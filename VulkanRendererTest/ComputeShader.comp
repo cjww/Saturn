@@ -1,0 +1,65 @@
+#version 450
+
+layout(local_size_x = 256) in;
+
+layout(set = 0, binding = 0) uniform Config{
+    int matrixCount;
+} opData;
+
+/*
+layout(set = 0, binding = 1) readonly buffer InputBuffer{
+    mat4 data[];
+} sourceData;
+*/
+
+layout(set = 0, binding = 2) buffer OutputBuffer{
+    mat4 data[];
+} outputData;
+
+layout(push_constant) uniform PushConstant {
+    float time;
+} pc;
+
+float rand(vec2 co){
+    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
+}
+
+mat4 translate(vec3 trans) {
+    return mat4(
+        vec4(1, 0, 0, 0),
+        vec4(0, 1, 0, 0),
+        vec4(0, 0, 1, 0),
+        vec4(trans.xyz, 1)
+    );
+}
+
+mat4 identity() {
+    return mat4(
+        vec4(1, 0, 0, 0),
+        vec4(0, 1, 0, 0),
+        vec4(0, 0, 1, 0),
+        vec4(0, 0, 0, 1)
+    );
+}
+
+void main() {
+    //grab global ID
+	uint gID = gl_GlobalInvocationID.x;
+    //make sure we dont access past the buffer size
+    if(gID < opData.matrixCount)
+    {
+        // do math
+        //outputData.matrices[gID] = sourceData.matrices[gID] * opData.transform;
+        
+        float widthf = sqrt(opData.matrixCount);
+        
+        uint width = uint(floor(widthf));
+
+        uint x = gID % width;
+        uint y = gID / width;
+        float randomTime = rand(vec2(x, y)) + 1;
+        vec3 translation = vec3(x * 2, y * 2, sin(pc.time * randomTime) * rand(vec2(x, y)) * 2);
+
+        outputData.data[gID] = identity() * translate(translation);
+    }
+}
