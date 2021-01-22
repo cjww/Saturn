@@ -125,11 +125,50 @@ int main() {
 	return 0;
 }
 
+
+struct SceneUbo {
+	glm::mat4 view;
+	glm::mat4 proj;
+};
+
+struct ObjectUbo {
+	glm::mat4 model;
+};
+
+struct VertexUV {
+	glm::vec4 position;
+	glm::vec2 uv;
+};
+
 void textureTest(vr::RenderWindow& window) {
 
 	RenderPass renderPass = createSimpleRenderPass(window);
 
 	
+	vr::ShaderPtr vertexShader = window.createShader("TextureVertexShader.spv", VK_SHADER_STAGE_VERTEX_BIT);
+	vr::ShaderPtr fragmentShader = window.createShader("TextureFragmentShader.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+	vr::ShaderSet shaderSet = window.createShaderSet(vertexShader, fragmentShader);
+
+	uint32_t pipeline = window.createPipeline(shaderSet, renderPass.renderPass, 0);
+
+	CameraController controller(window);
+
+	vr::DescriptorSetPtr descriptorSet = shaderSet.getDescriptorSet(0);
+	SceneUbo sceneUbo = {};
+	sceneUbo.view = controller.getView(0.0f);
+	sceneUbo.proj = controller.getProjection(60.f);
+
+	vr::BufferPtr sceneUniformBuffer = window.createUniformBuffer(sizeof(SceneUbo), &sceneUbo);
+	window.updateDescriptorSet(descriptorSet, 0, sceneUniformBuffer, nullptr, true);
+
+	ObjectUbo objectUbo = {};
+	objectUbo.model = glm::mat4(1.0f);
+
+	vr::BufferPtr objectUniformBuffer = window.createUniformBuffer(sizeof(ObjectUbo), &objectUbo);
+	window.updateDescriptorSet(descriptorSet, 1, objectUniformBuffer, nullptr, true);
+
+	VertexUV quad[4];
+
 
 
 
