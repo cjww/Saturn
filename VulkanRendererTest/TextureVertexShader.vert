@@ -1,6 +1,8 @@
 #version 450
 
 layout(location = 0) in vec4 in_vertexPosition;
+layout(location = 1) in vec2 in_vertexUV;
+
 
 layout(set = 0, binding = 0) uniform Scene {
     mat4 view;

@@ -50,6 +50,24 @@ public:
 	}
 };
 
+class FrameTimer {
+private:
+	std::chrono::steady_clock::time_point m_lastTime;
+public:
+	FrameTimer() {
+		m_lastTime = std::chrono::high_resolution_clock::now();
+	}
+
+	float getDeltaTime() {
+		// Time calculations
+		auto now = std::chrono::high_resolution_clock::now();
+		auto dtDuration = std::chrono::duration<float, std::ratio<1, 1>>(now - m_lastTime);
+		m_lastTime = now;
+		float dt = dtDuration.count();
+		return dt;
+	}
+};
+
 struct RenderPass {
 	vr::ImagePtr depthImage;
 	uint32_t renderPass;
@@ -143,7 +161,8 @@ struct VertexUV {
 void textureTest(vr::RenderWindow& window) {
 
 	RenderPass renderPass = createSimpleRenderPass(window);
-
+	vr::ImagePtr depthImage = window.createDepthImage(window.getCurrentExtent());
+	auto framebuffer = window.createFramebuffer(renderPass.renderPass, { depthImage });
 	
 	vr::ShaderPtr vertexShader = window.createShader("TextureVertexShader.spv", VK_SHADER_STAGE_VERTEX_BIT);
 	vr::ShaderPtr fragmentShader = window.createShader("TextureFragmentShader.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -167,8 +186,44 @@ void textureTest(vr::RenderWindow& window) {
 	vr::BufferPtr objectUniformBuffer = window.createUniformBuffer(sizeof(ObjectUbo), &objectUbo);
 	window.updateDescriptorSet(descriptorSet, 1, objectUniformBuffer, nullptr, true);
 
-	VertexUV quad[4];
+	VertexUV quad[] = {
+		{ glm::vec4(-0.5f, 0.5f, 0.0f, 1.0f), glm::vec2(0.0f, 1.0f) },
+		{ glm::vec4(0.5f, 0.5f, 0.0f, 1.0f), glm::vec2(1.0f, 1.0f) },
+		{ glm::vec4(0.5f, -0.5f, 0.0f, 1.0f), glm::vec2(1.0f, 0.0f) },
+		{ glm::vec4(-0.5f, -0.5f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f) }
+	};
 
+	uint32_t quadIndices[] = {
+		0, 1, 3,
+		1, 2, 3
+	};
+
+	vr::BufferPtr vertexBuffer = window.createVertexBuffer(sizeof(quad), quad);
+	vr::BufferPtr indexBuffer = window.createIndexBuffer(sizeof(quadIndices), quadIndices);
+
+	FrameTimer timer;
+	while (window.isOpen()) {
+		window.pollEvents();
+
+		float dt = timer.getDeltaTime();
+
+		sceneUbo.view = controller.getView(dt);
+		memcpy(sceneUniformBuffer->mappedData, &sceneUbo.view, sizeof(glm::mat4));
+		window.updateDescriptorSet(descriptorSet, 0, sceneUniformBuffer, nullptr, false);
+
+		window.beginFrame();
+
+		window.beginRenderPass(renderPass.renderPass, framebuffer, VK_SUBPASS_CONTENTS_INLINE);
+		
+		window.bindVertexBuffer(vertexBuffer);
+		window.bindIndexBuffer(indexBuffer);
+
+		window.drawIndexed(6, 1);
+
+		window.endFrame();
+
+
+	}
 
 
 
