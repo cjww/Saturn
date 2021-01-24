@@ -10,16 +10,17 @@
 class CameraController {
 private:
 	vr::RenderWindow& window;
-	glm::vec2 mouseLastPos;
 	glm::vec3 viewForward;
 	glm::vec3 viewPos;
+	glm::vec2 lastMousePos;
 public:
-	float speed = 100.f;
+	float speed = 1.f;
+	float sensitivty = 1.f;
 
 	CameraController(vr::RenderWindow& window) : window(window) {
-		mouseLastPos = glm::vec2(0.f);
 		viewForward = glm::vec3(0, 0, 1);
 		viewPos = glm::vec3(0.f);
+		lastMousePos = window.getCursorPosition();
 	};
 
 	glm::mat4 getView(float dt) {
@@ -27,19 +28,19 @@ public:
 		int vert = glfwGetKey(window.getWindowHandle(), GLFW_KEY_W) - glfwGetKey(window.getWindowHandle(), GLFW_KEY_S);
 
 		glm::vec2 mPos = window.getCursorPosition();
-		glm::vec2 diff = mouseLastPos - mPos;
-		mouseLastPos = mPos;
-
-		viewForward = glm::vec3(glm::vec4(viewForward, 0.0f) * glm::rotate(-diff.x * dt, glm::vec3(0, 1, 0)));
+		glm::vec2 diff = mPos - lastMousePos;
+		lastMousePos = mPos;
+		
+		viewForward = glm::vec3(glm::vec4(viewForward, 0.0f) * glm::rotate(diff.x * dt * sensitivty, glm::vec3(0, 1, 0)));
 
 		glm::vec3 right = glm::cross(viewForward, glm::vec3(0, 1, 0));
-		viewForward = glm::vec3(glm::vec4(viewForward, 0.0f) * glm::rotate(-diff.y * dt, right));
+		viewForward = glm::vec3(glm::vec4(viewForward, 0.0f) * glm::rotate(diff.y * dt * sensitivty, right));
 
 
 		viewPos += right * (float)hori * dt * speed;
 		viewPos += viewForward * (float)vert * dt * speed;
 
-
+		
 		return glm::lookAt(viewPos, viewPos + viewForward, glm::vec3(0, 1, 0));
 	}
 
@@ -78,6 +79,11 @@ struct Vertex {
 	glm::vec4 position;
 };
 
+struct VertexUV {
+	glm::vec4 position;
+	glm::vec2 uv;
+};
+
 struct Particle {
 	glm::mat4 mat;
 };
@@ -92,6 +98,16 @@ struct ConfigBuffer {
 	glm::mat4 transform;
 	int matrixCount;
 };
+
+struct SceneUbo {
+	glm::mat4 view;
+	glm::mat4 proj;
+};
+
+struct ObjectUbo {
+	glm::mat4 model;
+};
+
 
 Vertex box[8] = {
 	// forward
@@ -121,6 +137,18 @@ uint32_t boxIndices[] = {
 	7, 6, 3, 6, 2, 3
 };
 
+VertexUV quad[] = {
+	{ glm::vec4(-0.5f, 0.5f, 0.0f, 1.0f), glm::vec2(0.0f, 1.0f) },
+	{ glm::vec4(0.5f, 0.5f, 0.0f, 1.0f), glm::vec2(1.0f, 1.0f) },
+	{ glm::vec4(0.5f, -0.5f, 0.0f, 1.0f), glm::vec2(1.0f, 0.0f) },
+	{ glm::vec4(-0.5f, -0.5f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f) }
+};
+
+uint32_t quadIndices[] = {
+	0, 1, 3,
+	1, 2, 3
+};
+
 void computeTest(vr::RenderWindow& window);
 void textureTest(vr::RenderWindow& window);
 
@@ -144,25 +172,9 @@ int main() {
 }
 
 
-struct SceneUbo {
-	glm::mat4 view;
-	glm::mat4 proj;
-};
-
-struct ObjectUbo {
-	glm::mat4 model;
-};
-
-struct VertexUV {
-	glm::vec4 position;
-	glm::vec2 uv;
-};
-
 void textureTest(vr::RenderWindow& window) {
 
 	RenderPass renderPass = createSimpleRenderPass(window);
-	vr::ImagePtr depthImage = window.createDepthImage(window.getCurrentExtent());
-	auto framebuffer = window.createFramebuffer(renderPass.renderPass, { depthImage });
 	
 	vr::ShaderPtr vertexShader = window.createShader("TextureVertexShader.spv", VK_SHADER_STAGE_VERTEX_BIT);
 	vr::ShaderPtr fragmentShader = window.createShader("TextureFragmentShader.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -171,6 +183,8 @@ void textureTest(vr::RenderWindow& window) {
 	uint32_t pipeline = window.createPipeline(shaderSet, renderPass.renderPass, 0);
 
 	CameraController controller(window);
+	controller.sensitivty = 5.f;
+	controller.speed = 10.f;
 
 	vr::DescriptorSetPtr descriptorSet = shaderSet.getDescriptorSet(0);
 	SceneUbo sceneUbo = {};
@@ -186,18 +200,6 @@ void textureTest(vr::RenderWindow& window) {
 	vr::BufferPtr objectUniformBuffer = window.createUniformBuffer(sizeof(ObjectUbo), &objectUbo);
 	window.updateDescriptorSet(descriptorSet, 1, objectUniformBuffer, nullptr, true);
 
-	VertexUV quad[] = {
-		{ glm::vec4(-0.5f, 0.5f, 0.0f, 1.0f), glm::vec2(0.0f, 1.0f) },
-		{ glm::vec4(0.5f, 0.5f, 0.0f, 1.0f), glm::vec2(1.0f, 1.0f) },
-		{ glm::vec4(0.5f, -0.5f, 0.0f, 1.0f), glm::vec2(1.0f, 0.0f) },
-		{ glm::vec4(-0.5f, -0.5f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f) }
-	};
-
-	uint32_t quadIndices[] = {
-		0, 1, 3,
-		1, 2, 3
-	};
-
 	vr::BufferPtr vertexBuffer = window.createVertexBuffer(sizeof(quad), quad);
 	vr::BufferPtr indexBuffer = window.createIndexBuffer(sizeof(quadIndices), quadIndices);
 
@@ -207,22 +209,27 @@ void textureTest(vr::RenderWindow& window) {
 
 		float dt = timer.getDeltaTime();
 
+		window.beginFrame();
+		
 		sceneUbo.view = controller.getView(dt);
-		memcpy(sceneUniformBuffer->mappedData, &sceneUbo.view, sizeof(glm::mat4));
+		memcpy(sceneUniformBuffer->mappedData, &sceneUbo, sizeof(sceneUbo));
 		window.updateDescriptorSet(descriptorSet, 0, sceneUniformBuffer, nullptr, false);
 
-		window.beginFrame();
-
-		window.beginRenderPass(renderPass.renderPass, framebuffer, VK_SUBPASS_CONTENTS_INLINE);
+		window.beginRenderPass(renderPass.renderPass, renderPass.frameBuffer, VK_SUBPASS_CONTENTS_INLINE);
 		
+		window.bindPipeline(pipeline);
+
 		window.bindVertexBuffer(vertexBuffer);
 		window.bindIndexBuffer(indexBuffer);
 
+		window.bindDescriptorSet(descriptorSet, pipeline);
+
 		window.drawIndexed(6, 1);
 
+		window.endRenderPass();
+
 		window.endFrame();
-
-
+		
 	}
 
 

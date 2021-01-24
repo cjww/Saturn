@@ -129,7 +129,7 @@ namespace NAME_SPACE {
 
 		uint32_t createFramebuffer(uint32_t renderPass, const std::vector<ImagePtr>& additionalAttachments);
 		
-		uint32_t createPipeline(const ShaderSet& shaderSet, uint32_t renderPass = 0, uint32_t subpassIndexconst = 0);
+		uint32_t createPipeline(const ShaderSet& shaderSet, uint32_t renderPass = 0, uint32_t subpassIndex = 0);
 
 		//Resource creation
 		ImagePtr createDepthImage(VkExtent2D extent);

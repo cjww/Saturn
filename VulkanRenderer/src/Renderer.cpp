@@ -8,6 +8,29 @@ namespace NAME_SPACE {
 			"VK_LAYER_KHRONOS_validation"
 		};
 
+		uint32_t count;
+		VkResult res = vkEnumerateInstanceLayerProperties(&count, nullptr);
+		vbl::printError(res, "Faiedl to enumerate instance layers");
+		std::vector<VkLayerProperties> layerProperties(count);
+		res = vkEnumerateInstanceLayerProperties(&count, layerProperties.data());
+		vbl::printError(res, "Faiedl to enumerate instance layers");
+
+
+		for (int i = 0; i < m_validationLayers.size(); i++) {
+			bool found = false;
+			for (const auto& prop : layerProperties) {
+				if (strcmp(m_validationLayers[i], prop.layerName) == 0) {
+					found = true;
+					break;
+				}
+			}
+			if (!found) {
+				std::cerr << "A validation layer requested was not present in available layers: " << m_validationLayers[i] << std::endl;
+				m_validationLayers.erase(m_validationLayers.begin() + i);
+				i--;
+			}
+		}
+
 		vbl::setValidationLayers(true, m_validationLayers.data(), m_validationLayers.size());
 	}
 
@@ -181,11 +204,11 @@ namespace NAME_SPACE {
 	}
 
 	Renderer::Renderer() {
+		glfwInit();
+		createInstance();
 #ifdef _DEBUG
 		setupDebug();
 #endif
-		glfwInit();
-		createInstance();
 		getPhysicalDevice();
 		createDevice();
 
@@ -703,8 +726,7 @@ namespace NAME_SPACE {
 
 	void Renderer::drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t firstInstance, uint32_t vertexOffset, const CommandBufferPtr& commandBuffer, uint32_t frameIndex) {
 		uint32_t realFrameIndex = (frameIndex == -1) ? m_frameIndex : frameIndex;
-		//vkCmdDraw((commandBuffer == nullptr) ? m_graphicsCommandBuffers[realFrameIndex] : commandBuffer->buffers[realFrameIndex], vertexCount, instanceCount, firstVertex, firstInstance);
-		vkCmdDrawIndexed((commandBuffer == nullptr) ? m_graphicsCommandBuffers[realFrameIndex] : commandBuffer->buffers[realFrameIndex], indexCount, instanceCount, firstIndex, vertexOffset, firstIndex);
+		vkCmdDrawIndexed((commandBuffer == nullptr) ? m_graphicsCommandBuffers[realFrameIndex] : commandBuffer->buffers[realFrameIndex], indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 	}
 
 }
