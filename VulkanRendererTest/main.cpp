@@ -7,6 +7,9 @@
 
 #include <chrono>
 
+#define STB_IMAGE_IMPLEMENTATION
+#include <stb_image.h>
+
 class CameraController {
 private:
 	vr::RenderWindow& window;
@@ -192,16 +195,28 @@ void textureTest(vr::RenderWindow& window) {
 	sceneUbo.proj = controller.getProjection(60.f);
 
 	vr::BufferPtr sceneUniformBuffer = window.createUniformBuffer(sizeof(SceneUbo), &sceneUbo);
-	window.updateDescriptorSet(descriptorSet, 0, sceneUniformBuffer, nullptr, true);
+	window.updateDescriptorSet(descriptorSet, 0, sceneUniformBuffer, nullptr, nullptr, true);
 
 	ObjectUbo objectUbo = {};
 	objectUbo.model = glm::mat4(1.0f);
 
 	vr::BufferPtr objectUniformBuffer = window.createUniformBuffer(sizeof(ObjectUbo), &objectUbo);
-	window.updateDescriptorSet(descriptorSet, 1, objectUniformBuffer, nullptr, true);
+	window.updateDescriptorSet(descriptorSet, 1, objectUniformBuffer, nullptr, nullptr, true);
 
 	vr::BufferPtr vertexBuffer = window.createVertexBuffer(sizeof(quad), quad);
 	vr::BufferPtr indexBuffer = window.createIndexBuffer(sizeof(quadIndices), quadIndices);
+
+
+	vr::SamplerPtr sampler = window.createSampler(VK_FILTER_NEAREST);
+	int width, height, channels;
+	unsigned char* pixels = stbi_load("Box.png", &width, &height, &channels, 0);
+	if (!pixels) {
+		std::cerr << "Failed to load image" << std::endl;
+		return;
+	}
+	vr::ImagePtr image = window.createTextureImage2D({ (uint32_t)width, (uint32_t)height }, pixels, channels);
+	stbi_image_free(pixels);
+	window.updateDescriptorSet(descriptorSet, 2, nullptr, image, sampler, true);
 
 	FrameTimer timer;
 	while (window.isOpen()) {
@@ -213,7 +228,7 @@ void textureTest(vr::RenderWindow& window) {
 		
 		sceneUbo.view = controller.getView(dt);
 		memcpy(sceneUniformBuffer->mappedData, &sceneUbo, sizeof(sceneUbo));
-		window.updateDescriptorSet(descriptorSet, 0, sceneUniformBuffer, nullptr, false);
+		window.updateDescriptorSet(descriptorSet, 0, sceneUniformBuffer, nullptr, nullptr, false);
 
 		window.beginRenderPass(renderPass.renderPass, renderPass.frameBuffer, VK_SUBPASS_CONTENTS_INLINE);
 		
@@ -260,11 +275,11 @@ void computeTest(vr::RenderWindow& window) {
 	// Compute Shader uniform buffer
 	int ccount = count;
 	vr::BufferPtr configBuffer = window.createUniformBuffer(sizeof(ccount), &ccount);
-	window.updateDescriptorSet(computeDescSet, 0, configBuffer, nullptr, true);
+	window.updateDescriptorSet(computeDescSet, 0, configBuffer, nullptr, nullptr, true);
 
 	// Compute ouputBuffer
 	vr::BufferPtr outputBuffer = window.createStorageBuffer(sizeof(glm::mat4) * count, nullptr);
-	window.updateDescriptorSet(computeDescSet, 2, outputBuffer, nullptr, true);
+	window.updateDescriptorSet(computeDescSet, 2, outputBuffer, nullptr, nullptr, true);
 
 
 	float time = 1.0f;
@@ -291,12 +306,12 @@ void computeTest(vr::RenderWindow& window) {
 
 	vr::BufferPtr uniformBuffer = window.createUniformBuffer(sizeof(ubo), &ubo);
 
-	window.updateDescriptorSet(descriptorSet, 0, uniformBuffer, nullptr, true);
+	window.updateDescriptorSet(descriptorSet, 0, uniformBuffer, nullptr, nullptr, true);
 
 	// Wait until compute shader is done
 	window.waitForFence(fence);
 	// update vertex storage buffer with compute shader output
-	window.updateDescriptorSet(descriptorSet, 1, outputBuffer, nullptr, true);
+	window.updateDescriptorSet(descriptorSet, 1, outputBuffer, nullptr, nullptr, true);
 
 	// main loop
 	auto lastTime = std::chrono::high_resolution_clock::now();
@@ -328,13 +343,13 @@ void computeTest(vr::RenderWindow& window) {
 		// update vertex uniform buffer
 		ubo.view = controller.getView(dt);
 		memcpy((char*)uniformBuffer->mappedData + offsetof(UBO, UBO::view), &ubo.view, sizeof(glm::mat4));
-		window.updateDescriptorSet(descriptorSet, 0, uniformBuffer, nullptr, false);
+		window.updateDescriptorSet(descriptorSet, 0, uniformBuffer, nullptr, nullptr, false);
 		/*
 		*/
 		// wait for compute shader to finish
 		window.waitForFence(fence);
 		// update vertexShader with compute output
-		window.updateDescriptorSet(descriptorSet, 1, outputBuffer, nullptr, false);
+		window.updateDescriptorSet(descriptorSet, 1, outputBuffer, nullptr, nullptr, false);
 
 		// draw frame
 		window.beginRenderPass(renderPass.renderPass, renderPass.frameBuffer, VK_SUBPASS_CONTENTS_INLINE, glm::vec3(1.0f, 0.0f, 0.0f));
