@@ -181,6 +181,9 @@ namespace NAME_SPACE {
 		m_computeCommandBuffers.resize(1);
 		vbl::allocateCommandBuffers(m_computeCommandBuffers.data(), m_computeCommandBuffers.size(), m_device, m_computeCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
+		m_transferCommandBuffers.resize(m_swapChain.images.size() * 8);
+		vbl::allocateCommandBuffers(m_transferCommandBuffers.data(), m_transferCommandBuffers.size(), m_device, m_graphicsCommandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+
 	}
 
 	VkFramebuffer Renderer::createFramebuffer(VkExtent2D extent, VkRenderPass renderPass, const std::vector<VkImageView>& imageViews) {
@@ -394,8 +397,43 @@ namespace NAME_SPACE {
 	ImagePtr Renderer::createTextureImage2D(VkExtent2D extent, unsigned char* pixels, int channels) {
 		auto image = m_pResourceManager->createShaderReadOnlyColorImage2D(extent);
 
-		//vkCmdCopyBufferToImage()
+		BufferPtr buffer = m_pResourceManager->createBuffer(image->extent.width * image->extent.height, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, pixels);
 
+		VkCommandBufferBeginInfo info = {};
+		info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		info.pNext = nullptr;
+		info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+		info.pInheritanceInfo = nullptr;
+		if (m_transferCommandQueue.size() == m_transferCommandBuffers.size()) {
+			throw std::runtime_error("Transfer overflow"); //TODO Fix this
+		}
+
+		VkCommandBuffer commandBuffer = m_transferCommandBuffers[m_transferCommandQueue.size()];
+		vkBeginCommandBuffer(commandBuffer, &info);
+
+		VkBufferImageCopy copy = {};
+		copy.imageExtent = image->extent;
+		copy.imageOffset = { 0, 0, 0 };
+		copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		copy.imageSubresource.baseArrayLayer = 0;
+		copy.imageSubresource.layerCount = 1;
+		copy.imageSubresource.mipLevel = 0;
+
+		copy.bufferImageHeight = 0;
+		copy.bufferOffset = 0;
+		copy.bufferRowLength = 0;
+
+		vkCmdCopyBufferToImage(commandBuffer, buffer->buffer, image->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1, &copy);
+
+		vkEndCommandBuffer(commandBuffer);
+
+
+		TransferCommand transferCommand = {};
+		transferCommand.commandBuffer = commandBuffer;
+		transferCommand.srcBuffer = buffer;
+		transferCommand.dstImage = image;
+		transferCommand.type = TransferCommand::Type::BUFFER_TO_IMAGE;
+		m_transferCommandQueue.push_back(transferCommand);
 
 		return image;
 	}
@@ -621,6 +659,8 @@ namespace NAME_SPACE {
 			bufferInfo.range = buffer->size;
 			descriptorSet->writes[binding].pBufferInfo = &bufferInfo;
 			descriptorSet->writes[binding].pImageInfo = nullptr;
+			descriptorSet->writes[binding].pTexelBufferView = nullptr;
+
 		}
 		else if (image != nullptr) {
 			imageInfo.imageLayout = image->layout;
@@ -628,6 +668,7 @@ namespace NAME_SPACE {
 			imageInfo.sampler = sampler == nullptr ? VK_NULL_HANDLE : *sampler;
 			descriptorSet->writes[binding].pImageInfo = &imageInfo;
 			descriptorSet->writes[binding].pBufferInfo = nullptr;
+			descriptorSet->writes[binding].pTexelBufferView = nullptr;
 		}
 
 		if (isOneTimeUpdate) {

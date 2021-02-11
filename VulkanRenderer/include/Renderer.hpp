@@ -43,6 +43,25 @@ namespace NAME_SPACE {
 		std::vector<VkCommandBuffer> buffers;
 	};
 
+<<<<<<< HEAD
+=======
+	struct TransferCommand {
+		enum Type {
+			BUFFER_TO_IMAGE,
+			BUFFER_TO_BUFFER,
+			IMAGE_TO_BUFFER,
+			IMAGE_TO_IMAGE
+		} type;
+		BufferPtr srcBuffer;
+		ImagePtr srcImage;
+		BufferPtr dstBuffer;
+		ImagePtr dstImage;
+		VkCommandBuffer commandBuffer;
+	};
+
+	typedef std::shared_ptr<CommandBuffer> CommandBufferPtr;
+
+>>>>>>> temporary
 	struct Pipeline {
 		VkPipeline pipeline;
 		VkPipelineLayout layout;
@@ -77,6 +96,8 @@ namespace NAME_SPACE {
 		VkCommandPool m_computeCommandPool;
 		std::vector<VkCommandBuffer> m_graphicsCommandBuffers;
 		std::vector<VkCommandBuffer> m_computeCommandBuffers;
+		std::vector<VkCommandBuffer> m_transferCommandBuffers;
+		std::vector<TransferCommand> m_transferCommandQueue;
 
 		std::vector<VkSemaphore> m_imageAvailableSemaphore;
 		std::vector<VkSemaphore> m_renderFinishedSemaphore;
@@ -88,6 +109,7 @@ namespace NAME_SPACE {
 		std::vector<RenderPass> m_renderPasses;
 		std::vector<Framebuffer> m_framebuffers;
 		std::vector<Pipeline> m_pipelines;
+		//std::vector<VkSampler> m_samplers;
 
 		void setupDebug();
 

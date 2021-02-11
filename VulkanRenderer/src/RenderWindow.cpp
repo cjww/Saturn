@@ -151,7 +151,12 @@ namespace NAME_SPACE {
 
 		vbl::beginPrimaryCommandBuffer(m_graphicsCommandBuffers[m_frameIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 	
-		
+		std::vector<VkCommandBuffer> transferBuffers;
+		transferBuffers.reserve(m_transferCommandQueue.size());
+		for (const auto& t : m_transferCommandQueue) {
+			transferBuffers.push_back(t.commandBuffer);
+		}
+		vkCmdExecuteCommands(m_graphicsCommandBuffers[m_frameIndex], transferBuffers.size(), transferBuffers.data());
 	}
 	
 	void RenderWindow::endFrame() {
@@ -175,6 +180,8 @@ namespace NAME_SPACE {
 		vkQueueSubmit(m_graphicsQueue, 1, &info, m_inFlightFences[m_frameIndex]);
 		vbl::presentImage(m_graphicsQueue, m_swapChain.currentImageIndex, m_swapChain.swapChain, m_renderFinishedSemaphore[m_frameIndex]);
 		m_frameIndex = (m_frameIndex + 1) % m_swapChain.images.size();
+
+		m_transferCommandQueue.clear();
 	}
 
 	void RenderWindow::close() {

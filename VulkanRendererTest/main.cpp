@@ -16,14 +16,19 @@ private:
 	glm::vec3 viewForward;
 	glm::vec3 viewPos;
 	glm::vec2 lastMousePos;
+
 public:
-	float speed = 1.f;
+	float speed = 10.f;
 	float sensitivty = 1.f;
+		
+	bool mouseLocked;
 
 	CameraController(vr::RenderWindow& window) : window(window) {
 		viewForward = glm::vec3(0, 0, 1);
 		viewPos = glm::vec3(0.f);
-		lastMousePos = window.getCursorPosition();
+		
+		mouseLocked = true;
+		window.setHideCursor(true);
 	};
 
 	glm::mat4 getView(float dt) {
@@ -31,17 +36,37 @@ public:
 		int vert = glfwGetKey(window.getWindowHandle(), GLFW_KEY_W) - glfwGetKey(window.getWindowHandle(), GLFW_KEY_S);
 
 		glm::vec2 mPos = window.getCursorPosition();
-		glm::vec2 diff = mPos - lastMousePos;
-		lastMousePos = mPos;
-		
+		glm::vec2 center = glm::vec2(window.getCurrentExtent().width / 2, window.getCurrentExtent().height / 2);
+		glm::vec2 diff = mPos - center;
+		if (mouseLocked) {
+			window.setCursorPosition(center);
+		}
+		else {
+			diff = glm::vec2(0, 0);
+		}
+
+		if (glfwGetKey(window.getWindowHandle(), GLFW_KEY_ESCAPE)) {
+			mouseLocked = false;
+			window.setHideCursor(false);
+		}
+
+		int up = glfwGetKey(window.getWindowHandle(), GLFW_KEY_SPACE) - glfwGetKey(window.getWindowHandle(), GLFW_KEY_LEFT_CONTROL);
+		bool sprint = glfwGetKey(window.getWindowHandle(), GLFW_KEY_LEFT_SHIFT);
+
 		viewForward = glm::vec3(glm::vec4(viewForward, 0.0f) * glm::rotate(diff.x * dt * sensitivty, glm::vec3(0, 1, 0)));
 
 		glm::vec3 right = glm::cross(viewForward, glm::vec3(0, 1, 0));
 		viewForward = glm::vec3(glm::vec4(viewForward, 0.0f) * glm::rotate(diff.y * dt * sensitivty, right));
 
 
-		viewPos += right * (float)hori * dt * speed;
-		viewPos += viewForward * (float)vert * dt * speed;
+		float finalSpeed = speed;
+		if (sprint) {
+			finalSpeed *= 2;
+		}
+
+		viewPos += right * (float)hori * dt * finalSpeed;
+		viewPos += viewForward * (float)vert * dt * finalSpeed;
+		viewPos += glm::vec3(0, 1, 0) * (float)up * dt * finalSpeed;
 
 		
 		return glm::lookAt(viewPos, viewPos + viewForward, glm::vec3(0, 1, 0));
@@ -246,8 +271,6 @@ void textureTest(vr::RenderWindow& window) {
 		window.endFrame();
 		
 	}
-
-
 
 }
 

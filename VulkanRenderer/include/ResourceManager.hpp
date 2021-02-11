@@ -40,7 +40,7 @@ namespace NAME_SPACE {
 
 	typedef std::shared_ptr<Buffer> BufferPtr;
 	typedef std::shared_ptr<Image> ImagePtr;
-
+	
 
 	class ResourceManager {
 	private:
