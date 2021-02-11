@@ -3,6 +3,8 @@
 #define VMA_IMPLEMENTATION
 #include "vk_mem_alloc.h"
 
+#include "vulkan_base.hpp"
+
 namespace NAME_SPACE {
 
 	VkFormat ResourceManager::getSupportedDepthFormat() {
@@ -154,8 +156,11 @@ namespace NAME_SPACE {
 		VmaAllocationCreateInfo allocInfo = {};
 		allocInfo.usage = memoryUsage;
 		allocInfo.requiredFlags = requiredMemoryProperties;
-
-		vmaCreateImage(m_allocator, &info, &allocInfo, &image->image, &image->allocation, nullptr);
+		
+		vbl::printError(
+			vmaCreateImage(m_allocator, &info, &allocInfo, &image->image, &image->allocation, nullptr),
+			"Failed to create Image"
+		);
 
 		return image;
 	}

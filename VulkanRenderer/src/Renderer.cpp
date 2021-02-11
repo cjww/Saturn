@@ -400,6 +400,34 @@ namespace NAME_SPACE {
 		return image;
 	}
 
+	SamplerPtr Renderer::createSampler(VkFilter minMagFilter, float maxAnisotropy, float minLod, float maxLod, float mipLodBias) {
+		SamplerPtr sampler(new VkSampler, [&](VkSampler* sampler) {
+			vkDeviceWaitIdle(m_device);
+			vkDestroySampler(m_device, *sampler, nullptr);
+			delete sampler;
+			});
+
+		vbl::printError(
+			vbl::createSampler(sampler.get(), m_device, minMagFilter, maxAnisotropy, minLod, maxLod, mipLodBias),
+			"Failed to create sampler"
+		);
+		return sampler;
+	}
+
+	SamplerPtr Renderer::createSampler(VkSamplerCreateInfo info) {
+		SamplerPtr sampler(new VkSampler, [&](VkSampler* sampler) {
+			vkDeviceWaitIdle(m_device);
+			vkDestroySampler(m_device, *sampler, nullptr);
+			delete sampler;
+		});
+
+		vbl::printError(
+			vkCreateSampler(m_device, &info, nullptr, sampler.get()),
+			"Failed to create sampler"
+		);
+		return sampler;
+	}
+
 	BufferPtr Renderer::createVertexBuffer(VkDeviceSize size, void* initialData) {
 		return m_pResourceManager->createBuffer(size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, initialData);
 	}
@@ -578,7 +606,7 @@ namespace NAME_SPACE {
 		vkWaitForFences(m_device, 1, fence.get(), VK_TRUE, timeout);
 	}
 
-	void Renderer::updateDescriptorSet(const DescriptorSetPtr& descriptorSet, uint32_t binding, const BufferPtr& buffer, const ImagePtr& image, bool isOneTimeUpdate) {
+	void Renderer::updateDescriptorSet(const DescriptorSetPtr& descriptorSet, uint32_t binding, const BufferPtr& buffer, const ImagePtr& image, const SamplerPtr& sampler, bool isOneTimeUpdate) {
 
 		if (descriptorSet->writes.size() <= binding) {
 			throw std::runtime_error("Binding out of bounds!");
@@ -597,7 +625,7 @@ namespace NAME_SPACE {
 		else if (image != nullptr) {
 			imageInfo.imageLayout = image->layout;
 			imageInfo.imageView = image->view;
-			imageInfo.sampler = VK_NULL_HANDLE;
+			imageInfo.sampler = sampler == nullptr ? VK_NULL_HANDLE : *sampler;
 			descriptorSet->writes[binding].pImageInfo = &imageInfo;
 			descriptorSet->writes[binding].pBufferInfo = nullptr;
 		}

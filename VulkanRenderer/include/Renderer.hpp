@@ -43,13 +43,14 @@ namespace NAME_SPACE {
 		std::vector<VkCommandBuffer> buffers;
 	};
 
-	typedef std::shared_ptr<CommandBuffer> CommandBufferPtr;
-
 	struct Pipeline {
 		VkPipeline pipeline;
 		VkPipelineLayout layout;
 		bool isCompute;
 	};
+
+	typedef std::shared_ptr<CommandBuffer> CommandBufferPtr;
+	typedef std::shared_ptr<VkSampler> SamplerPtr;
 
 	class Renderer {
 	protected:
@@ -135,6 +136,10 @@ namespace NAME_SPACE {
 		ImagePtr createDepthImage(VkExtent2D extent);
 		ImagePtr createTextureImage2D(VkExtent2D extent, unsigned char* pixels, int channels = 4);
 
+		SamplerPtr createSampler(VkFilter minMagFilter, float maxAnisotropy = 16.0f, float minLod = 0.0f, float maxLod = 0.0f, float mipLodBias = 0.0f);
+		SamplerPtr createSampler(VkSamplerCreateInfo info);
+
+
 		BufferPtr createVertexBuffer(VkDeviceSize size, void* initialData);
 		BufferPtr createIndexBuffer(VkDeviceSize size, void* initialData);
 
@@ -157,7 +162,7 @@ namespace NAME_SPACE {
 		std::shared_ptr<VkFence> submitToComputeQueue(const CommandBufferPtr& commandBuffer);
 		void waitForFence(std::shared_ptr<VkFence> fence, uint64_t timeout = UINT64_MAX);
 
-		void updateDescriptorSet(const DescriptorSetPtr& descriptorSet, uint32_t binding, const BufferPtr& buffer, const ImagePtr& image, bool isOneTimeUpdate);
+		void updateDescriptorSet(const DescriptorSetPtr& descriptorSet, uint32_t binding, const BufferPtr& buffer, const ImagePtr& image, const SamplerPtr& sampler, bool isOneTimeUpdate);
 
 		// Draw commands
 		void beginRenderPass(uint32_t renderPass, uint32_t framebuffer, VkSubpassContents contents, glm::vec3 clearColor = glm::vec3(0.0f));

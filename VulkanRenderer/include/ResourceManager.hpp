@@ -1,8 +1,10 @@
 #pragma once
+
 #include "common.hpp"
 #include "vk_mem_alloc.h"
 #include <memory>
 #include <vector>
+
 
 namespace NAME_SPACE {
 	class Resource {
