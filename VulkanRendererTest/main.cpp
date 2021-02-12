@@ -7,9 +7,6 @@
 
 #include <chrono>
 
-#define STB_IMAGE_IMPLEMENTATION
-#include <stb_image.h>
-
 class CameraController {
 private:
 	vr::RenderWindow& window;
@@ -98,7 +95,7 @@ public:
 };
 
 struct RenderPass {
-	vr::ImagePtr depthImage;
+	vr::TexturePtr depthImage;
 	uint32_t renderPass;
 	uint32_t frameBuffer;
 };
@@ -233,15 +230,10 @@ void textureTest(vr::RenderWindow& window) {
 
 
 	vr::SamplerPtr sampler = window.createSampler(VK_FILTER_NEAREST);
-	int width, height, channels;
-	unsigned char* pixels = stbi_load("Box.png", &width, &height, &channels, 0);
-	if (!pixels) {
-		std::cerr << "Failed to load image" << std::endl;
-		return;
-	}
-	vr::ImagePtr image = window.createTextureImage2D({ (uint32_t)width, (uint32_t)height }, pixels, channels);
-	stbi_image_free(pixels);
-	window.updateDescriptorSet(descriptorSet, 2, nullptr, image, sampler, true);
+	
+	vr::Image image("Box.png");
+	vr::TexturePtr texture = window.createTexture2D(image);
+	window.updateDescriptorSet(descriptorSet, 2, nullptr, texture, sampler, true);
 
 	FrameTimer timer;
 	float time = 0.0f;

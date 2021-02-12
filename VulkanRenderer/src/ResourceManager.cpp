@@ -85,7 +85,7 @@ namespace NAME_SPACE {
 		return buffer;
 	}
 
-	void ResourceManager::createImageView(VkImageViewType type, std::shared_ptr<Image> image,
+	void ResourceManager::createImageView(VkImageViewType type, std::shared_ptr<Texture> image,
 		VkImageAspectFlags aspectMask, uint32_t baseMiplevel, uint32_t baseArrayLevel)
 	{
 		VkImageView view;
@@ -117,12 +117,12 @@ namespace NAME_SPACE {
 		}
 	}
 
-	std::shared_ptr<Image> ResourceManager::createImage(VkExtent3D extent, uint32_t arrayLayers, VkFormat format,
+	std::shared_ptr<Texture> ResourceManager::createImage(VkExtent3D extent, uint32_t arrayLayers, VkFormat format,
 		VkImageType type, VkImageLayout initialLayout, uint32_t mipLevels, const std::vector<uint32_t>& queueFamilyIndices,
 		VkSampleCountFlagBits sampleCount, VkSharingMode sharingMode, VkImageTiling tiling, VkImageUsageFlags usage,
 		VmaMemoryUsage memoryUsage, VkMemoryPropertyFlags requiredMemoryProperties)
 	{
-		std::shared_ptr<Image> image(new Image(), [&](Image* image) {
+		std::shared_ptr<Texture> image(new Texture(), [&](Texture* image) {
 			vkDeviceWaitIdle(m_allocatorInfo.device);
 			vmaDestroyImage(m_allocator, image->image, image->allocation);
 			if (image->view != VK_NULL_HANDLE) {
@@ -165,7 +165,7 @@ namespace NAME_SPACE {
 		return image;
 	}
 
-	std::shared_ptr<Image> ResourceManager::createDepthImage(VkExtent2D extent) {
+	std::shared_ptr<Texture> ResourceManager::createDepthImage(VkExtent2D extent) {
 
 		auto image = createImage(
 			{ extent.width, extent.height, 1 },
@@ -188,7 +188,7 @@ namespace NAME_SPACE {
 		return image;
 	}
 
-	ImagePtr ResourceManager::createShaderReadOnlyColorImage2D(VkExtent2D extent) {
+	TexturePtr ResourceManager::createShaderReadOnlyColorImage2D(VkExtent2D extent) {
 		auto image = createImage(
 			{ extent.width, extent.height, 1 },
 			1,

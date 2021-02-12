@@ -318,7 +318,7 @@ namespace NAME_SPACE {
 		return getResolveAttachment(m_swapChain.format);
 	}
 
-	uint32_t Renderer::createFramebuffer(uint32_t renderPass, const std::vector<ImagePtr>& additionalAttachments) {
+	uint32_t Renderer::createFramebuffer(uint32_t renderPass, const std::vector<TexturePtr>& additionalAttachments) {
 		Framebuffer framebuffer;
 		framebuffer.framebuffers.resize(m_swapChain.images.size());
 		for (uint32_t i = 0; i < (uint32_t)m_swapChain.images.size(); i++) {
@@ -390,11 +390,15 @@ namespace NAME_SPACE {
 		return m_pipelines.size() - 1;
 	}
 
-	ImagePtr Renderer::createDepthImage(VkExtent2D extent) {
+	TexturePtr Renderer::createDepthImage(VkExtent2D extent) {
 		return m_pResourceManager->createDepthImage(extent);
 	}
 
-	ImagePtr Renderer::createTextureImage2D(VkExtent2D extent, unsigned char* pixels, int channels) {
+	TexturePtr Renderer::createTexture2D(const Image& image) {
+		return createTexture2D(image.getExtent(), image.getPixels(), image.getChannelCount());
+	}
+
+	TexturePtr Renderer::createTexture2D(VkExtent2D extent, unsigned char* pixels, int channels) {
 		auto image = m_pResourceManager->createShaderReadOnlyColorImage2D(extent);
 
 		BufferPtr buffer = m_pResourceManager->createBuffer(image->extent.width * image->extent.height * channels, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, pixels);
@@ -652,7 +656,7 @@ namespace NAME_SPACE {
 		vkWaitForFences(m_device, 1, fence.get(), VK_TRUE, timeout);
 	}
 
-	void Renderer::updateDescriptorSet(const DescriptorSetPtr& descriptorSet, uint32_t binding, const BufferPtr& buffer, const ImagePtr& image, const SamplerPtr& sampler, bool isOneTimeUpdate) {
+	void Renderer::updateDescriptorSet(const DescriptorSetPtr& descriptorSet, uint32_t binding, const BufferPtr& buffer, const TexturePtr& image, const SamplerPtr& sampler, bool isOneTimeUpdate) {
 
 		if (descriptorSet->writes.size() <= binding) {
 			throw std::runtime_error("Binding out of bounds!");

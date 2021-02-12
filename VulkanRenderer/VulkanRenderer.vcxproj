@@ -172,6 +172,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="include\common.hpp" />
+    <ClInclude Include="include\Image.hpp" />
     <ClInclude Include="include\Renderer.hpp" />
     <ClInclude Include="include\RenderWindow.hpp" />
     <ClInclude Include="include\functions.hpp" />
@@ -181,6 +182,7 @@
     <ClInclude Include="include\Shader.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="include\Image.cpp" />
     <ClCompile Include="src\ShaderSet.cpp" />
     <ClCompile Include="src\functions.cpp" />
     <ClCompile Include="src\Shader.cpp" />

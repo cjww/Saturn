@@ -3,6 +3,7 @@
 
 #include "ShaderSet.hpp"
 #include "ResourceManager.hpp"
+#include "Image.hpp"
 
 #include "vulkan_base.hpp"
 
@@ -51,9 +52,9 @@ namespace NAME_SPACE {
 			IMAGE_TO_IMAGE
 		} type;
 		BufferPtr srcBuffer;
-		ImagePtr srcImage;
+		TexturePtr srcImage;
 		BufferPtr dstBuffer;
-		ImagePtr dstImage;
+		TexturePtr dstImage;
 		VkCommandBuffer commandBuffer;
 	};
 
@@ -144,13 +145,15 @@ namespace NAME_SPACE {
 
 		VkAttachmentDescription getSwapchainAttachment() const;
 
-		uint32_t createFramebuffer(uint32_t renderPass, const std::vector<ImagePtr>& additionalAttachments);
+		uint32_t createFramebuffer(uint32_t renderPass, const std::vector<TexturePtr>& additionalAttachments);
 		
 		uint32_t createPipeline(const ShaderSet& shaderSet, uint32_t renderPass = 0, uint32_t subpassIndex = 0);
 
 		//Resource creation
-		ImagePtr createDepthImage(VkExtent2D extent);
-		ImagePtr createTextureImage2D(VkExtent2D extent, unsigned char* pixels, int channels = 4);
+		TexturePtr createDepthImage(VkExtent2D extent);
+
+		TexturePtr createTexture2D(const Image& image);
+		TexturePtr createTexture2D(VkExtent2D extent, unsigned char* pixels, int channels = 4);
 
 		SamplerPtr createSampler(VkFilter minMagFilter, float maxAnisotropy = 16.0f, float minLod = 0.0f, float maxLod = 0.0f, float mipLodBias = 0.0f);
 		SamplerPtr createSampler(VkSamplerCreateInfo info);
@@ -178,7 +181,7 @@ namespace NAME_SPACE {
 		std::shared_ptr<VkFence> submitToComputeQueue(const CommandBufferPtr& commandBuffer);
 		void waitForFence(std::shared_ptr<VkFence> fence, uint64_t timeout = UINT64_MAX);
 
-		void updateDescriptorSet(const DescriptorSetPtr& descriptorSet, uint32_t binding, const BufferPtr& buffer, const ImagePtr& image, const SamplerPtr& sampler, bool isOneTimeUpdate);
+		void updateDescriptorSet(const DescriptorSetPtr& descriptorSet, uint32_t binding, const BufferPtr& buffer, const TexturePtr& image, const SamplerPtr& sampler, bool isOneTimeUpdate);
 
 		// Draw commands
 		void beginRenderPass(uint32_t renderPass, uint32_t framebuffer, VkSubpassContents contents, glm::vec3 clearColor = glm::vec3(0.0f));
