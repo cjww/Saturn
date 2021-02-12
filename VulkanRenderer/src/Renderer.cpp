@@ -397,7 +397,7 @@ namespace NAME_SPACE {
 	ImagePtr Renderer::createTextureImage2D(VkExtent2D extent, unsigned char* pixels, int channels) {
 		auto image = m_pResourceManager->createShaderReadOnlyColorImage2D(extent);
 
-		BufferPtr buffer = m_pResourceManager->createBuffer(image->extent.width * image->extent.height, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, pixels);
+		BufferPtr buffer = m_pResourceManager->createBuffer(image->extent.width * image->extent.height * channels, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, pixels);
 
 		VkCommandBufferBeginInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -405,7 +405,15 @@ namespace NAME_SPACE {
 		info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 		info.pInheritanceInfo = nullptr;
 		if (m_transferCommandQueue.size() == m_transferCommandBuffers.size()) {
-			throw std::runtime_error("Transfer overflow"); //TODO Fix this
+			//throw std::runtime_error("Transfer overflow"); //TODO Fix this
+			size_t oldSize = m_transferCommandBuffers.size();
+			m_transferCommandBuffers.resize(m_transferCommandBuffers.size() << 1);
+			uint32_t diff = m_transferCommandBuffers.size() - oldSize;
+			vbl::printError(
+				vbl::allocateCommandBuffers(&m_transferCommandBuffers[oldSize], diff, m_device, m_graphicsCommandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY),
+				"Failed to allocate Commandbuffers"
+			);
+
 		}
 
 		VkCommandBuffer commandBuffer = m_transferCommandBuffers[m_transferCommandQueue.size()];

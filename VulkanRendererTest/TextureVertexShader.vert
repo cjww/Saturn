@@ -17,5 +17,5 @@ layout(set = 0, binding = 1) uniform Object {
 void main() {
 
     gl_Position = sceneUbo.proj * sceneUbo.view * objectUbo.model * in_vertexPosition;
-    
+    out_vertexUV = in_vertexUV;
 }

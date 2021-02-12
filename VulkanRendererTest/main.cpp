@@ -86,7 +86,7 @@ public:
 	FrameTimer() {
 		m_lastTime = std::chrono::high_resolution_clock::now();
 	}
-
+	// return time since last call in seconds
 	float getDeltaTime() {
 		// Time calculations
 		auto now = std::chrono::high_resolution_clock::now();
@@ -166,10 +166,10 @@ uint32_t boxIndices[] = {
 };
 
 VertexUV quad[] = {
-	{ glm::vec4(-0.5f, 0.5f, 0.0f, 1.0f), glm::vec2(0.0f, 1.0f) },
-	{ glm::vec4(0.5f, 0.5f, 0.0f, 1.0f), glm::vec2(1.0f, 1.0f) },
-	{ glm::vec4(0.5f, -0.5f, 0.0f, 1.0f), glm::vec2(1.0f, 0.0f) },
-	{ glm::vec4(-0.5f, -0.5f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f) }
+	{ glm::vec4(-0.5f, 0.5f, 0.0f, 1.0f), glm::vec2(1.0f, 0.0f) },
+	{ glm::vec4(0.5f, 0.5f, 0.0f, 1.0f), glm::vec2(0.0f, 0.0f) },
+	{ glm::vec4(0.5f, -0.5f, 0.0f, 1.0f), glm::vec2(0.0f, 1.0f) },
+	{ glm::vec4(-0.5f, -0.5f, 0.0f, 1.0f), glm::vec2(1.0f, 1.0f) }
 };
 
 uint32_t quadIndices[] = {
@@ -244,16 +244,27 @@ void textureTest(vr::RenderWindow& window) {
 	window.updateDescriptorSet(descriptorSet, 2, nullptr, image, sampler, true);
 
 	FrameTimer timer;
+	float time = 0.0f;
+	int frames = 0;
 	while (window.isOpen()) {
 		window.pollEvents();
 
 		float dt = timer.getDeltaTime();
+		time += dt;
+		frames++;
+		if (time >= 0.5f) {
+			float cpuTime = time / frames;
+			window.setWindowTitle("Average CPU time " + std::to_string(cpuTime) + ", FPS: " + std::to_string((int)(1 / cpuTime)));
+			time = 0.0f;
+			frames = 0;
+		}
 
 		window.beginFrame();
 		
 		sceneUbo.view = controller.getView(dt);
 		memcpy(sceneUniformBuffer->mappedData, &sceneUbo, sizeof(sceneUbo));
 		window.updateDescriptorSet(descriptorSet, 0, sceneUniformBuffer, nullptr, nullptr, false);
+
 
 		window.beginRenderPass(renderPass.renderPass, renderPass.frameBuffer, VK_SUBPASS_CONTENTS_INLINE);
 		
