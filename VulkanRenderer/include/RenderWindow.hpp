@@ -8,7 +8,7 @@
 
 namespace NAME_SPACE {
 
-	class RenderWindow : public Renderer {
+	class RenderWindow {
 	private:
 
 		GLFWwindow* m_window;

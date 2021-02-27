@@ -68,6 +68,8 @@ namespace NAME_SPACE {
 	typedef std::shared_ptr<VkSampler> SamplerPtr;
 
 	class Renderer {
+	private:
+		static Renderer* m_myInstance;
 	protected:
 		VkApplicationInfo m_appInfo;
 		VkInstance m_instance;
@@ -115,7 +117,6 @@ namespace NAME_SPACE {
 		void createSurface(GLFWwindow* window);
 
 		void createSwapChain();
-		uint32_t getNextSwapchainImage();
 
 		void createCommandBuffers();
 
@@ -133,9 +134,19 @@ namespace NAME_SPACE {
 			const std::vector<VkPushConstantRange>& pushConstantRanges,
 			VkPipelineShaderStageCreateInfo shaderStage);
 
-	public:
 		Renderer();
+	public:
+
 		virtual ~Renderer();
+
+		static void init(GLFWwindow* window);
+		static Renderer* get();
+		static void cleanup();
+
+		uint32_t getNextSwapchainImage();
+
+		void beginFrame();
+		void endFrame();
 
 		// create renderpasses, framebuffers and pipelines
 		

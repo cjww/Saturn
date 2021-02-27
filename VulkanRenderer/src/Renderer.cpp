@@ -2,6 +2,8 @@
 
 namespace NAME_SPACE {
 
+	Renderer* Renderer::m_myInstance = nullptr;
+
 	void Renderer::setupDebug() {
 		m_validationLayers = {
 			"VK_LAYER_LUNARG_standard_validation",
@@ -142,28 +144,6 @@ namespace NAME_SPACE {
 		}
 	}
 
-	uint32_t Renderer::getNextSwapchainImage() {
-		vkWaitForFences(m_device, 1, &m_inFlightFences[m_frameIndex], VK_FALSE, UINT64_MAX);
-		
-		VkResult res = vkAcquireNextImageKHR(m_device, m_swapChain.swapChain, UINT64_MAX, m_imageAvailableSemaphore[m_frameIndex], VK_NULL_HANDLE, &m_swapChain.currentImageIndex);
-		if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR) {
-			return -1;
-		}
-		else {
-			vbl::printError(
-				res,
-				"Failed to acquire image"
-			);
-
-			if (m_imageFences[m_swapChain.currentImageIndex] != VK_NULL_HANDLE) {
-				vkWaitForFences(m_device, 1, &m_imageFences[m_swapChain.currentImageIndex], VK_FALSE, UINT64_MAX);
-			}
-			m_imageFences[m_swapChain.currentImageIndex] = m_inFlightFences[m_frameIndex];
-		}
-
-		return m_swapChain.currentImageIndex;
-	}
-
 	void Renderer::createCommandBuffers() {
 		
 		vbl::printError(
@@ -255,6 +235,81 @@ namespace NAME_SPACE {
 		vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
 		vkDestroyDevice(m_device, nullptr);
 		vkDestroyInstance(m_instance, nullptr);
+	}
+
+	void Renderer::init(GLFWwindow* window) {
+		if (m_myInstance == nullptr) {
+			m_myInstance = new Renderer();
+			m_myInstance->createSurface(window);
+			m_myInstance->createSwapChain();
+			m_myInstance->createCommandBuffers();
+			m_myInstance->createSyncronisationObjects();
+		}
+	}
+
+	Renderer* Renderer::get() {
+		return m_myInstance;
+	}
+
+	void Renderer::cleanup() {
+		delete m_myInstance;
+	}
+
+	uint32_t Renderer::getNextSwapchainImage() {
+		vkWaitForFences(m_device, 1, &m_inFlightFences[m_frameIndex], VK_FALSE, UINT64_MAX);
+
+		VkResult res = vkAcquireNextImageKHR(m_device, m_swapChain.swapChain, UINT64_MAX, m_imageAvailableSemaphore[m_frameIndex], VK_NULL_HANDLE, &m_swapChain.currentImageIndex);
+		if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR) {
+			return -1;
+		}
+		else {
+			vbl::printError(
+				res,
+				"Failed to acquire image"
+			);
+
+			if (m_imageFences[m_swapChain.currentImageIndex] != VK_NULL_HANDLE) {
+				vkWaitForFences(m_device, 1, &m_imageFences[m_swapChain.currentImageIndex], VK_FALSE, UINT64_MAX);
+			}
+			m_imageFences[m_swapChain.currentImageIndex] = m_inFlightFences[m_frameIndex];
+		}
+
+		return m_swapChain.currentImageIndex;
+	}
+
+	void Renderer::beginFrame() {
+		vbl::beginPrimaryCommandBuffer(m_graphicsCommandBuffers[m_frameIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
+
+		std::vector<VkCommandBuffer> transferBuffers;
+		transferBuffers.reserve(m_transferCommandQueue.size());
+		for (const auto& t : m_transferCommandQueue) {
+			transferBuffers.push_back(t.commandBuffer);
+		}
+		vkCmdExecuteCommands(m_graphicsCommandBuffers[m_frameIndex], transferBuffers.size(), transferBuffers.data());
+	}
+
+	void Renderer::endFrame() {
+		vkEndCommandBuffer(m_graphicsCommandBuffers[m_frameIndex]);
+
+		VkSubmitInfo info = {};
+		info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		info.commandBufferCount = 1;
+		info.pCommandBuffers = &m_graphicsCommandBuffers[m_frameIndex];
+		info.signalSemaphoreCount = 1;
+		info.pSignalSemaphores = &m_renderFinishedSemaphore[m_frameIndex];
+		info.waitSemaphoreCount = 1;
+		info.pWaitSemaphores = &m_imageAvailableSemaphore[m_frameIndex];
+
+		VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
+		info.pWaitDstStageMask = &waitStage;
+
+		vkResetFences(m_device, 1, &m_inFlightFences[m_frameIndex]);
+
+		vkQueueSubmit(m_graphicsQueue, 1, &info, m_inFlightFences[m_frameIndex]);
+		vbl::presentImage(m_graphicsQueue, m_swapChain.currentImageIndex, m_swapChain.swapChain, m_renderFinishedSemaphore[m_frameIndex]);
+		m_frameIndex = (m_frameIndex + 1) % m_swapChain.images.size();
+
+		m_transferCommandQueue.clear();
 	}
 
 	void Renderer::createSyncronisationObjects() {

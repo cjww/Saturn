@@ -228,7 +228,6 @@ void textureTest(vr::RenderWindow& window) {
 	vr::BufferPtr vertexBuffer = window.createVertexBuffer(sizeof(quad), quad);
 	vr::BufferPtr indexBuffer = window.createIndexBuffer(sizeof(quadIndices), quadIndices);
 
-
 	vr::SamplerPtr sampler = window.createSampler(VK_FILTER_NEAREST);
 	
 	vr::Image image("Box.png");

@@ -48,7 +48,7 @@ namespace NAME_SPACE {
 
 
 	void RenderWindow::create(uint32_t width, uint32_t height, const char* title, GLFWmonitor* monitor) {
-
+		glfwInit();
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		m_monitor = monitor;
 		m_window = glfwCreateWindow(width, height, title, m_monitor, nullptr);
@@ -64,13 +64,7 @@ namespace NAME_SPACE {
 
 		glfwSetWindowUserPointer(m_window, this);
 
-		createSurface(m_window);
-
-		createSwapChain();
-
-		createCommandBuffers();
-
-		createSyncronisationObjects();
+		Renderer::init(m_window);
 
 		VkExtent2D extent = { width, height };
 		m_windowedExtent = extent;
@@ -90,8 +84,6 @@ namespace NAME_SPACE {
 	void RenderWindow::shutDown() {
 		glfwDestroyWindow(m_window);
 		m_window = nullptr;
-
-
 	}
 
 	uint32_t RenderWindow::getNextFrameImage() {
@@ -102,7 +94,7 @@ namespace NAME_SPACE {
 		if (m_isIconified) {
 			return -1;
 		}
-		uint32_t imageIndex = getNextSwapchainImage();
+		uint32_t imageIndex = Renderer::get()->getNextSwapchainImage();
 		if (imageIndex == -1) {
 			m_needsRecreation = true;
 			return -1;
@@ -110,11 +102,12 @@ namespace NAME_SPACE {
 		return imageIndex;
 	}
 
-	RenderWindow::RenderWindow(uint32_t width, uint32_t height, const char* title) : Renderer() {
+	RenderWindow::RenderWindow(uint32_t width, uint32_t height, const char* title) {
 		create(width, height, title, nullptr);
 	}
 
-	RenderWindow::RenderWindow(uint32_t monitorIndex) : Renderer() {
+	RenderWindow::RenderWindow(uint32_t monitorIndex) {
+		glfwInit();
 		int count;
 		GLFWmonitor** monitors = glfwGetMonitors(&count);
 		if (monitorIndex >= count || monitorIndex < 0) {
@@ -149,39 +142,11 @@ namespace NAME_SPACE {
 	void RenderWindow::beginFrame() {
 		getNextFrameImage();
 
-		vbl::beginPrimaryCommandBuffer(m_graphicsCommandBuffers[m_frameIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
-	
-		std::vector<VkCommandBuffer> transferBuffers;
-		transferBuffers.reserve(m_transferCommandQueue.size());
-		for (const auto& t : m_transferCommandQueue) {
-			transferBuffers.push_back(t.commandBuffer);
-		}
-		vkCmdExecuteCommands(m_graphicsCommandBuffers[m_frameIndex], transferBuffers.size(), transferBuffers.data());
+		Renderer::get()->beginFrame();
 	}
 	
 	void RenderWindow::endFrame() {
-
-		vkEndCommandBuffer(m_graphicsCommandBuffers[m_frameIndex]);
-
-		VkSubmitInfo info = {};
-		info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
-		info.commandBufferCount = 1;
-		info.pCommandBuffers = &m_graphicsCommandBuffers[m_frameIndex];
-		info.signalSemaphoreCount = 1;
-		info.pSignalSemaphores = &m_renderFinishedSemaphore[m_frameIndex];
-		info.waitSemaphoreCount = 1;
-		info.pWaitSemaphores = &m_imageAvailableSemaphore[m_frameIndex];
-		
-		VkPipelineStageFlags waitStage = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT;
-		info.pWaitDstStageMask = &waitStage;
-
-		vkResetFences(m_device, 1, &m_inFlightFences[m_frameIndex]);
-
-		vkQueueSubmit(m_graphicsQueue, 1, &info, m_inFlightFences[m_frameIndex]);
-		vbl::presentImage(m_graphicsQueue, m_swapChain.currentImageIndex, m_swapChain.swapChain, m_renderFinishedSemaphore[m_frameIndex]);
-		m_frameIndex = (m_frameIndex + 1) % m_swapChain.images.size();
-
-		m_transferCommandQueue.clear();
+		Renderer::get()->endFrame();
 	}
 
 	void RenderWindow::close() {

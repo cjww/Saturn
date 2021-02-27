@@ -63,7 +63,7 @@ namespace NAME_SPACE {
 			vkDeviceWaitIdle(m_allocatorInfo.device);
 			vmaDestroyBuffer(m_allocator, buffer->buffer, buffer->allocation);
 			delete buffer;
-			});
+		});
 		VkBufferCreateInfo bufferInfo = {};
 		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 		bufferInfo.size = size;
