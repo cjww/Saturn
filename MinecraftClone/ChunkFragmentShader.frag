@@ -9,5 +9,4 @@ void main() {
     out_color = vec4(0.2, 0.2, 0.2, 1);
     out_color += texture(myTexture, in_vertexUV);
     out_color = min(out_color, 1);
-    
 }

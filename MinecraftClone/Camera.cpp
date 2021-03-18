@@ -4,7 +4,7 @@ Camera::Camera(vr::RenderWindow& window, vr::DescriptorSetPtr viewProjectionSet,
 	auto renderer = vr::Renderer::get();
 	
 	m_ubo.projection = m_controller.getProjection(60);
-	m_ubo.view = m_controller.getView(0);
+	m_ubo.view = glm::lookAt(glm::vec3(0, 0, -1), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 	m_buffer = renderer->createUniformBuffer(sizeof(m_ubo), &m_ubo);
 
 	renderer->updateDescriptorSet(m_descriptorSet, binding, m_buffer, nullptr, nullptr, true);

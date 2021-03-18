@@ -5,7 +5,14 @@ CameraController::CameraController(vr::RenderWindow& window) : window(window) {
 	viewPos = glm::vec3(0.f);
 
 	mouseLocked = true;
+
+	glm::vec2 center = glm::vec2(window.getCurrentExtent().width / 2, window.getCurrentExtent().height / 2);
+	window.setCursorPosition(center);
+
 	window.setHideCursor(true);
+
+	sensitivty = 0.001f;
+	speed = 0.01f;
 }
 
 glm::mat4 CameraController::getView(float dt) {
@@ -35,7 +42,9 @@ glm::mat4 CameraController::getView(float dt) {
 
 	glm::vec3 right = glm::cross(viewForward, glm::vec3(0, 1, 0));
 	viewForward = glm::vec3(glm::vec4(viewForward, 0.0f) * glm::rotate(diff.y * dt * sensitivty, right));
+	viewForward = normalize(viewForward);
 
+	//viewForward = glm::vec3(0, 0, 1);
 
 	float finalSpeed = speed;
 	if (sprint) {
