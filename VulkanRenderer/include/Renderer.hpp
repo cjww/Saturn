@@ -5,6 +5,8 @@
 #include "ResourceManager.hpp"
 #include "Image.hpp"
 
+#include <RenderWindow.hpp>
+
 #include "vulkan_base.hpp"
 
 #include "functions.hpp"
@@ -71,6 +73,8 @@ namespace NAME_SPACE {
 	private:
 		static Renderer* m_myInstance;
 	protected:
+		RenderWindow* m_window;
+
 		VkApplicationInfo m_appInfo;
 		VkInstance m_instance;
 		VkDevice m_device;
@@ -134,18 +138,18 @@ namespace NAME_SPACE {
 			const std::vector<VkPushConstantRange>& pushConstantRanges,
 			VkPipelineShaderStageCreateInfo shaderStage);
 
-		Renderer();
+		Renderer(RenderWindow* window);
 	public:
 
 		virtual ~Renderer();
 
-		static void init(GLFWwindow* window);
+		static void init(RenderWindow* window);
 		static Renderer* get();
 		static void cleanup();
 
 		uint32_t getNextSwapchainImage();
 
-		void beginFrame();
+		bool beginFrame();
 		void endFrame();
 
 		// create renderpasses, framebuffers and pipelines

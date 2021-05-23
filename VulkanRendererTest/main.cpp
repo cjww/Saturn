@@ -1,6 +1,7 @@
 #include <iostream>
 
 #include <RenderWindow.hpp>
+#include <Renderer.hpp>
 
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
@@ -9,7 +10,7 @@
 
 class CameraController {
 private:
-	vr::RenderWindow& window;
+	RenderWindow& window;
 	glm::vec3 viewForward;
 	glm::vec3 viewPos;
 	glm::vec2 lastMousePos;
@@ -20,7 +21,7 @@ public:
 		
 	bool mouseLocked;
 
-	CameraController(vr::RenderWindow& window) : window(window) {
+	CameraController(RenderWindow& window) : window(window) {
 		viewForward = glm::vec3(0, 0, 1);
 		viewPos = glm::vec3(0.f);
 		
@@ -33,7 +34,7 @@ public:
 		int vert = glfwGetKey(window.getWindowHandle(), GLFW_KEY_W) - glfwGetKey(window.getWindowHandle(), GLFW_KEY_S);
 
 		glm::vec2 mPos = window.getCursorPosition();
-		glm::vec2 center = glm::vec2(window.getCurrentExtent().width / 2, window.getCurrentExtent().height / 2);
+		glm::vec2 center = glm::vec2(window.getCurrentExtent().x / 2, window.getCurrentExtent().y / 2);
 		glm::vec2 diff = mPos - center;
 		if (mouseLocked) {
 			window.setCursorPosition(center);
@@ -70,7 +71,7 @@ public:
 	}
 
 	glm::mat4 getProjection(float fovDegrees) {
-		auto projection = glm::perspective(glm::radians(fovDegrees), (float)window.getCurrentExtent().width / window.getCurrentExtent().height, 0.01f, 1000.0f);
+		auto projection = glm::perspective(glm::radians(fovDegrees), (float)window.getCurrentExtent().x / window.getCurrentExtent().y, 0.01f, 1000.0f);
 		projection[1][1] *= -1;
 		return projection;
 	}
@@ -174,17 +175,17 @@ uint32_t quadIndices[] = {
 	1, 2, 3
 };
 
-void computeTest(vr::RenderWindow& window);
-void textureTest(vr::RenderWindow& window);
+void computeTest(RenderWindow& window);
+void textureTest(RenderWindow& window);
 
-RenderPass createSimpleRenderPass(vr::RenderWindow& window);
+RenderPass createSimpleRenderPass(RenderWindow& window);
 
 int main() {
 
 	try {
 		const int WIDTH = 1000, HEIGHT = 600;
-		vr::RenderWindow window(WIDTH, HEIGHT, "Hello vulkan");
-
+		RenderWindow window(WIDTH, HEIGHT, "Hello vulkan");
+		vr::Renderer::init(&window);
 
 		//computeTest(window);
 		textureTest(window);
@@ -197,15 +198,16 @@ int main() {
 }
 
 
-void textureTest(vr::RenderWindow& window) {
+void textureTest(RenderWindow& window) {
 
 	RenderPass renderPass = createSimpleRenderPass(window);
-	
-	vr::ShaderPtr vertexShader = window.createShader("TextureVertexShader.spv", VK_SHADER_STAGE_VERTEX_BIT);
-	vr::ShaderPtr fragmentShader = window.createShader("TextureFragmentShader.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-	vr::ShaderSet shaderSet = window.createShaderSet(vertexShader, fragmentShader);
+	vr::Renderer* renderer = vr::Renderer::get();
 
-	uint32_t pipeline = window.createPipeline(shaderSet, renderPass.renderPass, 0);
+	vr::ShaderPtr vertexShader = renderer->createShader("TextureVertexShader.spv", VK_SHADER_STAGE_VERTEX_BIT);
+	vr::ShaderPtr fragmentShader = renderer->createShader("TextureFragmentShader.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+	vr::ShaderSet shaderSet = renderer->createShaderSet(vertexShader, fragmentShader);
+
+	uint32_t pipeline = renderer->createPipeline(shaderSet, renderPass.renderPass, 0);
 
 	CameraController controller(window);
 	controller.sensitivty = 5.f;
@@ -216,23 +218,23 @@ void textureTest(vr::RenderWindow& window) {
 	sceneUbo.view = controller.getView(0.0f);
 	sceneUbo.proj = controller.getProjection(60.f);
 
-	vr::BufferPtr sceneUniformBuffer = window.createUniformBuffer(sizeof(SceneUbo), &sceneUbo);
-	window.updateDescriptorSet(descriptorSet, 0, sceneUniformBuffer, nullptr, nullptr, true);
+	vr::BufferPtr sceneUniformBuffer = renderer->createUniformBuffer(sizeof(SceneUbo), &sceneUbo);
+	renderer->updateDescriptorSet(descriptorSet, 0, sceneUniformBuffer, nullptr, nullptr, true);
 
 	ObjectUbo objectUbo = {};
 	objectUbo.model = glm::mat4(1.0f);
 
-	vr::BufferPtr objectUniformBuffer = window.createUniformBuffer(sizeof(ObjectUbo), &objectUbo);
-	window.updateDescriptorSet(descriptorSet, 1, objectUniformBuffer, nullptr, nullptr, true);
+	vr::BufferPtr objectUniformBuffer = renderer->createUniformBuffer(sizeof(ObjectUbo), &objectUbo);
+	renderer->updateDescriptorSet(descriptorSet, 1, objectUniformBuffer, nullptr, nullptr, true);
 
-	vr::BufferPtr vertexBuffer = window.createVertexBuffer(sizeof(quad), quad);
-	vr::BufferPtr indexBuffer = window.createIndexBuffer(sizeof(quadIndices), quadIndices);
+	vr::BufferPtr vertexBuffer = renderer->createVertexBuffer(sizeof(quad), quad);
+	vr::BufferPtr indexBuffer = renderer->createIndexBuffer(sizeof(quadIndices), quadIndices);
 
-	vr::SamplerPtr sampler = window.createSampler(VK_FILTER_NEAREST);
+	vr::SamplerPtr sampler = renderer->createSampler(VK_FILTER_NEAREST);
 	
 	vr::Image image("Box.png");
-	vr::TexturePtr texture = window.createTexture2D(image);
-	window.updateDescriptorSet(descriptorSet, 2, nullptr, texture, sampler, true);
+	vr::TexturePtr texture = renderer->createTexture2D(image);
+	renderer->updateDescriptorSet(descriptorSet, 2, nullptr, texture, sampler, true);
 
 	FrameTimer timer;
 	float time = 0.0f;
@@ -250,76 +252,77 @@ void textureTest(vr::RenderWindow& window) {
 			frames = 0;
 		}
 
-		window.beginFrame();
+		if (renderer->beginFrame()) {
+			sceneUbo.view = controller.getView(dt);
+			memcpy(sceneUniformBuffer->mappedData, &sceneUbo, sizeof(sceneUbo));
+			renderer->updateDescriptorSet(descriptorSet, 0, sceneUniformBuffer, nullptr, nullptr, false);
+
+
+			renderer->beginRenderPass(renderPass.renderPass, renderPass.frameBuffer, VK_SUBPASS_CONTENTS_INLINE);
 		
-		sceneUbo.view = controller.getView(dt);
-		memcpy(sceneUniformBuffer->mappedData, &sceneUbo, sizeof(sceneUbo));
-		window.updateDescriptorSet(descriptorSet, 0, sceneUniformBuffer, nullptr, nullptr, false);
+			renderer->bindPipeline(pipeline);
 
+			renderer->bindVertexBuffer(vertexBuffer);
+			renderer->bindIndexBuffer(indexBuffer);
 
-		window.beginRenderPass(renderPass.renderPass, renderPass.frameBuffer, VK_SUBPASS_CONTENTS_INLINE);
-		
-		window.bindPipeline(pipeline);
+			renderer->bindDescriptorSet(descriptorSet, pipeline);
 
-		window.bindVertexBuffer(vertexBuffer);
-		window.bindIndexBuffer(indexBuffer);
+			renderer->drawIndexed(6, 1);
 
-		window.bindDescriptorSet(descriptorSet, pipeline);
+			renderer->endRenderPass();
 
-		window.drawIndexed(6, 1);
-
-		window.endRenderPass();
-
-		window.endFrame();
+			renderer->endFrame();
+		}
 		
 	}
 
 }
 
-void computeTest(vr::RenderWindow& window) {
+void computeTest(RenderWindow& window) {
 	
 	RenderPass renderPass = createSimpleRenderPass(window);
-	
-	vr::ShaderPtr vshader = window.createShader("ComputeVertexShader.spv", VK_SHADER_STAGE_VERTEX_BIT);
-	vr::ShaderPtr fshader = window.createShader("ComputeFragmentShader.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-	vr::ShaderSet shaderSet = window.createShaderSet(vshader, fshader);
+	vr::Renderer* renderer = vr::Renderer::get();
 
-	auto pipeline = window.createPipeline(shaderSet, renderPass.renderPass, 0);
+	vr::ShaderPtr vshader = renderer->createShader("ComputeVertexShader.spv", VK_SHADER_STAGE_VERTEX_BIT);
+	vr::ShaderPtr fshader = renderer->createShader("ComputeFragmentShader.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+	vr::ShaderSet shaderSet = renderer->createShaderSet(vshader, fshader);
+
+	auto pipeline = renderer->createPipeline(shaderSet, renderPass.renderPass, 0);
 
 	// BOX
-	vr::BufferPtr boxVertexbuffer = window.createVertexBuffer(sizeof(box), box);
-	vr::BufferPtr boxIndexBuffer = window.createIndexBuffer(sizeof(boxIndices), boxIndices);
+	vr::BufferPtr boxVertexbuffer = renderer->createVertexBuffer(sizeof(box), box);
+	vr::BufferPtr boxIndexBuffer = renderer->createIndexBuffer(sizeof(boxIndices), boxIndices);
 
 	// Compute Shader
 	const int count = 2048 * 2;
-	vr::ShaderPtr computeShader = window.createShader("ComputeShader.spv", VK_SHADER_STAGE_COMPUTE_BIT);
-	vr::ShaderSet computeSet = window.createShaderSet(computeShader);
-	auto computePipeline = window.createPipeline(computeSet);
+	vr::ShaderPtr computeShader = renderer->createShader("ComputeShader.spv", VK_SHADER_STAGE_COMPUTE_BIT);
+	vr::ShaderSet computeSet = renderer->createShaderSet(computeShader);
+	auto computePipeline = renderer->createPipeline(computeSet);
 	vr::DescriptorSetPtr computeDescSet = computeSet.getDescriptorSet(0);
 
 	// Compute Shader uniform buffer
 	int ccount = count;
-	vr::BufferPtr configBuffer = window.createUniformBuffer(sizeof(ccount), &ccount);
-	window.updateDescriptorSet(computeDescSet, 0, configBuffer, nullptr, nullptr, true);
+	vr::BufferPtr configBuffer = renderer->createUniformBuffer(sizeof(ccount), &ccount);
+	renderer->updateDescriptorSet(computeDescSet, 0, configBuffer, nullptr, nullptr, true);
 
 	// Compute ouputBuffer
-	vr::BufferPtr outputBuffer = window.createStorageBuffer(sizeof(glm::mat4) * count, nullptr);
-	window.updateDescriptorSet(computeDescSet, 2, outputBuffer, nullptr, nullptr, true);
+	vr::BufferPtr outputBuffer = renderer->createStorageBuffer(sizeof(glm::mat4) * count, nullptr);
+	renderer->updateDescriptorSet(computeDescSet, 2, outputBuffer, nullptr, nullptr, true);
 
 
 	float time = 1.0f;
 
 	// Compute Command buffer
-	vr::CommandBufferPtr computeCommandBuffer = window.createCommandBuffer(true);
-	window.recordCommandBuffer(computeCommandBuffer, [&](uint32_t frameIndex) {
-		window.bindPipeline(computePipeline, computeCommandBuffer, frameIndex);
-		window.bindDescriptorSet(computeDescSet, computePipeline, computeCommandBuffer, frameIndex);
-		window.pushConstants(computePipeline, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(float), &time, computeCommandBuffer, frameIndex);
+	vr::CommandBufferPtr computeCommandBuffer = renderer->createCommandBuffer(true);
+	renderer->recordCommandBuffer(computeCommandBuffer, [&](uint32_t frameIndex) {
+		renderer->bindPipeline(computePipeline, computeCommandBuffer, frameIndex);
+		renderer->bindDescriptorSet(computeDescSet, computePipeline, computeCommandBuffer, frameIndex);
+		renderer->pushConstants(computePipeline, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(float), &time, computeCommandBuffer, frameIndex);
 		vkCmdDispatch(computeCommandBuffer->buffers[frameIndex], (count / 256) + 1, 1, 1);
 		});
 
 	// Dispatch compute shader
-	auto fence = window.submitToComputeQueue(computeCommandBuffer);
+	auto fence = renderer->submitToComputeQueue(computeCommandBuffer);
 
 	// Vertex Shader uniformBuffer
 	CameraController controller(window);
@@ -329,14 +332,14 @@ void computeTest(vr::RenderWindow& window) {
 	ubo.view = controller.getView(0.0f);
 	ubo.projection = controller.getProjection(60.f);
 
-	vr::BufferPtr uniformBuffer = window.createUniformBuffer(sizeof(ubo), &ubo);
+	vr::BufferPtr uniformBuffer = renderer->createUniformBuffer(sizeof(ubo), &ubo);
 
-	window.updateDescriptorSet(descriptorSet, 0, uniformBuffer, nullptr, nullptr, true);
+	renderer->updateDescriptorSet(descriptorSet, 0, uniformBuffer, nullptr, nullptr, true);
 
 	// Wait until compute shader is done
-	window.waitForFence(fence);
+	renderer->waitForFence(fence);
 	// update vertex storage buffer with compute shader output
-	window.updateDescriptorSet(descriptorSet, 1, outputBuffer, nullptr, nullptr, true);
+	renderer->updateDescriptorSet(descriptorSet, 1, outputBuffer, nullptr, nullptr, true);
 
 	// main loop
 	auto lastTime = std::chrono::high_resolution_clock::now();
@@ -352,56 +355,59 @@ void computeTest(vr::RenderWindow& window) {
 		//window.setWindowTitle("FPS: " + std::to_string(1 / dt));
 
 
-		window.beginFrame();
-		/*
-		*/
-		// Rerecord compute command buffer with new time
-		window.recordCommandBuffer(computeCommandBuffer, [&](uint32_t frameIndex) {
-			window.bindPipeline(computePipeline, computeCommandBuffer, frameIndex);
-			window.bindDescriptorSet(computeDescSet, computePipeline, computeCommandBuffer, frameIndex);
-			window.pushConstants(computePipeline, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(float), &time, computeCommandBuffer, frameIndex);
-			vkCmdDispatch(computeCommandBuffer->buffers[frameIndex], (count / 256) + 1, 1, 1);
-		}, true);
-		// Dispatch compute shader
-		fence = window.submitToComputeQueue(computeCommandBuffer);
+		if (renderer->beginFrame()) {
+			/*
+			*/
+			// Rerecord compute command buffer with new time
+			renderer->recordCommandBuffer(computeCommandBuffer, [&](uint32_t frameIndex) {
+				renderer->bindPipeline(computePipeline, computeCommandBuffer, frameIndex);
+				renderer->bindDescriptorSet(computeDescSet, computePipeline, computeCommandBuffer, frameIndex);
+				renderer->pushConstants(computePipeline, VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(float), &time, computeCommandBuffer, frameIndex);
+				vkCmdDispatch(computeCommandBuffer->buffers[frameIndex], (count / 256) + 1, 1, 1);
+			}, true);
+			// Dispatch compute shader
+			fence = renderer->submitToComputeQueue(computeCommandBuffer);
 
-		// update vertex uniform buffer
-		ubo.view = controller.getView(dt);
-		memcpy((char*)uniformBuffer->mappedData + offsetof(UBO, UBO::view), &ubo.view, sizeof(glm::mat4));
-		window.updateDescriptorSet(descriptorSet, 0, uniformBuffer, nullptr, nullptr, false);
-		/*
-		*/
-		// wait for compute shader to finish
-		window.waitForFence(fence);
-		// update vertexShader with compute output
-		window.updateDescriptorSet(descriptorSet, 1, outputBuffer, nullptr, nullptr, false);
+			// update vertex uniform buffer
+			ubo.view = controller.getView(dt);
+			memcpy((char*)uniformBuffer->mappedData + offsetof(UBO, UBO::view), &ubo.view, sizeof(glm::mat4));
+			renderer->updateDescriptorSet(descriptorSet, 0, uniformBuffer, nullptr, nullptr, false);
+			/*
+			*/
+			// wait for compute shader to finish
+			renderer->waitForFence(fence);
+			// update vertexShader with compute output
+			renderer->updateDescriptorSet(descriptorSet, 1, outputBuffer, nullptr, nullptr, false);
 
-		// draw frame
-		window.beginRenderPass(renderPass.renderPass, renderPass.frameBuffer, VK_SUBPASS_CONTENTS_INLINE, glm::vec3(1.0f, 0.0f, 0.0f));
+			// draw frame
+			renderer->beginRenderPass(renderPass.renderPass, renderPass.frameBuffer, VK_SUBPASS_CONTENTS_INLINE, glm::vec3(1.0f, 0.0f, 0.0f));
 
-		window.bindPipeline(pipeline);
+			renderer->bindPipeline(pipeline);
 		
-		window.bindVertexBuffer(boxVertexbuffer);
-		window.bindIndexBuffer(boxIndexBuffer);
+			renderer->bindVertexBuffer(boxVertexbuffer);
+			renderer->bindIndexBuffer(boxIndexBuffer);
 
-		window.bindDescriptorSet(descriptorSet, pipeline);
+			renderer->bindDescriptorSet(descriptorSet, pipeline);
 
-		window.drawIndexed(sizeof(boxIndices) / sizeof(uint32_t), count);
+			renderer->drawIndexed(sizeof(boxIndices) / sizeof(uint32_t), count);
 
-		window.endRenderPass();
+			renderer->endRenderPass();
+		}
 
-		window.endFrame();
+		renderer->endFrame();
 
 	}
 }
 
-RenderPass createSimpleRenderPass(vr::RenderWindow& window) {
+RenderPass createSimpleRenderPass(RenderWindow& window) {
 	RenderPass renderPassStruct = {};
 
-	renderPassStruct.depthImage = window.createDepthImage(window.getCurrentExtent());
+	vr::Renderer* renderer = vr::Renderer::get();
+
+	renderPassStruct.depthImage = renderer->createDepthImage({ (uint32_t)window.getCurrentExtent().x, (uint32_t)window.getCurrentExtent().y });
 
 	std::vector<VkAttachmentDescription> attachments(2);
-	attachments[0] = window.getSwapchainAttachment();
+	attachments[0] = renderer->getSwapchainAttachment();
 	attachments[1] = vr::getDepthAttachment(renderPassStruct.depthImage->format, renderPassStruct.depthImage->sampleCount);
 
 	std::vector<VkAttachmentReference> refrences(2);
@@ -421,9 +427,9 @@ RenderPass createSimpleRenderPass(vr::RenderWindow& window) {
 	subpasses[0].pColorAttachments = &refrences[0];
 	subpasses[0].pDepthStencilAttachment = &refrences[1];
 
-	renderPassStruct.renderPass = window.createRenderPass(attachments, subpasses, { });
+	renderPassStruct.renderPass = renderer->createRenderPass(attachments, subpasses, { });
 
-	renderPassStruct.frameBuffer = window.createFramebuffer(renderPassStruct.renderPass, { renderPassStruct.depthImage });
+	renderPassStruct.frameBuffer = renderer->createFramebuffer(renderPassStruct.renderPass, { renderPassStruct.depthImage });
 
 	return std::move(renderPassStruct);
 }

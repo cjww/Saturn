@@ -186,8 +186,10 @@ namespace NAME_SPACE {
 		return framebuffer;
 	}
 
-	Renderer::Renderer() {
-		glfwInit();
+	Renderer::Renderer(RenderWindow* window)
+		: m_window(window)
+	{
+		
 		createInstance();
 #ifdef _DEBUG
 		setupDebug();
@@ -237,10 +239,10 @@ namespace NAME_SPACE {
 		vkDestroyInstance(m_instance, nullptr);
 	}
 
-	void Renderer::init(GLFWwindow* window) {
+	void Renderer::init(RenderWindow* window) {
 		if (m_myInstance == nullptr) {
-			m_myInstance = new Renderer();
-			m_myInstance->createSurface(window);
+			m_myInstance = new Renderer(window);
+			m_myInstance->createSurface(window->getWindowHandle());
 			m_myInstance->createSwapChain();
 			m_myInstance->createCommandBuffers();
 			m_myInstance->createSyncronisationObjects();
@@ -256,10 +258,19 @@ namespace NAME_SPACE {
 	}
 
 	uint32_t Renderer::getNextSwapchainImage() {
+		if (m_window->wasResized()) {
+			//recreate(getCurrentExtent());
+			m_window->setWasResized(false);
+		}
+		if (m_window->isIconified()) {
+			return -1;
+		}
+
 		vkWaitForFences(m_device, 1, &m_inFlightFences[m_frameIndex], VK_FALSE, UINT64_MAX);
 
 		VkResult res = vkAcquireNextImageKHR(m_device, m_swapChain.swapChain, UINT64_MAX, m_imageAvailableSemaphore[m_frameIndex], VK_NULL_HANDLE, &m_swapChain.currentImageIndex);
 		if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR) {
+			m_window->setWasResized(true);
 			return -1;
 		}
 		else {
@@ -277,7 +288,11 @@ namespace NAME_SPACE {
 		return m_swapChain.currentImageIndex;
 	}
 
-	void Renderer::beginFrame() {
+	bool Renderer::beginFrame() {
+		if (getNextSwapchainImage() == -1) {
+			return false;
+		}
+
 		vbl::beginPrimaryCommandBuffer(m_graphicsCommandBuffers[m_frameIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
 		std::vector<VkCommandBuffer> transferBuffers;
@@ -286,6 +301,8 @@ namespace NAME_SPACE {
 			transferBuffers.push_back(t.commandBuffer);
 		}
 		vkCmdExecuteCommands(m_graphicsCommandBuffers[m_frameIndex], transferBuffers.size(), transferBuffers.data());
+		
+		return true;
 	}
 
 	void Renderer::endFrame() {
