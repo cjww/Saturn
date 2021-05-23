@@ -155,7 +155,27 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\ECS\ComponentArray.cpp" />
+    <ClCompile Include="src\ECS\ComponentFactory.cpp" />
+    <ClCompile Include="src\ECS\ECSCoordinator.cpp" />
+    <ClCompile Include="src\ECS\Entity.cpp" />
+    <ClCompile Include="src\ECS\EntityFactory.cpp" />
+    <ClCompile Include="src\ECS\System.cpp" />
+    <ClCompile Include="src\ECS\SystemFactory.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\Tools\ScopeTimer.cpp" />
+    <ClCompile Include="src\Tools\StopWatch.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\ECS\ComponentArray.h" />
+    <ClInclude Include="src\ECS\ComponentFactory.h" />
+    <ClInclude Include="src\ECS\ECSCoordinator.h" />
+    <ClInclude Include="src\ECS\Entity.h" />
+    <ClInclude Include="src\ECS\EntityFactory.h" />
+    <ClInclude Include="src\ECS\System.h" />
+    <ClInclude Include="src\ECS\SystemFactory.h" />
+    <ClInclude Include="src\Tools\ScopeTimer.h" />
+    <ClInclude Include="src\Tools\StopWatch.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
