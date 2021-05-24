@@ -10,7 +10,9 @@ EntityID ECSCoordinator::createEntity() {
 }
 
 void ECSCoordinator::destroyEntity(EntityID entity) {
-	m_componentFactory.onEntityDestroyed(entity);
-	m_systemFactory.onEntityDestroyed(entity);
+	ComponentMask signature = m_entityFactory.getEntitySignature(entity);
+
+	m_componentFactory.onEntityDestroyed(entity, signature);
+	m_systemFactory.onEntityDestroyed(entity, m_entityFactory.getEntitySignature(entity));
 	m_entityFactory.destroyEntity(entity);
 }

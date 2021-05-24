@@ -1,27 +1,11 @@
 #include "SystemFactory.h"
 
-void SystemFactory::onEntitySignatureChange(EntityID entity, ComponentMask newSignature) {
-	for (auto& it : m_systems) {
-		ComponentMask systemSignature = m_signatures[it.first];
-
-		if ((systemSignature & newSignature) == systemSignature) {
-			// All component requirements are met
-			it.second->addEntity(entity);
-		}
-		else {
-			it.second->removeEntity(entity);
-		}
-	}
-
-}
-
 void SystemFactory::onEntitySignatureAdd(EntityID entity, ComponentMask oldSignature, ComponentMask newSignature) {
 	for (auto& it : m_systems) {
-		ComponentMask systemSignature = m_signatures[it.first];
-
-		if ((systemSignature & newSignature) == systemSignature) {
+		ComponentQuery query = m_queries[it.first];
+		if (query.check(newSignature)) {
 			// All component requirements are met
-			if ((systemSignature & oldSignature) != systemSignature) {
+			if (!query.check(oldSignature)) {
 				// was not added since before
 				it.second->addEntity(entity);
 			}
@@ -32,10 +16,10 @@ void SystemFactory::onEntitySignatureAdd(EntityID entity, ComponentMask oldSigna
 
 void SystemFactory::onEntitySignatureRemove(EntityID entity, ComponentMask oldSignature, ComponentMask newSignature) {
 	for (auto& it : m_systems) {
-		ComponentMask systemSignature = m_signatures[it.first];
-		if ((systemSignature & oldSignature) == systemSignature) {
+		ComponentQuery query = m_queries[it.first];
+		if (query.check(oldSignature)) {
 			// this system should contain this entity
-			if ((systemSignature & newSignature) != systemSignature) {
+			if (!query.check(newSignature)) {
 				// Now it will not anymore
 				it.second->removeEntity(entity);
 			}
@@ -45,9 +29,12 @@ void SystemFactory::onEntitySignatureRemove(EntityID entity, ComponentMask oldSi
 }
 
 
-void SystemFactory::onEntityDestroyed(EntityID entity) {
+void SystemFactory::onEntityDestroyed(EntityID entity, ComponentMask signature) {
 	// inform all systems that this entity was destroyed
 	for (auto& it : m_systems) {
-		it.second->removeEntity(entity);
+		ComponentQuery query = m_queries[it.first];
+		if (query.check(signature)) {
+			it.second->removeEntity(entity);
+		}
 	}
 }

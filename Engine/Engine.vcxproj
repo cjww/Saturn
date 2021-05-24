@@ -157,6 +157,7 @@
   <ItemGroup>
     <ClCompile Include="src\ECS\ComponentArray.cpp" />
     <ClCompile Include="src\ECS\ComponentFactory.cpp" />
+    <ClCompile Include="src\ECS\ComponentQuery.cpp" />
     <ClCompile Include="src\ECS\ECSCoordinator.cpp" />
     <ClCompile Include="src\ECS\Entity.cpp" />
     <ClCompile Include="src\ECS\EntityFactory.cpp" />
@@ -172,6 +173,7 @@
     <ClInclude Include="src\ECS\ECSCoordinator.h" />
     <ClInclude Include="src\ECS\Entity.h" />
     <ClInclude Include="src\ECS\EntityFactory.h" />
+    <ClInclude Include="src\ECS\ComponentQuery.h" />
     <ClInclude Include="src\ECS\System.h" />
     <ClInclude Include="src\ECS\SystemFactory.h" />
     <ClInclude Include="src\Tools\ScopeTimer.h" />

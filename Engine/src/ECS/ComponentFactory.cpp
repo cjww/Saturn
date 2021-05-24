@@ -6,9 +6,11 @@ ComponentFactory::ComponentFactory()
 
 }
 
-void ComponentFactory::onEntityDestroyed(EntityID entity) {
+void ComponentFactory::onEntityDestroyed(EntityID entity, ComponentMask signature) {
 	// remove entity from every component type
 	for (auto& it : m_componentArrays) {
-		it.second->remove(entity);
+		if (signature.test(it.first)) {
+			it.second->remove(entity);
+		}
 	}
 }

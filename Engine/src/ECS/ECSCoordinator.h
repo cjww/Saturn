@@ -13,6 +13,7 @@ private:
 public:
 	
 	ECSCoordinator();
+
 	// Creates a new entity pointer
 	EntityID createEntity();
 	// Destroys this entity. The entity pointer should be considered invalid after a call to this function
@@ -28,7 +29,7 @@ public:
 	
 	// registers and returns a new system to make sure there is only one instance of this system
 	template<typename T, typename ...Args>
-	T* registerSystem(ComponentMask signature, Args&... args);
+	T* registerSystem(ComponentQuery componentQuery, Args&... args);
 	
 	// Adds a component to an entity
 	template<typename T>
@@ -55,14 +56,18 @@ inline void ECSCoordinator::registerComponent() {
 }
 
 template<typename T, typename ...Args>
-inline T* ECSCoordinator::registerSystem(ComponentMask signature, Args & ...args) {
-	return m_systemFactory.registerSystem<T>(signature, args...);
+inline T* ECSCoordinator::registerSystem(ComponentQuery componentQuery, Args & ...args) {
+	return m_systemFactory.registerSystem<T>(componentQuery, args...);
 }
 
 template<typename T>
 inline T* ECSCoordinator::addComponent(EntityID entity) {	
 	ComponentMask signature = m_entityFactory.getEntitySignature(entity);
-	signature.set(m_componentFactory.getComponentType<T>());
+	ComponentType type = m_componentFactory.getComponentType<T>();
+	if (signature.test(type)) {
+		return nullptr; // already added
+	}
+	signature.set(type);
 
 	m_systemFactory.onEntitySignatureAdd(entity, m_entityFactory.getEntitySignature(entity), signature);
 	m_entityFactory.setEntitySignature(entity, signature);
@@ -75,7 +80,7 @@ template<typename T>
 inline T* ECSCoordinator::getComponent(EntityID entity) const {
 	ComponentMask signature = m_entityFactory.getEntitySignature(entity);
 	if (!signature.test(m_componentFactory.getComponentType<T>())) {
-		return nullptr;
+		return nullptr; // does no contain this component
 	}
 	return m_componentFactory.getComponent<T>(entity);
 }
@@ -84,7 +89,11 @@ template<typename T>
 inline void ECSCoordinator::removeComponent(EntityID entity) {
 	
 	ComponentMask signature = m_entityFactory.getEntitySignature(entity);
-	signature.reset(m_componentFactory.getComponentType<T>());
+	ComponentType type = m_componentFactory.getComponentType<T>();
+	if (!signature.test(type)) {
+		return; // does not contain this component
+	}
+	signature.reset(type);
 	
 	m_systemFactory.onEntitySignatureRemove(entity, m_entityFactory.getEntitySignature(entity), signature);
 	m_entityFactory.setEntitySignature(entity, signature);

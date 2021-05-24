@@ -4,8 +4,10 @@
 #include <bitset>
 #include <unordered_map>
 
+#define MAX_COMPONENT_COUNT 32
+
 typedef size_t EntityID;
-typedef std::bitset<32> ComponentMask;
+typedef std::bitset<MAX_COMPONENT_COUNT> ComponentMask;
 
 class EntityFactory {
 private:

@@ -4,10 +4,7 @@
 #include <memory>
 #include <bitset>
 
-#define MAX_COMPONENT_COUNT 32
-
 typedef uint32_t ComponentType;
-typedef std::bitset<MAX_COMPONENT_COUNT> ComponentMask;
 
 class ComponentFactory {
 private:
@@ -46,7 +43,7 @@ public:
 	void removeComponent(EntityID entity);
 
 	// Makes sure all ComponentArrays unmaps this Entity
-	void onEntityDestroyed(EntityID entity);
+	void onEntityDestroyed(EntityID entity, ComponentMask signature);
 
 };
 
@@ -82,8 +79,7 @@ inline void ComponentFactory::registerComponent() {
 
 template<typename T>
 inline T* ComponentFactory::addComponent(EntityID entity) {
-	ComponentType type = getComponentType<T>();
-	return &getComponentArray<T>()->insert(entity);
+	return getComponentArray<T>()->insert(entity);
 }
 
 template<typename T>

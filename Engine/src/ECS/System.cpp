@@ -8,6 +8,5 @@ void System::removeEntity(EntityID entity) {
 }
 
 void System::addEntity(EntityID entity) {
-	//m_entities.insert(entity);
 	m_entities.emplace(entity);
 }

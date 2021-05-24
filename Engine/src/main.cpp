@@ -20,20 +20,16 @@ struct A {
 };
 
 class MySystem : public System {
+public:
 	virtual void update(float dt) override {
-
+		std::cout << "MySystem has " << m_entities.size() << " entities" << std::endl;
 	}
 };
 
 class MySystem1 : public System {
+public:
 	virtual void update(float dt) override {
-
-	}
-};
-
-class MySystem2 : public System {
-	virtual void update(float dt) override {
-
+		std::cout << "MySystem1 has " << m_entities.size() << " entities" << std::endl;
 	}
 };
 
@@ -49,20 +45,17 @@ int main() {
 	c.registerComponent<A>();
 	c.registerComponent<B>();
 
-	ComponentType aType= c.getComponentType<A>();
+	ComponentType aType = c.getComponentType<A>();
 	ComponentType bType = c.getComponentType<B>();
+
 	ComponentMask signature;
 	signature.set(aType);
 	signature.set(bType);
-	c.registerSystem<MySystem>(signature);
+	ComponentQuery query(signature);
+	MySystem* mySystem = c.registerSystem<MySystem>(query);
 
-	signature.reset();
-	signature.set(aType);
-	c.registerSystem<MySystem1>(signature);
-	
-	signature.reset();
-	signature.set(bType);
-	c.registerSystem<MySystem2>(signature);
+	ComponentQuery query1(signature, QueryOperator::OR);
+	MySystem1* mySystem1 = c.registerSystem<MySystem1>(query1);
 	
 	size_t add = 256 << 7;
 	
@@ -74,7 +67,49 @@ int main() {
 		}
 	}
 
+	{
+		ScopeTimer s("added " + std::to_string(add));
+		for (int i = 0; i < add; i++) {
+			c.addComponent<A>(m_entities[i]);
+		}
+	}
 
+	printf("%x\n", c.addComponent<A>(m_entities[0]));
+	printf("%x\n", c.getComponent<B>(m_entities[0]));
+	printf("%x\n", c.getComponent<A>(m_entities[0]));
+
+	c.removeComponent<B>(m_entities[0]);
+
+	mySystem->update(0.0f);
+	mySystem1->update(0.0f);
+
+
+	{
+		ScopeTimer s("added " + std::to_string(add));
+		for (int i = 0; i < add; i++) {
+			c.addComponent<B>(m_entities[i]);
+		}
+	}
+
+	mySystem->update(0.0f);
+	mySystem1->update(0.0f);
+
+	{
+		ScopeTimer s("removed " + std::to_string(add));
+		for (int i = 0; i < add; i++) {
+			c.removeComponent<A>(m_entities[i]);
+		}
+	}
+
+	{
+		ScopeTimer s("destroyed " + std::to_string(add));
+		for (int i = 0; i < add; i++) {
+			c.destroyEntity(m_entities[i]);
+		}
+	}
+
+
+	
 	/*
 	while (window.isOpen()) {
 		window.pollEvents();
