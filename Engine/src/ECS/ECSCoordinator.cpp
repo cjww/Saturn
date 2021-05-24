@@ -5,13 +5,12 @@ ECSCoordinator::ECSCoordinator()
 
 }
 
-Entity ECSCoordinator::createEntity() {
-	EntityID id = m_entityFactory.createEntity();
-	return std::make_shared<EntityWrapper>(EntityWrapper(id));
+EntityID ECSCoordinator::createEntity() {
+	return m_entityFactory.createEntity();
 }
 
-void ECSCoordinator::destroyEntity(Entity entity) {
-	m_componentFactory.onEntityDestroyed(entity->id);
+void ECSCoordinator::destroyEntity(EntityID entity) {
+	m_componentFactory.onEntityDestroyed(entity);
 	m_systemFactory.onEntityDestroyed(entity);
-	m_entityFactory.destroyEntity(entity->id);
+	m_entityFactory.destroyEntity(entity);
 }

@@ -1,23 +1,37 @@
 #pragma once
-#include "ComponentFactory.h"
+#include "ECSCoordinator.h"
 
-typedef uint8_t TagMask;
-
-class EntityWrapper {
+class Entity {
 private:
-	// Signature that describes which components are attached to this entity
-	ComponentMask m_componentMask;
+	ECSCoordinator* m_pCoordinator;
+	EntityID m_id;
 public:
-	EntityWrapper(EntityID id);
+	Entity(ECSCoordinator* pCoordinator);
+	~Entity();
 
-	// unique ID
-	EntityID id;
-	
-	TagMask tags; // max 8 tags (i.e 8 bits)
+	EntityID getID() const;
 
-	ComponentMask& getSignature();
-	
+	template<typename T>
+	T* addComponent();
+
+	template<typename T>
+	T* getComponent();
+
+	template<typename T>
+	void removeComponent();
 };
 
-// Wraps this to an easier name
-typedef std::shared_ptr<EntityWrapper> Entity;
+template<typename T>
+inline T* Entity::addComponent() {
+	return m_pCoordinator->addComponent<T>(m_id);
+}
+
+template<typename T>
+inline T* Entity::getComponent() {
+	return m_pCoordinator->getComponent<T>(m_id);
+}
+
+template<typename T>
+inline void Entity::removeComponent() {
+	m_pCoordinator->removeComponent<T>(m_id);
+}

@@ -3,22 +3,11 @@
 System::System() {
 }
 
-bool System::removeEntity(Entity entity) {
-	for (int i = 0; i < m_entities.size(); i++) {
-		if (m_entities[i] == entity) {
-			m_entities.erase(m_entities.begin() + i);
-			return true;
-		}
-	}
-	return false;
+void System::removeEntity(EntityID entity) {
+	m_entities.erase(entity);
 }
 
-bool System::addEntity(Entity entity) {
-	for (int i = 0; i < m_entities.size(); i++) {
-		if (m_entities[i] == entity) {
-			return false;
-		}
-	}
-	m_entities.push_back(entity);
-	return true;
+void System::addEntity(EntityID entity) {
+	//m_entities.insert(entity);
+	m_entities.emplace(entity);
 }

@@ -40,7 +40,6 @@ void RenderWindow::onClose(GLFWwindow* window) {
 
 
 void RenderWindow::create(uint32_t width, uint32_t height, const char* title, GLFWmonitor* monitor) {
-	glfwInit();
 	glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 	m_monitor = monitor;
 	m_window = glfwCreateWindow(width, height, title, m_monitor, nullptr);
@@ -71,12 +70,19 @@ void RenderWindow::shutDown() {
 	m_window = nullptr;
 }
 
+void RenderWindow::init() {
+	glfwInit();
+}
+
+void RenderWindow::cleanup() {
+	glfwTerminate();
+}
+
 RenderWindow::RenderWindow(uint32_t width, uint32_t height, const char* title) {
 	create(width, height, title, nullptr);
 }
 
 RenderWindow::RenderWindow(uint32_t monitorIndex) {
-	glfwInit();
 	int count;
 	GLFWmonitor** monitors = glfwGetMonitors(&count);
 	if (monitorIndex >= count || monitorIndex < 0) {

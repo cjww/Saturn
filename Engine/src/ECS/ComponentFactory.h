@@ -34,8 +34,8 @@ public:
 	void registerComponent();
 	
 	// Asks ComponentArray of this ComponentType to map this entity ID to a Component in the array
-	template<typename T, typename ...Args>
-	T* addComponent(EntityID entity, Args... args);
+	template<typename T>
+	T* addComponent(EntityID entity);
 	
 	// Asks ComponentArray of this ComponentType to return mapped Component data
 	template<typename T>
@@ -80,10 +80,10 @@ inline void ComponentFactory::registerComponent() {
 	m_componentArrays[componentId] = std::make_shared<ComponentArray<T>>();
 }
 
-template<typename T, typename ...Args>
-inline T* ComponentFactory::addComponent(EntityID entity, Args ...args) {
+template<typename T>
+inline T* ComponentFactory::addComponent(EntityID entity) {
 	ComponentType type = getComponentType<T>();
-	return &getComponentArray<T>()->insert(entity, args...);
+	return &getComponentArray<T>()->insert(entity);
 }
 
 template<typename T>

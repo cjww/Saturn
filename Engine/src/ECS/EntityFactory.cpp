@@ -10,10 +10,21 @@ EntityID EntityFactory::createEntity() {
 		id = m_availableEntities.front();
 		m_availableEntities.pop();
 	}
-	id = m_createdEntityCount++;
+	else {
+		id = m_createdEntityCount++;
+	}
+	m_entitySignatures[id] = ComponentMask();
 	return id;
 }
 
 void EntityFactory::destroyEntity(EntityID id) {
 	m_availableEntities.push(id);
+}
+
+ComponentMask EntityFactory::getEntitySignature(EntityID entity) const {
+	return m_entitySignatures.at(entity);
+}
+
+void EntityFactory::setEntitySignature(EntityID entity, ComponentMask signature) {
+	m_entitySignatures[entity] = signature;
 }

@@ -1,12 +1,17 @@
 #include "Entity.h"
 
-EntityWrapper::EntityWrapper(EntityID id)
-    : id(id)
-    , tags(0)
+
+Entity::Entity(ECSCoordinator* pCoordinator)
+    : m_pCoordinator(pCoordinator)
+    , m_id(m_pCoordinator->createEntity())
 {
 
 }
 
-ComponentMask& EntityWrapper::getSignature() {
-    return m_componentMask;
+Entity::~Entity() {
+    m_pCoordinator->destroyEntity(m_id);
+}
+
+EntityID Entity::getID() const  {
+    return m_id;
 }

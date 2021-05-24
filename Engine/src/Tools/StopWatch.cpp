@@ -11,6 +11,10 @@ void StopWatch::start() {
 	m_laps++;
 }
 
+void StopWatch::stop() {
+	m_laps = 0;
+}
+
 std::chrono::duration<double, std::milli> StopWatch::getDuration() {
 	auto now = std::chrono::high_resolution_clock::now();
 	return now - m_startTime;

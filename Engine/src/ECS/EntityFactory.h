@@ -1,13 +1,19 @@
 #pragma once
 #include <queue>
 #include <stdexcept>
+#include <bitset>
+#include <unordered_map>
 
 typedef size_t EntityID;
+typedef std::bitset<32> ComponentMask;
 
 class EntityFactory {
 private:
 	size_t m_createdEntityCount;
 	std::queue<EntityID> m_availableEntities;
+
+	std::unordered_map<EntityID, ComponentMask> m_entitySignatures;
+
 public:
 	
 	EntityFactory();
@@ -16,4 +22,6 @@ public:
 	// Destroy an entity and returns its ID to the pool of usabe IDs
 	void destroyEntity(EntityID id);
 	
+	ComponentMask getEntitySignature(EntityID entity) const;
+	void setEntitySignature(EntityID entity, ComponentMask siganture);
 };

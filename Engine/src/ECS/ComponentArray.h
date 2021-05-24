@@ -33,8 +33,7 @@ public:
 	// Returns Component data of this entity, nullptr if there is none
 	T* get(EntityID entity);
 	
-	template<typename ...Args>
-	T& insert(EntityID entity, Args... args);
+	T& insert(EntityID entity);
 
 	void remove(EntityID entity);
 
@@ -60,17 +59,13 @@ inline size_t ComponentArray<T>::getIndex(EntityID entity) const {
 
 template<typename T>
 inline T* ComponentArray<T>::get(EntityID entity) {
-	size_t index = getIndex(entity);
-	if (index == -1) {
-		return nullptr;
-	}
-	return &m_data.at(index);
+	return &m_data.at(getIndex(entity));
 }
 
 template<typename T>
-template<typename ...Args>
-inline T& ComponentArray<T>::insert(EntityID entity, Args... args) {
-	if (m_entityToIndex.find(entity) != m_entityToIndex.end()) {
+inline T& ComponentArray<T>::insert(EntityID entity) {
+	auto it = m_entityToIndex.find(entity);
+	if (it != m_entityToIndex.end()) {
 		throw std::runtime_error("Component already added to this entity!");
 	}
 	if (m_count == m_data.size()) {
@@ -78,9 +73,9 @@ inline T& ComponentArray<T>::insert(EntityID entity, Args... args) {
 	}
 
 	size_t index = m_count++;
-	m_entityToIndex[entity] = index;
-	m_indexToEntity[index] = entity;
-	//m_data[index] = T(args...);
+	
+	m_entityToIndex.insert(std::make_pair(entity, index));
+	m_indexToEntity.insert(std::make_pair(index, entity));
 	
 	return m_data[index];
 }
@@ -90,7 +85,7 @@ inline void ComponentArray<T>::remove(EntityID entity) {
 	size_t index = getIndex(entity);
 	if (index == -1)
 		return;
-	//m_data[index] = m_data[--m_count]; // move last element to fill new hole
+	// move last element to fill new hole
 	memcpy(&m_data[index], &m_data[--m_count], sizeof(T));
 
 	// Update index mapping

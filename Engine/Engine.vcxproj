@@ -177,6 +177,17 @@
     <ClInclude Include="src\Tools\ScopeTimer.h" />
     <ClInclude Include="src\Tools\StopWatch.h" />
   </ItemGroup>
+  <ItemGroup>
+    <ProjectReference Include="..\DX11Renderer\DX11Renderer.vcxproj">
+      <Project>{42400a75-a51a-4fe1-8e17-58e4683224e7}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\RenderWindow\RenderWindow.vcxproj">
+      <Project>{2395df42-2cae-4b41-83d6-5fb46fe0cb38}</Project>
+    </ProjectReference>
+    <ProjectReference Include="..\VulkanRenderer\VulkanRenderer.vcxproj">
+      <Project>{359be348-fd28-4226-b401-2539bd77cdb8}</Project>
+    </ProjectReference>
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

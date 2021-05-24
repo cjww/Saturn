@@ -9,6 +9,7 @@ public:
 	StopWatch();
 
 	void start();
+	void stop();
 	std::chrono::duration<double, std::milli> getDuration();
 	std::chrono::duration<double, std::milli> getAverageLapDuration();
 
