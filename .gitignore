@@ -1,5 +1,7 @@
 **/Debug
 **/Release
-.vs/
-x64/
-VulkanRenderer/lib/
+.vs
+**/x64
+VulkanRenderer/lib
+RenderWindow/lib
+DX11Renderer/lib
