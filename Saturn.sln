@@ -16,6 +16,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DX11Renderer", "DX11Rendere
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RenderWindow", "RenderWindow\RenderWindow.vcxproj", "{2395DF42-2CAE-4B41-83D6-5FB46FE0CB38}"
 EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EngineEditor", "EngineEditor\EngineEditor.vcxproj", "{B9CB2763-50B9-47DB-9AD7-81DF99E14B97}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x64 = Debug|x64
@@ -64,6 +66,14 @@ Global
 		{2395DF42-2CAE-4B41-83D6-5FB46FE0CB38}.Release|x64.Build.0 = Release|x64
 		{2395DF42-2CAE-4B41-83D6-5FB46FE0CB38}.Release|x86.ActiveCfg = Release|Win32
 		{2395DF42-2CAE-4B41-83D6-5FB46FE0CB38}.Release|x86.Build.0 = Release|Win32
+		{B9CB2763-50B9-47DB-9AD7-81DF99E14B97}.Debug|x64.ActiveCfg = Debug|x64
+		{B9CB2763-50B9-47DB-9AD7-81DF99E14B97}.Debug|x64.Build.0 = Debug|x64
+		{B9CB2763-50B9-47DB-9AD7-81DF99E14B97}.Debug|x86.ActiveCfg = Debug|Win32
+		{B9CB2763-50B9-47DB-9AD7-81DF99E14B97}.Debug|x86.Build.0 = Debug|Win32
+		{B9CB2763-50B9-47DB-9AD7-81DF99E14B97}.Release|x64.ActiveCfg = Release|x64
+		{B9CB2763-50B9-47DB-9AD7-81DF99E14B97}.Release|x64.Build.0 = Release|x64
+		{B9CB2763-50B9-47DB-9AD7-81DF99E14B97}.Release|x86.ActiveCfg = Release|Win32
+		{B9CB2763-50B9-47DB-9AD7-81DF99E14B97}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

@@ -15,9 +15,6 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="src\main.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\ECS\ComponentArray.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -50,34 +47,37 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\ECS\ComponentArray.h">
+    <ClInclude Include="include\Saturn\ECS\Systems\MeshRenderSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\ComponentFactory.h">
+    <ClInclude Include="include\Saturn\ECS\ComponentArray.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\ECSCoordinator.h">
+    <ClInclude Include="include\Saturn\ECS\ComponentFactory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Entity.h">
+    <ClInclude Include="include\Saturn\ECS\ComponentQuery.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\EntityFactory.h">
+    <ClInclude Include="include\Saturn\ECS\ECSCoordinator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\System.h">
+    <ClInclude Include="include\Saturn\ECS\Entity.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\SystemFactory.h">
+    <ClInclude Include="include\Saturn\ECS\EntityFactory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Tools\ScopeTimer.h">
+    <ClInclude Include="include\Saturn\ECS\System.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Tools\StopWatch.h">
+    <ClInclude Include="include\Saturn\ECS\SystemFactory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\ComponentQuery.h">
+    <ClInclude Include="include\Saturn\Tools\ScopeTimer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Saturn\Tools\StopWatch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

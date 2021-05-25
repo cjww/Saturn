@@ -1,4 +1,4 @@
-#include "ComponentQuery.h"
+#include "Saturn/ECS/ComponentQuery.h"
 
 ComponentQuery::ComponentQuery()
 	: m_components(0)
