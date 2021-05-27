@@ -47,37 +47,37 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\Saturn\ECS\Systems\MeshRenderSystem.h">
+    <ClInclude Include="src\ECS\ComponentArray.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Saturn\ECS\ComponentArray.h">
+    <ClInclude Include="src\ECS\ComponentFactory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Saturn\ECS\ComponentFactory.h">
+    <ClInclude Include="src\ECS\ComponentQuery.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Saturn\ECS\ComponentQuery.h">
+    <ClInclude Include="src\ECS\ECSCoordinator.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Saturn\ECS\ECSCoordinator.h">
+    <ClInclude Include="src\ECS\Entity.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Saturn\ECS\Entity.h">
+    <ClInclude Include="src\ECS\EntityFactory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Saturn\ECS\EntityFactory.h">
+    <ClInclude Include="src\ECS\System.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Saturn\ECS\System.h">
+    <ClInclude Include="src\ECS\SystemFactory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Saturn\ECS\SystemFactory.h">
+    <ClInclude Include="src\ECS\Systems\MeshRenderSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Saturn\Tools\ScopeTimer.h">
+    <ClInclude Include="src\Tools\ScopeTimer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Saturn\Tools\StopWatch.h">
+    <ClInclude Include="src\Tools\StopWatch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

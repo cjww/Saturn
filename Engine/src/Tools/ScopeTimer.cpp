@@ -1,4 +1,4 @@
-#include "Saturn/Tools/ScopeTimer.h"
+#include "ScopeTimer.h"
 
 ScopeTimer::ScopeTimer(const std::string& message, const std::string& outputFile)
 	: m_message(message)

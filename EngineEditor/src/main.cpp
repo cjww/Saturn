@@ -1,8 +1,8 @@
 #include <RenderWindow.hpp>
 //#include "ECS/ECSCoordinator.h"
-#include <Saturn\ECS\Entity.h>
-#include <Saturn\Tools\StopWatch.h>
-#include <Saturn\Tools\ScopeTimer.h>
+#include <ECS\Entity.h>
+#include <Tools\StopWatch.h>
+#include <Tools\ScopeTimer.h>
 
 #include <string>
 

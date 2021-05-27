@@ -105,6 +105,10 @@
       <AdditionalLibraryDirectories>$(SolutionDir)/RenderWindow/lib;$(SolutionDir)/VulkanRenderer/lib;$(SolutionDir)/DX11Renderer/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>VulkanRenderer$(Platform)$(Configuration).lib;RenderWindow$(Platform)$(Configuration).lib;DX11Renderer$(Platform)$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <ClCompile>
@@ -125,6 +129,10 @@
       <AdditionalLibraryDirectories>$(SolutionDir)/RenderWindow/lib;$(SolutionDir)/VulkanRenderer/lib;$(SolutionDir)/DX11Renderer/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>VulkanRenderer$(Platform)$(Configuration).lib;RenderWindow$(Platform)$(Configuration).lib;DX11Renderer$(Platform)$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
@@ -141,6 +149,10 @@
       <AdditionalLibraryDirectories>$(SolutionDir)/RenderWindow/lib;$(SolutionDir)/VulkanRenderer/lib;$(SolutionDir)/DX11Renderer/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>VulkanRenderer$(Platform)$(Configuration).lib;RenderWindow$(Platform)$(Configuration).lib;DX11Renderer$(Platform)$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <ClCompile>
@@ -161,6 +173,10 @@
       <AdditionalLibraryDirectories>$(SolutionDir)/RenderWindow/lib;$(SolutionDir)/VulkanRenderer/lib;$(SolutionDir)/DX11Renderer/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>VulkanRenderer$(Platform)$(Configuration).lib;RenderWindow$(Platform)$(Configuration).lib;DX11Renderer$(Platform)$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Link>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\ECS\ComponentArray.cpp" />
@@ -175,17 +191,17 @@
     <ClCompile Include="src\Tools\StopWatch.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="include\Saturn\ECS\ComponentArray.h" />
-    <ClInclude Include="include\Saturn\ECS\ComponentFactory.h" />
-    <ClInclude Include="include\Saturn\ECS\ECSCoordinator.h" />
-    <ClInclude Include="include\Saturn\ECS\Entity.h" />
-    <ClInclude Include="include\Saturn\ECS\EntityFactory.h" />
-    <ClInclude Include="include\Saturn\ECS\ComponentQuery.h" />
-    <ClInclude Include="include\Saturn\ECS\System.h" />
-    <ClInclude Include="include\Saturn\ECS\SystemFactory.h" />
-    <ClInclude Include="include\Saturn\ECS\Systems\MeshRenderSystem.h" />
-    <ClInclude Include="include\Saturn\Tools\ScopeTimer.h" />
-    <ClInclude Include="include\Saturn\Tools\StopWatch.h" />
+    <ClInclude Include="src\ECS\ComponentArray.h" />
+    <ClInclude Include="src\ECS\ComponentFactory.h" />
+    <ClInclude Include="src\ECS\ECSCoordinator.h" />
+    <ClInclude Include="src\ECS\Entity.h" />
+    <ClInclude Include="src\ECS\EntityFactory.h" />
+    <ClInclude Include="src\ECS\ComponentQuery.h" />
+    <ClInclude Include="src\ECS\System.h" />
+    <ClInclude Include="src\ECS\SystemFactory.h" />
+    <ClInclude Include="src\ECS\Systems\MeshRenderSystem.h" />
+    <ClInclude Include="src\Tools\ScopeTimer.h" />
+    <ClInclude Include="src\Tools\StopWatch.h" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\DX11Renderer\DX11Renderer.vcxproj">

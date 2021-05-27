@@ -1,4 +1,4 @@
-#include "Saturn/ECS/SystemFactory.h"
+#include "SystemFactory.h"
 
 void SystemFactory::onEntitySignatureAdd(EntityID entity, ComponentMask oldSignature, ComponentMask newSignature) {
 	for (auto& it : m_systems) {

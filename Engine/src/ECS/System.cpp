@@ -1,4 +1,4 @@
-#include "Saturn/ECS/System.h"
+#include "System.h"
 
 System::System() {
 }

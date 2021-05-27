@@ -1,4 +1,4 @@
-#include "Saturn/ECS/ComponentFactory.h"
+#include "ComponentFactory.h"
 
 ComponentFactory::ComponentFactory() 
 	: m_registeredComponentCount(0)

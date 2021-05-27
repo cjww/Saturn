@@ -1,4 +1,4 @@
-#include "Saturn/ECS/EntityFactory.h"
+#include "EntityFactory.h"
 
 EntityFactory::EntityFactory() {
 
