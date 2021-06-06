@@ -96,7 +96,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)/include;$(SolutionDir)/RenderWindow/include;$(SolutionDir)/VulkanRenderer/include;$(SolutionDir)/DX11Renderer/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)/src;$(SolutionDir)/RenderWindow/include;$(SolutionDir)/VulkanRenderer/include;$(SolutionDir)/DX11Renderer/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -118,7 +118,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)/include;$(SolutionDir)/RenderWindow/include;$(SolutionDir)/VulkanRenderer/include;$(SolutionDir)/DX11Renderer/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)/src;$(SolutionDir)/RenderWindow/include;$(SolutionDir)/VulkanRenderer/include;$(SolutionDir)/DX11Renderer/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -140,7 +140,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)/include;$(SolutionDir)/RenderWindow/include;$(SolutionDir)/VulkanRenderer/include;$(SolutionDir)/DX11Renderer/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)/src;$(SolutionDir)/RenderWindow/include;$(SolutionDir)/VulkanRenderer/include;$(SolutionDir)/DX11Renderer/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -162,7 +162,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)/include;$(SolutionDir)/RenderWindow/include;$(SolutionDir)/VulkanRenderer/include;$(SolutionDir)/DX11Renderer/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)/src;$(SolutionDir)/RenderWindow/include;$(SolutionDir)/VulkanRenderer/include;$(SolutionDir)/DX11Renderer/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
     </ClCompile>
     <Link>
@@ -187,19 +187,30 @@
     <ClCompile Include="src\ECS\EntityFactory.cpp" />
     <ClCompile Include="src\ECS\System.cpp" />
     <ClCompile Include="src\ECS\SystemFactory.cpp" />
+    <ClCompile Include="src\ECS\Systems\Rendering\Vulkan\MeshRenderSystem.cpp" />
+    <ClCompile Include="src\Engine.cpp" />
+    <ClCompile Include="src\ForwardRenderer.cpp" />
+    <ClCompile Include="src\IRenderTechnique.cpp" />
+    <ClCompile Include="src\ResourceManager.cpp" />
     <ClCompile Include="src\Tools\ScopeTimer.cpp" />
     <ClCompile Include="src\Tools\StopWatch.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ECS\ComponentArray.h" />
     <ClInclude Include="src\ECS\ComponentFactory.h" />
+    <ClInclude Include="src\ECS\Components.h" />
+    <ClInclude Include="src\Engine.h" />
+    <ClInclude Include="src\ForwardRenderer.h" />
+    <ClInclude Include="src\IRenderTechnique.h" />
+    <ClInclude Include="src\Vertex.h" />
     <ClInclude Include="src\ECS\ECSCoordinator.h" />
     <ClInclude Include="src\ECS\Entity.h" />
     <ClInclude Include="src\ECS\EntityFactory.h" />
     <ClInclude Include="src\ECS\ComponentQuery.h" />
     <ClInclude Include="src\ECS\System.h" />
     <ClInclude Include="src\ECS\SystemFactory.h" />
-    <ClInclude Include="src\ECS\Systems\MeshRenderSystem.h" />
+    <ClInclude Include="src\ECS\Systems\Rendering\Vulkan\MeshRenderSystem.h" />
+    <ClInclude Include="src\ResourceManager.h" />
     <ClInclude Include="src\Tools\ScopeTimer.h" />
     <ClInclude Include="src\Tools\StopWatch.h" />
   </ItemGroup>
@@ -213,6 +224,9 @@
     <ProjectReference Include="..\VulkanRenderer\VulkanRenderer.vcxproj">
       <Project>{359be348-fd28-4226-b401-2539bd77cdb8}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="src\setup.xml" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

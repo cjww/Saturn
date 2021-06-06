@@ -5,6 +5,11 @@ ECSCoordinator::ECSCoordinator()
 
 }
 
+ECSCoordinator* ECSCoordinator::get() {
+	static ECSCoordinator instance;
+	return &instance;
+}
+
 EntityID ECSCoordinator::createEntity() {
 	return m_entityFactory.createEntity();
 }

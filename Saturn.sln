@@ -11,9 +11,6 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VulkanRendererTest", "Vulka
 	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Engine", "Engine\Engine.vcxproj", "{113522DB-28C1-4B47-9684-45CD80885A8A}"
-	ProjectSection(ProjectDependencies) = postProject
-		{D2FA2934-F5E1-4A98-B003-9CD3A7C4AFDA} = {D2FA2934-F5E1-4A98-B003-9CD3A7C4AFDA}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DX11Renderer", "DX11Renderer\DX11Renderer.vcxproj", "{42400A75-A51A-4FE1-8E17-58E4683224E7}"
 EndProject

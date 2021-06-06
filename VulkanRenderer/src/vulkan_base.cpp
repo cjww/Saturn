@@ -28,7 +28,7 @@ namespace vbl {
         if(properties.deviceType == VK_PHYSICAL_DEVICE_TYPE_DISCRETE_GPU){
             score += 1000;
         }
-        score += properties.limits.maxImageDimension2D;
+        //score += properties.limits.maxImageDimension2D;
         
         if(!features.geometryShader){
             return 0;
@@ -127,11 +127,12 @@ namespace vbl {
         }
         VkPhysicalDevice* physicalDevices = new VkPhysicalDevice[count];
         res = vkEnumeratePhysicalDevices(instance, &count, physicalDevices);
-        std::multimap<int, VkPhysicalDevice> map;
+        std::multimap<int, VkPhysicalDevice, std::greater<int>> map;
         for(uint32_t i = 0; i < count; i++) {
             int score = rankPhysicalDevice(physicalDevices[i]);
             map.insert(std::make_pair(score, physicalDevices[i]));
         }
+        
 		delete[] physicalDevices;
 
         uint32_t i = 0;

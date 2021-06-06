@@ -21,9 +21,6 @@
     <ClInclude Include="include\vulkan_base.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\ResourceManager.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="include\common.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -39,7 +36,7 @@
     <ClInclude Include="include\Image.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\VulkanRenderer.hpp">
+    <ClInclude Include="include\DataManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -48,9 +45,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\vulkan_base.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ResourceManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Shader.cpp">
@@ -65,7 +59,7 @@
     <ClCompile Include="include\Image.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\VulkanRenderer.cpp">
+    <ClCompile Include="src\DataManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

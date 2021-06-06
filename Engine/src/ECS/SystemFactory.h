@@ -29,7 +29,7 @@ public:
 };
 
 template<typename T, typename ...Args>
-inline T* SystemFactory::registerSystem(ComponentQuery query, Args & ...args) {
+inline T* SystemFactory::registerSystem(ComponentQuery query, Args& ...args) {
 	const char* name = typeid(T).name();
 
 	if (m_systems.find(name) != m_systems.end()) {

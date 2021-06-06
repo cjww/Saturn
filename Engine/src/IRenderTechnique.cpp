@@ -1,0 +1,3 @@
+#include "IRenderTechnique.h"
+
+//EMPTY

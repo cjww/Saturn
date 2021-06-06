@@ -6,7 +6,7 @@
 class System {
 protected:
 	// Stores all entities that curently contain the required Components registered in SystemFactory
-	std::set<EntityID> m_entities;
+	std::set<EntityID> m_entitySet;
 
 	// makes sure these can only be called by SystemFactory
 	friend class SystemFactory;

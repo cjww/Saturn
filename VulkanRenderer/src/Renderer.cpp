@@ -109,14 +109,16 @@ namespace NAME_SPACE {
 	void Renderer::createSurface(GLFWwindow* window) {
 		vbl::printError(
 			glfwCreateWindowSurface(m_instance, window, nullptr, &m_surface),
-			"Failed to create surface"
+			"Failed to create surface",
+			true
 		);
 	}
 
 	void Renderer::createSwapChain() {
 		vbl::printError(
 			vbl::createSwapchain(&m_swapChain.swapChain, m_device, m_physicalDevice, m_surface, &m_graphicsQueueInfo, 1, &m_swapChain.format),
-			"Failed to create swap chain"
+			"Failed to create swap chain",
+			true
 		);
 
 		VkSurfaceCapabilitiesKHR surfaceCapabilities = {};
@@ -133,7 +135,7 @@ namespace NAME_SPACE {
 
 		m_swapChain.imageViews.resize(count);
 		for (uint32_t i = 0; i < (uint32_t)m_swapChain.images.size(); i++) {
-			m_pResourceManager->createImageView(m_swapChain.imageViews[i],
+			m_pDataManager->createImageView(m_swapChain.imageViews[i],
 				VK_IMAGE_VIEW_TYPE_2D,
 				m_swapChain.images[i],
 				m_swapChain.format,
@@ -197,14 +199,13 @@ namespace NAME_SPACE {
 		getPhysicalDevice();
 		createDevice();
 
-		m_pResourceManager = new ResourceManager(m_instance, m_device, m_physicalDevice, m_appInfo.apiVersion, { m_graphicsQueueInfo.family }, { m_computeQueueInfo.family });
+		m_pDataManager = new DataManager(m_instance, m_device, m_physicalDevice, m_appInfo.apiVersion, { m_graphicsQueueInfo.family }, { m_computeQueueInfo.family });
 		
 	}
 
 	Renderer::~Renderer() {
 		vkDeviceWaitIdle(m_device);
 
-		delete m_pResourceManager;
 		
 		for (auto& renderPass : m_renderPasses) {
 			vkDestroyRenderPass(m_device, renderPass.renderPass, nullptr);
@@ -225,10 +226,10 @@ namespace NAME_SPACE {
 			vkDestroySemaphore(m_device, m_imageAvailableSemaphore[i], nullptr);
 			vkDestroySemaphore(m_device, m_renderFinishedSemaphore[i], nullptr);
 			vkDestroyFence(m_device, m_inFlightFences[i], nullptr);
-
 			vkDestroyImageView(m_device, m_swapChain.imageViews[i], nullptr);
 		}
 
+		delete m_pDataManager;
 
 		vkDestroyCommandPool(m_device, m_graphicsCommandPool, nullptr);
 		vkDestroyCommandPool(m_device, m_computeCommandPool, nullptr);
@@ -288,6 +289,10 @@ namespace NAME_SPACE {
 		return m_swapChain.currentImageIndex;
 	}
 
+	RenderWindow* Renderer::getWindow() const {
+		return m_window;
+	}
+
 	bool Renderer::beginFrame() {
 		if (getNextSwapchainImage() == -1) {
 			return false;
@@ -295,12 +300,14 @@ namespace NAME_SPACE {
 
 		vbl::beginPrimaryCommandBuffer(m_graphicsCommandBuffers[m_frameIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
 
-		std::vector<VkCommandBuffer> transferBuffers;
-		transferBuffers.reserve(m_transferCommandQueue.size());
-		for (const auto& t : m_transferCommandQueue) {
-			transferBuffers.push_back(t.commandBuffer);
+		if (!m_transferCommandQueue.empty()) {
+			std::vector<VkCommandBuffer> transferBuffers;
+			transferBuffers.reserve(m_transferCommandQueue.size());
+			for (const auto& t : m_transferCommandQueue) {
+				transferBuffers.push_back(t.commandBuffer);
+			}
+			vkCmdExecuteCommands(m_graphicsCommandBuffers[m_frameIndex], transferBuffers.size(), transferBuffers.data());
 		}
-		vkCmdExecuteCommands(m_graphicsCommandBuffers[m_frameIndex], transferBuffers.size(), transferBuffers.data());
 		
 		return true;
 	}
@@ -334,7 +341,8 @@ namespace NAME_SPACE {
 		m_inFlightFences.resize(m_swapChain.images.size());
 		vbl::printError(
 			vbl::createFences(m_inFlightFences.data(), m_inFlightFences.size(), m_device, VK_FENCE_CREATE_SIGNALED_BIT),
-			"Failed to create fences"
+			"Failed to create fences",
+			true
 		);
 
 		m_imageFences.resize(m_inFlightFences.size(), VK_NULL_HANDLE);
@@ -342,13 +350,15 @@ namespace NAME_SPACE {
 		m_imageAvailableSemaphore.resize(m_swapChain.images.size());
 		vbl::printError(
 			vbl::createSemaphores(m_imageAvailableSemaphore.data(), m_imageAvailableSemaphore.size(), m_device),
-			"Failed to create semaphores"
+			"Failed to create semaphores",
+			true
 		);
 
 		m_renderFinishedSemaphore.resize(m_swapChain.images.size());
 		vbl::printError(
 			vbl::createSemaphores(m_renderFinishedSemaphore.data(), m_renderFinishedSemaphore.size(), m_device),
-			"Failed to create semaphores"
+			"Failed to create semaphores",
+			true
 		);
 	}
 
@@ -463,7 +473,7 @@ namespace NAME_SPACE {
 	}
 
 	TexturePtr Renderer::createDepthImage(VkExtent2D extent) {
-		return m_pResourceManager->createDepthImage(extent);
+		return m_pDataManager->createDepthImage(extent);
 	}
 
 	TexturePtr Renderer::createTexture2D(const Image& image) {
@@ -471,9 +481,9 @@ namespace NAME_SPACE {
 	}
 
 	TexturePtr Renderer::createTexture2D(VkExtent2D extent, unsigned char* pixels, int channels) {
-		auto image = m_pResourceManager->createShaderReadOnlyColorImage2D(extent);
+		auto image = m_pDataManager->createShaderReadOnlyColorImage2D(extent);
 
-		BufferPtr buffer = m_pResourceManager->createBuffer(image->extent.width * image->extent.height * channels, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, pixels);
+		BufferPtr buffer = m_pDataManager->createBuffer(image->extent.width * image->extent.height * channels, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, pixels);
 
 		VkCommandBufferBeginInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -551,19 +561,19 @@ namespace NAME_SPACE {
 	}
 
 	BufferPtr Renderer::createVertexBuffer(VkDeviceSize size, void* initialData) {
-		return m_pResourceManager->createBuffer(size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, initialData);
+		return m_pDataManager->createBuffer(size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, initialData);
 	}
 
 	BufferPtr Renderer::createIndexBuffer(VkDeviceSize size, void* initialData) {
-		return m_pResourceManager->createBuffer(size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, initialData);
+		return m_pDataManager->createBuffer(size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, initialData);
 	}
 
 	BufferPtr Renderer::createUniformBuffer(VkDeviceSize size, void* initialData) {
-		return m_pResourceManager->createBuffer(size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, initialData);
+		return m_pDataManager->createBuffer(size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, initialData);
 	}
 
 	BufferPtr Renderer::createStorageBuffer(VkDeviceSize size, void* initialData) {
-		return m_pResourceManager->createBuffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, initialData);
+		return m_pDataManager->createBuffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, initialData);
 	}
 
 	ShaderPtr Renderer::createShader(const char* path, VkShaderStageFlagBits stage) {

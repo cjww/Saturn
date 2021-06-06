@@ -177,7 +177,7 @@
     <ClInclude Include="include\functions.hpp" />
     <ClInclude Include="include\ShaderSet.hpp" />
     <ClInclude Include="include\vulkan_base.hpp" />
-    <ClInclude Include="include\ResourceManager.hpp" />
+    <ClInclude Include="include\DataManager.hpp" />
     <ClInclude Include="include\Shader.hpp" />
   </ItemGroup>
   <ItemGroup>
@@ -186,7 +186,7 @@
     <ClCompile Include="src\functions.cpp" />
     <ClCompile Include="src\Shader.cpp" />
     <ClCompile Include="src\Renderer.cpp" />
-    <ClCompile Include="src\ResourceManager.cpp" />
+    <ClCompile Include="src\DataManager.cpp" />
     <ClCompile Include="src\vulkan_base.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

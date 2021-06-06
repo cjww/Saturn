@@ -1,5 +1,7 @@
 #include "RenderWindow.hpp"
 
+unsigned int RenderWindow::windowCount = 0;
+
 void RenderWindow::onResize(GLFWwindow* window, int width, int height) {
 	RenderWindow* thisWindow = (RenderWindow*)glfwGetWindowUserPointer(window);
 	if (thisWindow->m_isIconified) {
@@ -70,19 +72,20 @@ void RenderWindow::shutDown() {
 	m_window = nullptr;
 }
 
-void RenderWindow::init() {
-	glfwInit();
-}
-
-void RenderWindow::cleanup() {
-	glfwTerminate();
-}
-
 RenderWindow::RenderWindow(uint32_t width, uint32_t height, const char* title) {
+	if (windowCount == 0) {
+		glfwInit();
+	}
+	windowCount++;
 	create(width, height, title, nullptr);
 }
 
 RenderWindow::RenderWindow(uint32_t monitorIndex) {
+	if (windowCount == 0) {
+		glfwInit();
+	}
+	windowCount++;
+
 	int count;
 	GLFWmonitor** monitors = glfwGetMonitors(&count);
 	if (monitorIndex >= count || monitorIndex < 0) {
@@ -100,6 +103,11 @@ RenderWindow::RenderWindow(uint32_t monitorIndex) {
 RenderWindow::~RenderWindow() {
 	if (m_window != nullptr) {
 		shutDown();
+
+		windowCount--;
+		if (windowCount == 0) {
+			glfwTerminate();
+		}
 	}
 }
 

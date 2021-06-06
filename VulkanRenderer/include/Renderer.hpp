@@ -2,7 +2,7 @@
 #include "common.hpp"
 
 #include "ShaderSet.hpp"
-#include "ResourceManager.hpp"
+#include "DataManager.hpp"
 #include "Image.hpp"
 
 #include <RenderWindow.hpp>
@@ -72,8 +72,10 @@ namespace NAME_SPACE {
 	class Renderer {
 	private:
 		static Renderer* m_myInstance;
-	protected:
+	protected:		
 		RenderWindow* m_window;
+		SwapChain m_swapChain;
+		VkSurfaceKHR m_surface;
 
 		VkApplicationInfo m_appInfo;
 		VkInstance m_instance;
@@ -89,10 +91,7 @@ namespace NAME_SPACE {
 		vbl::QueueInfo m_computeQueueInfo;
 		VkQueue m_computeQueue;
 
-		SwapChain m_swapChain;
-		VkSurfaceKHR m_surface;
-
-		ResourceManager* m_pResourceManager;
+		DataManager* m_pDataManager;
 
 		VkCommandPool m_graphicsCommandPool;
 		VkCommandPool m_computeCommandPool;
@@ -148,6 +147,8 @@ namespace NAME_SPACE {
 		static void cleanup();
 
 		uint32_t getNextSwapchainImage();
+
+		RenderWindow* getWindow() const;
 
 		bool beginFrame();
 		void endFrame();

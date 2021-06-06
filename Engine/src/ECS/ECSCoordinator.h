@@ -10,9 +10,9 @@ private:
 	ComponentFactory m_componentFactory;
 	SystemFactory m_systemFactory;
 
-public:
-	
 	ECSCoordinator();
+public:
+	static ECSCoordinator* get();
 
 	// Creates a new entity pointer
 	EntityID createEntity();
@@ -56,7 +56,7 @@ inline void ECSCoordinator::registerComponent() {
 }
 
 template<typename T, typename ...Args>
-inline T* ECSCoordinator::registerSystem(ComponentQuery componentQuery, Args & ...args) {
+inline T* ECSCoordinator::registerSystem(ComponentQuery componentQuery, Args& ...args) {
 	return m_systemFactory.registerSystem<T>(componentQuery, args...);
 }
 

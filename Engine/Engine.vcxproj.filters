@@ -45,6 +45,21 @@
     <ClCompile Include="src\ECS\ComponentQuery.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\ResourceManager.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ECS\Systems\Rendering\Vulkan\MeshRenderSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ForwardRenderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Engine.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\IRenderTechnique.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ECS\ComponentArray.h">
@@ -71,14 +86,35 @@
     <ClInclude Include="src\ECS\SystemFactory.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Systems\MeshRenderSystem.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\Tools\ScopeTimer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Tools\StopWatch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="src\ResourceManager.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Systems\Rendering\Vulkan\MeshRenderSystem.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Vertex.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ForwardRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Engine.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\IRenderTechnique.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Components.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+  </ItemGroup>
+  <ItemGroup>
+    <Xml Include="src\setup.xml" />
   </ItemGroup>
 </Project>
