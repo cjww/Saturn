@@ -25,8 +25,10 @@ private:
 public:
 	ForwardRenderer();
 
-	virtual void init(RenderWindow* pWindow) override;
+	virtual void init(RenderWindow* pWindow, bool setupImGui) override;
 	virtual void cleanup() override;
+
+	virtual void beginFrameImGUI() override;
 
 	virtual void draw() override;
 

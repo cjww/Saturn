@@ -21,6 +21,10 @@
 
 #include <functional>
 
+#include "imgui_impl_vulkan.h"
+#include "imgui_impl_glfw.h"
+
+
 namespace NAME_SPACE {
 	struct SwapChain {
 		VkSwapchainKHR swapChain = VK_NULL_HANDLE;
@@ -111,6 +115,8 @@ namespace NAME_SPACE {
 		std::vector<Framebuffer> m_framebuffers;
 		std::vector<Pipeline> m_pipelines;
 
+		VkDescriptorPool m_imGuiDescriptorPool;
+
 		void setupDebug();
 
 		void createInstance();
@@ -138,6 +144,10 @@ namespace NAME_SPACE {
 			VkPipelineShaderStageCreateInfo shaderStage);
 
 		Renderer(RenderWindow* window);
+
+		void createImGUIDescriptorPool();
+		ImGui_ImplVulkan_InitInfo getImGUIInitInfo() const;
+
 	public:
 
 		virtual ~Renderer();
@@ -145,6 +155,12 @@ namespace NAME_SPACE {
 		static void init(RenderWindow* window);
 		static Renderer* get();
 		static void cleanup();
+
+		void initImGUI(uint32_t renderpass);
+		void newFrameImGUI();
+		void endFrameImGUI();
+		void cleanupImGUI();
+
 
 		uint32_t getNextSwapchainImage();
 

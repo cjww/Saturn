@@ -188,6 +188,8 @@ namespace NAME_SPACE {
 		return framebuffer;
 	}
 
+
+
 	Renderer::Renderer(RenderWindow* window)
 		: m_window(window)
 	{
@@ -200,9 +202,55 @@ namespace NAME_SPACE {
 		createDevice();
 
 		m_pDataManager = new DataManager(m_instance, m_device, m_physicalDevice, m_appInfo.apiVersion, { m_graphicsQueueInfo.family }, { m_computeQueueInfo.family });
-		
 	}
 
+	void Renderer::createImGUIDescriptorPool() {
+		VkDescriptorPoolCreateInfo info = {};
+		info.sType = VK_STRUCTURE_TYPE_DESCRIPTOR_POOL_CREATE_INFO;
+		info.pNext = nullptr;
+		info.flags = 0;
+
+		VkDescriptorPoolSize poolSizes[] =
+		{
+			{ VK_DESCRIPTOR_TYPE_SAMPLER,					1000 },
+			{ VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER,	1000 },
+			{ VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE,				1000 },
+			{ VK_DESCRIPTOR_TYPE_STORAGE_IMAGE,				1000 },
+			{ VK_DESCRIPTOR_TYPE_UNIFORM_TEXEL_BUFFER,		1000 },
+			{ VK_DESCRIPTOR_TYPE_STORAGE_TEXEL_BUFFER,		1000 },
+			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER,			1000 },
+			{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER,			1000 },
+			{ VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER_DYNAMIC,	1000 },
+			{ VK_DESCRIPTOR_TYPE_STORAGE_BUFFER_DYNAMIC,	1000 },
+			{ VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT,			1000 }
+		};
+
+		info.pPoolSizes = poolSizes;
+		info.poolSizeCount = 11;
+		info.maxSets = 1000;
+		vbl::printError(
+			vkCreateDescriptorPool(m_device, &info, nullptr, &m_imGuiDescriptorPool),
+			"Failed to create ImGui descriptorPool"
+		);
+	}
+
+	ImGui_ImplVulkan_InitInfo Renderer::getImGUIInitInfo() const {
+		ImGui_ImplVulkan_InitInfo i = {};
+		i.Instance = m_instance;
+		i.PhysicalDevice = m_physicalDevice;
+		i.Device = m_device;
+		i.QueueFamily = m_graphicsQueueInfo.family;
+		i.Queue = m_graphicsQueue;
+		i.PipelineCache = VK_NULL_HANDLE;
+		i.DescriptorPool = m_imGuiDescriptorPool;
+		i.Allocator = nullptr;
+		i.MinImageCount = m_swapChain.images.size();
+		i.ImageCount = m_swapChain.images.size();
+		i.CheckVkResultFn = nullptr;
+		return i;
+	}
+
+	
 	Renderer::~Renderer() {
 		vkDeviceWaitIdle(m_device);
 
@@ -256,6 +304,61 @@ namespace NAME_SPACE {
 
 	void Renderer::cleanup() {
 		delete m_myInstance;
+	}
+	void Renderer::initImGUI(uint32_t renderpass) {
+		IMGUI_CHECKVERSION();
+		auto context = ImGui::CreateContext();
+		ImGui::SetCurrentContext(context);
+		ImGuiIO& io = ImGui::GetIO();
+		ImGui::StyleColorsDark();
+
+		createImGUIDescriptorPool();
+		auto info = getImGUIInitInfo();
+		ImGui_ImplGlfw_InitForVulkan(m_window->getWindowHandle(), true);
+		ImGui_ImplVulkan_Init(&info, m_renderPasses[renderpass].renderPass);
+
+		VkCommandBuffer commandBuffer;
+		vbl::allocateCommandBuffers(&commandBuffer, 1, m_device, m_graphicsCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
+		
+		VkCommandBufferBeginInfo beginInfo = {};
+		beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+		beginInfo.pNext = nullptr;
+		beginInfo.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
+		beginInfo.pInheritanceInfo = nullptr;
+		vkBeginCommandBuffer(commandBuffer, &beginInfo);
+		
+		ImGui_ImplVulkan_CreateFontsTexture(commandBuffer);
+		
+		
+		vkEndCommandBuffer(commandBuffer);
+		VkSubmitInfo submitInfo{};
+		submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+		submitInfo.commandBufferCount = 1;
+		submitInfo.pCommandBuffers = &commandBuffer;
+		vkQueueSubmit(m_graphicsQueue, 1, &submitInfo, VK_NULL_HANDLE);
+		vkQueueWaitIdle(m_graphicsQueue);
+
+		vkFreeCommandBuffers(m_device, m_graphicsCommandPool, 1, &commandBuffer);
+
+	}
+
+	void Renderer::newFrameImGUI() {
+		ImGui_ImplVulkan_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+	}
+
+	void Renderer::endFrameImGUI() {
+		ImGui::EndFrame();
+		ImGui::Render();
+		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_graphicsCommandBuffers[m_frameIndex]);
+	}
+
+	void Renderer::cleanupImGUI() {
+		ImGui_ImplVulkan_Shutdown();
+		ImGui_ImplGlfw_Shutdown();
+		ImGui::DestroyContext();
+		vkDestroyDescriptorPool(m_device, m_imGuiDescriptorPool, nullptr);
 	}
 
 	uint32_t Renderer::getNextSwapchainImage() {

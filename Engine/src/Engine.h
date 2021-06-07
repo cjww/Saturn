@@ -6,8 +6,10 @@
 #include "rapidxml\rapidxml.hpp"
 
 
+
 class Engine {
 private:
+	
 	IRenderTechnique* m_pRenderTechnique;
 
 	struct FrameTime {
@@ -23,7 +25,10 @@ public:
 	//Engine();
 	void setup(RenderWindow* pWindow, const std::filesystem::path& configPath);
 	void update();
+
+	void beginFrame();
 	void draw();
+	
 	void cleanup();
 
 	std::chrono::duration<double, std::milli> getCPUFrameTime() const;

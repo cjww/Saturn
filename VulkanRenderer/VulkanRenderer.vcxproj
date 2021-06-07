@@ -173,6 +173,14 @@
   <ItemGroup>
     <ClInclude Include="include\common.hpp" />
     <ClInclude Include="include\Image.hpp" />
+    <ClInclude Include="include\imconfig.h" />
+    <ClInclude Include="include\imgui.h" />
+    <ClInclude Include="include\imgui_impl_glfw.h" />
+    <ClInclude Include="include\imgui_impl_vulkan.h" />
+    <ClInclude Include="include\imgui_internal.h" />
+    <ClInclude Include="include\imstb_rectpack.h" />
+    <ClInclude Include="include\imstb_textedit.h" />
+    <ClInclude Include="include\imstb_truetype.h" />
     <ClInclude Include="include\Renderer.hpp" />
     <ClInclude Include="include\functions.hpp" />
     <ClInclude Include="include\ShaderSet.hpp" />
@@ -182,6 +190,13 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\Image.cpp" />
+    <ClCompile Include="include\imgui.cpp" />
+    <ClCompile Include="include\imgui_demo.cpp" />
+    <ClCompile Include="include\imgui_draw.cpp" />
+    <ClCompile Include="include\imgui_impl_glfw.cpp" />
+    <ClCompile Include="include\imgui_impl_vulkan.cpp" />
+    <ClCompile Include="include\imgui_tables.cpp" />
+    <ClCompile Include="include\imgui_widgets.cpp" />
     <ClCompile Include="src\ShaderSet.cpp" />
     <ClCompile Include="src\functions.cpp" />
     <ClCompile Include="src\Shader.cpp" />

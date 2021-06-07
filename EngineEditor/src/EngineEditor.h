@@ -8,6 +8,8 @@ private:
 	RenderWindow m_window;
 	Engine m_engine;
 
+
+
 public:
 	EngineEditor();
 

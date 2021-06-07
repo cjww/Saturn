@@ -25,15 +25,19 @@ void Engine::loadFromFile(const std::filesystem::path& configPath) {
 void Engine::setup(RenderWindow* pWindow, const std::filesystem::path& configPath) {
 	
 	m_pRenderTechnique = new ForwardRenderer;
-	m_pRenderTechnique->init(pWindow);
+	m_pRenderTechnique->init(pWindow, true);
 
 
 
 }
 
 void Engine::update() {
-	m_frameTime.start = std::chrono::high_resolution_clock::now();
 
+}
+
+void Engine::beginFrame() {
+	m_frameTime.start = std::chrono::high_resolution_clock::now();
+	m_pRenderTechnique->beginFrameImGUI();
 }
 
 void Engine::draw() {

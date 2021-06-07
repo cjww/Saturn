@@ -4,9 +4,10 @@ ForwardRenderer::ForwardRenderer() {
 	
 }
 
-void ForwardRenderer::init(RenderWindow* pWindow) {
+void ForwardRenderer::init(RenderWindow* pWindow, bool setupImGui) {
 	vr::Renderer::init(pWindow);
 	m_renderer = vr::Renderer::get();
+
 
 	vr::ShaderPtr vertexShader = m_renderer->createShader("../Engine/shaders/TextureVertexShader.spv", VK_SHADER_STAGE_VERTEX_BIT);
 	vr::ShaderPtr fragmentShader = m_renderer->createShader("../Engine/shaders/TextureFragmentShader.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -43,6 +44,10 @@ void ForwardRenderer::init(RenderWindow* pWindow) {
 
 	m_pipeline = m_renderer->createPipeline(shaderSet, m_renderPass, 0);
 
+	m_useImGui = setupImGui;
+	if (setupImGui) {
+		m_renderer->initImGUI(m_renderPass);
+	}
 
 	ECSCoordinator::get()->registerComponent<Model>();
 	ECSCoordinator::get()->registerComponent<Transform>();
@@ -55,7 +60,16 @@ void ForwardRenderer::init(RenderWindow* pWindow) {
 
 void ForwardRenderer::cleanup() {
 	m_pDepthTexture = nullptr;
+	if (m_useImGui) {
+		m_renderer->cleanupImGUI();
+	}
 	vr::Renderer::cleanup();
+}
+
+void ForwardRenderer::beginFrameImGUI() {
+	if (m_useImGui && !m_renderer->getWindow()->wasResized()) {
+		m_renderer->newFrameImGUI();
+	}
 }
 
 bool ForwardRenderer::beginFrame() {
@@ -72,6 +86,9 @@ bool ForwardRenderer::beginFrame() {
 
 void ForwardRenderer::endFrame() {
 	m_renderer->endRenderPass();
+	if (m_useImGui) {
+		m_renderer->endFrameImGUI();
+	}
 	m_renderer->endFrame();
 }
 
