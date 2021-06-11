@@ -7,11 +7,11 @@ ForwardRenderer::ForwardRenderer() {
 void ForwardRenderer::init(RenderWindow* pWindow, bool setupImGui) {
 	vr::Renderer::init(pWindow);
 	m_renderer = vr::Renderer::get();
-
+	m_useImGui = setupImGui;
 
 	vr::ShaderPtr vertexShader = m_renderer->createShader("../Engine/shaders/TextureVertexShader.spv", VK_SHADER_STAGE_VERTEX_BIT);
 	vr::ShaderPtr fragmentShader = m_renderer->createShader("../Engine/shaders/TextureFragmentShader.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-	vr::ShaderSet shaderSet = m_renderer->createShaderSet(vertexShader, fragmentShader);
+	m_pShaderSet = m_renderer->createShaderSet(vertexShader, fragmentShader);
 
 
 	glm::ivec2 extent = m_renderer->getWindow()->getCurrentExtent();
@@ -40,12 +40,11 @@ void ForwardRenderer::init(RenderWindow* pWindow, bool setupImGui) {
 	subpasses[0].pDepthStencilAttachment = &refrences[1];
 
 	m_renderPass = m_renderer->createRenderPass(attachments, subpasses, {});
-	m_frameBuffer = m_renderer->createFramebuffer(m_renderPass, { m_pDepthTexture });
+	m_frameBuffer = m_renderer->createSwapchainFramebuffer(m_renderPass, { m_pDepthTexture });
 
-	m_pipeline = m_renderer->createPipeline(shaderSet, m_renderPass, 0);
-
-	m_useImGui = setupImGui;
-	if (setupImGui) {
+	m_pipeline = m_renderer->createPipeline(m_pShaderSet, m_renderPass, 0);
+	
+	if (m_useImGui) {
 		m_renderer->initImGUI(m_renderPass);
 	}
 
@@ -53,13 +52,18 @@ void ForwardRenderer::init(RenderWindow* pWindow, bool setupImGui) {
 	ECSCoordinator::get()->registerComponent<Transform>();
 
 	ComponentMask mask;
+	mask.set(ECSCoordinator::get()->getComponentType<Transform>());
+	m_pDescriptorCreationSystem = ECSCoordinator::get()->registerSystem<vk::DescriptorCreationSystem>(mask, m_pShaderSet.get());
+
+	mask.reset();
 	mask.set(ECSCoordinator::get()->getComponentType<Model>());
 	mask.set(ECSCoordinator::get()->getComponentType<Transform>());
-	m_pMeshRenderSystem = ECSCoordinator::get()->registerSystem<vk::MeshRenderSystem>(mask);
+	m_pMeshRenderSystem = ECSCoordinator::get()->registerSystem<vk::MeshRenderSystem>(mask, m_pDescriptorCreationSystem);
+
 }
 
 void ForwardRenderer::cleanup() {
-	m_pDepthTexture = nullptr;
+	m_pShaderSet = nullptr;
 	if (m_useImGui) {
 		m_renderer->cleanupImGUI();
 	}
@@ -76,7 +80,6 @@ bool ForwardRenderer::beginFrame() {
 	bool begin = m_renderer->beginFrame();
 	if (!begin)
 		return false;
-
 	m_renderer->beginRenderPass(m_renderPass, m_frameBuffer, VK_SUBPASS_CONTENTS_INLINE);
 	m_renderer->bindPipeline(m_pipeline);
 
@@ -85,6 +88,7 @@ bool ForwardRenderer::beginFrame() {
 }
 
 void ForwardRenderer::endFrame() {
+	
 	m_renderer->endRenderPass();
 	if (m_useImGui) {
 		m_renderer->endFrameImGUI();
@@ -95,8 +99,9 @@ void ForwardRenderer::endFrame() {
 
 void ForwardRenderer::draw() {
 	if (beginFrame()) {
-
-		m_pMeshRenderSystem->draw();
+		
+		m_pDescriptorCreationSystem->update(0.0f);
+		m_pMeshRenderSystem->draw(m_pipeline);
 
 		endFrame();
 	}

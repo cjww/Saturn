@@ -10,11 +10,11 @@ protected:
 
 	// makes sure these can only be called by SystemFactory
 	friend class SystemFactory;
-	virtual void removeEntity(EntityID entity);
-	virtual void addEntity(EntityID entity);
+	virtual bool removeEntity(EntityID entity);
+	virtual bool addEntity(EntityID entity);
 public:
 	System();
-
+	virtual ~System();
 	virtual void update(float dt) = 0;
 
 

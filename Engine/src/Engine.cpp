@@ -25,7 +25,7 @@ void Engine::loadFromFile(const std::filesystem::path& configPath) {
 void Engine::setup(RenderWindow* pWindow, const std::filesystem::path& configPath) {
 	
 	m_pRenderTechnique = new ForwardRenderer;
-	m_pRenderTechnique->init(pWindow, true);
+	m_pRenderTechnique->init(pWindow, false);
 
 
 
@@ -46,7 +46,7 @@ void Engine::draw() {
 }
 
 void Engine::cleanup() {
-	
+	ECSCoordinator::cleanup();
 	ResourceManager::cleanup();
 	m_pRenderTechnique->cleanup();
 	delete m_pRenderTechnique;

@@ -187,6 +187,7 @@
     <ClCompile Include="src\ECS\EntityFactory.cpp" />
     <ClCompile Include="src\ECS\System.cpp" />
     <ClCompile Include="src\ECS\SystemFactory.cpp" />
+    <ClCompile Include="src\ECS\Systems\Rendering\Vulkan\DescriptorCreationSystem.cpp" />
     <ClCompile Include="src\ECS\Systems\Rendering\Vulkan\MeshRenderSystem.cpp" />
     <ClCompile Include="src\Engine.cpp" />
     <ClCompile Include="src\ForwardRenderer.cpp" />
@@ -199,9 +200,11 @@
     <ClInclude Include="src\ECS\ComponentArray.h" />
     <ClInclude Include="src\ECS\ComponentFactory.h" />
     <ClInclude Include="src\ECS\Components.h" />
+    <ClInclude Include="src\ECS\Systems\Rendering\Vulkan\DescriptorCreationSystem.h" />
     <ClInclude Include="src\Engine.h" />
     <ClInclude Include="src\ForwardRenderer.h" />
     <ClInclude Include="src\IRenderTechnique.h" />
+    <ClInclude Include="src\structs.h" />
     <ClInclude Include="src\Vertex.h" />
     <ClInclude Include="src\ECS\ECSCoordinator.h" />
     <ClInclude Include="src\ECS\Entity.h" />

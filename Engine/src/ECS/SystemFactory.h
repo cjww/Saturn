@@ -13,7 +13,7 @@ private:
 public:
 	// creates System and register it in above maps
 	template<typename T, typename ...Args>
-	T* registerSystem(ComponentQuery query, Args&... args);
+	T* registerSystem(ComponentQuery query, Args... args);
 
 	//Retrive pointer to system 
 	template<typename T>
@@ -29,7 +29,7 @@ public:
 };
 
 template<typename T, typename ...Args>
-inline T* SystemFactory::registerSystem(ComponentQuery query, Args& ...args) {
+inline T* SystemFactory::registerSystem(ComponentQuery query, Args ...args) {
 	const char* name = typeid(T).name();
 
 	if (m_systems.find(name) != m_systems.end()) {

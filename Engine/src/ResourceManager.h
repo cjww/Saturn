@@ -28,8 +28,8 @@ struct Material {
 };
 
 struct Mesh {
-	vr::BufferPtr vertexBuffer;
-	vr::BufferPtr indexBuffer;
+	vr::Buffer* vertexBuffer;
+	vr::Buffer* indexBuffer;
 	Material material;
 
 };

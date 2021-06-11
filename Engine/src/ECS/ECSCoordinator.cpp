@@ -1,13 +1,22 @@
 #include "ECSCoordinator.h"
 
+ECSCoordinator* ECSCoordinator::m_pMyInstance = nullptr;
+
 ECSCoordinator::ECSCoordinator()
 {
 
 }
 
 ECSCoordinator* ECSCoordinator::get() {
-	static ECSCoordinator instance;
-	return &instance;
+	if (m_pMyInstance == nullptr) {
+		m_pMyInstance = new ECSCoordinator;
+	}
+	return m_pMyInstance;
+}
+
+void ECSCoordinator::cleanup() {
+	if (m_pMyInstance != nullptr)
+		delete m_pMyInstance;
 }
 
 EntityID ECSCoordinator::createEntity() {

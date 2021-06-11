@@ -60,6 +60,9 @@
     <ClCompile Include="src\IRenderTechnique.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\ECS\Systems\Rendering\Vulkan\DescriptorCreationSystem.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ECS\ComponentArray.h">
@@ -111,6 +114,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ECS\Components.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\structs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\Systems\Rendering\Vulkan\DescriptorCreationSystem.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

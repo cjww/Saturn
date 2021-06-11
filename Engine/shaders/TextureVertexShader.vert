@@ -10,16 +10,17 @@ layout(set = 0, binding = 0) uniform Scene {
     mat4 proj;
 } sceneUbo;
 
-layout(set = 0, binding = 1) uniform Object {
-    mat4 model;
-} objectUbo;
 */
+layout(set = 0, binding = 0) uniform Object {
+    mat4 world;
+} objectUbo;
 
 void main() {
 
     //gl_Position = sceneUbo.proj * sceneUbo.view * objectUbo.model * in_vertexPosition;
-    //gl_Position = in_vertexPosition;
+    //gl_Position = objectUbo.world * in_vertexPosition;
     gl_Position = in_vertexPosition;
     
     out_vertexUV = in_vertexUV;
+    out_vertexUV.x = objectUbo.world[0].x;
 }

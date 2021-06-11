@@ -3,10 +3,13 @@
 System::System() {
 }
 
-void System::removeEntity(EntityID entity) {
-	m_entitySet.erase(entity);
+System::~System() {
 }
 
-void System::addEntity(EntityID entity) {
-	m_entitySet.emplace(entity);
+bool System::removeEntity(EntityID entity) {
+	return m_entitySet.erase(entity) > 0;
+}
+
+bool System::addEntity(EntityID entity) {
+	return m_entitySet.emplace(entity).second;
 }
