@@ -38,9 +38,6 @@ namespace NAME_SPACE {
 
 	};
 
-	typedef std::shared_ptr<Buffer> BufferPtr;
-	typedef std::shared_ptr<Texture> TexturePtr;
-	
 
 	class DataManager {
 	private:
@@ -50,6 +47,10 @@ namespace NAME_SPACE {
 		std::vector<uint32_t> m_graphicsQueueFamilyIndices;
 		std::vector<uint32_t> m_computeQueueFamilyIndices;
 
+		std::vector<Buffer*> m_buffers;
+		std::vector<Texture*> m_textures;
+		
+
 		VkFormat getSupportedDepthFormat();
 		VkFormat getFormat(const std::vector<VkFormat>& candidates, VkFormatFeatureFlagBits features, VkImageTiling tilling);
 
@@ -57,20 +58,20 @@ namespace NAME_SPACE {
 		DataManager(VkInstance instance, VkDevice device, VkPhysicalDevice physicalDevice, uint32_t apiVersion, const std::vector<uint32_t>& graphicsQueueFamilyIndices, const std::vector<uint32_t>& computeQueueFamilyIndices);
 		virtual ~DataManager();
 
-		std::shared_ptr<Buffer> createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, void* initialData = nullptr);
-		std::shared_ptr<Texture> createImage(VkExtent3D extent, uint32_t arrayLayers, VkFormat format,
+		Buffer* createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, void* initialData = nullptr);
+		Texture* createImage(VkExtent3D extent, uint32_t arrayLayers, VkFormat format,
 			VkImageType type, VkImageLayout initialLayout, uint32_t mipLevels, const std::vector<uint32_t>& queueFamilyIndices,
 			VkSampleCountFlagBits sampleCount, VkSharingMode sharingMode, VkImageTiling tiling, VkImageUsageFlags usage,
 			VmaMemoryUsage memoryUsage, VkMemoryPropertyFlags requiredMemoryProperties);
 
-		void createImageView(VkImageViewType type, std::shared_ptr<Texture> image,
+		void createImageView(VkImageViewType type, Texture* image,
 			VkImageAspectFlags aspectMask, uint32_t baseMiplevel, uint32_t baseArrayLevel);
 		void createImageView(VkImageView& view, VkImageViewType type, VkImage image, VkFormat format,
 			VkImageAspectFlags aspectMask, uint32_t baseMiplevel, uint32_t baseArrayLevel);
 
 
-		std::shared_ptr<Texture> createDepthImage(VkExtent2D extent);
-		TexturePtr createShaderReadOnlyColorImage2D(VkExtent2D extent);
+		Texture* createDepthImage(VkExtent2D extent);
+		Texture* createShaderReadOnlyColorImage2D(VkExtent2D extent);
 
 	};
 }

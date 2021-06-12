@@ -2,7 +2,7 @@
 
 namespace NAME_SPACE {
 
-	Renderer* Renderer::m_myInstance = nullptr;
+	Renderer* Renderer::m_pMyInstance = nullptr;
 
 	void Renderer::setupDebug() {
 		m_validationLayers = {
@@ -289,21 +289,21 @@ namespace NAME_SPACE {
 	}
 
 	void Renderer::init(RenderWindow* window) {
-		if (m_myInstance == nullptr) {
-			m_myInstance = new Renderer(window);
-			m_myInstance->createSurface(window->getWindowHandle());
-			m_myInstance->createSwapChain();
-			m_myInstance->createCommandBuffers();
-			m_myInstance->createSyncronisationObjects();
+		if (m_pMyInstance == nullptr) {
+			m_pMyInstance = new Renderer(window);
+			m_pMyInstance->createSurface(window->getWindowHandle());
+			m_pMyInstance->createSwapChain();
+			m_pMyInstance->createCommandBuffers();
+			m_pMyInstance->createSyncronisationObjects();
 		}
 	}
 
 	Renderer* Renderer::get() {
-		return m_myInstance;
+		return m_pMyInstance;
 	}
 
 	void Renderer::cleanup() {
-		delete m_myInstance;
+		delete m_pMyInstance;
 	}
 	void Renderer::initImGUI(uint32_t renderpass) {
 		IMGUI_CHECKVERSION();
@@ -503,7 +503,7 @@ namespace NAME_SPACE {
 		return getResolveAttachment(m_swapChain.format);
 	}
 
-	uint32_t Renderer::createFramebuffer(uint32_t renderPass, const std::vector<TexturePtr>& additionalAttachments) {
+	uint32_t Renderer::createSwapchainFramebuffer(uint32_t renderPass, const std::vector<Texture*>& additionalAttachments) {
 		Framebuffer framebuffer;
 		framebuffer.framebuffers.resize(m_swapChain.images.size());
 		for (uint32_t i = 0; i < (uint32_t)m_swapChain.images.size(); i++) {
@@ -519,6 +519,25 @@ namespace NAME_SPACE {
 		m_framebuffers.push_back(framebuffer);
 		return m_framebuffers.size() - 1;
 	}
+
+
+	uint32_t Renderer::createFramebuffer(uint32_t renderPass, VkExtent2D extent, const std::vector<Texture*>& attachments) {
+		Framebuffer framebuffer;
+		framebuffer.framebuffers.resize(m_swapChain.images.size());
+		for (uint32_t i = 0; i < (uint32_t)m_swapChain.images.size(); i++) {
+			
+			std::vector<VkImageView> views(attachments.size());
+			for (uint32_t j = 0; j < (uint32_t)attachments.size(); j++) {
+				views[j] = attachments[j]->view;
+			}
+
+			framebuffer.framebuffers[i] = createFramebuffer(extent, m_renderPasses[renderPass].renderPass, views);
+		}
+
+		m_framebuffers.push_back(framebuffer);
+		return m_framebuffers.size() - 1;
+	}
+
 
 	uint32_t Renderer::createGraphicsPipeline(uint32_t renderPass, uint32_t subpassIndex,
 		const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts,
@@ -575,18 +594,18 @@ namespace NAME_SPACE {
 		return m_pipelines.size() - 1;
 	}
 
-	TexturePtr Renderer::createDepthImage(VkExtent2D extent) {
+	Texture* Renderer::createDepthImage(VkExtent2D extent) {
 		return m_pDataManager->createDepthImage(extent);
 	}
 
-	TexturePtr Renderer::createTexture2D(const Image& image) {
+	Texture* Renderer::createTexture2D(const Image& image) {
 		return createTexture2D(image.getExtent(), image.getPixels(), image.getChannelCount());
 	}
 
-	TexturePtr Renderer::createTexture2D(VkExtent2D extent, unsigned char* pixels, int channels) {
+	Texture* Renderer::createTexture2D(VkExtent2D extent, unsigned char* pixels, int channels) {
 		auto image = m_pDataManager->createShaderReadOnlyColorImage2D(extent);
 
-		BufferPtr buffer = m_pDataManager->createBuffer(image->extent.width * image->extent.height * channels, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, pixels);
+		Buffer* buffer = m_pDataManager->createBuffer(image->extent.width * image->extent.height * channels, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, pixels);
 
 		VkCommandBufferBeginInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -663,19 +682,19 @@ namespace NAME_SPACE {
 		return sampler;
 	}
 
-	BufferPtr Renderer::createVertexBuffer(VkDeviceSize size, void* initialData) {
+	Buffer* Renderer::createVertexBuffer(VkDeviceSize size, void* initialData) {
 		return m_pDataManager->createBuffer(size, VK_BUFFER_USAGE_VERTEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, initialData);
 	}
 
-	BufferPtr Renderer::createIndexBuffer(VkDeviceSize size, void* initialData) {
+	Buffer* Renderer::createIndexBuffer(VkDeviceSize size, void* initialData) {
 		return m_pDataManager->createBuffer(size, VK_BUFFER_USAGE_INDEX_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, initialData);
 	}
 
-	BufferPtr Renderer::createUniformBuffer(VkDeviceSize size, void* initialData) {
+	Buffer* Renderer::createUniformBuffer(VkDeviceSize size, void* initialData) {
 		return m_pDataManager->createBuffer(size, VK_BUFFER_USAGE_UNIFORM_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, initialData);
 	}
 
-	BufferPtr Renderer::createStorageBuffer(VkDeviceSize size, void* initialData) {
+	Buffer* Renderer::createStorageBuffer(VkDeviceSize size, void* initialData) {
 		return m_pDataManager->createBuffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, initialData);
 	}
 
@@ -683,11 +702,11 @@ namespace NAME_SPACE {
 		return std::make_shared<Shader>(m_device, path, stage);
 	}
 
-	uint32_t Renderer::createPipeline(const ShaderSet& shaderSet, uint32_t renderPass, uint32_t subpassIndex) {
-		if (shaderSet.isGraphicsSet()) {
+	uint32_t Renderer::createPipeline(const ShaderSetPtr& shaderSet, uint32_t renderPass, uint32_t subpassIndex) {
+		if (shaderSet->isGraphicsSet()) {
 
-			auto vertexAttributes = shaderSet.getVertexAttributes();
-			auto vertexBindings = shaderSet.getVertexBindings();
+			auto vertexAttributes = shaderSet->getVertexAttributes();
+			auto vertexBindings = shaderSet->getVertexBindings();
 
 			VkPipelineVertexInputStateCreateInfo inputState = {};
 			inputState.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
@@ -701,29 +720,29 @@ namespace NAME_SPACE {
 			return createGraphicsPipeline(
 				renderPass,
 				subpassIndex,
-				shaderSet.getDescriptorSetLayouts(),
-				shaderSet.getPushConstantRanges(),
-				shaderSet.getShaderInfos(),
+				shaderSet->getDescriptorSetLayouts(),
+				shaderSet->getPushConstantRanges(),
+				shaderSet->getShaderInfos(),
 				inputState
 			);
 		}
 		else {
 			//Compute pipeline
-			return createComputePipeline(shaderSet.getDescriptorSetLayouts(), shaderSet.getPushConstantRanges(), shaderSet.getShaderInfos()[0]);
+			return createComputePipeline(shaderSet->getDescriptorSetLayouts(), shaderSet->getPushConstantRanges(), shaderSet->getShaderInfos()[0]);
 		}
 
 	}
 
-	ShaderSet Renderer::createShaderSet(const ShaderPtr& vertexShader, const ShaderPtr& fragmentShader) {
-		return ShaderSet(m_device, m_swapChain.images.size(), vertexShader, fragmentShader);
+	ShaderSetPtr Renderer::createShaderSet(const ShaderPtr& vertexShader, const ShaderPtr& fragmentShader) {
+		return std::make_shared<ShaderSet>(m_device, m_swapChain.images.size(), vertexShader, fragmentShader);
 	}
 
-	ShaderSet Renderer::createShaderSet(const ShaderPtr& vertexShader, const ShaderPtr& geometryShader, const ShaderPtr& fragmentShader) {
-		return ShaderSet(m_device, m_swapChain.images.size(), vertexShader, geometryShader, fragmentShader);
+	ShaderSetPtr Renderer::createShaderSet(const ShaderPtr& vertexShader, const ShaderPtr& geometryShader, const ShaderPtr& fragmentShader) {
+		return std::make_shared<ShaderSet>(m_device, m_swapChain.images.size(), vertexShader, geometryShader, fragmentShader);
 	}
 
-	ShaderSet Renderer::createShaderSet(const ShaderPtr& computeShader) {
-		return ShaderSet(m_device, m_swapChain.images.size(), computeShader);
+	ShaderSetPtr Renderer::createShaderSet(const ShaderPtr& computeShader) {
+		return std::make_shared<ShaderSet>(m_device, m_swapChain.images.size(), computeShader);
 	}
 
 
@@ -841,7 +860,7 @@ namespace NAME_SPACE {
 		vkWaitForFences(m_device, 1, fence.get(), VK_TRUE, timeout);
 	}
 
-	void Renderer::updateDescriptorSet(const DescriptorSetPtr& descriptorSet, uint32_t binding, const BufferPtr& buffer, const TexturePtr& image, const SamplerPtr& sampler, bool isOneTimeUpdate) {
+	void Renderer::updateDescriptorSet(const DescriptorSetPtr& descriptorSet, uint32_t binding, const Buffer* buffer, const Texture* image, const SamplerPtr& sampler, bool isOneTimeUpdate) {
 
 		if (descriptorSet->writes.size() <= binding) {
 			throw std::runtime_error("Binding out of bounds!");
@@ -940,13 +959,13 @@ namespace NAME_SPACE {
 		}
 	}
 
-	void Renderer::bindVertexBuffer(const BufferPtr& vertexBuffer, const CommandBufferPtr& commandBuffer, uint32_t frameIndex) {
+	void Renderer::bindVertexBuffer(const Buffer* vertexBuffer, const CommandBufferPtr& commandBuffer, uint32_t frameIndex) {
 		VkDeviceSize offset = 0;
 		uint32_t realFrameIndex = (frameIndex == -1) ? m_frameIndex : frameIndex;
 		vkCmdBindVertexBuffers((commandBuffer == nullptr)? m_graphicsCommandBuffers[realFrameIndex] : commandBuffer->buffers[realFrameIndex], 0, 1, &vertexBuffer->buffer, &offset);
 	}
 
-	void Renderer::bindVertexBuffers(const std::vector<BufferPtr>& vertexBuffers, const CommandBufferPtr& commandBuffer, uint32_t frameIndex) {
+	void Renderer::bindVertexBuffers(const std::vector<Buffer*>& vertexBuffers, const CommandBufferPtr& commandBuffer, uint32_t frameIndex) {
 
 		uint32_t realFrameIndex = (frameIndex == -1) ? m_frameIndex : frameIndex;
 		std::vector<VkDeviceSize> offsets(vertexBuffers.size());
@@ -962,7 +981,7 @@ namespace NAME_SPACE {
 			0, buffers.size(), buffers.data(), offsets.data());
 	}
 
-	void Renderer::bindIndexBuffer(const BufferPtr& indexbuffer, const CommandBufferPtr& commandBuffer, uint32_t frameIndex) {
+	void Renderer::bindIndexBuffer(const Buffer* indexbuffer, const CommandBufferPtr& commandBuffer, uint32_t frameIndex) {
 		uint32_t realFrameIndex = (frameIndex == -1) ? m_frameIndex : frameIndex;
 		vkCmdBindIndexBuffer((commandBuffer == nullptr) ? m_graphicsCommandBuffers[realFrameIndex] : commandBuffer->buffers[realFrameIndex], indexbuffer->buffer, 0, VK_INDEX_TYPE_UINT32);
 	}

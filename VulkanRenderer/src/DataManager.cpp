@@ -55,15 +55,28 @@ namespace NAME_SPACE {
 	}
 
 	DataManager::~DataManager() {
+		vkDeviceWaitIdle(m_allocatorInfo.device);
+
+		for (auto& buffer : m_buffers) {
+			vmaDestroyBuffer(m_allocator, buffer->buffer, buffer->allocation);
+			delete buffer;
+		}
+
+		for (auto& texture : m_textures) {
+			vmaDestroyImage(m_allocator, texture->image, texture->allocation);
+			if (texture->view != VK_NULL_HANDLE) {
+				vkDestroyImageView(m_allocatorInfo.device, texture->view, nullptr);
+			}
+			delete texture;
+		}
+
 		vmaDestroyAllocator(m_allocator);
 	}
 
-	std::shared_ptr<Buffer> DataManager::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, void* initialData) {
-		std::shared_ptr<Buffer> buffer(new Buffer(), [&](Buffer* buffer) {
-			vkDeviceWaitIdle(m_allocatorInfo.device);
-			vmaDestroyBuffer(m_allocator, buffer->buffer, buffer->allocation);
-			delete buffer;
-		});
+	Buffer* DataManager::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, void* initialData) {
+		m_buffers.push_back(new Buffer());
+		Buffer* buffer = m_buffers.back();
+
 		VkBufferCreateInfo bufferInfo = {};
 		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
 		bufferInfo.size = size;
@@ -85,7 +98,7 @@ namespace NAME_SPACE {
 		return buffer;
 	}
 
-	void DataManager::createImageView(VkImageViewType type, std::shared_ptr<Texture> image,
+	void DataManager::createImageView(VkImageViewType type, Texture* image,
 		VkImageAspectFlags aspectMask, uint32_t baseMiplevel, uint32_t baseArrayLevel)
 	{
 		VkImageView view;
@@ -117,19 +130,13 @@ namespace NAME_SPACE {
 		}
 	}
 
-	std::shared_ptr<Texture> DataManager::createImage(VkExtent3D extent, uint32_t arrayLayers, VkFormat format,
+	Texture* DataManager::createImage(VkExtent3D extent, uint32_t arrayLayers, VkFormat format,
 		VkImageType type, VkImageLayout initialLayout, uint32_t mipLevels, const std::vector<uint32_t>& queueFamilyIndices,
 		VkSampleCountFlagBits sampleCount, VkSharingMode sharingMode, VkImageTiling tiling, VkImageUsageFlags usage,
 		VmaMemoryUsage memoryUsage, VkMemoryPropertyFlags requiredMemoryProperties)
 	{
-		std::shared_ptr<Texture> image(new Texture(), [&](Texture* image) {
-			vkDeviceWaitIdle(m_allocatorInfo.device);
-			vmaDestroyImage(m_allocator, image->image, image->allocation);
-			if (image->view != VK_NULL_HANDLE) {
-				vkDestroyImageView(m_allocatorInfo.device, image->view, nullptr);
-			}
-			delete image;
-		});
+		m_textures.push_back(new Texture());
+		Texture* image = m_textures.back();
 		image->format = format;
 		image->layout = initialLayout;
 		image->sampleCount = sampleCount;
@@ -165,7 +172,7 @@ namespace NAME_SPACE {
 		return image;
 	}
 
-	std::shared_ptr<Texture> DataManager::createDepthImage(VkExtent2D extent) {
+	Texture* DataManager::createDepthImage(VkExtent2D extent) {
 
 		auto image = createImage(
 			{ extent.width, extent.height, 1 },
@@ -188,7 +195,7 @@ namespace NAME_SPACE {
 		return image;
 	}
 
-	TexturePtr DataManager::createShaderReadOnlyColorImage2D(VkExtent2D extent) {
+	Texture* DataManager::createShaderReadOnlyColorImage2D(VkExtent2D extent) {
 		auto image = createImage(
 			{ extent.width, extent.height, 1 },
 			1,

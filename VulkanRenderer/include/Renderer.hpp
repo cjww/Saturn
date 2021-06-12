@@ -57,10 +57,10 @@ namespace NAME_SPACE {
 			IMAGE_TO_BUFFER,
 			IMAGE_TO_IMAGE
 		} type;
-		BufferPtr srcBuffer;
-		TexturePtr srcImage;
-		BufferPtr dstBuffer;
-		TexturePtr dstImage;
+		Buffer* srcBuffer;
+		Texture* srcImage;
+		Buffer* dstBuffer;
+		Texture* dstImage;
 		VkCommandBuffer commandBuffer;
 	};
 
@@ -75,7 +75,7 @@ namespace NAME_SPACE {
 
 	class Renderer {
 	private:
-		static Renderer* m_myInstance;
+		static Renderer* m_pMyInstance;
 	protected:		
 		RenderWindow* m_window;
 		SwapChain m_swapChain;
@@ -177,31 +177,32 @@ namespace NAME_SPACE {
 
 		VkAttachmentDescription getSwapchainAttachment() const;
 
-		uint32_t createFramebuffer(uint32_t renderPass, const std::vector<TexturePtr>& additionalAttachments);
-		
-		uint32_t createPipeline(const ShaderSet& shaderSet, uint32_t renderPass = 0, uint32_t subpassIndex = 0);
+		uint32_t createSwapchainFramebuffer(uint32_t renderPass, const std::vector<Texture*>& additionalAttachments);
+		uint32_t createFramebuffer(uint32_t renderPass, VkExtent2D extent, const std::vector<Texture*>& attachments);
+
+		uint32_t createPipeline(const ShaderSetPtr& shaderSet, uint32_t renderPass = 0, uint32_t subpassIndex = 0);
 
 		//Resource creation
-		TexturePtr createDepthImage(VkExtent2D extent);
+		Texture* createDepthImage(VkExtent2D extent);
 
-		TexturePtr createTexture2D(const Image& image);
-		TexturePtr createTexture2D(VkExtent2D extent, unsigned char* pixels, int channels = 4);
+		Texture* createTexture2D(const Image& image);
+		Texture* createTexture2D(VkExtent2D extent, unsigned char* pixels, int channels = 4);
 
 		SamplerPtr createSampler(VkFilter minMagFilter, float maxAnisotropy = 16.0f, float minLod = 0.0f, float maxLod = 0.0f, float mipLodBias = 0.0f);
 		SamplerPtr createSampler(VkSamplerCreateInfo info);
 
 
-		BufferPtr createVertexBuffer(VkDeviceSize size, void* initialData);
-		BufferPtr createIndexBuffer(VkDeviceSize size, void* initialData);
+		Buffer* createVertexBuffer(VkDeviceSize size, void* initialData);
+		Buffer* createIndexBuffer(VkDeviceSize size, void* initialData);
 
-		BufferPtr createUniformBuffer(VkDeviceSize size, void* initialData);
-		BufferPtr createStorageBuffer(VkDeviceSize size, void* initialData);
+		Buffer* createUniformBuffer(VkDeviceSize size, void* initialData);
+		Buffer* createStorageBuffer(VkDeviceSize size, void* initialData);
 
 
 		ShaderPtr createShader(const char* path, VkShaderStageFlagBits stage);
-		ShaderSet createShaderSet(const ShaderPtr& vertexShader, const ShaderPtr& fragmentShader);
-		ShaderSet createShaderSet(const ShaderPtr& vertexShader, const ShaderPtr& geometryShader, const ShaderPtr& fragmentShader);
-		ShaderSet createShaderSet(const ShaderPtr& computeShader);
+		ShaderSetPtr createShaderSet(const ShaderPtr& vertexShader, const ShaderPtr& fragmentShader);
+		ShaderSetPtr createShaderSet(const ShaderPtr& vertexShader, const ShaderPtr& geometryShader, const ShaderPtr& fragmentShader);
+		ShaderSetPtr createShaderSet(const ShaderPtr& computeShader);
 
 
 		CommandBufferPtr createCommandBuffer(bool isCompute = false);
@@ -213,7 +214,7 @@ namespace NAME_SPACE {
 		std::shared_ptr<VkFence> submitToComputeQueue(const CommandBufferPtr& commandBuffer);
 		void waitForFence(std::shared_ptr<VkFence> fence, uint64_t timeout = UINT64_MAX);
 
-		void updateDescriptorSet(const DescriptorSetPtr& descriptorSet, uint32_t binding, const BufferPtr& buffer, const TexturePtr& image, const SamplerPtr& sampler, bool isOneTimeUpdate);
+		void updateDescriptorSet(const DescriptorSetPtr& descriptorSet, uint32_t binding, const Buffer* buffer, const Texture* image, const SamplerPtr& sampler, bool isOneTimeUpdate);
 
 		// Draw commands
 		void beginRenderPass(uint32_t renderPass, uint32_t framebuffer, VkSubpassContents contents, glm::vec3 clearColor = glm::vec3(0.0f));
@@ -221,10 +222,10 @@ namespace NAME_SPACE {
 		void endRenderPass();
 
 		void bindPipeline(uint32_t pipeline, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
-		void bindVertexBuffer(const BufferPtr& vertexBuffer, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
-		void bindVertexBuffers(const std::vector<BufferPtr>& vertexBuffers, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
+		void bindVertexBuffer(const Buffer* vertexBuffer, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
+		void bindVertexBuffers(const std::vector<Buffer*>& vertexBuffers, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
 
-		void bindIndexBuffer(const BufferPtr& indexbuffer, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
+		void bindIndexBuffer(const Buffer* indexbuffer, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
 
 		void bindDescriptorSet(const DescriptorSetPtr& descriptorSet, uint32_t pipeline, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
 		void pushConstants(uint32_t pipeline, VkShaderStageFlags shaderStages, uint32_t offset, uint32_t size, void* data, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
