@@ -11,7 +11,7 @@ layout(set = 0, binding = 0) uniform Scene {
 } sceneUbo;
 
 */
-layout(set = 0, binding = 0) uniform Object {
+layout(set = 1, binding = 0) uniform Object {
     mat4 world;
 } objectUbo;
 
