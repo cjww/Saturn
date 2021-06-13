@@ -6,16 +6,15 @@ namespace NAME_SPACE {
 
 	void Renderer::setupDebug() {
 		m_validationLayers = {
-			"VK_LAYER_LUNARG_standard_validation",
 			"VK_LAYER_KHRONOS_validation"
 		};
 
 		uint32_t count;
 		VkResult res = vkEnumerateInstanceLayerProperties(&count, nullptr);
-		vbl::printError(res, "Faiedl to enumerate instance layers");
+		vbl::printError(res, "Failed to enumerate instance layers");
 		std::vector<VkLayerProperties> layerProperties(count);
 		res = vkEnumerateInstanceLayerProperties(&count, layerProperties.data());
-		vbl::printError(res, "Faiedl to enumerate instance layers");
+		vbl::printError(res, "Failed to enumerate instance layers");
 
 
 		for (int i = 0; i < m_validationLayers.size(); i++) {
