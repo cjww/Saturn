@@ -14,6 +14,11 @@ private:
 
 	vr::ShaderSetPtr m_pShaderSet;
 
+
+	vr::DescriptorSetPtr m_pPerFrameDescriptorSet;
+
+	vr::Buffer* m_pPerFrameBuffer;
+
 	uint32_t m_frameBuffer;
 	vr::Texture* m_pDepthTexture;
 

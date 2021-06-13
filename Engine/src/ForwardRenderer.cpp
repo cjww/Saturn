@@ -60,10 +60,18 @@ void ForwardRenderer::init(RenderWindow* pWindow, bool setupImGui) {
 	mask.set(ECSCoordinator::get()->getComponentType<Transform>());
 	m_pMeshRenderSystem = ECSCoordinator::get()->registerSystem<vk::MeshRenderSystem>(mask, m_pDescriptorCreationSystem);
 
+
+	PerFrameBuffer perFrame = {};
+	perFrame.projViewMatrix = glm::mat4(1);
+	m_pPerFrameBuffer = m_renderer->createUniformBuffer(sizeof(PerFrameBuffer), &perFrame);
+
+	m_pPerFrameDescriptorSet = m_pShaderSet->getDescriptorSet(PER_FRAME_SET);
+	m_renderer->updateDescriptorSet(m_pPerFrameDescriptorSet, 0, m_pPerFrameBuffer, nullptr, nullptr, true);
 }
 
 void ForwardRenderer::cleanup() {
 	m_pShaderSet = nullptr;
+	m_pPerFrameDescriptorSet = nullptr;
 	if (m_useImGui) {
 		m_renderer->cleanupImGUI();
 	}
@@ -82,7 +90,7 @@ bool ForwardRenderer::beginFrame() {
 		return false;
 	m_renderer->beginRenderPass(m_renderPass, m_frameBuffer, VK_SUBPASS_CONTENTS_INLINE);
 	m_renderer->bindPipeline(m_pipeline);
-
+	m_renderer->bindDescriptorSet(m_pPerFrameDescriptorSet, m_pipeline);
 
 	return true;
 }

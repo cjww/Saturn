@@ -5,13 +5,12 @@ layout(location = 1) in vec2 in_vertexUV;
 
 layout(location = 0) out vec2 out_vertexUV;
 /*
-layout(set = 0, binding = 0) uniform Scene {
-    mat4 view;
-    mat4 proj;
+*/
+layout(set = 1, binding = 0) uniform Scene {
+    mat4 projView;
 } sceneUbo;
 
-*/
-layout(set = 1, binding = 0) uniform Object {
+layout(set = 0, binding = 0) uniform Object {
     mat4 world;
 } objectUbo;
 
@@ -23,4 +22,6 @@ void main() {
     
     out_vertexUV = in_vertexUV;
     out_vertexUV.x = objectUbo.world[0].x;
+    out_vertexUV.y = sceneUbo.projView[0].x;
+    
 }

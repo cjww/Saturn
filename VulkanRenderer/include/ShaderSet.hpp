@@ -54,4 +54,6 @@ namespace NAME_SPACE {
 		DescriptorSetPtr getDescriptorSet(uint32_t setIndex);
 
 	};
+
+	typedef std::shared_ptr<ShaderSet> ShaderSetPtr;
 }
