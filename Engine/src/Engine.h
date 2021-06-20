@@ -5,8 +5,6 @@
 #include "ResourceManager.h"
 #include "rapidxml\rapidxml.hpp"
 
-
-
 class Engine {
 private:
 	

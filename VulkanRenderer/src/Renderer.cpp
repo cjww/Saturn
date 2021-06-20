@@ -46,7 +46,6 @@ namespace NAME_SPACE {
 		m_appInfo.pApplicationName = "My Application";
 		m_appInfo.pEngineName = "No Engine";
 
-
 		uint32_t count = 0;
 		const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&count);
 		m_instanceExtensions.resize(count);
