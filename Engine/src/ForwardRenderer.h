@@ -7,6 +7,7 @@
 #include "ECS\ECSCoordinator.h"
 #include "ECS\Systems\Rendering\Vulkan\MeshRenderSystem.h"
 #include "ECS\Systems\Rendering\Vulkan\DescriptorCreationSystem.h"
+#include "ECS\Systems\Rendering\Vulkan\DescriptorManager.h"
 
 class ForwardRenderer : public IRenderTechnique {
 private:
@@ -16,8 +17,8 @@ private:
 
 
 	vr::DescriptorSetPtr m_pPerFrameDescriptorSet;
-
 	vr::Buffer* m_pPerFrameBuffer;
+
 
 	uint32_t m_frameBuffer;
 	vr::Texture* m_pDepthTexture;
@@ -25,6 +26,8 @@ private:
 	uint32_t m_renderPass;
 	uint32_t m_pipeline;
 	
+	vk::DescriptorManager* m_pDescriptorManager;
+
 	//Systems
 	vk::MeshRenderSystem* m_pMeshRenderSystem;
 	vk::DescriptorCreationSystem* m_pDescriptorCreationSystem;

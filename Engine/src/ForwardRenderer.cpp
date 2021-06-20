@@ -50,22 +50,28 @@ void ForwardRenderer::init(RenderWindow* pWindow, bool setupImGui) {
 
 	ECSCoordinator::get()->registerComponent<Model>();
 	ECSCoordinator::get()->registerComponent<Transform>();
+	
+	m_pDescriptorManager = new vk::DescriptorManager(m_pShaderSet.get());
+
 
 	ComponentMask mask;
 	mask.set(ECSCoordinator::get()->getComponentType<Transform>());
-	m_pDescriptorCreationSystem = ECSCoordinator::get()->registerSystem<vk::DescriptorCreationSystem>(mask, m_pShaderSet.get());
+	m_pDescriptorCreationSystem = ECSCoordinator::get()->registerSystem<vk::DescriptorCreationSystem>(mask, m_pDescriptorManager);
 
 	mask.reset();
 	mask.set(ECSCoordinator::get()->getComponentType<Model>());
 	mask.set(ECSCoordinator::get()->getComponentType<Transform>());
-	m_pMeshRenderSystem = ECSCoordinator::get()->registerSystem<vk::MeshRenderSystem>(mask, m_pDescriptorCreationSystem);
+	m_pMeshRenderSystem = ECSCoordinator::get()->registerSystem<vk::MeshRenderSystem>(mask, m_pDescriptorManager);
 
+	
 
 	PerFrameBuffer perFrame = {};
-	perFrame.projViewMatrix = glm::mat4(1);
+	glm::mat4 proj = glm::perspective(glm::radians(60.f), 1000.f / 600.f, 0.001f, 100.0f);
+	glm::mat4 view = glm::lookAt(glm::vec3(0, 0, 1), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
+	perFrame.projViewMatrix[0] = proj * view;
 	m_pPerFrameBuffer = m_renderer->createUniformBuffer(sizeof(PerFrameBuffer), &perFrame);
-
-	m_pPerFrameDescriptorSet = m_pShaderSet->getDescriptorSet(PER_FRAME_SET);
+	
+	m_pPerFrameDescriptorSet = m_pShaderSet->getDescriptorSet(SET_PER_FRAME);
 	m_renderer->updateDescriptorSet(m_pPerFrameDescriptorSet, 0, m_pPerFrameBuffer, nullptr, nullptr, true);
 }
 
@@ -75,6 +81,8 @@ void ForwardRenderer::cleanup() {
 	if (m_useImGui) {
 		m_renderer->cleanupImGUI();
 	}
+
+	delete m_pDescriptorManager;
 	vr::Renderer::cleanup();
 }
 
@@ -108,7 +116,6 @@ void ForwardRenderer::endFrame() {
 void ForwardRenderer::draw() {
 	if (beginFrame()) {
 		
-		m_pDescriptorCreationSystem->update(0.0f);
 		m_pMeshRenderSystem->draw(m_pipeline);
 
 		endFrame();

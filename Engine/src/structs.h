@@ -1,14 +1,16 @@
 #pragma once
 #include <glm/mat4x4.hpp>
 
-#define PER_FRAME_SET 1
-#define PER_OBJECT_SET 0
+#define SET_PER_OBJECT 0
+#define SET_PER_FRAME 1
+
+#define MAX_VIEWPORTS 4
 
 struct PerObjectBuffer {
 	glm::mat4 worldMatrix;
 };
 
 struct PerFrameBuffer {
-	glm::mat4 projViewMatrix;
+	glm::mat4 projViewMatrix[MAX_VIEWPORTS];
 };
 

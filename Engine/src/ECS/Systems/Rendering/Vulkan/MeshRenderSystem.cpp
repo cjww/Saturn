@@ -1,8 +1,8 @@
 #include "MeshRenderSystem.h"
 namespace vk {
 
-	MeshRenderSystem::MeshRenderSystem(DescriptorCreationSystem* pDescSystem)
-		: m_pDescSystem(pDescSystem)
+	MeshRenderSystem::MeshRenderSystem(DescriptorManager* pDescManager)
+		: m_pDescManager(pDescManager)
 	{
 		m_pCoordinator = ECSCoordinator::get();
 	}
@@ -17,7 +17,7 @@ namespace vk {
 			Transform* transform = m_pCoordinator->getComponent<Transform>(entity);
 			*/
 			//renderer->updateDescriptorSet(m_pDescSystem->getDescriptorSet(entity), 0, m_pDescSystem->getBuffer(entity, 0), nullptr, nullptr, false);
-			renderer->bindDescriptorSet(m_pDescSystem->getDescriptorSet(entity), pipeline);
+			renderer->bindDescriptorSet(m_pDescManager->getDescriptorSet(entity), pipeline);
 			
 			renderer->bindVertexBuffer(model->meshes[0].vertexBuffer);
 			renderer->bindIndexBuffer(model->meshes[0].indexBuffer);
