@@ -96,7 +96,7 @@ public:
 };
 
 struct RenderPass {
-	vr::TexturePtr depthImage;
+	vr::Texture* depthImage;
 	uint32_t renderPass;
 	uint32_t frameBuffer;
 };
@@ -184,8 +184,10 @@ int main() {
 
 	try {
 		const int WIDTH = 1000, HEIGHT = 600;
+		
 		RenderWindow window(WIDTH, HEIGHT, "Hello vulkan");
 		vr::Renderer::init(&window);
+		
 
 		//computeTest(window);
 		textureTest(window);
@@ -205,7 +207,7 @@ void textureTest(RenderWindow& window) {
 
 	vr::ShaderPtr vertexShader = renderer->createShader("TextureVertexShader.spv", VK_SHADER_STAGE_VERTEX_BIT);
 	vr::ShaderPtr fragmentShader = renderer->createShader("TextureFragmentShader.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-	vr::ShaderSet shaderSet = renderer->createShaderSet(vertexShader, fragmentShader);
+	vr::ShaderSetPtr shaderSet = renderer->createShaderSet(vertexShader, fragmentShader);
 
 	uint32_t pipeline = renderer->createPipeline(shaderSet, renderPass.renderPass, 0);
 
@@ -213,27 +215,27 @@ void textureTest(RenderWindow& window) {
 	controller.sensitivty = 5.f;
 	controller.speed = 10.f;
 
-	vr::DescriptorSetPtr descriptorSet = shaderSet.getDescriptorSet(0);
+	vr::DescriptorSetPtr descriptorSet = shaderSet->getDescriptorSet(0);
 	SceneUbo sceneUbo = {};
 	sceneUbo.view = controller.getView(0.0f);
 	sceneUbo.proj = controller.getProjection(60.f);
 
-	vr::BufferPtr sceneUniformBuffer = renderer->createUniformBuffer(sizeof(SceneUbo), &sceneUbo);
+	vr::Buffer* sceneUniformBuffer = renderer->createUniformBuffer(sizeof(SceneUbo), &sceneUbo);
 	renderer->updateDescriptorSet(descriptorSet, 0, sceneUniformBuffer, nullptr, nullptr, true);
 
 	ObjectUbo objectUbo = {};
 	objectUbo.model = glm::mat4(1.0f);
 
-	vr::BufferPtr objectUniformBuffer = renderer->createUniformBuffer(sizeof(ObjectUbo), &objectUbo);
+	vr::Buffer* objectUniformBuffer = renderer->createUniformBuffer(sizeof(ObjectUbo), &objectUbo);
 	renderer->updateDescriptorSet(descriptorSet, 1, objectUniformBuffer, nullptr, nullptr, true);
 
-	vr::BufferPtr vertexBuffer = renderer->createVertexBuffer(sizeof(quad), quad);
-	vr::BufferPtr indexBuffer = renderer->createIndexBuffer(sizeof(quadIndices), quadIndices);
+	vr::Buffer* vertexBuffer = renderer->createVertexBuffer(sizeof(quad), quad);
+	vr::Buffer* indexBuffer = renderer->createIndexBuffer(sizeof(quadIndices), quadIndices);
 
 	vr::SamplerPtr sampler = renderer->createSampler(VK_FILTER_NEAREST);
 	
 	vr::Image image("Box.png");
-	vr::TexturePtr texture = renderer->createTexture2D(image);
+	vr::Texture* texture = renderer->createTexture2D(image);
 	renderer->updateDescriptorSet(descriptorSet, 2, nullptr, texture, sampler, true);
 
 	FrameTimer timer;
@@ -285,28 +287,28 @@ void computeTest(RenderWindow& window) {
 
 	vr::ShaderPtr vshader = renderer->createShader("ComputeVertexShader.spv", VK_SHADER_STAGE_VERTEX_BIT);
 	vr::ShaderPtr fshader = renderer->createShader("ComputeFragmentShader.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-	vr::ShaderSet shaderSet = renderer->createShaderSet(vshader, fshader);
+	vr::ShaderSetPtr shaderSet = renderer->createShaderSet(vshader, fshader);
 
 	auto pipeline = renderer->createPipeline(shaderSet, renderPass.renderPass, 0);
 
 	// BOX
-	vr::BufferPtr boxVertexbuffer = renderer->createVertexBuffer(sizeof(box), box);
-	vr::BufferPtr boxIndexBuffer = renderer->createIndexBuffer(sizeof(boxIndices), boxIndices);
+	vr::Buffer* boxVertexbuffer = renderer->createVertexBuffer(sizeof(box), box);
+	vr::Buffer* boxIndexBuffer = renderer->createIndexBuffer(sizeof(boxIndices), boxIndices);
 
 	// Compute Shader
 	const int count = 2048 * 2;
 	vr::ShaderPtr computeShader = renderer->createShader("ComputeShader.spv", VK_SHADER_STAGE_COMPUTE_BIT);
-	vr::ShaderSet computeSet = renderer->createShaderSet(computeShader);
+	vr::ShaderSetPtr computeSet = renderer->createShaderSet(computeShader);
 	auto computePipeline = renderer->createPipeline(computeSet);
-	vr::DescriptorSetPtr computeDescSet = computeSet.getDescriptorSet(0);
+	vr::DescriptorSetPtr computeDescSet = computeSet->getDescriptorSet(0);
 
 	// Compute Shader uniform buffer
 	int ccount = count;
-	vr::BufferPtr configBuffer = renderer->createUniformBuffer(sizeof(ccount), &ccount);
+	vr::Buffer* configBuffer = renderer->createUniformBuffer(sizeof(ccount), &ccount);
 	renderer->updateDescriptorSet(computeDescSet, 0, configBuffer, nullptr, nullptr, true);
 
 	// Compute ouputBuffer
-	vr::BufferPtr outputBuffer = renderer->createStorageBuffer(sizeof(glm::mat4) * count, nullptr);
+	vr::Buffer* outputBuffer = renderer->createStorageBuffer(sizeof(glm::mat4) * count, nullptr);
 	renderer->updateDescriptorSet(computeDescSet, 2, outputBuffer, nullptr, nullptr, true);
 
 
@@ -326,13 +328,13 @@ void computeTest(RenderWindow& window) {
 
 	// Vertex Shader uniformBuffer
 	CameraController controller(window);
-	vr::DescriptorSetPtr descriptorSet = shaderSet.getDescriptorSet(0);
+	vr::DescriptorSetPtr descriptorSet = shaderSet->getDescriptorSet(0);
 	UBO ubo = {};
 	ubo.matrixCount = count;
 	ubo.view = controller.getView(0.0f);
 	ubo.projection = controller.getProjection(60.f);
 
-	vr::BufferPtr uniformBuffer = renderer->createUniformBuffer(sizeof(ubo), &ubo);
+	vr::Buffer* uniformBuffer = renderer->createUniformBuffer(sizeof(ubo), &ubo);
 
 	renderer->updateDescriptorSet(descriptorSet, 0, uniformBuffer, nullptr, nullptr, true);
 
@@ -429,7 +431,7 @@ RenderPass createSimpleRenderPass(RenderWindow& window) {
 
 	renderPassStruct.renderPass = renderer->createRenderPass(attachments, subpasses, { });
 
-	renderPassStruct.frameBuffer = renderer->createFramebuffer(renderPassStruct.renderPass, { renderPassStruct.depthImage });
+	renderPassStruct.frameBuffer = renderer->createFramebuffer(renderPassStruct.renderPass, {1000, 600}, { renderPassStruct.depthImage });
 
 	return std::move(renderPassStruct);
 }

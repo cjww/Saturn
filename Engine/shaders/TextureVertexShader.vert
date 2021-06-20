@@ -6,13 +6,14 @@ layout(location = 1) in vec2 in_vertexUV;
 layout(location = 0) out vec2 out_vertexUV;
 /*
 */
-layout(set = 1, binding = 0) uniform Scene {
-    mat4 projView;
-} sceneUbo;
 
 layout(set = 0, binding = 0) uniform Object {
     mat4 world;
 } objectUbo;
+
+layout(set = 1, binding = 0) uniform Scene {
+    mat4 projView;
+} sceneUbo;
 
 void main() {
 

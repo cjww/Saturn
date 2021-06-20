@@ -193,10 +193,10 @@ namespace NAME_SPACE {
 		: m_window(window)
 	{
 		
-		createInstance();
 #ifdef _DEBUG
 		setupDebug();
 #endif
+		createInstance();
 		getPhysicalDevice();
 		createDevice();
 
@@ -733,15 +733,24 @@ namespace NAME_SPACE {
 	}
 
 	ShaderSetPtr Renderer::createShaderSet(const ShaderPtr& vertexShader, const ShaderPtr& fragmentShader) {
-		return std::make_shared<ShaderSet>(m_device, m_swapChain.images.size(), vertexShader, fragmentShader);
+		return std::shared_ptr<ShaderSet>(new ShaderSet(m_device, m_swapChain.images.size(), vertexShader, fragmentShader), [&](ShaderSet* shaderSet) {
+			vkQueueWaitIdle(m_graphicsQueue);
+			delete shaderSet;
+		});
 	}
 
 	ShaderSetPtr Renderer::createShaderSet(const ShaderPtr& vertexShader, const ShaderPtr& geometryShader, const ShaderPtr& fragmentShader) {
-		return std::make_shared<ShaderSet>(m_device, m_swapChain.images.size(), vertexShader, geometryShader, fragmentShader);
+		return std::shared_ptr<ShaderSet>(new ShaderSet(m_device, m_swapChain.images.size(), vertexShader, geometryShader, fragmentShader), [&](ShaderSet* shaderSet) {
+			vkQueueWaitIdle(m_graphicsQueue);
+			delete shaderSet;
+		});
 	}
 
 	ShaderSetPtr Renderer::createShaderSet(const ShaderPtr& computeShader) {
-		return std::make_shared<ShaderSet>(m_device, m_swapChain.images.size(), computeShader);
+		return std::shared_ptr<ShaderSet>(new ShaderSet(m_device, m_swapChain.images.size(), computeShader), [&](ShaderSet* shaderSet) {
+			vkQueueWaitIdle(m_computeQueue);
+			delete shaderSet;
+		});
 	}
 
 
@@ -754,7 +763,7 @@ namespace NAME_SPACE {
 			commandBuffer->buffers.size(),
 			m_device, 
 			(isCompute) ? m_computeCommandPool : m_graphicsCommandPool,
-			(isCompute)? VK_COMMAND_BUFFER_LEVEL_PRIMARY : VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+			(isCompute) ? VK_COMMAND_BUFFER_LEVEL_PRIMARY : VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
 		return commandBuffer;
 	}
@@ -989,11 +998,11 @@ namespace NAME_SPACE {
 		uint32_t realFrameIndex = (frameIndex == -1) ? m_frameIndex : frameIndex;
 		if (m_pipelines[pipeline].isCompute) {
 			vkCmdBindDescriptorSets((commandBuffer == nullptr) ? m_computeCommandBuffers[realFrameIndex] : commandBuffer->buffers[realFrameIndex],
-				VK_PIPELINE_BIND_POINT_COMPUTE, m_pipelines[pipeline].layout, 0, 1, &descriptorSet->descriptorSets[realFrameIndex], 0, nullptr);
+				VK_PIPELINE_BIND_POINT_COMPUTE, m_pipelines[pipeline].layout, descriptorSet->setIndex, 1, &descriptorSet->descriptorSets[realFrameIndex], 0, nullptr);
 		}
 		else {
 			vkCmdBindDescriptorSets((commandBuffer == nullptr) ? m_graphicsCommandBuffers[realFrameIndex] : commandBuffer->buffers[realFrameIndex],
-				VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelines[pipeline].layout, 0, 1, &descriptorSet->descriptorSets[realFrameIndex], 0, nullptr);
+				VK_PIPELINE_BIND_POINT_GRAPHICS, m_pipelines[pipeline].layout, descriptorSet->setIndex, 1, &descriptorSet->descriptorSets[realFrameIndex], 0, nullptr);
 		}
 	}
 

@@ -37,7 +37,7 @@ namespace NAME_SPACE {
 		ShaderSet(VkDevice device, uint32_t swapChainImageCount, const ShaderPtr& vertexShader, const ShaderPtr& fragmentShader);
 		ShaderSet(VkDevice device, uint32_t swapChainImageCount, const ShaderPtr& vertexShader, const ShaderPtr& geometryShader, const ShaderPtr& fragmentShader);
 		
-		ShaderSet(VkDevice device, uint32_t swapChainImageCount, const ShaderPtr& compuetShader);
+		ShaderSet(VkDevice device, uint32_t swapChainImageCount, const ShaderPtr& computeShader);
 
 		virtual ~ShaderSet();
 
