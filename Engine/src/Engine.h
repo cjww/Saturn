@@ -10,6 +10,8 @@ private:
 	
 	IRenderTechnique* m_pRenderTechnique;
 
+	std::vector<Camera*> m_cameras;
+
 	struct FrameTime {
 		std::chrono::high_resolution_clock::time_point start;
 		std::chrono::duration<double, std::milli> cpu;
@@ -30,5 +32,11 @@ public:
 	void cleanup();
 
 	std::chrono::duration<double, std::milli> getCPUFrameTime() const;
+
+	Camera* newCamera();
+	Camera* newCamera(const RenderWindow* pWindow);
+
+	void addActiveCamera(Camera* camera);
+	void removeActiveCamera(Camera* camera);
 
 };

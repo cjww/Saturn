@@ -32,11 +32,6 @@ private:
 	vk::MeshRenderSystem* m_pMeshRenderSystem;
 	vk::DescriptorCreationSystem* m_pDescriptorCreationSystem;
 
-	std::array<VkViewport, MAX_VIEWPORT_COUNT> m_viewports;
-	uint32_t m_viewportCount;
-
-	bool beginFrame();
-	void endFrame();
 public:
 	ForwardRenderer();
 

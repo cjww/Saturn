@@ -47,6 +47,10 @@ void Engine::setup(RenderWindow* pWindow, const std::filesystem::path& configPat
 	loadFromFile(configPath);
 	m_pRenderTechnique->init(pWindow, true);
 
+	Camera* cam = newCamera(pWindow); // DefaultCamera
+	cam->setPosition(glm::vec3(0, 0, 1));
+	cam->lookAt(glm::vec3(0, 0, 0));
+	addActiveCamera(cam);
 
 
 }
@@ -66,6 +70,10 @@ void Engine::draw() {
 }
 
 void Engine::cleanup() {
+	for (auto& cam : m_cameras) {
+		delete cam;
+	}
+
 	ECSCoordinator::cleanup();
 	ResourceManager::cleanup();
 	m_pRenderTechnique->cleanup();
@@ -74,6 +82,25 @@ void Engine::cleanup() {
 
 std::chrono::duration<double, std::milli> Engine::getCPUFrameTime() const {
 	return m_frameTime.cpu;
+}
+
+Camera* Engine::newCamera() {
+	m_cameras.push_back(new Camera());
+	return m_cameras.back();
+}
+
+Camera* Engine::newCamera(const RenderWindow* pWindow) {
+	m_cameras.push_back(new Camera(pWindow));
+	return m_cameras.back();
+}
+
+
+void Engine::addActiveCamera(Camera* camera) {
+	m_pRenderTechnique->addCamera(camera);
+}
+
+void Engine::removeActiveCamera(Camera* camera) {
+	m_pRenderTechnique->removeCamera(camera);
 }
 
 

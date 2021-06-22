@@ -179,6 +179,8 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Camera.cpp" />
+    <ClCompile Include="src\Geometry\Rect.cpp" />
     <ClCompile Include="src\ECS\ComponentArray.cpp" />
     <ClCompile Include="src\ECS\ComponentFactory.cpp" />
     <ClCompile Include="src\ECS\ComponentQuery.cpp" />
@@ -198,6 +200,8 @@
     <ClCompile Include="src\Tools\StopWatch.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Geometry\Rect.h" />
+    <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\ECS\ComponentArray.h" />
     <ClInclude Include="src\ECS\ComponentFactory.h" />
     <ClInclude Include="src\ECS\Components.h" />
