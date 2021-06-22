@@ -337,4 +337,14 @@ namespace NAME_SPACE {
 		return descriptorSet;
 	}
 
+	void ShaderSet::destroyDescriptorSet(DescriptorSetPtr descriptorSet) {
+		vbl::printError(
+			vbl::freeDesciptorSets(m_device,
+				descriptorSet->descriptorSets.data(),
+				descriptorSet->descriptorSets.size(),
+				m_descriptorPool),
+			"Failed to destroy descriptor set"
+		);
+	}
+
 }

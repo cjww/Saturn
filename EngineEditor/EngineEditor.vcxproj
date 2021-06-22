@@ -171,6 +171,7 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\EditorView.cpp" />
     <ClCompile Include="src\EngineEditor.cpp" />
     <ClCompile Include="src\main.cpp" />
   </ItemGroup>
@@ -180,6 +181,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\EditorView.h" />
     <ClInclude Include="src\EngineEditor.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

@@ -19,7 +19,7 @@ public:
 
 	virtual void draw() = 0;
 
-	void addCamera(Camera* camera);
-	void removeCamera(Camera* camera);
+	virtual void addCamera(Camera* camera);
+	virtual void removeCamera(Camera* camera);
 
 };

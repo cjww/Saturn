@@ -216,4 +216,17 @@ namespace NAME_SPACE {
 
 		return image;
 	}
+	void DataManager::destroyBuffer(Buffer* buffer) {
+		vmaDestroyBuffer(m_allocator, buffer->buffer, buffer->allocation);
+		m_buffers.erase(std::find(m_buffers.begin(), m_buffers.end(), buffer));
+		delete buffer;
+	}
+	void DataManager::destroyImage(Texture* texture) {
+		vmaDestroyImage(m_allocator, texture->image, texture->allocation);
+		if (texture->view != VK_NULL_HANDLE) {
+			vkDestroyImageView(m_allocatorInfo.device, texture->view, nullptr);
+		}
+		m_textures.erase(std::find(m_textures.begin(), m_textures.end(), texture));
+		delete texture;
+	}
 }

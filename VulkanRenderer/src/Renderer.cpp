@@ -704,6 +704,14 @@ namespace NAME_SPACE {
 		return m_pDataManager->createBuffer(size, VK_BUFFER_USAGE_STORAGE_BUFFER_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, initialData);
 	}
 
+	void Renderer::destroyBuffer(Buffer* buffer) {
+		m_pDataManager->destroyBuffer(buffer);
+	}
+
+	void Renderer::destroyTexture(Texture* texture) {
+		m_pDataManager->destroyImage(texture);
+	}
+
 	ShaderPtr Renderer::createShader(const char* path, VkShaderStageFlagBits stage) {
 		return std::make_shared<Shader>(m_device, path, stage);
 	}

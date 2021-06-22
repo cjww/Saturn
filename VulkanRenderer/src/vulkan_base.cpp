@@ -546,6 +546,10 @@ namespace vbl {
         return vkAllocateDescriptorSets(device, &info, descriptorSets);
     }
 
+    VkResult freeDesciptorSets(VkDevice device, VkDescriptorSet* descriptorSets, uint32_t descriptorSetCount, VkDescriptorPool descriptorPool) {
+        return vkFreeDescriptorSets(device, descriptorPool, descriptorSetCount, descriptorSets);
+    }
+
     VkResult createPipelineLayout(VkPipelineLayout* pipelineLayout, VkDevice device, const VkDescriptorSetLayout* descriptorSetLayouts, uint32_t descriptorSetLayoutCount, const VkPushConstantRange* pushConstantRanges, uint32_t pushConstantRangeCount) {
         VkPipelineLayoutCreateInfo info = {};
         info.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO;

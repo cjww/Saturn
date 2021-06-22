@@ -46,11 +46,12 @@ void Engine::setup(RenderWindow* pWindow, const std::filesystem::path& configPat
 	
 	loadFromFile(configPath);
 	m_pRenderTechnique->init(pWindow, true);
-
+	/*
 	Camera* cam = newCamera(pWindow); // DefaultCamera
 	cam->setPosition(glm::vec3(0, 0, 1));
 	cam->lookAt(glm::vec3(0, 0, 0));
 	addActiveCamera(cam);
+	*/
 
 
 }

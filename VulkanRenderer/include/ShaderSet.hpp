@@ -52,6 +52,7 @@ namespace NAME_SPACE {
 		bool isGraphicsSet() const;
 
 		DescriptorSetPtr getDescriptorSet(uint32_t setIndex);
+		void destroyDescriptorSet(DescriptorSetPtr descriptorSet);
 
 	};
 

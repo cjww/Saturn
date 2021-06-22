@@ -113,6 +113,7 @@ namespace vbl {
 	VkResult createDescriptorPool(VkDescriptorPool* descriptorPool, VkDevice device, VkDescriptorPoolSize* poolSizes, uint32_t poolSizeCount, uint32_t maxSets);
     VkResult createDescriptorSetLayout(VkDescriptorSetLayout* descriptorSetLayout, VkDevice device, VkDescriptorSetLayoutBinding* setBindings, uint32_t setBindingCount);
 	VkResult allocateDescriptorSets(VkDescriptorSet* descriptorSets, VkDevice device, VkDescriptorSetLayout* descriptorSetLayouts, uint32_t descriptorSetCount, VkDescriptorPool descriptorPool);
+    VkResult freeDesciptorSets(VkDevice device, VkDescriptorSet* descriptorSets, uint32_t descriptorSetCount, VkDescriptorPool descriptorPool);
 
     VkResult createPipelineLayout(VkPipelineLayout* pipelineLayout, VkDevice device, const VkDescriptorSetLayout* descriptorSetLayouts, uint32_t descriptorSetLayoutCount, const VkPushConstantRange* pushConstantRanges, uint32_t pushConstantRangeCount);
 

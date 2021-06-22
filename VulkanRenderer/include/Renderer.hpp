@@ -200,6 +200,8 @@ namespace NAME_SPACE {
 		Buffer* createUniformBuffer(VkDeviceSize size, void* initialData);
 		Buffer* createStorageBuffer(VkDeviceSize size, void* initialData);
 
+		void destroyBuffer(Buffer* buffer);
+		void destroyTexture(Texture* texture);
 
 		ShaderPtr createShader(const char* path, VkShaderStageFlagBits stage);
 		ShaderSetPtr createShaderSet(const ShaderPtr& vertexShader, const ShaderPtr& fragmentShader);

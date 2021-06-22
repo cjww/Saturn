@@ -69,9 +69,11 @@ namespace NAME_SPACE {
 		void createImageView(VkImageView& view, VkImageViewType type, VkImage image, VkFormat format,
 			VkImageAspectFlags aspectMask, uint32_t baseMiplevel, uint32_t baseArrayLevel);
 
-
 		Texture* createDepthImage(VkExtent2D extent);
 		Texture* createShaderReadOnlyColorImage2D(VkExtent2D extent);
+
+		void destroyBuffer(Buffer* buffer);
+		void destroyImage(Texture* texture);
 
 	};
 }
