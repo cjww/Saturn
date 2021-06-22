@@ -116,7 +116,7 @@ namespace vbl {
 
     VkResult createPipelineLayout(VkPipelineLayout* pipelineLayout, VkDevice device, const VkDescriptorSetLayout* descriptorSetLayouts, uint32_t descriptorSetLayoutCount, const VkPushConstantRange* pushConstantRanges, uint32_t pushConstantRangeCount);
 
-    VkResult createGraphicsPipeline(VkPipeline* pipeline, VkDevice device, VkPipelineLayout layout, VkRenderPass renderPass, uint32_t subpassIndex, VkExtent2D extent, const VkPipelineShaderStageCreateInfo* shaderStages, uint32_t shaderStageCount, VkPipelineVertexInputStateCreateInfo vertexInput);
+    VkResult createGraphicsPipeline(VkPipeline* pipeline, VkDevice device, VkPipelineLayout layout, VkRenderPass renderPass, uint32_t subpassIndex, VkExtent2D extent, const VkPipelineShaderStageCreateInfo* shaderStages, uint32_t shaderStageCount, VkPipelineVertexInputStateCreateInfo vertexInput, const VkDynamicState* pDynamicStates = nullptr, uint32_t dynamicStateCount = 0);
     
     VkResult createRayTracingPipeline(VkPipeline* pipeline, VkDevice device);
     VkResult vkCreateRayTracingPipelines(VkInstance instance, VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkRayTracingPipelineCreateInfoNV *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines);

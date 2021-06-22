@@ -45,7 +45,7 @@ void Engine::loadFromFile(const std::filesystem::path& configPath) {
 void Engine::setup(RenderWindow* pWindow, const std::filesystem::path& configPath) {
 	
 	loadFromFile(configPath);
-	m_pRenderTechnique->init(pWindow, false);
+	m_pRenderTechnique->init(pWindow, true);
 
 
 
@@ -55,7 +55,7 @@ void Engine::update() {
 
 }
 
-void Engine::beginFrame() {
+void Engine::recordImGui() {
 	m_frameTime.start = std::chrono::high_resolution_clock::now();
 	m_pRenderTechnique->beginFrameImGUI();
 }

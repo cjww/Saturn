@@ -24,7 +24,7 @@ public:
 	void setup(RenderWindow* pWindow, const std::filesystem::path& configPath);
 	void update();
 
-	void beginFrame();
+	void recordImGui();
 	void draw();
 	
 	void cleanup();

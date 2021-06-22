@@ -12,21 +12,22 @@ void EngineEditor::run() {
 	m_engine.setup(&m_window, "../setup.xml");
 
 
-	EntityID entity = ECSCoordinator::get()->createEntity();
-	Transform* transform = ECSCoordinator::get()->addComponent<Transform>(entity);
-	ECSCoordinator::get()->addComponent<Model>(entity)->modelID = ResourceManager::get()->loadQuad();
-
 	while (m_window.isOpen()) {
 		auto time = std::chrono::duration_cast<std::chrono::duration<double>>(m_engine.getCPUFrameTime());
 		m_window.setWindowTitle(std::to_string(1.0 / time.count()) + " fps");
 		float dt = static_cast<float>(time.count());
 		
-		m_engine.beginFrame();
+		m_engine.recordImGui();
 		m_window.pollEvents();
-		/*
-		if (ImGui::Button("New Entity")) {
+		
+		ImGui::Begin("Entities");
+		if (ImGui::Button("New Entity")) {			
+			EntityID entity = ECSCoordinator::get()->createEntity();
+			Transform* transform = ECSCoordinator::get()->addComponent<Transform>(entity);
+			ECSCoordinator::get()->addComponent<Model>(entity)->modelID = ResourceManager::get()->loadQuad();
 		}
-		*/
+		ImGui::Text("Nr of entities: %d", ECSCoordinator::get()->getEntityCount());
+		ImGui::End();
 
 		m_engine.update();
 		m_engine.draw();

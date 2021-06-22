@@ -415,6 +415,9 @@ namespace NAME_SPACE {
 
 	void Renderer::endFrame() {
 		vkEndCommandBuffer(m_graphicsCommandBuffers[m_frameIndex]);
+	}
+
+	void Renderer::present() {
 
 		VkSubmitInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
@@ -540,13 +543,16 @@ namespace NAME_SPACE {
 	uint32_t Renderer::createGraphicsPipeline(uint32_t renderPass, uint32_t subpassIndex,
 		const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts,
 		const std::vector<VkPushConstantRange>& pushConstantRanges,
-		const std::vector<VkPipelineShaderStageCreateInfo> shaderStages,
-		VkPipelineVertexInputStateCreateInfo vertexInput
+		const std::vector<VkPipelineShaderStageCreateInfo>& shaderStages,
+		VkPipelineVertexInputStateCreateInfo vertexInput,
+		const std::vector<VkDynamicState>& dynamicStates
 		)
 	{
 		Pipeline pipeline;
 		vbl::printError(
-			vbl::createPipelineLayout(&pipeline.layout, m_device, descriptorSetLayouts.data(), descriptorSetLayouts.size(), pushConstantRanges.data(), pushConstantRanges.size()),
+			vbl::createPipelineLayout(&pipeline.layout, m_device, 
+				descriptorSetLayouts.data(), descriptorSetLayouts.size(), 
+				pushConstantRanges.data(), pushConstantRanges.size()),
 			"Failed to create pipeline layout"
 		);
 
@@ -560,7 +566,9 @@ namespace NAME_SPACE {
 				m_swapChain.extent,
 				shaderStages.data(),
 				shaderStages.size(),
-				vertexInput
+				vertexInput,
+				dynamicStates.data(),
+				dynamicStates.size()
 			),
 			"Failed to create pipeline"
 		);
@@ -721,7 +729,8 @@ namespace NAME_SPACE {
 				shaderSet->getDescriptorSetLayouts(),
 				shaderSet->getPushConstantRanges(),
 				shaderSet->getShaderInfos(),
-				inputState
+				inputState,
+				{ VK_DYNAMIC_STATE_VIEWPORT }
 			);
 		}
 		else {
@@ -991,6 +1000,16 @@ namespace NAME_SPACE {
 	void Renderer::bindIndexBuffer(const Buffer* indexbuffer, const CommandBufferPtr& commandBuffer, uint32_t frameIndex) {
 		uint32_t realFrameIndex = (frameIndex == -1) ? m_frameIndex : frameIndex;
 		vkCmdBindIndexBuffer((commandBuffer == nullptr) ? m_graphicsCommandBuffers[realFrameIndex] : commandBuffer->buffers[realFrameIndex], indexbuffer->buffer, 0, VK_INDEX_TYPE_UINT32);
+	}
+
+	void Renderer::bindViewports(const std::vector<VkViewport>& viewports, const CommandBufferPtr& commandBuffer, uint32_t frameIndex) {
+		uint32_t realFrameIndex = (frameIndex == -1) ? m_frameIndex : frameIndex;
+		vkCmdSetViewport((commandBuffer == nullptr) ? m_graphicsCommandBuffers[realFrameIndex] : commandBuffer->buffers[realFrameIndex], 0, viewports.size(), viewports.data());
+	}
+
+	void Renderer::bindViewport(const VkViewport& viewport, const CommandBufferPtr& commandBuffer, uint32_t frameIndex) {
+		uint32_t realFrameIndex = (frameIndex == -1) ? m_frameIndex : frameIndex;
+		vkCmdSetViewport((commandBuffer == nullptr) ? m_graphicsCommandBuffers[realFrameIndex] : commandBuffer->buffers[realFrameIndex], 0, 1, &viewport);
 	}
 
 	void Renderer::bindDescriptorSet(const DescriptorSetPtr& descriptorSet, uint32_t pipeline, const CommandBufferPtr& commandBuffer, uint32_t frameIndex) {

@@ -21,9 +21,11 @@ public:
 	EntityFactory();
 	// Creates an entity and gives it a unique ID
 	EntityID createEntity();
-	// Destroy an entity and returns its ID to the pool of usabe IDs
+	// Destroy an entity and returns its ID to the pool of usable IDs
 	void destroyEntity(EntityID id);
 	
 	ComponentMask getEntitySignature(EntityID entity) const;
 	void setEntitySignature(EntityID entity, ComponentMask siganture);
+
+	uint32_t getEntityCount() const;
 };

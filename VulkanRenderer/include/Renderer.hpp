@@ -136,8 +136,9 @@ namespace NAME_SPACE {
 		uint32_t createGraphicsPipeline(uint32_t renderPass, uint32_t subpassIndex,
 			const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts,
 			const std::vector<VkPushConstantRange>& pushConstantRanges,
-			const std::vector<VkPipelineShaderStageCreateInfo> shaderStages,
-			VkPipelineVertexInputStateCreateInfo vertexInput);
+			const std::vector<VkPipelineShaderStageCreateInfo>& shaderStages,
+			VkPipelineVertexInputStateCreateInfo vertexInput,
+			const std::vector<VkDynamicState>& dynamicStates);
 
 		uint32_t createComputePipeline(const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts,
 			const std::vector<VkPushConstantRange>& pushConstantRanges,
@@ -168,6 +169,7 @@ namespace NAME_SPACE {
 
 		bool beginFrame();
 		void endFrame();
+		void present();
 
 		// create renderpasses, framebuffers and pipelines
 		
@@ -226,6 +228,9 @@ namespace NAME_SPACE {
 		void bindVertexBuffers(const std::vector<Buffer*>& vertexBuffers, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
 
 		void bindIndexBuffer(const Buffer* indexbuffer, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
+
+		void bindViewports(const std::vector<VkViewport>& viewports, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
+		void bindViewport(const VkViewport& viewport, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
 
 		void bindDescriptorSet(const DescriptorSetPtr& descriptorSet, uint32_t pipeline, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
 		void pushConstants(uint32_t pipeline, VkShaderStageFlags shaderStages, uint32_t offset, uint32_t size, void* data, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);

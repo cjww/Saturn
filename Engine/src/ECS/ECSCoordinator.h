@@ -21,6 +21,8 @@ public:
 	// Destroys this entity. The entity pointer should be considered invalid after a call to this function
 	void destroyEntity(EntityID entity);
 
+	uint32_t getEntityCount() const;
+
 	// get the type id of a component
 	template<typename T>
 	ComponentType getComponentType() const;

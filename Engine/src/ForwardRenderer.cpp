@@ -68,14 +68,31 @@ void ForwardRenderer::init(RenderWindow* pWindow, bool setupImGui) {
 	PerFrameBuffer perFrame = {};
 	glm::mat4 proj = glm::perspective(glm::radians(60.f), 1000.f / 600.f, 0.001f, 100.0f);
 	glm::mat4 view = glm::lookAt(glm::vec3(0, 0, 1), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
-	perFrame.projViewMatrix[0] = proj * view;
+	perFrame.projViewMatrix = proj * view;
 	m_pPerFrameBuffer = m_renderer->createUniformBuffer(sizeof(PerFrameBuffer), &perFrame);
 	
 	m_pPerFrameDescriptorSet = m_pShaderSet->getDescriptorSet(SET_PER_FRAME);
 	m_renderer->updateDescriptorSet(m_pPerFrameDescriptorSet, 0, m_pPerFrameBuffer, nullptr, nullptr, true);
+	
+	m_viewports[0].width = 500.0f;
+	m_viewports[0].height = 600.0f;
+	m_viewports[0].maxDepth = 1.0f;
+	m_viewports[0].minDepth = 0.0f;
+	m_viewports[0].x = 0;
+	m_viewports[0].y = 0;
+
+	m_viewports[1].width = 500.0f;
+	m_viewports[1].height = 600.0f;
+	m_viewports[1].maxDepth = 1.0f;
+	m_viewports[1].minDepth = 0.0f;
+	m_viewports[1].x = 500;
+	m_viewports[1].y = 0;
+
+	m_viewportCount = 2;
 }
 
 void ForwardRenderer::cleanup() {
+	
 	m_pShaderSet = nullptr;
 	m_pPerFrameDescriptorSet = nullptr;
 	if (m_useImGui) {
@@ -100,6 +117,15 @@ bool ForwardRenderer::beginFrame() {
 	m_renderer->bindPipeline(m_pipeline);
 	m_renderer->bindDescriptorSet(m_pPerFrameDescriptorSet, m_pipeline);
 
+	VkViewport viewport = {};
+	viewport.width = 500.0f;
+	viewport.height = 300.0f;
+	viewport.maxDepth = 1.0f;
+	viewport.minDepth = 0.0f;
+	viewport.x = 0;
+	viewport.y = 0;
+	m_renderer->bindViewport(viewport);
+
 	return true;
 }
 
@@ -110,14 +136,36 @@ void ForwardRenderer::endFrame() {
 		m_renderer->endFrameImGUI();
 	}
 	m_renderer->endFrame();
+	m_renderer->present();
 }
 
 
 void ForwardRenderer::draw() {
+	bool begin = m_renderer->beginFrame();
+	if (!begin)
+		return;
+	m_renderer->beginRenderPass(m_renderPass, m_frameBuffer, VK_SUBPASS_CONTENTS_INLINE);
+	m_renderer->bindPipeline(m_pipeline);
+	m_renderer->bindDescriptorSet(m_pPerFrameDescriptorSet, m_pipeline);
+	
+	for (uint32_t i = 0; i < m_viewportCount; i++) {
+		m_renderer->bindViewport(m_viewports[i]);
+		m_pMeshRenderSystem->draw(m_pipeline);
+	}
+
+	if (m_useImGui) {
+		m_renderer->endFrameImGUI();
+	}
+	m_renderer->endRenderPass();
+	m_renderer->endFrame();
+	m_renderer->present();
+
+	/*
 	if (beginFrame()) {
 		
 		m_pMeshRenderSystem->draw(m_pipeline);
 
 		endFrame();
 	}
+	*/
 }

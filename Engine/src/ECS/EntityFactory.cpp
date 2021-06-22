@@ -28,3 +28,7 @@ ComponentMask EntityFactory::getEntitySignature(EntityID entity) const {
 void EntityFactory::setEntitySignature(EntityID entity, ComponentMask signature) {
 	m_entitySignatures[entity] = signature;
 }
+
+uint32_t EntityFactory::getEntityCount() const {
+	return m_createdEntityCount - m_availableEntities.size();
+}

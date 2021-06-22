@@ -30,3 +30,7 @@ void ECSCoordinator::destroyEntity(EntityID entity) {
 	m_systemFactory.onEntityDestroyed(entity, m_entityFactory.getEntitySignature(entity));
 	m_entityFactory.destroyEntity(entity);
 }
+
+uint32_t ECSCoordinator::getEntityCount() const {
+	return m_entityFactory.getEntityCount();
+}

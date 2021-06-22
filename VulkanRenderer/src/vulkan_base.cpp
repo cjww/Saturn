@@ -557,7 +557,7 @@ namespace vbl {
         return vkCreatePipelineLayout(device, &info, nullptr, pipelineLayout);
     }
 
-	VkResult createGraphicsPipeline(VkPipeline* pipeline, VkDevice device, VkPipelineLayout layout, VkRenderPass renderPass, uint32_t subpassIndex, VkExtent2D extent, const VkPipelineShaderStageCreateInfo* shaderStages, uint32_t shaderStageCount, VkPipelineVertexInputStateCreateInfo vertexInput) {
+	VkResult createGraphicsPipeline(VkPipeline* pipeline, VkDevice device, VkPipelineLayout layout, VkRenderPass renderPass, uint32_t subpassIndex, VkExtent2D extent, const VkPipelineShaderStageCreateInfo* shaderStages, uint32_t shaderStageCount, VkPipelineVertexInputStateCreateInfo vertexInput, const VkDynamicState* pDynamicStates, uint32_t dynamicStateCount) {
 
         vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         vertexInput.pNext = nullptr;
@@ -627,6 +627,12 @@ namespace vbl {
         viewportState.viewportCount = 1;
         viewportState.pViewports = &viewport;
 
+        VkPipelineDynamicStateCreateInfo dynamicState = {};
+        dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
+        dynamicState.pNext = nullptr;
+        dynamicState.flags = 0;
+        dynamicState.pDynamicStates = pDynamicStates;
+        dynamicState.dynamicStateCount = dynamicStateCount;
 
 		VkGraphicsPipelineCreateInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
@@ -634,7 +640,7 @@ namespace vbl {
 		info.renderPass = renderPass;
         info.pColorBlendState = &colorBlend;
         info.pDepthStencilState = &depthState;
-        info.pDynamicState = nullptr;
+        info.pDynamicState = &dynamicState;
         info.pInputAssemblyState = &input;
         info.pMultisampleState = &multisample;
         info.pRasterizationState = &rasterizer;
