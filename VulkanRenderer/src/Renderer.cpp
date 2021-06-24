@@ -308,6 +308,9 @@ namespace NAME_SPACE {
 		auto context = ImGui::CreateContext();
 		ImGui::SetCurrentContext(context);
 		ImGuiIO& io = ImGui::GetIO();
+		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;
+
 		ImGui::StyleColorsDark();
 
 		createImGUIDescriptorPool();

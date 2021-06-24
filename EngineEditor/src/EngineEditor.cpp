@@ -21,8 +21,8 @@ void EngineEditor::run() {
 		m_window.setWindowTitle(std::to_string(1.0 / time.count()) + " fps");
 		float dt = static_cast<float>(time.count());
 		
-		m_engine.recordImGui();
 		m_window.pollEvents();
+		m_engine.recordImGui();
 		ImGui::Begin("Entities");
 		if (ImGui::Button("New Entity")) {			
 			EntityID entity = ECSCoordinator::get()->createEntity();
@@ -32,9 +32,7 @@ void EngineEditor::run() {
 		}
 		ImGui::Text("Nr of entities: %d", ECSCoordinator::get()->getEntityCount());
 		ImGui::End();
-		/*
-		*/
-
+		
 		m_engine.update();
 		m_engine.draw();
 

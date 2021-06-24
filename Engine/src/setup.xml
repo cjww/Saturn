@@ -1,5 +1,0 @@
-﻿<?xml version="1.0" encoding="utf-8"?>
-<Engine>
-  <Renderer api="Vulkan" technique="Forward">
-  </Renderer>
-</Engine>
