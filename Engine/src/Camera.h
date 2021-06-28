@@ -1,5 +1,6 @@
 #pragma once
 #include "glm\gtc\matrix_transform.hpp"
+#include "glm\gtx\rotate_vector.hpp"
 
 #include "Geometry\Rect.h"
 #include "RenderWindow.hpp"
@@ -31,6 +32,12 @@ public:
 	
 	void setPosition(glm::vec3 position);
 	glm::vec3 getPosition() const;
+
+	void rotate(float angle, glm::vec3 axis);
+
+	glm::vec3 getForward() const;
+	glm::vec3 getUp() const;
+	glm::vec3 getRight() const;
 
 	glm::mat4 getViewMatrix();
 	glm::mat4 getProjectionMatrix();

@@ -34,6 +34,8 @@ void EngineEditor::run() {
 		ImGui::End();
 		
 		m_engine.update();
+		m_editorView->update(dt);
+
 		m_engine.draw();
 
 	}

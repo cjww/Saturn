@@ -33,6 +33,7 @@ void Camera::setFOVDegrees(float fovDegrees) {
 void Camera::setViewport(Rect viewport) {
     m_viewport = viewport;
     m_apectRatio = m_viewport.getSize().x / m_viewport.getSize().y;
+    m_projMat = glm::perspective(m_fov, m_apectRatio, m_near, m_far);
 }
 
 void Camera::lookAt(glm::vec3 target) {
@@ -48,8 +49,25 @@ glm::vec3 Camera::getPosition() const {
     return m_position;
 }
 
+void Camera::rotate(float angle, glm::vec3 axis) {
+    m_forward = glm::rotate(m_forward, angle, axis);
+}
+
+glm::vec3 Camera::getForward() const {
+    return m_forward;
+}
+
+glm::vec3 Camera::getUp() const {
+    return -m_up;
+}
+
+glm::vec3 Camera::getRight() const {
+    return glm::cross(m_forward, m_up);
+}
+
+
 glm::mat4 Camera::getViewMatrix() {
-    return glm::lookAt(m_position, m_forward, m_up);
+    return glm::lookAt(m_position, m_position + m_forward, m_up);
 }
 
 glm::mat4 Camera::getProjectionMatrix() {
