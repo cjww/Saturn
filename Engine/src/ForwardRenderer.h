@@ -9,37 +9,40 @@
 #include "ECS\Systems\Rendering\Vulkan\DescriptorCreationSystem.h"
 #include "ECS\Systems\Rendering\Vulkan\DescriptorManager.h"
 
-class ForwardRenderer : public IRenderTechnique {
-private:
-	vr::Renderer* m_renderer;
+namespace sa {
+	class ForwardRenderer : public IRenderTechnique {
+	private:
+		vr::Renderer* m_renderer;
 
-	vr::ShaderSetPtr m_pShaderSet;
-
-
-	vr::DescriptorSetPtr m_pPerFrameDescriptorSet;
-	vr::Buffer* m_pPerFrameBuffer;
+		vr::ShaderSetPtr m_pShaderSet;
 
 
-	uint32_t m_frameBuffer;
-	vr::Texture* m_pDepthTexture;
+		vr::DescriptorSetPtr m_pPerFrameDescriptorSet;
+		vr::Buffer* m_pPerFrameBuffer;
 
-	uint32_t m_renderPass;
-	uint32_t m_pipeline;
+
+		uint32_t m_frameBuffer;
+		vr::Texture* m_pDepthTexture;
+
+		uint32_t m_renderPass;
+		uint32_t m_pipeline;
 	
-	vk::DescriptorManager* m_pDescriptorManager;
+		vk::DescriptorManager* m_pDescriptorManager;
 
-	//Systems
-	vk::MeshRenderSystem* m_pMeshRenderSystem;
-	vk::DescriptorCreationSystem* m_pDescriptorCreationSystem;
+		//Systems
+		vk::MeshRenderSystem* m_pMeshRenderSystem;
+		vk::DescriptorCreationSystem* m_pDescriptorCreationSystem;
 
-public:
-	ForwardRenderer();
+	public:
+		ForwardRenderer();
 
-	virtual void init(RenderWindow* pWindow, bool setupImGui) override;
-	virtual void cleanup() override;
+		virtual void init(RenderWindow* pWindow, bool setupImGui) override;
+		virtual void cleanup() override;
 
-	virtual void beginFrameImGUI() override;
+		virtual void beginFrameImGUI() override;
 
-	virtual void draw() override;
+		virtual void draw() override;
 
-};
+	};
+
+}

@@ -5,38 +5,40 @@
 #include "ResourceManager.h"
 #include "rapidxml\rapidxml.hpp"
 
-class Engine {
-private:
-	
-	IRenderTechnique* m_pRenderTechnique;
+namespace sa {
+	class Engine {
+	private:
 
-	std::vector<Camera*> m_cameras;
+		IRenderTechnique* m_pRenderTechnique;
 
-	struct FrameTime {
-		std::chrono::high_resolution_clock::time_point start;
-		std::chrono::duration<double, std::milli> cpu;
-		std::chrono::duration<double, std::milli> gpu;
-	} m_frameTime;
+		std::vector<Camera*> m_cameras;
+
+		struct FrameTime {
+			std::chrono::high_resolution_clock::time_point start;
+			std::chrono::duration<double, std::milli> cpu;
+			std::chrono::duration<double, std::milli> gpu;
+		} m_frameTime;
 
 
-	void loadXML(const std::filesystem::path& path, rapidxml::xml_document<>& xml, std::string& xmlStr);
-	void loadFromFile(const std::filesystem::path& configPath);
-public:
-	//Engine();
-	void setup(RenderWindow* pWindow, const std::filesystem::path& configPath);
-	void update();
+		void loadXML(const std::filesystem::path& path, rapidxml::xml_document<>& xml, std::string& xmlStr);
+		void loadFromFile(const std::filesystem::path& configPath);
+	public:
+		//Engine();
+		void setup(RenderWindow* pWindow, const std::filesystem::path& configPath);
+		void update();
 
-	void recordImGui();
-	void draw();
-	
-	void cleanup();
+		void recordImGui();
+		void draw();
 
-	std::chrono::duration<double, std::milli> getCPUFrameTime() const;
+		void cleanup();
 
-	Camera* newCamera();
-	Camera* newCamera(const RenderWindow* pWindow);
+		std::chrono::duration<double, std::milli> getCPUFrameTime() const;
 
-	void addActiveCamera(Camera* camera);
-	void removeActiveCamera(Camera* camera);
+		Camera* newCamera();
+		Camera* newCamera(const RenderWindow* pWindow);
 
-};
+		void addActiveCamera(Camera* camera);
+		void removeActiveCamera(Camera* camera);
+
+	};
+}

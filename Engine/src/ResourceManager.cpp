@@ -1,74 +1,77 @@
 #include "ResourceManager.h"
 
-ResourceManager* ResourceManager::m_myInstance = nullptr;
+namespace sa {
 
-ResourceManager* ResourceManager::get()
-{
-	if (m_myInstance == nullptr) {
-		m_myInstance = new ResourceManager();
-	}
-	return m_myInstance;
-}
+	ResourceManager* ResourceManager::m_myInstance = nullptr;
 
-void ResourceManager::cleanup() {
-	if (m_myInstance != nullptr) {
-		delete m_myInstance;
-	}
-}
-
-ResourceID ResourceManager::loadModel(const std::filesystem::path& path)
-{
-	if (m_resourceIDs.find(path.string()) != m_resourceIDs.end()) {
-		return m_resourceIDs.at(path.string());
+	ResourceManager* ResourceManager::get()
+	{
+		if (m_myInstance == nullptr) {
+			m_myInstance = new ResourceManager();
+		}
+		return m_myInstance;
 	}
 
-	ResourceID id = m_nextID++;
-	m_models.insert(std::make_pair(id, std::make_unique<ModelData>()));
-	ModelData* model = m_models.at(id).get();
-
-
-	return id;
-}
-
-ResourceID ResourceManager::loadQuad()
-{
-	if (m_resourceIDs.find("Quad") != m_resourceIDs.end()) {
-		return m_resourceIDs.at("Quad");
+	void ResourceManager::cleanup() {
+		if (m_myInstance != nullptr) {
+			delete m_myInstance;
+		}
 	}
 
-	ResourceID id = m_nextID++;
-	m_models.insert(std::make_pair(id, std::make_unique<ModelData>()));
-	ModelData* model = m_models.at(id).get();
-	Mesh mesh = {};
-	mesh.material = {};
+	ResourceID ResourceManager::loadModel(const std::filesystem::path& path)
+	{
+		if (m_resourceIDs.find(path.string()) != m_resourceIDs.end()) {
+			return m_resourceIDs.at(path.string());
+		}
 
-	std::vector<VertexUV> vertices = {
-		{ glm::vec4(-0.5f, 0.5f, 0, 1), glm::vec2(0, 0) },
-		{ glm::vec4(0.5f, 0.5f, 0, 1), glm::vec2(1, 0) },
-		{ glm::vec4(0.5f, -0.5f, 0, 1), glm::vec2(1, 1) },
-		{ glm::vec4(-0.5f, -0.5f, 0, 1), glm::vec2(0, 1) }
-	};
-	mesh.vertexBuffer = vr::Renderer::get()->createVertexBuffer(vertices.size() * sizeof(VertexUV), vertices.data());
+		ResourceID id = m_nextID++;
+		m_models.insert(std::make_pair(id, std::make_unique<ModelData>()));
+		ModelData* model = m_models.at(id).get();
 
-	std::vector<uint32_t> indices = {
-		0, 1, 3,
-		1, 2, 3
-	};
-	mesh.indexBuffer = vr::Renderer::get()->createIndexBuffer(indices.size() * sizeof(uint32_t), indices.data());
-	model->meshes.push_back(mesh);
 
-	return id;
-}
+		return id;
+	}
 
-ModelData* ResourceManager::getModel(ResourceID id) const {
-	return m_models.at(id).get();
-}
+	ResourceID ResourceManager::loadQuad()
+	{
+		if (m_resourceIDs.find("Quad") != m_resourceIDs.end()) {
+			return m_resourceIDs.at("Quad");
+		}
 
-ResourceManager::ResourceManager()
-	: m_nextID(0)
-{
-}
+		ResourceID id = m_nextID++;
+		m_models.insert(std::make_pair(id, std::make_unique<ModelData>()));
+		ModelData* model = m_models.at(id).get();
+		Mesh mesh = {};
+		mesh.material = {};
 
-ResourceManager::~ResourceManager() {
-	
+		std::vector<VertexUV> vertices = {
+			{ glm::vec4(-0.5f, 0.5f, 0, 1), glm::vec2(0, 0) },
+			{ glm::vec4(0.5f, 0.5f, 0, 1), glm::vec2(1, 0) },
+			{ glm::vec4(0.5f, -0.5f, 0, 1), glm::vec2(1, 1) },
+			{ glm::vec4(-0.5f, -0.5f, 0, 1), glm::vec2(0, 1) }
+		};
+		mesh.vertexBuffer = vr::Renderer::get()->createVertexBuffer(vertices.size() * sizeof(VertexUV), vertices.data());
+
+		std::vector<uint32_t> indices = {
+			0, 1, 3,
+			1, 2, 3
+		};
+		mesh.indexBuffer = vr::Renderer::get()->createIndexBuffer(indices.size() * sizeof(uint32_t), indices.data());
+		model->meshes.push_back(mesh);
+
+		return id;
+	}
+
+	ModelData* ResourceManager::getModel(ResourceID id) const {
+		return m_models.at(id).get();
+	}
+
+	ResourceManager::ResourceManager()
+		: m_nextID(0)
+	{
+	}
+
+	ResourceManager::~ResourceManager() {
+
+	}
 }

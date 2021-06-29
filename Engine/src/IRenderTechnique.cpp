@@ -1,15 +1,16 @@
 #include "IRenderTechnique.h"
 
-//EMPTY
+namespace sa {
 
-bool IRenderTechnique::isUsingImGui() const {
-    return m_useImGui;
-}
+    bool IRenderTechnique::isUsingImGui() const {
+        return m_useImGui;
+    }
 
-void IRenderTechnique::addCamera(Camera* camera) {
-    m_activeCameras.insert(camera);
-}
+    void IRenderTechnique::addCamera(Camera* camera) {
+        m_activeCameras.insert(camera);
+    }
 
-void IRenderTechnique::removeCamera(Camera* camera) {
-    m_activeCameras.erase(camera);
+    void IRenderTechnique::removeCamera(Camera* camera) {
+        m_activeCameras.erase(camera);
+    }
 }

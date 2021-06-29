@@ -1,9 +1,10 @@
 #include "EditorView.h"
 
-EditorView::EditorView(RenderWindow* pWindow)
-	: m_pWindow(pWindow) 
+EditorView::EditorView(sa::Engine* pEngine, RenderWindow* pWindow)
+	: EditorModule(pEngine)
 {
-	Rect viewport;
+	m_pWindow = pWindow;
+	sa::Rect viewport;
 	viewport.setSize(pWindow->getCurrentExtent());
 	viewport.setPosition({ 0, 0 });
 	m_camera.setViewport(viewport);
@@ -11,7 +12,7 @@ EditorView::EditorView(RenderWindow* pWindow)
 	m_camera.setPosition(glm::vec3(0, 0, 1));
 	m_camera.lookAt(glm::vec3(0, 0, 0));
 
-	m_mouseSensitivity = 4.0f;
+	m_mouseSensitivity = 20.0f;
 	m_moveSpeed = 4.0f;
 }
 
@@ -19,7 +20,6 @@ EditorView::~EditorView() {
 
 }
 
-#include "imgui.h"
 void EditorView::update(float dt) {
 	
 	if (m_pWindow->getMouseButton(GLFW_MOUSE_BUTTON_1)) {
@@ -46,6 +46,29 @@ void EditorView::update(float dt) {
 
 }
 
-Camera* EditorView::getCamera() {
+void EditorView::onImGui() {
+	
+	/*
+	ImGui::SetNextWindowSize({ (float)m_pWindow->getCurrentExtent().x, (float)m_pWindow->getCurrentExtent().y });
+	ImGui::SetNextWindowPos({ 0.f, 0.f });
+	ImGuiID dockSpaceID = ImGui::DockSpaceOverViewport();
+	ImGui::SetNextWindowDockID(dockSpaceID);
+	if (ImGui::Begin("EditorView", 0,
+		ImGuiWindowFlags_NoBackground | 
+		ImGuiWindowFlags_NoBringToFrontOnFocus | 
+		ImGuiWindowFlags_NoCollapse |
+		ImGuiWindowFlags_NoMove | 
+		ImGuiWindowFlags_NoResize
+	)) {
+
+		
+	}
+	ImGui::End();
+
+	ImGui::ShowDemoWindow();
+	*/
+}
+
+sa::Camera* EditorView::getCamera() {
 	return &m_camera;
 }

@@ -1,9 +1,9 @@
 #pragma once
 #include <Camera.h>
-
-class EditorView {
+#include "EditorModule.h"
+class EditorView : public EditorModule {
 private:
-	Camera m_camera;
+	sa::Camera m_camera;
 	RenderWindow* m_pWindow;
 
 	glm::vec2 m_lastMousePos;
@@ -11,12 +11,15 @@ private:
 	float m_moveSpeed;
 
 public:
-	EditorView(RenderWindow* pWindow);
+	EditorView(sa::Engine* pEngine, RenderWindow* pWindow);
 	~EditorView();
 
 	// moves camera around scene according to input
 	void update(float dt);
 
-	Camera* getCamera();
+	virtual void onImGui() override;
+
+	sa::Camera* getCamera();
+
 
 };

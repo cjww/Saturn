@@ -6,11 +6,12 @@
 
 #define MAX_VIEWPORT_COUNT 4
 
-struct PerObjectBuffer {
-	glm::mat4 worldMatrix;
-};
+namespace sa {
+	struct PerObjectBuffer {
+		glm::mat4 worldMatrix;
+	};
 
-struct PerFrameBuffer {
-	glm::mat4 projViewMatrix;
-};
-
+	struct PerFrameBuffer {
+		glm::mat4 projViewMatrix;
+	};
+}

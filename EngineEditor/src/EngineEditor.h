@@ -8,9 +8,11 @@
 class EngineEditor {
 private:
 	RenderWindow m_window;
-	Engine m_engine;
+	sa::Engine m_engine;
 
-	std::unique_ptr<EditorView> m_editorView;
+	std::vector<std::unique_ptr<EditorModule>> m_editorModules;
+
+	void onImGui();
 
 public:
 	EngineEditor();

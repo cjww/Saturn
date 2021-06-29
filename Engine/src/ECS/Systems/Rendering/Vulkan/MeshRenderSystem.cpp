@@ -12,10 +12,10 @@ namespace vk {
 
 		for (const auto& entity : m_entitySet) {
 			Model* modelComp = m_pCoordinator->getComponent<Model>(entity);
-			ModelData* model = ResourceManager::get()->getModel(modelComp->modelID);
+			sa::ModelData* model = sa::ResourceManager::get()->getModel(modelComp->modelID);
 
 			Transform* transform = m_pCoordinator->getComponent<Transform>(entity);
-			PerObjectBuffer perObject = {};
+			sa::PerObjectBuffer perObject = {};
 			perObject.worldMatrix = glm::mat4(1);
 			perObject.worldMatrix = glm::translate(perObject.worldMatrix, transform->position);
 			perObject.worldMatrix = glm::rotate(perObject.worldMatrix, transform->rotation.x, glm::vec3(1, 0, 0));

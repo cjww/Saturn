@@ -9,9 +9,9 @@ namespace vk {
 	void DescriptorManager::addEntityDescriptorSet(EntityID entity) {
 		vr::DescriptorSetPtr descSet = m_pShaderSet->getDescriptorSet(SET_PER_OBJECT);
 	
-		PerObjectBuffer initialData = {};
+		sa::PerObjectBuffer initialData = {};
 		initialData.worldMatrix = glm::mat4(1);
-		vr::Buffer* buffer = vr::Renderer::get()->createUniformBuffer(sizeof(PerObjectBuffer), &initialData);
+		vr::Buffer* buffer = vr::Renderer::get()->createUniformBuffer(sizeof(sa::PerObjectBuffer), &initialData);
 
 		vr::Renderer::get()->updateDescriptorSet(descSet, 0, buffer, nullptr, nullptr, true);
 

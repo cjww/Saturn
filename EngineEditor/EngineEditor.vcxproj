@@ -171,6 +171,7 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\EditorModule.cpp" />
     <ClCompile Include="src\EditorView.cpp" />
     <ClCompile Include="src\EngineEditor.cpp" />
     <ClCompile Include="src\main.cpp" />
@@ -183,6 +184,7 @@
   <ItemGroup>
     <ClInclude Include="src\EditorView.h" />
     <ClInclude Include="src\EngineEditor.h" />
+    <ClInclude Include="src\EditorModule.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
