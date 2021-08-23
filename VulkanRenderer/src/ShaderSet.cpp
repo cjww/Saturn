@@ -1,7 +1,11 @@
 #include "ShaderSet.hpp"
 
 namespace NAME_SPACE {
-	ShaderSet::ShaderSet(VkDevice device, uint32_t swapChainImageCount, const ShaderPtr& vertexShader, const ShaderPtr& fragmentShader) : m_device(device), m_swapChainImageCount(swapChainImageCount) {
+	ShaderSet::ShaderSet(VkDevice device, uint32_t swapChainImageCount, const ShaderPtr& vertexShader, const ShaderPtr& fragmentShader)
+		: m_device(device)
+		, m_swapChainImageCount(swapChainImageCount)
+		, m_isGraphicsSet(true) 
+	{
 		if ((vertexShader->getStage() | fragmentShader->getStage()) != (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)) {
 			throw std::runtime_error("Missing stages");
 		}
@@ -96,7 +100,11 @@ namespace NAME_SPACE {
 
 	}
 
-	ShaderSet::ShaderSet(VkDevice device, uint32_t swapChainImageCount, const ShaderPtr& vertexShader, const ShaderPtr& geometryShader, const ShaderPtr& fragmentShader) : m_device(device), m_swapChainImageCount(swapChainImageCount) {
+	ShaderSet::ShaderSet(VkDevice device, uint32_t swapChainImageCount, const ShaderPtr& vertexShader, const ShaderPtr& geometryShader, const ShaderPtr& fragmentShader)
+		: m_device(device)
+		, m_swapChainImageCount(swapChainImageCount)
+		, m_isGraphicsSet(true)
+	{
 		if ((vertexShader->getStage() | geometryShader->getStage() | fragmentShader->getStage()) != (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)) {
 			throw std::runtime_error("Missing stages");
 		}
@@ -212,7 +220,11 @@ namespace NAME_SPACE {
 
 	}
 
-	ShaderSet::ShaderSet(VkDevice device, uint32_t swapChainImageCount, const ShaderPtr& computeShader) : m_device(device), m_swapChainImageCount(swapChainImageCount) {
+	ShaderSet::ShaderSet(VkDevice device, uint32_t swapChainImageCount, const ShaderPtr& computeShader)
+		: m_device(device)
+		, m_swapChainImageCount(swapChainImageCount)
+		, m_isGraphicsSet(false)
+	{
 		if (computeShader->getStage() != VK_SHADER_STAGE_COMPUTE_BIT) {
 			throw std::runtime_error("Missing compute stage");
 		}
@@ -307,7 +319,7 @@ namespace NAME_SPACE {
 	}
 
 	bool ShaderSet::isGraphicsSet() const {
-		return m_vertexAttributes.size() > 0;
+		return m_isGraphicsSet;
 	}
 
 	DescriptorSetPtr ShaderSet::getDescriptorSet(uint32_t setIndex) {

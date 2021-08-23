@@ -234,6 +234,7 @@ namespace NAME_SPACE {
 
 	ImGui_ImplVulkan_InitInfo Renderer::getImGUIInitInfo() const {
 		ImGui_ImplVulkan_InitInfo i = {};
+		memset(&i, 0, sizeof(i));
 		i.Instance = m_instance;
 		i.PhysicalDevice = m_physicalDevice;
 		i.Device = m_device;
@@ -340,6 +341,24 @@ namespace NAME_SPACE {
 		vkQueueWaitIdle(m_graphicsQueue);
 
 		vkFreeCommandBuffers(m_device, m_graphicsCommandPool, 1, &commandBuffer);
+		m_imGuiDescriptorSet = std::make_shared<DescriptorSet>();
+		m_imGuiDescriptorSet->descriptorSets.resize(m_swapChain.images.size());
+		m_imGuiDescriptorSet->writes.resize(m_swapChain.images.size());
+		for (int i = 0; i < m_swapChain.images.size(); i++) {
+			//m_imGuiDescriptorSet->descriptorSets[i] = ImGui_ImplVulkan_AllocateDescriptorSet();
+
+			m_imGuiDescriptorSet->writes[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+			m_imGuiDescriptorSet->writes[i].pNext = nullptr;
+			m_imGuiDescriptorSet->writes[i].descriptorCount = 1;
+			m_imGuiDescriptorSet->writes[i].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
+			m_imGuiDescriptorSet->writes[i].dstArrayElement = 0;
+			m_imGuiDescriptorSet->writes[i].dstBinding = 0;
+			m_imGuiDescriptorSet->writes[i].dstSet = m_imGuiDescriptorSet->descriptorSets[i];
+			m_imGuiDescriptorSet->writes[i].pBufferInfo = nullptr;
+			m_imGuiDescriptorSet->writes[i].pImageInfo = nullptr;
+			m_imGuiDescriptorSet->writes[i].pTexelBufferView = nullptr;
+		}
+		m_imGuiDescriptorSet->setIndex = 0;
 
 	}
 
@@ -360,6 +379,21 @@ namespace NAME_SPACE {
 		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();
 		vkDestroyDescriptorPool(m_device, m_imGuiDescriptorPool, nullptr);
+	}
+
+	void Renderer::imGuiImage(Texture* texture, const SamplerPtr& sampler) {
+		updateDescriptorSet(m_imGuiDescriptorSet, 0, nullptr, texture, sampler, true);
+		/*
+		ImGui::GetWindowDrawList()->AddCallback([](const ImDrawList* parent_list, const ImDrawCmd* cmd) {
+			Renderer* r = (Renderer*)cmd->UserCallbackData;
+			ImGui_ImplVulkan_cmdBindDescriptorSet(r->m_graphicsCommandBuffers[r->m_frameIndex], r->m_imGuiDescriptorSet->descriptorSets[r->m_frameIndex]);
+		}, this);
+		ImGui::Image(0, {0, 0});
+
+		ImGui::GetWindowDrawList()->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
+		*/
+		ImGui::Image(&m_imGuiDescriptorSet.get()->descriptorSets[m_frameIndex],
+			{ (float)texture->extent.width, (float)texture->extent.height });
 	}
 
 	uint32_t Renderer::getNextSwapchainImage() {
@@ -484,12 +518,30 @@ namespace NAME_SPACE {
 		renderPassInfo.pSubpasses = subpasses.data();
 		renderPassInfo.dependencyCount = dependencies.size();
 		renderPassInfo.pDependencies = dependencies.data();
-
+		/*
 		renderPass.colorAttachmentCount.resize(subpasses.size());
 		renderPass.depthAttachment.resize(subpasses.size());
 		for (uint32_t i = 0; i < (uint32_t)subpasses.size(); i++) {
 			renderPass.colorAttachmentCount[i] = subpasses[i].colorAttachmentCount;
 			renderPass.depthAttachment[i] = subpasses[i].pDepthStencilAttachment != nullptr;
+		}
+		*/
+
+		for (uint32_t i = 0; i < (uint32_t)attachments.size(); i++) {
+			if (attachments[i].format >= VK_FORMAT_UNDEFINED && attachments[i].format < VK_FORMAT_D16_UNORM) {
+				// Color attachment
+				VkClearValue clearValue;
+				clearValue.color = { 0, 0, 0, 0 };
+				renderPass.clearValues.push_back(clearValue);
+			}
+			else {
+				// Depth attachment
+				VkClearValue clearValue;
+				clearValue.depthStencil.depth = 1.0f;
+				clearValue.depthStencil.stencil = 0;
+				renderPass.clearValues.push_back(clearValue);
+
+			}
 		}
 
 		VkResult res = vkCreateRenderPass(m_device, &renderPassInfo, nullptr, &renderPass.renderPass);
@@ -603,18 +655,7 @@ namespace NAME_SPACE {
 		return m_pipelines.size() - 1;
 	}
 
-	Texture* Renderer::createDepthImage(VkExtent2D extent) {
-		return m_pDataManager->createDepthImage(extent);
-	}
-
-	Texture* Renderer::createTexture2D(const Image& image) {
-		return createTexture2D(image.getExtent(), image.getPixels(), image.getChannelCount());
-	}
-
-	Texture* Renderer::createTexture2D(VkExtent2D extent, unsigned char* pixels, int channels) {
-		auto image = m_pDataManager->createShaderReadOnlyColorImage2D(extent);
-
-		Buffer* buffer = m_pDataManager->createBuffer(image->extent.width * image->extent.height * channels, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, pixels);
+	VkCommandBuffer Renderer::beginTransferCommand() {
 
 		VkCommandBufferBeginInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
@@ -635,9 +676,62 @@ namespace NAME_SPACE {
 
 		VkCommandBuffer commandBuffer = m_transferCommandBuffers[m_transferCommandQueue.size()];
 		vkBeginCommandBuffer(commandBuffer, &info);
+		return commandBuffer;
+	}
+
+	void Renderer::endTransferCommand(const TransferCommand& command) {
+		vkEndCommandBuffer(command.commandBuffer);
+		m_transferCommandQueue.push_back(command);
+	}
+
+	Texture* Renderer::createDepthImage(VkExtent2D extent) {
+		return m_pDataManager->createDepthImage(extent);
+	}
+
+	Texture* Renderer::createTexture2D(const Image& image) {
+		return createTexture2D(image.getExtent(), image.getPixels(), image.getChannelCount());
+	}
+
+	Texture* Renderer::createTexture2D(VkExtent2D extent, unsigned char* pixels, int channels) {
+		auto image = m_pDataManager->createShaderReadOnlyColorImage2D(extent);
+
+		Buffer* buffer = m_pDataManager->createBuffer(image->extent.width * image->extent.height * channels, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, pixels);
+
+		return image;
+	}
+
+	Texture* Renderer::createColorAttachmentTexture(VkExtent2D extent, VkFormat format, uint32_t arrayLayers, uint32_t mipLevels, VkSampleCountFlagBits sampleCount, VkImageUsageFlags additionalUsage) {
+		auto image = m_pDataManager->createImage(
+			{ extent.width, extent.height, 1 },
+			arrayLayers,
+			format,
+			VK_IMAGE_TYPE_2D,
+			VK_IMAGE_LAYOUT_UNDEFINED,
+			mipLevels,
+			{ m_graphicsQueueInfo.family, m_computeQueueInfo.family },
+			sampleCount,
+			VK_SHARING_MODE_EXCLUSIVE,
+			VK_IMAGE_TILING_OPTIMAL,
+			VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT | additionalUsage,
+			VMA_MEMORY_USAGE_GPU_ONLY,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT);
+
+		m_pDataManager->createImageView(
+			VK_IMAGE_VIEW_TYPE_2D,
+			image,
+			VK_IMAGE_ASPECT_COLOR_BIT,
+			0,
+			0);
+
+		return image;
+	}
+
+	void Renderer::queueTransferCommand(Buffer* srcBuffer, Texture* dstTexture) {
+
+		VkCommandBuffer commandBuffer = beginTransferCommand();
 
 		VkBufferImageCopy copy = {};
-		copy.imageExtent = image->extent;
+		copy.imageExtent = dstTexture->extent;
 		copy.imageOffset = { 0, 0, 0 };
 		copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
 		copy.imageSubresource.baseArrayLayer = 0;
@@ -647,20 +741,90 @@ namespace NAME_SPACE {
 		copy.bufferImageHeight = 0;
 		copy.bufferOffset = 0;
 		copy.bufferRowLength = 0;
-
-		vkCmdCopyBufferToImage(commandBuffer, buffer->buffer, image->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1, &copy);
-
-		vkEndCommandBuffer(commandBuffer);
+		
+		vkCmdCopyBufferToImage(commandBuffer, srcBuffer->buffer, dstTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1, &copy);
 
 
 		TransferCommand transferCommand = {};
 		transferCommand.commandBuffer = commandBuffer;
-		transferCommand.srcBuffer = buffer;
-		transferCommand.dstImage = image;
+		transferCommand.srcBuffer = srcBuffer;
+		transferCommand.dstImage = dstTexture;
 		transferCommand.type = TransferCommand::Type::BUFFER_TO_IMAGE;
-		m_transferCommandQueue.push_back(transferCommand);
+		endTransferCommand(transferCommand);
 
-		return image;
+	}
+
+	void Renderer::queueTransferCommand(Buffer* srcBuffer, Buffer* dstBuffer) {
+
+		VkCommandBuffer commandBuffer = beginTransferCommand();
+
+		VkBufferCopy bufferCopy = {};
+		bufferCopy.dstOffset = 0;
+		bufferCopy.size = srcBuffer->size;
+		bufferCopy.srcOffset = 0;
+
+		vkCmdCopyBuffer(commandBuffer, srcBuffer->buffer, dstBuffer->buffer, 1, &bufferCopy);
+		
+		TransferCommand transferCommand = {};
+		transferCommand.commandBuffer = commandBuffer;
+		transferCommand.srcBuffer = srcBuffer;
+		transferCommand.dstBuffer = dstBuffer;
+		transferCommand.type = TransferCommand::Type::BUFFER_TO_BUFFER;
+		endTransferCommand(transferCommand);
+	}
+
+	void Renderer::queueTransferCommand(Texture* srcTexture, Buffer* dstBuffer)
+	{
+
+		VkCommandBuffer commandBuffer = beginTransferCommand();
+
+		VkBufferImageCopy copy = {};
+		copy.imageExtent = srcTexture->extent;
+		copy.imageOffset = { 0, 0, 0 };
+		copy.imageSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		copy.imageSubresource.baseArrayLayer = 0;
+		copy.imageSubresource.layerCount = 1;
+		copy.imageSubresource.mipLevel = 0;
+
+		copy.bufferImageHeight = 0;
+		copy.bufferOffset = 0;
+		copy.bufferRowLength = 0;
+		vkCmdCopyImageToBuffer(commandBuffer, srcTexture->image, srcTexture->layout, dstBuffer->buffer, 1, &copy);
+
+		TransferCommand transferCommand = {};
+		transferCommand.commandBuffer = commandBuffer;
+		transferCommand.dstBuffer = dstBuffer;
+		transferCommand.srcImage = srcTexture;
+		transferCommand.type = TransferCommand::Type::IMAGE_TO_BUFFER;
+		endTransferCommand(transferCommand);
+	}
+
+	void Renderer::queueTransferCommand(Texture* srcTexture, Texture* dstTexture) {
+
+		VkCommandBuffer commandBuffer = beginTransferCommand();
+
+		VkImageCopy imageCopy = {};
+		imageCopy.dstOffset = {0, 0, 0};
+		imageCopy.dstSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageCopy.dstSubresource.baseArrayLayer = 0;
+		imageCopy.dstSubresource.layerCount = 1;
+		imageCopy.dstSubresource.mipLevel = 0;
+		imageCopy.extent = srcTexture->extent;
+		
+		imageCopy.srcOffset = {0, 0, 0};
+		imageCopy.srcSubresource.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		imageCopy.srcSubresource.baseArrayLayer = 0;
+		imageCopy.srcSubresource.layerCount = 1;
+		imageCopy.srcSubresource.mipLevel = 0;
+	
+		vkCmdCopyImage(commandBuffer, srcTexture->image, srcTexture->layout, dstTexture->image, dstTexture->layout, 1, &imageCopy);
+	
+		TransferCommand transferCommand = {};
+		transferCommand.commandBuffer = commandBuffer;
+		transferCommand.srcImage = srcTexture;
+		transferCommand.dstImage = dstTexture;
+		transferCommand.type = TransferCommand::Type::IMAGE_TO_IMAGE;
+		endTransferCommand(transferCommand);
 	}
 
 	SamplerPtr Renderer::createSampler(VkFilter minMagFilter, float maxAnisotropy, float minLod, float maxLod, float mipLodBias) {
@@ -937,6 +1101,7 @@ namespace NAME_SPACE {
 		beginInfo.pNext = nullptr;
 		beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
 		
+			/*
 		std::vector<VkClearValue> clearValues;
 
 		for (uint32_t i = 0; i < m_renderPasses[renderPass].subpassCount; i++) {
@@ -948,13 +1113,14 @@ namespace NAME_SPACE {
 			if (m_renderPasses[renderPass].depthAttachment[i]) {
 				VkClearValue clearValue;
 				clearValue.depthStencil.depth = 1.0f;
-				clearValue.depthStencil.stencil = 0;		
+				clearValue.depthStencil.stencil = 0;
 				clearValues.push_back(clearValue);
 			}
 		}
+			*/
 
-		beginInfo.clearValueCount = clearValues.size();
-		beginInfo.pClearValues = clearValues.data();
+		beginInfo.clearValueCount = m_renderPasses[renderPass].clearValues.size();
+		beginInfo.pClearValues = m_renderPasses[renderPass].clearValues.data();
 		beginInfo.framebuffer = m_framebuffers[framebuffer].framebuffers[m_frameIndex];
 
 		VkRect2D renderArea = {};

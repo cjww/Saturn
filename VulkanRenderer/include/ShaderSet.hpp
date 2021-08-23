@@ -29,6 +29,7 @@ namespace NAME_SPACE {
 		std::vector<VkVertexInputAttributeDescription> m_vertexAttributes;
 		std::vector<VkVertexInputBindingDescription> m_vertexBindings;
 
+		bool m_isGraphicsSet;
 
 	public:
 		ShaderSet(const ShaderSet&) = delete;

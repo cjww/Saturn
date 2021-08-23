@@ -14,18 +14,22 @@ namespace sa {
 	private:
 		vr::Renderer* m_renderer;
 
-		vr::ShaderSetPtr m_pShaderSet;
-
+		vr::ShaderSetPtr m_pColorShaders;
+		vr::ShaderSetPtr m_pPostProcessShaders;
 
 		vr::DescriptorSetPtr m_pPerFrameDescriptorSet;
 		vr::Buffer* m_pPerFrameBuffer;
 
+		vr::DescriptorSetPtr m_pInputDescriptorSet;
 
-		uint32_t m_frameBuffer;
+		uint32_t m_mainFramebuffer;
 		vr::Texture* m_pDepthTexture;
+		vr::Texture* m_pMainColorTexture;
 
 		uint32_t m_renderPass;
-		uint32_t m_pipeline;
+		
+		uint32_t m_colorPipeline;
+		uint32_t m_postProcessPipline;
 	
 		vk::DescriptorManager* m_pDescriptorManager;
 

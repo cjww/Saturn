@@ -65,8 +65,9 @@ void EditorView::onImGui() {
 	}
 	ImGui::End();
 
-	ImGui::ShowDemoWindow();
 	*/
+
+	ImGui::ShowDemoWindow();
 }
 
 sa::Camera* EditorView::getCamera() {

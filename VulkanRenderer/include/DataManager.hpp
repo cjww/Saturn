@@ -38,7 +38,6 @@ namespace NAME_SPACE {
 
 	};
 
-
 	class DataManager {
 	private:
 		VmaAllocator m_allocator;

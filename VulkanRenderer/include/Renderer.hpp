@@ -40,6 +40,7 @@ namespace NAME_SPACE {
 		uint32_t subpassCount;
 		std::vector<uint32_t> colorAttachmentCount;
 		std::vector<VkBool32> depthAttachment;
+		std::vector<VkClearValue> clearValues;
 	};
 
 	struct Framebuffer {
@@ -116,7 +117,8 @@ namespace NAME_SPACE {
 		std::vector<Pipeline> m_pipelines;
 
 		VkDescriptorPool m_imGuiDescriptorPool;
-
+		DescriptorSetPtr m_imGuiDescriptorSet;
+		
 		void setupDebug();
 
 		void createInstance();
@@ -144,6 +146,9 @@ namespace NAME_SPACE {
 			const std::vector<VkPushConstantRange>& pushConstantRanges,
 			VkPipelineShaderStageCreateInfo shaderStage);
 
+		VkCommandBuffer beginTransferCommand();
+		void endTransferCommand(const TransferCommand& command);
+
 		Renderer(RenderWindow* window);
 
 		void createImGUIDescriptorPool();
@@ -162,6 +167,7 @@ namespace NAME_SPACE {
 		void endFrameImGUI();
 		void cleanupImGUI();
 
+		void imGuiImage(Texture* texture, const SamplerPtr& sampler);
 
 		uint32_t getNextSwapchainImage();
 
@@ -189,6 +195,14 @@ namespace NAME_SPACE {
 
 		Texture* createTexture2D(const Image& image);
 		Texture* createTexture2D(VkExtent2D extent, unsigned char* pixels, int channels = 4);
+		Texture* createColorAttachmentTexture(VkExtent2D extent, VkFormat format, uint32_t arrayLayers, uint32_t mipLevels, VkSampleCountFlagBits sampleCount, VkImageUsageFlags additionalUsage);
+
+
+		void queueTransferCommand(Buffer* srcBuffer, Texture* dstTexture);
+		void queueTransferCommand(Buffer* srcBuffer, Buffer* dstBuffer);
+		void queueTransferCommand(Texture* srcTexture, Buffer* dstBuffer);
+		void queueTransferCommand(Texture* srcTexture, Texture* dstTexture);
+
 
 		SamplerPtr createSampler(VkFilter minMagFilter, float maxAnisotropy = 16.0f, float minLod = 0.0f, float maxLod = 0.0f, float mipLodBias = 0.0f);
 		SamplerPtr createSampler(VkSamplerCreateInfo info);

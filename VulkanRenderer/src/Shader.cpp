@@ -7,7 +7,9 @@ namespace NAME_SPACE {
 			uint32_t set = m_pCompiler->get_decoration(b.id, spv::Decoration::DecorationDescriptorSet);
 			layoutBinding.binding = m_pCompiler->get_decoration(b.id, spv::Decoration::DecorationBinding);
 			size_t size = 0;
-			if (type != VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE && type != VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER) {
+			if (type != VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE && 
+				type != VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER &&
+				type != VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
 				size = m_pCompiler->get_declared_struct_size(m_pCompiler->get_type(b.type_id));
 			}
 			layoutBinding.stageFlags = m_stage;
@@ -106,13 +108,14 @@ namespace NAME_SPACE {
 		for (auto& it : attribs) {
 			m_vertexAttributes.push_back(it.second);
 		}
+		if (m_vertexAttributes.size() > 0) {
+			VkVertexInputBindingDescription b = {};
+			b.binding = 0;
+			b.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+			b.stride = size;
 
-		VkVertexInputBindingDescription b = {};
-		b.binding = 0;
-		b.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
-		b.stride = size;
-
-		m_vertexBindings = { b };
+			m_vertexBindings = { b };
+		}
 	}
 
 	Shader::Shader(VkDevice device, const char* path, VkShaderStageFlagBits stage) : m_device(device), m_stage(stage) {
@@ -141,6 +144,9 @@ namespace NAME_SPACE {
 
 		addResources(res.storage_images, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, nullptr);
 		addResources(res.storage_buffers, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr);
+
+		addResources(res.subpass_inputs, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, nullptr);
+
 
 		// TODO ...
 
