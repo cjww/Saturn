@@ -41,10 +41,10 @@ void EngineEditor::run() {
 	m_engine.addActiveCamera(static_cast<EditorView*>(m_editorModules.back().get())->getCamera());
 
 	/*
-	*/
 	vr::Image img("../Box.png");
 	vr::Texture* tex = vr::Renderer::get()->createTexture2D(img);
 	vr::SamplerPtr sampler = vr::Renderer::get()->createSampler(VK_FILTER_NEAREST);
+	*/
 
 	EntityID entity = ECSCoordinator::get()->createEntity();
 	ECSCoordinator::get()->addComponent<Transform>(entity);
@@ -63,9 +63,6 @@ void EngineEditor::run() {
 		//onImGui();
 		ImGui::ShowMetricsWindow();
 		/*
-		ImGui::Begin("Test");
-		vr::Renderer::get()->imGuiImage(tex, sampler);
-		ImGui::End();
 		*/
 		
 		
@@ -77,7 +74,7 @@ void EngineEditor::run() {
 
 	}
 
-	sampler.reset();
+	//sampler.reset();
 
 	m_engine.cleanup();
 	

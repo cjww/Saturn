@@ -172,17 +172,18 @@ namespace NAME_SPACE {
 		return image;
 	}
 
-	Texture* DataManager::createDepthImage(VkExtent2D extent) {
-
+	Texture* DataManager::createDepthAttachmentTexture2D(VkExtent2D extent, VkSampleCountFlagBits sampleCount,
+		uint32_t mipLevels, uint32_t arrayLayers) 
+	{
 		auto image = createImage(
 			{ extent.width, extent.height, 1 },
-			1,
+			arrayLayers,
 			getSupportedDepthFormat(),
 			VK_IMAGE_TYPE_2D,
 			VK_IMAGE_LAYOUT_UNDEFINED,
-			1,
+			mipLevels,
 			m_graphicsQueueFamilyIndices,
-			VK_SAMPLE_COUNT_1_BIT,
+			sampleCount,
 			VK_SHARING_MODE_EXCLUSIVE,
 			VK_IMAGE_TILING_OPTIMAL,
 			VK_IMAGE_USAGE_DEPTH_STENCIL_ATTACHMENT_BIT,
@@ -195,19 +196,21 @@ namespace NAME_SPACE {
 		return image;
 	}
 
-	Texture* DataManager::createShaderReadOnlyColorImage2D(VkExtent2D extent) {
+	Texture* DataManager::createColorTexture2D(VkExtent2D extent, VkImageUsageFlags usage, VkSampleCountFlagBits sampleCount,
+		uint32_t mipLevels, uint32_t arrayLayers) 
+	{
 		auto image = createImage(
 			{ extent.width, extent.height, 1 },
-			1,
+			arrayLayers,
 			VK_FORMAT_R8G8B8A8_UNORM,
 			VK_IMAGE_TYPE_2D,
-			VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL,
-			1,
+			VK_IMAGE_LAYOUT_UNDEFINED,
+			mipLevels,
 			m_graphicsQueueFamilyIndices,
-			VK_SAMPLE_COUNT_1_BIT,
+			sampleCount,
 			VK_SHARING_MODE_EXCLUSIVE,
 			VK_IMAGE_TILING_OPTIMAL,
-			VK_IMAGE_USAGE_SAMPLED_BIT,
+			usage,
 			VMA_MEMORY_USAGE_GPU_ONLY,
 			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
 		);

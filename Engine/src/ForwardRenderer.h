@@ -37,6 +37,9 @@ namespace sa {
 		vk::MeshRenderSystem* m_pMeshRenderSystem;
 		vk::DescriptorCreationSystem* m_pDescriptorCreationSystem;
 
+		vr::Texture* m_testTex;
+		vr::SamplerPtr m_testSampler;
+
 	public:
 		ForwardRenderer();
 

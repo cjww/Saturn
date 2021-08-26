@@ -304,7 +304,7 @@ namespace NAME_SPACE {
 	void Renderer::cleanup() {
 		delete m_pMyInstance;
 	}
-	void Renderer::initImGUI(uint32_t renderpass) {
+	void Renderer::initImGUI(uint32_t renderpass, uint32_t subpass) {
 		IMGUI_CHECKVERSION();
 		auto context = ImGui::CreateContext();
 		ImGui::SetCurrentContext(context);
@@ -316,6 +316,7 @@ namespace NAME_SPACE {
 
 		createImGUIDescriptorPool();
 		auto info = getImGUIInitInfo();
+		info.Subpass = subpass;
 		ImGui_ImplGlfw_InitForVulkan(m_window->getWindowHandle(), true);
 		ImGui_ImplVulkan_Init(&info, m_renderPasses[renderpass].renderPass);
 
@@ -341,25 +342,6 @@ namespace NAME_SPACE {
 		vkQueueWaitIdle(m_graphicsQueue);
 
 		vkFreeCommandBuffers(m_device, m_graphicsCommandPool, 1, &commandBuffer);
-		m_imGuiDescriptorSet = std::make_shared<DescriptorSet>();
-		m_imGuiDescriptorSet->descriptorSets.resize(m_swapChain.images.size());
-		m_imGuiDescriptorSet->writes.resize(m_swapChain.images.size());
-		for (int i = 0; i < m_swapChain.images.size(); i++) {
-			//m_imGuiDescriptorSet->descriptorSets[i] = ImGui_ImplVulkan_AllocateDescriptorSet();
-
-			m_imGuiDescriptorSet->writes[i].sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
-			m_imGuiDescriptorSet->writes[i].pNext = nullptr;
-			m_imGuiDescriptorSet->writes[i].descriptorCount = 1;
-			m_imGuiDescriptorSet->writes[i].descriptorType = VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER;
-			m_imGuiDescriptorSet->writes[i].dstArrayElement = 0;
-			m_imGuiDescriptorSet->writes[i].dstBinding = 0;
-			m_imGuiDescriptorSet->writes[i].dstSet = m_imGuiDescriptorSet->descriptorSets[i];
-			m_imGuiDescriptorSet->writes[i].pBufferInfo = nullptr;
-			m_imGuiDescriptorSet->writes[i].pImageInfo = nullptr;
-			m_imGuiDescriptorSet->writes[i].pTexelBufferView = nullptr;
-		}
-		m_imGuiDescriptorSet->setIndex = 0;
-
 	}
 
 	void Renderer::newFrameImGUI() {
@@ -382,18 +364,12 @@ namespace NAME_SPACE {
 	}
 
 	void Renderer::imGuiImage(Texture* texture, const SamplerPtr& sampler) {
-		updateDescriptorSet(m_imGuiDescriptorSet, 0, nullptr, texture, sampler, true);
-		/*
-		ImGui::GetWindowDrawList()->AddCallback([](const ImDrawList* parent_list, const ImDrawCmd* cmd) {
-			Renderer* r = (Renderer*)cmd->UserCallbackData;
-			ImGui_ImplVulkan_cmdBindDescriptorSet(r->m_graphicsCommandBuffers[r->m_frameIndex], r->m_imGuiDescriptorSet->descriptorSets[r->m_frameIndex]);
-		}, this);
-		ImGui::Image(0, {0, 0});
-
-		ImGui::GetWindowDrawList()->AddCallback(ImDrawCallback_ResetRenderState, nullptr);
-		*/
-		ImGui::Image(&m_imGuiDescriptorSet.get()->descriptorSets[m_frameIndex],
-			{ (float)texture->extent.width, (float)texture->extent.height });
+		
+		if (m_imGuiImages.find(texture) == m_imGuiImages.end()) {
+			m_imGuiImages.insert(std::make_pair(texture, ImGui_ImplVulkan_AddTexture(*sampler, texture->view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)));
+		}
+		ImTextureID tex = m_imGuiImages.at(texture);
+		ImGui::Image(tex, { (float)texture->extent.width, (float)texture->extent.height });
 	}
 
 	uint32_t Renderer::getNextSwapchainImage() {
@@ -655,13 +631,25 @@ namespace NAME_SPACE {
 		return m_pipelines.size() - 1;
 	}
 
-	VkCommandBuffer Renderer::beginTransferCommand() {
+	VkCommandBuffer Renderer::beginTransferCommand(const Framebuffer& framebuffer, const RenderPass& renderPass, uint32_t subpass) {
+
+		VkCommandBufferInheritanceInfo inheritanceInfo = {};
+		inheritanceInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_INHERITANCE_INFO;
+		inheritanceInfo.pNext = nullptr;
+		inheritanceInfo.occlusionQueryEnable = false;
+		inheritanceInfo.pipelineStatistics = 0;
+		inheritanceInfo.queryFlags = 0;
+
+		inheritanceInfo.framebuffer = framebuffer.framebuffers[(m_frameIndex + 1) % m_swapChain.images.size()];
+		inheritanceInfo.renderPass = renderPass.renderPass;
+		inheritanceInfo.subpass = subpass;
 
 		VkCommandBufferBeginInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
 		info.pNext = nullptr;
 		info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
-		info.pInheritanceInfo = nullptr;
+		info.pInheritanceInfo = &inheritanceInfo;
+
 		if (m_transferCommandQueue.size() == m_transferCommandBuffers.size()) {
 			//throw std::runtime_error("Transfer overflow"); //TODO Fix this
 			size_t oldSize = m_transferCommandBuffers.size();
@@ -684,18 +672,33 @@ namespace NAME_SPACE {
 		m_transferCommandQueue.push_back(command);
 	}
 
-	Texture* Renderer::createDepthImage(VkExtent2D extent) {
-		return m_pDataManager->createDepthImage(extent);
+	Texture* Renderer::createDepthTexture(VkExtent2D extent) {
+		return m_pDataManager->createDepthAttachmentTexture2D(
+			extent,
+			VK_SAMPLE_COUNT_1_BIT);
 	}
 
-	Texture* Renderer::createTexture2D(const Image& image) {
-		return createTexture2D(image.getExtent(), image.getPixels(), image.getChannelCount());
+	Texture* Renderer::createTexture2D(uint32_t framebuffer, uint32_t renderpass, uint32_t subpass, const Image& image) {
+		return createTexture2D(framebuffer, renderpass, subpass, image.getExtent(), image.getPixels(), image.getChannelCount());
 	}
 
-	Texture* Renderer::createTexture2D(VkExtent2D extent, unsigned char* pixels, int channels) {
-		auto image = m_pDataManager->createShaderReadOnlyColorImage2D(extent);
+	Texture* Renderer::createTexture2D(uint32_t framebuffer, uint32_t renderpass, uint32_t subpass, VkExtent2D extent, unsigned char* pixels, int channels) {
+		auto image = m_pDataManager->createColorTexture2D(
+			extent,
+			VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+			VK_SAMPLE_COUNT_1_BIT,
+			1,
+			1);
 
 		Buffer* buffer = m_pDataManager->createBuffer(image->extent.width * image->extent.height * channels, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, pixels);
+
+		queueTransferCommand(
+			framebuffer,
+			renderpass,
+			subpass,
+			buffer,
+			image);
+
 
 		return image;
 	}
@@ -726,9 +729,22 @@ namespace NAME_SPACE {
 		return image;
 	}
 
-	void Renderer::queueTransferCommand(Buffer* srcBuffer, Texture* dstTexture) {
+	void Renderer::queueTransferCommand(uint32_t framebuffer, uint32_t renderpass, uint32_t subpass, Buffer* srcBuffer, Texture* dstTexture) {
 
-		VkCommandBuffer commandBuffer = beginTransferCommand();
+		VkCommandBuffer commandBuffer = beginTransferCommand(m_framebuffers.at(framebuffer), m_renderPasses.at(renderpass), subpass);
+
+		VkImageMemoryBarrier copy_barrier = {};
+		copy_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		copy_barrier.dstAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		copy_barrier.oldLayout = dstTexture->layout;
+		copy_barrier.newLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		copy_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		copy_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		copy_barrier.image = dstTexture->image;
+		copy_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		copy_barrier.subresourceRange.levelCount = 1;
+		copy_barrier.subresourceRange.layerCount = 1;
+		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_TRANSFER_BIT, 0, 0, NULL, 0, NULL, 1, &copy_barrier);
 
 		VkBufferImageCopy copy = {};
 		copy.imageExtent = dstTexture->extent;
@@ -742,7 +758,21 @@ namespace NAME_SPACE {
 		copy.bufferOffset = 0;
 		copy.bufferRowLength = 0;
 		
-		vkCmdCopyBufferToImage(commandBuffer, srcBuffer->buffer, dstTexture->image, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL, 1, &copy);
+		vkCmdCopyBufferToImage(commandBuffer, srcBuffer->buffer, dstTexture->image, VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL, 1, &copy);
+
+		VkImageMemoryBarrier use_barrier = {};
+		use_barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		use_barrier.srcAccessMask = VK_ACCESS_TRANSFER_WRITE_BIT;
+		use_barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		use_barrier.oldLayout = VK_IMAGE_LAYOUT_TRANSFER_DST_OPTIMAL;
+		use_barrier.newLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		use_barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		use_barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		use_barrier.image = dstTexture->image;
+		use_barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		use_barrier.subresourceRange.levelCount = 1;
+		use_barrier.subresourceRange.layerCount = 1;
+		vkCmdPipelineBarrier(commandBuffer, VK_PIPELINE_STAGE_TRANSFER_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, NULL, 0, NULL, 1, &use_barrier);
 
 
 		TransferCommand transferCommand = {};
@@ -752,8 +782,10 @@ namespace NAME_SPACE {
 		transferCommand.type = TransferCommand::Type::BUFFER_TO_IMAGE;
 		endTransferCommand(transferCommand);
 
+		dstTexture->layout = use_barrier.newLayout;
 	}
 
+	/*
 	void Renderer::queueTransferCommand(Buffer* srcBuffer, Buffer* dstBuffer) {
 
 		VkCommandBuffer commandBuffer = beginTransferCommand();
@@ -826,6 +858,7 @@ namespace NAME_SPACE {
 		transferCommand.type = TransferCommand::Type::IMAGE_TO_IMAGE;
 		endTransferCommand(transferCommand);
 	}
+	*/
 
 	SamplerPtr Renderer::createSampler(VkFilter minMagFilter, float maxAnisotropy, float minLod, float maxLod, float mipLodBias) {
 		SamplerPtr sampler(new VkSampler, [&](VkSampler* sampler) {

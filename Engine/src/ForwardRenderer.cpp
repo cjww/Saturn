@@ -13,7 +13,7 @@ namespace sa {
 		glm::ivec2 extent = m_renderer->getWindow()->getCurrentExtent();
 
 
-		m_pDepthTexture = m_renderer->createDepthImage({ (uint32_t)extent.x, (uint32_t)extent.y });
+		m_pDepthTexture = m_renderer->createDepthTexture({ (uint32_t)extent.x, (uint32_t)extent.y });
 		m_pMainColorTexture = m_renderer->createColorAttachmentTexture(
 			{ (uint32_t)extent.x, (uint32_t)extent.y },
 			VK_FORMAT_R8G8B8A8_UNORM,
@@ -100,7 +100,7 @@ namespace sa {
 		m_postProcessPipline = m_renderer->createPipeline(m_pPostProcessShaders, m_renderPass, 1);
 
 		if (m_useImGui) {
-			m_renderer->initImGUI(m_renderPass);
+			m_renderer->initImGUI(m_renderPass, 1);
 		}
 
 		ECSCoordinator::get()->registerComponent<Model>();
@@ -126,17 +126,21 @@ namespace sa {
 
 		m_pPerFrameDescriptorSet = m_pColorShaders->getDescriptorSet(SET_PER_FRAME);
 		m_renderer->updateDescriptorSet(m_pPerFrameDescriptorSet, 0, m_pPerFrameBuffer, nullptr, nullptr, true);
-
+		
 		m_pInputDescriptorSet = m_pPostProcessShaders->getDescriptorSet(0);
 		VkImageLayout layout = m_pMainColorTexture->layout;
 		m_pMainColorTexture->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		m_renderer->updateDescriptorSet(m_pInputDescriptorSet, 0, nullptr, m_pMainColorTexture, nullptr, true);
 		m_pMainColorTexture->layout = layout;
-		
 
+		vr::Image img("../Box.png");
+		m_testTex = vr::Renderer::get()->createTexture2D(m_mainFramebuffer, m_renderPass, 0, img);
+		m_testSampler = vr::Renderer::get()->createSampler(VK_FILTER_NEAREST);
 	}
 
 	void ForwardRenderer::cleanup() {
+
+		m_testSampler.reset();
 
 		m_pColorShaders.reset();
 		m_pPostProcessShaders.reset();
@@ -197,6 +201,12 @@ namespace sa {
 		m_renderer->draw(6, 1);
 		
 		if (m_useImGui) {
+			ImGui::Begin("Test");
+			vr::Renderer::get()->imGuiImage(m_testTex, m_testSampler);
+			//vr::Renderer::get()->imGuiImage(m_pMainColorTexture, m_testSampler);
+
+			ImGui::End();
+
 			m_renderer->endFrameImGUI();
 		}
 		m_renderer->endRenderPass();

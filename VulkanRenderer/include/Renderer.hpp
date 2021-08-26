@@ -117,8 +117,8 @@ namespace NAME_SPACE {
 		std::vector<Pipeline> m_pipelines;
 
 		VkDescriptorPool m_imGuiDescriptorPool;
-		DescriptorSetPtr m_imGuiDescriptorSet;
-		
+		std::unordered_map<Texture*, ImTextureID> m_imGuiImages;
+
 		void setupDebug();
 
 		void createInstance();
@@ -146,7 +146,7 @@ namespace NAME_SPACE {
 			const std::vector<VkPushConstantRange>& pushConstantRanges,
 			VkPipelineShaderStageCreateInfo shaderStage);
 
-		VkCommandBuffer beginTransferCommand();
+		VkCommandBuffer beginTransferCommand(const Framebuffer& framebuffer, const RenderPass& renderPass, uint32_t subpass);
 		void endTransferCommand(const TransferCommand& command);
 
 		Renderer(RenderWindow* window);
@@ -162,7 +162,7 @@ namespace NAME_SPACE {
 		static Renderer* get();
 		static void cleanup();
 
-		void initImGUI(uint32_t renderpass);
+		void initImGUI(uint32_t renderpass, uint32_t subpass);
 		void newFrameImGUI();
 		void endFrameImGUI();
 		void cleanupImGUI();
@@ -191,17 +191,18 @@ namespace NAME_SPACE {
 		uint32_t createPipeline(const ShaderSetPtr& shaderSet, uint32_t renderPass = 0, uint32_t subpassIndex = 0);
 
 		//Resource creation
-		Texture* createDepthImage(VkExtent2D extent);
+		Texture* createDepthTexture(VkExtent2D extent);
 
-		Texture* createTexture2D(const Image& image);
-		Texture* createTexture2D(VkExtent2D extent, unsigned char* pixels, int channels = 4);
+		Texture* createTexture2D(uint32_t framebuffer, uint32_t renderpass, uint32_t subpass, const Image& image);
+		Texture* createTexture2D(uint32_t framebuffer, uint32_t renderpass, uint32_t subpass, VkExtent2D extent, unsigned char* pixels, int channels = 4);
 		Texture* createColorAttachmentTexture(VkExtent2D extent, VkFormat format, uint32_t arrayLayers, uint32_t mipLevels, VkSampleCountFlagBits sampleCount, VkImageUsageFlags additionalUsage);
 
-
-		void queueTransferCommand(Buffer* srcBuffer, Texture* dstTexture);
+		void queueTransferCommand(uint32_t framebuffer, uint32_t renderpass, uint32_t subpass, Buffer* srcBuffer, Texture* dstTexture);
+		/*
 		void queueTransferCommand(Buffer* srcBuffer, Buffer* dstBuffer);
 		void queueTransferCommand(Texture* srcTexture, Buffer* dstBuffer);
 		void queueTransferCommand(Texture* srcTexture, Texture* dstTexture);
+		*/
 
 
 		SamplerPtr createSampler(VkFilter minMagFilter, float maxAnisotropy = 16.0f, float minLod = 0.0f, float maxLod = 0.0f, float mipLodBias = 0.0f);
