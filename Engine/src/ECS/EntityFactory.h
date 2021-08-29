@@ -28,4 +28,5 @@ public:
 	void setEntitySignature(EntityID entity, ComponentMask siganture);
 
 	uint32_t getEntityCount() const;
+	std::vector<EntityID> getActiveEntities() const;
 };

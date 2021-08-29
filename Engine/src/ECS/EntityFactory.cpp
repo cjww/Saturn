@@ -18,6 +18,7 @@ EntityID EntityFactory::createEntity() {
 }
 
 void EntityFactory::destroyEntity(EntityID id) {
+	m_entitySignatures[id].reset();
 	m_availableEntities.push(id);
 }
 
@@ -31,4 +32,15 @@ void EntityFactory::setEntitySignature(EntityID entity, ComponentMask signature)
 
 uint32_t EntityFactory::getEntityCount() const {
 	return m_createdEntityCount - m_availableEntities.size();
+}
+
+std::vector<EntityID> EntityFactory::getActiveEntities() const {
+	std::vector<EntityID> entites;
+	entites.reserve(getEntityCount());
+	for (EntityID i = 0; i < m_createdEntityCount; i++) {
+		if (m_entitySignatures.find(i) != m_entitySignatures.end() && !m_entitySignatures.at(i).none()) {
+			entites.push_back(i);
+		}
+	}
+	return std::move(entites);
 }

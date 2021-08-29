@@ -13,18 +13,6 @@ void EngineEditor::onImGui() {
 		module->onImGui();
 	}
 
-	ImGui::Begin("Entities");
-	if (ImGui::Button("New Entity")) {
-		EntityID entity = ECSCoordinator::get()->createEntity();
-		Transform* transform = ECSCoordinator::get()->addComponent<Transform>(entity);
-		ECSCoordinator::get()->addComponent<Model>(entity)->modelID = sa::ResourceManager::get()->loadQuad();
-		transform->position = glm::vec3(0, 0, -(rand() % 10));
-	}
-	ImGui::Text("Nr of entities: %d", ECSCoordinator::get()->getEntityCount());
-	ImGui::End();
-	/*
-	*/
-
 }
 
 EngineEditor::EngineEditor()
@@ -40,6 +28,9 @@ void EngineEditor::run() {
 
 	m_editorModules.push_back(std::make_unique<EditorView>(&m_engine, &m_window));
 	m_engine.addActiveCamera(static_cast<EditorView*>(m_editorModules.back().get())->getCamera());
+
+	m_editorModules.push_back(std::make_unique<SceneView>(&m_engine));
+
 
 	EntityID entity = ECSCoordinator::get()->createEntity();
 	ECSCoordinator::get()->addComponent<Transform>(entity);

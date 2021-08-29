@@ -175,6 +175,7 @@
     <ClCompile Include="src\EditorView.cpp" />
     <ClCompile Include="src\EngineEditor.cpp" />
     <ClCompile Include="src\main.cpp" />
+    <ClCompile Include="src\SceneView.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\Engine\Engine.vcxproj">
@@ -185,6 +186,7 @@
     <ClInclude Include="src\EditorView.h" />
     <ClInclude Include="src\EngineEditor.h" />
     <ClInclude Include="src\EditorModule.h" />
+    <ClInclude Include="src\SceneView.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

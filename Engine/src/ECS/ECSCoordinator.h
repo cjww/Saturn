@@ -23,6 +23,8 @@ public:
 
 	uint32_t getEntityCount() const;
 
+	std::vector<EntityID> getActiveEntities() const;
+
 	// get the type id of a component
 	template<typename T>
 	ComponentType getComponentType() const;

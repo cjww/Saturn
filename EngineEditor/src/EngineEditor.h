@@ -4,6 +4,7 @@
 #include <Engine.h>
 
 #include "EditorView.h"
+#include "SceneView.h"
 
 class EngineEditor {
 private:

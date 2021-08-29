@@ -34,3 +34,7 @@ void ECSCoordinator::destroyEntity(EntityID entity) {
 uint32_t ECSCoordinator::getEntityCount() const {
 	return m_entityFactory.getEntityCount();
 }
+
+std::vector<EntityID> ECSCoordinator::getActiveEntities() const {
+	return std::move(m_entityFactory.getActiveEntities());
+}
