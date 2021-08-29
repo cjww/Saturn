@@ -22,5 +22,9 @@ namespace sa {
 		virtual void addCamera(Camera* camera);
 		virtual void removeCamera(Camera* camera);
 
+		virtual vr::Texture* getOutputTexture() const = 0;
+
+		virtual vr::Texture* createShaderTexture2D(const vr::Image& img) = 0;
+		
 	};
 }

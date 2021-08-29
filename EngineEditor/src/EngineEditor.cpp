@@ -1,16 +1,17 @@
 #include "EngineEditor.h"
 
 void EngineEditor::onImGui() {
+	
+
+	ImGuiID viewPortDockSpaceID = ImGui::DockSpaceOverViewport();
+	if (ImGui::BeginMainMenuBar()) {
+		ImGui::Text("Saturn 3");
+	}
+	ImGui::EndMainMenuBar();
+
 	for (auto& module : m_editorModules) {
 		module->onImGui();
 	}
-
-	//const ImU32 col = ImColor(1, 0, 0, 1);
-	//ImGui::GetWindowDrawList()->AddCircleFilled(ImVec2(0, 0), 50, col, 8);
-	
-	//ImGui::GetWindowDrawList()->PushClipRectFullScreen();
-	//ImGui::GetWindowDrawList()->AddLine(ImVec2(0, 0), ImVec2(10, 10), col, 1.f);
-	//ImGui::GetWindowDrawList()->PopClipRect();
 
 	ImGui::Begin("Entities");
 	if (ImGui::Button("New Entity")) {
@@ -40,12 +41,6 @@ void EngineEditor::run() {
 	m_editorModules.push_back(std::make_unique<EditorView>(&m_engine, &m_window));
 	m_engine.addActiveCamera(static_cast<EditorView*>(m_editorModules.back().get())->getCamera());
 
-	/*
-	vr::Image img("../Box.png");
-	vr::Texture* tex = vr::Renderer::get()->createTexture2D(img);
-	vr::SamplerPtr sampler = vr::Renderer::get()->createSampler(VK_FILTER_NEAREST);
-	*/
-
 	EntityID entity = ECSCoordinator::get()->createEntity();
 	ECSCoordinator::get()->addComponent<Transform>(entity);
 	ECSCoordinator::get()->addComponent<Model>(entity)->modelID = sa::ResourceManager::get()->loadQuad();
@@ -60,10 +55,8 @@ void EngineEditor::run() {
 		m_window.pollEvents();
 		m_engine.recordImGui();
 
-		//onImGui();
-		ImGui::ShowMetricsWindow();
-		/*
-		*/
+
+		onImGui();
 		
 		
 		m_engine.update();
@@ -74,7 +67,7 @@ void EngineEditor::run() {
 
 	}
 
-	//sampler.reset();
+	m_editorModules.clear();
 
 	m_engine.cleanup();
 	

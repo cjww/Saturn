@@ -25,6 +25,7 @@ namespace sa {
 		uint32_t m_mainFramebuffer;
 		vr::Texture* m_pDepthTexture;
 		vr::Texture* m_pMainColorTexture;
+		vr::Texture* m_pOutputTexture;
 
 		uint32_t m_renderPass;
 		
@@ -37,9 +38,6 @@ namespace sa {
 		vk::MeshRenderSystem* m_pMeshRenderSystem;
 		vk::DescriptorCreationSystem* m_pDescriptorCreationSystem;
 
-		vr::Texture* m_testTex;
-		vr::SamplerPtr m_testSampler;
-
 	public:
 		ForwardRenderer();
 
@@ -50,6 +48,10 @@ namespace sa {
 
 		virtual void draw() override;
 
+		virtual vr::Texture* getOutputTexture() const override;
+
+		virtual vr::Texture* createShaderTexture2D(const vr::Image& img) override;
+		
 	};
 
 }

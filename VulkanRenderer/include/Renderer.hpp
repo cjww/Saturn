@@ -167,7 +167,7 @@ namespace NAME_SPACE {
 		void endFrameImGUI();
 		void cleanupImGUI();
 
-		void imGuiImage(Texture* texture, const SamplerPtr& sampler);
+		ImTextureID getImTextureID(Texture* texture, const SamplerPtr& sampler);
 
 		uint32_t getNextSwapchainImage();
 
@@ -239,6 +239,8 @@ namespace NAME_SPACE {
 		void beginRenderPass(uint32_t renderPass, uint32_t framebuffer, VkSubpassContents contents, glm::vec3 clearColor = glm::vec3(0.0f));
 		void nextSubpass(VkSubpassContents contents);
 		void endRenderPass();
+
+		void transferTextureLayout(Texture* texture, VkImageLayout newLayout, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
 
 		void bindPipeline(uint32_t pipeline, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
 		void bindVertexBuffer(const Buffer* vertexBuffer, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);

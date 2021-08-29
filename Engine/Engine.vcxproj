@@ -196,6 +196,7 @@
     <ClCompile Include="src\ForwardRenderer.cpp" />
     <ClCompile Include="src\IRenderTechnique.cpp" />
     <ClCompile Include="src\ResourceManager.cpp" />
+    <ClCompile Include="src\Tools\Math.cpp" />
     <ClCompile Include="src\Tools\ScopeTimer.cpp" />
     <ClCompile Include="src\Tools\StopWatch.cpp" />
   </ItemGroup>
@@ -211,6 +212,7 @@
     <ClInclude Include="src\ForwardRenderer.h" />
     <ClInclude Include="src\IRenderTechnique.h" />
     <ClInclude Include="src\structs.h" />
+    <ClInclude Include="src\Tools\Math.h" />
     <ClInclude Include="src\Vertex.h" />
     <ClInclude Include="src\ECS\ECSCoordinator.h" />
     <ClInclude Include="src\ECS\Entity.h" />

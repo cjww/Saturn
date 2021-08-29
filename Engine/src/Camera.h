@@ -40,8 +40,8 @@ namespace sa {
 		glm::vec3 getUp() const;
 		glm::vec3 getRight() const;
 
-		glm::mat4 getViewMatrix();
-		glm::mat4 getProjectionMatrix();
+		glm::mat4 getViewMatrix() const;
+		glm::mat4 getProjectionMatrix() const;
 
 		Rect getViewport() const;
 

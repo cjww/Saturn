@@ -10,33 +10,36 @@ namespace sa {
 		m_renderer = vr::Renderer::get();
 		m_useImGui = setupImGui;
 
-		glm::ivec2 extent = m_renderer->getWindow()->getCurrentExtent();
 
-
-		m_pDepthTexture = m_renderer->createDepthTexture({ (uint32_t)extent.x, (uint32_t)extent.y });
+		glm::ivec2 windowExtent = m_renderer->getWindow()->getCurrentExtent();
+		
+		m_pDepthTexture = m_renderer->createDepthTexture({ (uint32_t)windowExtent.x, (uint32_t)windowExtent.y });
 		m_pMainColorTexture = m_renderer->createColorAttachmentTexture(
-			{ (uint32_t)extent.x, (uint32_t)extent.y },
+			{ (uint32_t)windowExtent.x, (uint32_t)windowExtent.y },
 			VK_FORMAT_R8G8B8A8_UNORM,
 			1,
 			1,
 			VK_SAMPLE_COUNT_1_BIT,
 			VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT);
 
-		VkAttachmentDescription colorAttachment = {};
-		colorAttachment.flags = 0;
-		colorAttachment.format = m_pMainColorTexture->format;
-		colorAttachment.initialLayout = m_pMainColorTexture->layout;
-		colorAttachment.finalLayout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		colorAttachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
-		colorAttachment.storeOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-		colorAttachment.samples = m_pMainColorTexture->sampleCount;
-		colorAttachment.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE;
-		colorAttachment.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE;
-
 		std::vector<VkAttachmentDescription> attachments(3);
 		attachments[0] = m_renderer->getSwapchainAttachment();
-		attachments[1] = colorAttachment;
+		attachments[1] = vr::getColorAttachment(m_pMainColorTexture->format, m_pMainColorTexture->sampleCount);
 		attachments[2] = vr::getDepthAttachment(m_pDepthTexture->format, m_pDepthTexture->sampleCount);
+
+		if (m_useImGui) {
+
+			m_pOutputTexture = m_renderer->createColorAttachmentTexture(
+				{ (uint32_t)windowExtent.x, (uint32_t)windowExtent.y },
+				VK_FORMAT_R8G8B8A8_UNORM,
+				1,
+				1,
+				VK_SAMPLE_COUNT_1_BIT,
+				VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+		
+			attachments.push_back(vr::getColorAttachment(m_pOutputTexture->format, m_pOutputTexture->sampleCount));
+		}
+		
 
 		std::vector<VkAttachmentReference> firstPassReferences(2);
 		firstPassReferences[0].attachment = 1;
@@ -46,12 +49,19 @@ namespace sa {
 		firstPassReferences[1].layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
 
 		std::vector<VkAttachmentReference> secondPassReferences(2);
-		secondPassReferences[0].attachment = 0;
+		secondPassReferences[0].attachment = m_useImGui ? 3 : 0;
 		secondPassReferences[0].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 		secondPassReferences[1].attachment = 1;
 		secondPassReferences[1].layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 
+		std::vector<VkAttachmentReference> thirdPassReference(2);
+		thirdPassReference[0].attachment = 0;
+		thirdPassReference[0].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+
+		thirdPassReference[1].attachment = 3;
+		thirdPassReference[1].layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		
 
 
 		std::vector<VkSubpassDescription> subpasses(2);
@@ -63,7 +73,6 @@ namespace sa {
 		subpasses[0].colorAttachmentCount = 1;
 		subpasses[0].pColorAttachments = &firstPassReferences[0];
 		subpasses[0].pDepthStencilAttachment = &firstPassReferences[1];
-		
 
 		subpasses[1].flags = 0;
 		subpasses[1].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
@@ -75,18 +84,48 @@ namespace sa {
 		subpasses[1].pColorAttachments = &secondPassReferences[0];
 		subpasses[1].pDepthStencilAttachment = nullptr;
 
-		VkSubpassDependency subpassDependency = {};
-		subpassDependency.dependencyFlags = 0;
-		subpassDependency.srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
-		subpassDependency.srcStageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
-		subpassDependency.srcSubpass = 0;
-		subpassDependency.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
-		subpassDependency.dstStageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
-		subpassDependency.dstSubpass = 1;
+		if (m_useImGui) {
+			subpasses.resize(3);
+			subpasses[2].flags = 0;
+			subpasses[2].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
+			subpasses[2].inputAttachmentCount = 1;
+			subpasses[2].pInputAttachments = &thirdPassReference[1];
+			subpasses[2].preserveAttachmentCount = 0;
 		
-		m_renderPass = m_renderer->createRenderPass(attachments, subpasses, { subpassDependency });
+			subpasses[2].colorAttachmentCount = 1;
+			subpasses[2].pColorAttachments = &thirdPassReference[0];
+			subpasses[2].pDepthStencilAttachment = nullptr;
+		}
+
+		std::vector<VkSubpassDependency> subpassDependencies(1);
+		subpassDependencies[0].dependencyFlags = 0;
+		subpassDependencies[0].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+		subpassDependencies[0].srcStageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+		subpassDependencies[0].srcSubpass = 0;
+		subpassDependencies[0].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+		subpassDependencies[0].dstStageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+		subpassDependencies[0].dstSubpass = 1;
+
+		if (m_useImGui) {
+			subpassDependencies.resize(2);
+			subpassDependencies[1].dependencyFlags = 0;
+			subpassDependencies[1].srcAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT;
+			subpassDependencies[1].srcStageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+			subpassDependencies[1].srcSubpass = 1;
+			subpassDependencies[1].dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_READ_BIT;
+			subpassDependencies[1].dstStageMask = VK_PIPELINE_STAGE_ALL_GRAPHICS_BIT;
+			subpassDependencies[1].dstSubpass = 2;
+		}
+
+
+		m_renderPass = m_renderer->createRenderPass(attachments, subpasses, subpassDependencies);
 		
-		m_mainFramebuffer = m_renderer->createSwapchainFramebuffer(m_renderPass, { m_pMainColorTexture, m_pDepthTexture });
+		std::vector<vr::Texture*> additionalAttachments = { m_pMainColorTexture, m_pDepthTexture };
+		if (m_useImGui) {
+			additionalAttachments.push_back(m_pOutputTexture);
+		}
+
+		m_mainFramebuffer = m_renderer->createSwapchainFramebuffer(m_renderPass, additionalAttachments);
 
 		vr::ShaderPtr vertexShader = m_renderer->createShader("../Engine/shaders/TextureVertexShader.spv", VK_SHADER_STAGE_VERTEX_BIT);
 		vr::ShaderPtr fragmentShader = m_renderer->createShader("../Engine/shaders/TextureFragmentShader.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
@@ -100,7 +139,7 @@ namespace sa {
 		m_postProcessPipline = m_renderer->createPipeline(m_pPostProcessShaders, m_renderPass, 1);
 
 		if (m_useImGui) {
-			m_renderer->initImGUI(m_renderPass, 1);
+			m_renderer->initImGUI(m_renderPass, 2);
 		}
 
 		ECSCoordinator::get()->registerComponent<Model>();
@@ -133,14 +172,9 @@ namespace sa {
 		m_renderer->updateDescriptorSet(m_pInputDescriptorSet, 0, nullptr, m_pMainColorTexture, nullptr, true);
 		m_pMainColorTexture->layout = layout;
 
-		vr::Image img("../Box.png");
-		m_testTex = vr::Renderer::get()->createTexture2D(m_mainFramebuffer, m_renderPass, 0, img);
-		m_testSampler = vr::Renderer::get()->createSampler(VK_FILTER_NEAREST);
 	}
 
 	void ForwardRenderer::cleanup() {
-
-		m_testSampler.reset();
 
 		m_pColorShaders.reset();
 		m_pPostProcessShaders.reset();
@@ -200,13 +234,10 @@ namespace sa {
 
 		m_renderer->draw(6, 1);
 		
+
 		if (m_useImGui) {
-			ImGui::Begin("Test");
-			vr::Renderer::get()->imGuiImage(m_testTex, m_testSampler);
-			//vr::Renderer::get()->imGuiImage(m_pMainColorTexture, m_testSampler);
 
-			ImGui::End();
-
+			m_renderer->nextSubpass(VK_SUBPASS_CONTENTS_INLINE);
 			m_renderer->endFrameImGUI();
 		}
 		m_renderer->endRenderPass();
@@ -214,5 +245,13 @@ namespace sa {
 		m_renderer->endFrame();
 		m_renderer->present();
 
+	}
+
+	vr::Texture* ForwardRenderer::getOutputTexture() const {
+		return m_pOutputTexture;
+	}
+
+	vr::Texture* ForwardRenderer::createShaderTexture2D(const vr::Image& img) {
+		return m_renderer->createTexture2D(m_mainFramebuffer, m_renderPass, 0, img);
 	}
 }

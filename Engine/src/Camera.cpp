@@ -67,11 +67,11 @@ namespace sa {
     }
 
 
-    glm::mat4 Camera::getViewMatrix() {
+    glm::mat4 Camera::getViewMatrix() const {
         return glm::lookAt(m_position, m_position + m_forward, m_up);
     }
 
-    glm::mat4 Camera::getProjectionMatrix() {
+    glm::mat4 Camera::getProjectionMatrix() const {
         return m_projMat;
     }
 

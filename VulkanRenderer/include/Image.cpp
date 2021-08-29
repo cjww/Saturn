@@ -15,6 +15,52 @@ namespace NAME_SPACE {
 
 	}
 
+	Image::Image(VkExtent2D extent, glm::vec4 color) : Image(extent.width, extent.height, color){
+
+	}
+
+	Image::Image(VkExtent2D extent, glm::vec3 color) : Image(extent.width, extent.height, color){
+		
+	}
+
+	Image::Image(int width, int height, glm::vec4 color) {
+		m_width = width;
+		m_height = height;
+		m_channels = 4;
+		int imageSize = m_width * m_height * m_channels;
+		m_pixels = new unsigned char[imageSize];
+		for (int i = 0; i < imageSize; i += m_channels) {
+			m_pixels[i] = (unsigned char)color.r * 255;
+			m_pixels[i + 1] = (unsigned char)color.g * 255;
+			m_pixels[i + 2] = (unsigned char)color.b * 255;
+			m_pixels[i + 3] = (unsigned char)color.a * 255;
+		}
+	}
+
+	Image::Image(int width, int height, glm::vec3 color) {
+		m_width = width;
+		m_height = height;
+		m_channels = 3;
+		int imageSize = m_width * m_height * m_channels;
+		m_pixels = (unsigned char*)STBI_MALLOC(imageSize);
+		for (int i = 0; i < imageSize; i += m_channels) {
+			m_pixels[i] = (unsigned char)color.r * 255;
+			m_pixels[i + 1] = (unsigned char)color.g * 255;
+			m_pixels[i + 2] = (unsigned char)color.b * 255;
+		}
+	}
+
+	Image::Image(VkExtent2D extent, unsigned char* pixels, int channels) : Image(extent.width, extent.height, pixels, channels) {
+		
+	}
+	
+	Image::Image(int width, int height, unsigned char* pixels, int channels) {
+		m_width = width;
+		m_height = height;
+		m_channels = channels;
+		m_pixels = pixels;
+	}
+
 	Image::Image(const Image& other) {
 		m_channels = other.m_channels;
 		m_height = other.m_height;
@@ -22,6 +68,17 @@ namespace NAME_SPACE {
 		int imageSize = m_width * m_height * m_channels;
 		m_pixels = (unsigned char*)STBI_MALLOC(imageSize);
 		memcpy(m_pixels, other.m_pixels, imageSize);
+	}
+
+	Image& Image::operator=(const Image& other) {
+		if (m_pixels) stbi_image_free(m_pixels);
+		m_channels = other.m_channels;
+		m_height = other.m_height;
+		m_width = other.m_width;
+		int imageSize = m_width * m_height * m_channels;
+		m_pixels = (unsigned char*)STBI_MALLOC(imageSize);
+		memcpy(m_pixels, other.m_pixels, imageSize);
+		return *this;
 	}
 
 	Image::~Image() {

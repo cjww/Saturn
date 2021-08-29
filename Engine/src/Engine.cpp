@@ -103,5 +103,10 @@ namespace sa {
 	void Engine::removeActiveCamera(Camera* camera) {
 		m_pRenderTechnique->removeCamera(camera);
 	}
+
+	IRenderTechnique* Engine::getRenderTechnique() const {
+		return m_pRenderTechnique;
+	}
+
 }
 

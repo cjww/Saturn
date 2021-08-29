@@ -30,11 +30,11 @@ namespace NAME_SPACE {
 		return attachment;
 	}
 
-	VkAttachmentDescription getColorAttachment(VkFormat format, VkSampleCountFlagBits sampleCount) {
+	VkAttachmentDescription getColorAttachment(VkFormat format, VkSampleCountFlagBits sampleCount, VkImageLayout finalLayout) {
 		VkAttachmentDescription attachment;
 		attachment.flags = 0;
 		attachment.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED;
-		attachment.finalLayout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
+		attachment.finalLayout = finalLayout;
 		attachment.format = format;
 		attachment.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR;
 		attachment.storeOp = VK_ATTACHMENT_STORE_OP_STORE;

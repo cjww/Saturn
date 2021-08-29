@@ -40,5 +40,7 @@ namespace sa {
 		void addActiveCamera(Camera* camera);
 		void removeActiveCamera(Camera* camera);
 
+		IRenderTechnique* getRenderTechnique() const;
+
 	};
 }

@@ -363,13 +363,12 @@ namespace NAME_SPACE {
 		vkDestroyDescriptorPool(m_device, m_imGuiDescriptorPool, nullptr);
 	}
 
-	void Renderer::imGuiImage(Texture* texture, const SamplerPtr& sampler) {
+	ImTextureID Renderer::getImTextureID(Texture* texture, const SamplerPtr& sampler) {
 		
 		if (m_imGuiImages.find(texture) == m_imGuiImages.end()) {
 			m_imGuiImages.insert(std::make_pair(texture, ImGui_ImplVulkan_AddTexture(*sampler, texture->view, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL)));
 		}
-		ImTextureID tex = m_imGuiImages.at(texture);
-		ImGui::Image(tex, { (float)texture->extent.width, (float)texture->extent.height });
+		return m_imGuiImages.at(texture);
 	}
 
 	uint32_t Renderer::getNextSwapchainImage() {
@@ -1133,24 +1132,6 @@ namespace NAME_SPACE {
 		VkRenderPassBeginInfo beginInfo = {};
 		beginInfo.pNext = nullptr;
 		beginInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_BEGIN_INFO;
-		
-			/*
-		std::vector<VkClearValue> clearValues;
-
-		for (uint32_t i = 0; i < m_renderPasses[renderPass].subpassCount; i++) {
-			for (uint32_t j = 0; j < m_renderPasses[renderPass].colorAttachmentCount[i]; j++) {
-				VkClearValue clearValue;
-				clearValue.color = { clearColor.r, clearColor.g, clearColor.b, 1.0f };
-				clearValues.push_back(clearValue);
-			}
-			if (m_renderPasses[renderPass].depthAttachment[i]) {
-				VkClearValue clearValue;
-				clearValue.depthStencil.depth = 1.0f;
-				clearValue.depthStencil.stencil = 0;
-				clearValues.push_back(clearValue);
-			}
-		}
-			*/
 
 		beginInfo.clearValueCount = m_renderPasses[renderPass].clearValues.size();
 		beginInfo.pClearValues = m_renderPasses[renderPass].clearValues.data();
@@ -1174,6 +1155,23 @@ namespace NAME_SPACE {
 		vkCmdEndRenderPass(m_graphicsCommandBuffers[m_frameIndex]);
 	}
 	
+	void Renderer::transferTextureLayout(Texture* texture, VkImageLayout newLayout, const CommandBufferPtr& commandBuffer, uint32_t frameIndex) {
+		uint32_t realFrameIndex = (frameIndex == -1) ? m_frameIndex : frameIndex;
+
+		VkImageMemoryBarrier barrier = {};
+		barrier.sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER;
+		barrier.dstAccessMask = VK_ACCESS_SHADER_READ_BIT;
+		barrier.oldLayout = texture->layout;
+		barrier.newLayout = newLayout;
+		barrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		barrier.image = texture->image;
+		barrier.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+		barrier.subresourceRange.levelCount = 1;
+		barrier.subresourceRange.layerCount = 1;
+		vkCmdPipelineBarrier(m_graphicsCommandBuffers[realFrameIndex], VK_PIPELINE_STAGE_HOST_BIT, VK_PIPELINE_STAGE_FRAGMENT_SHADER_BIT, 0, 0, NULL, 0, NULL, 1, &barrier);
+	}
+
 	void Renderer::bindPipeline(uint32_t pipeline, const CommandBufferPtr& commandBuffer, uint32_t frameIndex) {
 		auto p = m_pipelines[pipeline];
 		uint32_t realFrameIndex = (frameIndex == -1) ? m_frameIndex : frameIndex;
