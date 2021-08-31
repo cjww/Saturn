@@ -22,6 +22,9 @@ namespace sa {
 
 		void loadXML(const std::filesystem::path& path, rapidxml::xml_document<>& xml, std::string& xmlStr);
 		void loadFromFile(const std::filesystem::path& configPath);
+	
+		void registerComponents();
+
 	public:
 		//Engine();
 		void setup(RenderWindow* pWindow, const std::filesystem::path& configPath);

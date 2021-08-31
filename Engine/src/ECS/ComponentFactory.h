@@ -26,6 +26,13 @@ public:
 	template<typename T>
 	ComponentType getComponentType() const;
 
+	std::vector<ComponentType> getAllComponentTypes() const;
+
+	template<typename T>
+	const char* getComponentName() const;
+	const char* getComponentName(ComponentType type) const;
+
+
 	// Gives the new Component a unique ID and creates an array containing MAX_ENTITY_COUNT of this new Component
 	template<typename T>
 	void registerComponent();
@@ -33,6 +40,8 @@ public:
 	// Asks ComponentArray of this ComponentType to map this entity ID to a Component in the array
 	template<typename T>
 	T* addComponent(EntityID entity);
+	void addComponent(ComponentType type, EntityID entity);
+
 	
 	// Asks ComponentArray of this ComponentType to return mapped Component data
 	template<typename T>
@@ -41,6 +50,7 @@ public:
 	// Asks ComponentArray of this ComponentType to unmap this entity to this ComponentType
 	template<typename T>
 	void removeComponent(EntityID entity);
+	void removeComponent(ComponentType type, EntityID entity);
 
 	// Makes sure all ComponentArrays unmaps this Entity
 	void onEntityDestroyed(EntityID entity, ComponentMask signature);
@@ -57,7 +67,7 @@ inline std::shared_ptr<ComponentArray<T>> ComponentFactory::getComponentArray() 
 
 template<typename T>
 inline ComponentType ComponentFactory::getComponentType() const {
-	const char* name = typeid(T).name();
+	const char* name = getComponentName<T>();
 	if (m_componentTypes.find(name) == m_componentTypes.end()) {
 		throw std::runtime_error("Component not registered");
 	}
@@ -65,8 +75,14 @@ inline ComponentType ComponentFactory::getComponentType() const {
 }
 
 template<typename T>
-inline void ComponentFactory::registerComponent() {
+inline const char* ComponentFactory::getComponentName() const {
 	const char* name = typeid(T).name();
+	return name + 7;
+}
+
+template<typename T>
+inline void ComponentFactory::registerComponent() {
+	const char* name = getComponentName<T>();
 	if (m_componentTypes.find(name) != m_componentTypes.end()) {
 		throw std::runtime_error("Component already registered");
 	}

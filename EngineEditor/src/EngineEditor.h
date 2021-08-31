@@ -5,6 +5,7 @@
 
 #include "EditorView.h"
 #include "SceneView.h"
+#include "EntityInspector.h"
 
 class EngineEditor {
 private:

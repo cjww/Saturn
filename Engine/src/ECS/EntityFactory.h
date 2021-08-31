@@ -15,6 +15,8 @@ private:
 	std::queue<EntityID> m_availableEntities;
 
 	std::unordered_map<EntityID, ComponentMask> m_entitySignatures;
+	std::unordered_map<EntityID, std::string> m_entityNames;
+
 
 public:
 	
@@ -26,6 +28,10 @@ public:
 	
 	ComponentMask getEntitySignature(EntityID entity) const;
 	void setEntitySignature(EntityID entity, ComponentMask siganture);
+
+	const std::string& getEntityName(EntityID entity) const;
+	void setEntityName(EntityID entity, const std::string& name);
+
 
 	uint32_t getEntityCount() const;
 	std::vector<EntityID> getActiveEntities() const;

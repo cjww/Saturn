@@ -14,6 +14,7 @@ EntityID EntityFactory::createEntity() {
 		id = m_createdEntityCount++;
 	}
 	m_entitySignatures[id] = ComponentMask();
+	setEntityName(id, "Entity");
 	return id;
 }
 
@@ -30,17 +31,28 @@ void EntityFactory::setEntitySignature(EntityID entity, ComponentMask signature)
 	m_entitySignatures[entity] = signature;
 }
 
+const std::string& EntityFactory::getEntityName(EntityID entity) const {
+	if (m_entityNames.find(entity) == m_entityNames.end()) {
+		return "No Name";
+	}
+	return m_entityNames.at(entity);
+}
+
+void EntityFactory::setEntityName(EntityID entity, const std::string& name) {
+	m_entityNames[entity] = name;
+}
+
 uint32_t EntityFactory::getEntityCount() const {
 	return m_createdEntityCount - m_availableEntities.size();
 }
 
 std::vector<EntityID> EntityFactory::getActiveEntities() const {
-	std::vector<EntityID> entites;
-	entites.reserve(getEntityCount());
+	std::vector<EntityID> entities;
+	entities.reserve(getEntityCount());
 	for (EntityID i = 0; i < m_createdEntityCount; i++) {
 		if (m_entitySignatures.find(i) != m_entitySignatures.end() && !m_entitySignatures.at(i).none()) {
-			entites.push_back(i);
+			entities.push_back(i);
 		}
 	}
-	return std::move(entites);
+	return std::move(entities);
 }

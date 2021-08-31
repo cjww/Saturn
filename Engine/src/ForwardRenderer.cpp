@@ -142,11 +142,7 @@ namespace sa {
 			m_renderer->initImGUI(m_renderPass, 2);
 		}
 
-		ECSCoordinator::get()->registerComponent<Model>();
-		ECSCoordinator::get()->registerComponent<Transform>();
-
 		m_pDescriptorManager = new vk::DescriptorManager(m_pColorShaders.get());
-
 
 		ComponentMask mask;
 		mask.set(ECSCoordinator::get()->getComponentType<Transform>());

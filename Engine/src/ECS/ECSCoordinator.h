@@ -16,19 +16,31 @@ public:
 	static ECSCoordinator* get();
 	static void cleanup();
 
-	// Creates a new entity pointer
+	// Creates a new entity with default name "Entity"
 	EntityID createEntity();
-	// Destroys this entity. The entity pointer should be considered invalid after a call to this function
+	// Creates a new entity with a name
+	EntityID createEntity(const std::string& name);
+
+	// Destroys this entity. The entity ID should be considered invalid after a call to this function
 	void destroyEntity(EntityID entity);
 
-	uint32_t getEntityCount() const;
+	const std::string& getEntityName(EntityID entity) const;
+	void setEntityName(EntityID entity, const std::string& name);
 
+	uint32_t getEntityCount() const;
 	std::vector<EntityID> getActiveEntities() const;
 
 	// get the type id of a component
 	template<typename T>
 	ComponentType getComponentType() const;
 
+	std::vector<ComponentType> getAllComponentTypes() const;
+
+	template<typename T>
+	const char* getComponentName() const;
+	const char* getComponentName(ComponentType type) const;
+
+	
 	// register a new component, has to be called beafore use
 	template<typename T>
 	void registerComponent();
@@ -40,6 +52,7 @@ public:
 	// Adds a component to an entity
 	template<typename T>
 	T* addComponent(EntityID entity);
+	void addComponent(ComponentType type, EntityID entity);
 
 	// Gets a component from an entity 
 	template<typename T>
@@ -48,12 +61,18 @@ public:
 	// Removes a component from an entity
 	template<typename T>
 	void removeComponent(EntityID entity);
+	void removeComponent(ComponentType type, EntityID entity);
 
 };
 
 template<typename T>
 inline ComponentType ECSCoordinator::getComponentType() const {
 	return m_componentFactory.getComponentType<T>();
+}
+
+template<typename T>
+inline const char* ECSCoordinator::getComponentName() const {
+	return m_componentFactory.getComponentName<T>();
 }
 
 template<typename T>

@@ -42,8 +42,18 @@ namespace sa {
 		}
 	}
 
+	void Engine::registerComponents() {
+
+		ECSCoordinator::get()->registerComponent<Model>();
+		ECSCoordinator::get()->registerComponent<Transform>();
+		ECSCoordinator::get()->registerComponent<Script>();
+
+	}
+
 	void Engine::setup(RenderWindow* pWindow, const std::filesystem::path& configPath) {
 	
+		registerComponents();
+
 		loadFromFile(configPath);
 		m_pRenderTechnique->init(pWindow, true);
 		/*

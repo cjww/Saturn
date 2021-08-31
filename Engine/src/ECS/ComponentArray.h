@@ -9,6 +9,7 @@
 class ComponentArrayBase {
 public:
 	virtual void remove(EntityID entity) = 0;
+	virtual void insertOnly(EntityID entity) = 0;
 };
 
 template<typename T>
@@ -34,8 +35,9 @@ public:
 	T* get(EntityID entity);
 	
 	T* insert(EntityID entity);
+	void insertOnly(EntityID entity) override;
 
-	void remove(EntityID entity);
+	void remove(EntityID entity) override;
 
 };
 
@@ -71,6 +73,18 @@ inline T* ComponentArray<T>::insert(EntityID entity) {
 	m_indexToEntity.insert(std::make_pair(index, entity));
 	
 	return &m_data[index];
+}
+
+template<typename T>
+inline void ComponentArray<T>::insertOnly(EntityID entity) {
+	if (m_count == m_data.size()) {
+		m_data.resize(m_data.size() << 1);
+	}
+
+	size_t index = m_count++;
+
+	m_entityToIndex.insert(std::make_pair(entity, index));
+	m_indexToEntity.insert(std::make_pair(index, entity));
 }
 
 template<typename T>

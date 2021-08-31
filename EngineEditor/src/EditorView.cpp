@@ -92,8 +92,8 @@ void EditorView::onImGui() {
 		imGuiDrawVector(glm::vec3(0, 0, 1), blue, 1);
 		
 
-		ImGui::End();
 	}
+	ImGui::End();
 
 
 }
