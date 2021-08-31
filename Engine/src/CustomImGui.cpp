@@ -11,11 +11,13 @@ namespace ImGui {
 
 	void Component(Model* model) {
 		ImGui::Text("ModelID: %d", model->modelID);
-		sa::ModelData* data = sa::ResourceManager::get()->getModel(model->modelID);
-		for (const auto& mesh : data->meshes) {
-			ImGui::Spacing();
-			ImGui::Text("Material");
-			ImGui::ColorEdit4("Diffuse Color", (float*)&mesh.material.diffuseColor);
+		if (model->modelID != NULL_RESOURCE) {
+			sa::ModelData* data = sa::ResourceManager::get()->getModel(model->modelID);
+			for (const auto& mesh : data->meshes) {
+				ImGui::Spacing();
+				ImGui::Text("Material");
+				ImGui::ColorEdit4("Diffuse Color", (float*)&mesh.material.diffuseColor);
+			}
 		}
 		
 	}

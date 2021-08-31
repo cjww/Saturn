@@ -21,8 +21,9 @@ void SceneView::makePopups() {
 	}
 }
 
-SceneView::SceneView(sa::Engine* pEngine, EntityInspector* pInspector) : EditorModule(pEngine) {
+SceneView::SceneView(sa::Engine* pEngine, EntityInspector* pInspector, EditorView* pView) : EditorModule(pEngine) {
 	m_pInspector = pInspector;
+	m_pView = pView;
 }
 
 SceneView::~SceneView() {
@@ -63,6 +64,7 @@ void SceneView::onImGui() {
 				if (s) selected = e;
 				else selected = -1;
 				m_pInspector->setEntity(selected);
+				m_pView->setEntity(selected);
 			}
 			if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup)) {
 				hovered = e;

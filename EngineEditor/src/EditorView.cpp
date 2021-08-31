@@ -5,6 +5,7 @@ EditorView::EditorView(sa::Engine* pEngine, RenderWindow* pWindow)
 {
 	m_pWindow = pWindow;
 	m_isFocused = false;
+	m_selectedEntity = -1;
 
 	sa::Rect viewport;
 	viewport.setSize(pWindow->getCurrentExtent());
@@ -87,9 +88,26 @@ void EditorView::onImGui() {
 		const ImU32 green = ImColor(ImVec4(0, 1, 0, 1));
 		const ImU32 blue = ImColor(ImVec4(0, 0, 1, 1));
 		
-		imGuiDrawVector(glm::vec3(1, 0, 0), red, 1);
-		imGuiDrawVector(glm::vec3(0, 1, 0), green, 1);
-		imGuiDrawVector(glm::vec3(0, 0, 1), blue, 1);
+		if (m_selectedEntity != -1) {
+			Transform* transform = ECSCoordinator::get()->getComponent<Transform>(m_selectedEntity);
+			if (transform) {
+				glm::vec3 pos = transform->position;
+
+				glm::mat4 mat(1);
+				mat = glm::rotate(mat, transform->rotation.x, glm::vec3(1, 0, 0));
+				mat = glm::rotate(mat, transform->rotation.y, glm::vec3(0, 1, 0));
+				mat = glm::rotate(mat, transform->rotation.z, glm::vec3(0, 0, 1));
+				
+				glm::vec3 x = glm::normalize(mat[0]);
+				glm::vec3 y = glm::normalize(mat[1]);
+				glm::vec3 z = glm::normalize(mat[2]);
+
+
+				imGuiDrawVector(pos, x, red, 1);
+				imGuiDrawVector(pos, y, green, 1);
+				imGuiDrawVector(pos, z, blue, 1);
+			}
+		}
 		
 
 	}
@@ -181,4 +199,12 @@ void EditorView::imGuiDrawVector(glm::vec3 v, const ImColor& color, float thickn
 
 sa::Camera* EditorView::getCamera() {
 	return &m_camera;
+}
+
+EntityID EditorView::getEntity() const {
+	return m_selectedEntity;
+}
+
+void EditorView::setEntity(EntityID entity) {
+	m_selectedEntity = entity;
 }

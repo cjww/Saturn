@@ -27,11 +27,15 @@ void EngineEditor::run() {
 	m_engine.setup(&m_window, "../setup.xml");
 
 	m_editorModules.push_back(std::make_unique<EditorView>(&m_engine, &m_window));
-	m_engine.addActiveCamera(static_cast<EditorView*>(m_editorModules.back().get())->getCamera());
+	EditorView* editorView = static_cast<EditorView*>(m_editorModules.back().get());
 
+	m_engine.addActiveCamera(editorView->getCamera());
 
 	m_editorModules.push_back(std::make_unique<EntityInspector>(&m_engine));
-	m_editorModules.push_back(std::make_unique<SceneView>(&m_engine, static_cast<EntityInspector*>(m_editorModules.back().get())));
+	EntityInspector* entityinspector = static_cast<EntityInspector*>(m_editorModules.back().get());
+
+	m_editorModules.push_back(std::make_unique<SceneView>(&m_engine, entityinspector, editorView));
+	SceneView* sceneView = static_cast<SceneView*>(m_editorModules.back().get());
 
 
 	EntityID entity = ECSCoordinator::get()->createEntity();

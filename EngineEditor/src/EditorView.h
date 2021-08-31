@@ -2,6 +2,7 @@
 #include <Camera.h>
 #include "EditorModule.h"
 #include <Tools\Math.h>
+#include <ECS\ECSCoordinator.h>
 
 class EditorView : public EditorModule {
 private:
@@ -17,7 +18,7 @@ private:
 	ImVec2 m_displayedSize;
 	vr::SamplerPtr m_pSampler;
 
-	Transform transform;
+	EntityID m_selectedEntity;
 
 public:
 	EditorView(sa::Engine* pEngine, RenderWindow* pWindow);
@@ -34,6 +35,9 @@ public:
 
 
 	sa::Camera* getCamera();
+
+	EntityID getEntity() const;
+	void setEntity(EntityID entity);
 
 
 };

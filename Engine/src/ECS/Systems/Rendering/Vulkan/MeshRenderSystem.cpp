@@ -12,6 +12,11 @@ namespace vk {
 
 		for (const auto& entity : m_entitySet) {
 			Model* modelComp = m_pCoordinator->getComponent<Model>(entity);
+			
+			if (modelComp->modelID == NULL_RESOURCE) {
+				continue; // does not have to be drawn
+			}
+
 			sa::ModelData* model = sa::ResourceManager::get()->getModel(modelComp->modelID);
 
 			Transform* transform = m_pCoordinator->getComponent<Transform>(entity);
