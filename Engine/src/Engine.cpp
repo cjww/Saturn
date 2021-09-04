@@ -46,7 +46,9 @@ namespace sa {
 
 		ECSCoordinator::get()->registerComponent<Model>();
 		ECSCoordinator::get()->registerComponent<Transform>();
+		ECSCoordinator::get()->registerComponent<Light>();
 		ECSCoordinator::get()->registerComponent<Script>();
+
 
 	}
 

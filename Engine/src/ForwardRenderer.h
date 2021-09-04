@@ -19,6 +19,7 @@ namespace sa {
 
 		vr::DescriptorSetPtr m_pPerFrameDescriptorSet;
 		vr::Buffer* m_pPerFrameBuffer;
+		vr::Buffer* m_pLightBuffer;
 
 		vr::DescriptorSetPtr m_pInputDescriptorSet;
 

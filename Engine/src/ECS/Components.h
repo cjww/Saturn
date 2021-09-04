@@ -13,6 +13,17 @@ struct Transform {
 	glm::vec3 scale = glm::vec3(1);
 };
 
+enum class LightType {
+	POINT = 0,
+	DIRECTIONAL = 1
+};
+
+struct Light {
+	glm::vec3 color = glm::vec3(1);
+	float strength = 1.0f;
+	LightType type = LightType::POINT;
+};
+
 struct Script {
 	std::string scriptName;
 	std::string code;

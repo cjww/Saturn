@@ -5,6 +5,20 @@ layout(location = 0) in vec2 in_vertexUV;
 layout(location = 0) out vec4 out_color;
 //layout(set = 0, binding = 2) uniform sampler2D myTexture;
 
+
+
+
+struct Light {
+    vec3 color;
+    float strength;
+    int type;
+};
+/*
+layout(set = 1, binding = 1) uniform lights {
+    Light lights[64];
+};
+*/
+
 void main() {
     out_color = vec4(1, 1, 1, 1);
     //out_color += texture(myTexture, in_vertexUV);

@@ -181,6 +181,7 @@
   <ItemGroup>
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\CustomImGui.cpp" />
+    <ClCompile Include="src\ECS\Systems\Rendering\Vulkan\LightSystem.cpp" />
     <ClCompile Include="src\Geometry\Rect.cpp" />
     <ClCompile Include="src\ECS\ComponentArray.cpp" />
     <ClCompile Include="src\ECS\ComponentFactory.cpp" />
@@ -203,6 +204,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\CustomImGui.h" />
+    <ClInclude Include="src\ECS\Systems\Rendering\Vulkan\LightSystem.h" />
     <ClInclude Include="src\Geometry\Rect.h" />
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\ECS\ComponentArray.h" />
