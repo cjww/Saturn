@@ -219,6 +219,27 @@ namespace NAME_SPACE {
 
 		return image;
 	}
+	Texture* DataManager::createTexture3D(VkExtent3D extent, VkImageUsageFlags usage, VkSampleCountFlagBits sampleCount, VkFormat format, uint32_t mipLevels, uint32_t arrayLayers)
+	{
+		auto image = createImage(
+			extent,
+			arrayLayers,
+			format,
+			VK_IMAGE_TYPE_3D,
+			VK_IMAGE_LAYOUT_UNDEFINED,
+			mipLevels,
+			m_graphicsQueueFamilyIndices,
+			sampleCount,
+			VK_SHARING_MODE_EXCLUSIVE,
+			VK_IMAGE_TILING_OPTIMAL,
+			usage,
+			VMA_MEMORY_USAGE_GPU_ONLY,
+			VK_MEMORY_PROPERTY_DEVICE_LOCAL_BIT
+		);
+
+		createImageView(VK_IMAGE_VIEW_TYPE_3D, image, VK_IMAGE_ASPECT_COLOR_BIT, 0, 0);
+		return image;
+	}
 	void DataManager::destroyBuffer(Buffer* buffer) {
 		vmaDestroyBuffer(m_allocator, buffer->buffer, buffer->allocation);
 		m_buffers.erase(std::find(m_buffers.begin(), m_buffers.end(), buffer));

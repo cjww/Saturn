@@ -45,6 +45,42 @@ namespace vbl {
         uint32_t preserveAttachmentCount = 0;
     };
 
+    struct PipelineConfig {
+        struct InputAssembly {
+            VkPrimitiveTopology topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        } input;
+        
+        struct Rasterizer {
+            VkCullModeFlags cullMode = VK_CULL_MODE_BACK_BIT;
+            VkFrontFace frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+            VkPolygonMode polygonMode = VK_POLYGON_MODE_FILL;
+        } rasterizer;
+        
+        struct Multisample {
+            VkBool32 enable = VK_FALSE;
+            VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT;
+        } multisample;
+        struct ColorBlend {
+            VkBool32 enable = VK_FALSE;
+            VkBlendOp colorBlendOp = VK_BLEND_OP_ADD;
+            VkBlendOp alphaBlendOp = VK_BLEND_OP_ADD;
+            VkBlendFactor srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
+            VkBlendFactor dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
+            VkBlendFactor srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
+            VkBlendFactor dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+        } colorBlend;
+        struct DepthStencilState {
+            VkBool32 depthBoundsTestEnable = VK_FALSE;
+            VkCompareOp depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
+            VkBool32 depthTestEnable = VK_TRUE;
+            VkBool32 depthWriteEnable = VK_TRUE;
+            VkBool32 stencilTestEnable = VK_FALSE;
+        } depthStencil;
+        
+        std::vector<VkDynamicState> dynamicStates;
+
+    };
+
     //Helpers
     template<typename T>
     inline T clamp(T value, T min, T max) {
@@ -117,7 +153,7 @@ namespace vbl {
 
     VkResult createPipelineLayout(VkPipelineLayout* pipelineLayout, VkDevice device, const VkDescriptorSetLayout* descriptorSetLayouts, uint32_t descriptorSetLayoutCount, const VkPushConstantRange* pushConstantRanges, uint32_t pushConstantRangeCount);
 
-    VkResult createGraphicsPipeline(VkPipeline* pipeline, VkDevice device, VkPipelineLayout layout, VkRenderPass renderPass, uint32_t subpassIndex, VkExtent2D extent, const VkPipelineShaderStageCreateInfo* shaderStages, uint32_t shaderStageCount, VkPipelineVertexInputStateCreateInfo vertexInput, const VkDynamicState* pDynamicStates = nullptr, uint32_t dynamicStateCount = 0);
+    VkResult createGraphicsPipeline(VkPipeline* pipeline, VkDevice device, VkPipelineLayout layout, VkRenderPass renderPass, uint32_t subpassIndex, VkExtent2D extent, const VkPipelineShaderStageCreateInfo* shaderStages, uint32_t shaderStageCount, VkPipelineVertexInputStateCreateInfo vertexInput, PipelineConfig config = {});
     
     VkResult createRayTracingPipeline(VkPipeline* pipeline, VkDevice device);
     VkResult vkCreateRayTracingPipelines(VkInstance instance, VkDevice device, VkPipelineCache pipelineCache, uint32_t createInfoCount, const VkRayTracingPipelineCreateInfoNV *pCreateInfos, const VkAllocationCallbacks *pAllocator, VkPipeline *pPipelines);

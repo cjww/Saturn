@@ -1,4 +1,7 @@
 #include "Engine.h"
+
+#include "entt/entt.hpp"
+
 namespace sa {
 	void Engine::loadXML(const std::filesystem::path& path, rapidxml::xml_document<>& xml, std::string& xmlStr) {
 		std::ifstream file(path);
@@ -20,7 +23,7 @@ namespace sa {
 		xml_node<>* rendererNode = root->first_node("Renderer");
 		if (rendererNode) {
 			xml_attribute<>* api = rendererNode->first_attribute("API", 0, false);
-	
+
 			xml_attribute<>* renderTechnique = rendererNode->first_attribute("RenderTechnique", 0, false);
 			if (strcmp(renderTechnique->value(), "Forward") == 0) {
 				if (strcmp(api->value(), "Vulkan") == 0) {
@@ -42,6 +45,27 @@ namespace sa {
 		}
 	}
 
+	template<typename T>
+	T& get(entt::registry& reg, entt::entity e) {
+		return reg.get<T>(e);
+	}
+	 
+	template<typename T>
+	void set(entt::registry& reg, entt::entity e, const T& comp) {
+		reg.emplace_or_replace<T>(e, comp);
+	}
+
+	template<typename T>
+	void remove(entt::registry& reg, entt::entity e) {
+		reg.remove<T>(e);
+	}
+
+	template<typename T>
+	T construct() {
+		return T{};
+	}
+
+
 	void Engine::registerComponents() {
 
 		ECSCoordinator::get()->registerComponent<Model>();
@@ -49,7 +73,37 @@ namespace sa {
 		ECSCoordinator::get()->registerComponent<Light>();
 		ECSCoordinator::get()->registerComponent<Script>();
 
+		entt::registry r;
+		using namespace entt::literals;
+		auto fac = entt::meta<Transform>().type(entt::type_id<Transform>().hash())
+			.ctor<&construct<Transform>>()
+			.func<&get<Transform>, entt::as_ref_t>("get"_hs)
+			.func<&set<Transform>>("set"_hs)
+			.func<&remove<Transform>>("remove"_hs);
 
+		auto e = r.create();
+		r.emplace<Transform>(e);
+
+		entt::type_info info = entt::type_id<Transform>();
+		
+		const auto type = entt::resolve(info);
+		if (type) {
+			auto instance = type.invoke("get"_hs, {}, std::ref(r), e);
+			size_t size = type.size_of();
+			Transform t = type.construct().cast<Transform>();
+
+			
+			//type.invoke("set"_hs, {}, std::ref(r), e);
+			type.invoke("remove"_hs, {}, std::ref(r), e);
+
+
+		}
+
+		Transform* t = r.try_get<Transform>(e);
+		if (!t)
+		{
+			std::cout << "removed Transform" << std::endl;
+		}
 	}
 
 	void Engine::setup(RenderWindow* pWindow, const std::filesystem::path& configPath) {

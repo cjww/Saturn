@@ -561,7 +561,7 @@ namespace vbl {
         return vkCreatePipelineLayout(device, &info, nullptr, pipelineLayout);
     }
 
-	VkResult createGraphicsPipeline(VkPipeline* pipeline, VkDevice device, VkPipelineLayout layout, VkRenderPass renderPass, uint32_t subpassIndex, VkExtent2D extent, const VkPipelineShaderStageCreateInfo* shaderStages, uint32_t shaderStageCount, VkPipelineVertexInputStateCreateInfo vertexInput, const VkDynamicState* pDynamicStates, uint32_t dynamicStateCount) {
+	VkResult createGraphicsPipeline(VkPipeline* pipeline, VkDevice device, VkPipelineLayout layout, VkRenderPass renderPass, uint32_t subpassIndex, VkExtent2D extent, const VkPipelineShaderStageCreateInfo* shaderStages, uint32_t shaderStageCount, VkPipelineVertexInputStateCreateInfo vertexInput, PipelineConfig config) {
 
         vertexInput.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
         vertexInput.pNext = nullptr;
@@ -570,32 +570,32 @@ namespace vbl {
         VkPipelineInputAssemblyStateCreateInfo input = {};
         input.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;
         input.primitiveRestartEnable = VK_FALSE;
-        input.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST;
+        input.topology = config.input.topology;
 
         VkPipelineRasterizationStateCreateInfo rasterizer = {};
         rasterizer.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO;
-        rasterizer.cullMode = VK_CULL_MODE_BACK_BIT;
+        rasterizer.cullMode = config.rasterizer.cullMode;
         rasterizer.depthBiasEnable = VK_FALSE;
         rasterizer.depthClampEnable = VK_FALSE;
-        rasterizer.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE;
+        rasterizer.frontFace = config.rasterizer.frontFace;
         rasterizer.lineWidth = 1.0f;
-        rasterizer.polygonMode = VK_POLYGON_MODE_FILL;
+        rasterizer.polygonMode = config.rasterizer.polygonMode;
         rasterizer.rasterizerDiscardEnable = VK_FALSE;
 
         VkPipelineMultisampleStateCreateInfo multisample = {};
         multisample.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO;
         multisample.sampleShadingEnable = VK_FALSE;
-        multisample.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT;
+        multisample.rasterizationSamples = config.multisample.sampleCount;
 
 		VkPipelineColorBlendAttachmentState colorAttachment = {};
 		colorAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-		colorAttachment.blendEnable = VK_FALSE;
-		colorAttachment.colorBlendOp = VK_BLEND_OP_ADD;
-		colorAttachment.alphaBlendOp = VK_BLEND_OP_ADD;
-        colorAttachment.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA;
-		colorAttachment.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
-        colorAttachment.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
-		colorAttachment.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
+		colorAttachment.blendEnable = config.colorBlend.enable;
+		colorAttachment.colorBlendOp = config.colorBlend.colorBlendOp;
+		colorAttachment.alphaBlendOp = config.colorBlend.alphaBlendOp;
+        colorAttachment.srcColorBlendFactor = config.colorBlend.srcColorBlendFactor;
+		colorAttachment.dstColorBlendFactor = config.colorBlend.dstColorBlendFactor;
+        colorAttachment.srcAlphaBlendFactor = config.colorBlend.srcAlphaBlendFactor;
+		colorAttachment.dstAlphaBlendFactor = config.colorBlend.dstAlphaBlendFactor;
 
 		VkPipelineColorBlendStateCreateInfo colorBlend = {};
 	    colorBlend.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
@@ -606,11 +606,11 @@ namespace vbl {
 
         VkPipelineDepthStencilStateCreateInfo depthState = {};
         depthState.sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO;
-        depthState.depthBoundsTestEnable = VK_FALSE;
-        depthState.depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
-        depthState.depthTestEnable = VK_TRUE;
-        depthState.depthWriteEnable = VK_TRUE;
-        depthState.stencilTestEnable = VK_FALSE;
+        depthState.depthBoundsTestEnable = config.depthStencil.depthBoundsTestEnable;
+        depthState.depthCompareOp = config.depthStencil.depthCompareOp;
+        depthState.depthTestEnable = config.depthStencil.depthTestEnable;
+        depthState.depthWriteEnable = config.depthStencil.depthWriteEnable;
+        depthState.stencilTestEnable = config.depthStencil.stencilTestEnable;
 
         VkViewport viewport = {};
         viewport.x = 0.0f;
@@ -635,8 +635,8 @@ namespace vbl {
         dynamicState.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO;
         dynamicState.pNext = nullptr;
         dynamicState.flags = 0;
-        dynamicState.pDynamicStates = pDynamicStates;
-        dynamicState.dynamicStateCount = dynamicStateCount;
+        dynamicState.pDynamicStates = config.dynamicStates.data();
+        dynamicState.dynamicStateCount = static_cast<uint32_t>(config.dynamicStates.size());
 
 		VkGraphicsPipelineCreateInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;

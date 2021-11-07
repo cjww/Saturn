@@ -1,3 +1,5 @@
+#define DEBUG_LOG
+
 #include <iostream>
 
 #include <RenderWindow.hpp>
@@ -14,6 +16,9 @@ private:
 	glm::vec3 viewForward;
 	glm::vec3 viewPos;
 	glm::vec2 lastMousePos;
+
+	glm::mat4 mat = glm::mat4(1);
+	bool escapePressed;
 
 public:
 	float speed = 10.f;
@@ -43,10 +48,11 @@ public:
 			diff = glm::vec2(0, 0);
 		}
 
-		if (glfwGetKey(window.getWindowHandle(), GLFW_KEY_ESCAPE)) {
-			mouseLocked = false;
-			window.setHideCursor(false);
+		if (window.getKey(GLFW_KEY_ESCAPE) && !escapePressed) {
+			mouseLocked = !mouseLocked;
+			window.setHideCursor(mouseLocked);
 		}
+		escapePressed = window.getKey(GLFW_KEY_ESCAPE);
 
 		int up = glfwGetKey(window.getWindowHandle(), GLFW_KEY_SPACE) - glfwGetKey(window.getWindowHandle(), GLFW_KEY_LEFT_CONTROL);
 		bool sprint = glfwGetKey(window.getWindowHandle(), GLFW_KEY_LEFT_SHIFT);
@@ -68,6 +74,48 @@ public:
 
 		
 		return glm::lookAt(viewPos, viewPos + viewForward, glm::vec3(0, 1, 0));
+	}
+
+	glm::mat4 getViewRayTracing(float dt) {
+		int hori = glfwGetKey(window.getWindowHandle(), GLFW_KEY_D) - glfwGetKey(window.getWindowHandle(), GLFW_KEY_A);
+		int vert = glfwGetKey(window.getWindowHandle(), GLFW_KEY_W) - glfwGetKey(window.getWindowHandle(), GLFW_KEY_S);
+
+		glm::vec2 mPos = window.getCursorPosition();
+		glm::vec2 center = glm::vec2(window.getCurrentExtent().x / 2, window.getCurrentExtent().y / 2);
+		glm::vec2 diff = mPos - center;
+		if (mouseLocked) {
+			window.setCursorPosition(center);
+		}
+		else {
+			diff = glm::vec2(0, 0);
+		}
+
+		if (window.getKey(GLFW_KEY_ESCAPE) && !escapePressed) {
+			mouseLocked = !mouseLocked;
+			window.setHideCursor(mouseLocked);
+		}
+		escapePressed = window.getKey(GLFW_KEY_ESCAPE);
+		
+		int up = glfwGetKey(window.getWindowHandle(), GLFW_KEY_SPACE) - glfwGetKey(window.getWindowHandle(), GLFW_KEY_LEFT_CONTROL);
+		bool sprint = glfwGetKey(window.getWindowHandle(), GLFW_KEY_LEFT_SHIFT);
+
+		mat *= glm::rotate(diff.x * dt * sensitivty, glm::vec3(0, 1, 0));
+
+		glm::vec3 right = glm::cross(viewForward, glm::vec3(0, 1, 0));
+		mat *= glm::rotate(-diff.y * dt * sensitivty, right);
+
+
+		float finalSpeed = speed;
+		if (sprint) {
+			finalSpeed *= 2;
+		}
+
+		mat = glm::translate(mat, -right * (float)hori * dt * finalSpeed);
+		mat = glm::translate(mat, viewForward * (float)vert * dt * finalSpeed);
+		mat = glm::translate(mat, glm::vec3(0, 1, 0) * (float)up * dt * finalSpeed);
+
+		return mat;
+
 	}
 
 	glm::mat4 getProjection(float fovDegrees) {
@@ -177,10 +225,16 @@ uint32_t quadIndices[] = {
 
 void computeTest(RenderWindow& window);
 void textureTest(RenderWindow& window);
+void texture3DTest(RenderWindow& window);
 
 RenderPass createSimpleRenderPass(RenderWindow& window);
 
+
 int main() {
+
+#ifdef _WIN32
+	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
+#endif
 
 	try {
 		const int WIDTH = 1000, HEIGHT = 600;
@@ -188,13 +242,15 @@ int main() {
 		RenderWindow window(WIDTH, HEIGHT, "Hello vulkan");
 		vr::Renderer::init(&window);
 		
-
 		//computeTest(window);
-		textureTest(window);
+		//textureTest(window);
+		texture3DTest(window);
 	}
 	catch (std::exception e) {
 		std::cout << e.what() << std::endl;
 	}
+
+	vr::Renderer::cleanup();
 
 	return 0;
 }
@@ -235,7 +291,7 @@ void textureTest(RenderWindow& window) {
 	vr::SamplerPtr sampler = renderer->createSampler(VK_FILTER_NEAREST);
 	
 	vr::Image image("Box.png");
-	vr::Texture* texture = renderer->createTexture2D(image);
+	vr::Texture* texture = renderer->createTexture2D(renderPass.frameBuffer, renderPass.renderPass, 0, image);
 	renderer->updateDescriptorSet(descriptorSet, 2, nullptr, texture, sampler, true);
 
 	FrameTimer timer;
@@ -268,12 +324,14 @@ void textureTest(RenderWindow& window) {
 			renderer->bindIndexBuffer(indexBuffer);
 
 			renderer->bindDescriptorSet(descriptorSet, pipeline);
+			//renderer->bindViewport();
 
 			renderer->drawIndexed(6, 1);
 
 			renderer->endRenderPass();
 
 			renderer->endFrame();
+			renderer->present();
 		}
 		
 	}
@@ -398,7 +456,110 @@ void computeTest(RenderWindow& window) {
 
 		renderer->endFrame();
 
+		renderer->present();
+
 	}
+}
+
+void texture3DTest(RenderWindow& window) {
+	RenderPass renderPass = createSimpleRenderPass(window);
+	vr::Renderer* renderer = vr::Renderer::get();
+
+	vr::ShaderPtr vertexShader = renderer->createShader("RaytracingVertex.spv", VK_SHADER_STAGE_VERTEX_BIT);
+	vr::ShaderPtr fragmentShader = renderer->createShader("RaytracingFragment.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+	vr::ShaderSetPtr shaderSet = renderer->createShaderSet(vertexShader, fragmentShader);
+
+	auto pipeline = renderer->createPipeline(shaderSet, renderPass.renderPass, 0);
+
+	auto descriptorSet = shaderSet->getDescriptorSet(0);
+
+
+	/*vr::Image image("Box.png");
+	vr::Texture* tex = renderer->createTexture3D({ image.getExtent().width, image.getExtent().height, 1 }, VK_FORMAT_R8_UNORM);
+	
+	std::vector<uint8_t> data(image.getWidth() * image.getHeight());
+	for(int i = 0; i < data.size(); i++) {
+		data[i] = image.getPixels()[i * image.getChannelCount()];
+	}*/
+
+	vr::Texture* tex = renderer->createTexture3D({ 32, 32, 32 }, VK_FORMAT_R8_UNORM);
+
+	std::vector<uint8_t> data(32 * 32 * 32);
+	for (int i = 0; i < data.size(); i++) {
+		data[i] = i;
+	}
+
+	renderer->updateTexture(tex, renderPass.frameBuffer, renderPass.renderPass, 0, data.data(), data.size());
+	
+	vr::SamplerPtr sampler = renderer->createSampler(VK_FILTER_NEAREST);
+
+	renderer->updateDescriptorSet(descriptorSet, 0, nullptr, tex, sampler, true);
+	
+	auto variablesDescSet = shaderSet->getDescriptorSet(1);
+
+	CameraController cameraController(window);
+
+	struct Variables {
+		alignas(16) glm::mat4 worldMat;
+		alignas(16) glm::vec3 windowSize;
+		alignas(4) float time = 0.0f;
+	} variables;
+	variables.windowSize = glm::vec3(window.getCurrentExtent(), 0);
+	variables.worldMat = glm::mat4(1);
+
+	auto buffer = renderer->createUniformBuffer(sizeof(Variables), &variables);
+	
+	renderer->initImGUI(renderPass.renderPass, 0);
+
+	FrameTimer frameTimer;
+	bool keyPressed = false;
+	while (window.isOpen()) {
+		window.pollEvents();
+
+		if (window.getKey(GLFW_KEY_R) && !keyPressed)
+		{
+			fragmentShader->load("RaytracingFragment.spv");
+			shaderSet = renderer->createShaderSet(vertexShader, fragmentShader);
+			pipeline = renderer->createPipeline(shaderSet, renderPass.renderPass, 0);
+			descriptorSet = shaderSet->getDescriptorSet(0);
+			renderer->updateDescriptorSet(descriptorSet, 0, nullptr, tex, sampler, true);
+
+			variablesDescSet = shaderSet->getDescriptorSet(1);
+
+			DEBUG_LOG_INFO("Reloaded shader");
+		}
+		keyPressed = window.getKey(GLFW_KEY_R);
+
+		if(renderer->beginFrame()) {
+			float dt = frameTimer.getDeltaTime();
+			variables.time += dt;
+			variables.worldMat = cameraController.getViewRayTracing(dt);
+
+			memcpy(buffer->mappedData, &variables, sizeof(variables));
+			renderer->updateDescriptorSet(variablesDescSet, 0, buffer, nullptr, nullptr, false);
+			renderer->beginRenderPass(renderPass.renderPass, renderPass.frameBuffer, VK_SUBPASS_CONTENTS_INLINE);
+			
+			renderer->bindPipeline(pipeline);
+			renderer->bindDescriptorSet(descriptorSet, pipeline);
+			renderer->bindDescriptorSet(variablesDescSet, pipeline);
+			renderer->draw(6, 1);
+
+			renderer->newFrameImGUI();
+
+			ImGui::ShowDemoWindow();
+
+			renderer->endFrameImGUI();
+			
+			renderer->endRenderPass();
+			renderer->endFrame();
+
+			renderer->present();
+		}
+
+	}
+	renderer->cleanupImGUI();
+
+
 }
 
 RenderPass createSimpleRenderPass(RenderWindow& window) {
@@ -406,7 +567,7 @@ RenderPass createSimpleRenderPass(RenderWindow& window) {
 
 	vr::Renderer* renderer = vr::Renderer::get();
 
-	renderPassStruct.depthImage = renderer->createDepthImage({ (uint32_t)window.getCurrentExtent().x, (uint32_t)window.getCurrentExtent().y });
+	renderPassStruct.depthImage = renderer->createDepthTexture({ (uint32_t)window.getCurrentExtent().x, (uint32_t)window.getCurrentExtent().y });
 
 	std::vector<VkAttachmentDescription> attachments(2);
 	attachments[0] = renderer->getSwapchainAttachment();
@@ -431,7 +592,7 @@ RenderPass createSimpleRenderPass(RenderWindow& window) {
 
 	renderPassStruct.renderPass = renderer->createRenderPass(attachments, subpasses, { });
 
-	renderPassStruct.frameBuffer = renderer->createFramebuffer(renderPassStruct.renderPass, {1000, 600}, { renderPassStruct.depthImage });
+	renderPassStruct.frameBuffer = renderer->createSwapchainFramebuffer(renderPassStruct.renderPass, { renderPassStruct.depthImage });
 
 	return std::move(renderPassStruct);
 }

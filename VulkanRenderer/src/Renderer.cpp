@@ -357,6 +357,7 @@ namespace NAME_SPACE {
 	}
 
 	void Renderer::cleanupImGUI() {
+		vkDeviceWaitIdle(m_device);
 		ImGui_ImplVulkan_Shutdown();
 		ImGui_ImplGlfw_Shutdown();
 		ImGui::DestroyContext();
@@ -575,7 +576,7 @@ namespace NAME_SPACE {
 		const std::vector<VkPushConstantRange>& pushConstantRanges,
 		const std::vector<VkPipelineShaderStageCreateInfo>& shaderStages,
 		VkPipelineVertexInputStateCreateInfo vertexInput,
-		const std::vector<VkDynamicState>& dynamicStates
+		vbl::PipelineConfig config
 		)
 	{
 		Pipeline pipeline;
@@ -597,8 +598,7 @@ namespace NAME_SPACE {
 				shaderStages.data(),
 				shaderStages.size(),
 				vertexInput,
-				dynamicStates.data(),
-				dynamicStates.size()
+				config
 			),
 			"Failed to create pipeline"
 		);
@@ -726,6 +726,30 @@ namespace NAME_SPACE {
 			0);
 
 		return image;
+	}
+
+	Texture* Renderer::createTexture3D(VkExtent3D extent, VkFormat format)
+	{
+		auto image = m_pDataManager->createTexture3D(
+			extent,
+			VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+			VK_SAMPLE_COUNT_1_BIT,
+			format,
+			1,
+			1);
+
+		return image;
+
+	}
+
+	void Renderer::updateTexture(Texture* dst, uint32_t framebuffer, uint32_t renderpass, uint32_t subpass, void* data, size_t size) {
+		Buffer* buffer = m_pDataManager->createBuffer(size, VK_BUFFER_USAGE_TRANSFER_SRC_BIT, VMA_MEMORY_USAGE_CPU_TO_GPU, data);
+		queueTransferCommand(
+			framebuffer,
+			renderpass,
+			subpass,
+			buffer,
+			dst);
 	}
 
 	void Renderer::queueTransferCommand(uint32_t framebuffer, uint32_t renderpass, uint32_t subpass, Buffer* srcBuffer, Texture* dstTexture) {
@@ -915,7 +939,7 @@ namespace NAME_SPACE {
 		return std::make_shared<Shader>(m_device, path, stage);
 	}
 
-	uint32_t Renderer::createPipeline(const ShaderSetPtr& shaderSet, uint32_t renderPass, uint32_t subpassIndex) {
+	uint32_t Renderer::createPipeline(const ShaderSetPtr& shaderSet, uint32_t renderPass, uint32_t subpassIndex, vbl::PipelineConfig config) {
 		if (shaderSet->isGraphicsSet()) {
 
 			auto vertexAttributes = shaderSet->getVertexAttributes();
@@ -937,7 +961,7 @@ namespace NAME_SPACE {
 				shaderSet->getPushConstantRanges(),
 				shaderSet->getShaderInfos(),
 				inputState,
-				{ VK_DYNAMIC_STATE_VIEWPORT }
+				config
 			);
 		}
 		else {
@@ -1086,6 +1110,7 @@ namespace NAME_SPACE {
 	void Renderer::updateDescriptorSet(const DescriptorSetPtr& descriptorSet, uint32_t binding, const Buffer* buffer, const Texture* image, const SamplerPtr& sampler, bool isOneTimeUpdate) {
 
 		if (descriptorSet->writes.size() <= binding) {
+			DEBUG_LOG_ERROR("Binding", binding, "out of bounds!");
 			throw std::runtime_error("Binding out of bounds!");
 		}
 
