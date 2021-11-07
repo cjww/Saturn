@@ -3,13 +3,13 @@
 
 namespace ImGui {
 
-	void Component(Transform* transform) {
+	void Component(comp::Transform* transform) {
 		ImGui::DragFloat3("Position", (float*)&transform->position, 0.1f);
 		ImGui::DragFloat3("Rotation", (float*)&transform->rotation, 0.1f);
 		ImGui::DragFloat3("Scale", (float*)&transform->scale, 0.1f);
 	}
 
-	void Component(Model* model) {
+	void Component(comp::Model* model) {
 		ImGui::Text("ModelID: %d", model->modelID);
 		if (model->modelID != NULL_RESOURCE) {
 			sa::ModelData* data = sa::ResourceManager::get()->getModel(model->modelID);
@@ -21,8 +21,8 @@ namespace ImGui {
 		}
 		
 	}
-	void Component(Script* script) {
-		char buffer[IMGUI_BUFFER_SIZE_NORMAL];
+	void Component(comp::Script* script) {
+		static char buffer[IMGUI_BUFFER_SIZE_NORMAL];
 		strcpy_s(buffer, script->scriptName.c_str());
 		ImGui::InputText("Name##Script", buffer, IMGUI_BUFFER_SIZE_NORMAL);
 	}

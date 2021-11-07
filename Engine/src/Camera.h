@@ -23,6 +23,7 @@ namespace sa {
 	public:
 		Camera();
 		Camera(const RenderWindow* pWindow);
+		Camera(glm::ivec2 windowExtent);
 
 		void setFOVRadians(float fovRadians);
 		void setFOVDegrees(float fovDegrees);

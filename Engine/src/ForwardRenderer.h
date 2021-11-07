@@ -35,10 +35,6 @@ namespace sa {
 	
 		vk::DescriptorManager* m_pDescriptorManager;
 
-		//Systems
-		vk::MeshRenderSystem* m_pMeshRenderSystem;
-		vk::DescriptorCreationSystem* m_pDescriptorCreationSystem;
-
 	public:
 		ForwardRenderer();
 
@@ -47,7 +43,7 @@ namespace sa {
 
 		virtual void beginFrameImGUI() override;
 
-		virtual void draw() override;
+		virtual void draw(Scene* scene) override;
 
 		virtual vr::Texture* getOutputTexture() const override;
 

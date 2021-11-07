@@ -1,6 +1,8 @@
 #pragma once
 //#include "ECS\Components.h"
 
+#include <entt/entt.hpp>
+
 #include "ECS/ECSCoordinator.h"
 #include "ECS/Components.h"
 #include "imgui.h"
@@ -13,26 +15,26 @@
 
 namespace ImGui {
 	static struct PopupPayload {
-		void* data;
-		size_t size;
+		entt::type_info type;
 	} payload;
 
-	void Component(Transform* transform);
-	void Component(Model* model);
-	void Component(Script* script);
+	void Component(comp::Transform* transform);
+	void Component(comp::Model* model);
+	void Component(comp::Script* script);
 	
 
 	template<typename T>
-	void Component(EntityID entity);
+	void Component(entt::registry& reg, entt::entity entity);
 
 
 
 }
 
 template<typename T>
-void ImGui::Component(EntityID entity) {
-	T* comp = ECSCoordinator::get()->getComponent<T>(entity);
+void ImGui::Component(entt::registry& reg, entt::entity entity) {
+	T* comp = reg.try_get<T>(entity);
 	if (!comp) return;
+
 
 	ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
 	static bool visable = true;
@@ -41,8 +43,8 @@ void ImGui::Component(EntityID entity) {
 	}
 	if (!visable) {
 		ImGui::OpenPopup("Remove?");
-		payload.data = (void*)ECSCoordinator::get()->getComponentType<T>();
-		payload.size = sizeof(ComponentType);
+		//payload.data = (void*)ECSCoordinator::get()->getComponentType<T>();
+		payload.type = entt::type_id<T>();
 		visable = true;
 	}
 }

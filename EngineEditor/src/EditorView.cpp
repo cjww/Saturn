@@ -5,7 +5,7 @@ EditorView::EditorView(sa::Engine* pEngine, RenderWindow* pWindow)
 {
 	m_pWindow = pWindow;
 	m_isFocused = false;
-	m_selectedEntity = -1;
+	m_selectedEntity = entt::null;
 
 	sa::Rect viewport;
 	viewport.setSize(pWindow->getCurrentExtent());
@@ -88,8 +88,11 @@ void EditorView::onImGui() {
 		const ImU32 green = ImColor(ImVec4(0, 1, 0, 1));
 		const ImU32 blue = ImColor(ImVec4(0, 0, 1, 1));
 		
-		if (m_selectedEntity != -1) {
-			Transform* transform = ECSCoordinator::get()->getComponent<Transform>(m_selectedEntity);
+		entt::registry& sceneRegistry = m_pEngine->getCurrentScene()->getRegistry();
+
+		if (m_selectedEntity != entt::null) {
+			comp::Transform* transform = sceneRegistry.try_get<comp::Transform>(m_selectedEntity);
+
 			if (transform) {
 				glm::vec3 pos = transform->position;
 
@@ -201,10 +204,10 @@ sa::Camera* EditorView::getCamera() {
 	return &m_camera;
 }
 
-EntityID EditorView::getEntity() const {
+entt::entity EditorView::getEntity() const {
 	return m_selectedEntity;
 }
 
-void EditorView::setEntity(EntityID entity) {
+void EditorView::setEntity(entt::entity entity) {
 	m_selectedEntity = entity;
 }

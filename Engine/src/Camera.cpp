@@ -13,12 +13,18 @@ namespace sa {
     }
 
     Camera::Camera(const RenderWindow* pWindow)
+        : Camera(pWindow->getCurrentExtent())
+    {
+    }
+
+    Camera::Camera(glm::ivec2 windowExtent)
         : Camera()
     {
         m_viewport.setPosition(glm::vec2(0, 0));
-        m_viewport.setSize(pWindow->getCurrentExtent());
+        m_viewport.setSize(windowExtent);
         m_apectRatio = m_viewport.getSize().x / m_viewport.getSize().y;
         m_projMat = glm::perspective(m_fov, m_apectRatio, m_near, m_far);
+
     }
 
     void Camera::setFOVRadians(float fovRadians) {

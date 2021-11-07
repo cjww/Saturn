@@ -4,6 +4,7 @@
 
 #include "ResourceManager.h"
 #include "rapidxml\rapidxml.hpp"
+#include "Scene.h"
 
 namespace sa {
 	class Engine {
@@ -11,7 +12,8 @@ namespace sa {
 
 		IRenderTechnique* m_pRenderTechnique;
 
-		std::vector<Camera*> m_cameras;
+		std::unordered_map<size_t, Scene> m_scenes;
+		Scene* m_currentScene;
 
 		struct FrameTime {
 			std::chrono::high_resolution_clock::time_point start;
@@ -23,12 +25,10 @@ namespace sa {
 		void loadXML(const std::filesystem::path& path, rapidxml::xml_document<>& xml, std::string& xmlStr);
 		void loadFromFile(const std::filesystem::path& configPath);
 	
-		void registerComponents();
-
 	public:
 		//Engine();
 		void setup(RenderWindow* pWindow, const std::filesystem::path& configPath);
-		void update();
+		void update(float dt);
 
 		void recordImGui();
 		void draw();
@@ -37,13 +37,15 @@ namespace sa {
 
 		std::chrono::duration<double, std::milli> getCPUFrameTime() const;
 
-		Camera* newCamera();
-		Camera* newCamera(const RenderWindow* pWindow);
-
-		void addActiveCamera(Camera* camera);
-		void removeActiveCamera(Camera* camera);
-
 		IRenderTechnique* getRenderTechnique() const;
+
+		Scene& getScene(const std::string& name);
+		Scene* getCurrentScene() const;
+		void setScene(const std::string& name);
+		void setScene(Scene& scene);
+
+
+
 
 	};
 }

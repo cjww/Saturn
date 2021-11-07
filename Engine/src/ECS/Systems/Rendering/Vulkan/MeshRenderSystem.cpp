@@ -11,7 +11,7 @@ namespace vk {
 		vr::Renderer* renderer = vr::Renderer::get();
 
 		for (const auto& entity : m_entitySet) {
-			Model* modelComp = m_pCoordinator->getComponent<Model>(entity);
+			comp::Model* modelComp = m_pCoordinator->getComponent<comp::Model>(entity);
 			
 			if (modelComp->modelID == NULL_RESOURCE) {
 				continue; // does not have to be drawn
@@ -19,7 +19,7 @@ namespace vk {
 
 			sa::ModelData* model = sa::ResourceManager::get()->getModel(modelComp->modelID);
 
-			Transform* transform = m_pCoordinator->getComponent<Transform>(entity);
+			comp::Transform* transform = m_pCoordinator->getComponent<comp::Transform>(entity);
 			sa::PerObjectBuffer perObject = {};
 			perObject.worldMatrix = glm::mat4(1);
 			perObject.worldMatrix = glm::translate(perObject.worldMatrix, transform->position);

@@ -3,28 +3,37 @@
 
 #include <glm/gtc/matrix_transform.hpp>
 
-struct Model {
-	ResourceID modelID = NULL_RESOURCE;
-};
+namespace comp {
 
-struct Transform {
-	glm::vec3 position = glm::vec3(0);
-	glm::vec3 rotation = glm::vec3(0);
-	glm::vec3 scale = glm::vec3(1);
-};
+	struct Name {
+		std::string name;
+	};
 
-enum class LightType {
-	POINT = 0,
-	DIRECTIONAL = 1
-};
+	struct Model {
+		ResourceID modelID = NULL_RESOURCE;
+		vr::Buffer* buffer = nullptr;
+		vr::DescriptorSetPtr descriptorSet = nullptr;
+	};
 
-struct Light {
-	glm::vec3 color = glm::vec3(1);
-	float strength = 1.0f;
-	LightType type = LightType::POINT;
-};
+	struct Transform {
+		glm::vec3 position = glm::vec3(0);
+		glm::vec3 rotation = glm::vec3(0);
+		glm::vec3 scale = glm::vec3(1);
+	};
 
-struct Script {
-	std::string scriptName;
-	std::string code;
-};
+	enum class LightType {
+		POINT = 0,
+		DIRECTIONAL = 1
+	};
+
+	struct Light {
+		glm::vec3 color = glm::vec3(1);
+		float strength = 1.0f;
+		LightType type = LightType::POINT;
+	};
+
+	struct Script {
+		std::string scriptName;
+		std::string code;
+	};
+}

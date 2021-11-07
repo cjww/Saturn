@@ -31,6 +31,9 @@ namespace sa {
 	struct Mesh {
 		vr::Buffer* vertexBuffer;
 		vr::Buffer* indexBuffer;
+		union {
+			size_t indexCount, vertexCount;
+		};
 		Material material;
 
 	};

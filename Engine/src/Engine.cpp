@@ -42,22 +42,13 @@ namespace sa {
 		}
 	}
 
-	void Engine::registerComponents() {
-
-		ECSCoordinator::get()->registerComponent<Model>();
-		ECSCoordinator::get()->registerComponent<Transform>();
-		ECSCoordinator::get()->registerComponent<Light>();
-		ECSCoordinator::get()->registerComponent<Script>();
-
-
-	}
-
 	void Engine::setup(RenderWindow* pWindow, const std::filesystem::path& configPath) {
 	
-		registerComponents();
-
+		
 		loadFromFile(configPath);
 		m_pRenderTechnique->init(pWindow, true);
+		m_currentScene = nullptr;
+
 		/*
 		Camera* cam = newCamera(pWindow); // DefaultCamera
 		cam->setPosition(glm::vec3(0, 0, 1));
@@ -68,8 +59,9 @@ namespace sa {
 
 	}
 
-	void Engine::update() {
-
+	void Engine::update(float dt) {
+		if (m_currentScene)
+			m_currentScene->update(dt);
 	}
 
 	void Engine::recordImGui() {
@@ -78,14 +70,11 @@ namespace sa {
 	}
 
 	void Engine::draw() {
-		m_pRenderTechnique->draw();
+		m_pRenderTechnique->draw(m_currentScene);
 		m_frameTime.cpu = std::chrono::high_resolution_clock::now() - m_frameTime.start;
 	}
 
 	void Engine::cleanup() {
-		for (auto& cam : m_cameras) {
-			delete cam;
-		}
 
 		ECSCoordinator::cleanup();
 		ResourceManager::cleanup();
@@ -97,27 +86,25 @@ namespace sa {
 		return m_frameTime.cpu;
 	}
 
-	Camera* Engine::newCamera() {
-		m_cameras.push_back(new Camera());
-		return m_cameras.back();
-	}
-
-	Camera* Engine::newCamera(const RenderWindow* pWindow) {
-		m_cameras.push_back(new Camera(pWindow));
-		return m_cameras.back();
-	}
-
-
-	void Engine::addActiveCamera(Camera* camera) {
-		m_pRenderTechnique->addCamera(camera);
-	}
-
-	void Engine::removeActiveCamera(Camera* camera) {
-		m_pRenderTechnique->removeCamera(camera);
-	}
-
 	IRenderTechnique* Engine::getRenderTechnique() const {
 		return m_pRenderTechnique;
+	}
+
+	Scene& Engine::getScene(const std::string& name) {
+		return m_scenes[std::hash<std::string>()(name)];
+	}
+
+	Scene* Engine::getCurrentScene() const {
+		return m_currentScene;
+	}
+
+
+	void Engine::setScene(const std::string& name) {
+		setScene(m_scenes[std::hash<std::string>()(name)]);
+	}
+
+	void Engine::setScene(Scene& scene) {
+		m_currentScene = &scene;
 	}
 
 }

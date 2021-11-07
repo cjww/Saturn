@@ -6,12 +6,12 @@ void SceneView::makePopups() {
 
 			if (ImGui::Button("Empty")) {
 				EntityID entity = ECSCoordinator::get()->createEntity("Empty");
-				ECSCoordinator::get()->addComponent<Transform>(entity);
+				ECSCoordinator::get()->addComponent<comp::Transform>(entity);
 			}
 			if (ImGui::Button("Quad")) {
 				EntityID entity = ECSCoordinator::get()->createEntity("Quad");
-				Transform* transform = ECSCoordinator::get()->addComponent<Transform>(entity);
-				ECSCoordinator::get()->addComponent<Model>(entity)->modelID = sa::ResourceManager::get()->loadQuad();
+				comp::Transform* transform = ECSCoordinator::get()->addComponent<comp::Transform>(entity);
+				ECSCoordinator::get()->addComponent<comp::Model>(entity)->modelID = sa::ResourceManager::get()->loadQuad();
 			}
 			ImGui::EndMenu();
 		}

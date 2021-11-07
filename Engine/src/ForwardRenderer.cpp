@@ -142,17 +142,7 @@ namespace sa {
 			m_renderer->initImGUI(m_renderPass, 2);
 		}
 
-		m_pDescriptorManager = new vk::DescriptorManager(m_pColorShaders.get());
-
-		ComponentMask mask;
-		mask.set(ECSCoordinator::get()->getComponentType<Transform>());
-		m_pDescriptorCreationSystem = ECSCoordinator::get()->registerSystem<vk::DescriptorCreationSystem>(mask, m_pDescriptorManager);
-
-		mask.reset();
-		mask.set(ECSCoordinator::get()->getComponentType<Model>());
-		mask.set(ECSCoordinator::get()->getComponentType<Transform>());
-		m_pMeshRenderSystem = ECSCoordinator::get()->registerSystem<vk::MeshRenderSystem>(mask, m_pDescriptorManager);
-
+		
 		PerFrameBuffer perFrame = {};
 		glm::mat4 proj = glm::perspective(glm::radians(60.f), 1000.f / 600.f, 0.001f, 100.0f);
 		glm::mat4 view = glm::lookAt(glm::vec3(0, 0, 1), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
@@ -196,7 +186,7 @@ namespace sa {
 		}
 	}
 
-	void ForwardRenderer::draw() {
+	void ForwardRenderer::draw(Scene* scene) {
 		bool begin = m_renderer->beginFrame();
 		if (!begin)
 			return;
@@ -204,26 +194,66 @@ namespace sa {
 		m_renderer->beginRenderPass(m_renderPass, m_mainFramebuffer, VK_SUBPASS_CONTENTS_INLINE);
 		m_renderer->bindPipeline(m_colorPipeline);
 
-		for (const auto& camera : m_activeCameras) {
-			VkViewport viewport;
-			Rect r = camera->getViewport();
-			glm::vec2 pos = r.getPosition();
-			glm::vec2 size = r.getSize();
-			viewport.x = pos.x;
-			viewport.y = pos.y;
-			viewport.width = size.x;
-			viewport.height = size.y;
-			viewport.maxDepth = 1.0f;
-			viewport.minDepth = 0.0f;
+		if(scene != nullptr) {
+			for (const auto& camera : scene->getActiveCameras()) {
+				VkViewport viewport;
+				Rect r = camera->getViewport();
+				glm::vec2 pos = r.getPosition();
+				glm::vec2 size = r.getSize();
+				viewport.x = pos.x;
+				viewport.y = pos.y;
+				viewport.width = size.x;
+				viewport.height = size.y;
+				viewport.maxDepth = 1.0f;
+				viewport.minDepth = 0.0f;
 
-			PerFrameBuffer perFrame;
-			perFrame.projViewMatrix = camera->getProjectionMatrix() * camera->getViewMatrix();
-			memcpy(m_pPerFrameBuffer->mappedData, &perFrame, sizeof(perFrame));
+				PerFrameBuffer perFrame;
+				perFrame.projViewMatrix = camera->getProjectionMatrix() * camera->getViewMatrix();
+				memcpy(m_pPerFrameBuffer->mappedData, &perFrame, sizeof(perFrame));
 
-			m_renderer->updateDescriptorSet(m_pPerFrameDescriptorSet, 0, m_pPerFrameBuffer, nullptr, nullptr, false);
-			m_renderer->bindDescriptorSet(m_pPerFrameDescriptorSet, m_colorPipeline);
-			m_renderer->bindViewport(viewport);
-			m_pMeshRenderSystem->draw(m_colorPipeline);
+				m_renderer->updateDescriptorSet(m_pPerFrameDescriptorSet, 0, m_pPerFrameBuffer, nullptr, nullptr, false);
+				m_renderer->bindDescriptorSet(m_pPerFrameDescriptorSet, m_colorPipeline);
+				m_renderer->bindViewport(viewport);
+			
+				scene->getRegistry().group<comp::Transform, comp::Model>().each([&](const comp::Transform& transform, comp::Model& modelComp) {
+					
+					if (modelComp.modelID == NULL_RESOURCE) {
+						return; // does not have to be drawn
+					}
+
+					if (modelComp.descriptorSet == nullptr) {
+						modelComp.descriptorSet = m_pColorShaders->getDescriptorSet(SET_PER_OBJECT);
+					}
+
+					sa::ModelData* model = sa::ResourceManager::get()->getModel(modelComp.modelID);
+					
+					sa::PerObjectBuffer perObject = {};
+					perObject.worldMatrix = glm::mat4(1);
+					perObject.worldMatrix = glm::translate(perObject.worldMatrix, transform.position);
+					perObject.worldMatrix = glm::rotate(perObject.worldMatrix, transform.rotation.x, glm::vec3(1, 0, 0));
+					perObject.worldMatrix = glm::rotate(perObject.worldMatrix, transform.rotation.y, glm::vec3(0, 1, 0));
+					perObject.worldMatrix = glm::rotate(perObject.worldMatrix, transform.rotation.z, glm::vec3(0, 0, 1));
+					perObject.worldMatrix = glm::scale(perObject.worldMatrix, transform.scale);
+
+					memcpy(modelComp.buffer->mappedData, &perObject, sizeof(perObject));
+					m_renderer->updateDescriptorSet(modelComp.descriptorSet, 0, modelComp.buffer, nullptr, nullptr, false);
+					m_renderer->bindDescriptorSet(modelComp.descriptorSet, m_colorPipeline);
+
+					for (const auto& mesh : model->meshes) {
+						m_renderer->bindVertexBuffer(mesh.vertexBuffer);
+						if (mesh.indexBuffer != nullptr) {
+							m_renderer->bindIndexBuffer(mesh.indexBuffer);
+							m_renderer->drawIndexed(mesh.indexCount, 1);
+						}
+						else {
+							m_renderer->draw(mesh.vertexCount, 1);
+						}
+					}
+
+				});					
+			
+			}
+
 		}
 
 		

@@ -9,6 +9,8 @@ private:
 	EntityInspector* m_pInspector;
 	EditorView* m_pView;
 
+	entt::registry* m_pRegistry;
+
 	void makePopups();
 
 public:
