@@ -474,24 +474,29 @@ void texture3DTest(RenderWindow& window) {
 	auto descriptorSet = shaderSet->getDescriptorSet(0);
 
 
-	/*vr::Image image("Box.png");
+	/*
+	vr::Image image("Box.png");
 	vr::Texture* tex = renderer->createTexture3D({ image.getExtent().width, image.getExtent().height, 1 }, VK_FORMAT_R8_UNORM);
 	
 	std::vector<uint8_t> data(image.getWidth() * image.getHeight());
 	for(int i = 0; i < data.size(); i++) {
 		data[i] = image.getPixels()[i * image.getChannelCount()];
-	}*/
+	}
+	*/
+	uint32_t size = 8;
+	vr::Texture* tex = renderer->createTexture3D({ size, size, size }, VK_FORMAT_R8_UNORM);
 
-	vr::Texture* tex = renderer->createTexture3D({ 32, 32, 32 }, VK_FORMAT_R8_UNORM);
-
-	std::vector<uint8_t> data(32 * 32 * 32);
+	std::vector<uint8_t> data(size * size * size, 0);
 	for (int i = 0; i < data.size(); i++) {
 		data[i] = i;
 	}
+	/*
+	*/
 
 	renderer->updateTexture(tex, renderPass.frameBuffer, renderPass.renderPass, 0, data.data(), data.size());
 	
 	vr::SamplerPtr sampler = renderer->createSampler(VK_FILTER_NEAREST);
+	
 
 	renderer->updateDescriptorSet(descriptorSet, 0, nullptr, tex, sampler, true);
 	
@@ -534,6 +539,7 @@ void texture3DTest(RenderWindow& window) {
 			float dt = frameTimer.getDeltaTime();
 			variables.time += dt;
 			variables.worldMat = cameraController.getViewRayTracing(dt);
+
 
 			memcpy(buffer->mappedData, &variables, sizeof(variables));
 			renderer->updateDescriptorSet(variablesDescSet, 0, buffer, nullptr, nullptr, false);

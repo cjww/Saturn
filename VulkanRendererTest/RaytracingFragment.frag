@@ -23,6 +23,50 @@ float sphereIntersect(vec3 ray_origin, vec3 ray_dir, vec3 center, float radius) 
     return tca - thc;
 }
 
+// axis aligned box centered at the origin, with size boxSize
+vec2 boxIntersection( in vec3 ro, in vec3 rd, vec3 boxSize, out vec3 outNormal ) 
+{
+    vec3 m = 1.0/rd; // can precompute if traversing a set of aligned boxes
+    vec3 n = m*ro;   // can precompute if traversing a set of aligned boxes
+    vec3 k = abs(m)*boxSize;
+    vec3 t1 = -n - k;
+    vec3 t2 = -n + k;
+    float tN = max( max( t1.x, t1.y ), t1.z );
+    float tF = min( min( t2.x, t2.y ), t2.z );
+    if( tN>tF || tF<0.0) return vec2(-1.0); // no intersection
+    outNormal = -sign(rd)*step(t1.yzx,t1.xyz)*step(t1.zxy,t1.xyz);
+    return vec2( tN, tF );
+}
+
+// cylinder defined by extremes pa and pb, and radious ra
+vec4 cylIntersect( in vec3 ro, in vec3 rd, in vec3 pa, in vec3 pb, float ra )
+{
+    vec3 ca = pb-pa;
+    vec3 oc = ro-pa;
+    float caca = dot(ca,ca);
+    float card = dot(ca,rd);
+    float caoc = dot(ca,oc);
+    float a = caca - card*card;
+    float b = caca*dot( oc, rd) - caoc*card;
+    float c = caca*dot( oc, oc) - caoc*caoc - ra*ra*caca;
+    float h = b*b - a*c;
+    if( h<0.0 ) return vec4(-1.0); //no intersection
+    h = sqrt(h);
+    float t = (-b-h)/a;
+    // body
+    float y = caoc + t*card;
+    if( y>0.0 && y<caca ) return vec4( t, (oc+t*rd-ca*y/caca)/ra );
+    // caps
+    t = (((y<0.0)?0.0:caca) - caoc)/card;
+    if( abs(b+a*t)<h ) return vec4( t, ca*sign(y)/caca );
+    return vec4(-1.0); //no intersection
+}
+
+bool drawArrow(vec3 origin, vec3 dir, vec3 arrowStart, vec3 arrowEnd){
+    float tcylinder = cylIntersect(origin, dir, arrowStart, arrowEnd, 0.05).x;
+    return tcylinder > 0;
+}
+
 void main() {
 
     float z = (sin(var.time) + 1) * 0.5;
@@ -46,13 +90,48 @@ void main() {
     vec3 dir = fragmentPos - origin;
     dir = normalize(dir);
 
-    out_color = texture(myTexture, vec3(in_vertexUV, z));
-
-    vec3 spherePos = vec3(0, 0, 2 + z);
-    vec4 sphereColor = vec4(1, 0, 0, 1);
-    vec3 lightPos = vec3(z, 0, 0);
-
+    int texSize = 8;
+    vec3 lightPos = vec3(10, 0, 0);
     vec4 ambient = vec4(0.1, 0.1, 0.1, 1);
+    if(drawArrow(origin, dir, vec3(0, 0, 0), vec3(1, 0, 0))) {
+       out_color = vec4(1, 0, 0, 1);
+       return;
+    }
+    if(drawArrow(origin, dir, vec3(0, 0, 0), vec3(0, 1, 0))) {
+       out_color = vec4(0, 1, 0, 1);
+        return;
+    }
+    if(drawArrow(origin, dir, vec3(0, 0, 0), vec3(0, 0, 1))) {
+       out_color = vec4(0, 0, 1, 1);
+       return;
+    }
+   
+
+    vec3 boxNormal;
+    float tn = boxIntersection(origin, dir, vec3(texSize), boxNormal).x;
+    if(tn > 0)
+    {
+        //out_color = texture(myTexture, vec3(in_vertexUV, z));
+
+        vec3 point = origin + dir * tn;
+        point += texSize / 2;
+        point /= texSize;
+        point.y = 1 - point.y;
+
+        /*
+        */
+        
+        out_color = texture(myTexture, point);
+
+    }
+    else
+    {
+        out_color = vec4(0, 0, 0, 1);
+    }
+    
+    vec3 spherePos = vec3(0, 0, 0);
+    vec4 sphereColor = vec4(0, 1, 0, 1);
+
 
     float t = sphereIntersect(origin, dir, spherePos, 0.5);
     if(t > 0)
