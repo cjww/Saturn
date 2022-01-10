@@ -42,6 +42,8 @@ namespace NAME_SPACE {
 
 		static std::vector<uint32_t> readCode(const char* path);
 
+		void load(const char* path);
+
 		VkShaderStageFlagBits getStage() const;
 		const std::vector<DescriptorSetLayout>& getDescriptorSetLayouts() const;
 		const std::vector<VkPushConstantRange>& getPushConstantRanges() const;

@@ -70,6 +70,7 @@ namespace NAME_SPACE {
 
 		Texture* createDepthAttachmentTexture2D(VkExtent2D extent, VkSampleCountFlagBits sampleCount, uint32_t mipLevels = 1, uint32_t arrayLayers = 1);
 		Texture* createColorTexture2D(VkExtent2D extent, VkImageUsageFlags usage, VkSampleCountFlagBits sampleCount, uint32_t mipLevels = 1, uint32_t arrayLayers = 1);
+		Texture* createTexture3D(VkExtent3D extent, VkImageUsageFlags usage, VkSampleCountFlagBits sampleCount, VkFormat format, uint32_t mipLevels = 1, uint32_t arrayLayers = 1);
 
 		void destroyBuffer(Buffer* buffer);
 		void destroyImage(Texture* texture);

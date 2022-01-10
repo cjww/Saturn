@@ -1,4 +1,7 @@
 #include "Engine.h"
+
+#include "entt/entt.hpp"
+
 namespace sa {
 	void Engine::loadXML(const std::filesystem::path& path, rapidxml::xml_document<>& xml, std::string& xmlStr) {
 		std::ifstream file(path);
@@ -20,7 +23,7 @@ namespace sa {
 		xml_node<>* rendererNode = root->first_node("Renderer");
 		if (rendererNode) {
 			xml_attribute<>* api = rendererNode->first_attribute("API", 0, false);
-	
+
 			xml_attribute<>* renderTechnique = rendererNode->first_attribute("RenderTechnique", 0, false);
 			if (strcmp(renderTechnique->value(), "Forward") == 0) {
 				if (strcmp(api->value(), "Vulkan") == 0) {

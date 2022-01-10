@@ -5,6 +5,8 @@
 #include "DataManager.hpp"
 #include "Image.hpp"
 
+#include "Logger.hpp"
+
 #include <RenderWindow.hpp>
 
 #include "vulkan_base.hpp"
@@ -140,7 +142,7 @@ namespace NAME_SPACE {
 			const std::vector<VkPushConstantRange>& pushConstantRanges,
 			const std::vector<VkPipelineShaderStageCreateInfo>& shaderStages,
 			VkPipelineVertexInputStateCreateInfo vertexInput,
-			const std::vector<VkDynamicState>& dynamicStates);
+			vbl::PipelineConfig config = {});
 
 		uint32_t createComputePipeline(const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts,
 			const std::vector<VkPushConstantRange>& pushConstantRanges,
@@ -188,7 +190,7 @@ namespace NAME_SPACE {
 		uint32_t createSwapchainFramebuffer(uint32_t renderPass, const std::vector<Texture*>& additionalAttachments);
 		uint32_t createFramebuffer(uint32_t renderPass, VkExtent2D extent, const std::vector<Texture*>& attachments);
 
-		uint32_t createPipeline(const ShaderSetPtr& shaderSet, uint32_t renderPass = 0, uint32_t subpassIndex = 0);
+		uint32_t createPipeline(const ShaderSetPtr& shaderSet, uint32_t renderPass = 0, uint32_t subpassIndex = 0, vbl::PipelineConfig config = {});
 
 		//Resource creation
 		Texture* createDepthTexture(VkExtent2D extent);
@@ -196,6 +198,10 @@ namespace NAME_SPACE {
 		Texture* createTexture2D(uint32_t framebuffer, uint32_t renderpass, uint32_t subpass, const Image& image);
 		Texture* createTexture2D(uint32_t framebuffer, uint32_t renderpass, uint32_t subpass, VkExtent2D extent, unsigned char* pixels, int channels = 4);
 		Texture* createColorAttachmentTexture(VkExtent2D extent, VkFormat format, uint32_t arrayLayers, uint32_t mipLevels, VkSampleCountFlagBits sampleCount, VkImageUsageFlags additionalUsage);
+
+		Texture* createTexture3D(VkExtent3D extent, VkFormat format);
+
+		void updateTexture(Texture* dst, uint32_t framebuffer, uint32_t renderpass, uint32_t subpass, void* data, size_t size);
 
 		void queueTransferCommand(uint32_t framebuffer, uint32_t renderpass, uint32_t subpass, Buffer* srcBuffer, Texture* dstTexture);
 		/*

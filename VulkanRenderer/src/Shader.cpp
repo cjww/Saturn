@@ -118,53 +118,13 @@ namespace NAME_SPACE {
 		}
 	}
 
-	Shader::Shader(VkDevice device, const char* path, VkShaderStageFlagBits stage) : m_device(device), m_stage(stage) {
-		auto code = readCode(path);
-
-        m_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
-		m_info.pNext = nullptr;
-		m_info.flags = 0;
-
-		vbl::printError(
-			vbl::createShaderModule(&m_info.module, device, code.data(), code.size() * sizeof(uint32_t)),
-			"Failed to create shader module"
-		);
-        m_info.pName = "main";
-        m_info.stage = stage;
-        m_info.pSpecializationInfo = nullptr;
-
-        m_pCompiler = new spirv_cross::Compiler(code.data(), code.size());
-
-
-		auto res = m_pCompiler->get_shader_resources();
-		addResources(res.uniform_buffers, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, nullptr);
-		
-		addResources(res.sampled_images, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, nullptr);
-		addResources(res.separate_images, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, nullptr);
-
-		addResources(res.storage_images, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, nullptr);
-		addResources(res.storage_buffers, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr);
-
-		addResources(res.subpass_inputs, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, nullptr);
-
-
-		// TODO ...
-
-		for (auto& p : res.push_constant_buffers) {
-			size_t size = m_pCompiler->get_declared_struct_size(m_pCompiler->get_type(p.type_id));
-			
-			VkPushConstantRange range = {};
-			range.size = size;
-			range.offset = 0; // Modify when merged with other shader stage
-			range.stageFlags = stage;
-			m_pushConstantRanges.push_back(range);
-		}
-
-
-		if (stage == VK_SHADER_STAGE_VERTEX_BIT) {
-			getVertexInput(res.stage_inputs);
-		}
-
+	Shader::Shader(VkDevice device, const char* path, VkShaderStageFlagBits stage)
+		: m_device(device)
+		, m_stage(stage)
+		, m_pCompiler(nullptr)
+	{
+		m_info.module = VK_NULL_HANDLE;
+		load(path);
 	}
 
 	Shader::~Shader() {
@@ -184,6 +144,64 @@ namespace NAME_SPACE {
 		file.close();
 
 		return std::move(buffer);
+	}
+
+	void Shader::load(const char* path)
+	{
+
+		auto code = readCode(path);
+
+		m_info.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO;
+		m_info.pNext = nullptr;
+		m_info.flags = 0;
+
+		if (m_info.module != VK_NULL_HANDLE) {
+			vkDestroyShaderModule(m_device, m_info.module, nullptr);
+		}
+		vbl::printError(
+			vbl::createShaderModule(&m_info.module, m_device, code.data(), code.size() * sizeof(uint32_t)),
+			"Failed to create shader module"
+		);
+		m_info.pName = "main";
+		m_info.stage = m_stage;
+		m_info.pSpecializationInfo = nullptr;
+		
+		if (m_pCompiler) {
+			delete m_pCompiler;
+		}
+		m_pCompiler = new spirv_cross::Compiler(code.data(), code.size());
+
+		m_descriptorSets.clear();
+		auto res = m_pCompiler->get_shader_resources();
+		addResources(res.uniform_buffers, VK_DESCRIPTOR_TYPE_UNIFORM_BUFFER, nullptr);
+
+		addResources(res.sampled_images, VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER, nullptr);
+		addResources(res.separate_images, VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE, nullptr);
+
+		addResources(res.storage_images, VK_DESCRIPTOR_TYPE_STORAGE_IMAGE, nullptr);
+		addResources(res.storage_buffers, VK_DESCRIPTOR_TYPE_STORAGE_BUFFER, nullptr);
+
+		addResources(res.subpass_inputs, VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT, nullptr);
+
+
+		// TODO ...
+
+		m_pushConstantRanges.clear();
+		for (auto& p : res.push_constant_buffers) {
+			size_t size = m_pCompiler->get_declared_struct_size(m_pCompiler->get_type(p.type_id));
+
+			VkPushConstantRange range = {};
+			range.size = size;
+			range.offset = 0; // Modify when merged with other shader stage
+			range.stageFlags = m_stage;
+			m_pushConstantRanges.push_back(range);
+		}
+
+		m_vertexAttributes.clear();
+		m_vertexBindings.clear();
+		if (m_stage == VK_SHADER_STAGE_VERTEX_BIT) {
+			getVertexInput(res.stage_inputs);
+		}
 	}
 
 	VkShaderStageFlagBits Shader::getStage() const {

@@ -187,6 +187,7 @@
     <ClInclude Include="include\vulkan_base.hpp" />
     <ClInclude Include="include\DataManager.hpp" />
     <ClInclude Include="include\Shader.hpp" />
+    <ClInclude Include="include\Logger.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\Image.cpp" />
@@ -197,6 +198,7 @@
     <ClCompile Include="include\imgui_impl_vulkan.cpp" />
     <ClCompile Include="include\imgui_tables.cpp" />
     <ClCompile Include="include\imgui_widgets.cpp" />
+    <ClCompile Include="include\Logger.cpp" />
     <ClCompile Include="src\ShaderSet.cpp" />
     <ClCompile Include="src\functions.cpp" />
     <ClCompile Include="src\Shader.cpp" />
