@@ -19,5 +19,5 @@ private:
 public:
 	EngineEditor();
 
-	void run();
+	void openProject(const std::string& projectPath);
 };

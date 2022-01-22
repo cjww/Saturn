@@ -1,17 +1,17 @@
 #include "Entity.h"
 
-
-Entity::Entity(ECSCoordinator* pCoordinator)
-    : m_pCoordinator(pCoordinator)
-    , m_id(m_pCoordinator->createEntity())
+Entity::Entity(entt::registry* pRegistry, entt::entity entity)
+    : m_pRegistry(pRegistry)
+    , m_entity(entity)
 {
 
 }
 
+
 Entity::~Entity() {
-    m_pCoordinator->destroyEntity(m_id);
+    
 }
 
-EntityID Entity::getID() const  {
-    return m_id;
+entt::entity Entity::getID() const  {
+    return m_entity;
 }

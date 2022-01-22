@@ -10,7 +10,7 @@ void EntityInspector::makePopups() {
 			using namespace entt::literals;
 			//ECSCoordinator::get()->removeComponent(type, m_currentEntity);
 			auto mt_type = entt::resolve(type);
-			mt_type.func("remove"_hs).invoke({}, *m_registry, m_currentEntity);
+			//mt_type.func("remove"_hs).invoke({}, *m_registry, m_currentEntity);
 		}
 		ImGui::EndPopup();
 	}
@@ -25,7 +25,7 @@ void EntityInspector::makePopups() {
 				using namespace entt::literals;
 				//ECSCoordinator::get()->removeComponent(type, m_currentEntity);
 				auto mt_type = entt::resolve(type);
-				mt_type.func("add"_hs).invoke({}, *m_registry, m_currentEntity);
+				//mt_type.func("add"_hs).invoke({}, *m_registry, m_currentEntity);
 
 				ImGui::CloseCurrentPopup();
 			}
@@ -37,12 +37,18 @@ void EntityInspector::makePopups() {
 EntityInspector::EntityInspector(sa::Engine* pEngine) : EditorModule(pEngine) {
 	m_currentEntity = entt::null;
 	m_removeComponent = -1;
-	m_registry = nullptr;
+
+	m_pRegistry = nullptr;
+	if (pEngine->getCurrentScene()) {
+		m_pRegistry = &pEngine->getCurrentScene()->getRegistry();
+	}
 
 	using namespace entt::literals;
+	/*
 	entt::meta<comp::Transform>().func<&get<comp::Transform>, entt::as_ref_t>("get"_hs);
 	entt::meta<comp::Transform>().func<&remove<comp::Transform>>("remove"_hs);
 	entt::meta<comp::Transform>().func<&add<comp::Transform>, entt::as_ref_t>("add"_hs);
+	*/
 
 
 
@@ -59,6 +65,7 @@ void EntityInspector::onImGui() {
 			makePopups();
 			
 			char buffer[IMGUI_BUFFER_SIZE_SMALL];
+			/*
 			std::string entityName = std::to_string((int)m_currentEntity);
 			entt::registry& reg = m_pEngine->getCurrentScene()->getRegistry();
 			comp::Name* nameComp = reg.try_get<comp::Name>(m_currentEntity);
@@ -79,6 +86,7 @@ void EntityInspector::onImGui() {
 			ImGui::Component<comp::Script>(reg, m_currentEntity);
 		
 			
+			*/
 			ImGui::Separator();
 			ImGui::Spacing();
 			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 3);

@@ -57,6 +57,8 @@ namespace sa {
 			1, 2, 3
 		};
 		mesh.indexBuffer = vr::Renderer::get()->createIndexBuffer(indices.size() * sizeof(uint32_t), indices.data());
+
+		mesh.indexCount = 6;
 		model->meshes.push_back(mesh);
 
 		return id;

@@ -1,10 +1,32 @@
 #include "Scene.h"
 
+#include "ECS\Components.h"
+
 namespace sa {
+	void Scene::onModelConstruct(entt::registry reg, entt::entity e) {
+		//reg.get<comp::Model>(e).
+	}
+
+	void Scene::onModelDestroy(entt::registry reg, entt::entity e) {
+
+	}
+
+	Scene::Scene() {
+		
+	}
+
 	Scene::~Scene() {
 		for (auto& cam : m_cameras) {
 			delete cam;
 		}
+	}
+
+	void Scene::update(float dt) {
+
+	}
+
+	void Scene::render() {
+
 	}
 
 	Camera* Scene::newCamera() {
@@ -19,11 +41,21 @@ namespace sa {
 
 
 	void Scene::addActiveCamera(Camera* camera) {
-		publish<AddCamera>(camera);
+		size_t s = m_activeCameras.size();
+		m_activeCameras.insert(camera);
+		if(s != m_activeCameras.size())
+			publish<AddCamera>(camera);
 	}
 
 	void Scene::removeActiveCamera(Camera* camera) {
-		publish<RemoveCamera>(camera);
+		size_t s = m_activeCameras.size();
+		m_activeCameras.erase(camera);
+		if (s != m_activeCameras.size())
+			publish<RemoveCamera>(camera);
+	}
+
+	std::set<Camera*> Scene::getActiveCameras() const {
+		return m_activeCameras;
 	}
 
 	void Scene::setScene(const std::string& name) {
@@ -31,7 +63,7 @@ namespace sa {
 	}
 
 	Entity Scene::createEntity(const std::string name) {
-		return Entity(&m_reg, name);
+		return Entity(&m_reg, m_reg.create());
 	}
 
 	entt::registry& Scene::getRegistry() {

@@ -1,15 +1,15 @@
 #pragma once
-#include "ECSCoordinator.h"
+#include <entt\entt.hpp>
 
 class Entity {
 private:
-	ECSCoordinator* m_pCoordinator;
-	EntityID m_id;
+	entt::registry *m_pRegistry;
+	entt::entity m_entity;
 public:
-	Entity(ECSCoordinator* pCoordinator);
+	Entity(entt::registry* pRegistry, entt::entity entity);
 	~Entity();
 
-	EntityID getID() const;
+	entt::entity getID() const;
 
 	template<typename T>
 	T* addComponent();
@@ -23,15 +23,15 @@ public:
 
 template<typename T>
 inline T* Entity::addComponent() {
-	return m_pCoordinator->addComponent<T>(m_id);
+	return &m_pRegistry->emplace_or_replace<T>(m_entity);
 }
 
 template<typename T>
 inline T* Entity::getComponent() {
-	return m_pCoordinator->getComponent<T>(m_id);
+	return m_pRegistry->try_get<T>(m_entity);
 }
 
 template<typename T>
 inline void Entity::removeComponent() {
-	m_pCoordinator->removeComponent<T>(m_id);
+	m_pRegistry->remove<T>(m_entity);
 }

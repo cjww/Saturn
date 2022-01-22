@@ -225,6 +225,7 @@ namespace sa {
 						modelComp.descriptorSet = m_pColorShaders->getDescriptorSet(SET_PER_OBJECT);
 					}
 
+
 					sa::ModelData* model = sa::ResourceManager::get()->getModel(modelComp.modelID);
 					
 					sa::PerObjectBuffer perObject = {};
@@ -235,7 +236,12 @@ namespace sa {
 					perObject.worldMatrix = glm::rotate(perObject.worldMatrix, transform.rotation.z, glm::vec3(0, 0, 1));
 					perObject.worldMatrix = glm::scale(perObject.worldMatrix, transform.scale);
 
-					memcpy(modelComp.buffer->mappedData, &perObject, sizeof(perObject));
+					if (modelComp.buffer == nullptr) {
+						modelComp.buffer = vr::Renderer::get()->createUniformBuffer(sizeof(sa::PerObjectBuffer), &perObject);
+					}
+					else {
+						memcpy(modelComp.buffer->mappedData, &perObject, sizeof(perObject));
+					}
 					m_renderer->updateDescriptorSet(modelComp.descriptorSet, 0, modelComp.buffer, nullptr, nullptr, false);
 					m_renderer->bindDescriptorSet(modelComp.descriptorSet, m_colorPipeline);
 

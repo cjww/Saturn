@@ -52,6 +52,7 @@ namespace sa {
 		m_pRenderTechnique->init(pWindow, true);
 		m_currentScene = nullptr;
 
+
 		/*
 		Camera* cam = newCamera(pWindow); // DefaultCamera
 		cam->setPosition(glm::vec3(0, 0, 1));

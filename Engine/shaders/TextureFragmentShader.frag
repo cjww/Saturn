@@ -23,8 +23,5 @@ void main() {
     out_color = vec4(1, 1, 1, 1);
     //out_color += texture(myTexture, in_vertexUV);
     //out_color = min(out_color, 1);
-    
-    //out_color.x = in_vertexUV.x;
-    //out_color.y = in_vertexUV.y;
-    
+
 }

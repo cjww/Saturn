@@ -3,20 +3,22 @@
 void SceneView::makePopups() {
 	if (ImGui::BeginPopup("SceneViewMenu")) {
 		if (ImGui::BeginMenu("Add Entity")) {
-
+			
 			if (ImGui::Button("Empty")) {
-				EntityID entity = ECSCoordinator::get()->createEntity("Empty");
-				ECSCoordinator::get()->addComponent<comp::Transform>(entity);
+				Entity entity = m_pEngine->getCurrentScene()->createEntity("Empty");
+				entity.addComponent<comp::Transform>();
 			}
+			
 			if (ImGui::Button("Quad")) {
-				EntityID entity = ECSCoordinator::get()->createEntity("Quad");
-				comp::Transform* transform = ECSCoordinator::get()->addComponent<comp::Transform>(entity);
-				ECSCoordinator::get()->addComponent<comp::Model>(entity)->modelID = sa::ResourceManager::get()->loadQuad();
+				Entity entity = m_pEngine->getCurrentScene()->createEntity("Quad");
+				entity.addComponent<comp::Transform>();
+				entity.addComponent<comp::Model>()->modelID = sa::ResourceManager::get()->loadQuad();
 			}
+			
 			ImGui::EndMenu();
 		}
 
-		ImGui::Text("Nr of entities: %d", ECSCoordinator::get()->getEntityCount());
+		ImGui::Text("Nr of entities: %d", m_pRegistry->size());
 		ImGui::EndPopup();
 	}
 }
@@ -24,6 +26,10 @@ void SceneView::makePopups() {
 SceneView::SceneView(sa::Engine* pEngine, EntityInspector* pInspector, EditorView* pView) : EditorModule(pEngine) {
 	m_pInspector = pInspector;
 	m_pView = pView;
+	m_pRegistry = nullptr;
+	if (pEngine->getCurrentScene()) {
+		m_pRegistry = &pEngine->getCurrentScene()->getRegistry();
+	}
 }
 
 SceneView::~SceneView() {
@@ -34,14 +40,15 @@ void SceneView::onImGui() {
 	if (ImGui::Begin("Scene View")) {
 
 		static bool itemMenu = false;
-		static EntityID hovered = -1;
+		static entt::entity hovered = entt::null;
 		if (itemMenu) {
 			if (ImGui::BeginPopup("SceneViewMenu")) {
 				
 				if (ImGui::Button("Delete")) {
-					if (hovered != -1) {
-						ECSCoordinator::get()->destroyEntity(hovered);
-						m_pInspector->setEntity(-1);
+					if (hovered != entt::null) {
+						//ECSCoordinator::get()->destroyEntity(hovered);
+
+						m_pInspector->setEntity(entt::null);
 						ImGui::CloseCurrentPopup();
 					}
 				}
@@ -55,14 +62,13 @@ void SceneView::onImGui() {
 
 		ImGui::BeginListBox("##Entities");
 
-		auto entities = ECSCoordinator::get()->getActiveEntities();
-		static EntityID selected = -1;
-		
-		for (const auto& e : entities) {
+		static entt::entity selected = entt::null;
+
+		m_pRegistry->each([&](entt::entity e) {
 			bool s = selected == e;
-			if (ImGui::Selectable((ECSCoordinator::get()->getEntityName(e) + "##" + std::to_string(e)).c_str(), &s)) {
+			if (ImGui::Selectable((std::string("Entity") + "##" + std::to_string((int)e)).c_str(), &s)) {
 				if (s) selected = e;
-				else selected = -1;
+				else selected = entt::null;
 				m_pInspector->setEntity(selected);
 				m_pView->setEntity(selected);
 			}
@@ -70,8 +76,8 @@ void SceneView::onImGui() {
 				hovered = e;
 				itemMenu = true;
 			}
-		}
-
+		});
+	
 		ImGui::EndListBox();
 
 		

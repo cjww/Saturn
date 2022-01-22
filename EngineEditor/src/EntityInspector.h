@@ -25,7 +25,7 @@ void remove(entt::registry& r, entt::entity e) {
 class EntityInspector : public EditorModule {
 
 	entt::entity m_currentEntity;
-	entt::registry* m_registry;
+	entt::registry* m_pRegistry;
 
 	ComponentType m_removeComponent;
 

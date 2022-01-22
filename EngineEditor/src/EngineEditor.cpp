@@ -21,7 +21,7 @@ EngineEditor::EngineEditor()
 
 }
 
-void EngineEditor::run() {
+void EngineEditor::openProject(const std::string& projectPath) {
 	
 	m_engine.setup(&m_window, "../setup.xml");
 
@@ -39,17 +39,21 @@ void EngineEditor::run() {
 	EntityInspector* entityinspector = static_cast<EntityInspector*>(m_editorModules.back().get());
 	
 	
-	
-
-	/*
 	m_editorModules.push_back(std::make_unique<SceneView>(&m_engine, entityinspector, editorView));
 	SceneView* sceneView = static_cast<SceneView*>(m_editorModules.back().get());
+	
 
+	Entity e = m_engine.getCurrentScene()->createEntity();
+	e.addComponent<comp::Transform>();
+	e.addComponent<comp::Model>()->modelID = sa::ResourceManager::get()->loadQuad();
 
+	/*
 	EntityID entity = ECSCoordinator::get()->createEntity();
 	ECSCoordinator::get()->addComponent<Transform>(entity);
 	ECSCoordinator::get()->addComponent<Model>(entity)->modelID = sa::ResourceManager::get()->loadQuad();
 	*/
+
+	
 
 
 	srand(time(NULL));
