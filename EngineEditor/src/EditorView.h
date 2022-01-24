@@ -17,7 +17,7 @@ private:
 	ImVec2 m_displayedSize;
 	vr::SamplerPtr m_pSampler;
 
-	entt::entity m_selectedEntity;
+	sa::Entity m_selectedEntity;
 
 public:
 	EditorView(sa::Engine* pEngine, RenderWindow* pWindow);
@@ -35,8 +35,8 @@ public:
 
 	sa::Camera* getCamera();
 
-	entt::entity getEntity() const;
-	void setEntity(entt::entity entity);
+	sa::Entity getEntity() const;
+	void setEntity(sa::Entity entity);
 
 
 };

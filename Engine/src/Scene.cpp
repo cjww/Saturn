@@ -3,13 +3,6 @@
 #include "ECS\Components.h"
 
 namespace sa {
-	void Scene::onModelConstruct(entt::registry reg, entt::entity e) {
-		//reg.get<comp::Model>(e).
-	}
-
-	void Scene::onModelDestroy(entt::registry reg, entt::entity e) {
-
-	}
 
 	Scene::Scene() {
 		
@@ -44,14 +37,14 @@ namespace sa {
 		size_t s = m_activeCameras.size();
 		m_activeCameras.insert(camera);
 		if(s != m_activeCameras.size())
-			publish<AddCamera>(camera);
+			publish<event::AddedCamera>(camera);
 	}
 
 	void Scene::removeActiveCamera(Camera* camera) {
 		size_t s = m_activeCameras.size();
 		m_activeCameras.erase(camera);
 		if (s != m_activeCameras.size())
-			publish<RemoveCamera>(camera);
+			publish<event::RemovedCamera>(camera);
 	}
 
 	std::set<Camera*> Scene::getActiveCameras() const {
@@ -59,14 +52,23 @@ namespace sa {
 	}
 
 	void Scene::setScene(const std::string& name) {
-		publish<SceneSet>(name);
+		publish<event::SceneSet>(name);
 	}
 
-	Entity Scene::createEntity(const std::string name) {
-		return Entity(&m_reg, m_reg.create());
+	Entity Scene::createEntity(const std::string& name) {
+		Entity e(&m_reg, m_reg.create());
+		e.addComponent<comp::Name>(name);
+		//publish<event::EntityCreated>(e);
+		return e;
 	}
 
-	entt::registry& Scene::getRegistry() {
-		return m_reg;
+	void Scene::destroyEntity(const Entity& entity) {
+		//publish<event::EntityDestroyed>(entity);
+		m_reg.destroy(entity);
 	}
+
+	size_t Scene::getEntityCount() const {
+		return m_reg.size();
+	}
+
 }

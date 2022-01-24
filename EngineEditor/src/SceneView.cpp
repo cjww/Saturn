@@ -5,12 +5,12 @@ void SceneView::makePopups() {
 		if (ImGui::BeginMenu("Add Entity")) {
 			
 			if (ImGui::Button("Empty")) {
-				Entity entity = m_pEngine->getCurrentScene()->createEntity("Empty");
+				sa::Entity entity = m_pEngine->getCurrentScene()->createEntity("Empty");
 				entity.addComponent<comp::Transform>();
 			}
 			
 			if (ImGui::Button("Quad")) {
-				Entity entity = m_pEngine->getCurrentScene()->createEntity("Quad");
+				sa::Entity entity = m_pEngine->getCurrentScene()->createEntity("Quad");
 				entity.addComponent<comp::Transform>();
 				entity.addComponent<comp::Model>()->modelID = sa::ResourceManager::get()->loadQuad();
 			}
@@ -18,18 +18,13 @@ void SceneView::makePopups() {
 			ImGui::EndMenu();
 		}
 
-		ImGui::Text("Nr of entities: %d", m_pRegistry->size());
+		ImGui::Text("Nr of entities: %d", m_pEngine->getCurrentScene()->getEntityCount());
 		ImGui::EndPopup();
 	}
 }
 
-SceneView::SceneView(sa::Engine* pEngine, EntityInspector* pInspector, EditorView* pView) : EditorModule(pEngine) {
-	m_pInspector = pInspector;
-	m_pView = pView;
-	m_pRegistry = nullptr;
-	if (pEngine->getCurrentScene()) {
-		m_pRegistry = &pEngine->getCurrentScene()->getRegistry();
-	}
+SceneView::SceneView(sa::Engine* pEngine) : EditorModule(pEngine) {
+	
 }
 
 SceneView::~SceneView() {
@@ -39,16 +34,17 @@ SceneView::~SceneView() {
 void SceneView::onImGui() {
 	if (ImGui::Begin("Scene View")) {
 
+		sa::Scene* pScene = m_pEngine->getCurrentScene();
+
 		static bool itemMenu = false;
-		static entt::entity hovered = entt::null;
+		static sa::Entity hovered;
 		if (itemMenu) {
 			if (ImGui::BeginPopup("SceneViewMenu")) {
 				
 				if (ImGui::Button("Delete")) {
-					if (hovered != entt::null) {
-						//ECSCoordinator::get()->destroyEntity(hovered);
-
-						m_pInspector->setEntity(entt::null);
+					if (hovered) {
+						pScene->publish<event::EntityDeselected>(hovered);
+						pScene->destroyEntity(hovered);
 						ImGui::CloseCurrentPopup();
 					}
 				}
@@ -61,16 +57,19 @@ void SceneView::onImGui() {
 
 
 		ImGui::BeginListBox("##Entities");
-
-		static entt::entity selected = entt::null;
-
-		m_pRegistry->each([&](entt::entity e) {
+		static sa::Entity selected;
+		pScene->forEach([&](sa::Entity e) {
 			bool s = selected == e;
-			if (ImGui::Selectable((std::string("Entity") + "##" + std::to_string((int)e)).c_str(), &s)) {
-				if (s) selected = e;
-				else selected = entt::null;
-				m_pInspector->setEntity(selected);
-				m_pView->setEntity(selected);
+
+			if (ImGui::Selectable(e.getComponent<comp::Name>()->name.c_str(), &s)) {
+				if (s) {
+					selected = e;
+					m_pEngine->getCurrentScene()->publish<event::EntitySelected>(selected);
+				}
+				else {
+					selected = {};
+					m_pEngine->getCurrentScene()->publish<event::EntityDeselected>(selected);
+				}
 			}
 			if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup)) {
 				hovered = e;

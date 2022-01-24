@@ -2,6 +2,10 @@
 #include <ResourceManager.h>
 
 #include <glm/gtc/matrix_transform.hpp>
+#include <array>
+
+#include "entt\entt.hpp"
+
 
 namespace comp {
 
@@ -33,7 +37,11 @@ namespace comp {
 	};
 
 	struct Script {
+		// TODO not use dynamic memory here
 		std::string scriptName;
 		std::string code;
 	};
-}
+
+	
+};
+

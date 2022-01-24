@@ -29,6 +29,12 @@ void EngineEditor::openProject(const std::string& projectPath) {
 		m_engine.setScene(m_engine.getScene("SaturnScene"));
 	}
 
+	sa::registerComponentType<comp::Name>();
+	sa::registerComponentType<comp::Transform>();
+	sa::registerComponentType<comp::Model>();
+	sa::registerComponentType<comp::Script>();
+
+
 	m_editorModules.push_back(std::make_unique<EditorView>(&m_engine, &m_window));
 	EditorView* editorView = static_cast<EditorView*>(m_editorModules.back().get());
 
@@ -36,25 +42,14 @@ void EngineEditor::openProject(const std::string& projectPath) {
 
 		
 	m_editorModules.push_back(std::make_unique<EntityInspector>(&m_engine));
-	EntityInspector* entityinspector = static_cast<EntityInspector*>(m_editorModules.back().get());
 	
-	
-	m_editorModules.push_back(std::make_unique<SceneView>(&m_engine, entityinspector, editorView));
-	SceneView* sceneView = static_cast<SceneView*>(m_editorModules.back().get());
+	m_editorModules.push_back(std::make_unique<SceneView>(&m_engine));
 	
 
-	Entity e = m_engine.getCurrentScene()->createEntity();
+	sa::Entity e = m_engine.getCurrentScene()->createEntity("Quad");
 	e.addComponent<comp::Transform>();
 	e.addComponent<comp::Model>()->modelID = sa::ResourceManager::get()->loadQuad();
-
-	/*
-	EntityID entity = ECSCoordinator::get()->createEntity();
-	ECSCoordinator::get()->addComponent<Transform>(entity);
-	ECSCoordinator::get()->addComponent<Model>(entity)->modelID = sa::ResourceManager::get()->loadQuad();
-	*/
-
 	
-
 
 	srand(time(NULL));
 	while (m_window.isOpen()) {

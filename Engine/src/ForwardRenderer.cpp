@@ -176,7 +176,6 @@ namespace sa {
 			m_renderer->cleanupImGUI();
 		}
 
-		delete m_pDescriptorManager;
 		vr::Renderer::cleanup();
 	}
 
@@ -215,7 +214,7 @@ namespace sa {
 				m_renderer->bindDescriptorSet(m_pPerFrameDescriptorSet, m_colorPipeline);
 				m_renderer->bindViewport(viewport);
 			
-				scene->getRegistry().group<comp::Transform, comp::Model>().each([&](const comp::Transform& transform, comp::Model& modelComp) {
+				scene->forEach<comp::Transform, comp::Model>([&](const comp::Transform& transform, comp::Model& modelComp) {
 					
 					if (modelComp.modelID == NULL_RESOURCE) {
 						return; // does not have to be drawn
@@ -257,6 +256,7 @@ namespace sa {
 					}
 
 				});					
+			
 			
 			}
 

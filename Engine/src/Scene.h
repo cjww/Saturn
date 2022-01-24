@@ -1,34 +1,19 @@
 #pragma once
 #include "common.hpp"
-#include "entt/entt.hpp"
 #include "Camera.h"
 #include "ECS/Entity.h"
+#include "ECS/Events.h"
 
 namespace sa {
 	typedef uint32_t SceneID;
 
-	// Events
-	struct SceneSet {
-		std::string newSceneName;
-	};
-
-	struct AddCamera {
-		Camera* cam;
-	};
-
-	struct RemoveCamera {
-		Camera* cam;
-	};
 
 	class Scene : public entt::emitter<Scene> {
 	private:
-		entt::registry m_reg;
-
 		std::vector<Camera*> m_cameras;
 		std::set<Camera*> m_activeCameras;
 
-		static void onModelConstruct(entt::registry reg, entt::entity e);
-		static void onModelDestroy(entt::registry reg, entt::entity e);
+		entt::registry m_reg;
 
 	public:
 		Scene();
@@ -46,10 +31,38 @@ namespace sa {
 
 		void setScene(const std::string& name);
 
-		Entity createEntity(const std::string name = "Entity");
+		Entity createEntity(const std::string& name = "Entity");
+		void destroyEntity(const Entity& entity);
 
-		entt::registry& getRegistry();
+		size_t getEntityCount() const;
 
+		template<typename ...T, typename F>
+		void forEach(F func);
 
 	};
+	
+	template<typename ...T, typename F>
+	inline void Scene::forEach(F func) {
+		static_assert(
+			std::is_assignable_v<std::function<void(Entity, T&...)>, F> ||
+			std::is_assignable_v<std::function<void(T&...)>, F> ||
+			std::is_assignable_v<std::function<void(Entity)>, F> &&
+			"Not a valid function signature");
+		if constexpr (std::is_assignable_v<std::function<void(Entity)>, F>) {
+			m_reg.each([&](const entt::entity e) {
+				Entity entity(&m_reg, e);
+				func(entity);
+			});
+		}
+		else if constexpr (std::is_assignable_v<std::function<void(Entity, T&...)>, F>) {
+			m_reg.view<T...>().each([&](entt::entity e, T&... comp) {
+				Entity entity(&m_reg, e);
+				func(entity, comp...);
+			});
+		}
+		else if constexpr (std::is_assignable_v<std::function<void(T&...)>, F>) {
+			m_reg.view<T...>().each(func);
+		}
+
+	}
 }

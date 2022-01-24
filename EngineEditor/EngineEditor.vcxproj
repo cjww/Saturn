@@ -193,6 +193,7 @@
     <ClInclude Include="src\EngineEditor.h" />
     <ClInclude Include="src\EditorModule.h" />
     <ClInclude Include="src\EntityInspector.h" />
+    <ClInclude Include="src\Events.h" />
     <ClInclude Include="src\SceneView.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

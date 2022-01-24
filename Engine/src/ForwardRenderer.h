@@ -4,10 +4,8 @@
 #include <Renderer.hpp>
 #include "functions.hpp"
 
-#include "ECS\ECSCoordinator.h"
-#include "ECS\Systems\Rendering\Vulkan\MeshRenderSystem.h"
-#include "ECS\Systems\Rendering\Vulkan\DescriptorCreationSystem.h"
-#include "ECS\Systems\Rendering\Vulkan\DescriptorManager.h"
+#include "structs.h"
+#include "ECS\Components.h"
 
 namespace sa {
 	class ForwardRenderer : public IRenderTechnique {
@@ -33,7 +31,6 @@ namespace sa {
 		uint32_t m_colorPipeline;
 		uint32_t m_postProcessPipline;
 	
-		vk::DescriptorManager* m_pDescriptorManager;
 
 	public:
 		ForwardRenderer();

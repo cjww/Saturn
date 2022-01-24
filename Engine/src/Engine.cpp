@@ -80,7 +80,6 @@ namespace sa {
 
 	void Engine::cleanup() {
 
-		ECSCoordinator::cleanup();
 		ResourceManager::cleanup();
 		m_pRenderTechnique->cleanup();
 		delete m_pRenderTechnique;

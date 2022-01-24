@@ -179,22 +179,13 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\ECS\ComponentType.cpp" />
+    <ClCompile Include="src\ECS\MetaComponent.cpp" />
     <ClCompile Include="src\Scene.cpp" />
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\CustomImGui.cpp" />
-    <ClCompile Include="src\ECS\Systems\Rendering\Vulkan\LightSystem.cpp" />
     <ClCompile Include="src\Geometry\Rect.cpp" />
-    <ClCompile Include="src\ECS\ComponentArray.cpp" />
-    <ClCompile Include="src\ECS\ComponentFactory.cpp" />
-    <ClCompile Include="src\ECS\ComponentQuery.cpp" />
-    <ClCompile Include="src\ECS\ECSCoordinator.cpp" />
     <ClCompile Include="src\ECS\Entity.cpp" />
-    <ClCompile Include="src\ECS\EntityFactory.cpp" />
-    <ClCompile Include="src\ECS\System.cpp" />
-    <ClCompile Include="src\ECS\SystemFactory.cpp" />
-    <ClCompile Include="src\ECS\Systems\Rendering\Vulkan\DescriptorCreationSystem.cpp" />
-    <ClCompile Include="src\ECS\Systems\Rendering\Vulkan\DescriptorManager.cpp" />
-    <ClCompile Include="src\ECS\Systems\Rendering\Vulkan\MeshRenderSystem.cpp" />
     <ClCompile Include="src\Engine.cpp" />
     <ClCompile Include="src\ForwardRenderer.cpp" />
     <ClCompile Include="src\IRenderTechnique.cpp" />
@@ -204,30 +195,22 @@
     <ClCompile Include="src\Tools\StopWatch.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\ECS\ComponentType.h" />
+    <ClInclude Include="src\ECS\Events.h" />
+    <ClInclude Include="src\ECS\MetaComponent.h" />
     <ClInclude Include="src\Events.h" />
     <ClInclude Include="src\Scene.h" />
     <ClInclude Include="src\CustomImGui.h" />
-    <ClInclude Include="src\ECS\Systems\Rendering\Vulkan\LightSystem.h" />
     <ClInclude Include="src\Geometry\Rect.h" />
     <ClInclude Include="src\Camera.h" />
-    <ClInclude Include="src\ECS\ComponentArray.h" />
-    <ClInclude Include="src\ECS\ComponentFactory.h" />
     <ClInclude Include="src\ECS\Components.h" />
-    <ClInclude Include="src\ECS\Systems\Rendering\Vulkan\DescriptorCreationSystem.h" />
-    <ClInclude Include="src\ECS\Systems\Rendering\Vulkan\DescriptorManager.h" />
     <ClInclude Include="src\Engine.h" />
     <ClInclude Include="src\ForwardRenderer.h" />
     <ClInclude Include="src\IRenderTechnique.h" />
     <ClInclude Include="src\structs.h" />
     <ClInclude Include="src\Tools\Math.h" />
     <ClInclude Include="src\Vertex.h" />
-    <ClInclude Include="src\ECS\ECSCoordinator.h" />
     <ClInclude Include="src\ECS\Entity.h" />
-    <ClInclude Include="src\ECS\EntityFactory.h" />
-    <ClInclude Include="src\ECS\ComponentQuery.h" />
-    <ClInclude Include="src\ECS\System.h" />
-    <ClInclude Include="src\ECS\SystemFactory.h" />
-    <ClInclude Include="src\ECS\Systems\Rendering\Vulkan\MeshRenderSystem.h" />
     <ClInclude Include="src\ResourceManager.h" />
     <ClInclude Include="src\Tools\ScopeTimer.h" />
     <ClInclude Include="src\Tools\StopWatch.h" />

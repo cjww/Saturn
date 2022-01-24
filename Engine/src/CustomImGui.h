@@ -3,8 +3,8 @@
 
 #include <entt/entt.hpp>
 
-#include "ECS/ECSCoordinator.h"
 #include "ECS/Components.h"
+#include "ECS/Entity.h"
 #include "imgui.h"
 
 
@@ -15,7 +15,7 @@
 
 namespace ImGui {
 	static struct PopupPayload {
-		entt::type_info type;
+		sa::ComponentType type;
 	} payload;
 
 	void Component(comp::Transform* transform);
@@ -24,27 +24,27 @@ namespace ImGui {
 	
 
 	template<typename T>
-	void Component(entt::registry& reg, entt::entity entity);
+	void Component(sa::Entity entity);
 
 
 
 }
 
 template<typename T>
-void ImGui::Component(entt::registry& reg, entt::entity entity) {
-	T* comp = reg.try_get<T>(entity);
+void ImGui::Component(sa::Entity entity) {
+	T* comp = entity.getComponent<T>();
 	if (!comp) return;
 
 
 	ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
 	static bool visable = true;
-	if (ImGui::CollapsingHeader(ECSCoordinator::get()->getComponentName<T>(), &visable)) {
+	
+	if (ImGui::CollapsingHeader(sa::getComponentName<T>().c_str(), &visable)) {
 		ImGui::Component(comp);
 	}
 	if (!visable) {
 		ImGui::OpenPopup("Remove?");
-		//payload.data = (void*)ECSCoordinator::get()->getComponentType<T>();
-		payload.type = entt::type_id<T>();
+		payload.type = sa::getComponentType<T>();
 		visable = true;
 	}
 }

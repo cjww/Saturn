@@ -5,7 +5,7 @@ EditorView::EditorView(sa::Engine* pEngine, RenderWindow* pWindow)
 {
 	m_pWindow = pWindow;
 	m_isFocused = false;
-	m_selectedEntity = entt::null;
+	m_selectedEntity = {};
 
 	sa::Rect viewport;
 	viewport.setSize(pWindow->getCurrentExtent());
@@ -74,8 +74,16 @@ void EditorView::onImGui() {
 			ImGui::EndMenuBar();
 		}
 
-		m_isFocused = ImGui::IsWindowFocused();
+		sa::Scene* pScene = m_pEngine->getCurrentScene();
+		pScene->on<event::EntitySelected>([&](const event::EntitySelected& e, sa::Scene&) {
+			m_selectedEntity = e.entity;
+		});
 
+		pScene->on<event::EntityDeselected>([&](const event::EntityDeselected&, sa::Scene&) {
+			m_selectedEntity = {};
+		});
+
+		m_isFocused = ImGui::IsWindowFocused();
 
 		// render outputTexture with constant aspect ratio
 		ImVec2 availSize = ImGui::GetContentRegionAvail();
@@ -88,10 +96,8 @@ void EditorView::onImGui() {
 		const ImU32 green = ImColor(ImVec4(0, 1, 0, 1));
 		const ImU32 blue = ImColor(ImVec4(0, 0, 1, 1));
 		
-		entt::registry& sceneRegistry = m_pEngine->getCurrentScene()->getRegistry();
-
-		if (m_selectedEntity != entt::null) {
-			comp::Transform* transform = sceneRegistry.try_get<comp::Transform>(m_selectedEntity);
+		if (m_selectedEntity) {
+			comp::Transform* transform = m_selectedEntity.getComponent<comp::Transform>();
 
 			if (transform) {
 				glm::vec3 pos = transform->position;
@@ -112,7 +118,6 @@ void EditorView::onImGui() {
 			}
 		}
 		
-
 	}
 	ImGui::End();
 
@@ -204,10 +209,10 @@ sa::Camera* EditorView::getCamera() {
 	return &m_camera;
 }
 
-entt::entity EditorView::getEntity() const {
+sa::Entity EditorView::getEntity() const {
 	return m_selectedEntity;
 }
 
-void EditorView::setEntity(entt::entity entity) {
+void EditorView::setEntity(sa::Entity entity) {
 	m_selectedEntity = entity;
 }
