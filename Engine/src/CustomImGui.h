@@ -1,11 +1,7 @@
 #pragma once
-//#include "ECS\Components.h"
-
-#include <entt/entt.hpp>
 
 #include "ECS/Components.h"
 #include "ECS/Entity.h"
-#include "imgui.h"
 
 
 #define IMGUI_BUFFER_SIZE_BIG 256U

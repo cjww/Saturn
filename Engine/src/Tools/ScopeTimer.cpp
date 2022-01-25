@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "ScopeTimer.h"
 
 ScopeTimer::ScopeTimer(const std::string& message, const std::string& outputFile)

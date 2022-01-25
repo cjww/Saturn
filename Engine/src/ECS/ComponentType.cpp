@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "ComponentType.h"
 
 namespace sa {

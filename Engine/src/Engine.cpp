@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "Engine.h"
 
 #include "entt/entt.hpp"
@@ -79,7 +80,6 @@ namespace sa {
 	}
 
 	void Engine::cleanup() {
-
 		ResourceManager::cleanup();
 		m_pRenderTechnique->cleanup();
 		delete m_pRenderTechnique;

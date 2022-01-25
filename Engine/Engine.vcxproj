@@ -83,12 +83,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(ProjectDir)lib</OutDir>
-    <TargetName>$(ProjectName)$(Platform)$(Configuration)</TargetName>
+    <TargetName>$(SolutionName)_$(Platform)$(Configuration)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(ProjectDir)lib</OutDir>
-    <TargetName>$(ProjectName)$(Platform)$(Configuration)</TargetName>
+    <TargetName>$(SolutionName)_$(Platform)$(Configuration)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -142,6 +142,8 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)/src;$(SolutionDir)/RenderWindow/include;$(SolutionDir)/VulkanRenderer/include;$(SolutionDir)/DX11Renderer/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -164,6 +166,8 @@
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(ProjectDir)/src;$(SolutionDir)/RenderWindow/include;$(SolutionDir)/VulkanRenderer/include;$(SolutionDir)/DX11Renderer/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -181,6 +185,10 @@
   <ItemGroup>
     <ClCompile Include="src\ECS\ComponentType.cpp" />
     <ClCompile Include="src\ECS\MetaComponent.cpp" />
+    <ClCompile Include="src\pch.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="src\Scene.cpp" />
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\CustomImGui.cpp" />
@@ -191,14 +199,17 @@
     <ClCompile Include="src\IRenderTechnique.cpp" />
     <ClCompile Include="src\ResourceManager.cpp" />
     <ClCompile Include="src\Tools\Math.cpp" />
+    <ClCompile Include="src\Tools\Matrix.cpp" />
     <ClCompile Include="src\Tools\ScopeTimer.cpp" />
     <ClCompile Include="src\Tools\StopWatch.cpp" />
+    <ClCompile Include="src\Tools\Vector.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ECS\ComponentType.h" />
     <ClInclude Include="src\ECS\Events.h" />
     <ClInclude Include="src\ECS\MetaComponent.h" />
     <ClInclude Include="src\Events.h" />
+    <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\Scene.h" />
     <ClInclude Include="src\CustomImGui.h" />
     <ClInclude Include="src\Geometry\Rect.h" />
@@ -209,6 +220,9 @@
     <ClInclude Include="src\IRenderTechnique.h" />
     <ClInclude Include="src\structs.h" />
     <ClInclude Include="src\Tools\Math.h" />
+    <ClInclude Include="src\Tools\Matrix.h" />
+    <ClInclude Include="src\Tools\utils.h" />
+    <ClInclude Include="src\Tools\Vector.h" />
     <ClInclude Include="src\Vertex.h" />
     <ClInclude Include="src\ECS\Entity.h" />
     <ClInclude Include="src\ResourceManager.h" />

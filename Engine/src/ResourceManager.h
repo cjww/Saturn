@@ -1,7 +1,5 @@
 #pragma once
-#include <unordered_map>
-#include <memory>
-#include <filesystem>
+
 
 #include <glm/vec4.hpp>
 #include <glm/vec2.hpp>

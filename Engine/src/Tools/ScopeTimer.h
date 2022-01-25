@@ -1,7 +1,4 @@
 #pragma once
-#include <fstream>
-#include <chrono>
-#include <iostream>
 
 class ScopeTimer {
 private:

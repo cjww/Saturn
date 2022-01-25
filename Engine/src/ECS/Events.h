@@ -1,6 +1,6 @@
 #pragma once
 #include "Camera.h"
-#include "Entity.h";
+#include "Entity.h"
 
 namespace sa {
 	namespace event {

@@ -2,7 +2,6 @@
 #include "IRenderTechnique.h"
 
 #include <Renderer.hpp>
-#include "functions.hpp"
 
 #include "structs.h"
 #include "ECS\Components.h"

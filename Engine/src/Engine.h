@@ -1,10 +1,14 @@
 #pragma once
+#include "pch.h"
 #include "IRenderTechnique.h"
 #include "ForwardRenderer.h"
 
 #include "ResourceManager.h"
-#include "rapidxml\rapidxml.hpp"
 #include "Scene.h"
+
+#include "Tools/Vector.h"
+
+#include "Tools\utils.h"
 
 namespace sa {
 	class Engine {

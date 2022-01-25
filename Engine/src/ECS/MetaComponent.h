@@ -1,7 +1,5 @@
 #pragma once
 
-#include "entt\meta\meta.hpp"
-
 namespace sa {
 
 	class MetaComponent {

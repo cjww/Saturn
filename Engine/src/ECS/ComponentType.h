@@ -1,6 +1,4 @@
 #pragma once
-#include "entt\meta\resolve.hpp"
-#include "entt\meta\meta.hpp"
 #include "MetaComponent.h"
 
 namespace sa{

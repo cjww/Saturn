@@ -1,5 +1,4 @@
 #pragma once
-#include <glm/mat4x4.hpp>
 
 #define SET_PER_OBJECT 0
 #define SET_PER_FRAME 1

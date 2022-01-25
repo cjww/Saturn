@@ -1,3 +1,4 @@
+#include "pch.h"
 #include "Rect.h"
 
 namespace sa {
@@ -9,19 +10,19 @@ namespace sa {
 
 	}
 
-	void Rect::setPosition(glm::vec2 position) {
+	void Rect::setPosition(Vector2 position) {
 		m_position = position;
 	}
 
-	glm::vec2 Rect::getPosition() {
+	Vector2 Rect::getPosition() {
 		return m_position;
 	}
 
-	void Rect::setSize(glm::vec2 size) {
+	void Rect::setSize(Vector2 size) {
 		m_size = size;
 	}
 
-	glm::vec2 Rect::getSize() {
+	Vector2 Rect::getSize() {
 		return m_size;
 	}
 

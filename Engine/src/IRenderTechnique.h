@@ -1,7 +1,5 @@
 #pragma once
-#include <RenderWindow.hpp>
 
-#include <Renderer.hpp>
 #include "Camera.h"
 #include "Scene.h"
 namespace sa {

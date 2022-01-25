@@ -1,17 +1,18 @@
 #pragma once
-#include "glm/gtc/matrix_transform.hpp"
+#include "Tools\Vector.h"
+
 namespace sa {
 	class Rect {
 	private:
-		glm::vec2 m_position;
-		glm::vec2 m_size;
+		Vector2 m_position;
+		Vector2 m_size;
 	public:
 		Rect();
 
-		void setPosition(glm::vec2 position);
-		glm::vec2 getPosition();
+		void setPosition(Vector2 position);
+		Vector2 getPosition();
 
-		void setSize(glm::vec2 size);
-		glm::vec2 getSize();
+		void setSize(Vector2 size);
+		Vector2 getSize();
 	};
 }

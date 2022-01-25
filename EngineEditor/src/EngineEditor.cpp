@@ -45,7 +45,6 @@ void EngineEditor::openProject(const std::string& projectPath) {
 	
 	m_editorModules.push_back(std::make_unique<SceneView>(&m_engine));
 	
-
 	sa::Entity e = m_engine.getCurrentScene()->createEntity("Quad");
 	e.addComponent<comp::Transform>();
 	e.addComponent<comp::Model>()->modelID = sa::ResourceManager::get()->loadQuad();

@@ -1,5 +1,4 @@
 #pragma once
-#include <glm\mat4x4.hpp>
 #include "Camera.h"
 
 namespace sa::math {

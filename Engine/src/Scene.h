@@ -1,5 +1,5 @@
 #pragma once
-#include "common.hpp"
+
 #include "Camera.h"
 #include "ECS/Entity.h"
 #include "ECS/Events.h"

@@ -1,10 +1,7 @@
 #pragma once
-#include <stdexcept>
-#include <iostream>
 
 #include "ComponentType.h"
 #include "MetaComponent.h"
-#include "entt\entt.hpp"
 
 namespace sa {
 	
@@ -30,7 +27,7 @@ namespace sa {
 		bool hasComponent(const std::string name) const;
 
 		template<typename T, typename ...Args>
-		T* addComponent(Args&& ...);
+		T* addComponent(Args&& ...args);
 
 		MetaComponent addComponent(ComponentType type);
 		MetaComponent addComponent(const std::string& name);

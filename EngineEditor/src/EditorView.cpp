@@ -12,8 +12,8 @@ EditorView::EditorView(sa::Engine* pEngine, RenderWindow* pWindow)
 	viewport.setPosition({ 0, 0 });
 	m_camera.setViewport(viewport);
 
-	m_camera.setPosition(glm::vec3(0, 0, 1));
-	m_camera.lookAt(glm::vec3(0, 0, 0));
+	m_camera.setPosition(sa::Vector3(0, 0, 1));
+	m_camera.lookAt(sa::Vector3(0, 0, 0));
 
 	m_mouseSensitivity = 20.0f;
 	m_moveSpeed = 4.0f;

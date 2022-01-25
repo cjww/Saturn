@@ -1,12 +1,6 @@
 #pragma once
 #include <ResourceManager.h>
 
-#include <glm/gtc/matrix_transform.hpp>
-#include <array>
-
-#include "entt\entt.hpp"
-
-
 namespace comp {
 
 	struct Name {
