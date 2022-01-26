@@ -24,6 +24,9 @@
 #include <entt/entt.hpp>
 #include <rapidxml/rapidxml.hpp>
 
+#include <lua/lua.hpp>
+
+
 // glm
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>

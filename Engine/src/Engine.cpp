@@ -61,6 +61,16 @@ namespace sa {
 		addActiveCamera(cam);
 		*/
 
+		lua_State* L = luaL_newstate();
+		luaL_openlibs(L);
+		
+		luaL_loadstring(L, "print('Loaded ' .. jit.version .. ' for ' .. jit.os .. jit.arch)");
+		if (lua_pcall(L, 0, 0, NULL) != 0)
+		{
+			std::cout << "Error: " << lua_tostring(L, -1) << std::endl;
+		}
+
+		lua_close(L);
 
 	}
 
