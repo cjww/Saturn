@@ -26,6 +26,9 @@
 
 #include <lua/lua.hpp>
 
+#define SOL_ALL_SAFTIES_ON 1
+#include <sol/sol.hpp>
+
 
 // glm
 #include <glm/glm.hpp>
