@@ -10,6 +10,8 @@ namespace sa {
 
 		template<typename T>
 		T* cast();
+		
+		void* data();
 
 		bool isValid();
 	};

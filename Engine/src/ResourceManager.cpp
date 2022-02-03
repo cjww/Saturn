@@ -3,20 +3,10 @@
 
 namespace sa {
 
-	ResourceManager* ResourceManager::m_myInstance = nullptr;
-
-	ResourceManager* ResourceManager::get()
+	ResourceManager& ResourceManager::get()
 	{
-		if (m_myInstance == nullptr) {
-			m_myInstance = new ResourceManager();
-		}
-		return m_myInstance;
-	}
-
-	void ResourceManager::cleanup() {
-		if (m_myInstance != nullptr) {
-			delete m_myInstance;
-		}
+		static ResourceManager instance;
+		return instance;
 	}
 
 	ResourceID ResourceManager::loadModel(const std::filesystem::path& path)

@@ -3,6 +3,7 @@
 #include "Camera.h"
 #include "ECS/Entity.h"
 #include "ECS/Events.h"
+#include "ECS/Components.h"
 
 namespace sa {
 	typedef uint32_t SceneID;
@@ -39,6 +40,9 @@ namespace sa {
 		template<typename ...T, typename F>
 		void forEach(F func);
 
+		template<typename F>
+		void forEach(const std::vector<ComponentType>& components, F func);
+
 	};
 	
 	template<typename ...T, typename F>
@@ -64,5 +68,20 @@ namespace sa {
 			m_reg.view<T...>().each(func);
 		}
 
+	}
+
+	template<typename F>
+	inline void Scene::forEach(const std::vector<ComponentType>& components, F func) {
+		using namespace entt::literals;
+		
+		std::vector<entt::id_type> types(components.size());
+		for (size_t i = 0; i < types.size(); i++) {
+			types[i] = components[i].getTypeId();
+		}
+		
+		m_reg.runtime_view(std::cbegin(types), std::cend(types)).each([&](entt::entity e) {
+			Entity entity(&m_reg, e);
+			func(entity);
+		});
 	}
 }

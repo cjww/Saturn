@@ -6,6 +6,11 @@ namespace sa {
 		: m_data(any)
 	{
 	}
+
+	void* MetaComponent::data() {
+		return m_data.data();
+	}
+	
 	bool MetaComponent::isValid() {
 		return (bool)m_data;
 	}

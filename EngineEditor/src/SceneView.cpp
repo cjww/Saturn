@@ -12,7 +12,7 @@ void SceneView::makePopups() {
 			if (ImGui::Button("Quad")) {
 				sa::Entity entity = m_pEngine->getCurrentScene()->createEntity("Quad");
 				entity.addComponent<comp::Transform>();
-				entity.addComponent<comp::Model>()->modelID = sa::ResourceManager::get()->loadQuad();
+				entity.addComponent<comp::Model>()->modelID = sa::ResourceManager::get().loadQuad();
 			}
 			
 			ImGui::EndMenu();

@@ -17,14 +17,16 @@ namespace sa {
 			Camera* cam;
 		};
 
-		struct EntityDestroyed
-		{
+		struct EntityDestroyed {
 			Entity entity;
 		};
 
-		struct EntityCreated
-		{
+		struct EntityCreated {
 			Entity entity;
+		};
+
+		struct UpdatedScene {
+			float dt;
 		};
 	}
 }

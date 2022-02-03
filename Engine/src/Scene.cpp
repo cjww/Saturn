@@ -17,6 +17,14 @@ namespace sa {
 
 	void Scene::update(float dt) {
 
+		//	for each script file:
+		//		load
+		//		retrive required component types 
+		//		for each entity carrying required component:
+		//			set variables and components (entity, transform etc...)
+		//			execute update 
+
+		publish<event::UpdatedScene>(dt);
 	}
 
 	void Scene::render() {
@@ -59,17 +67,19 @@ namespace sa {
 	Entity Scene::createEntity(const std::string& name) {
 		Entity e(&m_reg, m_reg.create());
 		e.addComponent<comp::Name>(name);
-		//publish<event::EntityCreated>(e);
+		publish<event::EntityCreated>(e);
 		return e;
 	}
 
 	void Scene::destroyEntity(const Entity& entity) {
-		//publish<event::EntityDestroyed>(entity);
+		publish<event::EntityDestroyed>(entity);
 		m_reg.destroy(entity);
 	}
 
 	size_t Scene::getEntityCount() const {
 		return m_reg.size();
 	}
+
+	
 
 }

@@ -1,5 +1,7 @@
 #pragma once
 
+#define SOL_ALL_SAFTIES_ON 1
+#define DEBUG_LOG
 
 // Standard lib
 #include <vector>
@@ -24,9 +26,8 @@
 #include <entt/entt.hpp>
 #include <rapidxml/rapidxml.hpp>
 
-#include <lua/lua.hpp>
+#include <lua.hpp>
 
-#define SOL_ALL_SAFTIES_ON 1
 #include <sol/sol.hpp>
 
 
@@ -41,5 +42,8 @@
 // Other
 #include <Renderer.hpp>
 #include <RenderWindow.hpp>
+
+#include <Logger.hpp>
+
 
 

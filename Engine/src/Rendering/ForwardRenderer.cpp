@@ -226,7 +226,7 @@ namespace sa {
 					}
 
 
-					sa::ModelData* model = sa::ResourceManager::get()->getModel(modelComp.modelID);
+					sa::ModelData* model = sa::ResourceManager::get().getModel(modelComp.modelID);
 					
 					sa::PerObjectBuffer perObject = {};
 					perObject.worldMatrix = glm::mat4(1);

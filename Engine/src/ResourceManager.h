@@ -45,21 +45,19 @@ namespace sa {
 	class ResourceManager
 	{
 	private:	
-		static ResourceManager* m_myInstance;
 
 		ResourceID m_nextID;
 	
 		std::unordered_map<std::string, ResourceID> m_resourceIDs;
 		std::unordered_map<ResourceID, std::unique_ptr<ModelData>> m_models;
-	
+		
 
 		ResourceManager();
 
 	public:
 		~ResourceManager();
 	
-		static ResourceManager* get();
-		static void cleanup();
+		static ResourceManager& get();
 	
 		ResourceID loadModel(const std::filesystem::path& path);
 		ResourceID loadQuad();

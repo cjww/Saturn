@@ -14,6 +14,8 @@ namespace sa{
 		bool isValid() const;
 
 		std::string getName() const;
+		uint32_t getTypeId() const;
+
 
 		template<typename ...Args>
 		MetaComponent invoke(const std::string& name, Args&&... args);

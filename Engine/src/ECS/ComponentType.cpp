@@ -6,8 +6,10 @@ namespace sa {
 	ComponentType::ComponentType(entt::meta_type type)
 		: m_type(type)
 	{
-		m_name = type.info().name();
-		stripTypeName(m_name);
+		if (m_type) {
+			m_name = type.info().name();
+			stripTypeName(m_name);
+		}
 	}
 
 	bool ComponentType::isValid() const {
@@ -16,6 +18,10 @@ namespace sa {
 
 	std::string ComponentType::getName() const {
 		return m_name;
+	}
+
+	uint32_t ComponentType::getTypeId() const {
+		return m_type.info().hash();
 	}
 
 	void stripTypeName(std::string& str) {

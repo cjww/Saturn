@@ -13,7 +13,7 @@ namespace ImGui {
 	void Component(comp::Model* model) {
 		ImGui::Text("ModelID: %d", model->modelID);
 		if (model->modelID != NULL_RESOURCE) {
-			sa::ModelData* data = sa::ResourceManager::get()->getModel(model->modelID);
+			sa::ModelData* data = sa::ResourceManager::get().getModel(model->modelID);
 			for (const auto& mesh : data->meshes) {
 				ImGui::Spacing();
 				ImGui::Text("Material");

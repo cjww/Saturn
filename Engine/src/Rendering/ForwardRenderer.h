@@ -33,6 +33,7 @@ namespace sa {
 
 	public:
 		ForwardRenderer();
+		
 
 		virtual void init(RenderWindow* pWindow, bool setupImGui) override;
 		virtual void cleanup() override;

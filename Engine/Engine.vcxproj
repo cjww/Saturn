@@ -82,12 +82,12 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
-    <OutDir>$(ProjectDir)lib</OutDir>
+    <OutDir>$(ProjectDir)lib\</OutDir>
     <TargetName>$(SolutionName)_$(Platform)$(Configuration)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
-    <OutDir>$(ProjectDir)lib</OutDir>
+    <OutDir>$(ProjectDir)lib\</OutDir>
     <TargetName>$(SolutionName)_$(Platform)$(Configuration)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
@@ -195,6 +195,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\ScriptManager.cpp" />
     <ClCompile Include="src\ECS\ComponentType.cpp" />
     <ClCompile Include="src\ECS\MetaComponent.cpp" />
     <ClCompile Include="src\pch.cpp">
@@ -207,20 +208,21 @@
     <ClCompile Include="src\Geometry\Rect.cpp" />
     <ClCompile Include="src\ECS\Entity.cpp" />
     <ClCompile Include="src\Engine.cpp" />
-    <ClCompile Include="src\ForwardRenderer.cpp" />
-    <ClCompile Include="src\IRenderTechnique.cpp" />
+    <ClCompile Include="src\Rendering\ForwardRenderer.cpp" />
+    <ClCompile Include="src\Rendering\IRenderTechnique.cpp" />
     <ClCompile Include="src\ResourceManager.cpp" />
     <ClCompile Include="src\Tools\Math.cpp" />
     <ClCompile Include="src\Tools\Matrix.cpp" />
     <ClCompile Include="src\Tools\ScopeTimer.cpp" />
     <ClCompile Include="src\Tools\StopWatch.cpp" />
+    <ClCompile Include="src\Tools\utils.cpp" />
     <ClCompile Include="src\Tools\Vector.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\ScriptManager.h" />
     <ClInclude Include="src\ECS\ComponentType.h" />
     <ClInclude Include="src\ECS\Events.h" />
     <ClInclude Include="src\ECS\MetaComponent.h" />
-    <ClInclude Include="src\Events.h" />
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\Scene.h" />
     <ClInclude Include="src\CustomImGui.h" />
@@ -228,8 +230,8 @@
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\ECS\Components.h" />
     <ClInclude Include="src\Engine.h" />
-    <ClInclude Include="src\ForwardRenderer.h" />
-    <ClInclude Include="src\IRenderTechnique.h" />
+    <ClInclude Include="src\Rendering\ForwardRenderer.h" />
+    <ClInclude Include="src\Rendering\IRenderTechnique.h" />
     <ClInclude Include="src\structs.h" />
     <ClInclude Include="src\Tools\Math.h" />
     <ClInclude Include="src\Tools\Matrix.h" />

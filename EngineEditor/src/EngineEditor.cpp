@@ -22,17 +22,18 @@ EngineEditor::EngineEditor()
 }
 
 void EngineEditor::openProject(const std::string& projectPath) {
-	
+	/*
+	sa::registerComponentType<comp::Name>();
+	sa::registerComponentType<comp::Transform>();
+	sa::registerComponentType<comp::Model>();
+	sa::registerComponentType<comp::Script>();
+	*/
+
 	m_engine.setup(&m_window, "../setup.xml");
 
 	if (!m_engine.getCurrentScene()) {
 		m_engine.setScene(m_engine.getScene("SaturnScene"));
 	}
-
-	sa::registerComponentType<comp::Name>();
-	sa::registerComponentType<comp::Transform>();
-	sa::registerComponentType<comp::Model>();
-	sa::registerComponentType<comp::Script>();
 
 
 	m_editorModules.push_back(std::make_unique<EditorView>(&m_engine, &m_window));
@@ -47,7 +48,7 @@ void EngineEditor::openProject(const std::string& projectPath) {
 	
 	sa::Entity e = m_engine.getCurrentScene()->createEntity("Quad");
 	e.addComponent<comp::Transform>();
-	e.addComponent<comp::Model>()->modelID = sa::ResourceManager::get()->loadQuad();
+	e.addComponent<comp::Model>()->modelID = sa::ResourceManager::get().loadQuad();
 	
 
 	srand(time(NULL));
@@ -72,8 +73,6 @@ void EngineEditor::openProject(const std::string& projectPath) {
 	}
 
 	m_editorModules.clear();
-
 	m_engine.cleanup();
-	
 	
 }

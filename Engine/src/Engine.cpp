@@ -1,8 +1,6 @@
 #include "pch.h"
 #include "Engine.h"
 
-#include "entt/entt.hpp"
-
 namespace sa {
 	void Engine::loadXML(const std::filesystem::path& path, rapidxml::xml_document<>& xml, std::string& xmlStr) {
 		std::ifstream file(path);
@@ -28,7 +26,7 @@ namespace sa {
 			xml_attribute<>* renderTechnique = rendererNode->first_attribute("RenderTechnique", 0, false);
 			if (strcmp(renderTechnique->value(), "Forward") == 0) {
 				if (strcmp(api->value(), "Vulkan") == 0) {
-					m_pRenderTechnique = new ForwardRenderer;
+					m_pRenderTechnique = std::make_unique<ForwardRenderer>();
 				}
 				else {
 					throw std::runtime_error("API not supported : " + std::string(api->value()));
@@ -46,13 +44,43 @@ namespace sa {
 		}
 	}
 
+	void Engine::registerComponents() {
+		// TODO Could this be automated?
+		{
+			auto type = m_scriptManager.registerType<Vector3>();
+			type["x"] = &Vector3::x;
+			type["y"] = &Vector3::y;
+			type["z"] = &Vector3::z;
+		}
+
+		{
+			registerComponentType<comp::Model>();
+			auto type = m_scriptManager.registerComponent<comp::Model>();
+			type["id"] = &comp::Model::modelID;
+		}
+
+		{
+			registerComponentType<comp::Transform>();
+			auto type = m_scriptManager.registerComponent<comp::Transform>();
+			type["position"] = &comp::Transform::position;
+			type["rotation"] = &comp::Transform::rotation;
+			type["scale"] = &comp::Transform::scale;
+		}
+
+	}
+
 	void Engine::setup(RenderWindow* pWindow, const std::filesystem::path& configPath) {
 	
-		
+		registerComponents();
+
+		m_currentScene = nullptr;
 		loadFromFile(configPath);
 		m_pRenderTechnique->init(pWindow, true);
-		m_currentScene = nullptr;
 
+
+		setScene("Scene");
+		Entity e = getCurrentScene()->createEntity();
+		e.addComponent<comp::Model>()->modelID = 42;
 
 		/*
 		Camera* cam = newCamera(pWindow); // DefaultCamera
@@ -61,9 +89,61 @@ namespace sa {
 		addActiveCamera(cam);
 		*/
 
-		sol::state lua;
-		lua.open_libraries();
-		lua.do_string("print('Loaded ' .. jit.version .. ' for ' .. jit.os .. ' ' .. jit.arch)");
+		m_scriptManager.load("resources/scripts/test.lua");
+
+		for (auto& script : m_scriptManager.getScripts()) {
+
+			m_currentScene->forEach(script.components, [&](const Entity& entity)
+			{
+				for (auto& type : script.components) {
+					auto metaComp = type.invoke("get", entity);
+					
+
+					sol::state& lua = m_scriptManager.getState();
+					/*
+					script.env.push();
+					std::cout << "Stack: " << lua.stack_top() << " : " << lua_typename(lua, lua_type(lua, -1)) << std::endl;
+
+					void** typePtr = (void**)lua_newuserdata(lua, sizeof(void*));
+					*typePtr = sol::detail::align_usertype_pointer(metaComp.data());
+
+					std::cout << "Stack: " << lua.stack_top() << " : " << lua_typename(lua, lua_type(lua, -1)) << std::endl;
+					sol::metatable mt = lua.script("local c = " + name + ".new() \n return getmetatable(c)");
+					mt.push();
+					std::cout << "Stack: " << lua.stack_top() << " : " << lua_typename(lua, lua_type(lua, -1)) << std::endl;
+
+					lua_setmetatable(lua, -2);
+					std::cout << "Stack: " << lua.stack_top() << " : " << lua_typename(lua, lua_type(lua, -1)) << std::endl;
+
+					lua_setfield(lua, -2, utils::toLower(name).c_str());
+					std::cout << "Stack: " << lua.stack_top() << " : " << lua_typename(lua, lua_type(lua, -1)) << std::endl;
+
+					lua_pop(lua, lua_gettop(lua));
+					std::cout << "Stack: " << lua.stack_top() << " : " << lua_typename(lua, lua_type(lua, -1)) << std::endl;
+
+
+					script.env["model"] = lua["Model"]["new"](metaComp.data());
+					sol::table m = lua["Model"][sol::metatable_key];
+					m.for_each([](sol::object k, sol::object v) {
+						std::cout << k.as<std::string>() << std::endl;
+					});
+					
+					//script.env["model"] = metaComp.data();
+
+					lua.script("print(model.id)", script.env);
+					*/
+					
+				}
+			});
+			script.env.set_on(script.func);
+			
+			auto ret = script.func();
+			if(!ret.valid()) {
+				DEBUG_LOG_ERROR(lua_tostring(m_scriptManager.getState(), -1));
+			}
+			
+
+		}
 
 
 	}
@@ -71,6 +151,11 @@ namespace sa {
 	void Engine::update(float dt) {
 		if (m_currentScene)
 			m_currentScene->update(dt);
+	}
+
+	void Engine::cleanup() {
+		m_pRenderTechnique->cleanup();
+		m_pRenderTechnique.reset();
 	}
 
 	void Engine::recordImGui() {
@@ -83,18 +168,12 @@ namespace sa {
 		m_frameTime.cpu = std::chrono::high_resolution_clock::now() - m_frameTime.start;
 	}
 
-	void Engine::cleanup() {
-		ResourceManager::cleanup();
-		m_pRenderTechnique->cleanup();
-		delete m_pRenderTechnique;
-	}
-
 	std::chrono::duration<double, std::milli> Engine::getCPUFrameTime() const {
 		return m_frameTime.cpu;
 	}
 
 	IRenderTechnique* Engine::getRenderTechnique() const {
-		return m_pRenderTechnique;
+		return m_pRenderTechnique.get();
 	}
 
 	Scene& Engine::getScene(const std::string& name) {
