@@ -3,18 +3,11 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 # Visual Studio Version 17
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VulkanRenderer", "VulkanRenderer\VulkanRenderer.vcxproj", "{359BE348-FD28-4226-B401-2539BD77CDB8}"
-EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VulkanRendererTest", "VulkanRendererTest\VulkanRendererTest.vcxproj", "{FAFCC141-9A93-4AA4-8D46-1DDE77F5A861}"
-	ProjectSection(ProjectDependencies) = postProject
-		{359BE348-FD28-4226-B401-2539BD77CDB8} = {359BE348-FD28-4226-B401-2539BD77CDB8}
-	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Engine", "Engine\Engine.vcxproj", "{113522DB-28C1-4B47-9684-45CD80885A8A}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "DX11Renderer", "DX11Renderer\DX11Renderer.vcxproj", "{42400A75-A51A-4FE1-8E17-58E4683224E7}"
-EndProject
-Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "RenderWindow", "RenderWindow\RenderWindow.vcxproj", "{2395DF42-2CAE-4B41-83D6-5FB46FE0CB38}"
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EngineEditor", "EngineEditor\EngineEditor.vcxproj", "{B9CB2763-50B9-47DB-9AD7-81DF99E14B97}"
 EndProject
@@ -33,14 +26,6 @@ Global
 		Release|x86 = Release|x86
 	EndGlobalSection
 	GlobalSection(ProjectConfigurationPlatforms) = postSolution
-		{359BE348-FD28-4226-B401-2539BD77CDB8}.Debug|x64.ActiveCfg = Debug|x64
-		{359BE348-FD28-4226-B401-2539BD77CDB8}.Debug|x64.Build.0 = Debug|x64
-		{359BE348-FD28-4226-B401-2539BD77CDB8}.Debug|x86.ActiveCfg = Debug|Win32
-		{359BE348-FD28-4226-B401-2539BD77CDB8}.Debug|x86.Build.0 = Debug|Win32
-		{359BE348-FD28-4226-B401-2539BD77CDB8}.Release|x64.ActiveCfg = Release|x64
-		{359BE348-FD28-4226-B401-2539BD77CDB8}.Release|x64.Build.0 = Release|x64
-		{359BE348-FD28-4226-B401-2539BD77CDB8}.Release|x86.ActiveCfg = Release|Win32
-		{359BE348-FD28-4226-B401-2539BD77CDB8}.Release|x86.Build.0 = Release|Win32
 		{FAFCC141-9A93-4AA4-8D46-1DDE77F5A861}.Debug|x64.ActiveCfg = Debug|x64
 		{FAFCC141-9A93-4AA4-8D46-1DDE77F5A861}.Debug|x64.Build.0 = Debug|x64
 		{FAFCC141-9A93-4AA4-8D46-1DDE77F5A861}.Debug|x86.ActiveCfg = Debug|Win32
@@ -65,14 +50,6 @@ Global
 		{42400A75-A51A-4FE1-8E17-58E4683224E7}.Release|x64.Build.0 = Release|x64
 		{42400A75-A51A-4FE1-8E17-58E4683224E7}.Release|x86.ActiveCfg = Release|Win32
 		{42400A75-A51A-4FE1-8E17-58E4683224E7}.Release|x86.Build.0 = Release|Win32
-		{2395DF42-2CAE-4B41-83D6-5FB46FE0CB38}.Debug|x64.ActiveCfg = Debug|x64
-		{2395DF42-2CAE-4B41-83D6-5FB46FE0CB38}.Debug|x64.Build.0 = Debug|x64
-		{2395DF42-2CAE-4B41-83D6-5FB46FE0CB38}.Debug|x86.ActiveCfg = Debug|Win32
-		{2395DF42-2CAE-4B41-83D6-5FB46FE0CB38}.Debug|x86.Build.0 = Debug|Win32
-		{2395DF42-2CAE-4B41-83D6-5FB46FE0CB38}.Release|x64.ActiveCfg = Release|x64
-		{2395DF42-2CAE-4B41-83D6-5FB46FE0CB38}.Release|x64.Build.0 = Release|x64
-		{2395DF42-2CAE-4B41-83D6-5FB46FE0CB38}.Release|x86.ActiveCfg = Release|Win32
-		{2395DF42-2CAE-4B41-83D6-5FB46FE0CB38}.Release|x86.Build.0 = Release|Win32
 		{B9CB2763-50B9-47DB-9AD7-81DF99E14B97}.Debug|x64.ActiveCfg = Debug|x64
 		{B9CB2763-50B9-47DB-9AD7-81DF99E14B97}.Debug|x64.Build.0 = Debug|x64
 		{B9CB2763-50B9-47DB-9AD7-81DF99E14B97}.Debug|x86.ActiveCfg = Debug|Win32

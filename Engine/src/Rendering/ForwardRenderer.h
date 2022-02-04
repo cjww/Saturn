@@ -1,7 +1,7 @@
 #pragma once
 #include "IRenderTechnique.h"
 
-#include <Renderer.hpp>
+#include <Rendering/Vulkan/Renderer.hpp>
 
 #include "structs.h"
 #include "ECS\Components.h"

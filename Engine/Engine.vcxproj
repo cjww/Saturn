@@ -140,7 +140,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)/src;$(SolutionDir)/RenderWindow/include;$(SolutionDir)/VulkanRenderer/include;$(SolutionDir)/DX11Renderer/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)/src;$(VULKAN_SDK)/Include;$(ProjectDir)deps/imgui-sfml-2.5/;$(ProjectDir)deps/imgui-1.86/;$(ProjectDir)deps/SFML-2.5.1/include/;$(SolutionDir)/DX11Renderer/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -156,10 +156,10 @@
       </Command>
     </PreBuildEvent>
     <Lib>
-      <AdditionalDependencies>lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>lua51.lib;vulkan-1.lib;spirv-cross-cored.lib;spirv-cross-cppd.lib;spirv-cross-glsld.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
-      <AdditionalLibraryDirectories>$(ProjectDir)\deps\lua;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)deps\lua\;$(VULKAN_SDK)\Lib;$(ProjectDir)deps\SPIRV\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -170,7 +170,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)/src;$(SolutionDir)/RenderWindow/include;$(SolutionDir)/VulkanRenderer/include;$(SolutionDir)/DX11Renderer/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)/src;$(VULKAN_SDK)/Include;$(ProjectDir)deps/imgui-sfml-2.5/;$(ProjectDir)deps/imgui-1.86/;$(ProjectDir)deps/SFML-2.5.1/include/;$(SolutionDir)/DX11Renderer/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -188,15 +188,25 @@
       </Command>
     </PreBuildEvent>
     <Lib>
-      <AdditionalDependencies>lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>lua51.lib;vulkan-1.lib;spirv-cross-core.lib;spirv-cross-cpp.lib;spirv-cross-glsl.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
-      <AdditionalLibraryDirectories>$(ProjectDir)\deps\lua;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)deps\lua\;$(VULKAN_SDK)\Lib;$(ProjectDir)deps\SPIRV\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\ScriptManager.cpp" />
+    <ClCompile Include="src\ECS\Component.cpp" />
     <ClCompile Include="src\ECS\ComponentType.cpp" />
+    <ClCompile Include="src\Rendering\RenderWindow.cpp" />
+    <ClCompile Include="src\Rendering\Vulkan\DataManager.cpp" />
+    <ClCompile Include="src\Rendering\Vulkan\functions.cpp" />
+    <ClCompile Include="src\Rendering\Vulkan\Image.cpp" />
+    <ClCompile Include="src\Rendering\Vulkan\Renderer.cpp" />
+    <ClCompile Include="src\Rendering\Vulkan\Shader.cpp" />
+    <ClCompile Include="src\Rendering\Vulkan\ShaderSet.cpp" />
+    <ClCompile Include="src\Rendering\Vulkan\vulkan_base.cpp" />
+    <ClCompile Include="src\ScriptManager.cpp" />
+    <ClCompile Include="src\ECS\MetaComponentType.cpp" />
     <ClCompile Include="src\ECS\MetaComponent.cpp" />
     <ClCompile Include="src\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -211,6 +221,7 @@
     <ClCompile Include="src\Rendering\ForwardRenderer.cpp" />
     <ClCompile Include="src\Rendering\IRenderTechnique.cpp" />
     <ClCompile Include="src\ResourceManager.cpp" />
+    <ClCompile Include="src\Tools\Logger.cpp" />
     <ClCompile Include="src\Tools\Math.cpp" />
     <ClCompile Include="src\Tools\Matrix.cpp" />
     <ClCompile Include="src\Tools\ScopeTimer.cpp" />
@@ -219,9 +230,20 @@
     <ClCompile Include="src\Tools\Vector.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Rendering\SFML2DRenderer.h" />
-    <ClInclude Include="src\ScriptManager.h" />
+    <ClInclude Include="src\ECS\Component.h" />
     <ClInclude Include="src\ECS\ComponentType.h" />
+    <ClInclude Include="src\Rendering\SFML2DRenderer.h" />
+    <ClInclude Include="src\Rendering\RenderWindow.hpp" />
+    <ClInclude Include="src\Rendering\Vulkan\common.hpp" />
+    <ClInclude Include="src\Rendering\Vulkan\DataManager.hpp" />
+    <ClInclude Include="src\Rendering\Vulkan\functions.hpp" />
+    <ClInclude Include="src\Rendering\Vulkan\Image.hpp" />
+    <ClInclude Include="src\Rendering\Vulkan\Renderer.hpp" />
+    <ClInclude Include="src\Rendering\Vulkan\Shader.hpp" />
+    <ClInclude Include="src\Rendering\Vulkan\ShaderSet.hpp" />
+    <ClInclude Include="src\Rendering\Vulkan\vulkan_base.hpp" />
+    <ClInclude Include="src\ScriptManager.h" />
+    <ClInclude Include="src\ECS\MetaComponentType.h" />
     <ClInclude Include="src\ECS\Events.h" />
     <ClInclude Include="src\ECS\MetaComponent.h" />
     <ClInclude Include="src\pch.h" />
@@ -234,6 +256,7 @@
     <ClInclude Include="src\Rendering\ForwardRenderer.h" />
     <ClInclude Include="src\Rendering\IRenderTechnique.h" />
     <ClInclude Include="src\structs.h" />
+    <ClInclude Include="src\Tools\Logger.hpp" />
     <ClInclude Include="src\Tools\Math.h" />
     <ClInclude Include="src\Tools\Matrix.h" />
     <ClInclude Include="src\Tools\utils.h" />
@@ -247,12 +270,6 @@
   <ItemGroup>
     <ProjectReference Include="..\DX11Renderer\DX11Renderer.vcxproj">
       <Project>{42400a75-a51a-4fe1-8e17-58e4683224e7}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\RenderWindow\RenderWindow.vcxproj">
-      <Project>{2395df42-2cae-4b41-83d6-5fb46fe0cb38}</Project>
-    </ProjectReference>
-    <ProjectReference Include="..\VulkanRenderer\VulkanRenderer.vcxproj">
-      <Project>{359be348-fd28-4226-b401-2539bd77cdb8}</Project>
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>

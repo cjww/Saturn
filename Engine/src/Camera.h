@@ -1,7 +1,7 @@
 #pragma once
 #include "Geometry\Rect.h"
 #include "Tools\Matrix.h"
-#include "RenderWindow.hpp"
+#include "Rendering\RenderWindow.hpp"
 namespace sa {
 	class Camera {
 	private:

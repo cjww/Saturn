@@ -1,6 +1,5 @@
 #pragma once
 
-#include <RenderWindow.hpp>
 #include <Engine.h>
 
 #include "EditorView.h"
@@ -9,7 +8,7 @@
 
 class EngineEditor {
 private:
-	RenderWindow m_window;
+	sa::RenderWindow m_window;
 	sa::Engine m_engine;
 
 	std::vector<std::unique_ptr<EditorModule>> m_editorModules;

@@ -1,10 +1,9 @@
 #pragma once
 
-
 #include <glm/vec4.hpp>
 #include <glm/vec2.hpp>
 
-#include <Renderer.hpp>
+#include <Rendering/Vulkan/Renderer.hpp>
 #include <Vertex.h>
 
 //--------------------------------------------------------------------------------------

@@ -37,13 +37,13 @@
 #include <glm/gtx/rotate_vector.hpp>
 #include <glm/mat4x4.hpp>
 
-#include "imgui.h"
+#include <imgui.h>
 
 // Other
-#include <Renderer.hpp>
-#include <RenderWindow.hpp>
+#include "Rendering/Vulkan/Renderer.hpp"
+#include "Rendering/RenderWindow.hpp"
 
-#include <Logger.hpp>
+#include <Tools/Logger.hpp>
 
 
 
