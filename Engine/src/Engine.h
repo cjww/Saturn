@@ -37,6 +37,7 @@ namespace sa {
 	public:
 		//Engine();
 		void setup(RenderWindow* pWindow, const std::filesystem::path& configPath);
+
 		void update(float dt);
 
 		void cleanup();

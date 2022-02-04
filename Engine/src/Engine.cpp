@@ -28,6 +28,9 @@ namespace sa {
 				if (strcmp(api->value(), "Vulkan") == 0) {
 					m_pRenderTechnique = std::make_unique<ForwardRenderer>();
 				}
+				else if (strcmp(api->value(), "SFML") == 0) {
+					m_pRenderTechnique = std::make_unique<ForwardRenderer>();
+				}
 				else {
 					throw std::runtime_error("API not supported : " + std::string(api->value()));
 				}

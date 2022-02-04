@@ -219,6 +219,7 @@
     <ClCompile Include="src\Tools\Vector.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Rendering\SFML2DRenderer.h" />
     <ClInclude Include="src\ScriptManager.h" />
     <ClInclude Include="src\ECS\ComponentType.h" />
     <ClInclude Include="src\ECS\Events.h" />
