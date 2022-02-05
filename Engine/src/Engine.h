@@ -1,5 +1,4 @@
 #pragma once
-#include "pch.h"
 #include "Rendering/IRenderTechnique.h"
 #include "Rendering/ForwardRenderer.h"
 
