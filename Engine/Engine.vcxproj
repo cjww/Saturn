@@ -195,7 +195,6 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\ECS\Component.cpp" />
     <ClCompile Include="src\ECS\ComponentType.cpp" />
     <ClCompile Include="src\Rendering\RenderWindow.cpp" />
     <ClCompile Include="src\Rendering\Vulkan\DataManager.cpp" />
@@ -206,7 +205,6 @@
     <ClCompile Include="src\Rendering\Vulkan\ShaderSet.cpp" />
     <ClCompile Include="src\Rendering\Vulkan\vulkan_base.cpp" />
     <ClCompile Include="src\ScriptManager.cpp" />
-    <ClCompile Include="src\ECS\MetaComponentType.cpp" />
     <ClCompile Include="src\ECS\MetaComponent.cpp" />
     <ClCompile Include="src\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -230,7 +228,6 @@
     <ClCompile Include="src\Tools\Vector.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\ECS\Component.h" />
     <ClInclude Include="src\ECS\ComponentType.h" />
     <ClInclude Include="src\Rendering\SFML2DRenderer.h" />
     <ClInclude Include="src\Rendering\RenderWindow.hpp" />
@@ -243,7 +240,6 @@
     <ClInclude Include="src\Rendering\Vulkan\ShaderSet.hpp" />
     <ClInclude Include="src\Rendering\Vulkan\vulkan_base.hpp" />
     <ClInclude Include="src\ScriptManager.h" />
-    <ClInclude Include="src\ECS\MetaComponentType.h" />
     <ClInclude Include="src\ECS\Events.h" />
     <ClInclude Include="src\ECS\MetaComponent.h" />
     <ClInclude Include="src\pch.h" />
