@@ -63,7 +63,7 @@ namespace sa {
 		}
 
 		{
-			ComponentType::registerComponentType<comp::Transform>();
+			registerComponentType<comp::Transform>();
 			auto type = m_scriptManager.registerComponent<comp::Transform>();
 			type["position"] = &comp::Transform::position;
 			type["rotation"] = &comp::Transform::rotation;
