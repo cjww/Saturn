@@ -140,7 +140,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)/src;$(VULKAN_SDK)/Include;$(ProjectDir)deps/imgui-sfml-2.5/;$(ProjectDir)deps/imgui-1.86/;$(ProjectDir)deps/SFML-2.5.1/include/;$(SolutionDir)/DX11Renderer/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)deps\include\;$(ProjectDir)src\;$(VULKAN_SDK)\Include\;$(SolutionDir)DX11Renderer\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -170,7 +170,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)/src;$(VULKAN_SDK)/Include;$(ProjectDir)deps/imgui-sfml-2.5/;$(ProjectDir)deps/imgui-1.86/;$(ProjectDir)deps/SFML-2.5.1/include/;$(SolutionDir)/DX11Renderer/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)deps\include\;$(ProjectDir)src\;$(VULKAN_SDK)\Include\;$(SolutionDir)DX11Renderer\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -229,6 +229,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ECS\ComponentType.h" />
+    <ClInclude Include="src\internal\internalVector.h" />
     <ClInclude Include="src\Rendering\SFML2DRenderer.h" />
     <ClInclude Include="src\Rendering\RenderWindow.hpp" />
     <ClInclude Include="src\Rendering\Vulkan\common.hpp" />

@@ -51,9 +51,6 @@
     <ClCompile Include="src\Scene.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ECS\MetaComponentType.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\ECS\MetaComponent.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -97,9 +94,6 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Tools\Logger.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="src\ECS\Component.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ECS\ComponentType.cpp">
@@ -155,9 +149,6 @@
     <ClInclude Include="src\ECS\Events.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\MetaComponentType.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\ECS\MetaComponent.h">
       <Filter>Header Files</Filter>
     </ClInclude>
@@ -209,10 +200,10 @@
     <ClInclude Include="src\Tools\Logger.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Component.h">
+    <ClInclude Include="src\ECS\ComponentType.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\ComponentType.h">
+    <ClInclude Include="src\internal\internalVector.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

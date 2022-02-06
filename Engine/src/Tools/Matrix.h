@@ -1,5 +1,6 @@
 #pragma once
 #include <glm\glm.hpp>
+
 namespace sa {
 	template<unsigned Col, unsigned Row, typename Type>
 	class Matrix : public glm::mat<Col, Row, Type> {
