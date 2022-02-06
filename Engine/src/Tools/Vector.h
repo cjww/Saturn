@@ -9,7 +9,6 @@ namespace sa {
 	private:
 
 	public:
-		Vector();
 		Vector(Type scalar = 0);
 		template<typename ...T>
 		Vector(Type x, Type y, T... rest);

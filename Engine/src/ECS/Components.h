@@ -15,9 +15,9 @@ namespace comp {
 	};
 
 	struct Transform {
-		sa::Vector3f position = sa::Vector3f(0);
-		sa::Vector3f rotation = sa::Vector3f(0);
-		sa::Vector3f scale = sa::Vector3f(1);
+		sa::Vector3 position = sa::Vector3(0);
+		sa::Vector3 rotation = sa::Vector3(0);
+		sa::Vector3 scale = sa::Vector3(1);
 	};
 
 	enum class LightType {

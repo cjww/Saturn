@@ -4,15 +4,15 @@
 namespace sa {
 	class Rect {
 	private:
-		Vector2f m_position;
-		Vector2f m_size;
+		Vector2 m_position;
+		Vector2 m_size;
 	public:
 		Rect();
 
-		void setPosition(Vector2f position);
-		Vector2f getPosition();
+		void setPosition(Vector2 position);
+		Vector2 getPosition();
 
-		void setSize(Vector2f size);
-		Vector2f getSize();
+		void setSize(Vector2 size);
+		Vector2 getSize();
 	};
 }
