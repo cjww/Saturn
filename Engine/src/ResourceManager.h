@@ -3,7 +3,8 @@
 #include <glm/vec4.hpp>
 #include <glm/vec2.hpp>
 
-#include <Rendering/Vulkan/Renderer.hpp>
+#include <filesystem>
+
 #include <Vertex.h>
 
 //--------------------------------------------------------------------------------------
@@ -12,6 +13,10 @@
 
 typedef uint32_t ResourceID;
 #define NULL_RESOURCE (ResourceID)-1
+
+namespace vr {
+	struct Buffer;
+}
 
 namespace sa {
 

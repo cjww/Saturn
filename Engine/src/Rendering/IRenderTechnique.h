@@ -1,7 +1,12 @@
 #pragma once
-
 #include "Camera.h"
 #include "Scene.h"
+
+namespace vr {
+	struct Texture;
+	struct Image;
+}
+
 namespace sa {
 	class IRenderTechnique {
 	protected:

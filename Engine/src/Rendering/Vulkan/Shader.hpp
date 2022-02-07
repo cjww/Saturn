@@ -1,6 +1,5 @@
 #pragma once
-#define NOMINMAX
-#include <SPIRV\spirv_cross.hpp>
+
 
 #include "common.hpp"
 #include "vulkan_base.hpp"

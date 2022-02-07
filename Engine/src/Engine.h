@@ -11,6 +11,8 @@
 #include "Tools\utils.h"
 #include "ScriptManager.h"
 
+#include <rapidxml\rapidxml.hpp>
+
 namespace sa {
 	class Engine {
 	private:

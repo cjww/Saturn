@@ -156,10 +156,10 @@
       </Command>
     </PreBuildEvent>
     <Lib>
-      <AdditionalDependencies>lua51.lib;vulkan-1.lib;spirv-cross-cored.lib;spirv-cross-cppd.lib;spirv-cross-glsld.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>lua51.lib;vulkan-1.lib;glfw3.lib;spirv-cross-cored.lib;spirv-cross-cppd.lib;spirv-cross-glsld.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
-      <AdditionalLibraryDirectories>$(ProjectDir)deps\lua\;$(VULKAN_SDK)\Lib;$(ProjectDir)deps\SPIRV\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)deps\GLFW\lib-vc2019\;$(ProjectDir)deps\lua\;$(VULKAN_SDK)\Lib;$(ProjectDir)deps\SPIRV\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -188,14 +188,22 @@
       </Command>
     </PreBuildEvent>
     <Lib>
-      <AdditionalDependencies>lua51.lib;vulkan-1.lib;spirv-cross-core.lib;spirv-cross-cpp.lib;spirv-cross-glsl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>lua51.lib;vulkan-1.lib;glfw3.lib;spirv-cross-core.lib;spirv-cross-cpp.lib;spirv-cross-glsl.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
-      <AdditionalLibraryDirectories>$(ProjectDir)deps\lua\;$(VULKAN_SDK)\Lib;$(ProjectDir)deps\SPIRV\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)deps\GLFW\lib-vc2019\;$(ProjectDir)deps\lua\;$(VULKAN_SDK)\Lib;$(ProjectDir)deps\SPIRV\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\ECS\ComponentType.cpp" />
+    <ClCompile Include="src\imgui-SFML.cpp" />
+    <ClCompile Include="src\imgui.cpp" />
+    <ClCompile Include="src\imgui_demo.cpp" />
+    <ClCompile Include="src\imgui_draw.cpp" />
+    <ClCompile Include="src\imgui_impl_glfw.cpp" />
+    <ClCompile Include="src\imgui_impl_vulkan.cpp" />
+    <ClCompile Include="src\imgui_tables.cpp" />
+    <ClCompile Include="src\imgui_widgets.cpp" />
     <ClCompile Include="src\Rendering\RenderWindow.cpp" />
     <ClCompile Include="src\Rendering\Vulkan\DataManager.cpp" />
     <ClCompile Include="src\Rendering\Vulkan\functions.cpp" />
@@ -219,6 +227,7 @@
     <ClCompile Include="src\Rendering\ForwardRenderer.cpp" />
     <ClCompile Include="src\Rendering\IRenderTechnique.cpp" />
     <ClCompile Include="src\ResourceManager.cpp" />
+    <ClCompile Include="src\Tools\Clock.cpp" />
     <ClCompile Include="src\Tools\Logger.cpp" />
     <ClCompile Include="src\Tools\Math.cpp" />
     <ClCompile Include="src\Tools\Matrix.cpp" />
@@ -253,6 +262,7 @@
     <ClInclude Include="src\Rendering\ForwardRenderer.h" />
     <ClInclude Include="src\Rendering\IRenderTechnique.h" />
     <ClInclude Include="src\structs.h" />
+    <ClInclude Include="src\Tools\Clock.h" />
     <ClInclude Include="src\Tools\Logger.hpp" />
     <ClInclude Include="src\Tools\Math.h" />
     <ClInclude Include="src\Tools\Matrix.h" />

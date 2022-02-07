@@ -78,7 +78,7 @@ namespace sa {
 
 		m_currentScene = nullptr;
 		loadFromFile(configPath);
-		m_pRenderTechnique->init(pWindow, true);
+		m_pRenderTechnique->init(pWindow, false);
 
 
 		setScene("Scene");
@@ -92,7 +92,7 @@ namespace sa {
 		addActiveCamera(cam);
 		*/
 
-		m_scriptManager.load("resources/scripts/test.lua");
+		m_scriptManager.load("test.lua");
 
 		for (auto& script : m_scriptManager.getScripts()) {
 

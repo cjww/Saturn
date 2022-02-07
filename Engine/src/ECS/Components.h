@@ -2,6 +2,14 @@
 #include <ResourceManager.h>
 #include "Tools\Vector.h"
 
+// Forward declarations
+namespace vr {
+	struct Buffer;
+	struct DescriptorSet;
+	typedef std::shared_ptr<DescriptorSet> DescriptorSetPtr;
+
+}
+
 namespace comp {
 
 	struct Name {

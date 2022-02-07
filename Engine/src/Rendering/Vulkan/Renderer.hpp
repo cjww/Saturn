@@ -13,13 +13,9 @@
 
 #include "functions.hpp"
 
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
 
 #include <glm/vec3.hpp>
 #include <glm/vec4.hpp>
-
-#include <functional>
 
 #include "imgui_impl_vulkan.h"
 #include "imgui_impl_glfw.h"

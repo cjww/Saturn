@@ -19,6 +19,11 @@
 #include <memory>
 #include <filesystem>
 #include <algorithm>
+#include <sstream>
+#include <string.h>
+
+#include <functional>
+
 
 
 
@@ -32,6 +37,13 @@
 
 
 //#include <taskflow/taskflow.hpp>
+#define GLFW_INCLUDE_VULKAN
+#include <GLFW/glfw3.h>
+
+#define NOMINMAX
+#include <SPIRV\spirv_cross.hpp>
+
+
 
 
 // glm

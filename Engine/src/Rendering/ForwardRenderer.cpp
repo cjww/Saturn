@@ -1,5 +1,8 @@
 #include "pch.h"
 #include "ForwardRenderer.h"
+
+#include "Rendering\Vulkan\Renderer.hpp"
+
 namespace sa {
 
 	ForwardRenderer::ForwardRenderer() {

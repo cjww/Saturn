@@ -4,6 +4,8 @@
 #include "ECS/ComponentType.h"
 #include "ECS/Entity.h"
 
+#include <sol/sol.hpp>
+
 namespace sa {
 
 	class ScriptManager {

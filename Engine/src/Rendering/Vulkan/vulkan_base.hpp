@@ -1,12 +1,6 @@
 #pragma once
-#include <vulkan/vulkan.hpp>
 
-#include <iostream>
-#include <string.h>
-#include <sstream>
-#include <map>
-#include <vector>
-#include <fstream>
+#include <vulkan/vulkan.hpp>
 
 inline bool vbl_useValidationLayers = false;
 inline const char** vbl_validationLayers = nullptr;

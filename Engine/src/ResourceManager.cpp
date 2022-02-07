@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "ResourceManager.h"
 
+#include <Rendering/Vulkan/Renderer.hpp>
+
 namespace sa {
 
 	ResourceManager& ResourceManager::get()

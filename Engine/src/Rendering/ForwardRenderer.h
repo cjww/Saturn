@@ -1,10 +1,24 @@
 #pragma once
 #include "IRenderTechnique.h"
 
-#include <Rendering/Vulkan/Renderer.hpp>
+//#include <Rendering/Vulkan/Renderer.hpp>
 
 #include "structs.h"
 #include "ECS\Components.h"
+
+namespace vr {
+	class Renderer;
+	
+	class ShaderSet;
+	typedef std::shared_ptr<ShaderSet> ShaderSetPtr;
+
+	class DescriptorSet;
+	typedef std::shared_ptr<DescriptorSet> DescriptorSetPtr;
+
+	struct Buffer;
+	struct Texture;
+	struct Image;
+}
 
 namespace sa {
 	class ForwardRenderer : public IRenderTechnique {

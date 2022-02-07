@@ -19,4 +19,10 @@
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <Xml Include="project.xml" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="test.lua" />
+  </ItemGroup>
 </Project>
