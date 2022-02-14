@@ -2,6 +2,7 @@
 
 #include "Rendering/IRenderTechnique.h"
 #include "Rendering/ForwardRenderer.h"
+#include "Rendering/SFML2DRenderer.h"
 
 #include "ResourceManager.h"
 #include "Scene.h"

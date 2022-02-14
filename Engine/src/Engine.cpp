@@ -29,7 +29,7 @@ namespace sa {
 					m_pRenderTechnique = std::make_unique<ForwardRenderer>();
 				}
 				else if (strcmp(api->value(), "SFML") == 0) {
-					m_pRenderTechnique = std::make_unique<ForwardRenderer>();
+					m_pRenderTechnique = std::make_unique<SFML2DRenderer>();
 				}
 				else {
 					throw std::runtime_error("API not supported : " + std::string(api->value()));

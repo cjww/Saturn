@@ -1,17 +1,27 @@
 #pragma once
 #include "IRenderTechnique.h"
 
+namespace sf {
+	class RenderTexture;
+}
+
 namespace sa {
 	class SFML2DRenderer : public IRenderTechnique {
-		virtual void init(RenderWindow* pWindow, bool setupImGui = false) = 0;
-		virtual void cleanup() = 0;
+	private:
+		sf::RenderTexture* m_pTargetTexture;
 
-		virtual void beginFrameImGUI() = 0;
+	public:
 
-		virtual void draw(Scene* scene) = 0;
 
-		virtual vr::Texture* getOutputTexture() const = 0;
+		virtual void init(RenderWindow* pWindow, bool setupImGui = false) override;
+		virtual void cleanup() override;
 
-		virtual vr::Texture* createShaderTexture2D(const vr::Image& img) = 0;
+		virtual void beginFrameImGUI() override;
+
+		virtual void draw(Scene* scene) override;
+
+		virtual vr::Texture* getOutputTexture() const override;
+
+		virtual vr::Texture* createShaderTexture2D(const vr::Image& img) override;
 	};
 }

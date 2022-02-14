@@ -14,12 +14,13 @@ namespace sa {
 			sol::environment env;
 			sol::function func;
 			std::vector<ComponentType> components;
-
 		};
 	private:
 
 		std::vector<Script> m_scripts;
 		sol::state m_lua;
+
+		
 	
 	public:
 		ScriptManager();
