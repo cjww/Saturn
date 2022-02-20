@@ -56,6 +56,7 @@ namespace sa {
 			type["z"] = &Vector3::z;
 		}
 
+
 		{
 			registerComponentType<comp::Model>();
 			auto type = m_scriptManager.registerComponent<comp::Model>();
@@ -69,6 +70,10 @@ namespace sa {
 			type["rotation"] = &comp::Transform::rotation;
 			type["scale"] = &comp::Transform::scale;
 		}
+		
+		{
+			m_scriptManager.registerEntityType();
+		}
 
 	}
 
@@ -80,11 +85,8 @@ namespace sa {
 		loadFromFile(configPath);
 		m_pRenderTechnique->init(pWindow, false);
 
-
 		setScene("Scene");
-		Entity e = getCurrentScene()->createEntity();
-		e.addComponent<comp::Model>()->modelID = 42;
-
+		
 		/*
 		Camera* cam = newCamera(pWindow); // DefaultCamera
 		cam->setPosition(glm::vec3(0, 0, 1));
@@ -92,68 +94,13 @@ namespace sa {
 		addActiveCamera(cam);
 		*/
 
-		m_scriptManager.load("test.lua");
-
-		for (auto& script : m_scriptManager.getScripts()) {
-
-			m_currentScene->forEach(script.components, [&](const Entity& entity)
-			{
-				for (auto& type : script.components) {
-					auto metaComp = type.invoke("get", entity);
-					
-
-					sol::state& lua = m_scriptManager.getState();
-					/*
-					script.env.push();
-					std::cout << "Stack: " << lua.stack_top() << " : " << lua_typename(lua, lua_type(lua, -1)) << std::endl;
-
-					void** typePtr = (void**)lua_newuserdata(lua, sizeof(void*));
-					*typePtr = sol::detail::align_usertype_pointer(metaComp.data());
-
-					std::cout << "Stack: " << lua.stack_top() << " : " << lua_typename(lua, lua_type(lua, -1)) << std::endl;
-					sol::metatable mt = lua.script("local c = " + name + ".new() \n return getmetatable(c)");
-					mt.push();
-					std::cout << "Stack: " << lua.stack_top() << " : " << lua_typename(lua, lua_type(lua, -1)) << std::endl;
-
-					lua_setmetatable(lua, -2);
-					std::cout << "Stack: " << lua.stack_top() << " : " << lua_typename(lua, lua_type(lua, -1)) << std::endl;
-
-					lua_setfield(lua, -2, utils::toLower(name).c_str());
-					std::cout << "Stack: " << lua.stack_top() << " : " << lua_typename(lua, lua_type(lua, -1)) << std::endl;
-
-					lua_pop(lua, lua_gettop(lua));
-					std::cout << "Stack: " << lua.stack_top() << " : " << lua_typename(lua, lua_type(lua, -1)) << std::endl;
-
-
-					script.env["model"] = lua["Model"]["new"](metaComp.data());
-					sol::table m = lua["Model"][sol::metatable_key];
-					m.for_each([](sol::object k, sol::object v) {
-						std::cout << k.as<std::string>() << std::endl;
-					});
-					
-					//script.env["model"] = metaComp.data();
-
-					lua.script("print(model.id)", script.env);
-					*/
-					
-				}
-			});
-			script.env.set_on(script.func);
-			
-			auto ret = script.func();
-			if(!ret.valid()) {
-				DEBUG_LOG_ERROR(lua_tostring(m_scriptManager.getState(), -1));
-			}
-			
-
-		}
-
-
 	}
 
 	void Engine::update(float dt) {
-		if (m_currentScene)
+		if (m_currentScene) {
+			m_scriptManager.update(dt, m_currentScene);
 			m_currentScene->update(dt);
+		}
 	}
 
 	void Engine::cleanup() {
@@ -194,6 +141,11 @@ namespace sa {
 
 	void Engine::setScene(Scene& scene) {
 		m_currentScene = &scene;
+	}
+
+	void Engine::createSystemScript(const std::string& name) {
+		m_scriptManager.load(name);
+		m_scriptManager.start(m_currentScene); // Todo call start at a more approprite locations
 	}
 
 }

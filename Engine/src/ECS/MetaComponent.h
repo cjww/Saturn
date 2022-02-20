@@ -6,15 +6,20 @@ namespace sa {
 	class MetaComponent {
 	private:
 		entt::meta_any m_data;
+		std::string m_typeName;
+
+		friend class ComponentType;
+		MetaComponent(entt::meta_any any = {}, const std::string& typeName = "");
 	public:
-		MetaComponent(entt::meta_any any = {});
 
 		template<typename T>
 		T* cast();
 		
 		void* data();
 
-		bool isValid();
+		const std::string& getTypeName() const;
+
+		bool isValid() const;
 	};
 
 	template<typename T>

@@ -57,7 +57,7 @@ namespace sa {
 		void setScene(const std::string& name);
 		void setScene(Scene& scene);
 
-
+		void createSystemScript(const std::string& name);
 
 
 	};

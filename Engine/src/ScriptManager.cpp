@@ -1,7 +1,20 @@
 #include "pch.h"
 #include "ScriptManager.h"
 #include "ECS/Components.h"
+
 namespace sa {
+	sol::lua_value ScriptManager::castComponent(MetaComponent& metaComp) {
+		return m_componentCasters[metaComp.getTypeName()](metaComp);
+	}
+
+	
+	void ScriptManager::setComponents(const Entity& entity, sol::environment& env, std::vector<ComponentType>& components) {
+		for (auto& type : components) {
+			auto metaComp = type.invoke("get", entity);
+			std::string name = utils::toLower(type.getName());
+			env[name] = castComponent(metaComp);
+		}
+	}
 
 	ScriptManager::ScriptManager() {
 		m_lua.open_libraries();
@@ -22,9 +35,13 @@ namespace sa {
 
 
 	void ScriptManager::load(const std::string& path) {
-		m_scripts.emplace_back();
-		Script& script = m_scripts.back();
-		script.env = std::move(sol::environment(m_lua, sol::create, m_lua.globals()));
+		size_t size = m_scripts.size();
+		Script& script = m_scripts[path];
+
+		if (size != m_scripts.size()) {
+			script.env = std::move(sol::environment(m_lua, sol::create, m_lua.globals()));
+		}
+		script.components.clear();
 
 		std::ifstream file(path);
 		if (!file.is_open() || file.eof()) {
@@ -65,19 +82,59 @@ namespace sa {
 
 		script.func = m_lua.load_file(path);
 
+		script.env.set_on(script.func);
+
+		auto ret = script.func();
+		if (!ret.valid()) {
+			DEBUG_LOG_ERROR(lua_tostring(m_lua, -1));
+		}
+
 		m_lua.stack_clear();
 	}
 	
-	void ScriptManager::update() {
-		
+	void ScriptManager::start(Scene* pScene) {
+		for (auto& pair : m_scripts) {
+			Script& script = pair.second;
+
+			pScene->forEach(script.components, [&](const Entity& entity)
+				{
+					setComponents(entity, script.env, script.components);
+					script.env["entity"] = entity;
+					tryCall(script.env, "start");
+				});
+
+
+		}
 	}
 
-	std::vector<ScriptManager::Script>& ScriptManager::getScripts()
-	{
-		return m_scripts;
+	void ScriptManager::update(float dt, Scene* pScene) {
+		for (auto& pair : m_scripts) {
+			Script& script = pair.second;
+
+			pScene->forEach(script.components, [&](const Entity& entity)
+				{
+					setComponents(entity, script.env, script.components);
+					script.env["entity"] = entity;
+					tryCall(script.env, "update", dt);
+				});
+			
+
+		}
 	}
 
-	sol::state& ScriptManager::getState() {
-		return m_lua;
+	sol::usertype<Entity> ScriptManager::registerEntityType() {
+		auto type = registerType<Entity>();
+		for (const auto& pair : m_componentCasters)
+		{
+			type["get" + pair.first] = [&](const Entity& self) -> sol::lua_value {
+				ComponentType componentType = getComponentType(pair.first);
+				auto metaComp = componentType.invoke("get", self);
+				return castComponent(metaComp);
+			};
+
+		}
+		type["id"] = sol::readonly_property(&Entity::operator entt::id_type);
+	
+		return type;
 	}
 }

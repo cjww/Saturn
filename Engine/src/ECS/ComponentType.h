@@ -49,7 +49,7 @@ namespace sa{
 		auto func = m_type.func(entt::hashed_string(name.c_str()));
 		if (!func)
 			return {};
-		return { func.invoke({}, args...) };
+		return { func.invoke({}, args...), m_name };
 	}
 
 }

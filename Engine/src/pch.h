@@ -1,6 +1,5 @@
 #pragma once
 
-#define SOL_ALL_SAFTIES_ON 1
 #define DEBUG_LOG
 
 // Standard lib
@@ -25,15 +24,14 @@
 #include <functional>
 
 
-
-
 // Dependencies
 #include <entt/entt.hpp>
 #include <rapidxml/rapidxml.hpp>
 
+#define SOL_ALL_SAFTIES_ON 1
+#include <sol/sol.hpp>
 #include <lua.hpp>
 
-#include <sol/sol.hpp>
 
 
 //#include <taskflow/taskflow.hpp>
