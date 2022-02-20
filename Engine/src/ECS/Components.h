@@ -2,6 +2,8 @@
 #include <ResourceManager.h>
 #include "Tools\Vector.h"
 
+#include "sol\environment.hpp"
+
 // Forward declarations
 namespace vr {
 	struct Buffer;
@@ -28,6 +30,10 @@ namespace comp {
 		sa::Vector3 scale = sa::Vector3(1);
 	};
 
+	struct Script {
+		sol::environment env;
+	};
+
 	enum class LightType {
 		POINT = 0,
 		DIRECTIONAL = 1
@@ -39,12 +45,5 @@ namespace comp {
 		LightType type = LightType::POINT;
 	};
 
-	struct Script {
-		// TODO not use dynamic memory here
-		std::string scriptName;
-		std::string code;
-	};
-
-	
 };
 

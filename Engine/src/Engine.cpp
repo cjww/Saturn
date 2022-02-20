@@ -70,6 +70,14 @@ namespace sa {
 			type["rotation"] = &comp::Transform::rotation;
 			type["scale"] = &comp::Transform::scale;
 		}
+		{
+			registerComponentType<comp::Script>();
+			auto type = m_scriptManager.registerComponent<comp::Script>();
+			type["__index"] = [](const comp::Script& script, const std::string& key) {
+				return script.env[key];
+			};
+		}
+
 		
 		{
 			m_scriptManager.registerEntityType();
@@ -96,6 +104,10 @@ namespace sa {
 
 	}
 
+	void Engine::init() {
+		m_scriptManager.init(m_currentScene);
+	}
+
 	void Engine::update(float dt) {
 		if (m_currentScene) {
 			m_scriptManager.update(dt, m_currentScene);
@@ -106,6 +118,7 @@ namespace sa {
 	void Engine::cleanup() {
 		m_pRenderTechnique->cleanup();
 		m_pRenderTechnique.reset();
+		m_scenes.clear();
 	}
 
 	void Engine::recordImGui() {
@@ -145,7 +158,6 @@ namespace sa {
 
 	void Engine::createSystemScript(const std::string& name) {
 		m_scriptManager.load(name);
-		m_scriptManager.start(m_currentScene); // Todo call start at a more approprite locations
 	}
 
 }

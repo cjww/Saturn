@@ -40,7 +40,7 @@ namespace sa {
 
 		void load(const std::string& path);
 
-		void start(Scene* pScene);
+		void init(Scene* pScene);
 		void update(float dt, Scene* pScene);
 
 		template<typename T>
@@ -56,8 +56,9 @@ namespace sa {
 
 	template<typename ...Args>
 	inline void ScriptManager::tryCall(const sol::environment& env, const std::string& functionName, Args&& ...args) {
-		auto func = env[functionName];
+		sol::safe_function func = env[functionName];
 		if (func != sol::nil) {
+			env.set_on(func);
 			auto r = func(args...);
 			if (!r.valid()) {
 				DEBUG_LOG_ERROR(lua_tostring(m_lua, -1));

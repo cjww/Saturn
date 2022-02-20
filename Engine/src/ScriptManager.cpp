@@ -42,6 +42,7 @@ namespace sa {
 			script.env = std::move(sol::environment(m_lua, sol::create, m_lua.globals()));
 		}
 		script.components.clear();
+		script.components.push_back(getComponentType<comp::Script>());
 
 		std::ifstream file(path);
 		if (!file.is_open() || file.eof()) {
@@ -92,18 +93,21 @@ namespace sa {
 		m_lua.stack_clear();
 	}
 	
-	void ScriptManager::start(Scene* pScene) {
+	void ScriptManager::init(Scene* pScene) {
 		for (auto& pair : m_scripts) {
 			Script& script = pair.second;
 
 			pScene->forEach(script.components, [&](const Entity& entity)
 				{
-					setComponents(entity, script.env, script.components);
-					script.env["entity"] = entity;
-					tryCall(script.env, "start");
+					comp::Script* scriptComp = entity.getComponent<comp::Script>();
+					if(!scriptComp->env.valid()) {
+						scriptComp->env = sol::environment(m_lua, sol::create, script.env);
+					}
+					setComponents(entity, scriptComp->env, script.components);
+					scriptComp->env["entity"] = entity;
+					tryCall(scriptComp->env, "init");
 				});
-
-
+			
 		}
 	}
 
@@ -113,12 +117,10 @@ namespace sa {
 
 			pScene->forEach(script.components, [&](const Entity& entity)
 				{
-					setComponents(entity, script.env, script.components);
-					script.env["entity"] = entity;
-					tryCall(script.env, "update", dt);
+					comp::Script* scriptComp = entity.getComponent<comp::Script>();
+					tryCall(scriptComp->env, "update", dt);
 				});
 			
-
 		}
 	}
 

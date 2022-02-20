@@ -20,13 +20,21 @@ int main() {
 
 
 	sa::Entity entity = engine.getCurrentScene()->createEntity();
-	entity.addComponent<comp::Transform>()->position = {0, 0, 0};
+	entity.addComponent<comp::Transform>()->position = { 0, 0, 0 };
 	entity.addComponent<comp::Model>()->modelID = sa::ResourceManager::get().loadQuad();
+	entity.addComponent<comp::Script>();
+
+
+	sa::Entity entity2 = engine.getCurrentScene()->createEntity();
+	entity2.addComponent<comp::Transform>()->position = { 1, 0, -1 };
+	entity2.addComponent<comp::Model>()->modelID = sa::ResourceManager::get().loadQuad();
+	entity2.addComponent<comp::Script>();
 
 	engine.createSystemScript("test.lua");
 	
-	sa::Clock clock;
+	engine.init();
 
+	sa::Clock clock;
 	while (window.isOpen()) {
 		window.pollEvents();
 		

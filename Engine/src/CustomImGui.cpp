@@ -22,10 +22,5 @@ namespace ImGui {
 		}
 		
 	}
-	void Component(comp::Script* script) {
-		static char buffer[IMGUI_BUFFER_SIZE_NORMAL];
-		strcpy_s(buffer, script->scriptName.c_str());
-		ImGui::InputText("Name##Script", buffer, IMGUI_BUFFER_SIZE_NORMAL);
-	}
 	
 }

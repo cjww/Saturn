@@ -38,8 +38,11 @@ namespace sa {
 		void registerComponents();
 	
 	public:
-		//Engine();
+		// Call this to set up engine
 		void setup(RenderWindow* pWindow, const std::filesystem::path& configPath);
+
+		// Call this reight before the main loop
+		void init();
 
 		void update(float dt);
 
