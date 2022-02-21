@@ -21,7 +21,7 @@ namespace comp {
 
 	struct Model {
 		ResourceID modelID = NULL_RESOURCE;
-		vr::Buffer* buffer = nullptr;
+		sa::Buffer buffer;
 		vr::DescriptorSetPtr descriptorSet = nullptr;
 	};
 

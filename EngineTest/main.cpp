@@ -18,21 +18,38 @@ int main() {
 	engine.getCurrentScene()->addActiveCamera(&camera);
 
 	sa::Entity entity = engine.getCurrentScene()->createEntity();
-	entity.addComponent<comp::Transform>()->position = { 0, 0, 0 };
+	entity.addComponent<comp::Transform>()->position = { 0, 0, -1 };
 	entity.addComponent<comp::Model>()->modelID = sa::ResourceManager::get().loadQuad();
 	entity.addComponent<comp::Script>();
 
 
-	sa::Entity entity2 = engine.getCurrentScene()->createEntity();
-	entity2.addComponent<comp::Transform>()->position = { 1, 0, -1 };
-	entity2.addComponent<comp::Model>()->modelID = sa::ResourceManager::get().loadQuad();
-	
-	entity2.addComponent<comp::Script>();
-
 	engine.createSystemScript("test.lua");
 	
-	sa::ModelData* data = sa::ResourceManager::get().getModel(entity2.getComponent<comp::Model>()->modelID);
-	vr::Texture* tex;
+
+	sa::Entity entity3 = engine.getCurrentScene()->createEntity();
+	comp::Model* model = entity3.addComponent<comp::Model>();
+	entity3.addComponent<comp::Transform>()->position = { 0, 0, 0 };
+
+	model->modelID = sa::ResourceManager::get().createModel();
+	sa::ModelData* modelData = sa::ResourceManager::get().getModel(model->modelID);
+
+	std::vector<sa::VertexUV> vertices = {
+		{{0, 0, 0, 1}, {0, 0}},
+		{{1, 0, 0, 1}, {1, 0}},
+		{{0, -1, 0, 1}, {0, 1}},
+	};
+
+	std::vector<uint32_t> indices = {
+		1, 2, 3
+	};
+
+	sa::Mesh mesh;
+	mesh.indexBuffer = sa::Buffer(sa::BufferType::INDEX);
+	mesh.indexBuffer.write(indices);
+	mesh.vertexBuffer = sa::Buffer(sa::BufferType::VERTEX);
+	mesh.vertexBuffer.write(vertices);
+
+	modelData->meshes.push_back(mesh);
 
 
 	engine.init();
@@ -44,7 +61,7 @@ int main() {
 		float dt = clock.restart<float>();
 
 		//camera2.rotate(dt, { 0, 1, 0 });
-		//entity.getComponent<comp::Transform>()->position.z -= dt;
+		entity3.getComponent<comp::Transform>()->position.z -= dt;
 		
 		engine.update(dt);
 		engine.draw();

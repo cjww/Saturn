@@ -239,23 +239,23 @@ namespace sa {
 					perObject.worldMatrix = glm::rotate(perObject.worldMatrix, transform.rotation.z, glm::vec3(0, 0, 1));
 					perObject.worldMatrix = glm::scale(perObject.worldMatrix, transform.scale);
 
-					if (modelComp.buffer == nullptr) {
-						modelComp.buffer = vr::Renderer::get()->createUniformBuffer(sizeof(sa::PerObjectBuffer), &perObject);
+					if (!modelComp.buffer.isValid()) {
+						modelComp.buffer = sa::Buffer(sa::BufferType::UNIFORM, sizeof(sa::PerObjectBuffer), 1, &perObject);
 					}
 					else {
-						memcpy(modelComp.buffer->mappedData, &perObject, sizeof(perObject));
+						modelComp.buffer.write(perObject);
 					}
-					m_renderer->updateDescriptorSet(modelComp.descriptorSet, 0, modelComp.buffer, nullptr, nullptr, false);
+					m_renderer->updateDescriptorSet(modelComp.descriptorSet, 0, (const vr::Buffer*)modelComp.buffer, nullptr, nullptr, false);
 					m_renderer->bindDescriptorSet(modelComp.descriptorSet, m_colorPipeline);
 
 					for (const auto& mesh : model->meshes) {
-						m_renderer->bindVertexBuffer(mesh.vertexBuffer);
-						if (mesh.indexBuffer != nullptr) {
-							m_renderer->bindIndexBuffer(mesh.indexBuffer);
-							m_renderer->drawIndexed(mesh.indexCount, 1);
+						m_renderer->bindVertexBuffer((const vr::Buffer*)mesh.vertexBuffer);
+						if (mesh.indexBuffer.isValid()) {
+							m_renderer->bindIndexBuffer((const vr::Buffer*)mesh.indexBuffer);
+							m_renderer->drawIndexed(mesh.indexBuffer.getElementCount(), 1);
 						}
 						else {
-							m_renderer->draw(mesh.vertexCount, 1);
+							m_renderer->draw(mesh.vertexBuffer.getElementCount(), 1);
 						}
 					}
 

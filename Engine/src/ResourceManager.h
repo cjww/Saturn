@@ -7,6 +7,8 @@
 
 #include <Vertex.h>
 
+#include "Graphics\Buffer.h"
+
 //--------------------------------------------------------------------------------------
 // ResourceManager is the class that will hold all resources. 
 //--------------------------------------------------------------------------------------
@@ -31,13 +33,9 @@ namespace sa {
 	};
 
 	struct Mesh {
-		vr::Buffer* vertexBuffer;
-		vr::Buffer* indexBuffer;
-		union {
-			size_t indexCount, vertexCount;
-		};
+		sa::Buffer vertexBuffer;
+		sa::Buffer indexBuffer;
 		Material material;
-
 	};
 
 	struct ModelData {
@@ -62,11 +60,14 @@ namespace sa {
 		~ResourceManager();
 	
 		static ResourceManager& get();
-	
+
 		ResourceID loadModel(const std::filesystem::path& path);
 		ResourceID loadQuad();
 
 		ModelData* getModel(ResourceID id) const;
+
+		// creates empty model
+		ResourceID createModel();
 
 	};
 

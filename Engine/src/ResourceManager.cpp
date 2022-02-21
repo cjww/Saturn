@@ -43,15 +43,14 @@ namespace sa {
 			{ glm::vec4(0.5f, -0.5f, 0, 1), glm::vec2(1, 1) },
 			{ glm::vec4(-0.5f, -0.5f, 0, 1), glm::vec2(0, 1) }
 		};
-		mesh.vertexBuffer = vr::Renderer::get()->createVertexBuffer(vertices.size() * sizeof(VertexUV), vertices.data());
+		mesh.vertexBuffer = sa::Buffer(sa::BufferType::VERTEX, vertices.size() * sizeof(VertexUV), vertices.size(), vertices.data());
 
 		std::vector<uint32_t> indices = {
 			0, 1, 3,
 			1, 2, 3
 		};
-		mesh.indexBuffer = vr::Renderer::get()->createIndexBuffer(indices.size() * sizeof(uint32_t), indices.data());
+		mesh.indexBuffer = sa::Buffer(sa::BufferType::INDEX, indices.size() * sizeof(uint32_t), indices.size(), indices.data());
 
-		mesh.indexCount = 6;
 		model->meshes.push_back(mesh);
 
 		return id;
@@ -59,6 +58,12 @@ namespace sa {
 
 	ModelData* ResourceManager::getModel(ResourceID id) const {
 		return m_models.at(id).get();
+	}
+
+	ResourceID ResourceManager::createModel() {
+		ResourceID id = m_nextID++;
+		m_models.insert(std::make_pair(id, std::make_unique<ModelData>()));
+		return id;
 	}
 
 	ResourceManager::ResourceManager()
