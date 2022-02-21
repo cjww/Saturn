@@ -196,6 +196,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\ECS\ComponentType.cpp" />
+    <ClCompile Include="src\ECS\EntityEnvironment.cpp" />
     <ClCompile Include="src\imgui-SFML.cpp" />
     <ClCompile Include="src\imgui.cpp" />
     <ClCompile Include="src\imgui_demo.cpp" />
@@ -204,15 +205,15 @@
     <ClCompile Include="src\imgui_impl_vulkan.cpp" />
     <ClCompile Include="src\imgui_tables.cpp" />
     <ClCompile Include="src\imgui_widgets.cpp" />
-    <ClCompile Include="src\Rendering\RenderWindow.cpp" />
-    <ClCompile Include="src\Rendering\SFML2DRenderer.cpp" />
-    <ClCompile Include="src\Rendering\Vulkan\DataManager.cpp" />
-    <ClCompile Include="src\Rendering\Vulkan\functions.cpp" />
-    <ClCompile Include="src\Rendering\Vulkan\Image.cpp" />
-    <ClCompile Include="src\Rendering\Vulkan\Renderer.cpp" />
-    <ClCompile Include="src\Rendering\Vulkan\Shader.cpp" />
-    <ClCompile Include="src\Rendering\Vulkan\ShaderSet.cpp" />
-    <ClCompile Include="src\Rendering\Vulkan\vulkan_base.cpp" />
+    <ClCompile Include="src\Graphics\RenderWindow.cpp" />
+    <ClCompile Include="src\Graphics\SFML2DRenderer.cpp" />
+    <ClCompile Include="src\Graphics\Vulkan\DataManager.cpp" />
+    <ClCompile Include="src\Graphics\Vulkan\functions.cpp" />
+    <ClCompile Include="src\Graphics\Vulkan\Image.cpp" />
+    <ClCompile Include="src\Graphics\Vulkan\Renderer.cpp" />
+    <ClCompile Include="src\Graphics\Vulkan\Shader.cpp" />
+    <ClCompile Include="src\Graphics\Vulkan\ShaderSet.cpp" />
+    <ClCompile Include="src\Graphics\Vulkan\vulkan_base.cpp" />
     <ClCompile Include="src\ScriptManager.cpp" />
     <ClCompile Include="src\ECS\MetaComponent.cpp" />
     <ClCompile Include="src\pch.cpp">
@@ -221,12 +222,12 @@
     </ClCompile>
     <ClCompile Include="src\Scene.cpp" />
     <ClCompile Include="src\Camera.cpp" />
-    <ClCompile Include="src\CustomImGui.cpp" />
+    <ClCompile Include="src\Utils\CustomImGui.cpp" />
     <ClCompile Include="src\Geometry\Rect.cpp" />
     <ClCompile Include="src\ECS\Entity.cpp" />
     <ClCompile Include="src\Engine.cpp" />
-    <ClCompile Include="src\Rendering\ForwardRenderer.cpp" />
-    <ClCompile Include="src\Rendering\IRenderTechnique.cpp" />
+    <ClCompile Include="src\Graphics\ForwardRenderer.cpp" />
+    <ClCompile Include="src\Graphics\IRenderTechnique.cpp" />
     <ClCompile Include="src\ResourceManager.cpp" />
     <ClCompile Include="src\Tools\Clock.cpp" />
     <ClCompile Include="src\Tools\Logger.cpp" />
@@ -239,29 +240,30 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ECS\ComponentType.h" />
+    <ClInclude Include="src\ECS\EntityEnvironment.h" />
     <ClInclude Include="src\internal\internalVector.h" />
-    <ClInclude Include="src\Rendering\SFML2DRenderer.h" />
-    <ClInclude Include="src\Rendering\RenderWindow.hpp" />
-    <ClInclude Include="src\Rendering\Vulkan\common.hpp" />
-    <ClInclude Include="src\Rendering\Vulkan\DataManager.hpp" />
-    <ClInclude Include="src\Rendering\Vulkan\functions.hpp" />
-    <ClInclude Include="src\Rendering\Vulkan\Image.hpp" />
-    <ClInclude Include="src\Rendering\Vulkan\Renderer.hpp" />
-    <ClInclude Include="src\Rendering\Vulkan\Shader.hpp" />
-    <ClInclude Include="src\Rendering\Vulkan\ShaderSet.hpp" />
-    <ClInclude Include="src\Rendering\Vulkan\vulkan_base.hpp" />
+    <ClInclude Include="src\Graphics\SFML2DRenderer.h" />
+    <ClInclude Include="src\Graphics\RenderWindow.hpp" />
+    <ClInclude Include="src\Graphics\Vulkan\common.hpp" />
+    <ClInclude Include="src\Graphics\Vulkan\DataManager.hpp" />
+    <ClInclude Include="src\Graphics\Vulkan\functions.hpp" />
+    <ClInclude Include="src\Graphics\Vulkan\Image.hpp" />
+    <ClInclude Include="src\Graphics\Vulkan\Renderer.hpp" />
+    <ClInclude Include="src\Graphics\Vulkan\Shader.hpp" />
+    <ClInclude Include="src\Graphics\Vulkan\ShaderSet.hpp" />
+    <ClInclude Include="src\Graphics\Vulkan\vulkan_base.hpp" />
     <ClInclude Include="src\ScriptManager.h" />
     <ClInclude Include="src\ECS\Events.h" />
     <ClInclude Include="src\ECS\MetaComponent.h" />
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\Scene.h" />
-    <ClInclude Include="src\CustomImGui.h" />
+    <ClInclude Include="src\Utils\CustomImGui.h" />
     <ClInclude Include="src\Geometry\Rect.h" />
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\ECS\Components.h" />
     <ClInclude Include="src\Engine.h" />
-    <ClInclude Include="src\Rendering\ForwardRenderer.h" />
-    <ClInclude Include="src\Rendering\IRenderTechnique.h" />
+    <ClInclude Include="src\Graphics\ForwardRenderer.h" />
+    <ClInclude Include="src\Graphics\IRenderTechnique.h" />
     <ClInclude Include="src\structs.h" />
     <ClInclude Include="src\Tools\Clock.h" />
     <ClInclude Include="src\Tools\Logger.hpp" />

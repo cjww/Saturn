@@ -7,7 +7,7 @@
 
 #include <Tools/Logger.hpp>
 
-#include <Rendering/RenderWindow.hpp>
+#include <Graphics/RenderWindow.hpp>
 
 #include "vulkan_base.hpp"
 

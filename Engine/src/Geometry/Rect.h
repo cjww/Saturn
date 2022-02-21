@@ -8,6 +8,9 @@ namespace sa {
 		Vector2 m_size;
 	public:
 		Rect();
+		Rect(Vector2 position, Vector2 size);
+		Rect(float x, float y, float width, float height);
+
 
 		void setPosition(Vector2 position);
 		Vector2 getPosition();

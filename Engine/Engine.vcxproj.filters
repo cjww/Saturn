@@ -27,13 +27,13 @@
     <ClCompile Include="src\ResourceManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\ForwardRenderer.cpp">
+    <ClCompile Include="src\Graphics\ForwardRenderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Engine.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\IRenderTechnique.cpp">
+    <ClCompile Include="src\Graphics\IRenderTechnique.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Camera.cpp">
@@ -45,7 +45,7 @@
     <ClCompile Include="src\Tools\Math.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\CustomImGui.cpp">
+    <ClCompile Include="src\Utils\CustomImGui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Scene.cpp">
@@ -69,28 +69,28 @@
     <ClCompile Include="src\Tools\utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\RenderWindow.cpp">
+    <ClCompile Include="src\Graphics\RenderWindow.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\Vulkan\DataManager.cpp">
+    <ClCompile Include="src\Graphics\Vulkan\DataManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\Vulkan\functions.cpp">
+    <ClCompile Include="src\Graphics\Vulkan\functions.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\Vulkan\Renderer.cpp">
+    <ClCompile Include="src\Graphics\Vulkan\Renderer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\Vulkan\Shader.cpp">
+    <ClCompile Include="src\Graphics\Vulkan\Shader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\Vulkan\ShaderSet.cpp">
+    <ClCompile Include="src\Graphics\Vulkan\ShaderSet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\Vulkan\vulkan_base.cpp">
+    <ClCompile Include="src\Graphics\Vulkan\vulkan_base.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\Vulkan\Image.cpp">
+    <ClCompile Include="src\Graphics\Vulkan\Image.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Tools\Logger.cpp">
@@ -126,7 +126,10 @@
     <ClCompile Include="src\Tools\Clock.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Rendering\SFML2DRenderer.cpp">
+    <ClCompile Include="src\Graphics\SFML2DRenderer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\ECS\EntityEnvironment.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -146,13 +149,13 @@
     <ClInclude Include="src\Vertex.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\ForwardRenderer.h">
+    <ClInclude Include="src\Graphics\ForwardRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Engine.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\IRenderTechnique.h">
+    <ClInclude Include="src\Graphics\IRenderTechnique.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ECS\Components.h">
@@ -170,7 +173,7 @@
     <ClInclude Include="src\Tools\Math.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\CustomImGui.h">
+    <ClInclude Include="src\Utils\CustomImGui.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Scene.h">
@@ -197,34 +200,34 @@
     <ClInclude Include="src\ScriptManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\SFML2DRenderer.h">
+    <ClInclude Include="src\Graphics\SFML2DRenderer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\RenderWindow.hpp">
+    <ClInclude Include="src\Graphics\RenderWindow.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\Vulkan\common.hpp">
+    <ClInclude Include="src\Graphics\Vulkan\common.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\Vulkan\DataManager.hpp">
+    <ClInclude Include="src\Graphics\Vulkan\DataManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\Vulkan\functions.hpp">
+    <ClInclude Include="src\Graphics\Vulkan\functions.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\Vulkan\Image.hpp">
+    <ClInclude Include="src\Graphics\Vulkan\Image.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\Vulkan\Renderer.hpp">
+    <ClInclude Include="src\Graphics\Vulkan\Renderer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\Vulkan\Shader.hpp">
+    <ClInclude Include="src\Graphics\Vulkan\Shader.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\Vulkan\ShaderSet.hpp">
+    <ClInclude Include="src\Graphics\Vulkan\ShaderSet.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Rendering\Vulkan\vulkan_base.hpp">
+    <ClInclude Include="src\Graphics\Vulkan\vulkan_base.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Tools\Logger.hpp">
@@ -237,6 +240,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Tools\Clock.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\EntityEnvironment.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

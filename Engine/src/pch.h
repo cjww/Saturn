@@ -53,8 +53,8 @@
 #include <imgui.h>
 
 // Other
-#include "Rendering/Vulkan/Renderer.hpp"
-#include "Rendering/RenderWindow.hpp"
+#include "Graphics/Vulkan/Renderer.hpp"
+#include "Graphics/RenderWindow.hpp"
 
 #include <Tools/Logger.hpp>
 

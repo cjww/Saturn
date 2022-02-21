@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "ResourceManager.h"
 
-#include <Rendering/Vulkan/Renderer.hpp>
+#include <Graphics/Vulkan/Renderer.hpp>
 
 namespace sa {
 

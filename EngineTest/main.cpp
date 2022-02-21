@@ -15,9 +15,16 @@ int main() {
 	sa::Camera camera(&window);
 	camera.setPosition({ 0, 0, 1 });
 	camera.lookAt({ 0, 0, 0 });
+	camera.setViewport(sa::Rect( 0, 0, window.getCurrentExtent().x / 2, window.getCurrentExtent().y ));
+
 	engine.getCurrentScene()->addActiveCamera(&camera);
 
+	sa::Camera camera2(&window);
+	camera2.setPosition({ 0, 0, 1 });
+	camera2.lookAt({ 0, 0, 0 });
+	camera2.setViewport(sa::Rect( window.getCurrentExtent().x / 2, 0, window.getCurrentExtent().x / 2, window.getCurrentExtent().y ));
 
+	engine.getCurrentScene()->addActiveCamera(&camera);
 
 	sa::Entity entity = engine.getCurrentScene()->createEntity();
 	entity.addComponent<comp::Transform>()->position = { 0, 0, 0 };
@@ -28,10 +35,16 @@ int main() {
 	sa::Entity entity2 = engine.getCurrentScene()->createEntity();
 	entity2.addComponent<comp::Transform>()->position = { 1, 0, -1 };
 	entity2.addComponent<comp::Model>()->modelID = sa::ResourceManager::get().loadQuad();
+	
 	entity2.addComponent<comp::Script>();
 
 	engine.createSystemScript("test.lua");
 	
+	sa::ModelData* data = sa::ResourceManager::get().getModel(entity2.getComponent<comp::Model>()->modelID);
+	vr::Texture* tex;
+
+	
+
 	engine.init();
 
 	sa::Clock clock;

@@ -10,6 +10,16 @@ namespace sa {
 
 	}
 
+	Rect::Rect(Vector2 position, Vector2 size) {
+		m_position = position;
+		m_size = size;
+	}
+
+	Rect::Rect(float x, float y, float width, float height) {
+		m_position = Vector2(x, y);
+		m_size = Vector2(width, height);
+	}
+
 	void Rect::setPosition(Vector2 position) {
 		m_position = position;
 	}

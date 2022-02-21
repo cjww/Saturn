@@ -1,8 +1,8 @@
 #pragma once
 
-#include "Rendering/IRenderTechnique.h"
-#include "Rendering/ForwardRenderer.h"
-#include "Rendering/SFML2DRenderer.h"
+#include "Graphics/IRenderTechnique.h"
+#include "Graphics/ForwardRenderer.h"
+#include "Graphics/SFML2DRenderer.h"
 
 #include "ResourceManager.h"
 #include "Scene.h"
