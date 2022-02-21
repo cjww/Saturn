@@ -196,7 +196,6 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\ECS\ComponentType.cpp" />
-    <ClCompile Include="src\ECS\EntityEnvironment.cpp" />
     <ClCompile Include="src\imgui-SFML.cpp" />
     <ClCompile Include="src\imgui.cpp" />
     <ClCompile Include="src\imgui_demo.cpp" />
@@ -240,7 +239,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ECS\ComponentType.h" />
-    <ClInclude Include="src\ECS\EntityEnvironment.h" />
     <ClInclude Include="src\internal\internalVector.h" />
     <ClInclude Include="src\Graphics\SFML2DRenderer.h" />
     <ClInclude Include="src\Graphics\RenderWindow.hpp" />

@@ -24,7 +24,7 @@ int main() {
 	camera2.lookAt({ 0, 0, 0 });
 	camera2.setViewport(sa::Rect( window.getCurrentExtent().x / 2, 0, window.getCurrentExtent().x / 2, window.getCurrentExtent().y ));
 
-	engine.getCurrentScene()->addActiveCamera(&camera);
+	engine.getCurrentScene()->addActiveCamera(&camera2);
 
 	sa::Entity entity = engine.getCurrentScene()->createEntity();
 	entity.addComponent<comp::Transform>()->position = { 0, 0, 0 };
@@ -53,7 +53,7 @@ int main() {
 		
 		float dt = clock.restart<float>();
 
-		//camera.rotate(dt, { 0, 1, 0 });
+		camera2.rotate(dt, { 0, 1, 0 });
 		//entity.getComponent<comp::Transform>()->position.z -= dt;
 
 		engine.update(dt);

@@ -74,7 +74,7 @@ namespace sa {
 			registerComponentType<comp::Script>();
 			auto type = m_scriptManager.registerComponent<comp::Script>();
 			type["__index"] = [](const comp::Script& script, const std::string& key) {
-				return (*script.env)[key];
+				return script.env[key];
 			};
 		}
 

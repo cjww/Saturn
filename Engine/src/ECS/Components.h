@@ -2,6 +2,7 @@
 #include <ResourceManager.h>
 #include "Tools\Vector.h"
 
+#include "sol\environment.hpp"
 
 // Forward declarations
 namespace vr {
@@ -11,11 +12,6 @@ namespace vr {
 
 }
 
-namespace sa {
-	namespace details {
-		class EntityEnvironment;
-	}
-}
 
 namespace comp {
 
@@ -36,8 +32,7 @@ namespace comp {
 	};
 
 	struct Script {
-		//sol::environment env;
-		std::unique_ptr<sa::details::EntityEnvironment> env = nullptr;
+		sol::environment env;
 	};
 
 	enum class LightType {

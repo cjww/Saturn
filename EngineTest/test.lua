@@ -15,7 +15,7 @@ function init()
 end
 
 function update(dt)
-    t.position.z = t.position.z - dt
+    t.position.z = t.position.z - dt/2
     
     
 end
