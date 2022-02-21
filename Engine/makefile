@@ -3,22 +3,28 @@ SHADER_DIR = ./shaders
 VERT_SHADERS := $(wildcard $(SHADER_DIR)/*.vert)
 FRAG_SHADERS := $(wildcard $(SHADER_DIR)/*.frag)
 COMP_SHADERS := $(wildcard $(SHADER_DIR)/*.comp)
-SHADERS := $(VERT_SHADERS:%.vert=%.spv) $(FRAG_SHADERS:%.frag=%.spv) $(COMP_SHADERS:%.comp=%.spv)
+GEOM_SHADERS := $(wildcard $(SHADER_DIR)/*.geom)
+
+SHADERS := $(VERT_SHADERS:%.vert=%.vert.spv) $(FRAG_SHADERS:%.frag=%.frag.spv) $(COMP_SHADERS:%.comp=%.comp.spv) $(GEOM_SHADERS:%.geom=%.geom.spv)
 
 all: shaders
 
 shaders: $(SHADERS)
 	@echo "Done"
 
-%.spv: %.vert
+%.vert.spv: %.vert
 	@echo "compiling $<"
 	glslangValidator -V $< -o $@ 
 
-%.spv: %.frag
+%.frag.spv: %.frag
 	@echo "compiling $<"
 	glslangValidator -V $< -o $@ 
 
-%.spv: %.comp
+%.comp.spv: %.comp
+	@echo "compiling $<"
+	glslangValidator -V $< -o $@ 
+
+%.geom.spv: %.geom
 	@echo "compiling $<"
 	glslangValidator -V $< -o $@ 
 

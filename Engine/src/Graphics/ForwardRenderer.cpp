@@ -131,12 +131,12 @@ namespace sa {
 
 		m_mainFramebuffer = m_renderer->createSwapchainFramebuffer(m_renderPass, additionalAttachments);
 
-		vr::ShaderPtr vertexShader = m_renderer->createShader("../Engine/shaders/TextureVertexShader.spv", VK_SHADER_STAGE_VERTEX_BIT);
-		vr::ShaderPtr fragmentShader = m_renderer->createShader("../Engine/shaders/TextureFragmentShader.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+		vr::ShaderPtr vertexShader = m_renderer->createShader("../Engine/shaders/Texture.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+		vr::ShaderPtr fragmentShader = m_renderer->createShader("../Engine/shaders/Texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 		m_pColorShaders = m_renderer->createShaderSet(vertexShader, fragmentShader);
 
-		vr::ShaderPtr postProcessVertexShader = m_renderer->createShader("../Engine/shaders/PostProcessVertexShader.spv", VK_SHADER_STAGE_VERTEX_BIT);
-		vr::ShaderPtr postProcessFragmentShader = m_renderer->createShader("../Engine/shaders/PostProcessFragmentShader.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
+		vr::ShaderPtr postProcessVertexShader = m_renderer->createShader("../Engine/shaders/PostProcess.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
+		vr::ShaderPtr postProcessFragmentShader = m_renderer->createShader("../Engine/shaders/PostProcess.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 		m_pPostProcessShaders = m_renderer->createShaderSet(postProcessVertexShader, postProcessFragmentShader);
 
 		m_colorPipeline = m_renderer->createPipeline(m_pColorShaders, m_renderPass, 0);
