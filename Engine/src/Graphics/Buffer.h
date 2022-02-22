@@ -40,6 +40,9 @@ namespace sa {
 
 		void* data();
 
+		template<typename T>
+		auto getContent();
+
 		bool isValid() const;
 
 		operator const vr::Buffer*() const {
@@ -60,5 +63,12 @@ namespace sa {
 	template<typename T>
 	inline void Buffer::write(std::vector<T>& data) {
 		write((void*)data.data(), data.size() * sizeof(T), data.size());
+	}
+
+	template<typename T>
+	inline auto Buffer::getContent() {
+		std::vector<T> elements(getElementCount());
+		memcpy(elements.data(), data(), getSize());
+		return elements;
 	}
 }

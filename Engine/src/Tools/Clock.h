@@ -8,24 +8,25 @@ namespace sa {
 	public:
 		Clock();
 
-		template<typename T, typename P = std::ratio<1i64>>
+		template<typename T = float, typename Ratio = std::ratio<1i64>>
 		T restart();
 
-		template<typename T, typename P>
+		template<typename T = float, typename Ratio = std::ratio<1i64>>
 		T getElapsedTime() const;
 	};
 
-	template<typename T, typename P>
+	template<typename T, typename Ratio>
 	inline T Clock::restart() {
 		auto now = std::chrono::high_resolution_clock::now();
-		auto duration = std::chrono::duration_cast<std::chrono::duration<T, P>>(now - m_start);
+		auto duration = std::chrono::duration_cast<std::chrono::duration<T, Ratio>>(now - m_start);
 		m_start = now;
 		return duration.count();
 	}
 
-	template<typename T, typename P>
-	inline T Clock::getElapsedTime() const
-	{
-		return T();
+	template<typename T, typename Ratio>
+	inline T Clock::getElapsedTime() const {
+		auto now = std::chrono::high_resolution_clock::now();
+		auto duration = std::chrono::duration_cast<std::chrono::duration<T, Ratio>>(now - m_start);;
+		return duration.count();
 	}
 }
