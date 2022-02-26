@@ -45,7 +45,7 @@
     <ClCompile Include="src\Tools\Math.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Utils\CustomImGui.cpp">
+    <ClCompile Include="src\Tools\CustomImGui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Scene.cpp">
@@ -176,7 +176,7 @@
     <ClInclude Include="src\Tools\Math.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Utils\CustomImGui.h">
+    <ClInclude Include="src\Tools\CustomImGui.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Scene.h">

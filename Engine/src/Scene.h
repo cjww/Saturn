@@ -5,6 +5,10 @@
 #include "ECS/Events.h"
 #include "ECS/Components.h"
 
+#include <iostream>
+
+#include "Tools\utils.h"
+
 namespace sa {
 	typedef uint32_t SceneID;
 
@@ -42,6 +46,9 @@ namespace sa {
 
 		template<typename F>
 		void forEach(const std::vector<ComponentType>& components, F func);
+
+		template<typename Comp>
+		void onComponentCreate();
 
 	};
 	
@@ -83,5 +90,14 @@ namespace sa {
 			Entity entity(&m_reg, e);
 			func(entity);
 		});
+	}
+	template<typename Comp>
+	inline void Scene::onComponentCreate()
+	{
+		
+		if constexpr (utils::details::template has_signature<Comp, void()>::value)
+		{
+			std::cout << "hello " << std::endl;
+		}
 	}
 }

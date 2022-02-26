@@ -47,6 +47,11 @@ int main() {
 	camera.lookAt({ 0, 0, 0 });
 	engine.getCurrentScene()->addActiveCamera(&camera);
 
+	
+	std::cout << std::boolalpha << sa::utils::details::has_member_function<comp::Transform>::value
+		<< std::endl;
+
+
 	for (int i = 0; i < 10; i++) {
 		createTriangleEntity(engine);
 	}
@@ -73,6 +78,7 @@ int main() {
 			window.setWindowTitle("FPS: " + std::to_string(1 / dt));
 			fpsClock.restart();
 		}
+		
 		
 
 		/*

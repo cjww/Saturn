@@ -70,6 +70,7 @@ namespace sa {
 	void registerComponentType();
 
 
+
 	// ----------------- Definitions -----------------
 
 	template<typename T>
@@ -117,6 +118,8 @@ namespace sa {
 				;
 		}
 	}
+
+	
 
 }
 

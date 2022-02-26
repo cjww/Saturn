@@ -23,6 +23,9 @@ namespace sa {
 	private:
 
 		std::unordered_map<std::string, Script> m_scripts;
+		std::unordered_map<size_t, sol::table> m_customComponents;
+
+
 		sol::state m_lua;
 
 		std::unordered_map<std::string, std::function<sol::lua_value(MetaComponent&)>> m_componentCasters;
@@ -33,6 +36,9 @@ namespace sa {
 		void tryCall(const sol::environment& env, const std::string& functionName, Args&& ...args);
 
 		void setComponents(const Entity& entity, sol::environment& env, std::vector<ComponentType>& components);
+
+		void registerComponentType(std::string name, sol::table componentData);
+
 
 	public:
 		ScriptManager();

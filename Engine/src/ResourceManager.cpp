@@ -18,8 +18,8 @@ namespace sa {
 		}
 
 		ResourceID id = m_nextID++;
-		m_models.insert(std::make_pair(id, std::make_unique<ModelData>()));
-		ModelData* model = m_models.at(id).get();
+		const auto& [reference, success] = m_models.insert(std::make_pair(id, std::make_unique<ModelData>()));
+		ModelData* model = reference->second.get();
 
 
 		return id;
@@ -32,8 +32,8 @@ namespace sa {
 		}
 
 		ResourceID id = m_nextID++;
-		m_models.insert(std::make_pair(id, std::make_unique<ModelData>()));
-		ModelData* model = m_models.at(id).get();
+		const auto& [reference, success] = m_models.insert(std::make_pair(id, std::make_unique<ModelData>()));
+		ModelData* model = reference->second.get();
 		Mesh mesh = {};
 		mesh.material = {};
 

@@ -16,6 +16,10 @@ namespace sa {
 		}
 	}
 
+	void ScriptManager::registerComponentType(std::string name, sol::table componentData) {
+
+	}
+
 	ScriptManager::ScriptManager() {
 		m_lua.open_libraries();
 		auto ret = m_lua.do_string("return 'Loaded ' .. jit.version .. ' for ' .. jit.os .. ' ' .. jit.arch");

@@ -55,4 +55,5 @@ namespace sa {
         return m_pRegistry == nullptr
             || !m_pRegistry->valid(m_entity);
     }
+
 }

@@ -29,17 +29,30 @@ namespace comp {
 		sa::Vector3 position = sa::Vector3(0);
 		sa::Vector3 rotation = sa::Vector3(0);
 		sa::Vector3 scale = sa::Vector3(1);
+
+		
 	};
 
 	struct Script {
 		sol::environment env;
 	};
 
+	struct CustomComponent {
+		size_t typeID;
+		std::string name;
+		sol::table data;
+
+		CustomComponent(const std::string& name)
+			: name(name)
+		{
+		}
+
+	};
+
 	enum class LightType {
 		POINT = 0,
 		DIRECTIONAL = 1
 	};
-
 	struct Light {
 		glm::vec3 color = glm::vec3(1);
 		float strength = 1.0f;

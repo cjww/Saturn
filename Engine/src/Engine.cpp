@@ -48,7 +48,6 @@ namespace sa {
 	}
 
 	void Engine::registerComponents() {
-		// TODO Could this be automated?
 		{
 			auto type = m_scriptManager.registerType<Vector3>();
 			type["x"] = &Vector3::x;
@@ -57,6 +56,7 @@ namespace sa {
 		}
 
 
+		// TODO Could this be automated?
 		{
 			registerComponentType<comp::Model>();
 			auto type = m_scriptManager.registerComponent<comp::Model>();
@@ -76,6 +76,7 @@ namespace sa {
 			type["__index"] = [](const comp::Script& script, const std::string& key) {
 				return script.env[key];
 			};
+
 		}
 
 		

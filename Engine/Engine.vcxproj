@@ -223,7 +223,7 @@
     </ClCompile>
     <ClCompile Include="src\Scene.cpp" />
     <ClCompile Include="src\Camera.cpp" />
-    <ClCompile Include="src\Utils\CustomImGui.cpp" />
+    <ClCompile Include="src\Tools\CustomImGui.cpp" />
     <ClCompile Include="src\Geometry\Rect.cpp" />
     <ClCompile Include="src\ECS\Entity.cpp" />
     <ClCompile Include="src\Engine.cpp" />
@@ -259,7 +259,7 @@
     <ClInclude Include="src\ECS\MetaComponent.h" />
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\Scene.h" />
-    <ClInclude Include="src\Utils\CustomImGui.h" />
+    <ClInclude Include="src\Tools\CustomImGui.h" />
     <ClInclude Include="src\Geometry\Rect.h" />
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\ECS\Components.h" />
