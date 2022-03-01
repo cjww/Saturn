@@ -73,8 +73,7 @@ namespace sa {
             [](const Entity& e, const std::string& str) { e.getComponent<comp::Name>()->name = str; }
             );
 
-        type["__newindex"] = [](Entity& self, std::string& key, const sol::lua_value& value) {
-            key[0] = utils::toUpper(key[0]);
+        type["__newindex"] = [](Entity& self, const std::string& key, const sol::lua_value& value) {
             std::cout << "attempted to add new component " << key << " with value of type " <<
                 sol::type_name(LuaAccessable::getState(), value.value().get_type()) 
                 << std::endl;
