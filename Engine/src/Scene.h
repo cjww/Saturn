@@ -23,9 +23,9 @@ namespace sa {
 		Scene();
 		virtual ~Scene();
 
-		void init();
-		void update(float dt);
-		void render();
+		virtual void init();
+		virtual void update(float dt);
+		virtual void render();
 
 		Camera* newCamera();
 		Camera* newCamera(const RenderWindow* pWindow);
@@ -46,7 +46,6 @@ namespace sa {
 
 		template<typename F>
 		void forEach(const std::vector<ComponentType>& components, F func);
-
 
 	};
 	

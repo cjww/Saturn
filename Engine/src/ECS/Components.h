@@ -26,15 +26,6 @@ namespace comp {
 		Name() {}
 		Name(std::string name) : name(name) {}
 
-		void onInit(const sa::Entity&) override {
-			std::cout << "added name component "  << name << std::endl;
-		}
-		
-	/*
-		static void luaReg(sol::usertype<comp::Name>& type) {
-			
-		}
-	*/
 	};
 
 	struct Model : public sa::LuaAccessable {

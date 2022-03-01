@@ -18,12 +18,7 @@ namespace sa {
 	}
 
 	void Scene::init() {
-		for (ComponentType& type : ComponentType::getRegisteredComponents()) {
-			forEach({ type }, [&](const Entity& entity) {
-				auto comp = entity.getComponent(type);
-				type.invoke("onInit", comp, entity);
-			});
-		}
+
 	}
 
 	void Scene::update(float dt) {

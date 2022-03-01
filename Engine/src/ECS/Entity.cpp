@@ -63,8 +63,7 @@ namespace sa {
         for (const auto& name : LuaAccessable::getRegisteredComponents()) {
             auto varName = utils::toLower(name);
             type[varName] = sol::property([=](const Entity& self) -> sol::lua_value {
-                ComponentType componentType = getComponentType(name);
-                auto metaComp = componentType.invoke("get", self);
+                auto metaComp = self.getComponent(name);
                 return LuaAccessable::cast(metaComp);
             });
         }
@@ -73,6 +72,13 @@ namespace sa {
             [](const Entity& e) -> std::string { return e.getComponent<comp::Name>()->name; },
             [](const Entity& e, const std::string& str) { e.getComponent<comp::Name>()->name = str; }
             );
+
+        type["__newindex"] = [](Entity& self, std::string& key, const sol::lua_value& value) {
+            key[0] = utils::toUpper(key[0]);
+            std::cout << "attempted to add new component " << key << " with value of type " <<
+                sol::type_name(LuaAccessable::getState(), value.value().get_type()) 
+                << std::endl;
+        };
 
     }
 

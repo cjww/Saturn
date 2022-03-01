@@ -1,25 +1,20 @@
 --$using model transform
 
+local Enemy = require('testComponent')
+
 print("Hello world ")
 
-local number = 10
-
 function init()
+    
     t = entity.transform
-
+    assert(t == transform, "t and transform not same")
     --s = entity.script
-
     s = script
-    print(s)
+    assert(s.t == transform, "s.t and transform not same")
 
     print("hello from entity " .. entity.name .. " : " .. entity.id)
-    if s.number == nil then
-        print("no number in script")
-    else
-        s.number = 42
-    end
-    print(number)
-
+    
+    entity.enemy = Enemy.new();
 
 end
 

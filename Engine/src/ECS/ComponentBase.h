@@ -8,12 +8,7 @@ namespace sa {
 
 	class ComponentBase {
 	public:
-		ComponentBase() {}
-
-		virtual void onInit(const Entity&) {
-			std::cout << "defualt init" << std::endl;
-		}
-		virtual void onDestroy() {}
+		
 
 	};
 

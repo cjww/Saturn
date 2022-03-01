@@ -129,7 +129,6 @@ namespace sa {
 				.func<&Entity::getComponent<Comp>, entt::as_ref_t>("get"_hs)
 				.func<&Entity::addComponent<Comp>, entt::as_ref_t>("add"_hs)
 				.func<&Entity::removeComponent<Comp>>("remove"_hs)
-				.func<&Comp::onInit>("onInit"_hs)
 				;
 		
 			ComponentType::registerComponent<Comp>();

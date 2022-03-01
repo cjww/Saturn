@@ -1,4 +1,5 @@
 
+--$component
 Enemy = {
     health = 100,
     damage = 10,
@@ -6,6 +7,12 @@ Enemy = {
 
     onCreate = function()
         
+    end,
+
+    new = function()
+        return setmetatable({}, self)
     end
 
 }
+
+return Enemy
