@@ -12,17 +12,16 @@ namespace sa {
 		for (auto& type : components) {
 			auto metaComp = type.invoke("get", entity);
 			std::string name = utils::toLower(type.getName());
-			env[name] = castComponent(metaComp);
+			env[name] = LuaAccessable::cast(metaComp);
 		}
 	}
 
-	void ScriptManager::registerComponentType(std::string name, sol::table componentData) {
-
-	}
-
 	ScriptManager::ScriptManager() {
-		m_lua.open_libraries();
-		auto ret = m_lua.do_string("return 'Loaded ' .. jit.version .. ' for ' .. jit.os .. ' ' .. jit.arch");
+		LuaAccessable::getState().open_libraries();
+		//m_lua.open_libraries();
+
+		auto ret = LuaAccessable::getState().do_string("return 'Loaded ' .. jit.version .. ' for ' .. jit.os .. ' ' .. jit.arch");
+		//auto ret = m_lua.do_string("return 'Loaded ' .. jit.version .. ' for ' .. jit.os .. ' ' .. jit.arch");
 		if (ret.valid()) {
 			DEBUG_LOG_INFO(ret[0].as<std::string>());	
 		}
@@ -39,14 +38,22 @@ namespace sa {
 
 
 	void ScriptManager::load(const std::string& path) {
+		sol::state& lua = LuaAccessable::getState();
+
+
 		size_t size = m_scripts.size();
 		Script& script = m_scripts[path];
 
 		if (size != m_scripts.size()) {
-			script.env = std::move(sol::environment(m_lua, sol::create, m_lua.globals()));
+			script.env = std::move(sol::environment(lua, sol::create, lua.globals()));
 		}
 		script.components.clear();
-		script.components.push_back(getComponentType<comp::Script>());
+		ComponentType scriptType = getComponentType<comp::Script>();
+		if (!scriptType.isValid()) {
+			registerComponentType<comp::Script>();
+			scriptType = getComponentType<comp::Script>();
+		}
+		script.components.push_back(scriptType);
 
 		std::ifstream file(path);
 		if (!file.is_open() || file.eof()) {
@@ -85,19 +92,20 @@ namespace sa {
 			}
 		}
 
-		script.func = m_lua.load_file(path);
+		script.func = lua.load_file(path);
 
 		script.env.set_on(script.func);
 
 		auto ret = script.func();
 		if (!ret.valid()) {
-			DEBUG_LOG_ERROR(lua_tostring(m_lua, -1));
+			DEBUG_LOG_ERROR(lua_tostring(lua, -1));
 		}
 
-		m_lua.stack_clear();
+		lua.stack_clear();
 	}
 	
 	void ScriptManager::init(Scene* pScene) {
+		sol::state& lua = LuaAccessable::getState();
 		for (auto& pair : m_scripts) {
 			Script& script = pair.second;
 
@@ -105,7 +113,7 @@ namespace sa {
 				{
 					comp::Script* scriptComp = entity.getComponent<comp::Script>();
 					if(!scriptComp->env.valid()) {
-						scriptComp->env = sol::environment(m_lua, sol::create, script.env);
+						scriptComp->env = sol::environment(lua, sol::create, script.env);
 					}
 					setComponents(entity, scriptComp->env, script.components);
 					scriptComp->env["entity"] = entity;
@@ -128,19 +136,6 @@ namespace sa {
 		}
 	}
 
-	sol::usertype<Entity> ScriptManager::registerEntityType() {
-		auto type = registerType<Entity>();
-		for (const auto& pair : m_componentCasters)
-		{
-			type["get" + pair.first] = [&](const Entity& self) -> sol::lua_value {
-				ComponentType componentType = getComponentType(pair.first);
-				auto metaComp = componentType.invoke("get", self);
-				return castComponent(metaComp);
-			};
 
-		}
-		type["id"] = sol::readonly_property(&Entity::operator entt::id_type);
 	
-		return type;
-	}
 }

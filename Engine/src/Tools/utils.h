@@ -12,6 +12,8 @@ namespace sa {
 
 		std::vector<std::string> split(const std::string& str, char seperator, bool trimWhiteSpace = true);
 
+		void stripTypeName(std::string& str);
+
 		namespace details {
 
 			template<typename, typename T>

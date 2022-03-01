@@ -37,8 +37,6 @@ namespace sa {
 
 		void setComponents(const Entity& entity, sol::environment& env, std::vector<ComponentType>& components);
 
-		void registerComponentType(std::string name, sol::table componentData);
-
 
 	public:
 		ScriptManager();
@@ -55,9 +53,6 @@ namespace sa {
 		template<typename T>
 		sol::usertype<T> registerType();
 
-		sol::usertype<Entity> registerEntityType();
-
-
 	};
 
 	template<typename ...Args>
@@ -67,7 +62,7 @@ namespace sa {
 			env.set_on(func);
 			auto r = func(args...);
 			if (!r.valid()) {
-				DEBUG_LOG_ERROR(lua_tostring(m_lua, -1));
+				DEBUG_LOG_ERROR(lua_tostring(LuaAccessable::getState(), -1));
 			}
 		}
 	}

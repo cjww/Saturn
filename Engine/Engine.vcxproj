@@ -195,6 +195,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\ECS\ComponentBase.cpp" />
     <ClCompile Include="src\ECS\ComponentType.cpp" />
     <ClCompile Include="src\Graphics\Buffer.cpp" />
     <ClCompile Include="src\Graphics\Texture.cpp" />
@@ -240,6 +241,7 @@
     <ClCompile Include="src\Tools\Vector.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\ECS\ComponentBase.h" />
     <ClInclude Include="src\ECS\ComponentType.h" />
     <ClInclude Include="src\Graphics\Buffer.h" />
     <ClInclude Include="src\Graphics\Texture.h" />

@@ -8,7 +8,7 @@ namespace sa {
 	{
 		if (m_type) {
 			m_name = type.info().name();
-			stripTypeName(m_name);
+			utils::stripTypeName(m_name);
 		}
 	}
 
@@ -24,12 +24,8 @@ namespace sa {
 		return m_type.info().hash();
 	}
 
-	void stripTypeName(std::string& str) {
-		auto p = str.find_last_of("::");
-		if (p != std::string::npos) {
-			str = str.substr(p + 1);
-		}
-		str = str.substr(0, str.find_first_of("> "));
+	std::vector<ComponentType>& ComponentType::getRegisteredComponents() {
+		return s_registeredComponents;
 	}
 
 	ComponentType getComponentType(const std::string& name) {

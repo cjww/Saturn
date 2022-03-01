@@ -1,10 +1,14 @@
 #pragma once
 #include "MetaComponent.h"
 
+#include "Tools\utils.h"
+
 namespace sa{
 
 	class ComponentType {
 	private:
+		inline static std::vector<ComponentType> s_registeredComponents;
+
 		std::string m_name;
 		entt::meta_type m_type;
 	public:
@@ -20,10 +24,14 @@ namespace sa{
 		template<typename ...Args>
 		MetaComponent invoke(const std::string& name, Args&&... args);
 
+		template<typename T>
+		static void registerComponent();
+
+		static std::vector<ComponentType>& getRegisteredComponents();
+
 	};
 
 	
-	void stripTypeName(std::string& str);
 	ComponentType getComponentType(const std::string& name);
 	
 	template<typename T>
@@ -35,7 +43,7 @@ namespace sa{
 	template<typename T>
 	inline std::string getComponentName() {
 		std::string name = typeid(T).name();
-		stripTypeName(name);
+		utils::stripTypeName(name);
 		return name;
 	}
 
@@ -50,6 +58,11 @@ namespace sa{
 		if (!func)
 			return {};
 		return { func.invoke({}, args...), m_name };
+	}
+
+	template<typename T>
+	inline void ComponentType::registerComponent() {
+		s_registeredComponents.push_back(getComponentType<T>());
 	}
 
 }

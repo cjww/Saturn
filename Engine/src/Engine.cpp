@@ -49,39 +49,11 @@ namespace sa {
 
 	void Engine::registerComponents() {
 		{
-			auto type = m_scriptManager.registerType<Vector3>();
+			//auto type = m_scriptManager.registerType<Vector3>();
+			auto type = LuaAccessable::luaReg<Vector3>();
 			type["x"] = &Vector3::x;
 			type["y"] = &Vector3::y;
 			type["z"] = &Vector3::z;
-		}
-
-
-		// TODO Could this be automated?
-		{
-			registerComponentType<comp::Model>();
-			auto type = m_scriptManager.registerComponent<comp::Model>();
-			type["id"] = &comp::Model::modelID;
-		}
-
-		{
-			registerComponentType<comp::Transform>();
-			auto type = m_scriptManager.registerComponent<comp::Transform>();
-			type["position"] = &comp::Transform::position;
-			type["rotation"] = &comp::Transform::rotation;
-			type["scale"] = &comp::Transform::scale;
-		}
-		{
-			registerComponentType<comp::Script>();
-			auto type = m_scriptManager.registerComponent<comp::Script>();
-			type["__index"] = [](const comp::Script& script, const std::string& key) {
-				return script.env[key];
-			};
-
-		}
-
-		
-		{
-			m_scriptManager.registerEntityType();
 		}
 
 	}
@@ -93,9 +65,9 @@ namespace sa {
 		m_currentScene = nullptr;
 		loadFromFile(configPath);
 		m_pRenderTechnique->init(pWindow, false);
+	
+		setScene("MainScene");
 
-		setScene("Scene");
-		
 		/*
 		Camera* cam = newCamera(pWindow); // DefaultCamera
 		cam->setPosition(glm::vec3(0, 0, 1));
@@ -103,9 +75,13 @@ namespace sa {
 		addActiveCamera(cam);
 		*/
 
+		m_isSetup = true;
 	}
 
 	void Engine::init() {
+		if (m_currentScene)
+			m_currentScene->init();
+
 		m_scriptManager.init(m_currentScene);
 	}
 
@@ -150,11 +126,13 @@ namespace sa {
 
 
 	void Engine::setScene(const std::string& name) {
-		setScene(m_scenes[std::hash<std::string>()(name)]);
+		setScene(getScene(name));
 	}
 
 	void Engine::setScene(Scene& scene) {
 		m_currentScene = &scene;
+		if(m_isSetup)
+			init();
 	}
 
 	void Engine::createSystemScript(const std::string& name) {

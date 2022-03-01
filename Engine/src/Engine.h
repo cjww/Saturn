@@ -17,7 +17,7 @@
 namespace sa {
 	class Engine {
 	private:
-
+		
 		std::unique_ptr<IRenderTechnique> m_pRenderTechnique;
 
 		std::unordered_map<size_t, Scene> m_scenes;
@@ -31,6 +31,7 @@ namespace sa {
 			std::chrono::duration<double, std::milli> gpu;
 		} m_frameTime;
 
+		bool m_isSetup = false;
 
 		void loadXML(const std::filesystem::path& path, rapidxml::xml_document<>& xml, std::string& xmlStr);
 		void loadFromFile(const std::filesystem::path& configPath);
@@ -61,7 +62,6 @@ namespace sa {
 		void setScene(Scene& scene);
 
 		void createSystemScript(const std::string& name);
-
 
 	};
 }

@@ -3,6 +3,9 @@
 #include "ComponentType.h"
 #include "MetaComponent.h"
 
+#include "ComponentBase.h"
+
+
 namespace sa {
 	
 	class Entity {
@@ -69,6 +72,8 @@ namespace sa {
 	template<typename Comp>
 	void registerComponentType();
 
+	void updateEntityType();
+
 
 
 	// ----------------- Definitions -----------------
@@ -105,18 +110,42 @@ namespace sa {
 		m_pRegistry->remove<T>(m_entity);
 	}
 
+
+
 	template<typename Comp>
 	inline void registerComponentType() {
-		using namespace entt::literals;
-		if constexpr (std::is_class_v<Comp>) {
+		static bool registered = false;
+		if (registered)
+			return;
+
+		registered = true;
+		if constexpr (std::is_base_of_v<sa::ComponentBase, std::decay_t<Comp>>) {
+			std::cout << "Registered component " << getComponentName<Comp>();
+
+			using namespace entt::literals;
 			entt::meta<Comp>()
 				.type(entt::hashed_string(getComponentName<Comp>().c_str()))
 				.func<&Entity::hasComponent<Comp>>("has"_hs)
 				.func<&Entity::getComponent<Comp>, entt::as_ref_t>("get"_hs)
 				.func<&Entity::addComponent<Comp>, entt::as_ref_t>("add"_hs)
 				.func<&Entity::removeComponent<Comp>>("remove"_hs)
+				.func<&Comp::onInit>("onInit"_hs)
 				;
+		
+			ComponentType::registerComponent<Comp>();
 		}
+		if constexpr (std::is_base_of_v<sa::LuaAccessable, std::decay_t<Comp>>) {
+			std::cout << " : lua accessable";
+
+			auto type = LuaAccessable::registerComponent<Comp>();
+			Comp::luaReg(type);
+
+			updateEntityType();
+
+		}
+		
+		std::cout << std::endl;
+
 	}
 
 	
@@ -135,13 +164,12 @@ namespace std
 	};
 }
 
-/*
 // register components with meta types
 template<typename Type>
 struct entt::type_seq<Type> {
 	static entt::id_type value() ENTT_NOEXCEPT {
-		static const entt::id_type value = (sa::registerMetaComponent<Type>(), internal::type_seq::next());
+		static const entt::id_type value = (sa::registerComponentType<Type>(), internal::type_seq::next());
 		return value;
 	}
 };
-*/
+

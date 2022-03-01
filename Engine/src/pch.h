@@ -57,6 +57,8 @@
 #include "Graphics/RenderWindow.hpp"
 
 #include <Tools/Logger.hpp>
+#include <Tools/utils.h>
+
 
 
 

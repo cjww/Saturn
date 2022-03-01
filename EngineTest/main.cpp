@@ -47,11 +47,6 @@ int main() {
 	camera.lookAt({ 0, 0, 0 });
 	engine.getCurrentScene()->addActiveCamera(&camera);
 
-	
-	std::cout << std::boolalpha << sa::utils::details::has_member_function<comp::Transform>::value
-		<< std::endl;
-
-
 	for (int i = 0; i < 10; i++) {
 		createTriangleEntity(engine);
 	}
@@ -59,7 +54,10 @@ int main() {
 	engine.createSystemScript("test.lua");
 	
 
-	
+	sa::Entity quad = engine.getCurrentScene()->createEntity("Actor");
+	quad.addComponent<comp::Transform>();
+	quad.addComponent<comp::Script>();
+	quad.addComponent<comp::Model>()->modelID = sa::ResourceManager::get().loadQuad();
 
 
 	engine.init();

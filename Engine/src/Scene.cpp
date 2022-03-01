@@ -5,6 +5,8 @@
 
 namespace sa {
 
+	
+
 	Scene::Scene() {
 		
 	}
@@ -15,15 +17,16 @@ namespace sa {
 		}
 	}
 
+	void Scene::init() {
+		for (ComponentType& type : ComponentType::getRegisteredComponents()) {
+			forEach({ type }, [&](const Entity& entity) {
+				auto comp = entity.getComponent(type);
+				type.invoke("onInit", comp, entity);
+			});
+		}
+	}
+
 	void Scene::update(float dt) {
-
-		//	for each script file:
-		//		load
-		//		retrive required component types 
-		//		for each entity carrying required component:
-		//			set variables and components (entity, transform etc...)
-		//			execute update 
-
 		publish<event::UpdatedScene>(dt);
 	}
 
@@ -79,7 +82,5 @@ namespace sa {
 	size_t Scene::getEntityCount() const {
 		return m_reg.size();
 	}
-
-	
 
 }

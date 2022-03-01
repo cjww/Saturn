@@ -70,5 +70,14 @@ namespace sa {
 			return substrings;
 
 		}
+
+		void stripTypeName(std::string & str) {
+			auto p = str.find_last_of("::");
+			if (p != std::string::npos) {
+				str = str.substr(p + 1);
+			}
+			str = str.substr(0, str.find_first_of("> "));
+		}
+		
 	}
 }

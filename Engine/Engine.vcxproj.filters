@@ -135,6 +135,9 @@
     <ClCompile Include="src\Graphics\Buffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\ECS\ComponentBase.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ECS\Entity.h">
@@ -249,6 +252,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Graphics\Buffer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\ECS\ComponentBase.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
