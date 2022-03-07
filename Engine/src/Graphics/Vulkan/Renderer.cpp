@@ -113,9 +113,9 @@ namespace NAME_SPACE {
 		);
 	}
 
-	void Renderer::createSwapChain() {
+	void Renderer::createSwapchain() {
 		vbl::printError(
-			vbl::createSwapchain(&m_swapChain.swapChain, m_device, m_physicalDevice, m_surface, &m_graphicsQueueInfo, 1, &m_swapChain.format),
+			vbl::createSwapchain(&m_swapchain.swapchain, m_device, m_physicalDevice, m_surface, &m_graphicsQueueInfo, 1, &m_swapchain.format),
 			"Failed to create swap chain",
 			true
 		);
@@ -124,20 +124,20 @@ namespace NAME_SPACE {
 		vbl::printError(
 			vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_physicalDevice, m_surface, &surfaceCapabilities)
 		);
-		m_swapChain.extent = surfaceCapabilities.currentExtent;
+		m_swapchain.extent = surfaceCapabilities.currentExtent;
 
 
 		uint32_t count;
-		vkGetSwapchainImagesKHR(m_device, m_swapChain.swapChain, &count, nullptr);
-		m_swapChain.images.resize(count);
-		vkGetSwapchainImagesKHR(m_device, m_swapChain.swapChain, &count, m_swapChain.images.data());
+		vkGetSwapchainImagesKHR(m_device, m_swapchain.swapchain, &count, nullptr);
+		m_swapchain.images.resize(count);
+		vkGetSwapchainImagesKHR(m_device, m_swapchain.swapchain, &count, m_swapchain.images.data());
 
-		m_swapChain.imageViews.resize(count);
-		for (uint32_t i = 0; i < (uint32_t)m_swapChain.images.size(); i++) {
-			m_pDataManager->createImageView(m_swapChain.imageViews[i],
+		m_swapchain.imageViews.resize(count);
+		for (uint32_t i = 0; i < (uint32_t)m_swapchain.images.size(); i++) {
+			m_pDataManager->createImageView(m_swapchain.imageViews[i],
 				VK_IMAGE_VIEW_TYPE_2D,
-				m_swapChain.images[i],
-				m_swapChain.format,
+				m_swapchain.images[i],
+				m_swapchain.format,
 				VK_IMAGE_ASPECT_COLOR_BIT,
 				0,
 				0
@@ -156,13 +156,13 @@ namespace NAME_SPACE {
 			"Failed to create command pool for compute queue"
 		);
 
-		m_graphicsCommandBuffers.resize(m_swapChain.images.size());
+		m_graphicsCommandBuffers.resize(m_swapchain.images.size());
 		vbl::allocateCommandBuffers(m_graphicsCommandBuffers.data(), m_graphicsCommandBuffers.size(), m_device, m_graphicsCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 		
 		m_computeCommandBuffers.resize(1);
 		vbl::allocateCommandBuffers(m_computeCommandBuffers.data(), m_computeCommandBuffers.size(), m_device, m_computeCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-		m_transferCommandBuffers.resize(m_swapChain.images.size() * 8);
+		m_transferCommandBuffers.resize(m_swapchain.images.size() * 8);
 		vbl::allocateCommandBuffers(m_transferCommandBuffers.data(), m_transferCommandBuffers.size(), m_device, m_graphicsCommandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
 	}
@@ -244,8 +244,8 @@ namespace NAME_SPACE {
 		i.PipelineCache = VK_NULL_HANDLE;
 		i.DescriptorPool = m_imGuiDescriptorPool;
 		i.Allocator = nullptr;
-		i.MinImageCount = m_swapChain.images.size();
-		i.ImageCount = m_swapChain.images.size();
+		i.MinImageCount = m_swapchain.images.size();
+		i.ImageCount = m_swapchain.images.size();
 		i.CheckVkResultFn = nullptr;
 		return i;
 	}
@@ -260,7 +260,7 @@ namespace NAME_SPACE {
 		}
 
 		for (auto& framebuffer : m_framebuffers) {
-			for (uint32_t i = 0; i < (uint32_t)m_swapChain.images.size(); i++) {
+			for (uint32_t i = 0; i < (uint32_t)m_swapchain.images.size(); i++) {
 				vkDestroyFramebuffer(m_device, framebuffer.framebuffers[i], nullptr);
 			}
 		}
@@ -270,11 +270,11 @@ namespace NAME_SPACE {
 			vkDestroyPipeline(m_device, pipeline.pipeline, nullptr);
 		}
 
-		for (uint32_t i = 0; i < (uint32_t)m_swapChain.images.size(); i++) {
+		for (uint32_t i = 0; i < (uint32_t)m_swapchain.images.size(); i++) {
 			vkDestroySemaphore(m_device, m_imageAvailableSemaphore[i], nullptr);
 			vkDestroySemaphore(m_device, m_renderFinishedSemaphore[i], nullptr);
 			vkDestroyFence(m_device, m_inFlightFences[i], nullptr);
-			vkDestroyImageView(m_device, m_swapChain.imageViews[i], nullptr);
+			vkDestroyImageView(m_device, m_swapchain.imageViews[i], nullptr);
 		}
 
 		delete m_pDataManager;
@@ -282,7 +282,7 @@ namespace NAME_SPACE {
 		vkDestroyCommandPool(m_device, m_graphicsCommandPool, nullptr);
 		vkDestroyCommandPool(m_device, m_computeCommandPool, nullptr);
 
-		vkDestroySwapchainKHR(m_device, m_swapChain.swapChain, nullptr);
+		vkDestroySwapchainKHR(m_device, m_swapchain.swapchain, nullptr);
 		vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
 		vkDestroyDevice(m_device, nullptr);
 		vkDestroyInstance(m_instance, nullptr);
@@ -292,7 +292,7 @@ namespace NAME_SPACE {
 		if (m_pMyInstance == nullptr) {
 			m_pMyInstance = new Renderer(window);
 			m_pMyInstance->createSurface(window->getWindowHandle());
-			m_pMyInstance->createSwapChain();
+			m_pMyInstance->createSwapchain();
 			m_pMyInstance->createCommandBuffers();
 			m_pMyInstance->createSyncronisationObjects();
 		}
@@ -384,7 +384,7 @@ namespace NAME_SPACE {
 
 		vkWaitForFences(m_device, 1, &m_inFlightFences[m_frameIndex], VK_FALSE, UINT64_MAX);
 
-		VkResult res = vkAcquireNextImageKHR(m_device, m_swapChain.swapChain, UINT64_MAX, m_imageAvailableSemaphore[m_frameIndex], VK_NULL_HANDLE, &m_swapChain.currentImageIndex);
+		VkResult res = vkAcquireNextImageKHR(m_device, m_swapchain.swapchain, UINT64_MAX, m_imageAvailableSemaphore[m_frameIndex], VK_NULL_HANDLE, &m_swapchain.currentImageIndex);
 		if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR) {
 			m_window->setWasResized(true);
 			return -1;
@@ -395,13 +395,13 @@ namespace NAME_SPACE {
 				"Failed to acquire image"
 			);
 
-			if (m_imageFences[m_swapChain.currentImageIndex] != VK_NULL_HANDLE) {
-				vkWaitForFences(m_device, 1, &m_imageFences[m_swapChain.currentImageIndex], VK_FALSE, UINT64_MAX);
+			if (m_imageFences[m_swapchain.currentImageIndex] != VK_NULL_HANDLE) {
+				vkWaitForFences(m_device, 1, &m_imageFences[m_swapchain.currentImageIndex], VK_FALSE, UINT64_MAX);
 			}
-			m_imageFences[m_swapChain.currentImageIndex] = m_inFlightFences[m_frameIndex];
+			m_imageFences[m_swapchain.currentImageIndex] = m_inFlightFences[m_frameIndex];
 		}
 
-		return m_swapChain.currentImageIndex;
+		return m_swapchain.currentImageIndex;
 	}
 
 	sa::RenderWindow* Renderer::getWindow() const {
@@ -448,15 +448,15 @@ namespace NAME_SPACE {
 		vkResetFences(m_device, 1, &m_inFlightFences[m_frameIndex]);
 
 		vkQueueSubmit(m_graphicsQueue, 1, &info, m_inFlightFences[m_frameIndex]);
-		vbl::presentImage(m_graphicsQueue, m_swapChain.currentImageIndex, m_swapChain.swapChain, m_renderFinishedSemaphore[m_frameIndex]);
-		m_frameIndex = (m_frameIndex + 1) % m_swapChain.images.size();
+		vbl::presentImage(m_graphicsQueue, m_swapchain.currentImageIndex, m_swapchain.swapchain, m_renderFinishedSemaphore[m_frameIndex]);
+		m_frameIndex = (m_frameIndex + 1) % m_swapchain.images.size();
 
 		m_transferCommandQueue.clear();
 	}
 
 	void Renderer::createSyncronisationObjects() {
 		m_frameIndex = 0;
-		m_inFlightFences.resize(m_swapChain.images.size());
+		m_inFlightFences.resize(m_swapchain.images.size());
 		vbl::printError(
 			vbl::createFences(m_inFlightFences.data(), m_inFlightFences.size(), m_device, VK_FENCE_CREATE_SIGNALED_BIT),
 			"Failed to create fences",
@@ -465,14 +465,14 @@ namespace NAME_SPACE {
 
 		m_imageFences.resize(m_inFlightFences.size(), VK_NULL_HANDLE);
 
-		m_imageAvailableSemaphore.resize(m_swapChain.images.size());
+		m_imageAvailableSemaphore.resize(m_swapchain.images.size());
 		vbl::printError(
 			vbl::createSemaphores(m_imageAvailableSemaphore.data(), m_imageAvailableSemaphore.size(), m_device),
 			"Failed to create semaphores",
 			true
 		);
 
-		m_renderFinishedSemaphore.resize(m_swapChain.images.size());
+		m_renderFinishedSemaphore.resize(m_swapchain.images.size());
 		vbl::printError(
 			vbl::createSemaphores(m_renderFinishedSemaphore.data(), m_renderFinishedSemaphore.size(), m_device),
 			"Failed to create semaphores",
@@ -533,20 +533,20 @@ namespace NAME_SPACE {
 	}
 
 	VkAttachmentDescription Renderer::getSwapchainAttachment() const {
-		return getResolveAttachment(m_swapChain.format);
+		return getResolveAttachment(m_swapchain.format);
 	}
 
 	uint32_t Renderer::createSwapchainFramebuffer(uint32_t renderPass, const std::vector<Texture*>& additionalAttachments) {
 		Framebuffer framebuffer;
-		framebuffer.framebuffers.resize(m_swapChain.images.size());
-		for (uint32_t i = 0; i < (uint32_t)m_swapChain.images.size(); i++) {
+		framebuffer.framebuffers.resize(m_swapchain.images.size());
+		for (uint32_t i = 0; i < (uint32_t)m_swapchain.images.size(); i++) {
 			std::vector<VkImageView> views(additionalAttachments.size() + 1);
-			views[0] = m_swapChain.imageViews[i];
+			views[0] = m_swapchain.imageViews[i];
 			for (uint32_t j = 0; j < (uint32_t)additionalAttachments.size(); j++) {
 				views[j + 1] = additionalAttachments[j]->view;
 			}
 
-			framebuffer.framebuffers[i] = createFramebuffer(m_swapChain.extent, m_renderPasses[renderPass].renderPass, views);
+			framebuffer.framebuffers[i] = createFramebuffer(m_swapchain.extent, m_renderPasses[renderPass].renderPass, views);
 		}
 
 		m_framebuffers.push_back(framebuffer);
@@ -556,8 +556,8 @@ namespace NAME_SPACE {
 
 	uint32_t Renderer::createFramebuffer(uint32_t renderPass, VkExtent2D extent, const std::vector<Texture*>& attachments) {
 		Framebuffer framebuffer;
-		framebuffer.framebuffers.resize(m_swapChain.images.size());
-		for (uint32_t i = 0; i < (uint32_t)m_swapChain.images.size(); i++) {
+		framebuffer.framebuffers.resize(m_swapchain.images.size());
+		for (uint32_t i = 0; i < (uint32_t)m_swapchain.images.size(); i++) {
 			
 			std::vector<VkImageView> views(attachments.size());
 			for (uint32_t j = 0; j < (uint32_t)attachments.size(); j++) {
@@ -595,7 +595,7 @@ namespace NAME_SPACE {
 				pipeline.layout,
 				m_renderPasses[renderPass].renderPass,
 				subpassIndex,
-				m_swapChain.extent,
+				m_swapchain.extent,
 				shaderStages.data(),
 				shaderStages.size(),
 				vertexInput,
@@ -640,7 +640,7 @@ namespace NAME_SPACE {
 		inheritanceInfo.pipelineStatistics = 0;
 		inheritanceInfo.queryFlags = 0;
 
-		inheritanceInfo.framebuffer = framebuffer.framebuffers[(m_frameIndex + 1) % m_swapChain.images.size()];
+		inheritanceInfo.framebuffer = framebuffer.framebuffers[(m_frameIndex + 1) % m_swapchain.images.size()];
 		inheritanceInfo.renderPass = renderPass.renderPass;
 		inheritanceInfo.subpass = subpass;
 
@@ -973,21 +973,21 @@ namespace NAME_SPACE {
 	}
 
 	ShaderSetPtr Renderer::createShaderSet(const ShaderPtr& vertexShader, const ShaderPtr& fragmentShader) {
-		return std::shared_ptr<ShaderSet>(new ShaderSet(m_device, m_swapChain.images.size(), vertexShader, fragmentShader), [&](ShaderSet* shaderSet) {
+		return std::shared_ptr<ShaderSet>(new ShaderSet(m_device, m_swapchain.images.size(), vertexShader, fragmentShader), [&](ShaderSet* shaderSet) {
 			vkQueueWaitIdle(m_graphicsQueue);
 			delete shaderSet;
 		});
 	}
 
 	ShaderSetPtr Renderer::createShaderSet(const ShaderPtr& vertexShader, const ShaderPtr& geometryShader, const ShaderPtr& fragmentShader) {
-		return std::shared_ptr<ShaderSet>(new ShaderSet(m_device, m_swapChain.images.size(), vertexShader, geometryShader, fragmentShader), [&](ShaderSet* shaderSet) {
+		return std::shared_ptr<ShaderSet>(new ShaderSet(m_device, m_swapchain.images.size(), vertexShader, geometryShader, fragmentShader), [&](ShaderSet* shaderSet) {
 			vkQueueWaitIdle(m_graphicsQueue);
 			delete shaderSet;
 		});
 	}
 
 	ShaderSetPtr Renderer::createShaderSet(const ShaderPtr& computeShader) {
-		return std::shared_ptr<ShaderSet>(new ShaderSet(m_device, m_swapChain.images.size(), computeShader), [&](ShaderSet* shaderSet) {
+		return std::shared_ptr<ShaderSet>(new ShaderSet(m_device, m_swapchain.images.size(), computeShader), [&](ShaderSet* shaderSet) {
 			vkQueueWaitIdle(m_computeQueue);
 			delete shaderSet;
 		});
@@ -997,7 +997,7 @@ namespace NAME_SPACE {
 	CommandBufferPtr Renderer::createCommandBuffer(bool isCompute) {
 		CommandBufferPtr commandBuffer = std::make_shared<CommandBuffer>();
 
-		commandBuffer->buffers.resize(m_swapChain.images.size());
+		commandBuffer->buffers.resize(m_swapchain.images.size());
 		vbl::allocateCommandBuffers(
 			commandBuffer->buffers.data(),
 			commandBuffer->buffers.size(),
@@ -1164,7 +1164,7 @@ namespace NAME_SPACE {
 		beginInfo.framebuffer = m_framebuffers[framebuffer].framebuffers[m_frameIndex];
 
 		VkRect2D renderArea = {};
-		renderArea.extent = m_swapChain.extent;
+		renderArea.extent = m_swapchain.extent;
 		renderArea.offset = { 0, 0 };
 
 		beginInfo.renderArea = renderArea;

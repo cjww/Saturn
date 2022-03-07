@@ -22,8 +22,8 @@
 
 
 namespace NAME_SPACE {
-	struct SwapChain {
-		VkSwapchainKHR swapChain = VK_NULL_HANDLE;
+	struct Swapchain {
+		VkSwapchainKHR swapchain = VK_NULL_HANDLE;
 		VkFormat format;
 		std::vector<VkImage> images;
 		std::vector<VkImageView> imageViews;
@@ -75,7 +75,7 @@ namespace NAME_SPACE {
 		static Renderer* m_pMyInstance;
 	protected:		
 		sa::RenderWindow* m_window;
-		SwapChain m_swapChain;
+		Swapchain m_swapchain;
 		VkSurfaceKHR m_surface;
 
 		VkApplicationInfo m_appInfo;
@@ -123,7 +123,7 @@ namespace NAME_SPACE {
 
 		void createSurface(GLFWwindow* window);
 
-		void createSwapChain();
+		void createSwapchain();
 
 		void createCommandBuffers();
 
