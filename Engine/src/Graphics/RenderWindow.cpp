@@ -77,7 +77,9 @@ namespace sa {
 
 	RenderWindow::RenderWindow(uint32_t width, uint32_t height, const char* title) {
 		if (windowCount == 0) {
-			glfwInit();
+			if (!glfwInit()) {
+				throw std::runtime_error("Failed to initialize GLFW!");
+			}
 		}
 		windowCount++;
 		create(width, height, title, nullptr);
@@ -186,7 +188,7 @@ namespace sa {
 
 	glm::ivec2 RenderWindow::getCurrentExtent() const {
 		glm::ivec2 extent;
-		glfwGetWindowSize(m_window, &extent.x, &extent.y);
+		glfwGetFramebufferSize(m_window, &extent.x, &extent.y);
 		return extent;
 	}
 
