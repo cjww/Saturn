@@ -10,7 +10,7 @@ struct GLFWwindow;
 struct GLFWmonitor;
 namespace sa {
 
-	class RenderWindow {
+	class Window {
 	private:
 
 		GLFWwindow* m_window;
@@ -37,10 +37,10 @@ namespace sa {
 		static unsigned int windowCount;
 	public:
 
-		RenderWindow(uint32_t width, uint32_t height, const char* title);
-		RenderWindow(uint32_t monitorIndex);
+		Window(uint32_t width, uint32_t height, const char* title);
+		Window(uint32_t monitorIndex);
 
-		virtual ~RenderWindow();
+		virtual ~Window();
 
 		bool isOpen();
 		void pollEvents();

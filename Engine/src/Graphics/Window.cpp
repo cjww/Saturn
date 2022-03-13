@@ -1,25 +1,25 @@
 #include "pch.h"
-#include "RenderWindow.hpp"
+#include "Window.hpp"
 
 namespace sa {
 
-	unsigned int RenderWindow::windowCount = 0;
+	unsigned int Window::windowCount = 0;
 
-	void RenderWindow::onResize(GLFWwindow* window, int width, int height) {
-		RenderWindow* thisWindow = (RenderWindow*)glfwGetWindowUserPointer(window);
+	void Window::onResize(GLFWwindow* window, int width, int height) {
+		Window* thisWindow = (Window*)glfwGetWindowUserPointer(window);
 		if (thisWindow->m_isIconified) {
 			return;
 		}
 		thisWindow->m_wasResized = true;
 	}
 
-	void RenderWindow::onIconify(GLFWwindow* window, int iconified) {
-		RenderWindow* thisWindow = (RenderWindow*)glfwGetWindowUserPointer(window);
+	void Window::onIconify(GLFWwindow* window, int iconified) {
+		Window* thisWindow = (Window*)glfwGetWindowUserPointer(window);
 		thisWindow->m_isIconified = iconified;
 	}
 
-	void RenderWindow::onKey(GLFWwindow* window, int key, int scancode, int action, int mods) {
-		RenderWindow* thisWindow = (RenderWindow*)glfwGetWindowUserPointer(window);
+	void Window::onKey(GLFWwindow* window, int key, int scancode, int action, int mods) {
+		Window* thisWindow = (Window*)glfwGetWindowUserPointer(window);
 	#ifdef _WIN32
 		if (key == GLFW_KEY_F11 && action == GLFW_PRESS) {
 			thisWindow->toggleFullscreen();
@@ -31,20 +31,20 @@ namespace sa {
 		}
 	}
 
-	void RenderWindow::onMouseButton(GLFWwindow* window, int button, int action, int mods) {
-		RenderWindow* w = (RenderWindow*)glfwGetWindowUserPointer(window);
+	void Window::onMouseButton(GLFWwindow* window, int button, int action, int mods) {
+		Window* w = (Window*)glfwGetWindowUserPointer(window);
 		if (w->m_onMouseButtonFunction != nullptr) {
 			w->m_onMouseButtonFunction(button, action, mods);
 		}
 	}
 
-	void RenderWindow::onClose(GLFWwindow* window) {
-		RenderWindow* w = (RenderWindow*)glfwGetWindowUserPointer(window);
+	void Window::onClose(GLFWwindow* window) {
+		Window* w = (Window*)glfwGetWindowUserPointer(window);
 		w->close();
 	}
 
 
-	void RenderWindow::create(uint32_t width, uint32_t height, const char* title, GLFWmonitor* monitor) {
+	void Window::create(uint32_t width, uint32_t height, const char* title, GLFWmonitor* monitor) {
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		m_monitor = monitor;
 		m_window = glfwCreateWindow(width, height, title, m_monitor, nullptr);
@@ -52,11 +52,11 @@ namespace sa {
 			throw std::runtime_error("Failed to create GLFW window");
 		}
 
-		glfwSetWindowSizeCallback(m_window, &RenderWindow::onResize);
-		glfwSetWindowIconifyCallback(m_window, &RenderWindow::onIconify);
-		glfwSetKeyCallback(m_window, &RenderWindow::onKey);
-		glfwSetMouseButtonCallback(m_window, &RenderWindow::onMouseButton);
-		glfwSetWindowCloseCallback(m_window, &RenderWindow::onClose);
+		glfwSetWindowSizeCallback(m_window, &Window::onResize);
+		glfwSetWindowIconifyCallback(m_window, &Window::onIconify);
+		glfwSetKeyCallback(m_window, &Window::onKey);
+		glfwSetMouseButtonCallback(m_window, &Window::onMouseButton);
+		glfwSetWindowCloseCallback(m_window, &Window::onClose);
 
 		glfwSetWindowUserPointer(m_window, this);
 
@@ -70,12 +70,12 @@ namespace sa {
 		m_onMouseButtonFunction = nullptr;
 	}
 
-	void RenderWindow::shutDown() {
+	void Window::shutDown() {
 		glfwDestroyWindow(m_window);
 		m_window = nullptr;
 	}
 
-	RenderWindow::RenderWindow(uint32_t width, uint32_t height, const char* title) {
+	Window::Window(uint32_t width, uint32_t height, const char* title) {
 		if (windowCount == 0) {
 			if (!glfwInit()) {
 				throw std::runtime_error("Failed to initialize GLFW!");
@@ -85,7 +85,7 @@ namespace sa {
 		create(width, height, title, nullptr);
 	}
 
-	RenderWindow::RenderWindow(uint32_t monitorIndex) {
+	Window::Window(uint32_t monitorIndex) {
 		if (windowCount == 0) {
 			glfwInit();
 		}
@@ -105,7 +105,7 @@ namespace sa {
 		m_windowedExtent = { 1000, 600 };
 	}
 
-	RenderWindow::~RenderWindow() {
+	Window::~Window() {
 		if (m_window != nullptr) {
 			shutDown();
 
@@ -116,22 +116,22 @@ namespace sa {
 		}
 	}
 
-	bool RenderWindow::isOpen() {
+	bool Window::isOpen() {
 		if (m_window == nullptr) {
 			return false;
 		}
 		return !glfwWindowShouldClose(m_window);
 	}
 
-	void RenderWindow::pollEvents() {
+	void Window::pollEvents() {
 		glfwPollEvents();
 	}
 
-	void RenderWindow::close() {
+	void Window::close() {
 		glfwSetWindowShouldClose(m_window, GLFW_TRUE);
 	}
 
-	void RenderWindow::setRefreshRate(int rate) {
+	void Window::setRefreshRate(int rate) {
 		int xpos = 0, ypos = 0, width = getCurrentExtent().x, height = getCurrentExtent().y;
 		glfwGetWindowPos(m_window, &xpos, &ypos);
 		if (m_monitor != nullptr) {
@@ -141,7 +141,7 @@ namespace sa {
 	}
 
 
-	void RenderWindow::setMonitor(int monitorIndex) {
+	void Window::setMonitor(int monitorIndex) {
 		int count;
 		GLFWmonitor** monitors = glfwGetMonitors(&count);
 		if (monitorIndex >= count) {
@@ -165,7 +165,7 @@ namespace sa {
 		m_wasResized = true;
 	}
 
-	void RenderWindow::toggleFullscreen() {
+	void Window::toggleFullscreen() {
 		if (m_monitor == nullptr) {
 			setMonitor(0);
 		}
@@ -174,71 +174,71 @@ namespace sa {
 		}
 	}
 
-	void RenderWindow::setWindowTitle(const char* title) {
+	void Window::setWindowTitle(const char* title) {
 		glfwSetWindowTitle(m_window, title);
 	}
 
-	void RenderWindow::setWindowTitle(const std::string& title) {
+	void Window::setWindowTitle(const std::string& title) {
 		glfwSetWindowTitle(m_window, title.c_str());
 	}
 
-	void RenderWindow::setWindowTitle(std::string&& title) {
+	void Window::setWindowTitle(std::string&& title) {
 		glfwSetWindowTitle(m_window, title.c_str());
 	}
 
-	glm::ivec2 RenderWindow::getCurrentExtent() const {
+	glm::ivec2 Window::getCurrentExtent() const {
 		glm::ivec2 extent;
 		glfwGetFramebufferSize(m_window, &extent.x, &extent.y);
 		return extent;
 	}
 
-	GLFWwindow* RenderWindow::getWindowHandle() const {
+	GLFWwindow* Window::getWindowHandle() const {
 		return m_window;
 	}
 
-	int RenderWindow::getKey(int keyCode) const {
+	int Window::getKey(int keyCode) const {
 		return glfwGetKey(m_window, keyCode);
 	}
 
-	int RenderWindow::getMouseButton(int button) const {
+	int Window::getMouseButton(int button) const {
 		return glfwGetMouseButton(m_window, button);
 	}
 
-	glm::vec2 RenderWindow::getCursorPosition() const {
+	glm::vec2 Window::getCursorPosition() const {
 		glm::vec<2, double> pos(0.0);
 		glfwGetCursorPos(m_window, &pos.x, &pos.y);
 		return static_cast<glm::vec2>(pos);
 	}
 
-	void RenderWindow::setCursorPosition(const glm::vec2& position) {
+	void Window::setCursorPosition(const glm::vec2& position) {
 		glfwSetCursorPos(m_window, position.x, position.y);
 	}
 
-	void RenderWindow::setHideCursor(bool value) {
+	void Window::setHideCursor(bool value) {
 		glfwSetInputMode(m_window, GLFW_CURSOR, (value) ? GLFW_CURSOR_HIDDEN : GLFW_CURSOR_NORMAL);
 	}
 
-	bool RenderWindow::isHidingCursor() const {
+	bool Window::isHidingCursor() const {
 		return glfwGetInputMode(m_window, GLFW_CURSOR) == GLFW_CURSOR_HIDDEN;
 	}
 
-	void RenderWindow::setKeyCallback(std::function<void(int, int, int, int)> func) {
+	void Window::setKeyCallback(std::function<void(int, int, int, int)> func) {
 		m_onKeyFunction = func;
 	}
 
-	void RenderWindow::setMouseButtonCallback(std::function<void(int, int, int)> func) {
+	void Window::setMouseButtonCallback(std::function<void(int, int, int)> func) {
 		m_onMouseButtonFunction = func;
 	}
 
-	void RenderWindow::setWasResized(bool value) {
+	void Window::setWasResized(bool value) {
 		m_wasResized = value;
 	}
 
-	bool RenderWindow::wasResized() const {
+	bool Window::wasResized() const {
 		return m_wasResized;
 	}
 
-	bool RenderWindow::isIconified() const {
+	bool Window::isIconified() const {
 		return m_isIconified;
 	}
 
