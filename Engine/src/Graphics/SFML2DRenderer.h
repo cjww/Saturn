@@ -20,7 +20,7 @@ namespace sa {
 
 		virtual void draw(Scene* scene) override;
 
-		virtual vr::Texture* getOutputTexture() const override;
+		virtual sa::Texture getOutputTexture() const override;
 
 		virtual vr::Texture* createShaderTexture2D(const vr::Image& img) override;
 	};

@@ -17,6 +17,5 @@ namespace sa {
 		operator vr::Texture* () {
 			return m_pTexture;
 		}
-
 	};
 }

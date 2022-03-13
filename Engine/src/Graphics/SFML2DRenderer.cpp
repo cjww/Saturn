@@ -22,7 +22,7 @@ void sa::SFML2DRenderer::draw(Scene* scene) {
     m_pTargetTexture->display();
 }
 
-vr::Texture* sa::SFML2DRenderer::getOutputTexture() const {
+sa::Texture sa::SFML2DRenderer::getOutputTexture() const {
     return nullptr;
 }
 

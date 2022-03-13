@@ -1,6 +1,8 @@
 #pragma once
 #include "Camera.h"
 #include "Scene.h"
+#include "Texture.h"
+
 
 namespace vr {
 	struct Texture;
@@ -22,7 +24,7 @@ namespace sa {
 
 		virtual void draw(Scene* scene) = 0;
 
-		virtual vr::Texture* getOutputTexture() const = 0;
+		virtual sa::Texture getOutputTexture() const = 0;
 
 		virtual vr::Texture* createShaderTexture2D(const vr::Image& img) = 0;
 		

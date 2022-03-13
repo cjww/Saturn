@@ -77,6 +77,7 @@ namespace NAME_SPACE {
 		sa::RenderWindow* m_window;
 		Swapchain m_swapchain;
 		VkSurfaceKHR m_surface;
+		uint32_t m_inFlightCount;
 
 		VkApplicationInfo m_appInfo;
 		VkInstance m_instance;
@@ -125,7 +126,9 @@ namespace NAME_SPACE {
 
 		void createSwapchain();
 
+		void createCommandPools();
 		void createCommandBuffers();
+		void createGraphicsCommandBuffers();
 
 		void createSyncronisationObjects();
 
@@ -141,6 +144,12 @@ namespace NAME_SPACE {
 		uint32_t createComputePipeline(const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts,
 			const std::vector<VkPushConstantRange>& pushConstantRanges,
 			VkPipelineShaderStageCreateInfo shaderStage);
+
+		void destroyFramebuffers();
+		void destroySwapchain();
+		void destroySurface();
+		void destroySyncronisationObjects();
+		void freeGraphicsCommandBuffers();
 
 		VkCommandBuffer beginTransferCommand(const Framebuffer& framebuffer, const RenderPass& renderPass, uint32_t subpass);
 		void endTransferCommand(const TransferCommand& command);
@@ -165,12 +174,16 @@ namespace NAME_SPACE {
 
 		ImTextureID getImTextureID(Texture* texture, const SamplerPtr& sampler);
 
+		void createSwapchain(const sa::RenderWindow& window);
+		void createSwapchain(VkSurfaceKHR surface);
+
 		uint32_t getNextSwapchainImage();
 
 		sa::RenderWindow* getWindow() const;
 
 		bool beginFrame();
 		void endFrame();
+		void submit();
 		void present();
 
 		// create renderpasses, framebuffers and pipelines

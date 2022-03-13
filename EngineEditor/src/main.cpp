@@ -470,6 +470,36 @@ int main(int, char**)
     sa::Engine e;
 
     e.setup(&window, "../setup.xml");
+
+    VkSamplerCreateInfo samplerInfo = {};
+    samplerInfo.sType = VK_STRUCTURE_TYPE_SAMPLER_CREATE_INFO;
+    samplerInfo.pNext = 0;
+    samplerInfo.flags = 0;
+
+    samplerInfo.addressModeU = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeV = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.addressModeW = VK_SAMPLER_ADDRESS_MODE_REPEAT;
+    samplerInfo.anisotropyEnable = VK_FALSE;
+    samplerInfo.borderColor = VK_BORDER_COLOR_INT_OPAQUE_BLACK;
+    samplerInfo.compareEnable = VK_FALSE;
+    samplerInfo.compareOp = VK_COMPARE_OP_GREATER;
+    samplerInfo.magFilter = VK_FILTER_NEAREST;
+    samplerInfo.minFilter = VK_FILTER_NEAREST;
+    samplerInfo.maxAnisotropy = 1.0f;
+    samplerInfo.maxLod = 1;
+    samplerInfo.minLod = 0;
+    samplerInfo.mipLodBias = 0.0f;
+    samplerInfo.mipmapMode = VK_SAMPLER_MIPMAP_MODE_NEAREST;
+    samplerInfo.unnormalizedCoordinates = VK_FALSE;
+    
+    VkSampler sampler;
+    
+    check_vk_result(vkCreateSampler(g_Device, &samplerInfo, nullptr, &sampler));
+
+    sa::Texture texture = e.getRenderTechnique()->getOutputTexture();
+    //ImTextureID tex = ImGui_ImplVulkan_AddTexture(sampler, texture.getVkImageView(), texture.getImageLayout());
+
+
         
     // Main loop
     while (window.isOpen())
@@ -540,6 +570,8 @@ int main(int, char**)
             ImGui::End();
         }
 
+        //ImGui::Image(tex, ImVec2(500, 500));
+
         // Rendering
         ImGui::Render();
         ImDrawData* draw_data = ImGui::GetDrawData();
@@ -558,6 +590,9 @@ int main(int, char**)
     // Cleanup
     err = vkDeviceWaitIdle(g_Device);
     check_vk_result(err);
+    
+    vkDestroySampler(g_Device, sampler, nullptr);
+
     ImGui_ImplVulkan_Shutdown();
     ImGui_ImplGlfw_Shutdown();
     ImGui::DestroyContext();

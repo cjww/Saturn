@@ -130,10 +130,11 @@ namespace NAME_SPACE {
 		uint32_t count;
 		vkGetSwapchainImagesKHR(m_device, m_swapchain.swapchain, &count, nullptr);
 		m_swapchain.images.resize(count);
+		m_inFlightCount = count;
 		vkGetSwapchainImagesKHR(m_device, m_swapchain.swapchain, &count, m_swapchain.images.data());
 
 		m_swapchain.imageViews.resize(count);
-		for (uint32_t i = 0; i < (uint32_t)m_swapchain.images.size(); i++) {
+		for (uint32_t i = 0; i < m_inFlightCount; i++) {
 			m_pDataManager->createImageView(m_swapchain.imageViews[i],
 				VK_IMAGE_VIEW_TYPE_2D,
 				m_swapchain.images[i],
@@ -145,8 +146,7 @@ namespace NAME_SPACE {
 		}
 	}
 
-	void Renderer::createCommandBuffers() {
-		
+	void Renderer::createCommandPools() {
 		vbl::printError(
 			vbl::createCommandPool(&m_graphicsCommandPool, m_device, m_graphicsQueueInfo.family, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
 			"Failed to create command pool for graphics queue"
@@ -155,16 +155,21 @@ namespace NAME_SPACE {
 			vbl::createCommandPool(&m_computeCommandPool, m_device, m_computeQueueInfo.family, VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT),
 			"Failed to create command pool for compute queue"
 		);
+	}
 
-		m_graphicsCommandBuffers.resize(m_swapchain.images.size());
-		vbl::allocateCommandBuffers(m_graphicsCommandBuffers.data(), m_graphicsCommandBuffers.size(), m_device, m_graphicsCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
-		
+	void Renderer::createCommandBuffers() {
+
 		m_computeCommandBuffers.resize(1);
 		vbl::allocateCommandBuffers(m_computeCommandBuffers.data(), m_computeCommandBuffers.size(), m_device, m_computeCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-		m_transferCommandBuffers.resize(m_swapchain.images.size() * 8);
+		m_transferCommandBuffers.resize(m_inFlightCount * 8);
 		vbl::allocateCommandBuffers(m_transferCommandBuffers.data(), m_transferCommandBuffers.size(), m_device, m_graphicsCommandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
 
+	}
+
+	void Renderer::createGraphicsCommandBuffers() {
+		m_graphicsCommandBuffers.resize(m_inFlightCount);
+		vbl::allocateCommandBuffers(m_graphicsCommandBuffers.data(), m_graphicsCommandBuffers.size(), m_device, m_graphicsCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 	}
 
 	VkFramebuffer Renderer::createFramebuffer(VkExtent2D extent, VkRenderPass renderPass, const std::vector<VkImageView>& imageViews) {
@@ -201,6 +206,34 @@ namespace NAME_SPACE {
 		createDevice();
 
 		m_pDataManager = new DataManager(m_instance, m_device, m_physicalDevice, m_appInfo.apiVersion, { m_graphicsQueueInfo.family }, { m_computeQueueInfo.family });
+		
+		m_inFlightCount = 3;
+
+		createCommandPools();
+		createCommandBuffers();
+		createGraphicsCommandBuffers();
+
+		createSyncronisationObjects();
+
+	}
+
+	void Renderer::destroySwapchain() {
+		if (m_swapchain.swapchain == VK_NULL_HANDLE)
+			return;
+
+		for (uint32_t i = 0; i < m_inFlightCount; i++) {
+			vkDestroyImageView(m_device, m_swapchain.imageViews[i], nullptr);
+		}
+		vkDestroySwapchainKHR(m_device, m_swapchain.swapchain, nullptr);
+		m_swapchain.swapchain = VK_NULL_HANDLE;
+	}
+
+	void Renderer::destroySurface() {
+		if (m_surface == VK_NULL_HANDLE)
+			return;
+
+		vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+		m_surface = VK_NULL_HANDLE;
 	}
 
 	void Renderer::createImGUIDescriptorPool() {
@@ -244,13 +277,31 @@ namespace NAME_SPACE {
 		i.PipelineCache = VK_NULL_HANDLE;
 		i.DescriptorPool = m_imGuiDescriptorPool;
 		i.Allocator = nullptr;
-		i.MinImageCount = m_swapchain.images.size();
-		i.ImageCount = m_swapchain.images.size();
+		i.MinImageCount = m_inFlightCount;
+		i.ImageCount = m_inFlightCount;
 		i.CheckVkResultFn = nullptr;
 		return i;
 	}
 
+	void Renderer::destroySyncronisationObjects() {
+		for (uint32_t i = 0; i < m_inFlightCount; i++) {
+			vkDestroySemaphore(m_device, m_imageAvailableSemaphore[i], nullptr);
+			vkDestroySemaphore(m_device, m_renderFinishedSemaphore[i], nullptr);
+			vkDestroyFence(m_device, m_inFlightFences[i], nullptr);
+		}
+		m_imageAvailableSemaphore.clear();
+		m_renderFinishedSemaphore.clear();
+		m_inFlightFences.clear();
+
+		m_imageFences.clear();
+
+	}
+
 	
+	void Renderer::freeGraphicsCommandBuffers() {
+		vkFreeCommandBuffers(m_device, m_graphicsCommandPool, m_graphicsCommandBuffers.size(), m_graphicsCommandBuffers.data());
+	}
+
 	Renderer::~Renderer() {
 		vkDeviceWaitIdle(m_device);
 
@@ -259,31 +310,22 @@ namespace NAME_SPACE {
 			vkDestroyRenderPass(m_device, renderPass.renderPass, nullptr);
 		}
 
-		for (auto& framebuffer : m_framebuffers) {
-			for (uint32_t i = 0; i < (uint32_t)m_swapchain.images.size(); i++) {
-				vkDestroyFramebuffer(m_device, framebuffer.framebuffers[i], nullptr);
-			}
-		}
+		destroyFramebuffers();
 
 		for (auto& pipeline : m_pipelines) {
 			vkDestroyPipelineLayout(m_device, pipeline.layout, nullptr);
 			vkDestroyPipeline(m_device, pipeline.pipeline, nullptr);
 		}
 
-		for (uint32_t i = 0; i < (uint32_t)m_swapchain.images.size(); i++) {
-			vkDestroySemaphore(m_device, m_imageAvailableSemaphore[i], nullptr);
-			vkDestroySemaphore(m_device, m_renderFinishedSemaphore[i], nullptr);
-			vkDestroyFence(m_device, m_inFlightFences[i], nullptr);
-			vkDestroyImageView(m_device, m_swapchain.imageViews[i], nullptr);
-		}
-
-		delete m_pDataManager;
-
+		destroySwapchain();
+		//destroySurface();
+		destroySyncronisationObjects();
+		
 		vkDestroyCommandPool(m_device, m_graphicsCommandPool, nullptr);
 		vkDestroyCommandPool(m_device, m_computeCommandPool, nullptr);
 
-		vkDestroySwapchainKHR(m_device, m_swapchain.swapchain, nullptr);
-		vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
+		delete m_pDataManager;
+
 		vkDestroyDevice(m_device, nullptr);
 		vkDestroyInstance(m_instance, nullptr);
 	}
@@ -291,10 +333,7 @@ namespace NAME_SPACE {
 	void Renderer::init(sa::RenderWindow* window) {
 		if (m_pMyInstance == nullptr) {
 			m_pMyInstance = new Renderer(window);
-			m_pMyInstance->createSurface(window->getWindowHandle());
-			m_pMyInstance->createSwapchain();
-			m_pMyInstance->createCommandBuffers();
-			m_pMyInstance->createSyncronisationObjects();
+
 		}
 	}
 
@@ -431,8 +470,35 @@ namespace NAME_SPACE {
 		vkEndCommandBuffer(m_graphicsCommandBuffers[m_frameIndex]);
 	}
 
-	void Renderer::present() {
+	void Renderer::createSwapchain(const sa::RenderWindow& window) {
+		destroySwapchain();
+		
+		vkDeviceWaitIdle(m_device);
+		destroySyncronisationObjects();
+		freeGraphicsCommandBuffers();
 
+		createSurface(window.getWindowHandle());
+		createSwapchain();
+		createGraphicsCommandBuffers();
+		createSyncronisationObjects();
+		
+	}
+
+	void Renderer::createSwapchain(VkSurfaceKHR surface) {
+		destroySwapchain();
+		
+		vkDeviceWaitIdle(m_device);
+		destroySyncronisationObjects();
+		freeGraphicsCommandBuffers();
+
+		m_surface = surface;
+
+		createSwapchain();
+		createGraphicsCommandBuffers();
+		createSyncronisationObjects();
+	}
+
+	void Renderer::submit() {
 		VkSubmitInfo info = {};
 		info.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
 		info.commandBufferCount = 1;
@@ -448,15 +514,19 @@ namespace NAME_SPACE {
 		vkResetFences(m_device, 1, &m_inFlightFences[m_frameIndex]);
 
 		vkQueueSubmit(m_graphicsQueue, 1, &info, m_inFlightFences[m_frameIndex]);
-		vbl::presentImage(m_graphicsQueue, m_swapchain.currentImageIndex, m_swapchain.swapchain, m_renderFinishedSemaphore[m_frameIndex]);
-		m_frameIndex = (m_frameIndex + 1) % m_swapchain.images.size();
-
 		m_transferCommandQueue.clear();
+		m_frameIndex = (m_frameIndex + 1) % m_inFlightCount;
+
+	}
+
+	void Renderer::present() {
+		uint32_t prevFrame = (m_frameIndex + (m_inFlightCount - 1)) % m_inFlightCount;
+		vbl::presentImage(m_graphicsQueue, m_swapchain.currentImageIndex, m_swapchain.swapchain, m_renderFinishedSemaphore[prevFrame]);
 	}
 
 	void Renderer::createSyncronisationObjects() {
 		m_frameIndex = 0;
-		m_inFlightFences.resize(m_swapchain.images.size());
+		m_inFlightFences.resize(m_inFlightCount);
 		vbl::printError(
 			vbl::createFences(m_inFlightFences.data(), m_inFlightFences.size(), m_device, VK_FENCE_CREATE_SIGNALED_BIT),
 			"Failed to create fences",
@@ -465,20 +535,22 @@ namespace NAME_SPACE {
 
 		m_imageFences.resize(m_inFlightFences.size(), VK_NULL_HANDLE);
 
-		m_imageAvailableSemaphore.resize(m_swapchain.images.size());
+		m_imageAvailableSemaphore.resize(m_inFlightCount);
 		vbl::printError(
 			vbl::createSemaphores(m_imageAvailableSemaphore.data(), m_imageAvailableSemaphore.size(), m_device),
 			"Failed to create semaphores",
 			true
 		);
 
-		m_renderFinishedSemaphore.resize(m_swapchain.images.size());
+		m_renderFinishedSemaphore.resize(m_inFlightCount);
 		vbl::printError(
 			vbl::createSemaphores(m_renderFinishedSemaphore.data(), m_renderFinishedSemaphore.size(), m_device),
 			"Failed to create semaphores",
 			true
 		);
 	}
+
+	
 
 	uint32_t Renderer::createRenderPass(const std::vector<VkAttachmentDescription>& attachments,
 		const std::vector<VkSubpassDescription>& subpasses,
@@ -538,8 +610,8 @@ namespace NAME_SPACE {
 
 	uint32_t Renderer::createSwapchainFramebuffer(uint32_t renderPass, const std::vector<Texture*>& additionalAttachments) {
 		Framebuffer framebuffer;
-		framebuffer.framebuffers.resize(m_swapchain.images.size());
-		for (uint32_t i = 0; i < (uint32_t)m_swapchain.images.size(); i++) {
+		framebuffer.framebuffers.resize(m_inFlightCount);
+		for (uint32_t i = 0; i < m_inFlightCount; i++) {
 			std::vector<VkImageView> views(additionalAttachments.size() + 1);
 			views[0] = m_swapchain.imageViews[i];
 			for (uint32_t j = 0; j < (uint32_t)additionalAttachments.size(); j++) {
@@ -556,8 +628,8 @@ namespace NAME_SPACE {
 
 	uint32_t Renderer::createFramebuffer(uint32_t renderPass, VkExtent2D extent, const std::vector<Texture*>& attachments) {
 		Framebuffer framebuffer;
-		framebuffer.framebuffers.resize(m_swapchain.images.size());
-		for (uint32_t i = 0; i < (uint32_t)m_swapchain.images.size(); i++) {
+		framebuffer.framebuffers.resize(m_inFlightCount);
+		for (uint32_t i = 0; i < m_inFlightCount; i++) {
 			
 			std::vector<VkImageView> views(attachments.size());
 			for (uint32_t j = 0; j < (uint32_t)attachments.size(); j++) {
@@ -640,7 +712,7 @@ namespace NAME_SPACE {
 		inheritanceInfo.pipelineStatistics = 0;
 		inheritanceInfo.queryFlags = 0;
 
-		inheritanceInfo.framebuffer = framebuffer.framebuffers[(m_frameIndex + 1) % m_swapchain.images.size()];
+		inheritanceInfo.framebuffer = framebuffer.framebuffers[(m_frameIndex + 1) % m_inFlightCount];
 		inheritanceInfo.renderPass = renderPass.renderPass;
 		inheritanceInfo.subpass = subpass;
 
@@ -670,6 +742,14 @@ namespace NAME_SPACE {
 	void Renderer::endTransferCommand(const TransferCommand& command) {
 		vkEndCommandBuffer(command.commandBuffer);
 		m_transferCommandQueue.push_back(command);
+	}
+
+	void Renderer::destroyFramebuffers() {
+		for (auto& framebuffer : m_framebuffers) {
+			for (uint32_t i = 0; i < m_inFlightCount; i++) {
+				vkDestroyFramebuffer(m_device, framebuffer.framebuffers[i], nullptr);
+			}
+		}
 	}
 
 	Texture* Renderer::createDepthTexture(VkExtent2D extent) {
@@ -973,21 +1053,21 @@ namespace NAME_SPACE {
 	}
 
 	ShaderSetPtr Renderer::createShaderSet(const ShaderPtr& vertexShader, const ShaderPtr& fragmentShader) {
-		return std::shared_ptr<ShaderSet>(new ShaderSet(m_device, m_swapchain.images.size(), vertexShader, fragmentShader), [&](ShaderSet* shaderSet) {
+		return std::shared_ptr<ShaderSet>(new ShaderSet(m_device, m_inFlightCount, vertexShader, fragmentShader), [&](ShaderSet* shaderSet) {
 			vkQueueWaitIdle(m_graphicsQueue);
 			delete shaderSet;
 		});
 	}
 
 	ShaderSetPtr Renderer::createShaderSet(const ShaderPtr& vertexShader, const ShaderPtr& geometryShader, const ShaderPtr& fragmentShader) {
-		return std::shared_ptr<ShaderSet>(new ShaderSet(m_device, m_swapchain.images.size(), vertexShader, geometryShader, fragmentShader), [&](ShaderSet* shaderSet) {
+		return std::shared_ptr<ShaderSet>(new ShaderSet(m_device, m_inFlightCount, vertexShader, geometryShader, fragmentShader), [&](ShaderSet* shaderSet) {
 			vkQueueWaitIdle(m_graphicsQueue);
 			delete shaderSet;
 		});
 	}
 
 	ShaderSetPtr Renderer::createShaderSet(const ShaderPtr& computeShader) {
-		return std::shared_ptr<ShaderSet>(new ShaderSet(m_device, m_swapchain.images.size(), computeShader), [&](ShaderSet* shaderSet) {
+		return std::shared_ptr<ShaderSet>(new ShaderSet(m_device, m_inFlightCount, computeShader), [&](ShaderSet* shaderSet) {
 			vkQueueWaitIdle(m_computeQueue);
 			delete shaderSet;
 		});
@@ -997,7 +1077,7 @@ namespace NAME_SPACE {
 	CommandBufferPtr Renderer::createCommandBuffer(bool isCompute) {
 		CommandBufferPtr commandBuffer = std::make_shared<CommandBuffer>();
 
-		commandBuffer->buffers.resize(m_swapchain.images.size());
+		commandBuffer->buffers.resize(m_inFlightCount);
 		vbl::allocateCommandBuffers(
 			commandBuffer->buffers.data(),
 			commandBuffer->buffers.size(),
