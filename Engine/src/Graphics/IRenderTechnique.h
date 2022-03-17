@@ -3,10 +3,11 @@
 #include "Scene.h"
 #include "Texture.h"
 
+#include "Graphics\RenderWindow.h"
+#include "Graphics\Image.h"
 
 namespace vr {
 	struct Texture;
-	struct Image;
 }
 
 namespace sa {
@@ -14,9 +15,10 @@ namespace sa {
 	protected:
 		bool m_useImGui;
 
+		sa::RenderWindow* m_pWindow;
 		
 	public:
-		virtual void init(RenderWindow* pWindow, bool setupImGui = false) = 0;
+		virtual void init(sa::RenderWindow* pWindow, bool setupImGui = false) = 0;
 		virtual void cleanup() = 0;
 
 		bool isUsingImGui() const;
@@ -26,7 +28,7 @@ namespace sa {
 
 		virtual sa::Texture getOutputTexture() const = 0;
 
-		virtual vr::Texture* createShaderTexture2D(const vr::Image& img) = 0;
+		virtual sa::Texture createShaderTexture2D(const sa::Image& img) = 0;
 		
 	};
 }

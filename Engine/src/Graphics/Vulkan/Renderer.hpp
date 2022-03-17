@@ -3,11 +3,8 @@
 
 #include "ShaderSet.hpp"
 #include "DataManager.hpp"
-#include "Image.hpp"
 
 #include <Tools/Logger.hpp>
-
-#include <Graphics/RenderWindow.hpp>
 
 #include "vulkan_base.hpp"
 
@@ -29,6 +26,7 @@ namespace NAME_SPACE {
 		std::vector<VkImageView> imageViews;
 		VkExtent2D extent;
 		uint32_t currentImageIndex;
+		VkSurfaceKHR surface;
 	};
 
 	struct RenderPass {
@@ -41,6 +39,7 @@ namespace NAME_SPACE {
 
 	struct Framebuffer {
 		std::vector<VkFramebuffer> framebuffers;
+		VkExtent2D extent;
 	};
 
 	struct CommandBuffer {
@@ -71,12 +70,8 @@ namespace NAME_SPACE {
 	typedef std::shared_ptr<VkSampler> SamplerPtr;
 
 	class Renderer {
-	private:
-		static Renderer* m_pMyInstance;
 	protected:		
-		sa::RenderWindow* m_window;
-		Swapchain m_swapchain;
-		VkSurfaceKHR m_surface;
+		
 		uint32_t m_inFlightCount;
 
 		VkApplicationInfo m_appInfo;
@@ -113,6 +108,9 @@ namespace NAME_SPACE {
 		std::vector<Framebuffer> m_framebuffers;
 		std::vector<Pipeline> m_pipelines;
 
+		std::vector<Swapchain> m_swapchains;
+
+
 		VkDescriptorPool m_imGuiDescriptorPool;
 		std::unordered_map<Texture*, ImTextureID> m_imGuiImages;
 
@@ -122,10 +120,6 @@ namespace NAME_SPACE {
 		void getPhysicalDevice();
 		void createDevice();
 
-		void createSurface(GLFWwindow* window);
-
-		void createSwapchain();
-
 		void createCommandPools();
 		void createCommandBuffers();
 		void createGraphicsCommandBuffers();
@@ -134,7 +128,7 @@ namespace NAME_SPACE {
 
 		VkFramebuffer createFramebuffer(VkExtent2D extent, VkRenderPass renderPass, const std::vector<VkImageView>& imageViews);
 
-		uint32_t createGraphicsPipeline(uint32_t renderPass, uint32_t subpassIndex,
+		uint32_t createGraphicsPipeline(VkExtent2D extent, uint32_t renderPass, uint32_t subpassIndex,
 			const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts,
 			const std::vector<VkPushConstantRange>& pushConstantRanges,
 			const std::vector<VkPipelineShaderStageCreateInfo>& shaderStages,
@@ -146,15 +140,18 @@ namespace NAME_SPACE {
 			VkPipelineShaderStageCreateInfo shaderStage);
 
 		void destroyFramebuffers();
-		void destroySwapchain();
-		void destroySurface();
+		void destroyRenderPasses();
+		void destroyPipelines();
+
+		void destroySwapchains();
+		
 		void destroySyncronisationObjects();
 		void freeGraphicsCommandBuffers();
 
 		VkCommandBuffer beginTransferCommand(const Framebuffer& framebuffer, const RenderPass& renderPass, uint32_t subpass);
 		void endTransferCommand(const TransferCommand& command);
 
-		Renderer(sa::RenderWindow* window);
+		Renderer();
 
 		void createImGUIDescriptorPool();
 		ImGui_ImplVulkan_InitInfo getImGUIInitInfo() const;
@@ -163,28 +160,27 @@ namespace NAME_SPACE {
 
 		virtual ~Renderer();
 
-		static void init(sa::RenderWindow* window);
-		static Renderer* get();
-		static void cleanup();
+		static Renderer& get();
 
-		void initImGUI(uint32_t renderpass, uint32_t subpass);
+		void initImGUI(GLFWwindow* window, uint32_t renderpass, uint32_t subpass);
 		void newFrameImGUI();
 		void endFrameImGUI();
 		void cleanupImGUI();
 
 		ImTextureID getImTextureID(Texture* texture, const SamplerPtr& sampler);
 
-		void createSwapchain(const sa::RenderWindow& window);
-		void createSwapchain(VkSurfaceKHR surface);
+		VkSurfaceKHR createSurface(GLFWwindow* window);
+		void destroySurface(VkSurfaceKHR surface);
 
-		uint32_t getNextSwapchainImage();
+		uint32_t createSwapchain(VkSurfaceKHR surface);
+		void recreateSwapchain(uint32_t swapchain);
 
-		sa::RenderWindow* getWindow() const;
+		uint32_t getNextSwapchainImage(uint32_t swapchain);
 
-		bool beginFrame();
+		bool beginFrame(uint32_t swapchain = -1);
 		void endFrame();
 		void submit();
-		void present();
+		void present(uint32_t swapchain);
 
 		// create renderpasses, framebuffers and pipelines
 		
@@ -192,17 +188,17 @@ namespace NAME_SPACE {
 			const std::vector<VkSubpassDescription>& subpasses,
 			const std::vector<VkSubpassDependency>& dependencies);
 
-		VkAttachmentDescription getSwapchainAttachment() const;
+		VkAttachmentDescription getSwapchainAttachment(uint32_t swapchain) const;
 
-		uint32_t createSwapchainFramebuffer(uint32_t renderPass, const std::vector<Texture*>& additionalAttachments);
+		uint32_t createSwapchainFramebuffer(uint32_t swapchain, uint32_t renderPass, const std::vector<Texture*>& additionalAttachments);
 		uint32_t createFramebuffer(uint32_t renderPass, VkExtent2D extent, const std::vector<Texture*>& attachments);
 
-		uint32_t createPipeline(const ShaderSetPtr& shaderSet, uint32_t renderPass = 0, uint32_t subpassIndex = 0, vbl::PipelineConfig config = {});
+		uint32_t createPipeline(VkExtent2D extent, const ShaderSetPtr& shaderSet, uint32_t renderPass = 0, uint32_t subpassIndex = 0, vbl::PipelineConfig config = {});
+		uint32_t createPipeline(uint32_t swapchain, const ShaderSetPtr& shaderSet, uint32_t renderPass = 0, uint32_t subpassIndex = 0, vbl::PipelineConfig config = {});
 
 		//Resource creation
 		Texture* createDepthTexture(VkExtent2D extent);
 
-		Texture* createTexture2D(uint32_t framebuffer, uint32_t renderpass, uint32_t subpass, const Image& image);
 		Texture* createTexture2D(uint32_t framebuffer, uint32_t renderpass, uint32_t subpass, VkExtent2D extent, unsigned char* pixels, int channels = 4);
 		Texture* createColorAttachmentTexture(VkExtent2D extent, VkFormat format, uint32_t arrayLayers, uint32_t mipLevels, VkSampleCountFlagBits sampleCount, VkImageUsageFlags additionalUsage);
 

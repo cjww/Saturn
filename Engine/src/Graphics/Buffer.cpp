@@ -7,16 +7,16 @@ namespace sa {
 	void Buffer::init(size_t size, void* initialData) {
 		switch (m_type) {
 		case BufferType::VERTEX:
-			m_pBuffer = vr::Renderer::get()->createVertexBuffer(size, initialData);
+			m_pBuffer = vr::Renderer::get().createVertexBuffer(size, initialData);
 			break;
 		case BufferType::INDEX:
-			m_pBuffer = vr::Renderer::get()->createIndexBuffer(size, initialData);
+			m_pBuffer = vr::Renderer::get().createIndexBuffer(size, initialData);
 			break;
 		case BufferType::UNIFORM:
-			m_pBuffer = vr::Renderer::get()->createUniformBuffer(size, initialData);
+			m_pBuffer = vr::Renderer::get().createUniformBuffer(size, initialData);
 			break;
 		case BufferType::STORAGE:
-			m_pBuffer = vr::Renderer::get()->createStorageBuffer(size, initialData);
+			m_pBuffer = vr::Renderer::get().createStorageBuffer(size, initialData);
 			break;
 		}
 	}
@@ -51,7 +51,7 @@ namespace sa {
 				// if space for more initialize it to 0
 				memset((char*)data + getSize(), 0, diff);
 			}
-			vr::Renderer::get()->destroyBuffer(m_pBuffer);
+			vr::Renderer::get().destroyBuffer(m_pBuffer);
 		}
 		
 		init(newSize, data);

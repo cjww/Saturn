@@ -3,8 +3,6 @@
 
 namespace NAME_SPACE {
 
-	Renderer* Renderer::m_pMyInstance = nullptr;
-
 	void Renderer::setupDebug() {
 		m_validationLayers = {
 			"VK_LAYER_KHRONOS_validation"
@@ -105,46 +103,6 @@ namespace NAME_SPACE {
 
 	}
 
-	void Renderer::createSurface(GLFWwindow* window) {
-		vbl::printError(
-			glfwCreateWindowSurface(m_instance, window, nullptr, &m_surface),
-			"Failed to create surface",
-			true
-		);
-	}
-
-	void Renderer::createSwapchain() {
-		vbl::printError(
-			vbl::createSwapchain(&m_swapchain.swapchain, m_device, m_physicalDevice, m_surface, &m_graphicsQueueInfo, 1, &m_swapchain.format),
-			"Failed to create swap chain",
-			true
-		);
-
-		VkSurfaceCapabilitiesKHR surfaceCapabilities = {};
-		vbl::printError(
-			vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_physicalDevice, m_surface, &surfaceCapabilities)
-		);
-		m_swapchain.extent = surfaceCapabilities.currentExtent;
-
-
-		uint32_t count;
-		vkGetSwapchainImagesKHR(m_device, m_swapchain.swapchain, &count, nullptr);
-		m_swapchain.images.resize(count);
-		m_inFlightCount = count;
-		vkGetSwapchainImagesKHR(m_device, m_swapchain.swapchain, &count, m_swapchain.images.data());
-
-		m_swapchain.imageViews.resize(count);
-		for (uint32_t i = 0; i < m_inFlightCount; i++) {
-			m_pDataManager->createImageView(m_swapchain.imageViews[i],
-				VK_IMAGE_VIEW_TYPE_2D,
-				m_swapchain.images[i],
-				m_swapchain.format,
-				VK_IMAGE_ASPECT_COLOR_BIT,
-				0,
-				0
-			);
-		}
-	}
 
 	void Renderer::createCommandPools() {
 		vbl::printError(
@@ -194,8 +152,7 @@ namespace NAME_SPACE {
 
 
 
-	Renderer::Renderer(sa::RenderWindow* window)
-		: m_window(window)
+	Renderer::Renderer()
 	{
 		
 #ifdef _DEBUG
@@ -217,23 +174,19 @@ namespace NAME_SPACE {
 
 	}
 
-	void Renderer::destroySwapchain() {
-		if (m_swapchain.swapchain == VK_NULL_HANDLE)
-			return;
+	void Renderer::destroySwapchains() {
+		for (auto& swapchain : m_swapchains)
+		{
+			if (swapchain.swapchain == VK_NULL_HANDLE)
+				continue;
 
-		for (uint32_t i = 0; i < m_inFlightCount; i++) {
-			vkDestroyImageView(m_device, m_swapchain.imageViews[i], nullptr);
+			for (uint32_t i = 0; i < m_inFlightCount; i++) {
+				vkDestroyImageView(m_device, swapchain.imageViews[i], nullptr);
+			}
+			vkDestroySwapchainKHR(m_device, swapchain.swapchain, nullptr);
+			vkDestroySurfaceKHR(m_instance, swapchain.surface, nullptr);
 		}
-		vkDestroySwapchainKHR(m_device, m_swapchain.swapchain, nullptr);
-		m_swapchain.swapchain = VK_NULL_HANDLE;
-	}
-
-	void Renderer::destroySurface() {
-		if (m_surface == VK_NULL_HANDLE)
-			return;
-
-		vkDestroySurfaceKHR(m_instance, m_surface, nullptr);
-		m_surface = VK_NULL_HANDLE;
+		m_swapchains.clear();
 	}
 
 	void Renderer::createImGUIDescriptorPool() {
@@ -306,19 +259,11 @@ namespace NAME_SPACE {
 		vkDeviceWaitIdle(m_device);
 
 		
-		for (auto& renderPass : m_renderPasses) {
-			vkDestroyRenderPass(m_device, renderPass.renderPass, nullptr);
-		}
-
+		destroyRenderPasses();
 		destroyFramebuffers();
+		destroyPipelines();
+		destroySwapchains();
 
-		for (auto& pipeline : m_pipelines) {
-			vkDestroyPipelineLayout(m_device, pipeline.layout, nullptr);
-			vkDestroyPipeline(m_device, pipeline.pipeline, nullptr);
-		}
-
-		destroySwapchain();
-		//destroySurface();
 		destroySyncronisationObjects();
 		
 		vkDestroyCommandPool(m_device, m_graphicsCommandPool, nullptr);
@@ -330,21 +275,12 @@ namespace NAME_SPACE {
 		vkDestroyInstance(m_instance, nullptr);
 	}
 
-	void Renderer::init(sa::RenderWindow* window) {
-		if (m_pMyInstance == nullptr) {
-			m_pMyInstance = new Renderer(window);
-
-		}
+	Renderer& Renderer::get() {
+		static Renderer instance;
+		return instance;
 	}
 
-	Renderer* Renderer::get() {
-		return m_pMyInstance;
-	}
-
-	void Renderer::cleanup() {
-		delete m_pMyInstance;
-	}
-	void Renderer::initImGUI(uint32_t renderpass, uint32_t subpass) {
+	void Renderer::initImGUI(GLFWwindow* window, uint32_t renderpass, uint32_t subpass) {
 		IMGUI_CHECKVERSION();
 		auto context = ImGui::CreateContext();
 		ImGui::SetCurrentContext(context);
@@ -357,7 +293,7 @@ namespace NAME_SPACE {
 		createImGUIDescriptorPool();
 		auto info = getImGUIInitInfo();
 		info.Subpass = subpass;
-		ImGui_ImplGlfw_InitForVulkan(m_window->getWindowHandle(), true);
+		ImGui_ImplGlfw_InitForVulkan(window, true);
 		ImGui_ImplVulkan_Init(&info, m_renderPasses[renderpass].renderPass);
 
 		VkCommandBuffer commandBuffer;
@@ -412,7 +348,8 @@ namespace NAME_SPACE {
 		return m_imGuiImages.at(texture);
 	}
 
-	uint32_t Renderer::getNextSwapchainImage() {
+	uint32_t Renderer::getNextSwapchainImage(uint32_t swapchainIndex) {
+		/*
 		if (m_window->wasResized()) {
 			//recreate(getCurrentExtent());
 			m_window->setWasResized(false);
@@ -420,12 +357,15 @@ namespace NAME_SPACE {
 		if (m_window->isIconified()) {
 			return -1;
 		}
+		*/
+
+		Swapchain& swapchain = m_swapchains.at(swapchainIndex);
 
 		vkWaitForFences(m_device, 1, &m_inFlightFences[m_frameIndex], VK_FALSE, UINT64_MAX);
 
-		VkResult res = vkAcquireNextImageKHR(m_device, m_swapchain.swapchain, UINT64_MAX, m_imageAvailableSemaphore[m_frameIndex], VK_NULL_HANDLE, &m_swapchain.currentImageIndex);
+		VkResult res = vkAcquireNextImageKHR(m_device, swapchain.swapchain, UINT64_MAX, m_imageAvailableSemaphore[m_frameIndex], VK_NULL_HANDLE, &swapchain.currentImageIndex);
 		if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR) {
-			m_window->setWasResized(true);
+			//recreateSwapchain(swapchainIndex);
 			return -1;
 		}
 		else {
@@ -434,22 +374,21 @@ namespace NAME_SPACE {
 				"Failed to acquire image"
 			);
 
-			if (m_imageFences[m_swapchain.currentImageIndex] != VK_NULL_HANDLE) {
-				vkWaitForFences(m_device, 1, &m_imageFences[m_swapchain.currentImageIndex], VK_FALSE, UINT64_MAX);
+			if (m_imageFences[swapchain.currentImageIndex] != VK_NULL_HANDLE) {
+				vkWaitForFences(m_device, 1, &m_imageFences[swapchain.currentImageIndex], VK_FALSE, UINT64_MAX);
 			}
-			m_imageFences[m_swapchain.currentImageIndex] = m_inFlightFences[m_frameIndex];
+			m_imageFences[swapchain.currentImageIndex] = m_inFlightFences[m_frameIndex];
 		}
 
-		return m_swapchain.currentImageIndex;
+		return swapchain.currentImageIndex;
 	}
 
-	sa::RenderWindow* Renderer::getWindow() const {
-		return m_window;
-	}
+	bool Renderer::beginFrame(uint32_t swapchain) {
 
-	bool Renderer::beginFrame() {
-		if (getNextSwapchainImage() == -1) {
-			return false;
+		if (swapchain != -1) {
+			if (getNextSwapchainImage(swapchain) == -1) {
+				return false;
+			}
 		}
 
 		vbl::beginPrimaryCommandBuffer(m_graphicsCommandBuffers[m_frameIndex], VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT);
@@ -470,30 +409,99 @@ namespace NAME_SPACE {
 		vkEndCommandBuffer(m_graphicsCommandBuffers[m_frameIndex]);
 	}
 
-	void Renderer::createSwapchain(const sa::RenderWindow& window) {
-		destroySwapchain();
-		
-		vkDeviceWaitIdle(m_device);
-		destroySyncronisationObjects();
-		freeGraphicsCommandBuffers();
-
-		createSurface(window.getWindowHandle());
-		createSwapchain();
-		createGraphicsCommandBuffers();
-		createSyncronisationObjects();
-		
+	VkSurfaceKHR Renderer::createSurface(GLFWwindow* window) {
+		VkSurfaceKHR surface;
+		vbl::printError(
+			glfwCreateWindowSurface(m_instance, window, nullptr, &surface),
+			"Failed to create surface",
+			true
+		);
+		return surface;
 	}
 
-	void Renderer::createSwapchain(VkSurfaceKHR surface) {
-		destroySwapchain();
+	void Renderer::destroySurface(VkSurfaceKHR surface) {
+		vkDestroySurfaceKHR(m_instance, surface, nullptr);
+	}
+
+	uint32_t Renderer::createSwapchain(VkSurfaceKHR surface) {
+		m_swapchains.push_back({});
+		Swapchain& swapchain = m_swapchains.back();
+		vbl::printError(
+			vbl::createSwapchain(&swapchain.swapchain, m_device, m_physicalDevice, surface, &m_graphicsQueueInfo, 1, &swapchain.format),
+			"Failed to create swap chain",
+			true
+		);
+
+		VkSurfaceCapabilitiesKHR surfaceCapabilities = {};
+		vbl::printError(
+			vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_physicalDevice, surface, &surfaceCapabilities)
+		);
+		swapchain.extent = surfaceCapabilities.currentExtent;
+		swapchain.surface = surface;
+
+		uint32_t count;
+		vkGetSwapchainImagesKHR(m_device, swapchain.swapchain, &count, nullptr);
+		swapchain.images.resize(count);
+		m_inFlightCount = count;
+		vkGetSwapchainImagesKHR(m_device, swapchain.swapchain, &count, swapchain.images.data());
+
+		swapchain.imageViews.resize(count);
+		for (uint32_t i = 0; i < m_inFlightCount; i++) {
+			m_pDataManager->createImageView(swapchain.imageViews[i],
+				VK_IMAGE_VIEW_TYPE_2D,
+				swapchain.images[i],
+				swapchain.format,
+				VK_IMAGE_ASPECT_COLOR_BIT,
+				0,
+				0
+			);
+		}
+
+		return m_swapchains.size() - 1;
+	}
+
+	void Renderer::recreateSwapchain(uint32_t swapchain) {
 		
 		vkDeviceWaitIdle(m_device);
 		destroySyncronisationObjects();
 		freeGraphicsCommandBuffers();
 
-		m_surface = surface;
+		Swapchain& s = m_swapchains.at(swapchain);
+		vkDestroySwapchainKHR(m_device, s.swapchain, nullptr);
+		for (auto& imageView: s.imageViews) {
+			vkDestroyImageView(m_device, imageView, nullptr);
+		}
 
-		createSwapchain();
+		vbl::printError(
+			vbl::createSwapchain(&s.swapchain, m_device, m_physicalDevice, s.surface, &m_graphicsQueueInfo, 1, &s.format),
+			"Failed to create swap chain",
+			true
+		);
+
+		VkSurfaceCapabilitiesKHR surfaceCapabilities = {};
+		vbl::printError(
+			vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_physicalDevice, s.surface, &surfaceCapabilities)
+		);
+		s.extent = surfaceCapabilities.currentExtent;
+
+		uint32_t count;
+		vkGetSwapchainImagesKHR(m_device, s.swapchain, &count, nullptr);
+		s.images.resize(count);
+		m_inFlightCount = count;
+		vkGetSwapchainImagesKHR(m_device, s.swapchain, &count, s.images.data());
+
+		s.imageViews.resize(count);
+		for (uint32_t i = 0; i < m_inFlightCount; i++) {
+			m_pDataManager->createImageView(s.imageViews[i],
+				VK_IMAGE_VIEW_TYPE_2D,
+				s.images[i],
+				s.format,
+				VK_IMAGE_ASPECT_COLOR_BIT,
+				0,
+				0
+			);
+		}
+
 		createGraphicsCommandBuffers();
 		createSyncronisationObjects();
 	}
@@ -519,9 +527,10 @@ namespace NAME_SPACE {
 
 	}
 
-	void Renderer::present() {
+	void Renderer::present(uint32_t swapchain) {
+		Swapchain& s = m_swapchains.at(swapchain);
 		uint32_t prevFrame = (m_frameIndex + (m_inFlightCount - 1)) % m_inFlightCount;
-		vbl::presentImage(m_graphicsQueue, m_swapchain.currentImageIndex, m_swapchain.swapchain, m_renderFinishedSemaphore[prevFrame]);
+		vbl::presentImage(m_graphicsQueue, s.currentImageIndex, s.swapchain, m_renderFinishedSemaphore[prevFrame]);
 	}
 
 	void Renderer::createSyncronisationObjects() {
@@ -604,22 +613,23 @@ namespace NAME_SPACE {
 		return m_renderPasses.size() - 1;
 	}
 
-	VkAttachmentDescription Renderer::getSwapchainAttachment() const {
-		return getResolveAttachment(m_swapchain.format);
+	VkAttachmentDescription Renderer::getSwapchainAttachment(uint32_t swapchin) const {
+		return getResolveAttachment(m_swapchains.at(swapchin).format);
 	}
 
-	uint32_t Renderer::createSwapchainFramebuffer(uint32_t renderPass, const std::vector<Texture*>& additionalAttachments) {
+	uint32_t Renderer::createSwapchainFramebuffer(uint32_t swapchain, uint32_t renderPass, const std::vector<Texture*>& additionalAttachments) {
 		Framebuffer framebuffer;
 		framebuffer.framebuffers.resize(m_inFlightCount);
 		for (uint32_t i = 0; i < m_inFlightCount; i++) {
 			std::vector<VkImageView> views(additionalAttachments.size() + 1);
-			views[0] = m_swapchain.imageViews[i];
+			views[0] = m_swapchains.at(swapchain).imageViews[i];
 			for (uint32_t j = 0; j < (uint32_t)additionalAttachments.size(); j++) {
 				views[j + 1] = additionalAttachments[j]->view;
 			}
 
-			framebuffer.framebuffers[i] = createFramebuffer(m_swapchain.extent, m_renderPasses[renderPass].renderPass, views);
-		}
+			framebuffer.framebuffers[i] = createFramebuffer(m_swapchains.at(swapchain).extent, m_renderPasses.at(renderPass).renderPass, views);
+		}		
+		framebuffer.extent = m_swapchains.at(swapchain).extent;
 
 		m_framebuffers.push_back(framebuffer);
 		return m_framebuffers.size() - 1;
@@ -638,13 +648,14 @@ namespace NAME_SPACE {
 
 			framebuffer.framebuffers[i] = createFramebuffer(extent, m_renderPasses[renderPass].renderPass, views);
 		}
+		framebuffer.extent = extent;
 
 		m_framebuffers.push_back(framebuffer);
 		return m_framebuffers.size() - 1;
 	}
 
 
-	uint32_t Renderer::createGraphicsPipeline(uint32_t renderPass, uint32_t subpassIndex,
+	uint32_t Renderer::createGraphicsPipeline(VkExtent2D extent, uint32_t renderPass, uint32_t subpassIndex,
 		const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts,
 		const std::vector<VkPushConstantRange>& pushConstantRanges,
 		const std::vector<VkPipelineShaderStageCreateInfo>& shaderStages,
@@ -667,7 +678,7 @@ namespace NAME_SPACE {
 				pipeline.layout,
 				m_renderPasses[renderPass].renderPass,
 				subpassIndex,
-				m_swapchain.extent,
+				extent,
 				shaderStages.data(),
 				shaderStages.size(),
 				vertexInput,
@@ -752,14 +763,23 @@ namespace NAME_SPACE {
 		}
 	}
 
+	void Renderer::destroyRenderPasses() {
+		for (auto& renderpass : m_renderPasses) {
+			vkDestroyRenderPass(m_device, renderpass.renderPass, nullptr);
+		}
+	}
+
+	void Renderer::destroyPipelines() {
+		for (auto& pipeline : m_pipelines) {
+			vkDestroyPipelineLayout(m_device, pipeline.layout, nullptr);
+			vkDestroyPipeline(m_device, pipeline.pipeline, nullptr);
+		}
+	}
+
 	Texture* Renderer::createDepthTexture(VkExtent2D extent) {
 		return m_pDataManager->createDepthAttachmentTexture2D(
 			extent,
 			VK_SAMPLE_COUNT_1_BIT);
-	}
-
-	Texture* Renderer::createTexture2D(uint32_t framebuffer, uint32_t renderpass, uint32_t subpass, const Image& image) {
-		return createTexture2D(framebuffer, renderpass, subpass, image.getExtent(), image.getPixels(), image.getChannelCount());
 	}
 
 	Texture* Renderer::createTexture2D(uint32_t framebuffer, uint32_t renderpass, uint32_t subpass, VkExtent2D extent, unsigned char* pixels, int channels) {
@@ -832,6 +852,7 @@ namespace NAME_SPACE {
 			buffer,
 			dst);
 	}
+
 
 	void Renderer::queueTransferCommand(uint32_t framebuffer, uint32_t renderpass, uint32_t subpass, Buffer* srcBuffer, Texture* dstTexture) {
 
@@ -1009,10 +1030,12 @@ namespace NAME_SPACE {
 	}
 
 	void Renderer::destroyBuffer(Buffer* buffer) {
+		vkDeviceWaitIdle(m_device);
 		m_pDataManager->destroyBuffer(buffer);
 	}
 
 	void Renderer::destroyTexture(Texture* texture) {
+		vkDeviceWaitIdle(m_device);
 		m_pDataManager->destroyImage(texture);
 	}
 
@@ -1020,7 +1043,7 @@ namespace NAME_SPACE {
 		return std::make_shared<Shader>(m_device, path, stage);
 	}
 
-	uint32_t Renderer::createPipeline(const ShaderSetPtr& shaderSet, uint32_t renderPass, uint32_t subpassIndex, vbl::PipelineConfig config) {
+	uint32_t Renderer::createPipeline(VkExtent2D extent, const ShaderSetPtr& shaderSet, uint32_t renderPass, uint32_t subpassIndex, vbl::PipelineConfig config) {
 		if (shaderSet->isGraphicsSet()) {
 
 			auto vertexAttributes = shaderSet->getVertexAttributes();
@@ -1036,6 +1059,7 @@ namespace NAME_SPACE {
 			inputState.pVertexBindingDescriptions = vertexBindings.data();
 
 			return createGraphicsPipeline(
+				extent,
 				renderPass,
 				subpassIndex,
 				shaderSet->getDescriptorSetLayouts(),
@@ -1050,6 +1074,12 @@ namespace NAME_SPACE {
 			return createComputePipeline(shaderSet->getDescriptorSetLayouts(), shaderSet->getPushConstantRanges(), shaderSet->getShaderInfos()[0]);
 		}
 
+	}
+
+	uint32_t Renderer::createPipeline(uint32_t swapchain, const ShaderSetPtr& shaderSet, uint32_t renderPass, uint32_t subpassIndex, vbl::PipelineConfig config) {
+		if (swapchain == -1)
+			return createPipeline({ 0, 0 }, shaderSet, renderPass, subpassIndex, config);
+		return createPipeline(m_swapchains.at(swapchain).extent, shaderSet, renderPass, subpassIndex, config);
 	}
 
 	ShaderSetPtr Renderer::createShaderSet(const ShaderPtr& vertexShader, const ShaderPtr& fragmentShader) {
@@ -1242,9 +1272,9 @@ namespace NAME_SPACE {
 		beginInfo.clearValueCount = m_renderPasses[renderPass].clearValues.size();
 		beginInfo.pClearValues = m_renderPasses[renderPass].clearValues.data();
 		beginInfo.framebuffer = m_framebuffers[framebuffer].framebuffers[m_frameIndex];
-
+		
 		VkRect2D renderArea = {};
-		renderArea.extent = m_swapchain.extent;
+		renderArea.extent = m_framebuffers.at(framebuffer).extent;
 		renderArea.offset = { 0, 0 };
 
 		beginInfo.renderArea = renderArea;

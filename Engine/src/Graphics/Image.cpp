@@ -1,10 +1,10 @@
 #include "pch.h"
-#include "Image.hpp"
+#include "Image.h"
 
 #define STB_IMAGE_IMPLEMENTATION
 #include "stb_image.h"
 
-namespace NAME_SPACE {
+namespace sa {
 	Image::Image(const char* path) {
 		m_pixels = stbi_load(path, &m_width, &m_height, &m_channels, 0);
 		if (!m_pixels) {
@@ -16,15 +16,15 @@ namespace NAME_SPACE {
 
 	}
 
-	Image::Image(VkExtent2D extent, glm::vec4 color) : Image(extent.width, extent.height, color){
+	Image::Image(Vector2u extent, Vector4 color) : Image(extent.x, extent.y, color){
 
 	}
 
-	Image::Image(VkExtent2D extent, glm::vec3 color) : Image(extent.width, extent.height, color){
+	Image::Image(Vector2u extent, Vector3 color) : Image(extent.x, extent.y, color){
 		
 	}
 
-	Image::Image(int width, int height, glm::vec4 color) {
+	Image::Image(int width, int height, Vector4 color) {
 		m_width = width;
 		m_height = height;
 		m_channels = 4;
@@ -38,7 +38,7 @@ namespace NAME_SPACE {
 		}
 	}
 
-	Image::Image(int width, int height, glm::vec3 color) {
+	Image::Image(int width, int height, Vector3 color) {
 		m_width = width;
 		m_height = height;
 		m_channels = 3;
@@ -51,7 +51,7 @@ namespace NAME_SPACE {
 		}
 	}
 
-	Image::Image(VkExtent2D extent, unsigned char* pixels, int channels) : Image(extent.width, extent.height, pixels, channels) {
+	Image::Image(Vector2u extent, unsigned char* pixels, int channels) : Image(extent.x, extent.y, pixels, channels) {
 		
 	}
 	
@@ -86,7 +86,7 @@ namespace NAME_SPACE {
 		stbi_image_free(m_pixels);
 	}
 
-	VkExtent2D Image::getExtent() const {
+	Vector2u Image::getExtent() const {
 		return { static_cast<uint32_t>(m_width), static_cast<uint32_t>(m_height) };
 	}
 

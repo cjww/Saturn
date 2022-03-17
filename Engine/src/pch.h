@@ -54,7 +54,7 @@
 
 // Other
 #include "Graphics/Vulkan/Renderer.hpp"
-#include "Graphics/RenderWindow.hpp"
+#include "Graphics/Window.hpp"
 
 #include <Tools/Logger.hpp>
 #include <Tools/utils.h>

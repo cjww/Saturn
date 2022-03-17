@@ -1,11 +1,11 @@
 --$using model transform
 
-local Enemy = require('testComponent')
 
 print("Hello world ")
 
 function init()
     
+
     t = entity.transform
     assert(t == transform, "t and transform not same")
     --s = entity.script
@@ -14,12 +14,10 @@ function init()
 
     print("hello from entity " .. entity.name .. " : " .. entity.id)
     
-    entity.enemy = Enemy.new();
-
 end
 
 function update(dt)
     t.position.z = t.position.z - dt
-    
+    print(t.position.z)
     
 end

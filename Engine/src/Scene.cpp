@@ -34,7 +34,7 @@ namespace sa {
 		return m_cameras.back();
 	}
 
-	Camera* Scene::newCamera(const RenderWindow* pWindow) {
+	Camera* Scene::newCamera(const Window* pWindow) {
 		m_cameras.push_back(new Camera(pWindow));
 		return m_cameras.back();
 	}

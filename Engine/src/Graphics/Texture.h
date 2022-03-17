@@ -14,8 +14,6 @@ namespace sa {
 		Texture() = delete;
 		Texture(vr::Texture* pTexture);
 
-		operator vr::Texture* () {
-			return m_pTexture;
-		}
+		operator vr::Texture*();
 	};
 }

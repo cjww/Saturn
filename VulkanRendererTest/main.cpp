@@ -490,8 +490,6 @@ void texture3DTest(RenderWindow& window) {
 	for (int i = 0; i < data.size(); i++) {
 		data[i] = i;
 	}
-	/*
-	*/
 
 	renderer->updateTexture(tex, renderPass.frameBuffer, renderPass.renderPass, 0, data.data(), data.size());
 	

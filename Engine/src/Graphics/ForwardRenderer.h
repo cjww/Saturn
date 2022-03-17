@@ -6,6 +6,8 @@
 #include "structs.h"
 #include "ECS\Components.h"
 
+#include "Graphics\RenderWindow.h"
+#include "Graphics\Image.h"
 
 namespace vr {
 	class Renderer;
@@ -40,7 +42,9 @@ namespace sa {
 		vr::Texture* m_pMainColorTexture;
 		vr::Texture* m_pOutputTexture;
 
-		uint32_t m_renderPass;
+		uint32_t m_mainRenderPass;
+		uint32_t m_postRenderpass;
+
 		
 		uint32_t m_colorPipeline;
 		uint32_t m_postProcessPipline;
@@ -50,7 +54,7 @@ namespace sa {
 		ForwardRenderer();
 		
 
-		virtual void init(RenderWindow* pWindow, bool setupImGui) override;
+		virtual void init(sa::RenderWindow* pWindow, bool setupImGui) override;
 		virtual void cleanup() override;
 
 		virtual void beginFrameImGUI() override;
@@ -59,7 +63,7 @@ namespace sa {
 
 		virtual sa::Texture getOutputTexture() const override;
 
-		virtual vr::Texture* createShaderTexture2D(const vr::Image& img) override;
+		virtual sa::Texture createShaderTexture2D(const sa::Image& img) override;
 		
 	};
 

@@ -11,8 +11,10 @@ vec4 quad[6] = {
     vec4(-1, -1, 0, 1)
 };
 
+layout(location = 1) out vec2 out_vertPos;
+
 void main() {
 
     gl_Position = quad[gl_VertexIndex];  
-    
+    out_vertPos = gl_Position.xy;    
 }

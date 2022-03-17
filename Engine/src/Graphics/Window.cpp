@@ -3,8 +3,6 @@
 
 namespace sa {
 
-	unsigned int Window::windowCount = 0;
-
 	void Window::onResize(GLFWwindow* window, int width, int height) {
 		Window* thisWindow = (Window*)glfwGetWindowUserPointer(window);
 		if (thisWindow->m_isIconified) {
@@ -76,20 +74,20 @@ namespace sa {
 	}
 
 	Window::Window(uint32_t width, uint32_t height, const char* title) {
-		if (windowCount == 0) {
+		if (s_windowCount == 0) {
 			if (!glfwInit()) {
 				throw std::runtime_error("Failed to initialize GLFW!");
 			}
 		}
-		windowCount++;
+		s_windowCount++;
 		create(width, height, title, nullptr);
 	}
 
 	Window::Window(uint32_t monitorIndex) {
-		if (windowCount == 0) {
+		if (s_windowCount == 0) {
 			glfwInit();
 		}
-		windowCount++;
+		s_windowCount++;
 
 		int count;
 		GLFWmonitor** monitors = glfwGetMonitors(&count);
@@ -109,8 +107,8 @@ namespace sa {
 		if (m_window != nullptr) {
 			shutDown();
 
-			windowCount--;
-			if (windowCount == 0) {
+			s_windowCount--;
+			if (s_windowCount == 0) {
 				glfwTerminate();
 			}
 		}

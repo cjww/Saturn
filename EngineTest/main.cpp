@@ -1,8 +1,12 @@
 #include <Engine.h>
+#include <Graphics\RenderWindow.h>
+#include <Graphics\Image.h>
+#include <Graphics\Texture.h>
+
+
 #include <Tools\Clock.h>
 #include <filesystem>
 #include <Tools\ScopeTimer.h>
-
 
 void createTriangleEntity(sa::Engine& engine) {
 	sa::Entity entity = engine.getCurrentScene()->createEntity();
@@ -33,6 +37,40 @@ void createTriangleEntity(sa::Engine& engine) {
 	}
 }
 
+void regenerate(sa::Scene* scene) {
+	scene->forEach<comp::Model>([](comp::Model& model) {
+
+		sa::ModelData* modelData = sa::ResourceManager::get().getModel(model.modelID);
+
+		auto vertices = modelData->meshes[0].vertexBuffer.getContent<sa::VertexUV>();
+		auto indices = modelData->meshes[0].indexBuffer.getContent<uint32_t>();
+
+		uint32_t thisIndex = vertices.size();
+		sa::VertexUV prevVert = vertices.back();
+
+		sa::VertexUV newVert = prevVert;
+		if (newVert.position.x == 0) {
+			newVert.position.x += 1;
+			indices.push_back(thisIndex - 2);
+			indices.push_back(thisIndex);
+			indices.push_back(thisIndex - 1);
+		}
+		else {
+			newVert.position.y -= 1;
+			newVert.position.x = 0;
+
+			indices.push_back(thisIndex - 2);
+			indices.push_back(thisIndex - 1);
+			indices.push_back(thisIndex);
+		}
+		vertices.push_back(newVert);
+		modelData->meshes[0].vertexBuffer.write(vertices);
+		modelData->meshes[0].indexBuffer.write(indices);
+
+
+	});
+}
+
 int main() {
 	srand(time(NULL));
 
@@ -40,7 +78,7 @@ int main() {
 	sa::Engine engine;
 	sa::RenderWindow window(1000, 600, "test");
 	
-	engine.setup(&window, "project.xml");
+	engine.setup(&window);
 
 	sa::Camera camera(&window);
 	camera.setPosition({ 0, 0, 1 });
@@ -59,6 +97,8 @@ int main() {
 	quad.addComponent<comp::Script>();
 	quad.addComponent<comp::Model>()->modelID = sa::ResourceManager::get().loadQuad();
 
+	sa::Image image("Box.png");
+	sa::Texture boxTexture = engine.getRenderTechnique()->createShaderTexture2D(image);
 
 	engine.init();
 
@@ -77,55 +117,16 @@ int main() {
 			fpsClock.restart();
 		}
 		
-		
-
 		/*
-		// Sway tip
-		auto content = modelData->meshes[0].vertexBuffer.getContent<sa::VertexUV>();
-		content[2].position.x = (sin(timer) + 1) * 0.5f;
-
-		modelData->meshes[0].vertexBuffer.write(content);
-		*/
-
 		if (generateTimer.getElapsedTime() > 0.5f) {
 			generateTimer.restart();
-			
-			engine.getCurrentScene()->forEach<comp::Model>([](comp::Model& model) {
-				
-				sa::ModelData* modelData = sa::ResourceManager::get().getModel(model.modelID);
-
-				auto vertices = modelData->meshes[0].vertexBuffer.getContent<sa::VertexUV>();
-				auto indices = modelData->meshes[0].indexBuffer.getContent<uint32_t>();
-
-				uint32_t thisIndex = vertices.size();
-				sa::VertexUV prevVert = vertices.back();
-
-				sa::VertexUV newVert = prevVert;
-				if (newVert.position.x == 0) {
-					newVert.position.x += 1;
-					indices.push_back(thisIndex - 2);
-					indices.push_back(thisIndex);
-					indices.push_back(thisIndex - 1);
-				}
-				else {
-					newVert.position.y -= 1;
-					newVert.position.x = 0;
-
-					indices.push_back(thisIndex - 2);
-					indices.push_back(thisIndex - 1);
-					indices.push_back(thisIndex);
-				}
-				vertices.push_back(newVert);
-				modelData->meshes[0].vertexBuffer.write(vertices);
-				modelData->meshes[0].indexBuffer.write(indices);
-
-
-			});
+			regenerate(engine.getCurrentScene());
 		}
-
-
+		*/
 
 		engine.update(dt);
+
+
 		engine.draw();
 		
 	}

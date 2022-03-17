@@ -13,7 +13,7 @@ namespace sa {
         m_projMat = glm::perspective(m_fov, m_apectRatio, m_near, m_far);
     }
 
-    Camera::Camera(const RenderWindow* pWindow)
+    Camera::Camera(const Window* pWindow)
         : Camera(Vector2(pWindow->getCurrentExtent()))
     {
     }

@@ -28,7 +28,7 @@ namespace sa {
 		virtual void render();
 
 		Camera* newCamera();
-		Camera* newCamera(const RenderWindow* pWindow);
+		Camera* newCamera(const Window* pWindow);
 
 		void addActiveCamera(Camera* camera);
 		void removeActiveCamera(Camera* camera);

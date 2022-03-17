@@ -198,7 +198,9 @@
     <ClCompile Include="src\ECS\ComponentBase.cpp" />
     <ClCompile Include="src\ECS\ComponentType.cpp" />
     <ClCompile Include="src\Graphics\Buffer.cpp" />
+    <ClCompile Include="src\Graphics\RenderWindow.cpp" />
     <ClCompile Include="src\Graphics\Texture.cpp" />
+    <ClCompile Include="src\Graphics\Window.cpp" />
     <ClCompile Include="src\imgui-SFML.cpp" />
     <ClCompile Include="src\imgui.cpp" />
     <ClCompile Include="src\imgui_demo.cpp" />
@@ -207,11 +209,9 @@
     <ClCompile Include="src\imgui_impl_vulkan.cpp" />
     <ClCompile Include="src\imgui_tables.cpp" />
     <ClCompile Include="src\imgui_widgets.cpp" />
-    <ClCompile Include="src\Graphics\RenderWindow.cpp" />
-    <ClCompile Include="src\Graphics\SFML2DRenderer.cpp" />
     <ClCompile Include="src\Graphics\Vulkan\DataManager.cpp" />
     <ClCompile Include="src\Graphics\Vulkan\functions.cpp" />
-    <ClCompile Include="src\Graphics\Vulkan\Image.cpp" />
+    <ClCompile Include="src\Graphics\Image.cpp" />
     <ClCompile Include="src\Graphics\Vulkan\Renderer.cpp" />
     <ClCompile Include="src\Graphics\Vulkan\Shader.cpp" />
     <ClCompile Include="src\Graphics\Vulkan\ShaderSet.cpp" />
@@ -241,17 +241,18 @@
     <ClCompile Include="src\Tools\Vector.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Graphics\RenderWindow.h" />
     <ClInclude Include="src\ECS\ComponentBase.h" />
     <ClInclude Include="src\ECS\ComponentType.h" />
     <ClInclude Include="src\Graphics\Buffer.h" />
     <ClInclude Include="src\Graphics\Texture.h" />
+    <ClInclude Include="src\Graphics\Window.hpp" />
     <ClInclude Include="src\internal\internalVector.h" />
-    <ClInclude Include="src\Graphics\SFML2DRenderer.h" />
     <ClInclude Include="src\Graphics\RenderWindow.hpp" />
     <ClInclude Include="src\Graphics\Vulkan\common.hpp" />
     <ClInclude Include="src\Graphics\Vulkan\DataManager.hpp" />
     <ClInclude Include="src\Graphics\Vulkan\functions.hpp" />
-    <ClInclude Include="src\Graphics\Vulkan\Image.hpp" />
+    <ClInclude Include="src\Graphics\Image.h" />
     <ClInclude Include="src\Graphics\Vulkan\Renderer.hpp" />
     <ClInclude Include="src\Graphics\Vulkan\Shader.hpp" />
     <ClInclude Include="src\Graphics\Vulkan\ShaderSet.hpp" />

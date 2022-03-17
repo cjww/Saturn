@@ -28,7 +28,6 @@ namespace sa {
 		template<unsigned C, typename T>
 		Vector(const glm::vec<C, T>& other);
 
-
 		Vector<Comp, Type>& operator+=(const Vector<Comp, Type>& other);
 		Vector<Comp, Type>& operator-=(const Vector<Comp, Type>& other);
 

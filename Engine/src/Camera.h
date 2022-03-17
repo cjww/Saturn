@@ -1,7 +1,7 @@
 #pragma once
 #include "Geometry\Rect.h"
 #include "Tools\Matrix.h"
-#include "Graphics\RenderWindow.hpp"
+#include "Graphics\Window.hpp"
 namespace sa {
 	class Camera {
 	private:
@@ -19,7 +19,7 @@ namespace sa {
 		const float m_far = 1000.0f;
 	public:
 		Camera();
-		Camera(const RenderWindow* pWindow);
+		Camera(const Window* pWindow);
 		Camera(Vector2 windowExtent);
 
 		void setFOVRadians(float fovRadians);

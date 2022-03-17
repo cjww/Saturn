@@ -1,8 +1,6 @@
 #pragma once
 
 #include "Graphics/IRenderTechnique.h"
-#include "Graphics/ForwardRenderer.h"
-#include "Graphics/SFML2DRenderer.h"
 
 #include "ResourceManager.h"
 #include "Scene.h"
@@ -11,6 +9,8 @@
 
 #include "Tools\utils.h"
 #include "ScriptManager.h"
+
+#include "Graphics\RenderWindow.h"
 
 #include <rapidxml\rapidxml.hpp>
 
@@ -40,7 +40,7 @@ namespace sa {
 	
 	public:
 		// Call this to set up engine
-		void setup(RenderWindow* pWindow, const std::filesystem::path& configPath);
+		Scene& setup(sa::RenderWindow* pWindow = nullptr, const std::filesystem::path& configPath = "");
 
 		// Call this reight before the main loop
 		void init();
@@ -49,7 +49,7 @@ namespace sa {
 
 		void cleanup();
 
-		void recordImGui();
+		//void recordImGui();
 		void draw();
 
 		std::chrono::duration<double, std::milli> getCPUFrameTime() const;

@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "Engine.h"
 
+#include "Graphics\ForwardRenderer.h"
+
 namespace sa {
 	void Engine::loadXML(const std::filesystem::path& path, rapidxml::xml_document<>& xml, std::string& xmlStr) {
 		std::ifstream file(path);
@@ -27,9 +29,6 @@ namespace sa {
 			if (strcmp(renderTechnique->value(), "Forward") == 0) {
 				if (strcmp(api->value(), "Vulkan") == 0) {
 					m_pRenderTechnique = std::make_unique<ForwardRenderer>();
-				}
-				else if (strcmp(api->value(), "SFML") == 0) {
-					m_pRenderTechnique = std::make_unique<SFML2DRenderer>();
 				}
 				else {
 					throw std::runtime_error("API not supported : " + std::string(api->value()));
@@ -58,15 +57,20 @@ namespace sa {
 
 	}
 
-	void Engine::setup(RenderWindow* pWindow, const std::filesystem::path& configPath) {
+	Scene& Engine::setup(sa::RenderWindow* pWindow, const std::filesystem::path& configPath) {
 	
 		registerComponents();
 
 		m_currentScene = nullptr;
-		loadFromFile(configPath);
-		m_pRenderTechnique->init(pWindow, false);
-	
+		if(!configPath.empty())
+			loadFromFile(configPath);
+		if (pWindow)
+		{
+			m_pRenderTechnique = std::make_unique<ForwardRenderer>();
+			m_pRenderTechnique->init(pWindow, false);
+		}
 		setScene("MainScene");
+	
 
 		/*
 		Camera* cam = newCamera(pWindow); // DefaultCamera
@@ -76,16 +80,23 @@ namespace sa {
 		*/
 
 		m_isSetup = true;
+		return *m_currentScene;
 	}
 
+	
 	void Engine::init() {
-		if (m_currentScene)
+		if (m_currentScene) {
 			m_currentScene->init();
+			m_scriptManager.init(m_currentScene);
+		}
 
-		m_scriptManager.init(m_currentScene);
 	}
 
 	void Engine::update(float dt) {
+		if (m_pRenderTechnique)
+			m_pRenderTechnique->beginFrameImGUI();
+
+
 		if (m_currentScene) {
 			m_scriptManager.update(dt, m_currentScene);
 			m_currentScene->update(dt);
@@ -93,19 +104,16 @@ namespace sa {
 	}
 
 	void Engine::cleanup() {
-		m_pRenderTechnique->cleanup();
-		m_pRenderTechnique.reset();
+		if (m_pRenderTechnique) {
+			m_pRenderTechnique->cleanup();
+			m_pRenderTechnique.reset();
+		}
 		m_scenes.clear();
 	}
 
-	void Engine::recordImGui() {
-		m_frameTime.start = std::chrono::high_resolution_clock::now();
-		m_pRenderTechnique->beginFrameImGUI();
-	}
-
 	void Engine::draw() {
-		m_pRenderTechnique->draw(m_currentScene);
-		m_frameTime.cpu = std::chrono::high_resolution_clock::now() - m_frameTime.start;
+		if (m_pRenderTechnique)
+			m_pRenderTechnique->draw(m_currentScene);	
 	}
 
 	std::chrono::duration<double, std::milli> Engine::getCPUFrameTime() const {

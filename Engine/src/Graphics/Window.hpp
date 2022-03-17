@@ -24,17 +24,18 @@ namespace sa {
 		std::function<void(int, int, int, int)> m_onKeyFunction;
 		std::function<void(int, int, int)> m_onMouseButtonFunction;
 
+	protected:
 		static void onResize(GLFWwindow* window, int width, int height);
 		static void onIconify(GLFWwindow* window, int iconified);
 		static void onKey(GLFWwindow* window, int key, int scancode, int action, int mods);
 		static void onMouseButton(GLFWwindow* window, int button, int action, int mods);
 		static void onClose(GLFWwindow* window);
 
-		void create(uint32_t width, uint32_t height, const char* title, GLFWmonitor* monitor);
+		virtual void create(uint32_t width, uint32_t height, const char* title, GLFWmonitor* monitor);
 	
-		void shutDown();
+		virtual void shutDown();
 
-		static unsigned int windowCount;
+		inline static unsigned int s_windowCount = 0;
 	public:
 
 		Window(uint32_t width, uint32_t height, const char* title);
@@ -76,11 +77,5 @@ namespace sa {
 		bool wasResized() const;
 		bool isIconified() const;
 
-	};
-
-	struct RenderWindowProxy {
-		static glm::vec2 getCurrentExtent(const RenderWindow* window) {
-			return window->getCurrentExtent();
-		}
 	};
 }
