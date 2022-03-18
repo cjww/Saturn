@@ -56,16 +56,17 @@ namespace sa {
 		script.components.push_back(scriptType);
 
 		std::ifstream file(path);
-		if (!file.is_open() || file.eof()) {
+		if (!file.is_open()) {
 			file.close();
+			DEBUG_LOG_ERROR("Could not open lua file: ", path);
 			return;
 		}
-
+		
 		// Get first line with content i lua file
 		std::string line;
-		do {
+		while (!file.eof() && line.size() == 0) {
 			std::getline(file, line);
-		} while (!file.eof() && line.size() == 0);
+		}
 		file.close();
 
 
@@ -130,6 +131,15 @@ namespace sa {
 			pScene->forEach(script.components, [&](const Entity& entity)
 				{
 					comp::Script* scriptComp = entity.getComponent<comp::Script>();
+					if (!scriptComp->env.valid()) {
+						sol::state& lua = LuaAccessable::getState();
+						scriptComp->env = sol::environment(lua, sol::create, script.env);
+						
+						setComponents(entity, scriptComp->env, script.components);
+						scriptComp->env["entity"] = entity;
+						tryCall(scriptComp->env, "init");
+					}
+					
 					tryCall(scriptComp->env, "update", dt);
 				});
 			

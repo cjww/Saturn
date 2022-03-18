@@ -1,6 +1,6 @@
 #pragma once
 #include "EditorModule.h"
-#include "CustomImGui.h"
+#include <Tools\CustomImGui.h>
 
 
 class EntityInspector : public EditorModule {

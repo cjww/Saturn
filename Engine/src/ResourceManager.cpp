@@ -31,9 +31,10 @@ namespace sa {
 			return m_resourceIDs.at("Quad");
 		}
 
-		ResourceID id = m_nextID++;
-		const auto& [reference, success] = m_models.insert(std::make_pair(id, std::make_unique<ModelData>()));
-		ModelData* model = reference->second.get();
+		
+		auto [id, model] = createModel();
+		m_resourceIDs["Quad"] = id;
+		
 		Mesh mesh = {};
 		mesh.material = {};
 
@@ -53,6 +54,7 @@ namespace sa {
 
 		model->meshes.push_back(mesh);
 
+
 		return id;
 	}
 
@@ -60,10 +62,19 @@ namespace sa {
 		return m_models.at(id).get();
 	}
 
-	ResourceID ResourceManager::createModel() {
+	std::tuple<ResourceID, ModelData*> ResourceManager::createModel() {
 		ResourceID id = m_nextID++;
-		m_models.insert(std::make_pair(id, std::make_unique<ModelData>()));
-		return id;
+		const auto& [reference, success] = m_models.insert(std::make_pair(id, std::make_unique<ModelData>()));
+		return std::make_tuple(id, reference->second.get());
+	}
+
+	std::string ResourceManager::fetchResourceName(ResourceID resource) const {
+		for (auto [name, id] : m_resourceIDs){
+			if (id == resource) {
+				return name;
+			}
+		}
+		return "-";
 	}
 
 	ResourceManager::ResourceManager()

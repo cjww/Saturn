@@ -171,12 +171,28 @@
     </PreBuildEvent>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\main1.cpp" />
-  </ItemGroup>
-  <ItemGroup>
     <ProjectReference Include="..\Engine\Engine.vcxproj">
       <Project>{113522db-28c1-4b47-9684-45cd80885a8a}</Project>
     </ProjectReference>
+  </ItemGroup>
+  <ItemGroup>
+    <ClCompile Include="src\EditorModule.cpp" />
+    <ClCompile Include="src\EditorView.cpp" />
+    <ClCompile Include="src\EngineEditor.cpp" />
+    <ClCompile Include="src\EntityInspector.cpp" />
+    <ClCompile Include="src\main1.cpp" />
+    <ClCompile Include="src\SceneView.cpp" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="src\EditorModule.h" />
+    <ClInclude Include="src\EditorView.h" />
+    <ClInclude Include="src\EngineEditor.h" />
+    <ClInclude Include="src\EntityInspector.h" />
+    <ClInclude Include="src\Events.h" />
+    <ClInclude Include="src\SceneView.h" />
+  </ItemGroup>
+  <ItemGroup>
+    <None Include="test.lua" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

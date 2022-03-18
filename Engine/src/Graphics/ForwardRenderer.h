@@ -38,12 +38,18 @@ namespace sa {
 		vr::DescriptorSetPtr m_pInputDescriptorSet;
 
 		uint32_t m_mainFramebuffer;
+		uint32_t m_postFramebuffer;
+		uint32_t m_imguiFramebuffer;
+
 		vr::Texture* m_pDepthTexture;
 		vr::Texture* m_pMainColorTexture;
 		vr::Texture* m_pOutputTexture;
+		vr::SamplerPtr m_sampler;
 
 		uint32_t m_mainRenderPass;
 		uint32_t m_postRenderpass;
+		uint32_t m_imguiRenderpass;
+
 
 		
 		uint32_t m_colorPipeline;

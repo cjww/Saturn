@@ -1,6 +1,7 @@
 #pragma once
 #include <glm\glm.hpp>
 #include <algorithm>
+#include <string>
 
 namespace sa {
 
@@ -30,6 +31,8 @@ namespace sa {
 
 		Vector<Comp, Type>& operator+=(const Vector<Comp, Type>& other);
 		Vector<Comp, Type>& operator-=(const Vector<Comp, Type>& other);
+
+		std::string toString() const;
 
 	};
 
@@ -117,6 +120,19 @@ namespace sa {
 	inline Vector<Comp, Type>& Vector<Comp, Type>::operator-=(const Vector<Comp, Type>& other) {
 		*this = *this - other;
 		return *this;
+	}
+
+	template<unsigned Comp, typename Type>
+	inline std::string Vector<Comp, Type>::toString() const {
+		std::string str = "( ";
+		Type* ptr = (Type*)this;
+		for (unsigned i = 0; i < Comp; i++) {
+			str += std::to_string(ptr[i]);
+			if (i < Comp - 1)
+				str += ", ";
+		}
+		str += " )";
+		return str;
 	}
 
 }

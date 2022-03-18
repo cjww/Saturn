@@ -9,7 +9,6 @@ namespace sa {
         : m_pRegistry(pRegistry)
         , m_entity(entity)
     {
-
     }
 
     Entity::Entity()

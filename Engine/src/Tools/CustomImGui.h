@@ -3,6 +3,7 @@
 #include "ECS/Components.h"
 #include "ECS/Entity.h"
 
+#include "imgui_stdlib.h"
 
 #define IMGUI_BUFFER_SIZE_BIG 256U
 #define IMGUI_BUFFER_SIZE_NORMAL 128U
@@ -16,7 +17,8 @@ namespace ImGui {
 
 	void Component(comp::Transform* transform);
 	void Component(comp::Model* model);
-	
+	void Component(comp::Script* script);
+
 
 	template<typename T>
 	void Component(sa::Entity entity);

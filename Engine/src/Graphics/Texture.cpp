@@ -11,4 +11,13 @@ namespace sa {
 		return m_pTexture;
 	}
 
+	sa::Vector2u Texture::getExtent() const {
+		return sa::Vector2u(m_pTexture->extent.width, m_pTexture->extent.height);
+	}
+
+	bool Texture::isValid() const {
+		return m_pTexture != nullptr;
+	}
+
+
 }

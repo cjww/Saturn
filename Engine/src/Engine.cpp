@@ -67,7 +67,7 @@ namespace sa {
 		if (pWindow)
 		{
 			m_pRenderTechnique = std::make_unique<ForwardRenderer>();
-			m_pRenderTechnique->init(pWindow, false);
+			m_pRenderTechnique->init(pWindow, true);
 		}
 		setScene("MainScene");
 	
@@ -93,9 +93,6 @@ namespace sa {
 	}
 
 	void Engine::update(float dt) {
-		if (m_pRenderTechnique)
-			m_pRenderTechnique->beginFrameImGUI();
-
 
 		if (m_currentScene) {
 			m_scriptManager.update(dt, m_currentScene);
@@ -109,6 +106,11 @@ namespace sa {
 			m_pRenderTechnique.reset();
 		}
 		m_scenes.clear();
+	}
+
+	void Engine::recordImGui() {
+		if (m_pRenderTechnique)
+			m_pRenderTechnique->beginFrameImGUI();
 	}
 
 	void Engine::draw() {

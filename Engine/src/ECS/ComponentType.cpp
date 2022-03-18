@@ -24,6 +24,14 @@ namespace sa {
 		return m_type.info().hash();
 	}
 
+	bool ComponentType::operator==(const ComponentType& other) {
+		return m_type == other.m_type;
+	}
+
+	bool ComponentType::operator!=(const ComponentType& other) {
+		return m_type != other.m_type;
+	}
+
 	std::vector<ComponentType>& ComponentType::getRegisteredComponents() {
 		return s_registeredComponents;
 	}

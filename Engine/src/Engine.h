@@ -49,7 +49,7 @@ namespace sa {
 
 		void cleanup();
 
-		//void recordImGui();
+		void recordImGui();
 		void draw();
 
 		std::chrono::duration<double, std::milli> getCPUFrameTime() const;

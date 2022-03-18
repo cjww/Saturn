@@ -1,6 +1,6 @@
 #include "EditorView.h"
 
-EditorView::EditorView(sa::Engine* pEngine, RenderWindow* pWindow)
+EditorView::EditorView(sa::Engine* pEngine, sa::RenderWindow* pWindow)
 	: EditorModule(pEngine)
 {
 	m_pWindow = pWindow;
@@ -18,8 +18,8 @@ EditorView::EditorView(sa::Engine* pEngine, RenderWindow* pWindow)
 	m_mouseSensitivity = 20.0f;
 	m_moveSpeed = 4.0f;
 
-	m_pTexture = m_pEngine->getRenderTechnique()->getOutputTexture();
-	m_pSampler = vr::Renderer::get()->createSampler(VK_FILTER_NEAREST);
+	m_texture = m_pEngine->getRenderTechnique()->getOutputTexture();
+	m_pSampler = vr::Renderer::get().createSampler(VK_FILTER_NEAREST);
 
 }
 
@@ -87,9 +87,10 @@ void EditorView::onImGui() {
 
 		// render outputTexture with constant aspect ratio
 		ImVec2 availSize = ImGui::GetContentRegionAvail();
-		float aspectRatio = (float)m_pTexture->extent.height / m_pTexture->extent.width;
-		availSize.y = std::min(availSize.x * aspectRatio, (float)m_pTexture->extent.height);
-		ImGui::Image(vr::Renderer::get()->getImTextureID(m_pTexture, m_pSampler), availSize);
+
+		float aspectRatio = (float)m_texture.getExtent().y / m_texture.getExtent().x;
+		availSize.y = std::min(availSize.x * aspectRatio, (float)m_texture.getExtent().y);
+		ImGui::Image(vr::Renderer::get().getImTextureID(m_texture, m_pSampler), availSize);
 		m_displayedSize = availSize;
 
 		const ImU32 red = ImColor(ImVec4(1, 0, 0, 1));

@@ -67,8 +67,10 @@ namespace sa {
 		ModelData* getModel(ResourceID id) const;
 
 		// creates empty model
-		ResourceID createModel();
+		std::tuple<ResourceID, ModelData*> createModel();
 
+
+		std::string fetchResourceName(ResourceID resource) const;
 	};
 
 }

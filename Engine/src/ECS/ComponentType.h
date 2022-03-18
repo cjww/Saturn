@@ -24,10 +24,14 @@ namespace sa{
 		template<typename ...Args>
 		MetaComponent invoke(const std::string& name, Args&&... args);
 
+		bool operator==(const ComponentType& other);
+		bool operator!=(const ComponentType& other);
+
 		template<typename T>
 		static void registerComponent();
 
 		static std::vector<ComponentType>& getRegisteredComponents();
+
 
 	};
 

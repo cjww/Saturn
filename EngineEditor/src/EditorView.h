@@ -3,24 +3,27 @@
 #include "EditorModule.h"
 #include <Tools\Math.h>
 #include "ECS/Components.h"
+
+#include <glm\gtc\matrix_transform.hpp>
+
 class EditorView : public EditorModule {
 private:
 	sa::Camera m_camera;
-	RenderWindow* m_pWindow;
+	sa::RenderWindow* m_pWindow;
 
 	bool m_isFocused;
 	glm::vec2 m_lastMousePos;
 	float m_mouseSensitivity;
 	float m_moveSpeed;
 
-	vr::Texture* m_pTexture;
+	sa::Texture m_texture;
 	ImVec2 m_displayedSize;
 	vr::SamplerPtr m_pSampler;
 
 	sa::Entity m_selectedEntity;
 
 public:
-	EditorView(sa::Engine* pEngine, RenderWindow* pWindow);
+	EditorView(sa::Engine* pEngine, sa::RenderWindow* pWindow);
 	virtual ~EditorView() override;
 
 	// moves camera around scene according to input

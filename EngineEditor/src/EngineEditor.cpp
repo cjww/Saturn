@@ -1,5 +1,7 @@
 #include "EngineEditor.h"
 
+#include <Tools\Clock.h>
+
 void EngineEditor::onImGui() {
 	
 
@@ -13,6 +15,7 @@ void EngineEditor::onImGui() {
 		module->onImGui();
 	}
 
+	ImGui::ShowDemoWindow();
 }
 
 EngineEditor::EngineEditor()
@@ -22,19 +25,8 @@ EngineEditor::EngineEditor()
 }
 
 void EngineEditor::openProject(const std::string& projectPath) {
-	/*
-	sa::registerComponentType<comp::Name>();
-	sa::registerComponentType<comp::Transform>();
-	sa::registerComponentType<comp::Model>();
-	sa::registerComponentType<comp::Script>();
-	*/
-
-	m_engine.setup(&m_window, "../setup.xml");
-
-	if (!m_engine.getCurrentScene()) {
-		m_engine.setScene(m_engine.getScene("SaturnScene"));
-	}
-
+	
+	sa::Scene& scene = m_engine.setup(&m_window, "../setup.xml");
 
 	m_editorModules.push_back(std::make_unique<EditorView>(&m_engine, &m_window));
 	EditorView* editorView = static_cast<EditorView*>(m_editorModules.back().get());
@@ -46,25 +38,25 @@ void EngineEditor::openProject(const std::string& projectPath) {
 	
 	m_editorModules.push_back(std::make_unique<SceneView>(&m_engine));
 	
-	sa::Entity e = m_engine.getCurrentScene()->createEntity("Quad");
+	sa::Entity e = scene.createEntity("Quad");
 	e.addComponent<comp::Transform>();
 	e.addComponent<comp::Model>()->modelID = sa::ResourceManager::get().loadQuad();
 	
+	m_engine.createSystemScript("test.lua");
 
-	srand(time(NULL));
+	sa::Clock clock;
 	while (m_window.isOpen()) {
-		auto time = std::chrono::duration_cast<std::chrono::duration<double>>(m_engine.getCPUFrameTime());
-		m_window.setWindowTitle(std::to_string(1.0 / time.count()) + " fps");
-		float dt = static_cast<float>(time.count());
-
 		m_window.pollEvents();
+
 		m_engine.recordImGui();
 
-
 		onImGui();
+
 		
-		
+		float dt = clock.restart();
 		m_engine.update(dt);
+		m_window.setWindowTitle(std::to_string(1.0 / dt) + " fps");
+
 		for (auto& module : m_editorModules) {
 			module->update(dt);
 		}

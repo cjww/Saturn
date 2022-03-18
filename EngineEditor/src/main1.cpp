@@ -1,4 +1,3 @@
-/*
 #include "EngineEditor.h"
 int main(int argc, char** args) {
 
@@ -24,26 +23,7 @@ int main(int argc, char** args) {
 	}
 	return 0;
 }
-*/
-#include <crtdbg.h>
-
-#include "imgui.h"
-#include "imgui_impl_glfw.h"
-#include "imgui_impl_vulkan.h"
-#include <stdio.h>          // printf, fprintf
-#include <stdlib.h>         // abort
-#define GLFW_INCLUDE_NONE
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-#include <vulkan/vulkan.h>
-
-#include <Engine.h>
-#include <Graphics/RenderWindow.h>
-#include <Tools\Clock.h>
-
-#include <SPIRV\spirv_cross.hpp>
-
-#include <Graphics\Vulkan\Renderer.hpp>
+/*
 
 int main(int argc, char** args) {
 
@@ -80,7 +60,7 @@ int main(int argc, char** args) {
 		engine.update(clock.restart());
 
 
-		//ImGui::Image(vr::Renderer::get().getImTextureID(texture, sampler), ImVec2(500, 300));
+		ImGui::Image(vr::Renderer::get().getImTextureID(texture, sampler), ImVec2(500, 300));
 		
 
 		engine.draw();
@@ -89,3 +69,4 @@ int main(int argc, char** args) {
 	engine.cleanup();
 	return 0;
 }
+*/

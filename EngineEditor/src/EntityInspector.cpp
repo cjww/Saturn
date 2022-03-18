@@ -11,12 +11,11 @@ void EntityInspector::makePopups() {
 	}
 
 	if (ImGui::BeginPopup("Select Component")) {
-
-		for (auto type : entt::resolve()) {
-			sa::ComponentType compType(type);
-			
-			if (ImGui::Button(compType.getName().c_str())) {
-				m_selectedEntity.addComponent(compType);
+		for (auto type : sa::ComponentType::getRegisteredComponents()) {
+			if (type == sa::getComponentType<comp::Name>())
+				continue;
+			if (ImGui::Button(type.getName().c_str())) {
+				m_selectedEntity.addComponent(type);
 				ImGui::CloseCurrentPopup();
 			}
 		}
