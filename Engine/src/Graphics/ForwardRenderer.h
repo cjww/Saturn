@@ -56,9 +56,16 @@ namespace sa {
 		uint32_t m_postProcessPipline;
 	
 
+		void createTextures(VkExtent2D extent);
+		void createRenderPasses();
+		void createFramebuffers(VkExtent2D extent);
+		void createPipelines(VkExtent2D extent);
+
 	public:
 		ForwardRenderer();
 		
+		void swapchainResizedCallback(uint32_t width, uint32_t height);
+
 
 		virtual void init(sa::RenderWindow* pWindow, bool setupImGui) override;
 		virtual void cleanup() override;

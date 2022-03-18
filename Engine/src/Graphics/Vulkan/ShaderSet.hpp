@@ -31,6 +31,8 @@ namespace NAME_SPACE {
 
 		bool m_isGraphicsSet;
 
+		ShaderPtr m_pVertexShader, m_pGeometryShader, m_pFragmentShader, m_pComputeShader;
+
 	public:
 		ShaderSet(const ShaderSet&) = delete;
 		ShaderSet operator=(const ShaderSet&) = delete;

@@ -18,6 +18,4 @@ end
 
 function update(dt)
     t.position.z = t.position.z - dt
-    print(t.position.z)
-    
 end

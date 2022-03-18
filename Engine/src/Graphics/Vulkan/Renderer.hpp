@@ -39,6 +39,7 @@ namespace NAME_SPACE {
 
 	struct Framebuffer {
 		std::vector<VkFramebuffer> framebuffers;
+		std::vector<VkImageView> imageViews;
 		VkExtent2D extent;
 	};
 
@@ -68,6 +69,8 @@ namespace NAME_SPACE {
 
 	typedef std::shared_ptr<CommandBuffer> CommandBufferPtr;
 	typedef std::shared_ptr<VkSampler> SamplerPtr;
+
+	typedef std::function<void(uint32_t, uint32_t)> ResizeCallbackFunc;
 
 	class Renderer {
 	protected:		
@@ -109,7 +112,7 @@ namespace NAME_SPACE {
 		std::vector<Pipeline> m_pipelines;
 
 		std::vector<Swapchain> m_swapchains;
-
+		std::unordered_map<uint32_t, ResizeCallbackFunc> m_swapchainResizeCallbacks;
 
 		VkDescriptorPool m_imGuiDescriptorPool;
 		std::unordered_map<Texture*, ImTextureID> m_imGuiImages;
@@ -125,6 +128,8 @@ namespace NAME_SPACE {
 		void createGraphicsCommandBuffers();
 
 		void createSyncronisationObjects();
+
+		VkSurfaceKHR createSurface(GLFWwindow* window);
 
 		VkFramebuffer createFramebuffer(VkExtent2D extent, VkRenderPass renderPass, const std::vector<VkImageView>& imageViews);
 
@@ -169,11 +174,11 @@ namespace NAME_SPACE {
 
 		ImTextureID getImTextureID(Texture* texture, const SamplerPtr& sampler);
 
-		VkSurfaceKHR createSurface(GLFWwindow* window);
-		void destroySurface(VkSurfaceKHR surface);
-
-		uint32_t createSwapchain(VkSurfaceKHR surface);
+		uint32_t createSwapchain(GLFWwindow* window);
 		void recreateSwapchain(uint32_t swapchain);
+
+		void setOnSwapchainResizeCallback(uint32_t swapchain, ResizeCallbackFunc function);
+		void invokeSwapchainResize(uint32_t swapchain);
 
 		uint32_t getNextSwapchainImage(uint32_t swapchain);
 
@@ -241,6 +246,8 @@ namespace NAME_SPACE {
 
 		std::shared_ptr<VkFence> submitToComputeQueue(const CommandBufferPtr& commandBuffer);
 		void waitForFence(std::shared_ptr<VkFence> fence, uint64_t timeout = UINT64_MAX);
+
+		void waitDeviceIdle() const;
 
 		void updateDescriptorSet(const DescriptorSetPtr& descriptorSet, uint32_t binding, const Buffer* buffer, const Texture* image, const SamplerPtr& sampler, bool isOneTimeUpdate);
 

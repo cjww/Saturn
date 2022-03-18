@@ -14,7 +14,7 @@ namespace sa {
 		RenderWindow(uint32_t monitorIndex);
 
 
-		void frame();
+		bool frame();
 
 		void display(bool present);
 

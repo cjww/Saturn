@@ -4,21 +4,8 @@
 #include "Graphics\Vulkan\Renderer.hpp"
 
 namespace sa {
-
-	ForwardRenderer::ForwardRenderer() {
-
-	}
-
-	void ForwardRenderer::init(sa::RenderWindow* pWindow, bool setupImGui) {
-		m_renderer = &vr::Renderer::get();
-		m_useImGui = setupImGui;
-
-		m_pWindow = pWindow;
-
-		sa::Vector2u windowExtent = pWindow->getCurrentExtent();
-
-		VkExtent2D extent = { windowExtent.x, windowExtent.y };
-		
+	
+	void ForwardRenderer::createTextures(VkExtent2D extent) {
 		m_pMainColorTexture = m_renderer->createColorAttachmentTexture(
 			extent,
 			VK_FORMAT_R8G8B8A8_UNORM,
@@ -28,7 +15,7 @@ namespace sa {
 			VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
 
 		m_pDepthTexture = m_renderer->createDepthTexture(extent);
-		
+
 		m_pOutputTexture = m_renderer->createColorAttachmentTexture(
 			extent,
 			VK_FORMAT_R8G8B8A8_UNORM,
@@ -36,8 +23,9 @@ namespace sa {
 			1,
 			VK_SAMPLE_COUNT_1_BIT,
 			VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+	}
 
-		
+	void ForwardRenderer::createRenderPasses() {
 		std::vector<VkAttachmentDescription> mainAttachments(2);
 		mainAttachments[0] = vr::getColorAttachment(m_pMainColorTexture->format, m_pMainColorTexture->sampleCount, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 		mainAttachments[1] = vr::getDepthAttachment(m_pDepthTexture->format, m_pDepthTexture->sampleCount);
@@ -50,7 +38,7 @@ namespace sa {
 
 		mainPassReferences[1].attachment = 1; // m_pDepthTexture
 		mainPassReferences[1].layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-		
+
 
 		VkSubpassDescription mainRenderpass;
 		mainRenderpass.flags = 0;
@@ -65,7 +53,7 @@ namespace sa {
 
 
 		m_mainRenderPass = m_renderer->createRenderPass(mainAttachments, { mainRenderpass }, {});
-		
+
 
 		std::vector<VkAttachmentDescription> postAttachments(1);
 		if (m_useImGui) {
@@ -118,24 +106,75 @@ namespace sa {
 			imguiRenderpasses[0].pResolveAttachments = nullptr;
 
 			m_imguiRenderpass = m_renderer->createRenderPass(imguiAttachments, imguiRenderpasses, {});
-			
-
-			m_imguiFramebuffer = m_renderer->createSwapchainFramebuffer(m_pWindow->getSwapchainID(), m_imguiRenderpass, {});
-			
-			m_renderer->initImGUI(pWindow->getWindowHandle(), m_imguiRenderpass, 0);
 		}
-		
+	}
 
+	void ForwardRenderer::createFramebuffers(VkExtent2D extent)
+	{
 		std::vector<vr::Texture*> additionalAttachments = { m_pMainColorTexture, m_pDepthTexture };
-		
+
 		m_mainFramebuffer = m_renderer->createFramebuffer(m_mainRenderPass, extent, additionalAttachments);
-		
-		if (m_useImGui) {	
+
+		if (m_useImGui) {
 			m_postFramebuffer = m_renderer->createFramebuffer(m_postRenderpass, extent, { m_pOutputTexture });
+			
+			m_imguiFramebuffer = m_renderer->createSwapchainFramebuffer(m_pWindow->getSwapchainID(), m_imguiRenderpass, {});
+			m_renderer->initImGUI(m_pWindow->getWindowHandle(), m_imguiRenderpass, 0);
 		}
 		else {
 			m_postFramebuffer = m_renderer->createSwapchainFramebuffer(m_pWindow->getSwapchainID(), m_postRenderpass, {});
 		}
+	}
+
+	void ForwardRenderer::createPipelines(VkExtent2D extent) {
+		vbl::PipelineConfig pipelineConfig = {};
+		pipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
+
+		m_colorPipeline = m_renderer->createPipeline(extent, m_pColorShaders, m_mainRenderPass, 0, pipelineConfig);
+		m_postProcessPipline = m_renderer->createPipeline(extent, m_pPostProcessShaders, m_postRenderpass, 0, pipelineConfig);
+	}
+
+	ForwardRenderer::ForwardRenderer() {
+
+	}
+
+	void ForwardRenderer::swapchainResizedCallback(uint32_t width, uint32_t height) {
+		std::cout << "resized: " << width << ", " << height << std::endl;
+		m_renderer->waitDeviceIdle();
+
+		//TODO: should this be done here?
+		m_renderer->recreateSwapchain(m_pWindow->getSwapchainID());
+		VkExtent2D extent = { width, height };
+		createTextures(extent);
+		createRenderPasses();
+		createFramebuffers(extent);
+		createPipelines(extent);
+
+		VkImageLayout layout = m_pMainColorTexture->layout;
+		m_pMainColorTexture->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
+		m_renderer->updateDescriptorSet(m_pInputDescriptorSet, 0, nullptr, m_pMainColorTexture, m_sampler, true);
+		m_pMainColorTexture->layout = layout;
+
+	}
+
+	void ForwardRenderer::init(sa::RenderWindow* pWindow, bool setupImGui) {
+		m_renderer = &vr::Renderer::get();
+		m_useImGui = setupImGui;
+
+		m_pWindow = pWindow;
+		
+		// Setup callback
+		m_renderer->setOnSwapchainResizeCallback(m_pWindow->getSwapchainID(), 
+			std::bind(&ForwardRenderer::swapchainResizedCallback, this, std::placeholders::_1, std::placeholders::_2));
+
+		// Get Extent
+		sa::Vector2u windowExtent = m_pWindow->getCurrentExtent();
+		VkExtent2D extent = { windowExtent.x, windowExtent.y };
+		
+		// Create pipeline resources
+		createTextures(extent);
+		createRenderPasses();
+		createFramebuffers(extent);
 
 
 		vr::ShaderPtr vertexShader = m_renderer->createShader("../Engine/shaders/Texture.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
@@ -146,27 +185,26 @@ namespace sa {
 		vr::ShaderPtr postProcessFragmentShader = m_renderer->createShader("../Engine/shaders/PostProcess.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
 		m_pPostProcessShaders = m_renderer->createShaderSet(postProcessVertexShader, postProcessFragmentShader);
 
-		vbl::PipelineConfig pipelineConfig = {};
-		pipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
-
-		m_colorPipeline = m_renderer->createPipeline(extent, m_pColorShaders, m_mainRenderPass, 0, pipelineConfig);
-		m_postProcessPipline = m_renderer->createPipeline(extent, m_pPostProcessShaders, m_postRenderpass, 0, pipelineConfig);
+		createPipelines(extent);
 		
 
+		// Buffers DescriptorSets
 		PerFrameBuffer perFrame = {};
 		glm::mat4 proj = glm::perspective(glm::radians(60.f), 1000.f / 600.f, 0.001f, 100.0f);
 		glm::mat4 view = glm::lookAt(glm::vec3(0, 0, 1), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 		perFrame.projViewMatrix = proj * view;
 		m_pPerFrameBuffer = m_renderer->createUniformBuffer(sizeof(PerFrameBuffer), &perFrame);
 
-		//m_pLightBuffer = m_renderer->createUniformBuffer(sizeof(Light) * 64, nullptr);
-
 		m_pPerFrameDescriptorSet = m_pColorShaders->getDescriptorSet(SET_PER_FRAME);
 		m_renderer->updateDescriptorSet(m_pPerFrameDescriptorSet, 0, m_pPerFrameBuffer, nullptr, nullptr, true);
 		
+		//m_pLightBuffer = m_renderer->createUniformBuffer(sizeof(Light) * 64, nullptr);
+		//m_renderer->updateDescriptorSet(m_pPerFrameDescriptorSet, 1, m_pLightBuffer, nullptr, nullptr, true);
+
+		// Sampler
 		m_sampler = m_renderer->createSampler(VK_FILTER_LINEAR);
 
-		//m_renderer->updateDescriptorSet(m_pPerFrameDescriptorSet, 1, m_pLightBuffer, nullptr, nullptr, true);
+		// Texture DescriptorSets
 		m_pInputDescriptorSet = m_pPostProcessShaders->getDescriptorSet(0);
 		VkImageLayout layout = m_pMainColorTexture->layout;
 		m_pMainColorTexture->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -196,7 +234,10 @@ namespace sa {
 	}
 
 	void ForwardRenderer::draw(Scene* scene) {
-		m_pWindow->frame();
+		if (!m_pWindow->frame()) {
+			if(m_useImGui) ImGui::EndFrame();
+			return;
+		}
 
 
 		m_renderer->beginRenderPass(m_mainRenderPass, m_mainFramebuffer, VK_SUBPASS_CONTENTS_INLINE);

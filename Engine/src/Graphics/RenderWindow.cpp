@@ -4,27 +4,25 @@
 #include "Graphics\Vulkan\Renderer.hpp"
 #include "GLFW\glfw3.h"
 
+#include <thread>
+
 namespace sa {
 
 	RenderWindow::RenderWindow(uint32_t width, uint32_t height, const char* title) : Window(width, height, title) {
-
-		VkSurfaceKHR surface = vr::Renderer::get().createSurface(this->getWindowHandle());
-		m_swapchain = vr::Renderer::get().createSwapchain(surface);
-
+		m_swapchain = vr::Renderer::get().createSwapchain(getWindowHandle());
 	}
 
 	RenderWindow::RenderWindow(uint32_t monitorIndex) : Window(monitorIndex) {
-
-		VkSurfaceKHR surface = vr::Renderer::get().createSurface(this->getWindowHandle());
-		m_swapchain = vr::Renderer::get().createSwapchain(surface);
-
+		m_swapchain = vr::Renderer::get().createSwapchain(getWindowHandle());
 	}
 
 
-	void RenderWindow::frame() {
-		if (!vr::Renderer::get().beginFrame(m_swapchain)) {
-
+	bool RenderWindow::frame() {
+		while (isIconified()) { // TODO: better way?
+			pollEvents();
 		}
+
+		return vr::Renderer::get().beginFrame(m_swapchain);
 	}
 
 	void RenderWindow::display(bool present) {

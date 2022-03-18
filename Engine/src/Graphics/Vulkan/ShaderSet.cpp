@@ -5,7 +5,9 @@ namespace NAME_SPACE {
 	ShaderSet::ShaderSet(VkDevice device, uint32_t swapChainImageCount, const ShaderPtr& vertexShader, const ShaderPtr& fragmentShader)
 		: m_device(device)
 		, m_swapChainImageCount(swapChainImageCount)
-		, m_isGraphicsSet(true) 
+		, m_isGraphicsSet(true)
+		, m_pVertexShader(vertexShader)
+		, m_pFragmentShader(fragmentShader)
 	{
 		if ((vertexShader->getStage() | fragmentShader->getStage()) != (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)) {
 			throw std::runtime_error("Missing stages");
@@ -105,6 +107,9 @@ namespace NAME_SPACE {
 		: m_device(device)
 		, m_swapChainImageCount(swapChainImageCount)
 		, m_isGraphicsSet(true)
+		, m_pVertexShader(vertexShader)
+		, m_pGeometryShader(geometryShader)
+		, m_pFragmentShader(fragmentShader)
 	{
 		if ((vertexShader->getStage() | geometryShader->getStage() | fragmentShader->getStage()) != (VK_SHADER_STAGE_VERTEX_BIT | VK_SHADER_STAGE_GEOMETRY_BIT | VK_SHADER_STAGE_FRAGMENT_BIT)) {
 			throw std::runtime_error("Missing stages");
@@ -225,6 +230,7 @@ namespace NAME_SPACE {
 		: m_device(device)
 		, m_swapChainImageCount(swapChainImageCount)
 		, m_isGraphicsSet(false)
+		, m_pComputeShader(computeShader)
 	{
 		if (computeShader->getStage() != VK_SHADER_STAGE_COMPUTE_BIT) {
 			throw std::runtime_error("Missing compute stage");

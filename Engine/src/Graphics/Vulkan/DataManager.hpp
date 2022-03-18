@@ -33,6 +33,13 @@ namespace NAME_SPACE {
 		VkSampleCountFlagBits sampleCount;
 		VkExtent3D extent;
 
+		uint32_t arrayLayers;
+		VkImageType imageType;
+		uint32_t mipLevels;
+		VkSharingMode sharingMode;
+		VkImageTiling tiling;
+		VkImageUsageFlags usage;
+
 		using Resource::Resource;
 		Texture(const Texture&) = delete;
 

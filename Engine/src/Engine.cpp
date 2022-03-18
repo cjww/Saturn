@@ -67,7 +67,7 @@ namespace sa {
 		if (pWindow)
 		{
 			m_pRenderTechnique = std::make_unique<ForwardRenderer>();
-			m_pRenderTechnique->init(pWindow, true);
+			m_pRenderTechnique->init(pWindow, false);
 		}
 		setScene("MainScene");
 	

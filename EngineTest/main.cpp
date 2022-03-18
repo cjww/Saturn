@@ -13,10 +13,10 @@ void createTriangleEntity(sa::Engine& engine) {
 	comp::Model* model = entity.addComponent<comp::Model>();
 	entity.addComponent<comp::Transform>()->position = { (float)(rand() % 20) - (20/2), (float)(rand() % 10), -10};
 
-	model->modelID = sa::ResourceManager::get().createModel();
+	auto [modelID, modelData] = sa::ResourceManager::get().createModel();
+	model->modelID = modelID;
 
 	{
-		sa::ModelData* modelData = sa::ResourceManager::get().getModel(model->modelID);
 		std::vector<sa::VertexUV> vertices = {
 			{{0, 0, 0, 1}, {0, 0}},
 			{{1, 0, 0, 1}, {1, 0}},

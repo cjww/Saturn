@@ -142,6 +142,12 @@ namespace NAME_SPACE {
 		image->layout = initialLayout;
 		image->sampleCount = sampleCount;
 		image->extent = extent;
+		image->arrayLayers = arrayLayers;
+		image->imageType = type;
+		image->mipLevels = mipLevels;
+		image->sharingMode = sharingMode;
+		image->tiling = tiling;
+		image->usage = usage;
 
 
 		VkImageCreateInfo info = {};

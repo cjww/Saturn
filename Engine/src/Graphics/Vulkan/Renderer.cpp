@@ -150,8 +150,6 @@ namespace NAME_SPACE {
 		return framebuffer;
 	}
 
-
-
 	Renderer::Renderer()
 	{
 		
@@ -365,7 +363,7 @@ namespace NAME_SPACE {
 
 		VkResult res = vkAcquireNextImageKHR(m_device, swapchain.swapchain, UINT64_MAX, m_imageAvailableSemaphore[m_frameIndex], VK_NULL_HANDLE, &swapchain.currentImageIndex);
 		if (res == VK_ERROR_OUT_OF_DATE_KHR || res == VK_SUBOPTIMAL_KHR) {
-			//recreateSwapchain(swapchainIndex);
+			invokeSwapchainResize(swapchainIndex);
 			return -1;
 		}
 		else {
@@ -419,25 +417,22 @@ namespace NAME_SPACE {
 		return surface;
 	}
 
-	void Renderer::destroySurface(VkSurfaceKHR surface) {
-		vkDestroySurfaceKHR(m_instance, surface, nullptr);
-	}
+	uint32_t Renderer::createSwapchain(GLFWwindow* window) {
 
-	uint32_t Renderer::createSwapchain(VkSurfaceKHR surface) {
 		m_swapchains.push_back({});
 		Swapchain& swapchain = m_swapchains.back();
+		swapchain.surface = createSurface(window);
 		vbl::printError(
-			vbl::createSwapchain(&swapchain.swapchain, m_device, m_physicalDevice, surface, &m_graphicsQueueInfo, 1, &swapchain.format),
+			vbl::createSwapchain(&swapchain.swapchain, m_device, m_physicalDevice, swapchain.surface, &m_graphicsQueueInfo, 1, &swapchain.format),
 			"Failed to create swap chain",
 			true
 		);
 
 		VkSurfaceCapabilitiesKHR surfaceCapabilities = {};
 		vbl::printError(
-			vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_physicalDevice, surface, &surfaceCapabilities)
+			vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_physicalDevice, swapchain.surface, &surfaceCapabilities)
 		);
 		swapchain.extent = surfaceCapabilities.currentExtent;
-		swapchain.surface = surface;
 
 		uint32_t count;
 		vkGetSwapchainImagesKHR(m_device, swapchain.swapchain, &count, nullptr);
@@ -463,20 +458,20 @@ namespace NAME_SPACE {
 	void Renderer::recreateSwapchain(uint32_t swapchain) {
 		
 		vkDeviceWaitIdle(m_device);
-		destroySyncronisationObjects();
-		freeGraphicsCommandBuffers();
 
 		Swapchain& s = m_swapchains.at(swapchain);
-		vkDestroySwapchainKHR(m_device, s.swapchain, nullptr);
-		for (auto& imageView: s.imageViews) {
-			vkDestroyImageView(m_device, imageView, nullptr);
-		}
 
 		vbl::printError(
 			vbl::createSwapchain(&s.swapchain, m_device, m_physicalDevice, s.surface, &m_graphicsQueueInfo, 1, &s.format),
 			"Failed to create swap chain",
 			true
 		);
+		destroySyncronisationObjects();
+
+		//vkDestroySwapchainKHR(m_device, s.swapchain, nullptr);
+		for (auto& imageView : s.imageViews) {
+			vkDestroyImageView(m_device, imageView, nullptr);
+		}
 
 		VkSurfaceCapabilitiesKHR surfaceCapabilities = {};
 		vbl::printError(
@@ -489,6 +484,8 @@ namespace NAME_SPACE {
 		s.images.resize(count);
 		m_inFlightCount = count;
 		vkGetSwapchainImagesKHR(m_device, s.swapchain, &count, s.images.data());
+		
+		s.currentImageIndex = 0;
 
 		s.imageViews.resize(count);
 		for (uint32_t i = 0; i < m_inFlightCount; i++) {
@@ -501,9 +498,22 @@ namespace NAME_SPACE {
 				0
 			);
 		}
-
-		createGraphicsCommandBuffers();
 		createSyncronisationObjects();
+	}
+
+	void Renderer::setOnSwapchainResizeCallback(uint32_t swapchain, ResizeCallbackFunc function) {
+		m_swapchainResizeCallbacks[swapchain] = function;
+	}
+
+	void Renderer::invokeSwapchainResize(uint32_t swapchain) {
+		if (m_swapchainResizeCallbacks.count(swapchain)) {
+			VkSurfaceCapabilitiesKHR capabilities;
+			vbl::printError(
+				vkGetPhysicalDeviceSurfaceCapabilitiesKHR(m_physicalDevice, m_swapchains.at(swapchain).surface, &capabilities),
+				"Failed to get surface capabilities"
+			);
+			m_swapchainResizeCallbacks.at(swapchain)(capabilities.currentExtent.width, capabilities.currentExtent.height);
+		}
 	}
 
 	void Renderer::submit() {
@@ -623,13 +633,13 @@ namespace NAME_SPACE {
 		Framebuffer framebuffer;
 		framebuffer.framebuffers.resize(m_inFlightCount);
 		for (uint32_t i = 0; i < m_inFlightCount; i++) {
-			std::vector<VkImageView> views(additionalAttachments.size() + 1);
-			views[0] = m_swapchains.at(swapchain).imageViews[i];
+			framebuffer.imageViews.resize(additionalAttachments.size() + 1);
+			framebuffer.imageViews[0] = m_swapchains.at(swapchain).imageViews[i];
 			for (uint32_t j = 0; j < (uint32_t)additionalAttachments.size(); j++) {
-				views[j + 1] = additionalAttachments[j]->view;
+				framebuffer.imageViews[j + 1] = additionalAttachments[j]->view;
 			}
 
-			framebuffer.framebuffers[i] = createFramebuffer(m_swapchains.at(swapchain).extent, m_renderPasses.at(renderPass).renderPass, views);
+			framebuffer.framebuffers[i] = createFramebuffer(m_swapchains.at(swapchain).extent, m_renderPasses.at(renderPass).renderPass, framebuffer.imageViews);
 		}		
 		framebuffer.extent = m_swapchains.at(swapchain).extent;
 
@@ -643,12 +653,12 @@ namespace NAME_SPACE {
 		framebuffer.framebuffers.resize(m_inFlightCount);
 		for (uint32_t i = 0; i < m_inFlightCount; i++) {
 			
-			std::vector<VkImageView> views(attachments.size());
+			framebuffer.imageViews.resize(attachments.size());
 			for (uint32_t j = 0; j < (uint32_t)attachments.size(); j++) {
-				views[j] = attachments[j]->view;
+				framebuffer.imageViews[j] = attachments[j]->view;
 			}
 
-			framebuffer.framebuffers[i] = createFramebuffer(extent, m_renderPasses[renderPass].renderPass, views);
+			framebuffer.framebuffers[i] = createFramebuffer(extent, m_renderPasses[renderPass].renderPass, framebuffer.imageViews);
 		}
 		framebuffer.extent = extent;
 
@@ -1351,6 +1361,10 @@ namespace NAME_SPACE {
 	void Renderer::bindViewports(const std::vector<VkViewport>& viewports, const CommandBufferPtr& commandBuffer, uint32_t frameIndex) {
 		uint32_t realFrameIndex = (frameIndex == -1) ? m_frameIndex : frameIndex;
 		vkCmdSetViewport((commandBuffer == nullptr) ? m_graphicsCommandBuffers[realFrameIndex] : commandBuffer->buffers[realFrameIndex], 0, viewports.size(), viewports.data());
+	}
+
+	void Renderer::waitDeviceIdle() const {
+		vkDeviceWaitIdle(m_device);
 	}
 
 	void Renderer::bindViewport(const VkViewport& viewport, const CommandBufferPtr& commandBuffer, uint32_t frameIndex) {
