@@ -29,6 +29,8 @@ namespace sa {
 		virtual sa::Texture getOutputTexture() const = 0;
 
 		virtual sa::Texture createShaderTexture2D(const sa::Image& img) = 0;
+
+		sa::Vector2u getCurrentExtent() const;
 		
 	};
 }

@@ -120,8 +120,7 @@ namespace sa {
 
 		registered = true;
 		if constexpr (std::is_base_of_v<sa::ComponentBase, std::decay_t<Comp>>) {
-			std::cout << "Registered component " << getComponentName<Comp>();
-
+			
 			using namespace entt::literals;
 			entt::meta<Comp>()
 				.type(entt::hashed_string(getComponentName<Comp>().c_str()))
@@ -134,16 +133,13 @@ namespace sa {
 			ComponentType::registerComponent<Comp>();
 		}
 		if constexpr (std::is_base_of_v<sa::LuaAccessable, std::decay_t<Comp>>) {
-			std::cout << " : lua accessable";
-
+			
 			auto type = LuaAccessable::registerComponent<Comp>();
 			Comp::luaReg(type);
 
 			updateEntityType();
 
 		}
-		
-		std::cout << std::endl;
 
 	}
 

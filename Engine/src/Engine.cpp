@@ -97,7 +97,14 @@ namespace sa {
 		if (m_currentScene) {
 			m_scriptManager.update(dt, m_currentScene);
 			m_currentScene->update(dt);
+			if (m_pRenderTechnique->getCurrentExtent().length() > 1.f) {
+				for (auto& camera : m_currentScene->getActiveCameras()) {
+					camera->setViewport(sa::Rect({ 0, 0 }, m_pRenderTechnique->getCurrentExtent()));
+				}
+			}
+		
 		}
+
 	}
 
 	void Engine::cleanup() {

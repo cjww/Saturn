@@ -8,10 +8,15 @@
 #include <filesystem>
 #include <Tools\ScopeTimer.h>
 
+int randomRange(int min, int max) {
+	return (rand() % (max - min)) - (max - min)/2;
+}
+
 void createTriangleEntity(sa::Engine& engine) {
 	sa::Entity entity = engine.getCurrentScene()->createEntity();
 	comp::Model* model = entity.addComponent<comp::Model>();
-	entity.addComponent<comp::Transform>()->position = { (float)(rand() % 20) - (20/2), (float)(rand() % 10), -10};
+	entity.addComponent<comp::Transform>()->position = { (float)randomRange(-20, 20), (float)randomRange(-20, 20), randomRange(-10, 40)};
+	entity.addComponent<comp::Script>();
 
 	auto [modelID, modelData] = sa::ResourceManager::get().createModel();
 	model->modelID = modelID;
@@ -35,6 +40,13 @@ void createTriangleEntity(sa::Engine& engine) {
 
 		modelData->meshes.push_back(mesh);
 	}
+}
+
+void createQuad(sa::Engine& engine) {
+	sa::Entity entity = engine.getCurrentScene()->createEntity();
+	entity.addComponent<comp::Model>()->modelID = sa::ResourceManager::get().loadQuad();
+	entity.addComponent<comp::Transform>()->position = { (float)randomRange(-50, 50), (float)randomRange(-50, 50), randomRange(-10, 40) };
+	entity.addComponent<comp::Script>();
 }
 
 void regenerate(sa::Scene* scene) {
@@ -85,8 +97,9 @@ int main() {
 	camera.lookAt({ 0, 0, 0 });
 	engine.getCurrentScene()->addActiveCamera(&camera);
 
-	for (int i = 0; i < 10; i++) {
-		createTriangleEntity(engine);
+	for (int i = 0; i < 15000; i++) {
+		//createTriangleEntity(engine);
+		createQuad(engine);
 	}
 
 	engine.createSystemScript("test.lua");
@@ -116,7 +129,7 @@ int main() {
 			window.setWindowTitle("FPS: " + std::to_string(1 / dt));
 			fpsClock.restart();
 		}
-		
+		camera.setPosition(camera.getPosition() - camera.getForward() * dt);
 		/*
 		if (generateTimer.getElapsedTime() > 0.5f) {
 			generateTimer.restart();

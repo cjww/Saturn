@@ -1,5 +1,6 @@
 #pragma once
 #include <glm\glm.hpp>
+#include <glm\geometric.hpp>
 #include <algorithm>
 #include <string>
 
@@ -33,6 +34,10 @@ namespace sa {
 		Vector<Comp, Type>& operator-=(const Vector<Comp, Type>& other);
 
 		std::string toString() const;
+
+		float length() const;
+		float distance(const sa::Vector<Comp, Type>& other) const;
+
 
 	};
 
@@ -133,6 +138,17 @@ namespace sa {
 		}
 		str += " )";
 		return str;
+	}
+
+	template<unsigned Comp, typename Type>
+	inline float Vector<Comp, Type>::length() const {
+		glm::vec<Comp, float> v = *this;
+		return glm::length(v);
+	}
+
+	template<unsigned Comp, typename Type>
+	inline float Vector<Comp, Type>::distance(const sa::Vector<Comp, Type>& other) const {
+		return (other - *this).length();
 	}
 
 }

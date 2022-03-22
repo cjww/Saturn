@@ -339,7 +339,8 @@ namespace NAME_SPACE {
 		std::vector<VkDescriptorSetLayout> layouts(m_swapChainImageCount, m_descriptorSetLayouts[setIndex]);
 		vbl::printError(
 			vbl::allocateDescriptorSets(descriptorSet->descriptorSets.data(), m_device, layouts.data(), descriptorSet->descriptorSets.size(), m_descriptorPool),
-			"Failed to allocate descriptor set"
+			"Failed to allocate descriptor set",
+			true
 		);
 		descriptorSet->setIndex = setIndex;
 

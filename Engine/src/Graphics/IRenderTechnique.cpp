@@ -7,4 +7,8 @@ namespace sa {
         return m_useImGui;
     }
 
+    sa::Vector2u IRenderTechnique::getCurrentExtent() const {
+        return m_pWindow->getCurrentExtent();
+    }
+
 }
