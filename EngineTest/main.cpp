@@ -46,7 +46,7 @@ void createQuad(sa::Engine& engine) {
 	sa::Entity entity = engine.getCurrentScene()->createEntity();
 	entity.addComponent<comp::Model>()->modelID = sa::ResourceManager::get().loadQuad();
 	entity.addComponent<comp::Transform>()->position = { (float)randomRange(-50, 50), (float)randomRange(-50, 50), randomRange(-10, 40) };
-	entity.addComponent<comp::Script>();
+	//entity.addComponent<comp::Script>();
 }
 
 void regenerate(sa::Scene* scene) {
@@ -97,7 +97,7 @@ int main() {
 	camera.lookAt({ 0, 0, 0 });
 	engine.getCurrentScene()->addActiveCamera(&camera);
 
-	for (int i = 0; i < 15000; i++) {
+	for (int i = 0; i < 1000; i++) {
 		//createTriangleEntity(engine);
 		createQuad(engine);
 	}

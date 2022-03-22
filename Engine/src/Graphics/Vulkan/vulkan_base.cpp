@@ -588,20 +588,23 @@ namespace vbl {
         multisample.sampleShadingEnable = VK_FALSE;
         multisample.rasterizationSamples = config.multisample.sampleCount;
 
-		VkPipelineColorBlendAttachmentState colorAttachment = {};
-		colorAttachment.colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
-		colorAttachment.blendEnable = config.colorBlend.enable;
-		colorAttachment.colorBlendOp = config.colorBlend.colorBlendOp;
-		colorAttachment.alphaBlendOp = config.colorBlend.alphaBlendOp;
-        colorAttachment.srcColorBlendFactor = config.colorBlend.srcColorBlendFactor;
-		colorAttachment.dstColorBlendFactor = config.colorBlend.dstColorBlendFactor;
-        colorAttachment.srcAlphaBlendFactor = config.colorBlend.srcAlphaBlendFactor;
-		colorAttachment.dstAlphaBlendFactor = config.colorBlend.dstAlphaBlendFactor;
+        std::vector<VkPipelineColorBlendAttachmentState> colorAttachments(config.colorBlends.size());
+        for (int i = 0; i < config.colorBlends.size(); i++) {
+
+		    colorAttachments[i].colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT | VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT;
+		    colorAttachments[i].blendEnable = config.colorBlends[i].enable;
+		    colorAttachments[i].colorBlendOp = config.colorBlends[i].colorBlendOp;
+		    colorAttachments[i].alphaBlendOp = config.colorBlends[i].alphaBlendOp;
+            colorAttachments[i].srcColorBlendFactor = config.colorBlends[i].srcColorBlendFactor;
+		    colorAttachments[i].dstColorBlendFactor = config.colorBlends[i].dstColorBlendFactor;
+            colorAttachments[i].srcAlphaBlendFactor = config.colorBlends[i].srcAlphaBlendFactor;
+		    colorAttachments[i].dstAlphaBlendFactor = config.colorBlends[i].dstAlphaBlendFactor;
+        }
 
 		VkPipelineColorBlendStateCreateInfo colorBlend = {};
 	    colorBlend.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO;
-        colorBlend.attachmentCount = 1;
-        colorBlend.pAttachments = &colorAttachment;
+        colorBlend.attachmentCount = colorAttachments.size();
+        colorBlend.pAttachments = colorAttachments.data();
         colorBlend.logicOpEnable = VK_FALSE;
 
 

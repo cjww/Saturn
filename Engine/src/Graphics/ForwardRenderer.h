@@ -44,6 +44,7 @@ namespace sa {
 		vr::Texture* m_pDepthTexture;
 		vr::Texture* m_pMainColorTexture;
 		vr::Texture* m_pOutputTexture;
+		vr::Texture* m_pBrightnessTexture;
 		vr::SamplerPtr m_sampler;
 
 		uint32_t m_mainRenderPass;

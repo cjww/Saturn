@@ -23,21 +23,33 @@ namespace sa {
 			1,
 			VK_SAMPLE_COUNT_1_BIT,
 			VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+
+		m_pBrightnessTexture = m_renderer->createColorAttachmentTexture(
+			extent,
+			m_pMainColorTexture->format,
+			1,
+			1,
+			VK_SAMPLE_COUNT_1_BIT,
+			VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
 	}
 
 	void ForwardRenderer::createRenderPasses() {
-		std::vector<VkAttachmentDescription> mainAttachments(2);
+		std::vector<VkAttachmentDescription> mainAttachments(3);
 		mainAttachments[0] = vr::getColorAttachment(m_pMainColorTexture->format, m_pMainColorTexture->sampleCount, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 		mainAttachments[1] = vr::getDepthAttachment(m_pDepthTexture->format, m_pDepthTexture->sampleCount);
+		mainAttachments[2] = vr::getColorAttachment(m_pBrightnessTexture->format, m_pBrightnessTexture->sampleCount, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 
 
 
-		std::vector<VkAttachmentReference> mainPassReferences(2);
+		std::vector<VkAttachmentReference> mainPassReferences(3);
 		mainPassReferences[0].attachment = 0; // m_pMainColorTexture / output
 		mainPassReferences[0].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 		mainPassReferences[1].attachment = 1; // m_pDepthTexture
 		mainPassReferences[1].layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
+
+		mainPassReferences[2].attachment = 2; // m_pBrightnessTexture
+		mainPassReferences[2].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
 
 
 		VkSubpassDescription mainRenderpass;
@@ -46,8 +58,10 @@ namespace sa {
 		mainRenderpass.inputAttachmentCount = 0;
 		mainRenderpass.preserveAttachmentCount = 0;
 
-		mainRenderpass.colorAttachmentCount = 1;
-		mainRenderpass.pColorAttachments = &mainPassReferences[0];
+		std::vector<VkAttachmentReference> colorRef = { mainPassReferences[0], mainPassReferences[2] };
+
+		mainRenderpass.colorAttachmentCount = colorRef.size();
+		mainRenderpass.pColorAttachments = colorRef.data();
 		mainRenderpass.pDepthStencilAttachment = &mainPassReferences[1];
 		mainRenderpass.pResolveAttachments = nullptr;
 
@@ -111,7 +125,7 @@ namespace sa {
 
 	void ForwardRenderer::createFramebuffers(VkExtent2D extent)
 	{
-		std::vector<vr::Texture*> additionalAttachments = { m_pMainColorTexture, m_pDepthTexture };
+		std::vector<vr::Texture*> additionalAttachments = { m_pMainColorTexture, m_pDepthTexture, m_pBrightnessTexture };
 
 		m_mainFramebuffer = m_renderer->createFramebuffer(m_mainRenderPass, extent, additionalAttachments);
 
@@ -130,7 +144,10 @@ namespace sa {
 		vbl::PipelineConfig pipelineConfig = {};
 		pipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
 
+		pipelineConfig.colorBlends.resize(2);
 		m_colorPipeline = m_renderer->createPipeline(extent, m_pColorShaders, m_mainRenderPass, 0, pipelineConfig);
+
+		pipelineConfig.colorBlends.resize(1);
 		m_postProcessPipline = m_renderer->createPipeline(extent, m_pPostProcessShaders, m_postRenderpass, 0, pipelineConfig);
 	}
 

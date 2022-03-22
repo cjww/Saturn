@@ -62,7 +62,9 @@ namespace vbl {
             VkBlendFactor dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA;
             VkBlendFactor srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE;
             VkBlendFactor dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO;
-        } colorBlend;
+        };
+        std::vector<ColorBlend> colorBlends;
+
         struct DepthStencilState {
             VkBool32 depthBoundsTestEnable = VK_FALSE;
             VkCompareOp depthCompareOp = VK_COMPARE_OP_LESS_OR_EQUAL;
