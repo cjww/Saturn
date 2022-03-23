@@ -247,6 +247,7 @@
     <ClInclude Include="src\ECS\ComponentType.h" />
     <ClInclude Include="src\Graphics\Buffer.h" />
     <ClInclude Include="src\Graphics\Texture.h" />
+    <ClInclude Include="src\Graphics\Vulkan\IRenderPass.h" />
     <ClInclude Include="src\Graphics\Window.hpp" />
     <ClInclude Include="src\internal\internalVector.h" />
     <ClInclude Include="src\Graphics\RenderWindow.hpp" />

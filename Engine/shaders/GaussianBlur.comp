@@ -1,0 +1,14 @@
+#version 420
+#extension GL_ARB_compute_shader : enable
+layout (local_size_x = 32, local_size_y = 32) in;
+
+
+
+void main() {
+
+    int value = 0;
+    for(int i = 0; i < 500000; i++) {
+        value += 1;
+    }
+
+}

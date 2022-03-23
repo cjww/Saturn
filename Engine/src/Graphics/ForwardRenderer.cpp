@@ -145,10 +145,10 @@ namespace sa {
 		pipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
 
 		pipelineConfig.colorBlends.resize(2);
-		m_colorPipeline = m_renderer->createPipeline(extent, m_pColorShaders, m_mainRenderPass, 0, pipelineConfig);
+		m_colorPipeline = m_renderer->createPipeline(m_pColorShaders, extent, m_mainRenderPass, 0, pipelineConfig);
 
 		pipelineConfig.colorBlends.resize(1);
-		m_postProcessPipline = m_renderer->createPipeline(extent, m_pPostProcessShaders, m_postRenderpass, 0, pipelineConfig);
+		m_postProcessPipline = m_renderer->createPipeline(m_pPostProcessShaders, extent, m_postRenderpass, 0, pipelineConfig);
 	}
 
 	ForwardRenderer::ForwardRenderer() {
@@ -205,6 +205,16 @@ namespace sa {
 		createPipelines(extent);
 		
 
+		vr::ShaderPtr blurComputeShader = m_renderer->createShader("../Engine/shaders/GaussianBlur.comp.spv", VK_SHADER_STAGE_COMPUTE_BIT);
+		m_pBlurComputeShader = m_renderer->createShaderSet(blurComputeShader);
+		m_blurPipeline = m_renderer->createPipeline(m_pBlurComputeShader);
+
+		m_blurCommandBuffer = m_renderer->createCommandBuffer(true);
+		m_renderer->recordCommandBuffer(m_blurCommandBuffer, [&](uint32_t frameIndex) {
+			m_renderer->bindPipeline(m_blurPipeline, m_blurCommandBuffer, frameIndex);
+			vkCmdDispatch(m_blurCommandBuffer->buffers[frameIndex], 32, 32, 1);
+		}, false);
+
 		// Buffers DescriptorSets
 		PerFrameBuffer perFrame = {};
 		glm::mat4 proj = glm::perspective(glm::radians(60.f), 1000.f / 600.f, 0.001f, 100.0f);
@@ -238,6 +248,8 @@ namespace sa {
 		m_pPerFrameDescriptorSet.reset();
 		m_pInputDescriptorSet.reset();
 
+		m_pBlurComputeShader.reset();
+
 		m_sampler.reset();
 		if (m_useImGui) {
 			m_renderer->cleanupImGUI();
@@ -256,6 +268,7 @@ namespace sa {
 			return;
 		}
 
+		auto fence = m_renderer->submitToComputeQueue(m_blurCommandBuffer);
 
 		m_renderer->beginRenderPass(m_mainRenderPass, m_mainFramebuffer, VK_SUBPASS_CONTENTS_INLINE);
 		m_renderer->bindPipeline(m_colorPipeline);
@@ -343,6 +356,8 @@ namespace sa {
 			m_renderer->endFrameImGUI();
 		}
 		m_renderer->endRenderPass();
+
+		m_renderer->waitForFence(fence);
 
 		m_pWindow->display(true);
 

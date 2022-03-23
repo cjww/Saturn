@@ -31,6 +31,8 @@ namespace sa {
 		vr::ShaderSetPtr m_pColorShaders;
 		vr::ShaderSetPtr m_pPostProcessShaders;
 
+		vr::ShaderSetPtr m_pBlurComputeShader;
+
 		vr::DescriptorSetPtr m_pPerFrameDescriptorSet;
 		vr::Buffer* m_pPerFrameBuffer;
 		vr::Buffer* m_pLightBuffer;
@@ -43,19 +45,24 @@ namespace sa {
 
 		vr::Texture* m_pDepthTexture;
 		vr::Texture* m_pMainColorTexture;
-		vr::Texture* m_pOutputTexture;
-		vr::Texture* m_pBrightnessTexture;
-		vr::SamplerPtr m_sampler;
 
+		vr::Texture* m_pBrightnessTexture;
+		vr::Texture* m_pBlurredBrightnessTexture;
+		
+		vr::Texture* m_pOutputTexture;
+		
+		vr::SamplerPtr m_sampler;
+		
 		uint32_t m_mainRenderPass;
 		uint32_t m_postRenderpass;
 		uint32_t m_imguiRenderpass;
-
-
 		
 		uint32_t m_colorPipeline;
 		uint32_t m_postProcessPipline;
-	
+
+		uint32_t m_blurPipeline;
+
+		vr::CommandBufferPtr m_blurCommandBuffer;
 
 		void createTextures(VkExtent2D extent);
 		void createRenderPasses();

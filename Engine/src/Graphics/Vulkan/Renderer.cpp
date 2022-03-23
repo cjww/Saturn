@@ -1055,7 +1055,7 @@ namespace NAME_SPACE {
 		return std::make_shared<Shader>(m_device, path, stage);
 	}
 
-	uint32_t Renderer::createPipeline(VkExtent2D extent, const ShaderSetPtr& shaderSet, uint32_t renderPass, uint32_t subpassIndex, vbl::PipelineConfig config) {
+	uint32_t Renderer::createPipeline(const ShaderSetPtr& shaderSet, VkExtent2D extent, uint32_t renderPass, uint32_t subpassIndex, vbl::PipelineConfig config) {
 		if (shaderSet->isGraphicsSet()) {
 
 			auto vertexAttributes = shaderSet->getVertexAttributes();
@@ -1090,8 +1090,8 @@ namespace NAME_SPACE {
 
 	uint32_t Renderer::createPipeline(uint32_t swapchain, const ShaderSetPtr& shaderSet, uint32_t renderPass, uint32_t subpassIndex, vbl::PipelineConfig config) {
 		if (swapchain == -1)
-			return createPipeline({ 0, 0 }, shaderSet, renderPass, subpassIndex, config);
-		return createPipeline(m_swapchains.at(swapchain).extent, shaderSet, renderPass, subpassIndex, config);
+			return createPipeline(shaderSet, { 0, 0 }, renderPass, subpassIndex, config);
+		return createPipeline(shaderSet, m_swapchains.at(swapchain).extent, renderPass, subpassIndex, config);
 	}
 
 	ShaderSetPtr Renderer::createShaderSet(const ShaderPtr& vertexShader, const ShaderPtr& fragmentShader) {
