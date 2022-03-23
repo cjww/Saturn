@@ -30,7 +30,16 @@ namespace sa {
 			1,
 			1,
 			VK_SAMPLE_COUNT_1_BIT,
-			VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+			VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+
+		m_pBlurredBrightnessTexture = m_renderer->createColorAttachmentTexture(
+			extent,
+			m_pMainColorTexture->format,
+			1,
+			1,
+			VK_SAMPLE_COUNT_1_BIT,
+			VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+
 	}
 
 	void ForwardRenderer::createRenderPasses() {
@@ -209,11 +218,30 @@ namespace sa {
 		m_pBlurComputeShader = m_renderer->createShaderSet(blurComputeShader);
 		m_blurPipeline = m_renderer->createPipeline(m_pBlurComputeShader);
 
+
+
+		m_pBlurDescriptorSet = m_pBlurComputeShader->getDescriptorSet(0);
+		{
+			VkImageLayout layout = m_pBrightnessTexture->layout;
+			m_pBrightnessTexture->layout = VK_IMAGE_LAYOUT_GENERAL;
+			m_renderer->updateDescriptorSet(m_pBlurDescriptorSet, 0, nullptr, m_pBrightnessTexture, nullptr, true);
+			m_pBrightnessTexture->layout = layout;
+		}
+		{
+			VkImageLayout layout = m_pBlurredBrightnessTexture->layout;
+			m_pBlurredBrightnessTexture->layout = VK_IMAGE_LAYOUT_GENERAL;
+			m_renderer->updateDescriptorSet(m_pBlurDescriptorSet, 1, nullptr, m_pBlurredBrightnessTexture, nullptr, true);
+			m_pBlurredBrightnessTexture->layout = layout;
+		}
+
+
 		m_blurCommandBuffer = m_renderer->createCommandBuffer(true);
 		m_renderer->recordCommandBuffer(m_blurCommandBuffer, [&](uint32_t frameIndex) {
 			m_renderer->bindPipeline(m_blurPipeline, m_blurCommandBuffer, frameIndex);
-			vkCmdDispatch(m_blurCommandBuffer->buffers[frameIndex], 32, 32, 1);
+			m_renderer->bindDescriptorSet(m_pBlurDescriptorSet, m_blurPipeline, m_blurCommandBuffer, frameIndex);
+			m_renderer->dispatchCompute(32, 32, 1, m_blurCommandBuffer, frameIndex);
 		}, false);
+		
 
 		// Buffers DescriptorSets
 		PerFrameBuffer perFrame = {};
@@ -345,6 +373,7 @@ namespace sa {
 		
 		//m_renderer->nextSubpass(VK_SUBPASS_CONTENTS_INLINE);
 		m_renderer->endRenderPass();
+		m_renderer->waitForFence(fence);
 		m_renderer->beginRenderPass(m_postRenderpass, m_postFramebuffer, VK_SUBPASS_CONTENTS_INLINE);
 		m_renderer->bindPipeline(m_postProcessPipline);
 		m_renderer->bindDescriptorSet(m_pInputDescriptorSet, m_postProcessPipline);
@@ -357,7 +386,6 @@ namespace sa {
 		}
 		m_renderer->endRenderPass();
 
-		m_renderer->waitForFence(fence);
 
 		m_pWindow->display(true);
 

@@ -10,7 +10,8 @@ namespace NAME_SPACE {
 			size_t size = 0;
 			if (type != VK_DESCRIPTOR_TYPE_SAMPLED_IMAGE && 
 				type != VK_DESCRIPTOR_TYPE_COMBINED_IMAGE_SAMPLER &&
-				type != VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT) {
+				type != VK_DESCRIPTOR_TYPE_INPUT_ATTACHMENT &&
+				type != VK_DESCRIPTOR_TYPE_STORAGE_IMAGE) {
 				size = m_pCompiler->get_declared_struct_size(m_pCompiler->get_type(b.type_id));
 			}
 			layoutBinding.stageFlags = m_stage;

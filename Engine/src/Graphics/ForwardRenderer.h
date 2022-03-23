@@ -32,7 +32,8 @@ namespace sa {
 		vr::ShaderSetPtr m_pPostProcessShaders;
 
 		vr::ShaderSetPtr m_pBlurComputeShader;
-
+		vr::DescriptorSetPtr m_pBlurDescriptorSet;
+		
 		vr::DescriptorSetPtr m_pPerFrameDescriptorSet;
 		vr::Buffer* m_pPerFrameBuffer;
 		vr::Buffer* m_pLightBuffer;

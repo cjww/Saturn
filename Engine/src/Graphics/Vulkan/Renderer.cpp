@@ -1400,4 +1400,9 @@ namespace NAME_SPACE {
 		vkCmdDrawIndexed((commandBuffer == nullptr) ? m_graphicsCommandBuffers[realFrameIndex] : commandBuffer->buffers[realFrameIndex], indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 	}
 
+	void Renderer::dispatchCompute(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ, const CommandBufferPtr& commandBuffer, uint32_t frameIndex) {
+		uint32_t realFrameIndex = (frameIndex == -1) ? m_frameIndex : frameIndex;
+		vkCmdDispatch((commandBuffer == nullptr) ? m_computeCommandBuffers[realFrameIndex] : commandBuffer->buffers[realFrameIndex], groupCountX, groupCountY, groupCountZ);
+	}
+
 }
