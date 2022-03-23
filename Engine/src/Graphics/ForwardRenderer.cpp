@@ -30,7 +30,7 @@ namespace sa {
 			1,
 			1,
 			VK_SAMPLE_COUNT_1_BIT,
-			VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+			VK_IMAGE_USAGE_STORAGE_BIT);
 
 		m_pBlurredBrightnessTexture = m_renderer->createColorAttachmentTexture(
 			extent,
@@ -218,8 +218,8 @@ namespace sa {
 		m_pBlurComputeShader = m_renderer->createShaderSet(blurComputeShader);
 		m_blurPipeline = m_renderer->createPipeline(m_pBlurComputeShader);
 
-
-
+		/*
+			// BLUR PASS
 		m_pBlurDescriptorSet = m_pBlurComputeShader->getDescriptorSet(0);
 		{
 			VkImageLayout layout = m_pBrightnessTexture->layout;
@@ -242,6 +242,7 @@ namespace sa {
 			m_renderer->dispatchCompute(32, 32, 1, m_blurCommandBuffer, frameIndex);
 		}, false);
 		
+		*/
 
 		// Buffers DescriptorSets
 		PerFrameBuffer perFrame = {};
@@ -296,7 +297,7 @@ namespace sa {
 			return;
 		}
 
-		auto fence = m_renderer->submitToComputeQueue(m_blurCommandBuffer);
+		//auto fence = m_renderer->submitToComputeQueue(m_blurCommandBuffer);
 
 		m_renderer->beginRenderPass(m_mainRenderPass, m_mainFramebuffer, VK_SUBPASS_CONTENTS_INLINE);
 		m_renderer->bindPipeline(m_colorPipeline);
@@ -371,9 +372,7 @@ namespace sa {
 		}
 
 		
-		//m_renderer->nextSubpass(VK_SUBPASS_CONTENTS_INLINE);
 		m_renderer->endRenderPass();
-		m_renderer->waitForFence(fence);
 		m_renderer->beginRenderPass(m_postRenderpass, m_postFramebuffer, VK_SUBPASS_CONTENTS_INLINE);
 		m_renderer->bindPipeline(m_postProcessPipline);
 		m_renderer->bindDescriptorSet(m_pInputDescriptorSet, m_postProcessPipline);
