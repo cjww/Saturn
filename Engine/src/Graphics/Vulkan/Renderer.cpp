@@ -120,8 +120,11 @@ namespace NAME_SPACE {
 		m_computeCommandBuffers.resize(1);
 		vbl::allocateCommandBuffers(m_computeCommandBuffers.data(), m_computeCommandBuffers.size(), m_device, m_computeCommandPool, VK_COMMAND_BUFFER_LEVEL_PRIMARY);
 
-		m_transferCommandBuffers.resize(m_inFlightCount * 8);
-		vbl::allocateCommandBuffers(m_transferCommandBuffers.data(), m_transferCommandBuffers.size(), m_device, m_graphicsCommandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+		std::vector<VkCommandBuffer> transferBuffers(m_inFlightCount * 8);
+		vbl::allocateCommandBuffers(transferBuffers.data(), transferBuffers.size(), m_device, m_graphicsCommandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY);
+		for (auto& buffer : transferBuffers) {
+			m_transferCommandBuffers[buffer] = VK_NULL_HANDLE;
+		}
 
 	}
 
@@ -396,6 +399,7 @@ namespace NAME_SPACE {
 			transferBuffers.reserve(m_transferCommandQueue.size());
 			for (const auto& t : m_transferCommandQueue) {
 				transferBuffers.push_back(t.commandBuffer);
+				m_transferCommandBuffers[t.commandBuffer] = m_inFlightFences[m_frameIndex];
 			}
 			vkCmdExecuteCommands(m_graphicsCommandBuffers[m_frameIndex], transferBuffers.size(), transferBuffers.data());
 		}
@@ -745,19 +749,33 @@ namespace NAME_SPACE {
 		info.flags = VK_COMMAND_BUFFER_USAGE_ONE_TIME_SUBMIT_BIT;
 		info.pInheritanceInfo = &inheritanceInfo;
 
-		if (m_transferCommandQueue.size() == m_transferCommandBuffers.size()) {
-			//throw std::runtime_error("Transfer overflow"); //TODO Fix this
-			size_t oldSize = m_transferCommandBuffers.size();
-			m_transferCommandBuffers.resize(m_transferCommandBuffers.size() << 1);
-			uint32_t diff = m_transferCommandBuffers.size() - oldSize;
-			vbl::printError(
-				vbl::allocateCommandBuffers(&m_transferCommandBuffers[oldSize], diff, m_device, m_graphicsCommandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY),
-				"Failed to allocate Commandbuffers"
-			);
-
+		bool found = false;
+		VkCommandBuffer foundBuffer = VK_NULL_HANDLE;
+		for (auto& pair : m_transferCommandBuffers) {
+			if (pair.second == VK_NULL_HANDLE || vkGetFenceStatus(m_device, pair.second) == VK_SUCCESS) {
+				found = true;
+				foundBuffer = pair.first;
+				pair.second = m_inFlightFences[(m_frameIndex + 1) % m_inFlightCount];
+				break;
+			}
 		}
 
-		VkCommandBuffer commandBuffer = m_transferCommandBuffers[m_transferCommandQueue.size()];
+		if (!found) {
+			size_t oldSize = m_transferCommandBuffers.size();
+			size_t newSize = m_transferCommandBuffers.size() << 1;
+			uint32_t diff = newSize - oldSize;
+			std::vector<VkCommandBuffer> newTransferBuffers(diff);
+			vbl::printError(
+				vbl::allocateCommandBuffers(newTransferBuffers.data(), newTransferBuffers.size(), m_device, m_graphicsCommandPool, VK_COMMAND_BUFFER_LEVEL_SECONDARY),
+				"Failed to allocate Commandbuffers"
+			);
+			for (auto& buffer : newTransferBuffers) {
+				m_transferCommandBuffers[buffer] = VK_NULL_HANDLE;
+				foundBuffer = buffer;
+			}
+		}
+
+		VkCommandBuffer commandBuffer = foundBuffer;
 		vkBeginCommandBuffer(commandBuffer, &info);
 		return commandBuffer;
 	}
@@ -794,10 +812,23 @@ namespace NAME_SPACE {
 			VK_SAMPLE_COUNT_1_BIT);
 	}
 
+	Texture* Renderer::createColorTexture2D(VkExtent2D extent, VkFormat format, VkImageUsageFlags usage, VkSampleCountFlagBits sampleCount, uint32_t mipLevels, uint32_t arrayLayers) {
+		auto image = m_pDataManager->createColorTexture2D(
+			extent,
+			usage,
+			format,
+			sampleCount,
+			mipLevels,
+			arrayLayers);
+
+		return image;
+	}
+
 	Texture* Renderer::createTexture2D(uint32_t framebuffer, uint32_t renderpass, uint32_t subpass, VkExtent2D extent, unsigned char* pixels, int channels) {
 		auto image = m_pDataManager->createColorTexture2D(
 			extent,
 			VK_IMAGE_USAGE_SAMPLED_BIT | VK_IMAGE_USAGE_TRANSFER_DST_BIT,
+			VK_FORMAT_R8G8B8A8_UNORM,
 			VK_SAMPLE_COUNT_1_BIT,
 			1,
 			1);

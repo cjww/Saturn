@@ -65,6 +65,12 @@ namespace sa {
 
 		vr::CommandBufferPtr m_blurCommandBuffer;
 
+		//DEBUG
+		sa::Texture m_texture;
+		sa::Texture m_defaultTexture;
+
+		float timer = 0.0f;
+
 		void createTextures(VkExtent2D extent);
 		void createRenderPasses();
 		void createFramebuffers(VkExtent2D extent);

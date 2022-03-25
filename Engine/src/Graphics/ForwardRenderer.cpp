@@ -46,7 +46,7 @@ namespace sa {
 		std::vector<VkAttachmentDescription> mainAttachments(3);
 		mainAttachments[0] = vr::getColorAttachment(m_pMainColorTexture->format, m_pMainColorTexture->sampleCount, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
 		mainAttachments[1] = vr::getDepthAttachment(m_pDepthTexture->format, m_pDepthTexture->sampleCount);
-		mainAttachments[2] = vr::getColorAttachment(m_pBrightnessTexture->format, m_pBrightnessTexture->sampleCount, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
+		mainAttachments[2] = vr::getColorAttachment(m_pBrightnessTexture->format, m_pBrightnessTexture->sampleCount);
 
 
 
@@ -266,7 +266,20 @@ namespace sa {
 		m_pMainColorTexture->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
 		m_renderer->updateDescriptorSet(m_pInputDescriptorSet, 0, nullptr, m_pMainColorTexture, m_sampler, true);
 		m_pMainColorTexture->layout = layout;
+		
+		sa::Image img("../Box.png");
+		// m_texture = m_renderer->createTexture2D(m_mainFramebuffer, m_mainRenderPass, 0, { img.getExtent().x, img.getExtent().y }, img.getPixels(), img.getChannelCount());
+		m_texture = m_renderer->createColorTexture2D({ img.getExtent().x, img.getExtent().y }, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+		m_renderer->updateTexture(m_texture, m_mainFramebuffer, m_mainRenderPass, 0, img.getPixels(), img.getExtent().x * img.getExtent().y * img.getChannelCount());
+		
 
+		m_defaultTexture = m_renderer->createColorTexture2D({1, 1}, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+		unsigned char pixels[] = {
+			255, 0, 255, 255
+		};
+		m_renderer->updateTexture(m_defaultTexture, m_mainFramebuffer, m_mainRenderPass, 0, pixels, 4);
+
+		m_renderer->updateDescriptorSet(m_pPerFrameDescriptorSet, 1, nullptr, m_defaultTexture, m_sampler, true);
 	}
 
 	void ForwardRenderer::cleanup() {
@@ -292,6 +305,15 @@ namespace sa {
 	}
 
 	void ForwardRenderer::draw(Scene* scene) {
+		timer += 0.01f;
+
+		unsigned char pixels[] = {
+			0, (std::sin(timer) + 1) * 0.5f * 255, 255, 255
+		};
+		m_renderer->updateTexture(m_defaultTexture, m_mainFramebuffer, m_mainRenderPass, 0, pixels, 4);
+
+
+
 		if (!m_pWindow->frame()) {
 			if(m_useImGui) ImGui::EndFrame();
 			return;

@@ -203,13 +203,13 @@ namespace NAME_SPACE {
 		return image;
 	}
 
-	Texture* DataManager::createColorTexture2D(VkExtent2D extent, VkImageUsageFlags usage, VkSampleCountFlagBits sampleCount,
+	Texture* DataManager::createColorTexture2D(VkExtent2D extent, VkImageUsageFlags usage, VkFormat format, VkSampleCountFlagBits sampleCount,
 		uint32_t mipLevels, uint32_t arrayLayers) 
 	{
 		auto image = createImage(
 			{ extent.width, extent.height, 1 },
 			arrayLayers,
-			VK_FORMAT_R8G8B8A8_UNORM,
+			format,
 			VK_IMAGE_TYPE_2D,
 			VK_IMAGE_LAYOUT_UNDEFINED,
 			mipLevels,

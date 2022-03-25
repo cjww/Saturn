@@ -97,7 +97,7 @@ namespace NAME_SPACE {
 		VkCommandPool m_computeCommandPool;
 		std::vector<VkCommandBuffer> m_graphicsCommandBuffers;
 		std::vector<VkCommandBuffer> m_computeCommandBuffers;
-		std::vector<VkCommandBuffer> m_transferCommandBuffers;
+		std::unordered_map<VkCommandBuffer, VkFence> m_transferCommandBuffers;
 		std::vector<TransferCommand> m_transferCommandQueue;
 
 		std::vector<VkSemaphore> m_imageAvailableSemaphore;
@@ -204,6 +204,8 @@ namespace NAME_SPACE {
 		//Resource creation
 		Texture* createDepthTexture(VkExtent2D extent);
 
+
+		Texture* createColorTexture2D(VkExtent2D extent, VkFormat format, VkImageUsageFlags usage, VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT, uint32_t mipLevels = 1, uint32_t arrayLayers = 1);
 		Texture* createTexture2D(uint32_t framebuffer, uint32_t renderpass, uint32_t subpass, VkExtent2D extent, unsigned char* pixels, int channels = 4);
 		Texture* createColorAttachmentTexture(VkExtent2D extent, VkFormat format, uint32_t arrayLayers, uint32_t mipLevels, VkSampleCountFlagBits sampleCount, VkImageUsageFlags additionalUsage);
 
