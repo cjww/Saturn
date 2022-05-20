@@ -219,6 +219,7 @@ namespace sa {
 		m_blurPipeline = m_renderer->createPipeline(m_pBlurComputeShader);
 
 		/*
+		*/
 			// BLUR PASS
 		m_pBlurDescriptorSet = m_pBlurComputeShader->getDescriptorSet(0);
 		{
@@ -242,7 +243,6 @@ namespace sa {
 			m_renderer->dispatchCompute(32, 32, 1, m_blurCommandBuffer, frameIndex);
 		}, false);
 		
-		*/
 
 		// Buffers DescriptorSets
 		PerFrameBuffer perFrame = {};
@@ -279,7 +279,7 @@ namespace sa {
 		};
 		m_renderer->updateTexture(m_defaultTexture, m_mainFramebuffer, m_mainRenderPass, 0, pixels, 4);
 
-		m_renderer->updateDescriptorSet(m_pPerFrameDescriptorSet, 1, nullptr, m_defaultTexture, m_sampler, true);
+		m_renderer->updateDescriptorSet(m_pPerFrameDescriptorSet, 1, nullptr, m_texture, m_sampler, true);
 	}
 
 	void ForwardRenderer::cleanup() {
@@ -307,10 +307,13 @@ namespace sa {
 	void ForwardRenderer::draw(Scene* scene) {
 		timer += 0.01f;
 
+		/*
 		unsigned char pixels[] = {
 			0, (std::sin(timer) + 1) * 0.5f * 255, 255, 255
 		};
 		m_renderer->updateTexture(m_defaultTexture, m_mainFramebuffer, m_mainRenderPass, 0, pixels, 4);
+		*/		
+		
 
 
 
@@ -319,7 +322,9 @@ namespace sa {
 			return;
 		}
 
-		//auto fence = m_renderer->submitToComputeQueue(m_blurCommandBuffer);
+		auto fence = m_renderer->submitToComputeQueue(m_blurCommandBuffer);
+		m_renderer->waitForFence(fence);
+
 
 		m_renderer->beginRenderPass(m_mainRenderPass, m_mainFramebuffer, VK_SUBPASS_CONTENTS_INLINE);
 		m_renderer->bindPipeline(m_colorPipeline);
@@ -406,7 +411,6 @@ namespace sa {
 			m_renderer->endFrameImGUI();
 		}
 		m_renderer->endRenderPass();
-
 
 		m_pWindow->display(true);
 

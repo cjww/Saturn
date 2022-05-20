@@ -754,9 +754,17 @@ namespace NAME_SPACE {
 		for (auto& pair : m_transferCommandBuffers) {
 			if (pair.second == VK_NULL_HANDLE || vkGetFenceStatus(m_device, pair.second) == VK_SUCCESS) {
 				found = true;
-				foundBuffer = pair.first;
-				pair.second = m_inFlightFences[(m_frameIndex + 1) % m_inFlightCount];
-				break;
+				for(const auto& transferCommand : m_transferCommandQueue) {
+					if (transferCommand.commandBuffer == pair.first) {
+						found = false;
+						break;
+					}
+				}
+				if (found) {
+					foundBuffer = pair.first;
+					pair.second = m_inFlightFences[(m_frameIndex + 1) % m_inFlightCount];
+					break;
+				}
 			}
 		}
 
