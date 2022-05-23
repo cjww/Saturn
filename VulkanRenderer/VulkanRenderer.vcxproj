@@ -83,12 +83,12 @@
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(ProjectDir)Lib\</OutDir>
-    <TargetName>$(ProjectName)$(Platform)$(Configuration)</TargetName>
+    <TargetName>$(ProjectName)_$(Platform)$(Configuration)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(ProjectDir)Lib\</OutDir>
-    <TargetName>$(ProjectName)$(Platform)$(Configuration)</TargetName>
+    <TargetName>$(ProjectName)_$(Platform)$(Configuration)</TargetName>
   </PropertyGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">
     <ClCompile>
@@ -136,16 +136,18 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)/RenderWindow/include;$(ProjectDir)/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)/include;$(VULKAN_SDK)/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <PrecompiledHeader>Create</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;$(SolutionDir)/RenderWindow/lib;$(ProjectDir)\deps\SPIRV\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>RenderWindow$(Platform)$(Configuration).lib;vulkan-1.lib;spirv-cross-cored.lib;spirv-cross-cppd.lib;spirv-cross-glsld.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;$(ProjectDir)/deps/GLFW/lib-vc2019;$(ProjectDir)\deps\SPIRV\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;spirv-cross-cored.lib;spirv-cross-cppd.lib;spirv-cross-glsld.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -156,8 +158,10 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(SolutionDir)/RenderWindow/include;$(ProjectDir)/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <AdditionalIncludeDirectories>$(ProjectDir)/include;$(VULKAN_SDK)/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp20</LanguageStandard>
+      <PrecompiledHeader>Create</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -166,45 +170,37 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalLibraryDirectories>$(SolutionDir)/RenderWindow/lib;$(VULKAN_SDK)\Lib;$(ProjectDir)\deps\SPIRV\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
-      <AdditionalDependencies>RenderWindow$(Platform)$(Configuration).lib;vulkan-1.lib;spirv-cross-core.lib;spirv-cross-cpp.lib;spirv-cross-glsl.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;$(ProjectDir)/deps/GLFW/lib-vc2019;$(ProjectDir)\deps\SPIRV\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>vulkan-1.lib;glfw3.lib;spirv-cross-core.lib;spirv-cross-cpp.lib;spirv-cross-glsl.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClInclude Include="include\common.hpp" />
-    <ClInclude Include="include\Image.hpp" />
-    <ClInclude Include="include\imconfig.h" />
-    <ClInclude Include="include\imgui.h" />
-    <ClInclude Include="include\imgui_impl_glfw.h" />
-    <ClInclude Include="include\imgui_impl_vulkan.h" />
-    <ClInclude Include="include\imgui_internal.h" />
-    <ClInclude Include="include\imstb_rectpack.h" />
-    <ClInclude Include="include\imstb_textedit.h" />
-    <ClInclude Include="include\imstb_truetype.h" />
+    <ClInclude Include="include\Resources\RenderProgram.hpp" />
+    <ClInclude Include="include\RenderWindow.hpp" />
+    <ClInclude Include="include\Resources\DeviceMemoryManager.hpp" />
+    <ClInclude Include="include\Resources\ResourceManager.hpp" />
+    <ClInclude Include="include\CommandPool.hpp" />
+    <ClInclude Include="include\Extent.hpp" />
+    <ClInclude Include="include\pch.h" />
+    <ClInclude Include="include\Resources\Swapchain.hpp" />
+    <ClInclude Include="include\Tools\Logger.hpp" />
+    <ClInclude Include="include\debugFunctions.h" />
     <ClInclude Include="include\Renderer.hpp" />
-    <ClInclude Include="include\functions.hpp" />
-    <ClInclude Include="include\ShaderSet.hpp" />
-    <ClInclude Include="include\vulkan_base.hpp" />
-    <ClInclude Include="include\DataManager.hpp" />
-    <ClInclude Include="include\Shader.hpp" />
-    <ClInclude Include="include\Logger.hpp" />
+    <ClInclude Include="include\VulkanCore.hpp" />
+    <ClInclude Include="include\Window.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="include\Image.cpp" />
-    <ClCompile Include="include\imgui.cpp" />
-    <ClCompile Include="include\imgui_demo.cpp" />
-    <ClCompile Include="include\imgui_draw.cpp" />
-    <ClCompile Include="include\imgui_impl_glfw.cpp" />
-    <ClCompile Include="include\imgui_impl_vulkan.cpp" />
-    <ClCompile Include="include\imgui_tables.cpp" />
-    <ClCompile Include="include\imgui_widgets.cpp" />
-    <ClCompile Include="include\Logger.cpp" />
-    <ClCompile Include="src\ShaderSet.cpp" />
-    <ClCompile Include="src\functions.cpp" />
-    <ClCompile Include="src\Shader.cpp" />
+    <ClCompile Include="include\Resources\DeviceMemoryManager.cpp" />
+    <ClCompile Include="src\RenderProgram.cpp" />
+    <ClCompile Include="src\RenderWindow.cpp" />
+    <ClCompile Include="src\Swapchain.cpp" />
+    <ClCompile Include="src\CommandPool.cpp" />
+    <ClCompile Include="src\ResourceManager.cpp" />
+    <ClCompile Include="src\VulkanCore.cpp" />
+    <ClCompile Include="src\Logger.cpp" />
+    <ClCompile Include="src\debugFunctions.cpp" />
     <ClCompile Include="src\Renderer.cpp" />
-    <ClCompile Include="src\DataManager.cpp" />
-    <ClCompile Include="src\vulkan_base.cpp" />
+    <ClCompile Include="src\Window.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

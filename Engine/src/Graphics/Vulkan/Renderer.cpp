@@ -1,3 +1,4 @@
+#include "..\..\..\..\VulkanRenderer\include\Renderer.hpp"
 #include "pch.h"
 #include "Renderer.hpp"
 
@@ -428,7 +429,7 @@ namespace NAME_SPACE {
 		swapchain.surface = createSurface(window);
 		vbl::printError(
 			vbl::createSwapchain(&swapchain.swapchain, m_device, m_physicalDevice, swapchain.surface, &m_graphicsQueueInfo, 1, &swapchain.format),
-			"Failed to create swap chain",
+			"Failed to create swapchain",
 			true
 		);
 

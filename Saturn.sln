@@ -4,6 +4,9 @@ Microsoft Visual Studio Solution File, Format Version 12.00
 VisualStudioVersion = 17.0.31903.59
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VulkanRendererTest", "VulkanRendererTest\VulkanRendererTest.vcxproj", "{FAFCC141-9A93-4AA4-8D46-1DDE77F5A861}"
+	ProjectSection(ProjectDependencies) = postProject
+		{359BE348-FD28-4226-B401-2539BD77CDB8} = {359BE348-FD28-4226-B401-2539BD77CDB8}
+	EndProjectSection
 EndProject
 Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Engine", "Engine\Engine.vcxproj", "{113522DB-28C1-4B47-9684-45CD80885A8A}"
 EndProject
@@ -17,6 +20,8 @@ Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "EngineTest", "EngineTest\En
 	ProjectSection(ProjectDependencies) = postProject
 		{113522DB-28C1-4B47-9684-45CD80885A8A} = {113522DB-28C1-4B47-9684-45CD80885A8A}
 	EndProjectSection
+EndProject
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "VulkanRenderer", "VulkanRenderer\VulkanRenderer.vcxproj", "{359BE348-FD28-4226-B401-2539BD77CDB8}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -74,6 +79,14 @@ Global
 		{05892111-632C-48D3-B7DA-F1C4496E7AF5}.Release|x64.Build.0 = Release|x64
 		{05892111-632C-48D3-B7DA-F1C4496E7AF5}.Release|x86.ActiveCfg = Release|Win32
 		{05892111-632C-48D3-B7DA-F1C4496E7AF5}.Release|x86.Build.0 = Release|Win32
+		{359BE348-FD28-4226-B401-2539BD77CDB8}.Debug|x64.ActiveCfg = Debug|x64
+		{359BE348-FD28-4226-B401-2539BD77CDB8}.Debug|x64.Build.0 = Debug|x64
+		{359BE348-FD28-4226-B401-2539BD77CDB8}.Debug|x86.ActiveCfg = Debug|Win32
+		{359BE348-FD28-4226-B401-2539BD77CDB8}.Debug|x86.Build.0 = Debug|Win32
+		{359BE348-FD28-4226-B401-2539BD77CDB8}.Release|x64.ActiveCfg = Release|x64
+		{359BE348-FD28-4226-B401-2539BD77CDB8}.Release|x64.Build.0 = Release|x64
+		{359BE348-FD28-4226-B401-2539BD77CDB8}.Release|x86.ActiveCfg = Release|Win32
+		{359BE348-FD28-4226-B401-2539BD77CDB8}.Release|x86.Build.0 = Release|Win32
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

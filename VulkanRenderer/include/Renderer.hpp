@@ -1,110 +1,40 @@
 #pragma once
-#include "common.hpp"
 
-#include "ShaderSet.hpp"
-#include "DataManager.hpp"
-#include "Image.hpp"
-
-#include "Logger.hpp"
-
-
-
-#include "vulkan_base.hpp"
-
-#include "functions.hpp"
-
-#include <taskflow/taskflow.hpp>
-
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-
-#include <glm/vec3.hpp>
-#include <glm/vec4.hpp>
-
-#include <functional>
-
+#include "Tools\Logger.hpp"
+#include "Resources/ResourceManager.hpp"
+#include "RenderProgramFactory.hpp"
+/*
 #include "imgui_impl_vulkan.h"
 #include "imgui_impl_glfw.h"
+*/
 
+#include "Texture.hpp"
 
-namespace NAME_SPACE {
-	struct SwapChain {
-		VkSwapchainKHR swapChain = VK_NULL_HANDLE;
-		VkFormat format;
-		std::vector<VkImage> images;
-		std::vector<VkImageView> imageViews;
-		VkExtent2D extent;
-		uint32_t currentImageIndex;
-	};
+struct GLFWwindow;
 
-	struct RenderPass {
-		VkRenderPass renderPass;
-		uint32_t subpassCount;
-		std::vector<uint32_t> colorAttachmentCount;
-		std::vector<VkBool32> depthAttachment;
-		std::vector<VkClearValue> clearValues;
-	};
+namespace sa {
 
-	struct Framebuffer {
-		std::vector<VkFramebuffer> framebuffers;
-	};
+	class VulkanCore;
+	class CommandBufferSet;
 
-	struct CommandBuffer {
-		std::vector<VkCommandBuffer> buffers;
-	};
-
-	struct TransferCommand {
-		enum Type {
-			BUFFER_TO_IMAGE,
-			BUFFER_TO_BUFFER,
-			IMAGE_TO_BUFFER,
-			IMAGE_TO_IMAGE
-		} type;
-		Buffer* srcBuffer;
-		Texture* srcImage;
-		Buffer* dstBuffer;
-		Texture* dstImage;
-		VkCommandBuffer commandBuffer;
-	};
-
-	struct Pipeline {
-		VkPipeline pipeline;
-		VkPipelineLayout layout;
-		bool isCompute;
-	};
-
-	typedef std::shared_ptr<CommandBuffer> CommandBufferPtr;
-	typedef std::shared_ptr<VkSampler> SamplerPtr;
 
 	class Renderer {
-	private:
-		static Renderer* m_pMyInstance;
-	protected:		
-		RenderWindow* m_window;
-		SwapChain m_swapChain;
-		VkSurfaceKHR m_surface;
+	protected:
+		//VulkanCore* m_pCore;
 
-		VkApplicationInfo m_appInfo;
-		VkInstance m_instance;
-		VkDevice m_device;
-		VkPhysicalDevice m_physicalDevice;
+		std::unique_ptr<VulkanCore> m_pCore;
 
-		std::vector<const char*> m_validationLayers;
-		std::vector<const char*> m_instanceExtensions;
-		std::vector<const char*> m_deviceExtensions;
+		/*
+		CommandBufferSet* m_pGraphicsCommandBufferSet;
+		CommandBufferSet* m_pComputeCommandBufferSet;
+		*/
 
-		vbl::QueueInfo m_graphicsQueueInfo;
-		VkQueue m_graphicsQueue;
-		vbl::QueueInfo m_computeQueueInfo;
-		VkQueue m_computeQueue;
 
-		DataManager* m_pDataManager;
+		//DeviceMemoryManager* m_pDataManager;
 
-		VkCommandPool m_graphicsCommandPool;
-		VkCommandPool m_computeCommandPool;
-		std::vector<VkCommandBuffer> m_graphicsCommandBuffers;
-		std::vector<VkCommandBuffer> m_computeCommandBuffers;
-		std::vector<VkCommandBuffer> m_transferCommandBuffers;
+		/*
+		
+		std::unordered_map<VkCommandBuffer, VkFence> m_transferCommandBuffers;
 		std::vector<TransferCommand> m_transferCommandQueue;
 
 		std::vector<VkSemaphore> m_imageAvailableSemaphore;
@@ -118,26 +48,25 @@ namespace NAME_SPACE {
 		std::vector<Framebuffer> m_framebuffers;
 		std::vector<Pipeline> m_pipelines;
 
+		std::vector<Swapchain> m_swapchains;
+		std::unordered_map<uint32_t, ResizeCallbackFunc> m_swapchainResizeCallbacks;
+
 		VkDescriptorPool m_imGuiDescriptorPool;
 		std::unordered_map<Texture*, ImTextureID> m_imGuiImages;
 
-		void setupDebug();
 
-		void createInstance();
-		void getPhysicalDevice();
-		void createDevice();
-
-		void createSurface(GLFWwindow* window);
-
-		void createSwapChain();
-
+		
+		void createCommandPools();
 		void createCommandBuffers();
+		void createGraphicsCommandBuffers();
 
 		void createSyncronisationObjects();
 
+		VkSurfaceKHR createSurface(GLFWwindow* window);
+
 		VkFramebuffer createFramebuffer(VkExtent2D extent, VkRenderPass renderPass, const std::vector<VkImageView>& imageViews);
 
-		uint32_t createGraphicsPipeline(uint32_t renderPass, uint32_t subpassIndex,
+		uint32_t createGraphicsPipeline(VkExtent2D extent, uint32_t renderPass, uint32_t subpassIndex,
 			const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts,
 			const std::vector<VkPushConstantRange>& pushConstantRanges,
 			const std::vector<VkPipelineShaderStageCreateInfo>& shaderStages,
@@ -148,54 +77,76 @@ namespace NAME_SPACE {
 			const std::vector<VkPushConstantRange>& pushConstantRanges,
 			VkPipelineShaderStageCreateInfo shaderStage);
 
+		void destroyFramebuffers();
+		void destroyRenderPasses();
+		void destroyPipelines();
+
+		void destroySwapchains();
+
+		void destroySyncronisationObjects();
+		void freeGraphicsCommandBuffers();
+
 		VkCommandBuffer beginTransferCommand(const Framebuffer& framebuffer, const RenderPass& renderPass, uint32_t subpass);
 		void endTransferCommand(const TransferCommand& command);
 
-		Renderer(RenderWindow* window);
 
 		void createImGUIDescriptorPool();
 		ImGui_ImplVulkan_InitInfo getImGUIInitInfo() const;
 
+		*/
+		Renderer();
 	public:
-
+		static Renderer& get();
 		virtual ~Renderer();
 
-		static void init(RenderWindow* window);
-		static Renderer* get();
-		static void cleanup();
+		ResourceID createSwapchain(GLFWwindow* pWindow);
+		void destroySwapchain(ResourceID id);
 
-		void initImGUI(uint32_t renderpass, uint32_t subpass);
+		RenderProgramFactory createRenderProgram();
+		ResourceID createFramebuffer(ResourceID renderProgram, const std::vector<Texture>& attachmentTextures);
+		ResourceID createSwapchainFramebuffer(ResourceID swapchain, ResourceID renderProgram, const std::vector<Texture>& additionalAttachmentTextures, uint32_t layers = 1);
+
+		bool beginFrame(ResourceID swapchain);
+		void endFrame(ResourceID swapchain);
+
+
+
+
+
+		/*
+		void initImGUI(GLFWwindow* window, uint32_t renderpass, uint32_t subpass);
 		void newFrameImGUI();
 		void endFrameImGUI();
 		void cleanupImGUI();
 
 		ImTextureID getImTextureID(Texture* texture, const SamplerPtr& sampler);
 
-		uint32_t getNextSwapchainImage();
+		uint32_t createSwapchain(GLFWwindow* window);
+		void recreateSwapchain(uint32_t swapchain);
 
-		RenderWindow* getWindow() const;
+		void setOnSwapchainResizeCallback(uint32_t swapchain, ResizeCallbackFunc function);
+		void invokeSwapchainResize(uint32_t swapchain);
 
-		bool beginFrame();
-		void endFrame();
-		void present();
-
+		uint32_t getNextSwapchainImage(uint32_t swapchain);
 		// create renderpasses, framebuffers and pipelines
-		
+
 		uint32_t createRenderPass(const std::vector<VkAttachmentDescription>& attachments,
 			const std::vector<VkSubpassDescription>& subpasses,
 			const std::vector<VkSubpassDependency>& dependencies);
 
-		VkAttachmentDescription getSwapchainAttachment() const;
+		VkAttachmentDescription getSwapchainAttachment(uint32_t swapchain) const;
 
-		uint32_t createSwapchainFramebuffer(uint32_t renderPass, const std::vector<Texture*>& additionalAttachments);
+		uint32_t createSwapchainFramebuffer(uint32_t swapchain, uint32_t renderPass, const std::vector<Texture*>& additionalAttachments);
 		uint32_t createFramebuffer(uint32_t renderPass, VkExtent2D extent, const std::vector<Texture*>& attachments);
 
-		uint32_t createPipeline(const ShaderSetPtr& shaderSet, uint32_t renderPass = 0, uint32_t subpassIndex = 0, vbl::PipelineConfig config = {});
+		uint32_t createPipeline(const ShaderSetPtr& shaderSet, VkExtent2D extent = { 0, 0 }, uint32_t renderPass = 0, uint32_t subpassIndex = 0, vbl::PipelineConfig config = {});
+		uint32_t createPipeline(uint32_t swapchain, const ShaderSetPtr& shaderSet, uint32_t renderPass = 0, uint32_t subpassIndex = 0, vbl::PipelineConfig config = {});
 
 		//Resource creation
 		Texture* createDepthTexture(VkExtent2D extent);
 
-		Texture* createTexture2D(uint32_t framebuffer, uint32_t renderpass, uint32_t subpass, const Image& image);
+
+		Texture* createColorTexture2D(VkExtent2D extent, VkFormat format, VkImageUsageFlags usage, VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT, uint32_t mipLevels = 1, uint32_t arrayLayers = 1);
 		Texture* createTexture2D(uint32_t framebuffer, uint32_t renderpass, uint32_t subpass, VkExtent2D extent, unsigned char* pixels, int channels = 4);
 		Texture* createColorAttachmentTexture(VkExtent2D extent, VkFormat format, uint32_t arrayLayers, uint32_t mipLevels, VkSampleCountFlagBits sampleCount, VkImageUsageFlags additionalUsage);
 
@@ -204,11 +155,7 @@ namespace NAME_SPACE {
 		void updateTexture(Texture* dst, uint32_t framebuffer, uint32_t renderpass, uint32_t subpass, void* data, size_t size);
 
 		void queueTransferCommand(uint32_t framebuffer, uint32_t renderpass, uint32_t subpass, Buffer* srcBuffer, Texture* dstTexture);
-		/*
-		void queueTransferCommand(Buffer* srcBuffer, Buffer* dstBuffer);
-		void queueTransferCommand(Texture* srcTexture, Buffer* dstBuffer);
-		void queueTransferCommand(Texture* srcTexture, Texture* dstTexture);
-		*/
+	
 
 
 		SamplerPtr createSampler(VkFilter minMagFilter, float maxAnisotropy = 16.0f, float minLod = 0.0f, float maxLod = 0.0f, float mipLodBias = 0.0f);
@@ -239,6 +186,8 @@ namespace NAME_SPACE {
 		std::shared_ptr<VkFence> submitToComputeQueue(const CommandBufferPtr& commandBuffer);
 		void waitForFence(std::shared_ptr<VkFence> fence, uint64_t timeout = UINT64_MAX);
 
+		void waitDeviceIdle() const;
+
 		void updateDescriptorSet(const DescriptorSetPtr& descriptorSet, uint32_t binding, const Buffer* buffer, const Texture* image, const SamplerPtr& sampler, bool isOneTimeUpdate);
 
 		// Draw commands
@@ -262,7 +211,8 @@ namespace NAME_SPACE {
 
 		void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex = 0U, uint32_t firstInstance = 0U, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
 		void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex = 0U, uint32_t firstInstance = 0U, uint32_t vertexOffset = 0U, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
+		void dispatchCompute(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
+		*/
 
-		
 	};
 }

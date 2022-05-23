@@ -1,9 +1,6 @@
 #pragma once
 
-#include "common.hpp"
 #include "vk_mem_alloc.h"
-#include <memory>
-#include <vector>
 
 
 namespace NAME_SPACE {
@@ -38,7 +35,7 @@ namespace NAME_SPACE {
 
 	};
 
-	class DataManager {
+	class DeviceMemoryManager {
 	private:
 		VmaAllocator m_allocator;
 		VmaAllocatorCreateInfo m_allocatorInfo;
@@ -54,8 +51,8 @@ namespace NAME_SPACE {
 		VkFormat getFormat(const std::vector<VkFormat>& candidates, VkFormatFeatureFlagBits features, VkImageTiling tilling);
 
 	public:
-		DataManager(VkInstance instance, VkDevice device, VkPhysicalDevice physicalDevice, uint32_t apiVersion, const std::vector<uint32_t>& graphicsQueueFamilyIndices, const std::vector<uint32_t>& computeQueueFamilyIndices);
-		virtual ~DataManager();
+		DeviceMemoryManager(VkInstance instance, VkDevice device, VkPhysicalDevice physicalDevice, uint32_t apiVersion, const std::vector<uint32_t>& graphicsQueueFamilyIndices, const std::vector<uint32_t>& computeQueueFamilyIndices);
+		virtual ~DeviceMemoryManager();
 
 		Buffer* createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, void* initialData = nullptr);
 		Texture* createImage(VkExtent3D extent, uint32_t arrayLayers, VkFormat format,

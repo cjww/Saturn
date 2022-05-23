@@ -1,3 +1,5 @@
+#include "..\..\..\VulkanRenderer\include\Texture.hpp"
+#include "..\..\..\VulkanRenderer\include\Texture.hpp"
 #pragma once
 #include "Tools\Vector.h"
 namespace vr {
@@ -12,6 +14,7 @@ namespace sa {
 
 	public:
 		Texture() = default;
+
 		Texture(vr::Texture* pTexture);
 
 		sa::Vector2u getExtent() const;
