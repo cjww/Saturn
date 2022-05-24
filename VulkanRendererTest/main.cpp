@@ -235,6 +235,7 @@ int main() {
 
 	const int WIDTH = 1000, HEIGHT = 600;
 	sa::RenderWindow window(WIDTH, HEIGHT, "Test Window");
+
 	sa::Renderer& renderer = sa::Renderer::get();
 	auto renderProgram = renderer.createRenderProgram()
 		.addSwapchainAttachment(window.getSwapchainID()) // 0

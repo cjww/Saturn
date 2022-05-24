@@ -136,7 +136,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)/include;$(VULKAN_SDK)/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)/include;$(VULKAN_SDK)/Include;$(ProjectDir)/deps/SPIRV/Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <PrecompiledHeader>Create</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -158,7 +158,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)/include;$(VULKAN_SDK)/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)/include;$(VULKAN_SDK)/Include;$(ProjectDir)/deps/SPIRV/Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <PrecompiledHeader>Create</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -182,6 +182,8 @@
     <ClInclude Include="include\Resources\DeviceMemoryManager.hpp" />
     <ClInclude Include="include\Resources\ResourceManager.hpp" />
     <ClInclude Include="include\CommandPool.hpp" />
+    <ClInclude Include="include\Resources\Shader.hpp" />
+    <ClInclude Include="include\Resources\ShaderSet.hpp" />
     <ClInclude Include="include\structs.hpp" />
     <ClInclude Include="include\pch.h" />
     <ClInclude Include="include\Resources\Swapchain.hpp" />
@@ -193,6 +195,8 @@
     <ClInclude Include="include\Window.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\Shader.cpp" />
+    <ClCompile Include="src\ShaderSet.cpp" />
     <ClCompile Include="src\FramebufferSet.cpp" />
     <ClCompile Include="src\RenderProgramFactory.cpp" />
     <ClCompile Include="include\Resources\DeviceMemoryManager.cpp" />

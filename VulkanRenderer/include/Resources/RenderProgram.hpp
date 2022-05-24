@@ -2,6 +2,8 @@
 
 #include "VulkanCore.hpp"
 
+#include "Resources\ShaderSet.hpp"
+
 namespace sa {
 
 	class Attachment {
@@ -44,7 +46,7 @@ namespace sa {
 
 		void addSubpassDependency(vk::SubpassDependency dependency);
 
-		void createPipeline();
+		void createPipeline(const ShaderSet& shaders);
 
 		void create(VulkanCore* pCore);
 		void destroy();

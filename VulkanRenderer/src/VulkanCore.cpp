@@ -340,6 +340,101 @@ namespace sa {
 		return m_device.createFramebuffer(info);
 	}
 
+	vk::Pipeline VulkanCore::createGraphicsPipeline(vk::PipelineLayout layout, vk::RenderPass renderPass, uint32_t subpassIndex, vk::Extent2D extent, std::vector<vk::PipelineShaderStageCreateInfo> shaderStages, vk::PipelineVertexInputStateCreateInfo vertexInput, vk::PipelineCache cache,  PipelineConfig config) {
+
+		vk::PipelineInputAssemblyStateCreateInfo input{
+			.topology = config.input.topology,
+			.primitiveRestartEnable = false,
+		};
+
+		vk::PipelineRasterizationStateCreateInfo rasterizer = {
+			.depthClampEnable = false,
+			.rasterizerDiscardEnable = false, //TODO: look into what this is
+			.polygonMode = config.rasterizer.polygonMode,
+			.cullMode = config.rasterizer.cullMode,
+			.frontFace = config.rasterizer.frontFace,
+			.depthBiasEnable = false,
+			.lineWidth = 1.0f,
+		};
+
+		vk::PipelineMultisampleStateCreateInfo multisample{
+			.rasterizationSamples = config.multisample.sampleCount,
+			.sampleShadingEnable = false,
+		};
+
+		std::vector<vk::PipelineColorBlendAttachmentState> colorAttachments(config.colorBlends.size());
+		for (int i = 0; i < config.colorBlends.size(); i++) {
+
+			colorAttachments[i].colorWriteMask = vk::ColorComponentFlagBits::eR | vk::ColorComponentFlagBits::eG | vk::ColorComponentFlagBits::eB | vk::ColorComponentFlagBits::eA;
+			colorAttachments[i].blendEnable = config.colorBlends[i].enable;
+			colorAttachments[i].colorBlendOp = config.colorBlends[i].colorBlendOp;
+			colorAttachments[i].alphaBlendOp = config.colorBlends[i].alphaBlendOp;
+			colorAttachments[i].srcColorBlendFactor = config.colorBlends[i].srcColorBlendFactor;
+			colorAttachments[i].dstColorBlendFactor = config.colorBlends[i].dstColorBlendFactor;
+			colorAttachments[i].srcAlphaBlendFactor = config.colorBlends[i].srcAlphaBlendFactor;
+			colorAttachments[i].dstAlphaBlendFactor = config.colorBlends[i].dstAlphaBlendFactor;
+		}
+
+		vk::PipelineColorBlendStateCreateInfo colorBlend{
+			.logicOpEnable = false,
+			.logicOp = vk::LogicOp::eAnd
+		};
+		colorBlend.setAttachments(colorAttachments);
+
+
+		vk::PipelineDepthStencilStateCreateInfo depthState = {
+			.depthTestEnable = config.depthStencil.depthTestEnable,
+			.depthWriteEnable = config.depthStencil.depthWriteEnable,
+			.depthCompareOp = config.depthStencil.depthCompareOp,
+			.depthBoundsTestEnable = config.depthStencil.depthBoundsTestEnable,
+			.stencilTestEnable = config.depthStencil.stencilTestEnable,
+		};
+
+
+		vk::Viewport viewport = {
+			.x = 0.0f,
+			.y = 0.0f,
+			.width = extent.width,
+			.height = extent.height,
+			.minDepth = 0.0f,
+			.maxDepth = 1.0f,
+		};
+
+		vk::Rect2D scissor = {
+			.offset = { 0, 0 },
+			.extent = extent,
+		};
+
+		vk::PipelineViewportStateCreateInfo viewportState = {
+			.viewportCount = 1,
+			.pViewports = &viewport,
+			.scissorCount = 1,
+			.pScissors = &scissor,
+		};
+
+		vk::PipelineDynamicStateCreateInfo dynamicState;
+		dynamicState.setDynamicStates(config.dynamicStates);
+
+		vk::GraphicsPipelineCreateInfo info{
+			.pVertexInputState = &vertexInput,
+			.pInputAssemblyState = &input,
+			.pTessellationState = nullptr,
+			.pViewportState = &viewportState,
+			.pRasterizationState = &rasterizer,
+			.pMultisampleState = &multisample,
+			.pDepthStencilState = &depthState,
+			.pColorBlendState = &colorBlend,
+			.pDynamicState = &dynamicState,
+			.layout = layout,
+			.renderPass = renderPass,
+			.subpass = subpassIndex,
+		};
+		info.setStages(shaderStages);
+
+		return m_device.createGraphicsPipeline(cache, info);
+	}
+
+
 	uint32_t VulkanCore::getGraphicsQueueFamily() const {
 		return m_graphicsQueueInfo.family;
 	}

@@ -28,6 +28,11 @@ namespace sa {
 		m_dependencies.push_back(dependency);
 	}
 
+	void RenderProgram::createPipeline(const ShaderSet& shaders) {
+	
+		
+	}
+
 	void RenderProgram::create(VulkanCore* pCore) {
 		m_device = pCore->getDevice();
 
