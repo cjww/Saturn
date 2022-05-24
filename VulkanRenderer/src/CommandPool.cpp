@@ -6,7 +6,7 @@ namespace sa {
 	void CommandPool::create(vk::Device device, uint32_t queueFamily, vk::CommandPoolCreateFlags flags) {
 		m_device = device;
 
-		if (m_commandPool != VK_NULL_HANDLE) {
+		if (m_commandPool) {
 			destroy();
 		}
 		m_commandPool = device.createCommandPool({ 

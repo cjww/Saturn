@@ -47,7 +47,7 @@ namespace sa {
 			vk::CompareOp depthCompareOp = vk::CompareOp::eLessOrEqual;
 			vk::Bool32 depthTestEnable = true;
 			vk::Bool32 depthWriteEnable = true;
-			vk::Bool32 stencilTestEnable = VK_FALSfalse;
+			vk::Bool32 stencilTestEnable = false;
 		} depthStencil;
 
 		std::vector<vk::DynamicState> dynamicStates;

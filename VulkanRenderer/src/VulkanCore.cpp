@@ -69,7 +69,7 @@ namespace sa {
 			.applicationVersion = 0,
 			.pEngineName = "Saturn",
 			.engineVersion = 0,
-			.apiVersion = VK_API_VERSION_1_2
+			.apiVersion = VK_API_VERSION_1_3
 		};
 
 		uint32_t count = 0;
@@ -141,7 +141,7 @@ namespace sa {
 				m_physicalDevice = device;
 			}
 		}
-		if (m_physicalDevice == VK_NULL_HANDLE) {
+		if (!m_physicalDevice) {
 			throw std::runtime_error("No GPU Found");
 		}
 	}
@@ -394,8 +394,8 @@ namespace sa {
 		vk::Viewport viewport = {
 			.x = 0.0f,
 			.y = 0.0f,
-			.width = extent.width,
-			.height = extent.height,
+			.width = 1.0f,
+			.height = 1.0f,
 			.minDepth = 0.0f,
 			.maxDepth = 1.0f,
 		};
@@ -431,7 +431,9 @@ namespace sa {
 		};
 		info.setStages(shaderStages);
 
-		return m_device.createGraphicsPipeline(cache, info);
+		auto result = m_device.createGraphicsPipeline(cache, info);
+		checkError(result.result, "Failed to create Graphics pipeline", true);
+		return result.value;
 	}
 
 

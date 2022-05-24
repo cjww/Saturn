@@ -121,30 +121,30 @@ namespace sa {
 		image->usage = usage;
 
 
-		VkImageCreateInfo info = {};
-		info.sType = VK_STRUCTURE_TYPE_IMAGE_CREATE_INFO;
-		info.pNext = 0;
-		info.flags = 0;
-		info.arrayLayers = arrayLayers;
-		info.extent = extent;
-		info.format = (VkFormat)format;
-		info.imageType = (VkImageType)type;
-		info.initialLayout = (VkImageLayout)initialLayout;
-		info.mipLevels = mipLevels;
-		info.pQueueFamilyIndices = queueFamilyIndices.data();
-		info.queueFamilyIndexCount = queueFamilyIndices.size();
-		info.samples = (VkSampleCountFlagBits)sampleCount;
-		info.sharingMode = (VkSharingMode)sharingMode;
-		info.tiling = (VkImageTiling)tiling;
-		info.usage = (VkImageUsageFlags)usage;
+		vk::ImageCreateInfo info{
+			.imageType = type,
+			.format = format,
+			.extent = extent,
+			.mipLevels = mipLevels,
+			.arrayLayers = arrayLayers,
+			.samples = sampleCount,
+			.tiling = tiling,
+			.usage = usage,
+			.sharingMode = sharingMode,
+			.queueFamilyIndexCount = static_cast<uint32_t>(queueFamilyIndices.size()),
+			.pQueueFamilyIndices = queueFamilyIndices.data(),
+			.initialLayout = initialLayout,
+		};
 
 		VmaAllocationCreateInfo allocInfo = {};
 		allocInfo.usage = memoryUsage;
 		allocInfo.requiredFlags = (VkMemoryPropertyFlags)requiredMemoryProperties;
 		
+		VkImageCreateInfo cinfo = (VkImageCreateInfo)info;
+
 		VkImage cimage;
 		sa::checkError(
-			(vk::Result)vmaCreateImage(m_allocator, &info, &allocInfo, &cimage, &image->allocation, nullptr),
+			(vk::Result)vmaCreateImage(m_allocator, &cinfo, &allocInfo, &cimage, &image->allocation, nullptr),
 			"Failed to create Image",
 			false
 		);

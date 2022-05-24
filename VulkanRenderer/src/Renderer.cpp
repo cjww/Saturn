@@ -104,7 +104,7 @@ namespace sa {
 		RenderProgram* pRenderProgram = getRenderProgram(renderProgram);
 
 		std::vector<vk::ImageView> swapchainViews = pSwapchain->getImageViews();
-		uint32_t count = swapchainViews.size();
+		uint32_t count = static_cast<uint32_t>(swapchainViews.size());
 		std::vector<std::vector<vk::ImageView>> framebufferViews(count);
 		Extent extent = pSwapchain->getExtent();
 		for (uint32_t i = 0; i < count; i++) {

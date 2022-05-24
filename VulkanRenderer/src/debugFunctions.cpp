@@ -83,9 +83,6 @@ namespace sa {
         case vk::Result::eErrorNotPermittedEXT:
             ss << "Not permitted EXT" << std::endl;
             break;
-        case vk::Result::eErrorFullScreenExclusiveModeLostEXT:
-            ss << "Full Screen exclusive mode lost EXT" << std::endl;
-            break;
         default:
             return;
         }

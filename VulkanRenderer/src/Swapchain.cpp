@@ -53,7 +53,7 @@ namespace sa {
 
 		createSyncronisationObjects();
 
-		m_commandBufferSet = pCore->allocateGraphicsCommandBufferSet(m_images.size(), vk::CommandBufferLevel::ePrimary);
+		m_commandBufferSet = pCore->allocateGraphicsCommandBufferSet(static_cast<uint32_t>(m_images.size()), vk::CommandBufferLevel::ePrimary);
 
 	}
 
@@ -84,7 +84,7 @@ namespace sa {
 	}
 
 	CommandBufferSet* Swapchain::beginFrame() {
-		if (m_swapchain == VK_NULL_HANDLE) {
+		if (!m_swapchain) {
 			return nullptr;
 		}
 		m_device.waitForFences(m_inFlightFences[m_frameIndex], VK_FALSE, UINT64_MAX);
@@ -106,7 +106,7 @@ namespace sa {
 				true
 			);
 			m_imageIndex = res.value;
-			if (m_imageFences[m_imageIndex] != VK_NULL_HANDLE) {
+			if (m_imageFences[m_imageIndex]) {
 				m_device.waitForFences(m_imageFences[m_imageIndex], VK_FALSE, UINT64_MAX);
 			}
 			m_imageFences[m_imageIndex] = m_inFlightFences[m_frameIndex];

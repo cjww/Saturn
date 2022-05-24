@@ -12,6 +12,8 @@
 #include <optional>
 #include <fstream>
 
+
+//#define VK_USE_PLATFORM_WIN32_KHR
 #define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
 #include <vulkan\vulkan.hpp>
 
@@ -19,11 +21,6 @@
 
 #define NOMINMAX
 #include <SPIRV\spirv_cross.hpp>
-
-
-
-#include "GLFW/glfw3.h"
-#include "SPIRV\spirv.h"
 
 
 #include "Resources\ResourceManager.hpp"
