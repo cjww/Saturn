@@ -175,14 +175,17 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="include\Resources\FramebufferSet.hpp" />
+    <ClInclude Include="include\RenderProgramFactory.hpp" />
     <ClInclude Include="include\Resources\RenderProgram.hpp" />
     <ClInclude Include="include\RenderWindow.hpp" />
     <ClInclude Include="include\Resources\DeviceMemoryManager.hpp" />
     <ClInclude Include="include\Resources\ResourceManager.hpp" />
     <ClInclude Include="include\CommandPool.hpp" />
-    <ClInclude Include="include\Extent.hpp" />
+    <ClInclude Include="include\structs.hpp" />
     <ClInclude Include="include\pch.h" />
     <ClInclude Include="include\Resources\Swapchain.hpp" />
+    <ClInclude Include="include\Texture.hpp" />
     <ClInclude Include="include\Tools\Logger.hpp" />
     <ClInclude Include="include\debugFunctions.h" />
     <ClInclude Include="include\Renderer.hpp" />
@@ -190,12 +193,15 @@
     <ClInclude Include="include\Window.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\FramebufferSet.cpp" />
+    <ClCompile Include="src\RenderProgramFactory.cpp" />
     <ClCompile Include="include\Resources\DeviceMemoryManager.cpp" />
     <ClCompile Include="src\RenderProgram.cpp" />
     <ClCompile Include="src\RenderWindow.cpp" />
     <ClCompile Include="src\Swapchain.cpp" />
     <ClCompile Include="src\CommandPool.cpp" />
     <ClCompile Include="src\ResourceManager.cpp" />
+    <ClCompile Include="src\Texture.cpp" />
     <ClCompile Include="src\VulkanCore.cpp" />
     <ClCompile Include="src\Logger.cpp" />
     <ClCompile Include="src\debugFunctions.cpp" />

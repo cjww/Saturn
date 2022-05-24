@@ -189,9 +189,9 @@ namespace sa {
 	}
 
 	Extent Window::getCurrentExtent() const {
-		Extent extent;
-		glfwGetFramebufferSize(m_window, &extent.width, &extent.height);
-		return extent;
+		int width, height;
+		glfwGetFramebufferSize(m_window, &width, &height);
+		return { (uint32_t)width, (uint32_t)height };
 	}
 
 	GLFWwindow* Window::getWindowHandle() const {

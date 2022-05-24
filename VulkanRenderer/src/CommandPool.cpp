@@ -35,7 +35,8 @@ namespace sa {
 
 	CommandBufferSet::CommandBufferSet(const std::vector<vk::CommandBuffer>& buffers)
 		: m_buffers(buffers) 
-		, m_currentBufferIndex(0)
+		, m_currentBufferIndex(-1)
+		, m_lastBufferIndex(-1)
 	{
 
 	}
@@ -63,14 +64,27 @@ namespace sa {
 		if (m_lastBufferIndex == -1)
 			throw std::runtime_error("Buffer was never recorder to");
 
+		vk::PipelineStageFlags waitStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+
 		vk::SubmitInfo info{
 			.waitSemaphoreCount = 1,
 			.pWaitSemaphores = &waitSemaphore,
+			.pWaitDstStageMask = &waitStage,
 			.commandBufferCount = 1,
 			.pCommandBuffers = &m_buffers[m_lastBufferIndex],
 			.signalSemaphoreCount = 1,
 			.pSignalSemaphores = &signalSemaphore,
 		};
 		queue.submit(info, fence);
+	}
+
+	vk::CommandBuffer CommandBufferSet::getBuffer() const {
+		if (m_currentBufferIndex == -1)
+			throw std::runtime_error("Buffer index was -1 : Forgot to call begin");
+		return m_buffers[m_currentBufferIndex];
+	}
+
+	uint32_t CommandBufferSet::getBufferIndex() const {
+		return m_currentBufferIndex;
 	}
 }

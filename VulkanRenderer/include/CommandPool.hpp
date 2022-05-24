@@ -13,8 +13,12 @@ namespace sa {
 		CommandBufferSet(const std::vector<vk::CommandBuffer>& buffers);
 		void begin(int bufferIndex);
 		void end();
-
+		
 		void submit(vk::Queue queue, vk::Fence fence = {}, vk::Semaphore signalSemaphore = {}, vk::Semaphore waitSemaphore = {});
+
+		vk::CommandBuffer getBuffer() const;
+		uint32_t getBufferIndex() const;
+
 	};
 
 	class CommandPool {

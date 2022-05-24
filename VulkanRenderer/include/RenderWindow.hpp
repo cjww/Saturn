@@ -17,7 +17,7 @@ namespace sa {
 
 		void display();
 
-		uint32_t getSwapchainID() const;
+		ResourceID getSwapchainID() const;
 
 	};
 }

@@ -17,6 +17,10 @@ namespace sa {
 	class VulkanCore;
 	class CommandBufferSet;
 
+	class Swapchain;
+	class RenderProgram;
+	class FramebufferSet;
+
 
 	class Renderer {
 	protected:
@@ -24,8 +28,10 @@ namespace sa {
 
 		std::unique_ptr<VulkanCore> m_pCore;
 
+
+		CommandBufferSet* m_pCurrentCommandBufferSet;
+
 		/*
-		CommandBufferSet* m_pGraphicsCommandBufferSet;
 		CommandBufferSet* m_pComputeCommandBufferSet;
 		*/
 
@@ -94,6 +100,13 @@ namespace sa {
 		ImGui_ImplVulkan_InitInfo getImGUIInitInfo() const;
 
 		*/
+
+		friend class RenderProgramFactory;
+		Swapchain* getSwapchain(ResourceID id);
+		RenderProgram* getRenderProgram(ResourceID id);
+		FramebufferSet* getFramebufferSet(ResourceID id);
+
+
 		Renderer();
 	public:
 		static Renderer& get();
@@ -103,8 +116,13 @@ namespace sa {
 		void destroySwapchain(ResourceID id);
 
 		RenderProgramFactory createRenderProgram();
-		ResourceID createFramebuffer(ResourceID renderProgram, const std::vector<Texture>& attachmentTextures);
-		ResourceID createSwapchainFramebuffer(ResourceID swapchain, ResourceID renderProgram, const std::vector<Texture>& additionalAttachmentTextures, uint32_t layers = 1);
+		ResourceID createFramebuffer(ResourceID renderProgram, const std::vector<Texture2D>& attachmentTextures, uint32_t layers = 1U);
+		ResourceID createSwapchainFramebuffer(ResourceID swapchain, ResourceID renderProgram, const std::vector<Texture2D>& additionalAttachmentTextures, uint32_t layers = 1U);
+
+		//RenderProgram features
+		void beginRenderProgram(ResourceID renderProgram, ResourceID framebuffer, Color clearColor = { 0.f, 0.f, 0.f, 1.f }, Rect renderArea = { {0, 0}, {0, 0} });
+		void endRenderProgram(ResourceID renderProgram);
+
 
 		bool beginFrame(ResourceID swapchain);
 		void endFrame(ResourceID swapchain);

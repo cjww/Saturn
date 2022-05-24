@@ -1,5 +1,8 @@
 #pragma once
 
+#include "structs.hpp"
+
+
 namespace vk {
 	class ImageView;
 }
@@ -7,17 +10,19 @@ namespace vk {
 namespace sa {
 	struct DeviceImage;
 
-	class Texture {
+	// Wrapper for image pointer
+	class Texture2D {
 	private:
-		DeviceImage* m_image;
-		std::shared_ptr<vk::ImageView> m_view;
+		DeviceImage* m_pImage;
+		std::shared_ptr<vk::ImageView> m_pView;
 		
 	public:
-		Texture();
+		Texture2D(DeviceImage* pImage, std::shared_ptr<vk::ImageView> pView);
+		Texture2D(const Texture2D&) = default;
+		Texture2D& operator=(const Texture2D&) = default;
 
-
-		Extent getExtent();
-		std::shared_ptr<vk::ImageView> getView() const;
+		Extent getExtent() const;
+		vk::ImageView* getView() const;
 
 	};
 

@@ -6,6 +6,7 @@
 #include <vector>
 #include <unordered_map>
 #include <queue>
+#include <set>
 #include <memory>
 #include <functional>
 #include <optional>
@@ -16,5 +17,4 @@
 #include "GLFW/glfw3.h"
 
 
-#include "structs.hpp"
 #include "Resources\ResourceManager.hpp"

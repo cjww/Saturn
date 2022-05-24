@@ -2,11 +2,13 @@
 #include "Resources/RenderProgram.hpp"
 
 namespace sa {
-	RenderProgram::RenderProgram() {
+	RenderProgram::RenderProgram()
+	{
 
 	}
 
-	Subpass& RenderProgram::beginSubpass() {
+
+	Subpass& RenderProgram::newSubpass() {
 		return m_subpasses.emplace_back();
 	}
 
@@ -22,16 +24,17 @@ namespace sa {
 		});
 	}
 
-	void RenderProgram::create(VulkanCore* pCore) {
+	void RenderProgram::addSubpassDependency(vk::SubpassDependency dependency) {
+		m_dependencies.push_back(dependency);
+	}
 
-		addAttachment(vk::ImageLayout::eUndefined, vk::ImageLayout::ePresentSrcKHR, vk::Format::eR16G16B16A16Unorm, vk::AttachmentLoadOp::eClear, vk::AttachmentStoreOp::eStore);
-		
+	void RenderProgram::create(VulkanCore* pCore) {
+		m_device = pCore->getDevice();
 
 		std::vector<vk::SubpassDescription> descriptions;
-		descriptions.push_back(beginSubpass()
-			.addAttachmentReference(0, vk::ImageLayout::eColorAttachmentOptimal)
-			.end());
-
+		for (auto& subpass : m_subpasses) {
+			descriptions.push_back(subpass.getDescription());
+		}
 
 		vk::SubpassDependency dependency{
 			.srcSubpass = 0,
@@ -47,11 +50,10 @@ namespace sa {
 		
 		info.setAttachments(m_attachments)
 			.setSubpasses(descriptions)
-			//.setDependencies(dependency)
+			.setDependencies(m_dependencies)
 			;
 
-		m_renderPass = pCore->getDevice().createRenderPass(info);
-
+		m_renderPass = m_device.createRenderPass(info);
 
 		/*
 		vk::FramebufferCreateInfo framebufferInfo;
@@ -64,11 +66,46 @@ namespace sa {
 
 	}
 
-	vk::RenderPass RenderProgram::getRenderPass() const { 
+	void RenderProgram::destroy() {
+		m_device.destroyRenderPass(m_renderPass);
+	}
+
+	void RenderProgram::begin(CommandBufferSet* cmd, FramebufferSet* framebuffer, Color clearColor, Rect renderArea) {
+		if (renderArea.extent.width == 0 || renderArea.extent.height == 0) {
+			renderArea.extent = framebuffer->getExtent();
+		}
+		vk::Rect2D rect{
+			.offset = { renderArea.offset.x, renderArea.offset.y },
+			.extent = { renderArea.extent.width, renderArea.extent.height },
+		};
+
+		std::vector<vk::ClearValue> clearValues;
+
+		// TODO add appropriate amount of clear values
+		vk::ClearValue value(vk::ClearColorValue{ std::array<float, 4> { clearColor.r, clearColor.g, clearColor.b, clearColor.a }});
+
+		clearValues.push_back(value);
+
+		vk::RenderPassBeginInfo info{
+			.renderPass = m_renderPass,
+			.framebuffer = framebuffer->getBuffer(cmd->getBufferIndex()),
+			.renderArea = rect,
+		};
+
+		info.setClearValues(clearValues);
+
+		cmd->getBuffer().beginRenderPass(info, vk::SubpassContents::eInline);
+	}
+
+	void RenderProgram::end(CommandBufferSet* cmd) {
+		cmd->getBuffer().endRenderPass();
+	}
+
+	vk::RenderPass RenderProgram::getRenderPass() const {
 		return m_renderPass;
 	}
 
-	Subpass& Subpass::addAttachmentReference(uint32_t index, vk::ImageLayout layout) {
+	void Subpass::addAttachmentReference(uint32_t index, vk::ImageLayout layout) {
 		
 		switch(layout) {
 		case vk::ImageLayout::eColorAttachmentOptimal:
@@ -91,10 +128,9 @@ namespace sa {
 			throw std::runtime_error("Unsupported attachment format");
 			break;
 		}
-		
-		return *this;
 	}
-	vk::SubpassDescription Subpass::end() {
+	
+	vk::SubpassDescription Subpass::getDescription() {
 		return m_description
 			.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
 			.setColorAttachments(m_colorAttachmentReferences)

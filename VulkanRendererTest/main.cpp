@@ -237,10 +237,15 @@ int main() {
 	sa::RenderWindow window(WIDTH, HEIGHT, "Test Window");
 	sa::Renderer& renderer = sa::Renderer::get();
 	auto renderProgram = renderer.createRenderProgram()
+		.addSwapchainAttachment(window.getSwapchainID()) // 0
+		.beginSubpass()
+			.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
+		.endSubpass()
 		.end();
 	
 
-	auto framebuffer  = renderer.createFramebuffer(renderProgram)
+	auto framebuffer = renderer.createSwapchainFramebuffer(window.getSwapchainID(), renderProgram, {});
+
 
 	try {
 
@@ -249,6 +254,11 @@ int main() {
 
 			if (window.beginFrame()) {
 
+				renderer.beginRenderProgram(renderProgram, framebuffer);
+
+				// Drawing
+
+				renderer.endRenderProgram(renderProgram);
 
 				window.display();
 			}

@@ -3,7 +3,7 @@
 #include <functional>
 #include <stdexcept>
 
-#include "Extent.hpp"
+#include "structs.hpp"
 
 struct GLFWwindow;
 struct GLFWmonitor;

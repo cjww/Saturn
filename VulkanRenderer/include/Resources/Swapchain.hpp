@@ -6,7 +6,7 @@
 #include "CommandPool.hpp"
 
 #include "RenderProgram.hpp"
-
+#include "structs.hpp"
 
 namespace sa {
 
@@ -35,6 +35,7 @@ namespace sa {
 		vk::Queue m_graphicsQueue;
 
 		Extent m_extent;
+		vk::Format m_format;
 
 		void createSyncronisationObjects();
 
@@ -49,12 +50,12 @@ namespace sa {
 		void setResizeCallback(std::function<void(Extent)> function);
 
 
-		int beginFrame();
+		CommandBufferSet* beginFrame();
 		void endFrame(vk::Queue queue);
 
 		std::vector<vk::ImageView> getImageViews() const;
 		Extent getExtent() const;
-
+		vk::Format getFormat() const;
 
 	};
 }

@@ -24,7 +24,7 @@ namespace sa {
 		sa::Renderer::get().endFrame(m_swapchain);	
 	}
 
-	uint32_t RenderWindow::getSwapchainID() const {
+	ResourceID RenderWindow::getSwapchainID() const {
 		return m_swapchain;
 	}
 

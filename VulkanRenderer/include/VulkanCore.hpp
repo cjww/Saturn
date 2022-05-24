@@ -4,7 +4,7 @@
 #include "Tools/Logger.hpp"
 
 #include "CommandPool.hpp"
-#include "FramebufferSet.hpp"
+#include "Resources/FramebufferSet.hpp"
 
 namespace sa {
 
@@ -35,6 +35,10 @@ namespace sa {
 
 		CommandPool m_graphicsCommandPool;
 		CommandPool m_computeCommandPool;
+
+		vk::Format m_defaultColorFormat;
+		vk::Format m_defaultDepthFormat;
+
 
 		uint32_t getQueueFamilyIndex(vk::QueueFlags capabilities, vk::QueueFamilyProperties* prop);
 		QueueInfo getQueueInfo(vk::QueueFlags capabilities, uint32_t maxCount);
@@ -78,6 +82,9 @@ namespace sa {
 		vk::PhysicalDevice getPhysicalDevice() const;
 		vk::Device getDevice() const;
 
+
+		vk::Format getDefaultColorFormat() const;
+		vk::Format getDefaultDepthFormat() const;
 
 
 	};

@@ -215,6 +215,8 @@ namespace sa {
 		createCommandPools();
 
 
+		m_defaultColorFormat = vk::Format::eR8G8B8A8Srgb;
+		m_defaultDepthFormat = vk::Format::eD16Unorm;
 	}
 
 	void VulkanCore::cleanup() {
@@ -366,6 +368,14 @@ namespace sa {
 		return m_device;
 	}
 
+	vk::Format VulkanCore::getDefaultColorFormat() const {
+		return m_defaultColorFormat;
+	}
+
+	vk::Format VulkanCore::getDefaultDepthFormat() const {
+		return m_defaultDepthFormat;
+	}
+
 	CommandBufferSet VulkanCore::allocateGraphicsCommandBufferSet(uint32_t count, vk::CommandBufferLevel level) {
 		return m_graphicsCommandPool.allocateCommandBufferSet(count, level);
 	}
@@ -379,6 +389,6 @@ namespace sa {
 		for (uint32_t i = 0; i < attachments.size(); i++) {
 			framebuffers[i] = createFrameBuffer(renderPass, attachments[i], width, height, layers);
 		}
-		return framebuffers;
+		return FramebufferSet(m_device, framebuffers, { width, height });
 	}
 }
