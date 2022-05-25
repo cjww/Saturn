@@ -55,6 +55,8 @@ namespace sa {
 
 		m_commandBufferSet = pCore->allocateGraphicsCommandBufferSet(static_cast<uint32_t>(m_images.size()), vk::CommandBufferLevel::ePrimary);
 
+		DEBUG_LOG_INFO("Created Swapchain\n\tImage count: ", m_images.size(), "\n\tFormat: ", vk::to_string(m_format));
+
 	}
 
 	void Swapchain::destroy() {
@@ -87,7 +89,9 @@ namespace sa {
 		if (!m_swapchain) {
 			return nullptr;
 		}
-		m_device.waitForFences(m_inFlightFences[m_frameIndex], VK_FALSE, UINT64_MAX);
+		checkError(
+			m_device.waitForFences(m_inFlightFences[m_frameIndex], VK_FALSE, UINT64_MAX),
+			"Failed to wait for in flight fence");
 
 		vk::ResultValue<uint32_t> res = m_device.acquireNextImageKHR(m_swapchain, UINT64_MAX, m_imageAvailableSemaphore[m_frameIndex]);
 		if (res.result == vk::Result::eErrorOutOfDateKHR || res.result == vk::Result::eSuboptimalKHR) {
@@ -99,19 +103,19 @@ namespace sa {
 			}
 			return nullptr;
 		}
-		else {
+		checkError(
+			res.result,
+			"Failed to acquire image",
+			true
+		);
+		m_imageIndex = res.value;
+		if (m_imageFences[m_imageIndex]) {
 			checkError(
-				res.result,
-				"Failed to acquire image",
-				true
-			);
-			m_imageIndex = res.value;
-			if (m_imageFences[m_imageIndex]) {
-				m_device.waitForFences(m_imageFences[m_imageIndex], VK_FALSE, UINT64_MAX);
-			}
-			m_imageFences[m_imageIndex] = m_inFlightFences[m_frameIndex];
+				m_device.waitForFences(m_imageFences[m_imageIndex], VK_FALSE, UINT64_MAX),
+				"Failed to wait for image fence");
 		}
-
+		m_imageFences[m_imageIndex] = m_inFlightFences[m_frameIndex];
+	
 		m_commandBufferSet.begin(m_frameIndex);
 
 		return &m_commandBufferSet;
@@ -136,8 +140,8 @@ namespace sa {
 			.pImageIndices = &m_imageIndex,
 			.pResults = &result
 		};
-		checkError(result, "Failed to present", false);
 		checkError(queue.presentKHR(presentInfo), "Failed to present", false);
+		checkError(result, "Failed to present", false);
 
 		m_frameIndex = (m_frameIndex + 1) % static_cast<uint32_t>(m_images.size());
 
@@ -153,6 +157,10 @@ namespace sa {
 
 	vk::Format Swapchain::getFormat() const {
 		return m_format;
+	}
+
+	uint32_t Swapchain::getImageCount() const {
+		return m_images.size();
 	}
 
 }

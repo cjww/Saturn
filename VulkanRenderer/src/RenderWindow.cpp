@@ -12,7 +12,7 @@ namespace sa {
 	}
 
 
-	bool RenderWindow::beginFrame() {
+	RenderContext RenderWindow::beginFrame() {
 		while (isIconified()) { // TODO: better way?
 			pollEvents();
 		}
@@ -26,6 +26,10 @@ namespace sa {
 
 	ResourceID RenderWindow::getSwapchainID() const {
 		return m_swapchain;
+	}
+
+	uint32_t RenderWindow::getSwapchainImageCount() const {
+		return Renderer::get().getSwapchainImageCount(m_swapchain);
 	}
 
 }

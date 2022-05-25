@@ -13,12 +13,12 @@ namespace sa {
 		RenderWindow(uint32_t monitorIndex);
 
 
-		bool beginFrame();
+		RenderContext beginFrame();
 
 		void display();
 
 		ResourceID getSwapchainID() const;
-
+		uint32_t getSwapchainImageCount() const;
 	};
 }
 

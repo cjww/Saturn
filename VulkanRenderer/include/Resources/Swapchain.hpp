@@ -57,5 +57,7 @@ namespace sa {
 		Extent getExtent() const;
 		vk::Format getFormat() const;
 
+		uint32_t getImageCount() const;
+
 	};
 }

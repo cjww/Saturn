@@ -120,19 +120,21 @@ namespace sa {
 			m_vertexBindings = { b };
 		}
 	}
+	
+	Shader::Shader(vk::Device device, const char* path, vk::ShaderStageFlagBits stage) {
+		create(device, path, stage);
+	}
 
-	Shader::Shader(vk::Device device, const char* path, vk::ShaderStageFlagBits stage)
-		: m_device(device)
-		, m_stage(stage)
-		, m_pCompiler(nullptr)
+	void Shader::create(vk::Device device, const char* path, vk::ShaderStageFlagBits stage)
 	{
-		m_info.module = nullptr;
+		m_device = device;
+		m_stage = stage;
+		
 		load(path);
 	}
 
-	Shader::~Shader() {
+	void Shader::destroy() {
 		m_device.destroyShaderModule(m_info.module);
-		delete m_pCompiler;
 	}
 
 	std::vector<uint32_t> Shader::readCode(const char* path) {
@@ -168,10 +170,10 @@ namespace sa {
 		m_info.setPName("main");
 		m_info.setStage(m_stage);
 
-		if (m_pCompiler) {
-			delete m_pCompiler;
+		m_pCompiler = std::make_shared<spirv_cross::Compiler>(code.data(), code.size());
+		for (auto ext : m_pCompiler->get_declared_extensions()) {
+			DEBUG_LOG_INFO("Shader uses vulkan extension: ", ext);
 		}
-		m_pCompiler = new spirv_cross::Compiler(code.data(), code.size());
 
 		m_descriptorSets.clear();
 		auto res = m_pCompiler->get_shader_resources();

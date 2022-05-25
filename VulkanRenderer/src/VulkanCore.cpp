@@ -204,6 +204,18 @@ namespace sa {
 		m_computeCommandPool.create(m_device, m_computeQueueInfo.family, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
 	}
 
+	bool VulkanCore::isDepthFormat(vk::Format format) {
+		return format == vk::Format::eD16Unorm
+			|| format == vk::Format::eD16UnormS8Uint
+			|| format == vk::Format::eD24UnormS8Uint
+			|| format == vk::Format::eD32Sfloat
+			|| format == vk::Format::eD32SfloatS8Uint;
+	}
+
+	bool VulkanCore::isColorFormat(vk::Format format) {
+		return !isDepthFormat(format);
+	}
+
 	void VulkanCore::init() {
 #if RENDERER_VALIDATION
 			setupDebug();
@@ -318,16 +330,6 @@ namespace sa {
 		return m_device.createImageView(info);
 	}
 
-	vk::RenderPass VulkanCore::createRenderPass(std::vector<vk::AttachmentDescription> attachments, std::vector<vk::SubpassDescription> subpasses, std::vector<vk::SubpassDependency> dependencies) {
-		vk::RenderPassCreateInfo info;
-		info
-			.setAttachments(attachments)
-			.setSubpasses(subpasses)
-			.setDependencies(dependencies)
-			;
-		return m_device.createRenderPass(info);
-	}
-
 	vk::Framebuffer VulkanCore::createFrameBuffer(vk::RenderPass renderPass, std::vector<vk::ImageView> attachments, uint32_t width, uint32_t height, uint32_t layers){
 		vk::FramebufferCreateInfo info{
 			.renderPass = renderPass,
@@ -394,8 +396,8 @@ namespace sa {
 		vk::Viewport viewport = {
 			.x = 0.0f,
 			.y = 0.0f,
-			.width = 1.0f,
-			.height = 1.0f,
+			.width = (float)extent.width,
+			.height = (float)extent.height,
 			.minDepth = 0.0f,
 			.maxDepth = 1.0f,
 		};

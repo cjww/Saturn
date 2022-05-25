@@ -91,6 +91,11 @@ namespace sa {
 
 	public:
 
+		static bool isDepthFormat(vk::Format format);
+		static bool isColorFormat(vk::Format format);
+
+
+
 		void init();
 		void cleanup();
 
@@ -98,7 +103,6 @@ namespace sa {
 		vk::SwapchainKHR createSwapchain(vk::SurfaceKHR surface, uint32_t queueFamily, vk::Format* outFormat);
 		vk::ImageView createImageView(vk::ImageViewType type, vk::Image image, vk::Format format, vk::ImageAspectFlags aspectMask, uint32_t baseMipLevel, uint32_t baseArrayLevel);
 		
-		vk::RenderPass createRenderPass(std::vector<vk::AttachmentDescription> attachments, std::vector<vk::SubpassDescription> subpasses, std::vector<vk::SubpassDependency> dependencies);
 		vk::Framebuffer createFrameBuffer(vk::RenderPass renderPass, std::vector<vk::ImageView> attachments, uint32_t width, uint32_t height, uint32_t layers);
 
 		vk::Pipeline createGraphicsPipeline(

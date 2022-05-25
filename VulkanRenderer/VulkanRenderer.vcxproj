@@ -146,7 +146,7 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;$(ProjectDir)/deps/GLFW/lib-vc2019;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;$(ProjectDir)/deps/GLFW/lib-vc2019;$(ProjectDir)\deps\SPIRV\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;spirv-cross-cored.lib;spirv-cross-cppd.lib;spirv-cross-glsld.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
@@ -170,13 +170,16 @@
       <GenerateDebugInformation>true</GenerateDebugInformation>
     </Link>
     <Lib>
-      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;$(ProjectDir)/deps/GLFW/lib-vc2019;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(VULKAN_SDK)\Lib;$(ProjectDir)/deps/GLFW/lib-vc2019;$(ProjectDir)\deps\SPIRV\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
       <AdditionalDependencies>vulkan-1.lib;glfw3.lib;spirv-cross-core.lib;spirv-cross-cpp.lib;spirv-cross-glsl.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="include\Resources\DescriptorSet.hpp" />
     <ClInclude Include="include\Resources\FramebufferSet.hpp" />
     <ClInclude Include="include\RenderProgramFactory.hpp" />
+    <ClInclude Include="include\Resources\Pipeline.hpp" />
+    <ClInclude Include="include\RenderContext.hpp" />
     <ClInclude Include="include\Resources\RenderProgram.hpp" />
     <ClInclude Include="include\RenderWindow.hpp" />
     <ClInclude Include="include\Resources\DeviceMemoryManager.hpp" />
@@ -195,6 +198,9 @@
     <ClInclude Include="include\Window.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="include\RenderContext.cpp" />
+    <ClCompile Include="include\Resources\DescriptorSet.cpp" />
+    <ClCompile Include="src\Pipeline.cpp" />
     <ClCompile Include="src\Shader.cpp" />
     <ClCompile Include="src\ShaderSet.cpp" />
     <ClCompile Include="src\FramebufferSet.cpp" />

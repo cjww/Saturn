@@ -1,7 +1,5 @@
 #pragma once
 
-#include "Tools\Logger.hpp"
-#include "Resources/ResourceManager.hpp"
 #include "RenderProgramFactory.hpp"
 /*
 #include "imgui_impl_vulkan.h"
@@ -9,6 +7,7 @@
 */
 
 #include "Texture.hpp"
+#include "RenderContext.hpp"
 
 struct GLFWwindow;
 
@@ -17,19 +16,12 @@ namespace sa {
 	class VulkanCore;
 	class CommandBufferSet;
 
-	class Swapchain;
-	class RenderProgram;
-	class FramebufferSet;
-
-
+	
 	class Renderer {
 	protected:
 		//VulkanCore* m_pCore;
 
 		std::unique_ptr<VulkanCore> m_pCore;
-
-
-		CommandBufferSet* m_pCurrentCommandBufferSet;
 
 		/*
 		CommandBufferSet* m_pComputeCommandBufferSet;
@@ -101,11 +93,7 @@ namespace sa {
 
 		*/
 
-		friend class RenderProgramFactory;
-		Swapchain* getSwapchain(ResourceID id);
-		RenderProgram* getRenderProgram(ResourceID id);
-		FramebufferSet* getFramebufferSet(ResourceID id);
-
+		
 
 		Renderer();
 	public:
@@ -113,18 +101,28 @@ namespace sa {
 		virtual ~Renderer();
 
 		ResourceID createSwapchain(GLFWwindow* pWindow);
-		void destroySwapchain(ResourceID id);
+		void destroySwapchain(ResourceID swapchain);
+
+		uint32_t getSwapchainImageCount(ResourceID swapchain);
 
 		RenderProgramFactory createRenderProgram();
+		void setClearColor(ResourceID renderProgram, Color color, uint32_t attachmentIndex);
+		void setClearColor(ResourceID renderProgram, Color color);
+
 		ResourceID createFramebuffer(ResourceID renderProgram, const std::vector<Texture2D>& attachmentTextures, uint32_t layers = 1U);
-		ResourceID createSwapchainFramebuffer(ResourceID swapchain, ResourceID renderProgram, const std::vector<Texture2D>& additionalAttachmentTextures, uint32_t layers = 1U);
+		ResourceID createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<Texture2D>& additionalAttachmentTextures, uint32_t layers = 1U);
+		void destroyFramebuffer(ResourceID framebuffer);
 
-		//RenderProgram features
-		void beginRenderProgram(ResourceID renderProgram, ResourceID framebuffer, Color clearColor = { 0.f, 0.f, 0.f, 1.f }, Rect renderArea = { {0, 0}, {0, 0} });
-		void endRenderProgram(ResourceID renderProgram);
+		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& fragmentShader);
+		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& geometryShader, const std::string& fragmentShader);
+		void destroyPipeline(ResourceID pipeline);
+
+		ResourceID allocateDescriptorSet(ResourceID pipeline, uint32_t setIndex, uint32_t backBufferCount = 1);
+		void freeDescriptorSet(ResourceID descriptorSet);
 
 
-		bool beginFrame(ResourceID swapchain);
+
+		RenderContext beginFrame(ResourceID swapchain);
 		void endFrame(ResourceID swapchain);
 
 

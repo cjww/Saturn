@@ -5,6 +5,7 @@
 
 #include <Renderer.hpp>
 #include <RenderWindow.hpp>
+#include <Tools\Logger.hpp>
 /*
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/transform.hpp>
@@ -227,47 +228,80 @@ uint32_t quadIndices[] = {
 */
 
 
+
+struct VertexColor {
+	float position[4];
+	float color[4];
+};
+
+
+VertexColor quad[] = {
+	{ { -0.5f, 0.5f, 0.0f, 1.0f },	{ 1.0f, 0.0f } },
+	{ { 0.5f, 0.5f, 0.0f, 1.0f },	{ 0.0f, 0.0f } },
+	{ { 0.5f, -0.5f, 0.0f, 1.0f },	{ 0.0f, 1.0f } },
+	{ { -0.5f, -0.5f, 0.0f, 1.0f },	{ 1.0f, 1.0f } }
+};
+
+
 int main() {
 
 #ifdef _WIN32
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
+	try {
 
-	const int WIDTH = 1000, HEIGHT = 600;
-	sa::RenderWindow window(WIDTH, HEIGHT, "Test Window");
+		const int WIDTH = 1000, HEIGHT = 600;
+		sa::RenderWindow window(WIDTH, HEIGHT, "Test Window");
 
-	sa::Renderer& renderer = sa::Renderer::get();
-	auto renderProgram = renderer.createRenderProgram()
-		.addSwapchainAttachment(window.getSwapchainID()) // 0
-		.beginSubpass()
-			.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
-		.endSubpass()
-		.end();
+		sa::Renderer& renderer = sa::Renderer::get();
+		auto renderProgram = renderer.createRenderProgram()
+			.addSwapchainAttachment(window.getSwapchainID()) // 0
+			.beginSubpass()
+				.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
+			.endSubpass()
+			.end();
 	
 
-	auto framebuffer = renderer.createSwapchainFramebuffer(window.getSwapchainID(), renderProgram, {});
+		sa::Color clearColor = { 0.2f, 0.7f, 0.8f, 1.f };
+		renderer.setClearColor(renderProgram, clearColor);
+
+		auto framebuffer = renderer.createSwapchainFramebuffer(renderProgram, window.getSwapchainID(), {});
+
+		auto pipeline = renderer.createGraphicsPipeline(
+			renderProgram,
+			0,
+			window.getCurrentExtent(),
+			"TestShader.vert.spv",
+			"TestShader.frag.spv");
+
+	
+		ResourceID descriptorSet = renderer.allocateDescriptorSet(pipeline, 0, renderer.getSwapchainImageCount(window.getSwapchainID()));
 
 
-	try {
 
 		while (window.isOpen()) {
 			window.pollEvents();
 
-			if (window.beginFrame()) {
+			sa::RenderContext context = window.beginFrame();
+			if (context) {
+				
 
-				renderer.beginRenderProgram(renderProgram, framebuffer);
+				context.beginRenderProgram(renderProgram, framebuffer);
+				context.bindPipeline(pipeline);
 
 				// Drawing
+				context.draw(3, 1);
 
-				renderer.endRenderProgram(renderProgram);
-
+				context.endRenderProgram(renderProgram);
+				
 				window.display();
 			}
 
 		}
 	}
-	catch (std::exception e) {
-		std::cout << e.what() << std::endl;
+	catch (const std::exception& e) {
+		DEBUG_LOG_ERROR(e.what());
+		
 	}
 
 	return 0;

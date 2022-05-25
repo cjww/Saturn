@@ -3,6 +3,7 @@
 #define RENDERER_VALIDATION 1
 #define DEBUG_LOG
 
+
 #include <vector>
 #include <unordered_map>
 #include <queue>
@@ -22,5 +23,5 @@
 #define NOMINMAX
 #include <SPIRV\spirv_cross.hpp>
 
-
 #include "Resources\ResourceManager.hpp"
+#include "Tools\Logger.hpp"

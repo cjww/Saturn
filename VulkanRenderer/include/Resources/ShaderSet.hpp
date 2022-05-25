@@ -1,21 +1,13 @@
 #pragma once
 #include "Resources/Shader.hpp"
-
+#include "Resources\DescriptorSet.hpp"
 namespace sa {
 
-	struct DescriptorSet {
-		std::vector<vk::DescriptorSet> descriptorSets;
-		std::vector<vk::WriteDescriptorSet> writes;
-		uint32_t setIndex;
-	};
-
-	typedef std::shared_ptr<DescriptorSet> DescriptorSetPtr;
-
+	
 	class ShaderSet {
 	private:
 		vk::Device m_device;
-		uint32_t m_swapChainImageCount;
-
+		
 		std::vector<vk::DescriptorSetLayout> m_descriptorSetLayouts;
 		std::vector<vk::PushConstantRange> m_pushConstantRanges;
 		std::vector<vk::PipelineShaderStageCreateInfo> m_shaderInfos;
@@ -29,18 +21,18 @@ namespace sa {
 
 		bool m_isGraphicsSet;
 
-		ShaderPtr m_pVertexShader, m_pGeometryShader, m_pFragmentShader, m_pComputeShader;
+		std::optional<Shader> m_vertexShader, m_geometryShader, m_fragmentShader, m_computeShader;
 
 	public:
-		ShaderSet(const ShaderSet&) = delete;
-		ShaderSet operator=(const ShaderSet&) = delete;
+		ShaderSet() = default;
+		ShaderSet(const ShaderSet&) = default;
+		ShaderSet& operator=(const ShaderSet&) = default;
 
-		ShaderSet(vk::Device device, uint32_t swapChainImageCount, const ShaderPtr& vertexShader, const ShaderPtr& fragmentShader);
-		ShaderSet(vk::Device device, uint32_t swapChainImageCount, const ShaderPtr& vertexShader, const ShaderPtr& geometryShader, const ShaderPtr& fragmentShader);
-		
-		ShaderSet(vk::Device device, uint32_t swapChainImageCount, const ShaderPtr& computeShader);
+		ShaderSet(vk::Device device, const Shader& vertexShader, const Shader& fragmentShader);
+		ShaderSet(vk::Device device, const Shader& vertexShader, const Shader& geometryShader, const Shader& fragmentShader);
+		ShaderSet(vk::Device device, const Shader& computeShader);
 
-		virtual ~ShaderSet();
+		void destroy();
 
 		const std::vector<vk::DescriptorSetLayout>& getDescriptorSetLayouts() const;
 		const std::vector<vk::PushConstantRange>& getPushConstantRanges() const;
@@ -52,10 +44,7 @@ namespace sa {
 
 		bool isGraphicsSet() const;
 
-		DescriptorSetPtr getDescriptorSet(uint32_t setIndex);
-		void destroyDescriptorSet(DescriptorSetPtr descriptorSet);
-
+		DescriptorSet allocateDescriptorSet(uint32_t setIndex, uint32_t count);
 	};
 
-	typedef std::shared_ptr<ShaderSet> ShaderSetPtr;
 }

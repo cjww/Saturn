@@ -16,27 +16,6 @@ namespace sa {
 		return instance;
 	}
 
-	Swapchain* Renderer::getSwapchain(ResourceID id) {
-		Swapchain* pSwapchain = ResourceManager::get().get<Swapchain>(id);
-		if (!pSwapchain)
-			throw std::runtime_error("Nonexistent swapchain: " + id);
-		return pSwapchain;
-	}
-
-	RenderProgram* Renderer::getRenderProgram(ResourceID id) {
-		RenderProgram* pRenderProgram = ResourceManager::get().get<RenderProgram>(id);
-		if (!pRenderProgram)
-			throw std::runtime_error("Nonexistent render program: " + id);
-		return pRenderProgram;
-	}
-
-	FramebufferSet* Renderer::getFramebufferSet(ResourceID id) {
-		FramebufferSet* pFramebufferSet = ResourceManager::get().get<FramebufferSet>(id);
-		if (!pFramebufferSet)
-			throw std::runtime_error("Nonexistent framebuffer: " + id);
-		return pFramebufferSet;
-	}
-
 	Renderer::Renderer() {
 		try {
 			m_pCore = std::make_unique<VulkanCore>();
@@ -45,6 +24,8 @@ namespace sa {
 			ResourceManager::get().setCleanupFunction<Swapchain>([](Swapchain* p) { p->destroy(); });
 			ResourceManager::get().setCleanupFunction<FramebufferSet>([](FramebufferSet* p) { p->destroy(); });
 			ResourceManager::get().setCleanupFunction<RenderProgram>([](RenderProgram* p) { p->destroy(); });
+			ResourceManager::get().setCleanupFunction<Pipeline>([](Pipeline* p) { p->destroy(); });
+			ResourceManager::get().setCleanupFunction<DescriptorSet>([](DescriptorSet* p) { p->destroy(); });
 
 
 		}
@@ -55,6 +36,8 @@ namespace sa {
 	Renderer::~Renderer() {
 		m_pCore->getDevice().waitIdle();
 
+		ResourceManager::get().clearContainer<DescriptorSet>();
+		ResourceManager::get().clearContainer<Pipeline>();
 		ResourceManager::get().clearContainer<FramebufferSet>();
 		ResourceManager::get().clearContainer<RenderProgram>();
 		ResourceManager::get().clearContainer<Swapchain>();
@@ -73,15 +56,30 @@ namespace sa {
 		ResourceManager::get().remove<Swapchain>(id);
 	}
 
+	uint32_t Renderer::getSwapchainImageCount(ResourceID swapchain) {
+		Swapchain* pSwapchain = RenderContext::getSwapchain(swapchain);
+		return pSwapchain->getImageCount();
+	}
+
 	RenderProgramFactory Renderer::createRenderProgram() {
 		return RenderProgramFactory(m_pCore.get());
+	}
+
+	void Renderer::setClearColor(ResourceID renderProgram, Color color, uint32_t attachmentIndex) {
+		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
+		pRenderProgram->setClearColor(attachmentIndex, color);
+	}
+
+	void Renderer::setClearColor(ResourceID renderProgram, Color color) {
+		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
+		pRenderProgram->setClearColor(color);
 	}
 
 	ResourceID Renderer::createFramebuffer(ResourceID renderProgram, const std::vector<Texture2D>& attachmentTextures, uint32_t layers) {
 		if (attachmentTextures.empty())
 			throw std::runtime_error("At least one attachmnet is required to create a framebuffer");
 
-		RenderProgram* pRenderProgram = getRenderProgram(renderProgram);
+		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
 
 		std::vector<vk::ImageView> framebufferViews;
 		Extent extent = attachmentTextures[0].getExtent();
@@ -99,9 +97,9 @@ namespace sa {
 			);
 	}
 
-	ResourceID Renderer::createSwapchainFramebuffer(ResourceID swapchain, ResourceID renderProgram, const std::vector<Texture2D>& additionalAttachmentTextures, uint32_t layers) {
-		Swapchain* pSwapchain = getSwapchain(swapchain);
-		RenderProgram* pRenderProgram = getRenderProgram(renderProgram);
+	ResourceID Renderer::createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<Texture2D>& additionalAttachmentTextures, uint32_t layers) {
+		Swapchain* pSwapchain = RenderContext::getSwapchain(swapchain);
+		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
 
 		std::vector<vk::ImageView> swapchainViews = pSwapchain->getImageViews();
 		uint32_t count = static_cast<uint32_t>(swapchainViews.size());
@@ -121,32 +119,57 @@ namespace sa {
 		return ResourceManager::get().insert<FramebufferSet>(m_pCore->createFrameBufferSet(pRenderProgram->getRenderPass(), framebufferViews, extent.width, extent.height, layers));
 	}
 
-	bool Renderer::beginFrame(ResourceID swapchain) {
-		Swapchain* pSwapchain = getSwapchain(swapchain);
+	void Renderer::destroyFramebuffer(ResourceID framebuffer) {
+		ResourceManager::get().remove<FramebufferSet>(framebuffer);
+	}
 
-		m_pCurrentCommandBufferSet = pSwapchain->beginFrame();
-		if (!m_pCurrentCommandBufferSet) {
-			return false;
+	ResourceID Renderer::createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& fragmentShader) {
+		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
+		Shader vShader(m_pCore->getDevice(), vertexShader.c_str(), vk::ShaderStageFlagBits::eVertex);
+		Shader fShader(m_pCore->getDevice(), fragmentShader.c_str(), vk::ShaderStageFlagBits::eFragment);
+		ShaderSet set(m_pCore->getDevice(), vShader, fShader);
+
+		return pRenderProgram->createPipeline(set, subpassIndex, extent);
+	}
+	
+	ResourceID Renderer::createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& geometryShader, const std::string& fragmentShader) {
+		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
+		Shader vShader(m_pCore->getDevice(), vertexShader.c_str(), vk::ShaderStageFlagBits::eVertex);
+		Shader gShader(m_pCore->getDevice(), geometryShader.c_str(), vk::ShaderStageFlagBits::eGeometry);
+		Shader fShader(m_pCore->getDevice(), fragmentShader.c_str(), vk::ShaderStageFlagBits::eFragment);
+		ShaderSet set(m_pCore->getDevice(), vShader, gShader, fShader);
+
+		return pRenderProgram->createPipeline(set, subpassIndex, extent);
+	}
+
+	void Renderer::destroyPipeline(ResourceID pipeline) {
+		ResourceManager::get().remove<Pipeline>(pipeline);
+	}
+
+	ResourceID Renderer::allocateDescriptorSet(ResourceID pipeline, uint32_t setIndex, uint32_t backBufferCount) {
+		Pipeline* pPipeline = RenderContext::getPipeline(pipeline);
+		return ResourceManager::get().insert<DescriptorSet>(pPipeline->allocateDescriptSet(setIndex, backBufferCount));
+	}
+
+	void Renderer::freeDescriptorSet(ResourceID descriptorSet) {
+		ResourceManager::get().remove<DescriptorSet>(descriptorSet);
+	}
+
+
+	RenderContext Renderer::beginFrame(ResourceID swapchain) {
+		Swapchain* pSwapchain = RenderContext::getSwapchain(swapchain);
+
+		CommandBufferSet* pCommandBufferSet = pSwapchain->beginFrame();
+		if (!pCommandBufferSet) {
+			return {};
 		}
 
-		return true;
+		return RenderContext(pCommandBufferSet);
 	}
 
 	void Renderer::endFrame(ResourceID swapchain) {
-		Swapchain* pSwapchain = getSwapchain(swapchain);
+		Swapchain* pSwapchain = RenderContext::getSwapchain(swapchain);
 		pSwapchain->endFrame(m_pCore->getGraphicsQueue());
-	}
-
-	void Renderer::beginRenderProgram(ResourceID renderProgram, ResourceID framebuffer, Color clearColor, Rect renderArea) {
-		RenderProgram* pRenderProgram = getRenderProgram(renderProgram);
-		FramebufferSet* pFramebuffer = getFramebufferSet(framebuffer);
-		pRenderProgram->begin(m_pCurrentCommandBufferSet, pFramebuffer, clearColor, renderArea);
-	}
-
-
-	void Renderer::endRenderProgram(ResourceID renderProgram) {
-		RenderProgram* pRenderProgram = getRenderProgram(renderProgram);
-		pRenderProgram->end(m_pCurrentCommandBufferSet);
 	}
 
 }

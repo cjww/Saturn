@@ -91,14 +91,14 @@ namespace sa {
 			vk::ImageLayout::eUndefined,
 			vk::ImageLayout::eColorAttachmentOptimal,
 			m_pCore->getDefaultColorFormat(),
-			vk::AttachmentLoadOp::eDontCare,
+			vk::AttachmentLoadOp::eClear,
 			vk::AttachmentStoreOp::eDontCare
 		);
 		return *this;
 	}
 
 	RenderProgramFactory& RenderProgramFactory::addSwapchainAttachment(ResourceID swapchain) {
-		Swapchain* pSwapChain = Renderer::get().getSwapchain(swapchain);
+		Swapchain* pSwapChain = RenderContext::getSwapchain(swapchain);
 		m_pProgram->addAttachment(
 			vk::ImageLayout::eUndefined,
 			vk::ImageLayout::ePresentSrcKHR,
@@ -143,23 +143,28 @@ namespace sa {
 	}
 
 	RenderProgramFactory::SubpassFactory& RenderProgramFactory::SubpassFactory::addAttachmentReference(uint32_t index, SubpassAttachmentUsage usage) {
+		vk::AttachmentDescription desc = m_pProgramFactory->m_pProgram->getAttachment(index);
+
 		vk::ImageLayout layout;
+
 		switch (usage) {
 		case SubpassAttachmentUsage::ColorTarget:
 			layout = vk::ImageLayout::eColorAttachmentOptimal;
+			m_pSubpass->addColorAttachmentReference(index, layout);
 			break;
 		case SubpassAttachmentUsage::DepthTarget:
 			layout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+			m_pSubpass->setDepthAttachmentReference(index, layout);
 			break;
 		case SubpassAttachmentUsage::Input:
 			layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+			m_pSubpass->addInputAttachmentReference(index, layout);
 			break;
 		default:
 			throw std::runtime_error("Unsupported usage");
-			break;
+			return *this;
 		}
 
-		m_pSubpass->addAttachmentReference(index, layout);
 
 		m_attachmentReferences.emplace_back(index, usage);
 		return *this;

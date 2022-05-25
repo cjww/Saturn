@@ -20,7 +20,7 @@ namespace sa {
 	}
 
 	CommandBufferSet CommandPool::allocateCommandBufferSet(uint32_t count, vk::CommandBufferLevel level) {
-		return CommandBufferSet(m_device.allocateCommandBuffers({
+		return CommandBufferSet(m_device.allocateCommandBuffers(vk::CommandBufferAllocateInfo{
 			.commandPool = m_commandPool,
 			.level = level,
 			.commandBufferCount = count,
@@ -46,7 +46,8 @@ namespace sa {
 			throw std::runtime_error("Buffer index was not -1 : Forgot to call end");
 
 		vk::CommandBuffer& buffer = m_buffers.at(bufferIndex);
-		buffer.begin({
+		buffer.begin(vk::CommandBufferBeginInfo{
+			.flags = vk::CommandBufferUsageFlagBits::eOneTimeSubmit,
 			.pInheritanceInfo = nullptr,
 		});
 		m_currentBufferIndex = bufferIndex;

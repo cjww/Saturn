@@ -1,16 +1,12 @@
 #pragma once
 
-namespace sa {
+#include "Resources\DescriptorSet.hpp"
 
-	struct DescriptorSetLayout {
-		std::vector<vk::DescriptorSetLayoutBinding> bindings;
-		std::vector<vk::WriteDescriptorSet> writes;
-		std::vector<size_t> sizes;
-	};
+namespace sa {
 
 	class Shader {
 	private:
-		spirv_cross::Compiler* m_pCompiler;
+		std::shared_ptr<spirv_cross::Compiler> m_pCompiler;
 		vk::PipelineShaderStageCreateInfo m_info;
 		vk::Device m_device;
 		vk::ShaderStageFlagBits m_stage;
@@ -26,11 +22,15 @@ namespace sa {
 		void getVertexInput(const spirv_cross::SmallVector<spirv_cross::Resource>& resources);
 
 	public:
-		Shader(const Shader&) = delete;
-		Shader operator=(const Shader&) = delete;
 		
+		Shader() = default;
+		Shader(const Shader& shader) = default;
+		Shader& operator=(const Shader&) = default;
+
 		Shader(vk::Device device, const char* path, vk::ShaderStageFlagBits stage);
-		virtual ~Shader();
+		
+		void create(vk::Device device, const char* path, vk::ShaderStageFlagBits stage);
+		void destroy();
 
 		static std::vector<uint32_t> readCode(const char* path);
 
@@ -47,5 +47,4 @@ namespace sa {
 
 	};
 
-	typedef std::shared_ptr<Shader> ShaderPtr;
 }
