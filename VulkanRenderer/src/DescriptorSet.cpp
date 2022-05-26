@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "DescriptorSet.hpp"
+#include "Resources/DescriptorSet.hpp"
 
 namespace sa {
 	void DescriptorSet::create(vk::Device device, vk::DescriptorPool descriptorPool, uint32_t count, DescriptorSetLayout info, vk::DescriptorSetLayout layout, uint32_t setIndex) {

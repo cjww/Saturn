@@ -5,7 +5,7 @@
 
 namespace sa {
 
-    void checkError(vk::Result result, const char* msg, bool doThrow = true);
+    void checkError(vk::Result result, const std::string& msg, bool doThrow = true);
 
     VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType,
         const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);

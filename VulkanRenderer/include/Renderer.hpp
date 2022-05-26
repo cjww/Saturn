@@ -8,6 +8,7 @@
 
 #include "Texture.hpp"
 #include "RenderContext.hpp"
+#include "Resources/Buffer.hpp"
 
 struct GLFWwindow;
 
@@ -120,7 +121,7 @@ namespace sa {
 		ResourceID allocateDescriptorSet(ResourceID pipeline, uint32_t setIndex, uint32_t backBufferCount = 1);
 		void freeDescriptorSet(ResourceID descriptorSet);
 
-
+		Buffer createBuffer(BufferType type, size_t size, uint32_t elementCount, void* initialData);
 
 		RenderContext beginFrame(ResourceID swapchain);
 		void endFrame(ResourceID swapchain);

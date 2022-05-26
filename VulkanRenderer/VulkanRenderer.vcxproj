@@ -175,6 +175,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="include\Resources\Buffer.hpp" />
     <ClInclude Include="include\Resources\DescriptorSet.hpp" />
     <ClInclude Include="include\Resources\FramebufferSet.hpp" />
     <ClInclude Include="include\RenderProgramFactory.hpp" />
@@ -199,13 +200,14 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\RenderContext.cpp" />
-    <ClCompile Include="include\Resources\DescriptorSet.cpp" />
+    <ClCompile Include="src\Buffer.cpp" />
+    <ClCompile Include="src\DescriptorSet.cpp" />
     <ClCompile Include="src\Pipeline.cpp" />
     <ClCompile Include="src\Shader.cpp" />
     <ClCompile Include="src\ShaderSet.cpp" />
     <ClCompile Include="src\FramebufferSet.cpp" />
     <ClCompile Include="src\RenderProgramFactory.cpp" />
-    <ClCompile Include="include\Resources\DeviceMemoryManager.cpp" />
+    <ClCompile Include="src\DeviceMemoryManager.cpp" />
     <ClCompile Include="src\RenderProgram.cpp" />
     <ClCompile Include="src\RenderWindow.cpp" />
     <ClCompile Include="src\Swapchain.cpp" />

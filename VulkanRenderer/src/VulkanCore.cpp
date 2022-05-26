@@ -64,14 +64,6 @@ namespace sa {
 	}
 
 	void VulkanCore::createInstance() {
-		vk::ApplicationInfo appInfo{
-			.pApplicationName = "Saturn App",
-			.applicationVersion = 0,
-			.pEngineName = "Saturn",
-			.engineVersion = 0,
-			.apiVersion = VK_API_VERSION_1_3
-		};
-
 		uint32_t count = 0;
 		const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&count);
 		for (uint32_t i = 0; i < count; i++) {
@@ -81,7 +73,7 @@ namespace sa {
 		m_instanceExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
 
 		vk::InstanceCreateInfo instanceInfo{
-			.pApplicationInfo = &appInfo,
+			.pApplicationInfo = &m_appInfo,
 			.enabledExtensionCount = static_cast<uint32_t>(m_instanceExtensions.size()),
 			.ppEnabledExtensionNames = m_instanceExtensions.data()
 		};
@@ -216,8 +208,9 @@ namespace sa {
 		return !isDepthFormat(format);
 	}
 
-	void VulkanCore::init() {
-#if RENDERER_VALIDATION
+	void VulkanCore::init(vk::ApplicationInfo appInfo) {
+		m_appInfo = appInfo;
+#ifdef RENDERER_VALIDATION
 			setupDebug();
 #endif // RENDERER_VALIDATION
 		createInstance();
@@ -226,6 +219,7 @@ namespace sa {
 		
 		createCommandPools();
 
+		m_memoryManager.create(m_instance, m_device, m_physicalDevice, m_appInfo.apiVersion, { m_graphicsQueueInfo.family }, { m_computeQueueInfo.family });
 
 		m_defaultColorFormat = vk::Format::eR8G8B8A8Srgb;
 		m_defaultDepthFormat = vk::Format::eD16Unorm;
@@ -233,6 +227,7 @@ namespace sa {
 
 	void VulkanCore::cleanup() {
 		
+		m_memoryManager.destroy();
 
 		m_graphicsCommandPool.destroy();
 		m_computeCommandPool.destroy();
@@ -342,6 +337,14 @@ namespace sa {
 		return m_device.createFramebuffer(info);
 	}
 
+	FramebufferSet VulkanCore::createFrameBufferSet(vk::RenderPass renderPass, std::vector<std::vector<vk::ImageView>> attachments, uint32_t width, uint32_t height, uint32_t layers) {
+		std::vector<vk::Framebuffer> framebuffers(attachments.size());
+		for (uint32_t i = 0; i < attachments.size(); i++) {
+			framebuffers[i] = createFrameBuffer(renderPass, attachments[i], width, height, layers);
+		}
+		return FramebufferSet(m_device, framebuffers, { width, height });
+	}
+
 	vk::Pipeline VulkanCore::createGraphicsPipeline(vk::PipelineLayout layout, vk::RenderPass renderPass, uint32_t subpassIndex, vk::Extent2D extent, std::vector<vk::PipelineShaderStageCreateInfo> shaderStages, vk::PipelineVertexInputStateCreateInfo vertexInput, vk::PipelineCache cache,  PipelineConfig config) {
 
 		vk::PipelineInputAssemblyStateCreateInfo input{
@@ -438,6 +441,21 @@ namespace sa {
 		return result.value;
 	}
 
+	CommandBufferSet VulkanCore::allocateGraphicsCommandBufferSet(uint32_t count, vk::CommandBufferLevel level) {
+		return m_graphicsCommandPool.allocateCommandBufferSet(count, level);
+	}
+
+	CommandBufferSet VulkanCore::allocateComputeCommandBufferSet(uint32_t count, vk::CommandBufferLevel level) {
+		return m_computeCommandPool.allocateCommandBufferSet(count, level);
+	}
+
+	DeviceBuffer* VulkanCore::createBuffer(vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage, size_t size, void* initialData) {
+		return m_memoryManager.createBuffer(size, usage, memoryUsage, initialData);
+	}
+
+	void VulkanCore::destroyBuffer(DeviceBuffer* pBuffer) {
+		m_memoryManager.destroyBuffer(pBuffer);
+	}
 
 	uint32_t VulkanCore::getGraphicsQueueFamily() const {
 		return m_graphicsQueueInfo.family;
@@ -475,19 +493,5 @@ namespace sa {
 		return m_defaultDepthFormat;
 	}
 
-	CommandBufferSet VulkanCore::allocateGraphicsCommandBufferSet(uint32_t count, vk::CommandBufferLevel level) {
-		return m_graphicsCommandPool.allocateCommandBufferSet(count, level);
-	}
 
-	CommandBufferSet VulkanCore::allocateComputeCommandBufferSet(uint32_t count, vk::CommandBufferLevel level) {
-		return m_computeCommandPool.allocateCommandBufferSet(count, level);
-	}
-
-	FramebufferSet VulkanCore::createFrameBufferSet(vk::RenderPass renderPass, std::vector<std::vector<vk::ImageView>> attachments, uint32_t width, uint32_t height, uint32_t layers) {
-		std::vector<vk::Framebuffer> framebuffers(attachments.size());
-		for (uint32_t i = 0; i < attachments.size(); i++) {
-			framebuffers[i] = createFrameBuffer(renderPass, attachments[i], width, height, layers);
-		}
-		return FramebufferSet(m_device, framebuffers, { width, height });
-	}
 }

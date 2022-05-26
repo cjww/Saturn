@@ -18,8 +18,17 @@ namespace sa {
 
 	Renderer::Renderer() {
 		try {
+			vk::ApplicationInfo info = {
+				.pApplicationName = "Saturn App",
+				.applicationVersion = 0,
+				.pEngineName = "Saturn",
+				.engineVersion = 0,
+				.apiVersion = VK_API_VERSION_1_3
+			}; 
+
 			m_pCore = std::make_unique<VulkanCore>();
-			m_pCore->init();
+			
+			m_pCore->init(info);
 
 			ResourceManager::get().setCleanupFunction<Swapchain>([](Swapchain* p) { p->destroy(); });
 			ResourceManager::get().setCleanupFunction<FramebufferSet>([](FramebufferSet* p) { p->destroy(); });
@@ -155,6 +164,9 @@ namespace sa {
 		ResourceManager::get().remove<DescriptorSet>(descriptorSet);
 	}
 
+	Buffer Renderer::createBuffer(BufferType type, size_t size, uint32_t elementCount, void* initialData) {
+		return Buffer(m_pCore.get(), type, size, elementCount, initialData);
+	}
 
 	RenderContext Renderer::beginFrame(ResourceID swapchain) {
 		Swapchain* pSwapchain = RenderContext::getSwapchain(swapchain);

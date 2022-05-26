@@ -1,11 +1,8 @@
 #pragma once
 
 #include "debugFunctions.h"
-#include <vulkan\vulkan.hpp>
 
 #include "vk_mem_alloc.h"
-#include <memory>
-#include <vector>
 
 
 namespace sa {
@@ -66,14 +63,35 @@ namespace sa {
 		vk::Format getFormat(const std::vector<vk::Format>& candidates, vk::FormatFeatureFlagBits features, vk::ImageTiling tilling);
 
 	public:
-		DeviceMemoryManager(vk::Instance instance, vk::Device device, vk::PhysicalDevice physicalDevice, uint32_t apiVersion, const std::vector<uint32_t>& graphicsQueueFamilyIndices, const std::vector<uint32_t>& computeQueueFamilyIndices);
-		virtual ~DeviceMemoryManager();
+		DeviceMemoryManager() = default;
+		
+		void create(
+			vk::Instance instance,
+			vk::Device device,
+			vk::PhysicalDevice physicalDevice,
+			uint32_t apiVersion,
+			const std::vector<uint32_t>& graphicsQueueFamilyIndices,
+			const std::vector<uint32_t>& computeQueueFamilyIndices
+		);
+		
+		void destroy();
 
-		DeviceBuffer* createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, void* initialData = nullptr);
-		DeviceImage* createImage(vk::Extent3D extent, uint32_t arrayLayers, vk::Format format,
-			vk::ImageType type, vk::ImageLayout initialLayout, uint32_t mipLevels, const std::vector<uint32_t>& queueFamilyIndices,
-			vk::SampleCountFlagBits sampleCount, vk::SharingMode sharingMode, vk::ImageTiling tiling, vk::ImageUsageFlags usage,
-			VmaMemoryUsage memoryUsage, vk::MemoryPropertyFlags requiredMemoryProperties);
+		DeviceBuffer* createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage, void* initialData = nullptr);
+		DeviceImage* createImage(
+			vk::Extent3D extent, 
+			uint32_t arrayLayers, 
+			vk::Format format,
+			vk::ImageType type, 
+			vk::ImageLayout initialLayout, 
+			uint32_t mipLevels, 
+			const std::vector<uint32_t>& queueFamilyIndices,
+			vk::SampleCountFlagBits sampleCount, 
+			vk::SharingMode sharingMode, 
+			vk::ImageTiling tiling, 
+			vk::ImageUsageFlags usage,
+			VmaMemoryUsage memoryUsage, 
+			vk::MemoryPropertyFlags requiredMemoryProperties
+		);
 
 		DeviceImage* createDepthAttachmentTexture2D(vk::Extent2D extent, vk::SampleCountFlagBits sampleCount, uint32_t mipLevels = 1, uint32_t arrayLayers = 1);
 		DeviceImage* createColorTexture2D(vk::Extent2D extent, vk::ImageUsageFlags usage, vk::Format format, vk::SampleCountFlagBits sampleCount, uint32_t mipLevels, uint32_t arrayLayers);

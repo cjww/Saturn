@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "DeviceMemoryManager.hpp"
+#include "Resources/DeviceMemoryManager.hpp"
 
 #define VMA_IMPLEMENTATION
 #include "vk_mem_alloc.h"
@@ -41,13 +41,14 @@ namespace sa {
 		}
 		return vk::Format::eUndefined;
 	}
-	DeviceMemoryManager::DeviceMemoryManager(vk::Instance instance, vk::Device device, vk::PhysicalDevice physicalDevice, uint32_t apiVersion,
-		const std::vector<uint32_t>& graphicsQueueFamilyIndices, const std::vector<uint32_t>& computeQueueFamilyIndices) {
+	
+
+	void DeviceMemoryManager::create(vk::Instance instance, vk::Device device, vk::PhysicalDevice physicalDevice, uint32_t apiVersion, const std::vector<uint32_t>& graphicsQueueFamilyIndices, const std::vector<uint32_t>& computeQueueFamilyIndices) {
 
 		m_instance = instance;
 		m_physicalDevice = physicalDevice;
 		m_device = device;
-
+		
 		m_allocatorInfo.device = device;
 		m_allocatorInfo.instance = instance;
 		m_allocatorInfo.physicalDevice = physicalDevice;
@@ -59,8 +60,8 @@ namespace sa {
 		m_computeQueueFamilyIndices = computeQueueFamilyIndices;
 	}
 
-	DeviceMemoryManager::~DeviceMemoryManager() {
-		vkDeviceWaitIdle(m_allocatorInfo.device);
+	void DeviceMemoryManager::destroy() {
+		m_device.waitIdle();
 
 		for (auto& buffer : m_buffers) {
 			vmaDestroyBuffer(m_allocator, buffer->buffer, buffer->allocation);
@@ -75,14 +76,15 @@ namespace sa {
 		vmaDestroyAllocator(m_allocator);
 	}
 
-	DeviceBuffer* DeviceMemoryManager::createBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VmaMemoryUsage memoryUsage, void* initialData) {
+
+	DeviceBuffer* DeviceMemoryManager::createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage, void* initialData) {
 		m_buffers.push_back(new DeviceBuffer());
 		DeviceBuffer* buffer = m_buffers.back();
 
-		VkBufferCreateInfo bufferInfo = {};
-		bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
-		bufferInfo.size = size;
-		bufferInfo.usage = usage;
+		vk::BufferCreateInfo bufferInfo = {
+			.size = size,
+			.usage = usage,
+		};
 
 		VmaAllocationCreateInfo allocInfo = {};
 		allocInfo.usage = memoryUsage;
@@ -90,8 +92,11 @@ namespace sa {
 		
 		VmaAllocationInfo info;
 		VkBuffer cbuffer;
-		vmaCreateBuffer(m_allocator, &bufferInfo, &allocInfo, &cbuffer, &buffer->allocation, &info);
+		VkBufferCreateInfo cBufferInfo = (VkBufferCreateInfo)bufferInfo;
+		vk::Result result = (vk::Result)vmaCreateBuffer(m_allocator, &cBufferInfo, &allocInfo, &cbuffer, &buffer->allocation, &info);
 		buffer->buffer = cbuffer;
+
+		checkError(result, "Failed to allocate buffer of size " + size, false);
 
 		buffer->size = size;
 		buffer->mappedData = info.pMappedData;

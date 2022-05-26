@@ -5,8 +5,8 @@
 
 #include "CommandPool.hpp"
 #include "Resources/FramebufferSet.hpp"
-
 #include "Resources\ShaderSet.hpp"
+#include "Resources/DeviceMemoryManager.hpp"
 
 namespace sa {
 
@@ -56,7 +56,7 @@ namespace sa {
 
 	class VulkanCore {
 	private:
-
+		vk::ApplicationInfo m_appInfo;
 		vk::Instance m_instance;
 		vk::Device m_device;
 		vk::PhysicalDevice m_physicalDevice;
@@ -77,6 +77,7 @@ namespace sa {
 		vk::Format m_defaultColorFormat;
 		vk::Format m_defaultDepthFormat;
 
+		DeviceMemoryManager m_memoryManager;
 
 		uint32_t getQueueFamilyIndex(vk::QueueFlags capabilities, vk::QueueFamilyProperties* prop);
 		QueueInfo getQueueInfo(vk::QueueFlags capabilities, uint32_t maxCount);
@@ -96,7 +97,7 @@ namespace sa {
 
 
 
-		void init();
+		void init(vk::ApplicationInfo appInfo);
 		void cleanup();
 
 		vk::SurfaceKHR createSurface(GLFWwindow* pWindow);
@@ -104,6 +105,12 @@ namespace sa {
 		vk::ImageView createImageView(vk::ImageViewType type, vk::Image image, vk::Format format, vk::ImageAspectFlags aspectMask, uint32_t baseMipLevel, uint32_t baseArrayLevel);
 		
 		vk::Framebuffer createFrameBuffer(vk::RenderPass renderPass, std::vector<vk::ImageView> attachments, uint32_t width, uint32_t height, uint32_t layers);
+		FramebufferSet createFrameBufferSet(
+			vk::RenderPass renderPass, 
+			std::vector<std::vector<vk::ImageView>> attachments, 
+			uint32_t width, 
+			uint32_t height, 
+			uint32_t layers);
 
 		vk::Pipeline createGraphicsPipeline(
 			vk::PipelineLayout layout,
@@ -117,13 +124,9 @@ namespace sa {
 
 		CommandBufferSet allocateGraphicsCommandBufferSet(uint32_t count, vk::CommandBufferLevel level);
 		CommandBufferSet allocateComputeCommandBufferSet(uint32_t count, vk::CommandBufferLevel level);
-		FramebufferSet createFrameBufferSet(
-			vk::RenderPass renderPass, 
-			std::vector<std::vector<vk::ImageView>> attachments, 
-			uint32_t width, 
-			uint32_t height, 
-			uint32_t layers);
-
+		
+		DeviceBuffer* createBuffer(vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage, size_t size, void* initialData);
+		void destroyBuffer(DeviceBuffer* pBuffer);
 
 		uint32_t getGraphicsQueueFamily() const;
 		vk::Queue getGraphicsQueue() const;

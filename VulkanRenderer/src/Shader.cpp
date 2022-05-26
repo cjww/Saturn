@@ -169,8 +169,7 @@ namespace sa {
 
 		m_info.setPName("main");
 		m_info.setStage(m_stage);
-
-		m_pCompiler = std::make_shared<spirv_cross::Compiler>(code.data(), code.size());
+		m_pCompiler = std::make_shared<spirv_cross::Compiler>(code);
 		for (auto ext : m_pCompiler->get_declared_extensions()) {
 			DEBUG_LOG_INFO("Shader uses vulkan extension: ", ext);
 		}
