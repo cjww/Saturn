@@ -232,7 +232,11 @@ uint32_t quadIndices[] = {
 };
 */
 
-
+struct UBO {
+	glm::mat4 world;
+	glm::mat4 view;
+	glm::mat4 projection;
+};
 
 struct VertexColor {
 	float position[4];
@@ -280,9 +284,6 @@ int main() {
 			"TestShader.frag.spv");
 
 
-		ResourceID descriptorSet = renderer.allocateDescriptorSet(pipeline, 0, renderer.getSwapchainImageCount(window.getSwapchainID()));
-
-
 		sa::Buffer vertexBuffer = renderer.createBuffer(
 			sa::BufferType::VERTEX, quad.size() * sizeof(VertexColor), quad.data());
 		
@@ -296,7 +297,19 @@ int main() {
 		});
 
 
+		ResourceID descriptorSet = renderer.allocateDescriptorSet(pipeline, 0, renderer.getSwapchainImageCount(window.getSwapchainID()));
 
+		sa::Buffer uniformBuffer = renderer.createBuffer(
+			sa::BufferType::UNIFORM);
+
+		UBO ubo = {};
+		ubo.world = glm::mat4(1);
+		ubo.view = glm::lookAt(glm::vec3{ 0, 0, 1 }, { 0, 0, 0 }, { 0, 1, 0 });
+		ubo.projection = glm::perspective(glm::radians(90.f), (float)WIDTH / HEIGHT, 0.01f, 1000.0f);
+
+		uniformBuffer.write(ubo);
+
+		renderer.updateDescriptorSet(descriptorSet, 0, uniformBuffer);
 
 		while (window.isOpen()) {
 			window.pollEvents();
@@ -307,10 +320,11 @@ int main() {
 
 				context.beginRenderProgram(renderProgram, framebuffer);
 				context.bindPipeline(pipeline);
-
+				context.bindDescriptorSet(descriptorSet, pipeline);
 				// Drawing
 				context.bindVertexBuffers(0, { vertexBuffer });
 				context.bindIndexBuffer(indexBuffer);
+				
 				context.drawIndexed(indexBuffer.getElementCount<uint32_t>(), 1);
 
 				context.endRenderProgram(renderProgram);

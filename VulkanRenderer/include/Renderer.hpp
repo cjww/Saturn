@@ -119,6 +119,7 @@ namespace sa {
 		void destroyPipeline(ResourceID pipeline);
 
 		ResourceID allocateDescriptorSet(ResourceID pipeline, uint32_t setIndex, uint32_t backBufferCount = 1ui32);
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Buffer& buffer);
 		void freeDescriptorSet(ResourceID descriptorSet);
 
 		Buffer createBuffer(BufferType type, size_t size = 0ui64, void* initialData = nullptr);

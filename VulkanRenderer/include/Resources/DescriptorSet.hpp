@@ -25,5 +25,12 @@ namespace sa {
 			vk::DescriptorSetLayout layout,
 			uint32_t setIndex);
 		void destroy();
+
+		void update(uint32_t binding, vk::Buffer buffer, vk::DeviceSize bufferSize, vk::DeviceSize bufferOffset, uint32_t indexToUpdate);
+		
+		vk::DescriptorSet getSet(uint32_t index) const;
+
+		uint32_t getSetIndex() const;
+
 	};
 }

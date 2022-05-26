@@ -37,6 +37,13 @@ namespace sa {
 		return pPipeline;
 	}
 
+	DescriptorSet* RenderContext::getDescriptorSet(ResourceID id) {
+		DescriptorSet* pDescriptorSet = ResourceManager::get().get<DescriptorSet>(id);
+		if (!pDescriptorSet)
+			throw std::runtime_error("Nonexistent descriptor set: " + id);
+		return pDescriptorSet;
+	}
+
 	RenderContext::RenderContext()
 		: m_pCommandBufferSet(nullptr)
 	{
@@ -87,6 +94,33 @@ namespace sa {
 	void RenderContext::bindIndexBuffer(const Buffer& buffer) {
 		const DeviceBuffer* deviceBuffer = (const DeviceBuffer*)buffer;
 		m_pCommandBufferSet->getBuffer().bindIndexBuffer(deviceBuffer->buffer, 0, vk::IndexType::eUint32);
+	}
+
+
+	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Buffer& buffer) {
+		DescriptorSet* pDedscriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+		const DeviceBuffer* pDeviceBuffer = (const DeviceBuffer*)buffer;
+		pDedscriptorSet->update(binding, pDeviceBuffer->buffer, pDeviceBuffer->size, 0, m_pCommandBufferSet->getBufferIndex());
+	}
+
+	void RenderContext::bindDescriptorSet(ResourceID descriptorSet, ResourceID pipeline) {
+		Pipeline* pPipeline = getPipeline(pipeline);
+		DescriptorSet* pDedscriptorSet = getDescriptorSet(descriptorSet);
+		pPipeline->bindDescriptorSet(m_pCommandBufferSet, pDedscriptorSet);
+	}
+
+	void RenderContext::bindDescriptorSets(const std::vector<ResourceID>& descriptorSets, ResourceID pipeline) {
+		Pipeline* pPipeline = getPipeline(pipeline);
+		std::vector<vk::DescriptorSet> sets;
+		sets.reserve(descriptorSets.size());
+		uint32_t firstSet = UINT32_MAX;
+		for (auto id : descriptorSets) {
+			DescriptorSet* pDescriptorSet = getDescriptorSet(id);
+			if (firstSet == UINT32_MAX)
+				firstSet = pDescriptorSet->getSetIndex();
+			sets.push_back(pDescriptorSet->getSet(m_pCommandBufferSet->getBufferIndex()));
+		}
+		pPipeline->bindDescriptorSets(m_pCommandBufferSet, firstSet, sets);
 	}
 
 	void RenderContext::draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) {

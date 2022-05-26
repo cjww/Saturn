@@ -160,6 +160,12 @@ namespace sa {
 		return ResourceManager::get().insert<DescriptorSet>(pPipeline->allocateDescriptSet(setIndex, backBufferCount));
 	}
 
+	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Buffer& buffer) {
+		DescriptorSet* pDedscriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+		const DeviceBuffer* pDeviceBuffer = (const DeviceBuffer*)buffer;
+		pDedscriptorSet->update(binding, pDeviceBuffer->buffer, pDeviceBuffer->size, 0, UINT32_MAX);
+	}
+
 	void Renderer::freeDescriptorSet(ResourceID descriptorSet) {
 		ResourceManager::get().remove<DescriptorSet>(descriptorSet);
 	}
