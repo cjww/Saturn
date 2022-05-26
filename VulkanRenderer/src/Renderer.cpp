@@ -164,8 +164,8 @@ namespace sa {
 		ResourceManager::get().remove<DescriptorSet>(descriptorSet);
 	}
 
-	Buffer Renderer::createBuffer(BufferType type, size_t size, uint32_t elementCount, void* initialData) {
-		return Buffer(m_pCore.get(), type, size, elementCount, initialData);
+	Buffer Renderer::createBuffer(BufferType type, size_t size, void* initialData) {
+		return Buffer(m_pCore.get(), type, size, initialData);
 	}
 
 	RenderContext Renderer::beginFrame(ResourceID swapchain) {

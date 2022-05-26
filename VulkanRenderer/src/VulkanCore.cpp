@@ -449,8 +449,8 @@ namespace sa {
 		return m_computeCommandPool.allocateCommandBufferSet(count, level);
 	}
 
-	DeviceBuffer* VulkanCore::createBuffer(vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage, size_t size, void* initialData) {
-		return m_memoryManager.createBuffer(size, usage, memoryUsage, initialData);
+	DeviceBuffer* VulkanCore::createBuffer(vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags allocationFlags, size_t size, void* initialData) {
+		return m_memoryManager.createBuffer(size, usage, memoryUsage, allocationFlags, initialData);
 	}
 
 	void VulkanCore::destroyBuffer(DeviceBuffer* pBuffer) {

@@ -110,18 +110,18 @@ namespace sa {
 		void setClearColor(ResourceID renderProgram, Color color, uint32_t attachmentIndex);
 		void setClearColor(ResourceID renderProgram, Color color);
 
-		ResourceID createFramebuffer(ResourceID renderProgram, const std::vector<Texture2D>& attachmentTextures, uint32_t layers = 1U);
-		ResourceID createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<Texture2D>& additionalAttachmentTextures, uint32_t layers = 1U);
+		ResourceID createFramebuffer(ResourceID renderProgram, const std::vector<Texture2D>& attachmentTextures, uint32_t layers = 1ui32);
+		ResourceID createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<Texture2D>& additionalAttachmentTextures, uint32_t layers = 1ui32);
 		void destroyFramebuffer(ResourceID framebuffer);
 
 		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& fragmentShader);
 		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& geometryShader, const std::string& fragmentShader);
 		void destroyPipeline(ResourceID pipeline);
 
-		ResourceID allocateDescriptorSet(ResourceID pipeline, uint32_t setIndex, uint32_t backBufferCount = 1);
+		ResourceID allocateDescriptorSet(ResourceID pipeline, uint32_t setIndex, uint32_t backBufferCount = 1ui32);
 		void freeDescriptorSet(ResourceID descriptorSet);
 
-		Buffer createBuffer(BufferType type, size_t size, uint32_t elementCount, void* initialData);
+		Buffer createBuffer(BufferType type, size_t size = 0ui64, void* initialData = nullptr);
 
 		RenderContext beginFrame(ResourceID swapchain);
 		void endFrame(ResourceID swapchain);

@@ -66,7 +66,35 @@ namespace sa {
 		pPipeline->bind(m_pCommandBufferSet);
 	}
 
+	void RenderContext::bindVertexBuffers(uint32_t firstBinding, const std::vector<Buffer>& buffers) {
+		if (buffers.empty())
+			return;
+
+		std::vector<vk::Buffer> vkBuffers;
+		std::vector<vk::DeviceSize> offsets(buffers.size(), 0);
+		vkBuffers.reserve(buffers.size());
+		for (const Buffer& buffer : buffers) {
+			if (buffer.getType() != BufferType::VERTEX) {
+				DEBUG_LOG_ERROR("All buffers must be of VERTEX type");
+				return;
+			}
+			const DeviceBuffer* deviceBuffer = (const DeviceBuffer*)buffer;
+			vkBuffers.push_back(deviceBuffer->buffer);
+		}
+		m_pCommandBufferSet->getBuffer().bindVertexBuffers(firstBinding, vkBuffers, offsets);
+	}
+
+	void RenderContext::bindIndexBuffer(const Buffer& buffer) {
+		const DeviceBuffer* deviceBuffer = (const DeviceBuffer*)buffer;
+		m_pCommandBufferSet->getBuffer().bindIndexBuffer(deviceBuffer->buffer, 0, vk::IndexType::eUint32);
+	}
+
 	void RenderContext::draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) {
 		m_pCommandBufferSet->getBuffer().draw(vertexCount, instanceCount, firstVertex, firstInstance);
 	}
+
+	void RenderContext::drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance) {
+		m_pCommandBufferSet->getBuffer().drawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
+	}
+
 }

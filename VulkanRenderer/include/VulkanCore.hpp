@@ -23,7 +23,7 @@ namespace sa {
 
 		struct Rasterizer {
 			vk::CullModeFlags cullMode = vk::CullModeFlagBits::eBack;
-			vk::FrontFace frontFace = vk::FrontFace::eCounterClockwise;
+			vk::FrontFace frontFace = vk::FrontFace::eClockwise;
 			vk::PolygonMode polygonMode = vk::PolygonMode::eFill;
 		} rasterizer;
 
@@ -125,7 +125,7 @@ namespace sa {
 		CommandBufferSet allocateGraphicsCommandBufferSet(uint32_t count, vk::CommandBufferLevel level);
 		CommandBufferSet allocateComputeCommandBufferSet(uint32_t count, vk::CommandBufferLevel level);
 		
-		DeviceBuffer* createBuffer(vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage, size_t size, void* initialData);
+		DeviceBuffer* createBuffer(vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags allocationFlags, size_t size, void* initialData);
 		void destroyBuffer(DeviceBuffer* pBuffer);
 
 		uint32_t getGraphicsQueueFamily() const;

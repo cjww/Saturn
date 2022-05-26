@@ -12,6 +12,11 @@
 */
 
 #include <chrono>
+#include <array>
+
+#include "glm\common.hpp"
+#include "glm\gtc\matrix_transform.hpp"
+
 /*
 class CameraController {
 private:
@@ -235,11 +240,11 @@ struct VertexColor {
 };
 
 
-VertexColor quad[] = {
-	{ { -0.5f, 0.5f, 0.0f, 1.0f },	{ 1.0f, 0.0f } },
-	{ { 0.5f, 0.5f, 0.0f, 1.0f },	{ 0.0f, 0.0f } },
-	{ { 0.5f, -0.5f, 0.0f, 1.0f },	{ 0.0f, 1.0f } },
-	{ { -0.5f, -0.5f, 0.0f, 1.0f },	{ 1.0f, 1.0f } }
+std::array<VertexColor, 4> quad = {
+	VertexColor{ { -0.5f, -0.5f, 0.0f, 1.0f },	{ 1.0f, 0.0f, 0.0f, 1.0f } },
+	VertexColor{ { 0.5f, -0.5f, 0.0f, 1.0f },	{ 0.0f, 1.0f, 0.0f, 1.0f } },
+	VertexColor{ { 0.5f, 0.5f, 0.0f, 1.0f },	{ 0.0f, 0.0f, 1.0f, 1.0f } },
+	VertexColor{ { -0.5f, 0.5f, 0.0f, 1.0f },	{ 1.0f, 0.0f, 1.0f, 1.0f } }
 };
 
 
@@ -257,10 +262,10 @@ int main() {
 		auto renderProgram = renderer.createRenderProgram()
 			.addSwapchainAttachment(window.getSwapchainID()) // 0
 			.beginSubpass()
-				.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
+			.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
 			.endSubpass()
 			.end();
-	
+
 
 		sa::Color clearColor = { 0.2f, 0.7f, 0.8f, 1.f };
 		renderer.setClearColor(renderProgram, clearColor);
@@ -274,8 +279,22 @@ int main() {
 			"TestShader.vert.spv",
 			"TestShader.frag.spv");
 
-	
+
 		ResourceID descriptorSet = renderer.allocateDescriptorSet(pipeline, 0, renderer.getSwapchainImageCount(window.getSwapchainID()));
+
+
+		sa::Buffer vertexBuffer = renderer.createBuffer(
+			sa::BufferType::VERTEX, quad.size() * sizeof(VertexColor), quad.data());
+		
+
+		sa::Buffer indexBuffer = renderer.createBuffer(
+			sa::BufferType::INDEX);
+
+		indexBuffer.write<uint32_t, 6>({
+			0, 1, 3,
+			1, 2, 3
+		});
+
 
 
 
@@ -290,7 +309,9 @@ int main() {
 				context.bindPipeline(pipeline);
 
 				// Drawing
-				context.draw(3, 1);
+				context.bindVertexBuffers(0, { vertexBuffer });
+				context.bindIndexBuffer(indexBuffer);
+				context.drawIndexed(indexBuffer.getElementCount<uint32_t>(), 1);
 
 				context.endRenderProgram(renderProgram);
 				

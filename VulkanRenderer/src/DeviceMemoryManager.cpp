@@ -48,7 +48,7 @@ namespace sa {
 		m_instance = instance;
 		m_physicalDevice = physicalDevice;
 		m_device = device;
-		
+
 		m_allocatorInfo.device = device;
 		m_allocatorInfo.instance = instance;
 		m_allocatorInfo.physicalDevice = physicalDevice;
@@ -77,7 +77,7 @@ namespace sa {
 	}
 
 
-	DeviceBuffer* DeviceMemoryManager::createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage, void* initialData) {
+	DeviceBuffer* DeviceMemoryManager::createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags allocationFlags, void* initialData) {
 		m_buffers.push_back(new DeviceBuffer());
 		DeviceBuffer* buffer = m_buffers.back();
 
@@ -88,7 +88,7 @@ namespace sa {
 
 		VmaAllocationCreateInfo allocInfo = {};
 		allocInfo.usage = memoryUsage;
-		allocInfo.flags = VMA_ALLOCATION_CREATE_MAPPED_BIT;
+		allocInfo.flags = allocationFlags;
 		
 		VmaAllocationInfo info;
 		VkBuffer cbuffer;

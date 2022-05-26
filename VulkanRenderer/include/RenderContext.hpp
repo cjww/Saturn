@@ -1,6 +1,7 @@
 #pragma once
 
 #include "structs.hpp"
+#include "Resources/Buffer.hpp"
 
 namespace sa {
 	class CommandBufferSet;
@@ -30,10 +31,12 @@ namespace sa {
 		void beginRenderProgram(ResourceID renderProgram, ResourceID framebuffer, Rect renderArea = { {0, 0}, {0, 0} });
 		void endRenderProgram(ResourceID renderProgram);
 
-
 		void bindPipeline(ResourceID pipeline);
+		void bindVertexBuffers(uint32_t firstBinding, const std::vector<Buffer>& buffers);
+		void bindIndexBuffer(const Buffer& buffer);
 
 		void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex = 0, uint32_t firstInstance = 0);
+		void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0);
 
 
 		operator bool() {

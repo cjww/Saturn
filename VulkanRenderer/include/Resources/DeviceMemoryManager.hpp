@@ -76,7 +76,7 @@ namespace sa {
 		
 		void destroy();
 
-		DeviceBuffer* createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage, void* initialData = nullptr);
+		DeviceBuffer* createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags allocationFlags, void* initialData = nullptr);
 		DeviceImage* createImage(
 			vk::Extent3D extent, 
 			uint32_t arrayLayers, 
