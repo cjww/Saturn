@@ -27,14 +27,14 @@ namespace sa {
 	#endif // _WIN32
 
 		if (thisWindow->m_onKeyFunction != nullptr) {
-			thisWindow->m_onKeyFunction(key, action, mods, scancode);
+			thisWindow->m_onKeyFunction((Key)key, (InputAction)action, (ModKeyFlags)mods, scancode);
 		}
 	}
 
 	void Window::onMouseButton(GLFWwindow* window, int button, int action, int mods) {
 		Window* w = (Window*)glfwGetWindowUserPointer(window);
 		if (w->m_onMouseButtonFunction != nullptr) {
-			w->m_onMouseButtonFunction(button, action, mods);
+			w->m_onMouseButtonFunction((MouseButton)button, (InputAction)action, (ModKeyFlags)mods);
 		}
 	}
 
@@ -198,12 +198,12 @@ namespace sa {
 		return m_window;
 	}
 
-	int Window::getKey(int keyCode) const {
-		return glfwGetKey(m_window, keyCode);
+	int Window::getKey(Key keyCode) const {
+		return glfwGetKey(m_window, (int)keyCode);
 	}
 
-	int Window::getMouseButton(int button) const {
-		return glfwGetMouseButton(m_window, button);
+	int Window::getMouseButton(MouseButton button) const {
+		return glfwGetMouseButton(m_window, (int)button);
 	}
 
 	Point Window::getCursorPosition() const {
@@ -224,11 +224,11 @@ namespace sa {
 		return glfwGetInputMode(m_window, GLFW_CURSOR) == GLFW_CURSOR_HIDDEN;
 	}
 
-	void Window::setKeyCallback(std::function<void(int, int, int, int)> func) {
+	void Window::setKeyCallback(KeyCallback func) {
 		m_onKeyFunction = func;
 	}
 
-	void Window::setMouseButtonCallback(std::function<void(int, int, int)> func) {
+	void Window::setMouseButtonCallback(MouseButtonCallback func) {
 		m_onMouseButtonFunction = func;
 	}
 

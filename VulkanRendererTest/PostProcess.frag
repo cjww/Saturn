@@ -13,5 +13,5 @@ void main() {
     out_color = subpassLoad(colorTexture);
     out_color += subpassLoad(positionTexture);
     
-    //out_color = min(out_color, vec4(1, 1, 1, 1));
+    out_color = normalize(out_color);
 }

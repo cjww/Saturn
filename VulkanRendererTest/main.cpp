@@ -6,21 +6,17 @@
 #include <Renderer.hpp>
 #include <RenderWindow.hpp>
 #include <Tools\Logger.hpp>
-/*
-#include <glm/gtc/matrix_transform.hpp>
-#include <glm/gtx/transform.hpp>
-*/
 
 #include <chrono>
 #include <array>
 
 #include "glm\common.hpp"
 #include "glm\gtc\matrix_transform.hpp"
+#include "glm/gtx/transform.hpp"
 
-/*
 class CameraController {
 private:
-	RenderWindow& window;
+	sa::RenderWindow& window;
 	glm::vec3 viewForward;
 	glm::vec3 viewPos;
 	glm::vec2 lastMousePos;
@@ -30,11 +26,11 @@ private:
 
 public:
 	float speed = 10.f;
-	float sensitivty = 1.f;
+	float sensitivty = 10.f;
 		
 	bool mouseLocked;
 
-	CameraController(RenderWindow& window) : window(window) {
+	CameraController(sa::RenderWindow& window) : window(window) {
 		viewForward = glm::vec3(0, 0, 1);
 		viewPos = glm::vec3(0.f);
 		
@@ -43,27 +39,27 @@ public:
 	};
 
 	glm::mat4 getView(float dt) {
-		int hori = glfwGetKey(window.getWindowHandle(), GLFW_KEY_D) - glfwGetKey(window.getWindowHandle(), GLFW_KEY_A);
-		int vert = glfwGetKey(window.getWindowHandle(), GLFW_KEY_W) - glfwGetKey(window.getWindowHandle(), GLFW_KEY_S);
+		int hori = window.getKey(sa::Key::D) - window.getKey(sa::Key::A);
+		int vert = window.getKey(sa::Key::W) - window.getKey(sa::Key::S);
 
-		glm::vec2 mPos = window.getCursorPosition();
-		glm::vec2 center = glm::vec2(window.getCurrentExtent().x / 2, window.getCurrentExtent().y / 2);
+		glm::vec2 mPos = { window.getCursorPosition().x, window.getCursorPosition().y };
+		glm::vec2 center = glm::vec2((float)window.getCurrentExtent().width / 2, (float)window.getCurrentExtent().height / 2);
 		glm::vec2 diff = mPos - center;
 		if (mouseLocked) {
-			window.setCursorPosition(center);
+			window.setCursorPosition({ center.x, center.y });
 		}
 		else {
 			diff = glm::vec2(0, 0);
 		}
 
-		if (window.getKey(GLFW_KEY_ESCAPE) && !escapePressed) {
+		if (window.getKey(sa::Key::ESCAPE) && !escapePressed) {
 			mouseLocked = !mouseLocked;
 			window.setHideCursor(mouseLocked);
 		}
-		escapePressed = window.getKey(GLFW_KEY_ESCAPE);
+		escapePressed = window.getKey(sa::Key::ESCAPE);
 
-		int up = glfwGetKey(window.getWindowHandle(), GLFW_KEY_SPACE) - glfwGetKey(window.getWindowHandle(), GLFW_KEY_LEFT_CONTROL);
-		bool sprint = glfwGetKey(window.getWindowHandle(), GLFW_KEY_LEFT_SHIFT);
+		int up = window.getKey(sa::Key::SPACE) - window.getKey(sa::Key::LEFT_CONTROL);
+		bool sprint = window.getKey(sa::Key::LEFT_SHIFT);
 
 		viewForward = glm::vec3(glm::vec4(viewForward, 0.0f) * glm::rotate(diff.x * dt * sensitivty, glm::vec3(0, 1, 0)));
 
@@ -83,16 +79,16 @@ public:
 		
 		return glm::lookAt(viewPos, viewPos + viewForward, glm::vec3(0, 1, 0));
 	}
-
+	/*
 	glm::mat4 getViewRayTracing(float dt) {
-		int hori = glfwGetKey(window.getWindowHandle(), GLFW_KEY_D) - glfwGetKey(window.getWindowHandle(), GLFW_KEY_A);
-		int vert = glfwGetKey(window.getWindowHandle(), GLFW_KEY_W) - glfwGetKey(window.getWindowHandle(), GLFW_KEY_S);
+		int hori = window.getKey(sa::Key::D) - window.getKey(sa::Key::A);
+		int vert = window.getKey(sa::Key::W) - window.getKey(sa::Key::S);
 
-		glm::vec2 mPos = window.getCursorPosition();
-		glm::vec2 center = glm::vec2(window.getCurrentExtent().x / 2, window.getCurrentExtent().y / 2);
+		glm::vec2 mPos = { window.getCursorPosition().x, window.getCursorPosition().y };
+		glm::vec2 center = glm::vec2((float)window.getCurrentExtent().width / 2, (float)window.getCurrentExtent().height / 2);
 		glm::vec2 diff = mPos - center;
 		if (mouseLocked) {
-			window.setCursorPosition(center);
+			window.setCursorPosition({ center.x, center.y });
 		}
 		else {
 			diff = glm::vec2(0, 0);
@@ -125,13 +121,15 @@ public:
 		return mat;
 
 	}
+	*/
 
 	glm::mat4 getProjection(float fovDegrees) {
-		auto projection = glm::perspective(glm::radians(fovDegrees), (float)window.getCurrentExtent().x / window.getCurrentExtent().y, 0.01f, 1000.0f);
+		auto projection = glm::perspective(glm::radians(fovDegrees), (float)window.getCurrentExtent().width / window.getCurrentExtent().height, 0.01f, 1000.0f);
 		projection[1][1] *= -1;
 		return projection;
 	}
 };
+/*
 
 class FrameTimer {
 private:
@@ -250,10 +248,10 @@ struct VertexColorUV {
 
 
 std::array<VertexColorUV, 4> quad = {
-	VertexColorUV{ { -0.5f, -0.5f, 0.0f, 1.0f },{ 1.0f, 0.0f, 0.0f, 1.0f }, {0.0f, 0.0f} },
-	VertexColorUV{ { 0.5f, -0.5f, 0.0f, 1.0f },	{ 0.0f, 1.0f, 0.0f, 1.0f }, {1.0f, 0.0f} },
-	VertexColorUV{ { 0.5f, 0.5f, 0.0f, 1.0f },	{ 0.0f, 0.0f, 1.0f, 1.0f }, {1.0f, 1.0f} },
-	VertexColorUV{ { -0.5f, 0.5f, 0.0f, 1.0f },	{ 1.0f, 0.0f, 1.0f, 1.0f }, {0.0f, 1.0f} }
+	VertexColorUV{ { -0.5f, -0.5f, 0.0f, 1.0f },{ 1.0f, 0.0f, 0.0f, 1.0f }, {0.0f, 1.0f} },
+	VertexColorUV{ { 0.5f, -0.5f, 0.0f, 1.0f },	{ 0.0f, 1.0f, 0.0f, 1.0f }, {1.0f, 1.0f} },
+	VertexColorUV{ { 0.5f, 0.5f, 0.0f, 1.0f },	{ 0.0f, 0.0f, 1.0f, 1.0f }, {1.0f, 0.0f} },
+	VertexColorUV{ { -0.5f, 0.5f, 0.0f, 1.0f },	{ 1.0f, 1.0f, 1.0f, 1.0f }, {0.0f, 0.0f} }
 };
 
 
@@ -344,12 +342,17 @@ int main() {
 		sa::Buffer uniformBuffer = renderer.createBuffer(
 			sa::BufferType::UNIFORM);
 
+		CameraController camera(window);
+
 		UBO ubo = {};
 		ubo.view = glm::lookAt(glm::vec3{ 0, 0, 1 }, { 0, 0, 0 }, { 0, 1, 0 });
-		ubo.projection = glm::perspective(glm::radians(90.f), (float)WIDTH / HEIGHT, 0.1f, 10.0f);
+		ubo.projection = camera.getProjection(90);
 
 		uniformBuffer.write(ubo); 
 		renderer.updateDescriptorSet(descriptorSet, 0, uniformBuffer);
+
+
+
 
 		std::vector<PushConstant> objects;
 
@@ -373,16 +376,24 @@ int main() {
 
 		auto now = std::chrono::high_resolution_clock::now();
 		float dt = 0;
+		float timer = 0.0f;
 		while (window.isOpen()) {
 			window.pollEvents();
 			
+			timer += dt;
+			ubo.view = camera.getView(dt);
+
 			objects[0].world = glm::rotate(objects[0].world, dt, {0.f, 1.0f, 0.f});
+			objects[1].world = glm::translate(glm::mat4(1), { 0.f, std::sin(timer * 2), 0.f });
 
 			window.setWindowTitle("FPS: " + std::to_string(1 / dt));
 
 			sa::RenderContext context = window.beginFrame();
 			if (context) {
 				
+				uniformBuffer.write(ubo);
+				context.updateDescriptorSet(descriptorSet, 0, uniformBuffer);
+
 				context.beginRenderProgram(mainRenderProgram, mainFramebuffer);
 					context.bindPipeline(mainPipeline);
 					context.bindDescriptorSet(descriptorSet, mainPipeline);

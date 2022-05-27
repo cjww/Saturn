@@ -5,9 +5,16 @@
 
 #include "structs.hpp"
 
+#include "InputEnums.hpp."
+
 struct GLFWwindow;
 struct GLFWmonitor;
+
+
 namespace sa {
+
+	typedef std::function<void(Key, InputAction, ModKeyFlags, int)> KeyCallback;
+	typedef std::function<void(MouseButton, InputAction, ModKeyFlags)> MouseButtonCallback;
 
 	class Window {
 	private:
@@ -20,8 +27,8 @@ namespace sa {
 		bool m_isIconified;
 		bool m_wasResized;
 
-		std::function<void(int, int, int, int)> m_onKeyFunction;
-		std::function<void(int, int, int)> m_onMouseButtonFunction;
+		KeyCallback m_onKeyFunction;
+		MouseButtonCallback m_onMouseButtonFunction;
 
 	protected:
 		static void onResize(GLFWwindow* window, int width, int height);
@@ -59,8 +66,8 @@ namespace sa {
 
 		GLFWwindow* getWindowHandle() const;
 
-		int getKey(int keyCode) const;
-		int getMouseButton(int button) const;
+		int getKey(Key keyCode) const;
+		int getMouseButton(MouseButton button) const;
 
 		Point getCursorPosition() const;
 		void setCursorPosition(const Point& position);
@@ -68,9 +75,9 @@ namespace sa {
 		void setHideCursor(bool value);
 		bool isHidingCursor() const;
 
-		void setKeyCallback(std::function<void(int, int, int, int)> func);
+		void setKeyCallback(KeyCallback func);
 
-		void setMouseButtonCallback(std::function<void(int, int, int)> func);
+		void setMouseButtonCallback(MouseButtonCallback func);
 
 		void setWasResized(bool value);
 		bool wasResized() const;
