@@ -51,6 +51,7 @@ namespace sa {
 		RenderContext(CommandBufferSet* pCommandBufferSet);
 
 		void beginRenderProgram(ResourceID renderProgram, ResourceID framebuffer, Rect renderArea = { {0, 0}, {0, 0} });
+		void nextSubpass();
 		void endRenderProgram(ResourceID renderProgram);
 
 		void bindPipeline(ResourceID pipeline);

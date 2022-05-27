@@ -10,6 +10,7 @@
 #include "Resources/Buffer.hpp"
 #include "Resources/Texture.hpp"
 #include "Image.hpp"
+#include "FormatFlags.hpp"
 
 struct GLFWwindow;
 
@@ -38,6 +39,9 @@ namespace sa {
 
 		std::unique_ptr<VulkanCore> m_pCore;
 		std::queue<DataTransfer> m_transferQueue;
+
+
+
 		/*
 		CommandBufferSet* m_pComputeCommandBufferSet;
 		*/
@@ -124,7 +128,7 @@ namespace sa {
 		void setClearColor(ResourceID renderProgram, Color color, uint32_t attachmentIndex);
 		void setClearColor(ResourceID renderProgram, Color color);
 
-		ResourceID createFramebuffer(ResourceID renderProgram, const std::vector<Texture2D>& attachmentTextures, uint32_t layers = 1ui32);
+		ResourceID createFramebuffer(ResourceID renderProgram, const std::vector<Texture2D>& attachmentTextures, uint32_t count, uint32_t layers = 1ui32);
 		ResourceID createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<Texture2D>& additionalAttachmentTextures, uint32_t layers = 1ui32);
 		void destroyFramebuffer(ResourceID framebuffer);
 
@@ -135,11 +139,13 @@ namespace sa {
 		ResourceID allocateDescriptorSet(ResourceID pipeline, uint32_t setIndex, uint32_t backBufferCount = 1ui32);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Buffer& buffer);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture2D& texture, ResourceID sampler);
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture2D& texture);
 
 		void freeDescriptorSet(ResourceID descriptorSet);
 
 		Buffer createBuffer(BufferType type, size_t size = 0ui64, void* initialData = nullptr);
-		Texture2D createTexture2D(TextureType type, Extent extent);
+		Texture2D createTexture2D(TextureTypeFlags type, Extent extent);
+		Texture2D createTexture2D(TextureTypeFlags type, Extent extent, FormatPrecisionFlags formatPrecision, FormatDimensionFlags formatDimensions, FormatTypeFlags formatType);
 		Texture2D createTexture2D(const Image& image);
 
 		void queueTransfer(const DataTransfer& transfer);
@@ -148,9 +154,6 @@ namespace sa {
 
 		RenderContext beginFrame(ResourceID swapchain);
 		void endFrame(ResourceID swapchain);
-
-
-
 
 
 		/*
@@ -255,4 +258,7 @@ namespace sa {
 		*/
 
 	};
+
+
+	
 }

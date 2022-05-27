@@ -175,6 +175,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="include\FormatFlags.hpp" />
     <ClInclude Include="include\Image.hpp" />
     <ClInclude Include="include\Resources\Buffer.hpp" />
     <ClInclude Include="include\Resources\DescriptorSet.hpp" />

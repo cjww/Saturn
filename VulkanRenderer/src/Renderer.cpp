@@ -85,26 +85,25 @@ namespace sa {
 		pRenderProgram->setClearColor(color);
 	}
 
-	ResourceID Renderer::createFramebuffer(ResourceID renderProgram, const std::vector<Texture2D>& attachmentTextures, uint32_t layers) {
+	ResourceID Renderer::createFramebuffer(ResourceID renderProgram, const std::vector<Texture2D>& attachmentTextures, uint32_t count, uint32_t layers) {
 		if (attachmentTextures.empty())
 			throw std::runtime_error("At least one attachmnet is required to create a framebuffer");
 
 		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
 
-		std::vector<vk::ImageView> framebufferViews;
+		std::vector<std::vector<vk::ImageView>> framebufferViews(count);
 		Extent extent = attachmentTextures[0].getExtent();
-		for (auto& texture : attachmentTextures) {
-			framebufferViews.push_back(*texture.getView());
-			if (extent.width != texture.getExtent().width || extent.height != texture.getExtent().height) {
-				throw std::runtime_error("All attachments must be of the same size");
+		for (uint32_t i = 0; i < count; i++) {
+			for (auto& texture : attachmentTextures) {
+				framebufferViews[i].push_back(*texture.getView());
+				if (extent.width != texture.getExtent().width || extent.height != texture.getExtent().height) {
+					throw std::runtime_error("All attachments must be of the same size");
+				}
 			}
 		}
 
-
 		return ResourceManager::get().insert<FramebufferSet>(
-			m_pCore->createFrameBufferSet(pRenderProgram->getRenderPass(), { framebufferViews }, extent.width, extent.height, layers)
-			
-			);
+			m_pCore->createFrameBufferSet(pRenderProgram->getRenderPass(), framebufferViews, extent.width, extent.height, layers));
 	}
 
 	ResourceID Renderer::createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<Texture2D>& additionalAttachmentTextures, uint32_t layers) {
@@ -118,9 +117,9 @@ namespace sa {
 		for (uint32_t i = 0; i < count; i++) {
 			framebufferViews[i].resize(additionalAttachmentTextures.size() + 1);
 			framebufferViews[i][0] = swapchainViews[i];
-			for (uint32_t j = 1; j < (uint32_t)additionalAttachmentTextures.size(); j++) {
-				framebufferViews[i][j] = *additionalAttachmentTextures[j].getView();
-				if (extent.width != additionalAttachmentTextures[j].getExtent().width || extent.height != additionalAttachmentTextures[j].getExtent().height) {
+			for (uint32_t j = 1; j < (uint32_t)framebufferViews[i].size(); j++) {
+				framebufferViews[i][j] = *additionalAttachmentTextures[j - 1].getView();
+				if (extent.width != additionalAttachmentTextures[j - 1].getExtent().width || extent.height != additionalAttachmentTextures[j - 1].getExtent().height) {
 					throw std::runtime_error("All attachments must be of the same size");
 				}
 			}
@@ -173,6 +172,11 @@ namespace sa {
 		pDescriptorSet->update(binding, vk::ImageLayout::eShaderReadOnlyOptimal, *texture.getView(), pSampler, UINT32_MAX);
 	}
 
+	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture2D& texture) {
+		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+		pDescriptorSet->update(binding, vk::ImageLayout::eShaderReadOnlyOptimal, *texture.getView(), nullptr, UINT32_MAX);
+	}
+
 	void Renderer::freeDescriptorSet(ResourceID descriptorSet) {
 		ResourceManager::get().remove<DescriptorSet>(descriptorSet);
 	}
@@ -181,8 +185,12 @@ namespace sa {
 		return Buffer(m_pCore.get(), type, size, initialData);
 	}
 
-	Texture2D Renderer::createTexture2D(TextureType type, Extent extent) {
+	Texture2D Renderer::createTexture2D(TextureTypeFlags type, Extent extent) {
 		return Texture2D(m_pCore.get(), type, extent);
+	}
+
+	Texture2D Renderer::createTexture2D(TextureTypeFlags type, Extent extent, FormatPrecisionFlags formatPrecision, FormatDimensionFlags formatDimensions, FormatTypeFlags formatType) {
+		return Texture2D(m_pCore.get(), type, extent, formatPrecision, formatDimensions, formatType);
 	}
 
 	Texture2D Renderer::createTexture2D(const Image& image) {
@@ -241,6 +249,7 @@ namespace sa {
 		Swapchain* pSwapchain = RenderContext::getSwapchain(swapchain);
 		pSwapchain->endFrame(m_pCore->getGraphicsQueue());
 	}
+
 
 }
 

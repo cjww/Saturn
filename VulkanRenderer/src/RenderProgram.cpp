@@ -38,7 +38,7 @@ namespace sa {
 
 	void RenderProgram::setClearColor(uint32_t attachmentIndex, Color color) {
 		if (m_attachments.at(attachmentIndex).loadOp != vk::AttachmentLoadOp::eClear)
-			throw std::runtime_error((std::string)("Attachment " + attachmentIndex) + " is not clearable");
+			throw std::runtime_error("Attachment " + std::to_string(attachmentIndex) + " is not clearable");
 		m_clearValues.at(attachmentIndex).color = std::array<float, 4> { color.r, color.g, color.b, color.a };
 	}
 
@@ -46,7 +46,9 @@ namespace sa {
 		size_t clearIndex = 0;
 		for (size_t i = 0; i < m_attachments.size(); i++) {
 			if (m_attachments[i].loadOp == vk::AttachmentLoadOp::eClear) {
-				m_clearValues[clearIndex].color = std::array<float, 4>{ color.r, color.g, color.b, color.a };
+				if (!VulkanCore::isDepthFormat(m_attachments[i].format)) {
+					m_clearValues[clearIndex].color = std::array<float, 4>{ color.r, color.g, color.b, color.a };
+				}
 				clearIndex++;
 			}
 		}

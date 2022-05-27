@@ -69,6 +69,9 @@ namespace sa {
 		pRenderProgram->begin(m_pCommandBufferSet, pFramebuffer, renderArea);
 	}
 
+	void RenderContext::nextSubpass() {
+		m_pCommandBufferSet->getBuffer().nextSubpass(vk::SubpassContents::eInline);
+	}
 
 	void RenderContext::endRenderProgram(ResourceID renderProgram) {
 		RenderProgram* pRenderProgram = getRenderProgram(renderProgram);

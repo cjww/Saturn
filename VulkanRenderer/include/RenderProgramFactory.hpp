@@ -2,6 +2,8 @@
 
 #include "Resources\ResourceManager.hpp"
 
+#include "Resources\Texture.hpp"
+
 namespace sa {
 	class RenderProgram;
 	class Subpass;
@@ -14,7 +16,6 @@ namespace sa {
 		DepthTarget,
 		Input
 	};
-
 
 	class RenderProgramFactory {
 	public:
@@ -52,7 +53,8 @@ namespace sa {
 
 		RenderProgramFactory(VulkanCore* pCore);
 		
-		RenderProgramFactory& addColorAttachment();
+		RenderProgramFactory& addColorAttachment(bool store);
+		RenderProgramFactory& addColorAttachment(bool store, const Texture2D& formatSample);
 		RenderProgramFactory& addSwapchainAttachment(ResourceID swapchain);
 		RenderProgramFactory& addDepthAttachment();
 

@@ -4,6 +4,55 @@
 #include "debugFunctions.h" // for checkError and debugCallback
 
 namespace sa {
+	void VulkanCore::fillFormats() {
+
+		m_formats.push_back({ FormatPrecisionFlagBits::e32Bit, FormatDimensionFlagBits::e4, FormatTypeFlagBits::SFLOAT, vk::Format::eR32G32B32A32Sfloat });
+		m_formats.push_back({ FormatPrecisionFlagBits::e32Bit, FormatDimensionFlagBits::e4, FormatTypeFlagBits::SINT, vk::Format::eR32G32B32A32Sint });
+		m_formats.push_back({ FormatPrecisionFlagBits::e32Bit, FormatDimensionFlagBits::e4, FormatTypeFlagBits::UINT, vk::Format::eR32G32B32A32Uint });
+		m_formats.push_back({ FormatPrecisionFlagBits::e16Bit, FormatDimensionFlagBits::e4, FormatTypeFlagBits::SFLOAT, vk::Format::eR16G16B16A16Sfloat });
+		m_formats.push_back({ FormatPrecisionFlagBits::e16Bit, FormatDimensionFlagBits::e4, FormatTypeFlagBits::SINT, vk::Format::eR16G16B16A16Sint });
+		m_formats.push_back({ FormatPrecisionFlagBits::e16Bit, FormatDimensionFlagBits::e4, FormatTypeFlagBits::UINT, vk::Format::eR16G16B16A16Uint });
+		m_formats.push_back({ FormatPrecisionFlagBits::e8Bit, FormatDimensionFlagBits::e4, FormatTypeFlagBits::UNORM, vk::Format::eR8G8B8A8Unorm });
+		m_formats.push_back({ FormatPrecisionFlagBits::e8Bit, FormatDimensionFlagBits::e4, FormatTypeFlagBits::SINT, vk::Format::eR8G8B8A8Sint });
+		m_formats.push_back({ FormatPrecisionFlagBits::e8Bit, FormatDimensionFlagBits::e4, FormatTypeFlagBits::UINT, vk::Format::eR8G8B8A8Uint });
+		m_formats.push_back({ FormatPrecisionFlagBits::e8Bit, FormatDimensionFlagBits::e4, FormatTypeFlagBits::SRGB, vk::Format::eR8G8B8A8Srgb });
+		m_formats.push_back({ FormatPrecisionFlagBits::e32Bit, FormatDimensionFlagBits::e3, FormatTypeFlagBits::SFLOAT, vk::Format::eR32G32B32Sfloat });
+		m_formats.push_back({ FormatPrecisionFlagBits::e32Bit, FormatDimensionFlagBits::e3, FormatTypeFlagBits::SINT, vk::Format::eR32G32B32Sint });
+		m_formats.push_back({ FormatPrecisionFlagBits::e32Bit, FormatDimensionFlagBits::e3, FormatTypeFlagBits::UINT, vk::Format::eR32G32B32Uint });
+		m_formats.push_back({ FormatPrecisionFlagBits::e16Bit, FormatDimensionFlagBits::e3, FormatTypeFlagBits::SFLOAT, vk::Format::eR16G16B16Sfloat });
+		m_formats.push_back({ FormatPrecisionFlagBits::e16Bit, FormatDimensionFlagBits::e3, FormatTypeFlagBits::SINT, vk::Format::eR16G16B16Sint });
+		m_formats.push_back({ FormatPrecisionFlagBits::e16Bit, FormatDimensionFlagBits::e3, FormatTypeFlagBits::UINT, vk::Format::eR16G16B16Uint });
+		m_formats.push_back({ FormatPrecisionFlagBits::e8Bit, FormatDimensionFlagBits::e3, FormatTypeFlagBits::UNORM, vk::Format::eR8G8B8Unorm });
+		m_formats.push_back({ FormatPrecisionFlagBits::e8Bit, FormatDimensionFlagBits::e3, FormatTypeFlagBits::SINT, vk::Format::eR8G8B8Sint });
+		m_formats.push_back({ FormatPrecisionFlagBits::e8Bit, FormatDimensionFlagBits::e3, FormatTypeFlagBits::UINT, vk::Format::eR8G8B8Uint });
+		m_formats.push_back({ FormatPrecisionFlagBits::e8Bit, FormatDimensionFlagBits::e3, FormatTypeFlagBits::SRGB, vk::Format::eR8G8B8Srgb });
+		m_formats.push_back({ FormatPrecisionFlagBits::e32Bit, FormatDimensionFlagBits::e2, FormatTypeFlagBits::SFLOAT, vk::Format::eR32G32Sfloat });
+		m_formats.push_back({ FormatPrecisionFlagBits::e32Bit, FormatDimensionFlagBits::e2, FormatTypeFlagBits::SINT, vk::Format::eR32G32Sint });
+		m_formats.push_back({ FormatPrecisionFlagBits::e32Bit, FormatDimensionFlagBits::e2, FormatTypeFlagBits::UINT, vk::Format::eR32G32Uint });
+		m_formats.push_back({ FormatPrecisionFlagBits::e16Bit, FormatDimensionFlagBits::e2, FormatTypeFlagBits::SFLOAT, vk::Format::eR16G16Sfloat });
+		m_formats.push_back({ FormatPrecisionFlagBits::e16Bit, FormatDimensionFlagBits::e2, FormatTypeFlagBits::SINT, vk::Format::eR16G16Sint });
+		m_formats.push_back({ FormatPrecisionFlagBits::e16Bit, FormatDimensionFlagBits::e2, FormatTypeFlagBits::UINT, vk::Format::eR16G16Uint });
+		m_formats.push_back({ FormatPrecisionFlagBits::e8Bit, FormatDimensionFlagBits::e2, FormatTypeFlagBits::UNORM, vk::Format::eR8G8Unorm });
+		m_formats.push_back({ FormatPrecisionFlagBits::e8Bit, FormatDimensionFlagBits::e2, FormatTypeFlagBits::SINT, vk::Format::eR8G8Sint });
+		m_formats.push_back({ FormatPrecisionFlagBits::e8Bit, FormatDimensionFlagBits::e2, FormatTypeFlagBits::UINT, vk::Format::eR8G8Uint });
+		m_formats.push_back({ FormatPrecisionFlagBits::e8Bit, FormatDimensionFlagBits::e2, FormatTypeFlagBits::SRGB, vk::Format::eR8G8Srgb });
+		m_formats.push_back({ FormatPrecisionFlagBits::e32Bit, FormatDimensionFlagBits::e1, FormatTypeFlagBits::SFLOAT, vk::Format::eR32Sfloat });
+		m_formats.push_back({ FormatPrecisionFlagBits::e32Bit, FormatDimensionFlagBits::e1, FormatTypeFlagBits::SINT, vk::Format::eR32Sint });
+		m_formats.push_back({ FormatPrecisionFlagBits::e32Bit, FormatDimensionFlagBits::e1, FormatTypeFlagBits::UINT, vk::Format::eR32Uint });
+		m_formats.push_back({ FormatPrecisionFlagBits::e16Bit, FormatDimensionFlagBits::e1, FormatTypeFlagBits::SFLOAT, vk::Format::eR16Sfloat });
+		m_formats.push_back({ FormatPrecisionFlagBits::e16Bit, FormatDimensionFlagBits::e1, FormatTypeFlagBits::SINT, vk::Format::eR16Sint });
+		m_formats.push_back({ FormatPrecisionFlagBits::e16Bit, FormatDimensionFlagBits::e1, FormatTypeFlagBits::UINT, vk::Format::eR16Uint });
+		m_formats.push_back({ FormatPrecisionFlagBits::e8Bit, FormatDimensionFlagBits::e1, FormatTypeFlagBits::UNORM, vk::Format::eR8Unorm });
+		m_formats.push_back({ FormatPrecisionFlagBits::e8Bit, FormatDimensionFlagBits::e1, FormatTypeFlagBits::SINT, vk::Format::eR8Sint });
+		m_formats.push_back({ FormatPrecisionFlagBits::e8Bit, FormatDimensionFlagBits::e1, FormatTypeFlagBits::UINT, vk::Format::eR8Uint });
+		m_formats.push_back({ FormatPrecisionFlagBits::e8Bit, FormatDimensionFlagBits::e1, FormatTypeFlagBits::SRGB, vk::Format::eR8Srgb });
+
+		m_formats.push_back({ FormatPrecisionFlagBits::e8Bit, FormatDimensionFlagBits::e4, FormatTypeFlagBits::SRGB, vk::Format::eB8G8R8A8Srgb });
+		m_formats.push_back({ FormatPrecisionFlagBits::e8Bit, FormatDimensionFlagBits::e4, FormatTypeFlagBits::UNORM, vk::Format::eB8G8R8A8Unorm });
+		
+	}
+
+
 	uint32_t VulkanCore::getQueueFamilyIndex(vk::QueueFlags capabilities, vk::QueueFamilyProperties* prop) {
 		std::vector<vk::QueueFamilyProperties> queueFamilyProperties = m_physicalDevice.getQueueFamilyProperties();
 
@@ -221,8 +270,10 @@ namespace sa {
 
 		m_memoryManager.create(m_instance, m_device, m_physicalDevice, m_appInfo.apiVersion, { m_graphicsQueueInfo.family }, { m_computeQueueInfo.family });
 
+		fillFormats();
+
 		m_defaultColorFormat = vk::Format::eR8G8B8A8Srgb;
-		m_defaultDepthFormat = vk::Format::eD16Unorm;
+		m_defaultDepthFormat = getSupportedDepthFormat();
 	}
 
 	void VulkanCore::cleanup() {
@@ -457,7 +508,7 @@ namespace sa {
 		m_memoryManager.destroyBuffer(pBuffer);
 	}
 
-	DeviceImage* VulkanCore::createColorImage2D(Extent extent, vk::Format format, vk::ImageUsageFlags usage, vk::SampleCountFlagBits sampleCount, uint32_t mipLevels, uint32_t arrayLayers) {
+	DeviceImage* VulkanCore::createImage2D(Extent extent, vk::Format format, vk::ImageUsageFlags usage, vk::SampleCountFlagBits sampleCount, uint32_t mipLevels, uint32_t arrayLayers) {
 		return m_memoryManager.createImage(
 			{ extent.width, extent.height, 1 },
 			arrayLayers,
@@ -584,5 +635,67 @@ namespace sa {
 		return m_defaultDepthFormat;
 	}
 
+
+	vk::Format VulkanCore::getSupportedDepthFormat() {
+		std::vector<vk::Format> formats = {
+			vk::Format::eD16UnormS8Uint,
+			vk::Format::eD32SfloatS8Uint,
+			vk::Format::eD24UnormS8Uint,
+			vk::Format::eD32Sfloat,
+			vk::Format::eD16Unorm,
+		};
+		vk::Format f = getFormat(
+			formats,
+			vk::FormatFeatureFlagBits::eDepthStencilAttachment,
+			vk::ImageTiling::eOptimal
+		);
+		if (f == vk::Format::eUndefined) {
+			throw std::runtime_error("Could not find supported depth format");
+		}
+		return f;
+	}
+
+	vk::Format VulkanCore::getFormat(const std::vector<vk::Format>& candidates, vk::FormatFeatureFlags features, vk::ImageTiling tilling) {
+		for (vk::Format format : candidates) {
+			vk::FormatProperties properties = m_physicalDevice.getFormatProperties(format);
+
+			switch (tilling)
+			{
+			case vk::ImageTiling::eOptimal:
+				if (((properties.optimalTilingFeatures | properties.bufferFeatures) & features) == features) {
+					return format;
+				}
+				break;
+			case vk::ImageTiling::eLinear:
+				if (((properties.linearTilingFeatures | properties.bufferFeatures) & features) == features) {
+					return format;
+				}
+				break;
+			default:
+				break;
+			}
+
+		}
+		return vk::Format::eUndefined;
+	}
+
+	vk::Format VulkanCore::getFormat(FormatPrecisionFlags precision, FormatDimensionFlags dimensions, FormatTypeFlags type, vk::FormatFeatureFlags features, vk::ImageTiling tilling) {
+		std::vector<vk::Format> candidates;
+		
+		for (auto format : m_formats) {
+			if (!(format.precision & precision)) {
+				continue;
+			}
+			if (!(format.dimension & dimensions)) {
+				continue;
+			}
+			if (!(format.type & type)) {
+				continue;
+			}
+			candidates.push_back(format.format);
+		}
+
+		return getFormat(candidates, features, tilling);
+	}
 
 }

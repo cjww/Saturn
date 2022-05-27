@@ -2,6 +2,7 @@
 
 #include "structs.hpp"
 #include "Image.hpp"
+#include "FormatFlags.hpp"
 
 namespace vk {
 	class ImageView;
@@ -13,10 +14,14 @@ namespace sa {
 
 	class VulkanCore;
 
-	enum class TextureType {
-		SAMPLED_COLOR,
-		ATTACHMENT_COLOR,
-		ATTACHMENT_DEPTH,
+	typedef uint32_t TextureTypeFlags;
+	enum TextureTypeFlagBits : TextureTypeFlags {
+		TRANSFER_DST = 2,
+		SAMPLED = 4,
+		STORAGE = 8,
+		COLOR_ATTACHMENT = 16,
+		DEPTH_ATTACHMENT = 32,
+		INPUT_ATTACHMENT = 128,
 	};
 
 	// Wrapper for image pointer
@@ -27,16 +32,20 @@ namespace sa {
 		DeviceBuffer* m_pStagingBuffer;
 		std::shared_ptr<vk::ImageView> m_pView;
 
-		TextureType m_type;
+		TextureTypeFlags m_type;
 		
 	public:
-		Texture2D(VulkanCore* pCore, TextureType type, Extent extent);
+		Texture2D(VulkanCore* pCore, TextureTypeFlags type, Extent extent);
+		Texture2D(VulkanCore* pCore, TextureTypeFlags type, Extent extent,
+			FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types);
 		Texture2D(VulkanCore* pCore, const Image& image);
 
 		Texture2D(const Texture2D&) = default;
 		Texture2D& operator=(const Texture2D&) = default;
 
-		void create(TextureType type, Extent extent);
+		void create(TextureTypeFlags type, Extent extent);
+		void create(TextureTypeFlags type, Extent extent,
+			FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types);
 		void destroy();
 
 		Extent getExtent() const;

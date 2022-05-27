@@ -59,9 +59,6 @@ namespace sa {
 		std::vector<DeviceImage*> m_images;
 		
 
-		vk::Format getSupportedDepthFormat();
-		vk::Format getFormat(const std::vector<vk::Format>& candidates, vk::FormatFeatureFlagBits features, vk::ImageTiling tilling);
-
 	public:
 		DeviceMemoryManager() = default;
 		
@@ -92,10 +89,11 @@ namespace sa {
 			VmaMemoryUsage memoryUsage, 
 			vk::MemoryPropertyFlags requiredMemoryProperties
 		);
-
+		/*
 		DeviceImage* createDepthAttachmentTexture2D(vk::Extent2D extent, vk::SampleCountFlagBits sampleCount, uint32_t mipLevels = 1, uint32_t arrayLayers = 1);
 		DeviceImage* createColorTexture2D(vk::Extent2D extent, vk::ImageUsageFlags usage, vk::Format format, vk::SampleCountFlagBits sampleCount, uint32_t mipLevels, uint32_t arrayLayers);
 		DeviceImage* createTexture3D(vk::Extent3D extent, vk::ImageUsageFlags usage, vk::SampleCountFlagBits sampleCount, vk::Format format, uint32_t mipLevels = 1, uint32_t arrayLayers = 1);
+		*/
 
 		void destroyBuffer(DeviceBuffer* buffer);
 		void destroyImage(DeviceImage* texture);

@@ -40,14 +40,14 @@ namespace sa {
 				switch (firstUsage) {
 				case SubpassAttachmentUsage::DepthTarget:
 					dependency.setSrcAccessMask(vk::AccessFlagBits::eDepthStencilAttachmentWrite);
-					dependency.setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
+					dependency.setSrcStageMask(vk::PipelineStageFlagBits::eEarlyFragmentTests);
 					break;
 				case SubpassAttachmentUsage::ColorTarget:
 					dependency.setSrcAccessMask(vk::AccessFlagBits::eColorAttachmentWrite);
 					dependency.setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
 					break;
 				case SubpassAttachmentUsage::Input:
-					dependency.setSrcAccessMask(vk::AccessFlagBits::eShaderRead);
+					dependency.setSrcAccessMask(vk::AccessFlagBits::eInputAttachmentRead);
 					dependency.setSrcStageMask(vk::PipelineStageFlagBits::eFragmentShader);
 					break;
 				default:
@@ -57,14 +57,14 @@ namespace sa {
 				switch (thisUsage) {
 				case SubpassAttachmentUsage::DepthTarget:
 					dependency.setDstAccessMask(vk::AccessFlagBits::eDepthStencilAttachmentWrite);
-					dependency.setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
+					dependency.setDstStageMask(vk::PipelineStageFlagBits::eEarlyFragmentTests);
 					break;
 				case SubpassAttachmentUsage::ColorTarget:
 					dependency.setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite);
 					dependency.setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
 					break;
 				case SubpassAttachmentUsage::Input:
-					dependency.setDstAccessMask(vk::AccessFlagBits::eShaderRead);
+					dependency.setDstAccessMask(vk::AccessFlagBits::eInputAttachmentRead);
 					dependency.setDstStageMask(vk::PipelineStageFlagBits::eFragmentShader);
 					break;
 				default:
@@ -86,13 +86,26 @@ namespace sa {
 		m_pProgram = sa::ResourceManager::get().get<RenderProgram>(m_id);
 	}
 
-	RenderProgramFactory& RenderProgramFactory::addColorAttachment() {
+	RenderProgramFactory& RenderProgramFactory::addColorAttachment(bool store) {
 		m_pProgram->addAttachment(
 			vk::ImageLayout::eUndefined,
-			vk::ImageLayout::eColorAttachmentOptimal,
+			vk::ImageLayout::eShaderReadOnlyOptimal,
 			m_pCore->getDefaultColorFormat(),
 			vk::AttachmentLoadOp::eClear,
-			vk::AttachmentStoreOp::eDontCare
+			(store) ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare
+		);
+		return *this;
+	}
+
+	RenderProgramFactory& RenderProgramFactory::addColorAttachment(bool store, const Texture2D& sampleFormat) {
+		const DeviceImage* pDeviceImage = (const DeviceImage*)sampleFormat;
+
+		m_pProgram->addAttachment(
+			vk::ImageLayout::eUndefined,
+			vk::ImageLayout::eShaderReadOnlyOptimal,
+			pDeviceImage->format,
+			vk::AttachmentLoadOp::eClear,
+			(store)? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare
 		);
 		return *this;
 	}
@@ -125,7 +138,15 @@ namespace sa {
 	}
 
 	RenderProgramFactory& RenderProgramFactory::addSubpassDependency() {
-
+		vk::SubpassDependency dep{
+			.srcSubpass = 0,
+			.dstSubpass = 1,
+			.srcStageMask = vk::PipelineStageFlagBits::eAllGraphics,
+			.dstStageMask = vk::PipelineStageFlagBits::eFragmentShader,
+			.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite,
+			.dstAccessMask = vk::AccessFlagBits::eShaderRead,
+		};
+		m_pProgram->addSubpassDependency(dep);
 		return *this;
 	}
 
@@ -133,8 +154,6 @@ namespace sa {
 		m_pProgram->create(m_pCore);
 		return m_id;
 	}
-
-
 
 	RenderProgramFactory::SubpassFactory::SubpassFactory(RenderProgramFactory* pProgramFactory, Subpass* pSubpass)
 		: m_pProgramFactory(pProgramFactory)

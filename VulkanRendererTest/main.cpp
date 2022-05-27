@@ -262,37 +262,74 @@ int main() {
 #ifdef _WIN32
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
-	try {
 
 		const int WIDTH = 1000, HEIGHT = 600;
 		sa::RenderWindow window(WIDTH, HEIGHT, "Test Window");
-
 		sa::Renderer& renderer = sa::Renderer::get();
-		auto renderProgram = renderer.createRenderProgram()
-			.addSwapchainAttachment(window.getSwapchainID()) // 0
+		
+		sa::Texture2D depthTexture = renderer.createTexture2D(
+			sa::TextureTypeFlagBits::DEPTH_ATTACHMENT, 
+			window.getCurrentExtent());
+		sa::Texture2D colorTexture = renderer.createTexture2D(
+			sa::TextureTypeFlagBits::COLOR_ATTACHMENT | 
+			sa::TextureTypeFlagBits::INPUT_ATTACHMENT,
+			window.getCurrentExtent());
+
+		sa::Texture2D positionsTexture = renderer.createTexture2D(
+			sa::TextureTypeFlagBits::COLOR_ATTACHMENT |
+			sa::TextureTypeFlagBits::INPUT_ATTACHMENT,
+			window.getCurrentExtent(),
+			sa::FormatPrecisionFlagBits::e32Bit, 
+			sa::FormatDimensionFlagBits::e4, 
+			sa::FormatTypeFlagBits::SFLOAT);
+
+
+
+		auto mainRenderProgram = renderer.createRenderProgram()
+			.addSwapchainAttachment(window.getSwapchainID()) // 0 swapchain
+			.addDepthAttachment() // 1 depth
+			.addColorAttachment(false) // 2 color
+			.addColorAttachment(false, positionsTexture) // 3 positions
 			.beginSubpass()
-			.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
+				.addAttachmentReference(2, sa::SubpassAttachmentUsage::ColorTarget)
+				.addAttachmentReference(3, sa::SubpassAttachmentUsage::ColorTarget)
+				.addAttachmentReference(1, sa::SubpassAttachmentUsage::DepthTarget)
+			.endSubpass()
+			.beginSubpass()
+				.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
+				.addAttachmentReference(2, sa::SubpassAttachmentUsage::Input)
+				.addAttachmentReference(3, sa::SubpassAttachmentUsage::Input)
 			.endSubpass()
 			.end();
-
+		
 
 		sa::Color clearColor = { 0.2f, 0.7f, 0.8f, 1.f };
-		renderer.setClearColor(renderProgram, clearColor);
+		renderer.setClearColor(mainRenderProgram, clearColor);
 
-		auto framebuffer = renderer.createSwapchainFramebuffer(renderProgram, window.getSwapchainID(), {});
-
-		auto pipeline = renderer.createGraphicsPipeline(
-			renderProgram,
+		auto mainFramebuffer = renderer.createSwapchainFramebuffer(
+			mainRenderProgram, 
+			window.getSwapchainID(), 
+			{ depthTexture, colorTexture, positionsTexture });
+		
+		auto mainPipeline = renderer.createGraphicsPipeline(
+			mainRenderProgram,
 			0,
 			window.getCurrentExtent(),
 			"TestShader.vert.spv",
 			"TestShader.frag.spv");
 
 
+		auto postPipeline = renderer.createGraphicsPipeline(
+			mainRenderProgram,
+			1,
+			window.getCurrentExtent(),
+			"PostProcess.vert.spv",
+			"PostProcess.frag.spv");
+
+
+
 		sa::Buffer vertexBuffer = renderer.createBuffer(
 			sa::BufferType::VERTEX, quad.size() * sizeof(VertexColorUV), quad.data());
-		
-
 		sa::Buffer indexBuffer = renderer.createBuffer(
 			sa::BufferType::INDEX);
 
@@ -302,50 +339,69 @@ int main() {
 		});
 
 
-		ResourceID descriptorSet = renderer.allocateDescriptorSet(pipeline, 0, renderer.getSwapchainImageCount(window.getSwapchainID()));
+		ResourceID descriptorSet = renderer.allocateDescriptorSet(mainPipeline, 0, window.getSwapchainImageCount());
 
 		sa::Buffer uniformBuffer = renderer.createBuffer(
 			sa::BufferType::UNIFORM);
 
 		UBO ubo = {};
 		ubo.view = glm::lookAt(glm::vec3{ 0, 0, 1 }, { 0, 0, 0 }, { 0, 1, 0 });
-		ubo.projection = glm::perspective(glm::radians(90.f), (float)WIDTH / HEIGHT, 0.01f, 1000.0f);
+		ubo.projection = glm::perspective(glm::radians(90.f), (float)WIDTH / HEIGHT, 0.1f, 10.0f);
 
 		uniformBuffer.write(ubo); 
 		renderer.updateDescriptorSet(descriptorSet, 0, uniformBuffer);
 
+		std::vector<PushConstant> objects;
+
 		PushConstant pc = {};
 		pc.world = glm::mat4(1);
+		objects.push_back(pc);
+
+		pc.world = glm::translate(pc.world, glm::vec3(0.5, 0, 0));
+		objects.push_back(pc);
+
+
+		ResourceID descriptorSetPost = renderer.allocateDescriptorSet(postPipeline, 0, window.getSwapchainImageCount());
 
 		sa::Image image("Box.png");
 		sa::Texture2D texture = renderer.createTexture2D(image);
 		ResourceID sampler = renderer.createSampler();
 		renderer.updateDescriptorSet(descriptorSet, 1, texture, sampler);
 
+		renderer.updateDescriptorSet(descriptorSetPost, 0, colorTexture);
+		renderer.updateDescriptorSet(descriptorSetPost, 1, positionsTexture);
 
 		auto now = std::chrono::high_resolution_clock::now();
 		float dt = 0;
 		while (window.isOpen()) {
 			window.pollEvents();
+			
+			objects[0].world = glm::rotate(objects[0].world, dt, {0.f, 1.0f, 0.f});
 
-			pc.world = glm::rotate(pc.world, dt, { 0.f, 1.0f, 0.f });
+			window.setWindowTitle("FPS: " + std::to_string(1 / dt));
 
 			sa::RenderContext context = window.beginFrame();
 			if (context) {
 				
+				context.beginRenderProgram(mainRenderProgram, mainFramebuffer);
+					context.bindPipeline(mainPipeline);
+					context.bindDescriptorSet(descriptorSet, mainPipeline);
+					// Drawing
+					context.bindVertexBuffers(0, { vertexBuffer });
+					context.bindIndexBuffer(indexBuffer);
+					for (const auto& object : objects) {
+						context.pushConstant(mainPipeline, sa::ShaderStageFlagBits::VERTEX, 0, object);
 
-				context.beginRenderProgram(renderProgram, framebuffer);
-				context.bindPipeline(pipeline);
-				context.bindDescriptorSet(descriptorSet, pipeline);
-				// Drawing
-				context.bindVertexBuffers(0, { vertexBuffer });
-				context.bindIndexBuffer(indexBuffer);
-				
-				context.pushConstant(pipeline, sa::ShaderStageFlagBits::VERTEX, 0, pc);
+						context.drawIndexed(indexBuffer.getElementCount<uint32_t>(), 1);
+					}
 
-				context.drawIndexed(indexBuffer.getElementCount<uint32_t>(), 1);
+				context.nextSubpass();
 
-				context.endRenderProgram(renderProgram);
+					context.bindPipeline(postPipeline);
+					context.bindDescriptorSet(descriptorSetPost, postPipeline);
+					
+					context.drawIndexed(6, 1);
+				context.endRenderProgram(mainRenderProgram);
 				
 				window.display();
 			}
@@ -357,6 +413,10 @@ int main() {
 		}
 
 		texture.destroy();
+		depthTexture.destroy();
+		colorTexture.destroy();
+		positionsTexture.destroy();
+	try {
 	}
 	catch (const std::exception& e) {
 		DEBUG_LOG_ERROR(e.what());

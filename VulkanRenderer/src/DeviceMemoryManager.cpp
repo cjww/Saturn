@@ -6,42 +6,6 @@
 
 namespace sa {
 
-	vk::Format DeviceMemoryManager::getSupportedDepthFormat() {
-		std::vector<vk::Format> formats = {
-			vk::Format::eD24UnormS8Uint,
-			vk::Format::eD16Unorm,			
-			vk::Format::eD16UnormS8Uint,
-			vk::Format::eD32Sfloat,
-			vk::Format::eD32SfloatS8Uint
-		};
-		vk::Format f = getFormat(
-			formats,
-			vk::FormatFeatureFlagBits::eDepthStencilAttachment,
-			vk::ImageTiling::eOptimal
-		);
-		if (f == vk::Format::eUndefined) {
-			throw std::runtime_error("Could not find supported depth format");
-		}
-		return f;
-	}
-
-	vk::Format DeviceMemoryManager::getFormat(const std::vector<vk::Format>& candidates, vk::FormatFeatureFlagBits features, vk::ImageTiling tilling) {
-		for (vk::Format format : candidates) {
-			vk::FormatProperties properties = m_physicalDevice.getFormatProperties(format);
-			if (tilling == vk::ImageTiling::eOptimal &&
-				(properties.optimalTilingFeatures & features) == features)
-			{
-				return format;
-			}
-			else if (tilling == vk::ImageTiling::eLinear &&
-				(properties.linearTilingFeatures & features) == features)
-			{
-				return format;
-			}
-		}
-		return vk::Format::eUndefined;
-	}
-	
 
 	void DeviceMemoryManager::create(vk::Instance instance, vk::Device device, vk::PhysicalDevice physicalDevice, uint32_t apiVersion, const std::vector<uint32_t>& graphicsQueueFamilyIndices, const std::vector<uint32_t>& computeQueueFamilyIndices) {
 
@@ -158,7 +122,7 @@ namespace sa {
 
 		return image;
 	}
-
+	/*
 	DeviceImage* DeviceMemoryManager::createDepthAttachmentTexture2D(vk::Extent2D extent, vk::SampleCountFlagBits sampleCount,
 		uint32_t mipLevels, uint32_t arrayLayers) 
 	{
@@ -222,6 +186,7 @@ namespace sa {
 
 		return image;
 	}
+	*/
 	
 	void DeviceMemoryManager::destroyBuffer(DeviceBuffer* buffer) {
 		vmaDestroyBuffer(m_allocator, buffer->buffer, buffer->allocation);

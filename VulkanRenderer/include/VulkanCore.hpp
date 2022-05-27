@@ -8,6 +8,8 @@
 #include "Resources\ShaderSet.hpp"
 #include "Resources/DeviceMemoryManager.hpp"
 
+#include "FormatFlags.hpp"
+
 namespace sa {
 
 	struct QueueInfo {
@@ -54,6 +56,13 @@ namespace sa {
 
 	};
 
+	struct FormatProperties {
+		FormatPrecisionFlagBits precision;
+		FormatDimensionFlagBits dimension;
+		FormatTypeFlagBits type;
+		vk::Format format;
+	};
+
 	class VulkanCore {
 	private:
 		vk::ApplicationInfo m_appInfo;
@@ -64,7 +73,7 @@ namespace sa {
 		std::vector<const char*> m_validationLayers;
 		std::vector<const char*> m_instanceExtensions;
 		std::vector<const char*> m_deviceExtensions;
-		
+
 
 		QueueInfo m_graphicsQueueInfo;
 		QueueInfo m_computeQueueInfo;
@@ -77,7 +86,11 @@ namespace sa {
 		vk::Format m_defaultColorFormat;
 		vk::Format m_defaultDepthFormat;
 
+		std::vector<FormatProperties> m_formats;
+
 		DeviceMemoryManager m_memoryManager;
+
+		void fillFormats();
 
 		uint32_t getQueueFamilyIndex(vk::QueueFlags capabilities, vk::QueueFamilyProperties* prop);
 		QueueInfo getQueueInfo(vk::QueueFlags capabilities, uint32_t maxCount);
@@ -103,13 +116,13 @@ namespace sa {
 		vk::SurfaceKHR createSurface(GLFWwindow* pWindow);
 		vk::SwapchainKHR createSwapchain(vk::SurfaceKHR surface, uint32_t queueFamily, vk::Format* outFormat);
 		vk::ImageView createImageView(vk::ImageViewType type, vk::Image image, vk::Format format, vk::ImageAspectFlags aspectMask, uint32_t baseMipLevel, uint32_t baseArrayLevel);
-		
+
 		vk::Framebuffer createFrameBuffer(vk::RenderPass renderPass, std::vector<vk::ImageView> attachments, uint32_t width, uint32_t height, uint32_t layers);
 		FramebufferSet createFrameBufferSet(
-			vk::RenderPass renderPass, 
-			std::vector<std::vector<vk::ImageView>> attachments, 
-			uint32_t width, 
-			uint32_t height, 
+			vk::RenderPass renderPass,
+			std::vector<std::vector<vk::ImageView>> attachments,
+			uint32_t width,
+			uint32_t height,
 			uint32_t layers);
 
 		vk::Pipeline createGraphicsPipeline(
@@ -124,11 +137,11 @@ namespace sa {
 
 		CommandBufferSet allocateGraphicsCommandBufferSet(uint32_t count, vk::CommandBufferLevel level);
 		CommandBufferSet allocateComputeCommandBufferSet(uint32_t count, vk::CommandBufferLevel level);
-		
+
 		DeviceBuffer* createBuffer(vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags allocationFlags, size_t size, void* initialData);
 		void destroyBuffer(DeviceBuffer* pBuffer);
 
-		DeviceImage* createColorImage2D(Extent extent, vk::Format format, vk::ImageUsageFlags usage, vk::SampleCountFlagBits sampleCount, uint32_t mipLevels = 1, uint32_t arrayLayers = 1);
+		DeviceImage* createImage2D(Extent extent, vk::Format format, vk::ImageUsageFlags usage, vk::SampleCountFlagBits sampleCount, uint32_t mipLevels = 1, uint32_t arrayLayers = 1);
 		void destroyImage(DeviceImage* pImage);
 
 		void transferImageLayout(vk::CommandBuffer commandBuffer,
@@ -167,6 +180,13 @@ namespace sa {
 		vk::Format getDefaultColorFormat() const;
 		vk::Format getDefaultDepthFormat() const;
 
+		vk::Format getSupportedDepthFormat();
+		vk::Format getFormat(const std::vector<vk::Format>& candidates, vk::FormatFeatureFlags features, vk::ImageTiling tilling);
+		vk::Format getFormat(FormatPrecisionFlags precision, FormatDimensionFlags dimensions, FormatTypeFlags type, vk::FormatFeatureFlags features, vk::ImageTiling tilling);
+
+		
 
 	};
+
+
 }
