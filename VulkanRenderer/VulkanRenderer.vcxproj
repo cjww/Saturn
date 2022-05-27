@@ -175,6 +175,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="include\Image.hpp" />
     <ClInclude Include="include\Resources\Buffer.hpp" />
     <ClInclude Include="include\Resources\DescriptorSet.hpp" />
     <ClInclude Include="include\Resources\FramebufferSet.hpp" />
@@ -191,7 +192,7 @@
     <ClInclude Include="include\structs.hpp" />
     <ClInclude Include="include\pch.h" />
     <ClInclude Include="include\Resources\Swapchain.hpp" />
-    <ClInclude Include="include\Texture.hpp" />
+    <ClInclude Include="include\Resources\Texture.hpp" />
     <ClInclude Include="include\Tools\Logger.hpp" />
     <ClInclude Include="include\debugFunctions.h" />
     <ClInclude Include="include\Renderer.hpp" />
@@ -202,6 +203,7 @@
     <ClCompile Include="include\RenderContext.cpp" />
     <ClCompile Include="src\Buffer.cpp" />
     <ClCompile Include="src\DescriptorSet.cpp" />
+    <ClCompile Include="src\Image.cpp" />
     <ClCompile Include="src\Pipeline.cpp" />
     <ClCompile Include="src\Shader.cpp" />
     <ClCompile Include="src\ShaderSet.cpp" />

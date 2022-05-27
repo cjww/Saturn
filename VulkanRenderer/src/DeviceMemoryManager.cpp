@@ -96,7 +96,7 @@ namespace sa {
 		vk::Result result = (vk::Result)vmaCreateBuffer(m_allocator, &cBufferInfo, &allocInfo, &cbuffer, &buffer->allocation, &info);
 		buffer->buffer = cbuffer;
 
-		checkError(result, "Failed to allocate buffer of size " + size, false);
+		checkError(result, "Failed to allocate buffer of size " + std::to_string(size), false);
 
 		buffer->size = size;
 		buffer->mappedData = info.pMappedData;
@@ -143,6 +143,7 @@ namespace sa {
 
 		VmaAllocationCreateInfo allocInfo = {};
 		allocInfo.usage = memoryUsage;
+		allocInfo.flags = VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT;
 		allocInfo.requiredFlags = (VkMemoryPropertyFlags)requiredMemoryProperties;
 		
 		VkImageCreateInfo cinfo = (VkImageCreateInfo)info;

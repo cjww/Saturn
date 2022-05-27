@@ -86,6 +86,10 @@ namespace sa {
 		cmd->getBuffer().bindDescriptorSets(bindPoint, m_layout, set->getSetIndex(), set->getSet(cmd->getBufferIndex()), nullptr);
 	}
 
+	void Pipeline::pushConstants(CommandBufferSet* cmd, vk::ShaderStageFlags stages, uint32_t offset, uint32_t size, void* data) {
+		cmd->getBuffer().pushConstants(m_layout, stages, offset, size, data);
+	}
+
 	bool Pipeline::isCompute() {
 		return !m_shaderSet.isGraphicsSet();
 	}

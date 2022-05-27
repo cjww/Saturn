@@ -2,8 +2,6 @@
 
 #include "Resources\ResourceManager.hpp"
 
-#include "Texture.hpp"
-
 namespace sa {
 	class RenderProgram;
 	class Subpass;

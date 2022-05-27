@@ -233,22 +233,27 @@ uint32_t quadIndices[] = {
 */
 
 struct UBO {
-	glm::mat4 world;
 	glm::mat4 view;
 	glm::mat4 projection;
 };
 
-struct VertexColor {
-	float position[4];
-	float color[4];
+struct PushConstant {
+	glm::mat4 world;
 };
 
 
-std::array<VertexColor, 4> quad = {
-	VertexColor{ { -0.5f, -0.5f, 0.0f, 1.0f },	{ 1.0f, 0.0f, 0.0f, 1.0f } },
-	VertexColor{ { 0.5f, -0.5f, 0.0f, 1.0f },	{ 0.0f, 1.0f, 0.0f, 1.0f } },
-	VertexColor{ { 0.5f, 0.5f, 0.0f, 1.0f },	{ 0.0f, 0.0f, 1.0f, 1.0f } },
-	VertexColor{ { -0.5f, 0.5f, 0.0f, 1.0f },	{ 1.0f, 0.0f, 1.0f, 1.0f } }
+struct VertexColorUV {
+	float position[4];
+	float color[4];
+	float uv[2];
+};
+
+
+std::array<VertexColorUV, 4> quad = {
+	VertexColorUV{ { -0.5f, -0.5f, 0.0f, 1.0f },{ 1.0f, 0.0f, 0.0f, 1.0f }, {0.0f, 0.0f} },
+	VertexColorUV{ { 0.5f, -0.5f, 0.0f, 1.0f },	{ 0.0f, 1.0f, 0.0f, 1.0f }, {1.0f, 0.0f} },
+	VertexColorUV{ { 0.5f, 0.5f, 0.0f, 1.0f },	{ 0.0f, 0.0f, 1.0f, 1.0f }, {1.0f, 1.0f} },
+	VertexColorUV{ { -0.5f, 0.5f, 0.0f, 1.0f },	{ 1.0f, 0.0f, 1.0f, 1.0f }, {0.0f, 1.0f} }
 };
 
 
@@ -285,7 +290,7 @@ int main() {
 
 
 		sa::Buffer vertexBuffer = renderer.createBuffer(
-			sa::BufferType::VERTEX, quad.size() * sizeof(VertexColor), quad.data());
+			sa::BufferType::VERTEX, quad.size() * sizeof(VertexColorUV), quad.data());
 		
 
 		sa::Buffer indexBuffer = renderer.createBuffer(
@@ -303,16 +308,27 @@ int main() {
 			sa::BufferType::UNIFORM);
 
 		UBO ubo = {};
-		ubo.world = glm::mat4(1);
 		ubo.view = glm::lookAt(glm::vec3{ 0, 0, 1 }, { 0, 0, 0 }, { 0, 1, 0 });
 		ubo.projection = glm::perspective(glm::radians(90.f), (float)WIDTH / HEIGHT, 0.01f, 1000.0f);
 
-		uniformBuffer.write(ubo);
-
+		uniformBuffer.write(ubo); 
 		renderer.updateDescriptorSet(descriptorSet, 0, uniformBuffer);
 
+		PushConstant pc = {};
+		pc.world = glm::mat4(1);
+
+		sa::Image image("Box.png");
+		sa::Texture2D texture = renderer.createTexture2D(image);
+		ResourceID sampler = renderer.createSampler();
+		renderer.updateDescriptorSet(descriptorSet, 1, texture, sampler);
+
+
+		auto now = std::chrono::high_resolution_clock::now();
+		float dt = 0;
 		while (window.isOpen()) {
 			window.pollEvents();
+
+			pc.world = glm::rotate(pc.world, dt, { 0.f, 1.0f, 0.f });
 
 			sa::RenderContext context = window.beginFrame();
 			if (context) {
@@ -325,6 +341,8 @@ int main() {
 				context.bindVertexBuffers(0, { vertexBuffer });
 				context.bindIndexBuffer(indexBuffer);
 				
+				context.pushConstant(pipeline, sa::ShaderStageFlagBits::VERTEX, 0, pc);
+
 				context.drawIndexed(indexBuffer.getElementCount<uint32_t>(), 1);
 
 				context.endRenderProgram(renderProgram);
@@ -332,7 +350,13 @@ int main() {
 				window.display();
 			}
 
+			dt = std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - now).count();
+			
+			now = std::chrono::high_resolution_clock::now();
+
 		}
+
+		texture.destroy();
 	}
 	catch (const std::exception& e) {
 		DEBUG_LOG_ERROR(e.what());

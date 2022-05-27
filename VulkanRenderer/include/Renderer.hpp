@@ -6,9 +6,10 @@
 #include "imgui_impl_glfw.h"
 */
 
-#include "Texture.hpp"
 #include "RenderContext.hpp"
 #include "Resources/Buffer.hpp"
+#include "Resources/Texture.hpp"
+#include "Image.hpp"
 
 struct GLFWwindow;
 
@@ -18,12 +19,25 @@ namespace sa {
 	class CommandBufferSet;
 
 	
+	struct DataTransfer {
+		enum Type {
+			BUFFER_TO_IMAGE,
+			BUFFER_TO_BUFFER,
+			IMAGE_TO_BUFFER,
+			IMAGE_TO_IMAGE
+		} type;
+		DeviceBuffer* srcBuffer = nullptr;
+		DeviceImage* srcImage = nullptr;
+		DeviceBuffer* dstBuffer = nullptr;
+		DeviceImage* dstImage = nullptr;
+	};
+
 	class Renderer {
 	protected:
 		//VulkanCore* m_pCore;
 
 		std::unique_ptr<VulkanCore> m_pCore;
-
+		std::queue<DataTransfer> m_transferQueue;
 		/*
 		CommandBufferSet* m_pComputeCommandBufferSet;
 		*/
@@ -120,9 +134,17 @@ namespace sa {
 
 		ResourceID allocateDescriptorSet(ResourceID pipeline, uint32_t setIndex, uint32_t backBufferCount = 1ui32);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Buffer& buffer);
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture2D& texture, ResourceID sampler);
+
 		void freeDescriptorSet(ResourceID descriptorSet);
 
 		Buffer createBuffer(BufferType type, size_t size = 0ui64, void* initialData = nullptr);
+		Texture2D createTexture2D(TextureType type, Extent extent);
+		Texture2D createTexture2D(const Image& image);
+
+		void queueTransfer(const DataTransfer& transfer);
+
+		ResourceID createSampler();
 
 		RenderContext beginFrame(ResourceID swapchain);
 		void endFrame(ResourceID swapchain);

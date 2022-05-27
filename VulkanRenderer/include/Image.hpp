@@ -1,10 +1,7 @@
 #pragma once
-#include "common.hpp"
-#include <vulkan/vulkan.hpp>
-#include <glm\vec3.hpp>
-#include <glm\vec4.hpp>;
+#include "structs.hpp"
 
-namespace NAME_SPACE {
+namespace sa {
 	class Image {
 	private:
 		unsigned char* m_pixels;
@@ -13,12 +10,10 @@ namespace NAME_SPACE {
 	public:
 		Image(const char* path);
 		Image(const std::string& path);
-		Image(VkExtent2D extent, glm::vec4 color);
-		Image(VkExtent2D extent, glm::vec3 color);
-		Image(int width, int height, glm::vec4 color);
-		Image(int width, int height, glm::vec3 color);
-
-		Image(VkExtent2D extent, unsigned char* pixels, int channels);
+		Image(Extent extent, Color color);
+		Image(int width, int height, Color color);
+		
+		Image(Extent extent, unsigned char* pixels, int channels);
 		Image(int width, int height, unsigned char* pixels, int channels);
 
 
@@ -27,7 +22,7 @@ namespace NAME_SPACE {
 
 		virtual ~Image();
 
-		VkExtent2D getExtent() const;
+		Extent getExtent() const;
 		int getWidth() const;
 		int getHeight() const;
 		int getChannelCount() const;

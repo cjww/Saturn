@@ -29,6 +29,24 @@ namespace sa {
 
 	}
 	
+	void DescriptorSet::update(uint32_t binding, uint32_t indexToUpdate) {
+		if (indexToUpdate == UINT32_MAX) {
+			std::vector<vk::WriteDescriptorSet> writes;
+			for (uint32_t i = 0; i < m_descriptorSets.size(); i++) {
+				m_writes[binding].dstSet = m_descriptorSets[i];
+				m_writes[binding].dstArrayElement = 0;
+				writes.push_back(m_writes[binding]);
+			}
+			m_device.updateDescriptorSets(writes, nullptr);
+		}
+		else {
+			m_writes[binding].dstSet = m_descriptorSets[indexToUpdate];
+			m_writes[binding].dstArrayElement = 0;
+
+			m_device.updateDescriptorSets(m_writes[binding], nullptr);
+		}
+	}
+
 	void DescriptorSet::destroy() {
 		m_device.freeDescriptorSets(m_descriptorPool, m_descriptorSets);
 	}
@@ -46,36 +64,27 @@ namespace sa {
 			.range = bufferSize,
 		};
 
-		VkDescriptorImageInfo imageInfo = {};
-
 		m_writes[binding].setBufferInfo(bufferInfo);
-		
-		/*
-		else if (image != nullptr) {
-			imageInfo.imageLayout = image->layout;
-			imageInfo.imageView = image->view;
-			imageInfo.sampler = sampler == nullptr ? VK_NULL_HANDLE : *sampler;
-			descriptorSet->writes[binding].pImageInfo = &imageInfo;
-			descriptorSet->writes[binding].pBufferInfo = nullptr;
-			descriptorSet->writes[binding].pTexelBufferView = nullptr;
-		}
-		*/
 
-		if (indexToUpdate == UINT32_MAX) {
-			std::vector<vk::WriteDescriptorSet> writes;
-			for (uint32_t i = 0; i < m_descriptorSets.size(); i++) {
-				m_writes[binding].dstSet = m_descriptorSets[i];
-				m_writes[binding].dstArrayElement = 0;
-				writes.push_back(m_writes[binding]);
-			}
-			m_device.updateDescriptorSets(writes, nullptr);
-		}
-		else {
-			m_writes[binding].dstSet = m_descriptorSets[indexToUpdate];
-			m_writes[binding].dstArrayElement = 0;
+		update(binding, indexToUpdate);
 
-			m_device.updateDescriptorSets(m_writes[binding], nullptr);
+	}
+
+	void DescriptorSet::update(uint32_t binding, vk::ImageLayout imageLayout, vk::ImageView imageView, vk::Sampler* pSampler, uint32_t indexToUpdate) {
+		if (m_writes.size() <= binding) {
+			DEBUG_LOG_ERROR("Binding", binding, "out of bounds!");
+			throw std::runtime_error("Binding " + std::to_string(binding) + " out of bounds!");
 		}
+
+		vk::DescriptorImageInfo imageInfo{
+			.sampler = (pSampler)? *pSampler : nullptr,
+			.imageView = imageView,
+			.imageLayout = imageLayout,
+		};
+
+		m_writes[binding].setImageInfo(imageInfo);
+
+		update(binding, indexToUpdate);
 
 	}
 

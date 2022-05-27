@@ -35,7 +35,7 @@ namespace sa {
 			ResourceManager::get().setCleanupFunction<RenderProgram>([](RenderProgram* p) { p->destroy(); });
 			ResourceManager::get().setCleanupFunction<Pipeline>([](Pipeline* p) { p->destroy(); });
 			ResourceManager::get().setCleanupFunction<DescriptorSet>([](DescriptorSet* p) { p->destroy(); });
-
+			ResourceManager::get().setCleanupFunction<vk::Sampler>([&](vk::Sampler* p) { m_pCore->getDevice().destroySampler(*p); });
 
 		}
 		catch (const std::exception& e) {
@@ -45,6 +45,7 @@ namespace sa {
 	Renderer::~Renderer() {
 		m_pCore->getDevice().waitIdle();
 
+		ResourceManager::get().clearContainer<vk::Sampler>();
 		ResourceManager::get().clearContainer<DescriptorSet>();
 		ResourceManager::get().clearContainer<Pipeline>();
 		ResourceManager::get().clearContainer<FramebufferSet>();
@@ -161,9 +162,15 @@ namespace sa {
 	}
 
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Buffer& buffer) {
-		DescriptorSet* pDedscriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		const DeviceBuffer* pDeviceBuffer = (const DeviceBuffer*)buffer;
-		pDedscriptorSet->update(binding, pDeviceBuffer->buffer, pDeviceBuffer->size, 0, UINT32_MAX);
+		pDescriptorSet->update(binding, pDeviceBuffer->buffer, pDeviceBuffer->size, 0, UINT32_MAX);
+	}
+
+	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture2D& texture, ResourceID sampler) {
+		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
+		pDescriptorSet->update(binding, vk::ImageLayout::eShaderReadOnlyOptimal, *texture.getView(), pSampler, UINT32_MAX);
 	}
 
 	void Renderer::freeDescriptorSet(ResourceID descriptorSet) {
@@ -174,12 +181,57 @@ namespace sa {
 		return Buffer(m_pCore.get(), type, size, initialData);
 	}
 
+	Texture2D Renderer::createTexture2D(TextureType type, Extent extent) {
+		return Texture2D(m_pCore.get(), type, extent);
+	}
+
+	Texture2D Renderer::createTexture2D(const Image& image) {
+		return Texture2D(m_pCore.get(), image);
+	}
+
+	void Renderer::queueTransfer(const DataTransfer& transfer) {
+		m_transferQueue.push(transfer);
+	}
+
+	ResourceID Renderer::createSampler() {
+		return ResourceManager::get().insert(m_pCore->createSampler());
+	}
+
 	RenderContext Renderer::beginFrame(ResourceID swapchain) {
 		Swapchain* pSwapchain = RenderContext::getSwapchain(swapchain);
 
 		CommandBufferSet* pCommandBufferSet = pSwapchain->beginFrame();
 		if (!pCommandBufferSet) {
 			return {};
+		}
+
+		while (!m_transferQueue.empty()) {
+			DataTransfer& transfer = m_transferQueue.front();
+
+			switch (transfer.type) {
+			case DataTransfer::Type::BUFFER_TO_IMAGE:
+				m_pCore->transferBufferToColorImage(
+					pCommandBufferSet->getBuffer(),
+					transfer.srcBuffer->buffer,
+					transfer.dstImage->image,
+					transfer.dstImage->extent,
+					transfer.dstImage->layout,
+					vk::ImageLayout::eShaderReadOnlyOptimal,
+					vk::AccessFlagBits::eShaderRead,
+					vk::PipelineStageFlagBits::eFragmentShader);
+				transfer.dstImage->layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+				break;
+			case DataTransfer::Type::BUFFER_TO_BUFFER:
+			case DataTransfer::Type::IMAGE_TO_BUFFER:	
+			case DataTransfer::Type::IMAGE_TO_IMAGE:
+				throw std::runtime_error("unimplemented case");
+				break;
+			default:
+				throw std::runtime_error("Invalid transfer type");
+				break;
+			}
+
+			m_transferQueue.pop();
 		}
 
 		return RenderContext(pCommandBufferSet);

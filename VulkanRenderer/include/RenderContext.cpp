@@ -44,6 +44,13 @@ namespace sa {
 		return pDescriptorSet;
 	}
 
+	vk::Sampler* RenderContext::getSampler(ResourceID id) {
+		vk::Sampler* pSampler = ResourceManager::get().get<vk::Sampler>(id);
+		if (!pSampler)
+			throw std::runtime_error("Nonexistent sampler: " + id);
+		return pSampler;
+	}
+
 	RenderContext::RenderContext()
 		: m_pCommandBufferSet(nullptr)
 	{
@@ -107,6 +114,11 @@ namespace sa {
 		Pipeline* pPipeline = getPipeline(pipeline);
 		DescriptorSet* pDedscriptorSet = getDescriptorSet(descriptorSet);
 		pPipeline->bindDescriptorSet(m_pCommandBufferSet, pDedscriptorSet);
+	}
+
+	void RenderContext::pushConstants(ResourceID pipeline, ShaderStageFlags stages, uint32_t offset, size_t size, void* data) {
+		Pipeline* pPipeline = getPipeline(pipeline);
+		pPipeline->pushConstants(m_pCommandBufferSet, (vk::ShaderStageFlags)stages, offset, size, data);
 	}
 
 	void RenderContext::bindDescriptorSets(const std::vector<ResourceID>& descriptorSets, ResourceID pipeline) {

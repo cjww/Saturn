@@ -457,6 +457,97 @@ namespace sa {
 		m_memoryManager.destroyBuffer(pBuffer);
 	}
 
+	DeviceImage* VulkanCore::createColorImage2D(Extent extent, vk::Format format, vk::ImageUsageFlags usage, vk::SampleCountFlagBits sampleCount, uint32_t mipLevels, uint32_t arrayLayers) {
+		return m_memoryManager.createImage(
+			{ extent.width, extent.height, 1 },
+			arrayLayers,
+			format,
+			vk::ImageType::e2D,
+			vk::ImageLayout::eUndefined,
+			mipLevels,
+			{ m_graphicsQueueInfo.family },
+			sampleCount,
+			vk::SharingMode::eExclusive,
+			vk::ImageTiling::eOptimal,
+			usage,
+			VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
+			vk::MemoryPropertyFlagBits::eDeviceLocal
+		);
+	}
+
+	void VulkanCore::destroyImage(DeviceImage* pImage) {
+		m_memoryManager.destroyImage(pImage);
+	}
+
+	void VulkanCore::transferImageLayout(vk::CommandBuffer commandBuffer, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::AccessFlags srcAccessMask, vk::AccessFlags dstAccessMask, vk::Image image, vk::ImageAspectFlags imageAspect, vk::PipelineStageFlags srcStage, vk::PipelineStageFlags dstStage) {
+		vk::ImageMemoryBarrier copyBarrier{
+			.dstAccessMask = dstAccessMask,
+			.oldLayout = oldLayout,
+			.newLayout = newLayout,
+			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.image = image,
+			.subresourceRange{
+				.aspectMask = imageAspect,
+				.levelCount = 1,
+				.layerCount = 1,
+			},
+		};
+
+		commandBuffer.pipelineBarrier(
+			srcStage,
+			dstStage,
+			(vk::DependencyFlags)0,
+			nullptr,
+			nullptr,
+			copyBarrier);
+	}
+
+
+	void VulkanCore::transferBufferToColorImage(vk::CommandBuffer commandBuffer, vk::Buffer buffer, vk::Image image, vk::Extent3D copyExtent, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::AccessFlags dstAccessMask, vk::PipelineStageFlags dstStage) {
+		transferImageLayout(commandBuffer,
+			oldLayout,
+			vk::ImageLayout::eTransferDstOptimal,
+			(vk::AccessFlags)0,
+			vk::AccessFlagBits::eTransferWrite,
+			image, 
+			vk::ImageAspectFlagBits::eColor,
+			vk::PipelineStageFlagBits::eHost,
+			vk::PipelineStageFlagBits::eTransfer);
+
+		vk::BufferImageCopy copy{
+			.imageSubresource{
+				.aspectMask = vk::ImageAspectFlagBits::eColor,
+				.mipLevel = 0,
+				.baseArrayLayer = 0,
+				.layerCount = 1,
+			},
+			.imageOffset = { 0, 0, 0 },
+			.imageExtent = copyExtent,
+		};
+
+		commandBuffer.copyBufferToImage(buffer, image, vk::ImageLayout::eTransferDstOptimal, copy);
+
+		transferImageLayout(commandBuffer,
+			vk::ImageLayout::eTransferDstOptimal,
+			newLayout,
+			vk::AccessFlagBits::eTransferWrite,
+			dstAccessMask,
+			image, 
+			vk::ImageAspectFlagBits::eColor,
+			vk::PipelineStageFlagBits::eTransfer,
+			dstStage);
+	}
+
+
+	vk::Sampler VulkanCore::createSampler() {
+		vk::SamplerCreateInfo info {
+
+		};
+
+		return m_device.createSampler(info);
+	}
+
 	uint32_t VulkanCore::getGraphicsQueueFamily() const {
 		return m_graphicsQueueInfo.family;
 	}

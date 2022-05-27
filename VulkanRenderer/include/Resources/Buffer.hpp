@@ -62,10 +62,6 @@ namespace sa {
 			return m_pBuffer;
 		}
 
-		operator DeviceBuffer*() {
-			return m_pBuffer;
-		}
-
 		template<typename T>
 		Buffer& operator<<(const T& value);
 
