@@ -2,21 +2,21 @@
 #include "Resources/Shader.hpp"
 
 namespace sa {
-	void Shader::addResources(const spirv_cross::SmallVector<spirv_cross::Resource>& resources, vk::DescriptorType type, vk::Sampler* immutableSamplers) {
+	void Shader::addResources(const spirv_cross::Compiler& compiler, const spirv_cross::SmallVector<spirv_cross::Resource>& resources, vk::DescriptorType type, vk::Sampler* immutableSamplers) {
 		for (auto& b : resources) {
 			vk::DescriptorSetLayoutBinding layoutBinding = {};
-			uint32_t set = m_pCompiler->get_decoration(b.id, spv::Decoration::DecorationDescriptorSet);
-			layoutBinding.binding = m_pCompiler->get_decoration(b.id, spv::Decoration::DecorationBinding);
+			uint32_t set = compiler.get_decoration(b.id, spv::Decoration::DecorationDescriptorSet);
+			layoutBinding.binding = compiler.get_decoration(b.id, spv::Decoration::DecorationBinding);
 			size_t size = 0;
 			if (type != vk::DescriptorType::eSampledImage && 
 				type != vk::DescriptorType::eCombinedImageSampler &&
 				type != vk::DescriptorType::eInputAttachment &&
 				type != vk::DescriptorType::eStorageImage) {
-				size = m_pCompiler->get_declared_struct_size(m_pCompiler->get_type(b.type_id));
+				size = compiler.get_declared_struct_size(compiler.get_type(b.type_id));
 			}
 			layoutBinding.stageFlags = m_stage;
 
-			auto t = m_pCompiler->get_type(b.type_id);
+			auto t = compiler.get_type(b.type_id);
 
 			layoutBinding.descriptorCount = (t.array.size() > 0) ? t.array[0] : 1;
 			layoutBinding.descriptorType = type;
@@ -45,16 +45,16 @@ namespace sa {
 		}
 	}
 
-	void Shader::getVertexInput(const spirv_cross::SmallVector<spirv_cross::Resource>& resources) {
+	void Shader::getVertexInput(const spirv_cross::Compiler& compiler, const spirv_cross::SmallVector<spirv_cross::Resource>& resources) {
 
 		uint32_t size = 0;
 		std::unordered_map<uint32_t, uint32_t> sizes;
 		std::unordered_map<uint32_t, vk::VertexInputAttributeDescription> attribs;
 
 		for (auto& input : resources) {
-			auto type = m_pCompiler->get_type(input.type_id);
-			uint32_t location = m_pCompiler->get_decoration(input.id, spv::Decoration::DecorationLocation);
-			uint32_t binding = m_pCompiler->get_decoration(input.id, spv::Decoration::DecorationBinding);
+			auto type = compiler.get_type(input.type_id);
+			uint32_t location = compiler.get_decoration(input.id, spv::Decoration::DecorationLocation);
+			uint32_t binding = compiler.get_decoration(input.id, spv::Decoration::DecorationBinding);
 			vk::Format format = vk::Format::eUndefined;
 			if (type.basetype == spirv_cross::SPIRType::BaseType::UInt) {
 				format = vk::Format::eR32Uint;
@@ -99,7 +99,7 @@ namespace sa {
 		}
 
 		for (auto& input : resources) {
-			uint32_t location = m_pCompiler->get_decoration(input.id, spv::Decoration::DecorationLocation);
+			uint32_t location = compiler.get_decoration(input.id, spv::Decoration::DecorationLocation);
 			uint32_t offset = 0;
 			for (uint32_t i = 0; i < location; i++) {
 				offset += sizes[i];
@@ -169,30 +169,33 @@ namespace sa {
 
 		m_info.setPName("main");
 		m_info.setStage(m_stage);
-		m_pCompiler = std::make_shared<spirv_cross::Compiler>(code);
-		for (auto ext : m_pCompiler->get_declared_extensions()) {
+
+		spirv_cross::Compiler compiler(code);
+
+		//m_pCompiler = std::make_shared<spirv_cross::Compiler>(code);
+		for (auto ext : compiler.get_declared_extensions()) {
 			DEBUG_LOG_INFO("Shader uses vulkan extension: ", ext);
 		}
 
 		m_descriptorSets.clear();
-		auto res = m_pCompiler->get_shader_resources();
+		auto res = compiler.get_shader_resources();
 
-		addResources(res.uniform_buffers, vk::DescriptorType::eUniformBuffer, nullptr);
+		addResources(compiler, res.uniform_buffers, vk::DescriptorType::eUniformBuffer, nullptr);
 
-		addResources(res.sampled_images, vk::DescriptorType::eCombinedImageSampler, nullptr);
-		addResources(res.separate_images, vk::DescriptorType::eSampledImage, nullptr);
+		addResources(compiler, res.sampled_images, vk::DescriptorType::eCombinedImageSampler, nullptr);
+		addResources(compiler, res.separate_images, vk::DescriptorType::eSampledImage, nullptr);
 
-		addResources(res.storage_images, vk::DescriptorType::eStorageImage, nullptr);
-		addResources(res.storage_buffers, vk::DescriptorType::eStorageBuffer, nullptr);
+		addResources(compiler, res.storage_images, vk::DescriptorType::eStorageImage, nullptr);
+		addResources(compiler, res.storage_buffers, vk::DescriptorType::eStorageBuffer, nullptr);
 
-		addResources(res.subpass_inputs, vk::DescriptorType::eInputAttachment, nullptr);
+		addResources(compiler, res.subpass_inputs, vk::DescriptorType::eInputAttachment, nullptr);
 		// TODO ...
 
 
 
 		m_pushConstantRanges.clear();
 		for (auto& p : res.push_constant_buffers) {
-			size_t size = m_pCompiler->get_declared_struct_size(m_pCompiler->get_type(p.type_id));
+			size_t size = compiler.get_declared_struct_size(compiler.get_type(p.type_id));
 
 			vk::PushConstantRange range = {
 				.stageFlags = m_stage,
@@ -205,7 +208,7 @@ namespace sa {
 		m_vertexAttributes.clear();
 		m_vertexBindings.clear();
 		if (m_stage == vk::ShaderStageFlagBits::eVertex) {
-			getVertexInput(res.stage_inputs);
+			getVertexInput(compiler, res.stage_inputs);
 		}
 	}
 

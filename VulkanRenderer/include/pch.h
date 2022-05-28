@@ -1,6 +1,6 @@
 #pragma once
 
-#define RENDERER_VALIDATION 1
+#define RENDERER_VALIDATION
 #define DEBUG_LOG
 
 
@@ -20,8 +20,6 @@
 
 #include <GLFW/glfw3.h>
 
-#define NOMINMAX
-#include <SPIRV\spirv_cross.hpp>
 
 #include "Resources\ResourceManager.hpp"
 #include "Tools\Logger.hpp"

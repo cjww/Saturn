@@ -2,11 +2,14 @@
 
 #include "Resources\DescriptorSet.hpp"
 
+#define NOMINMAX
+#include <spirv_cross/spirv_cross.hpp>
+
+
 namespace sa {
 
 	class Shader {
 	private:
-		std::shared_ptr<spirv_cross::Compiler> m_pCompiler;
 		vk::PipelineShaderStageCreateInfo m_info;
 		vk::Device m_device;
 		vk::ShaderStageFlagBits m_stage;
@@ -17,9 +20,9 @@ namespace sa {
 		std::vector<vk::VertexInputAttributeDescription> m_vertexAttributes;
 		std::vector<vk::VertexInputBindingDescription> m_vertexBindings;
 
-		void addResources(const spirv_cross::SmallVector<spirv_cross::Resource>& resources, vk::DescriptorType type, vk::Sampler* immutableSamplers);
+		void addResources(const spirv_cross::Compiler& compiler, const spirv_cross::SmallVector<spirv_cross::Resource>& resources, vk::DescriptorType type, vk::Sampler* immutableSamplers);
 
-		void getVertexInput(const spirv_cross::SmallVector<spirv_cross::Resource>& resources);
+		void getVertexInput(const spirv_cross::Compiler& compiler, const spirv_cross::SmallVector<spirv_cross::Resource>& resources);
 
 	public:
 		

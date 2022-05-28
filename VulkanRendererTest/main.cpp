@@ -261,6 +261,7 @@ int main() {
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
 
+
 		const int WIDTH = 1000, HEIGHT = 600;
 		sa::RenderWindow window(WIDTH, HEIGHT, "Test Window");
 		sa::Renderer& renderer = sa::Renderer::get();
@@ -280,6 +281,7 @@ int main() {
 			sa::FormatPrecisionFlagBits::e32Bit, 
 			sa::FormatDimensionFlagBits::e4, 
 			sa::FormatTypeFlagBits::SFLOAT);
+
 
 
 
@@ -330,7 +332,6 @@ int main() {
 			sa::BufferType::VERTEX, quad.size() * sizeof(VertexColorUV), quad.data());
 		sa::Buffer indexBuffer = renderer.createBuffer(
 			sa::BufferType::INDEX);
-
 		indexBuffer.write<uint32_t, 6>({
 			0, 1, 3,
 			1, 2, 3
@@ -338,6 +339,8 @@ int main() {
 
 
 		ResourceID descriptorSet = renderer.allocateDescriptorSet(mainPipeline, 0, window.getSwapchainImageCount());
+
+
 
 		sa::Buffer uniformBuffer = renderer.createBuffer(
 			sa::BufferType::UNIFORM);
@@ -350,7 +353,6 @@ int main() {
 
 		uniformBuffer.write(ubo); 
 		renderer.updateDescriptorSet(descriptorSet, 0, uniformBuffer);
-
 
 
 
@@ -382,7 +384,6 @@ int main() {
 			
 			timer += dt;
 			ubo.view = camera.getView(dt);
-
 			objects[0].world = glm::rotate(objects[0].world, dt, {0.f, 1.0f, 0.f});
 			objects[1].world = glm::translate(glm::mat4(1), { 0.f, std::sin(timer * 2), 0.f });
 
@@ -395,6 +396,7 @@ int main() {
 				context.updateDescriptorSet(descriptorSet, 0, uniformBuffer);
 
 				context.beginRenderProgram(mainRenderProgram, mainFramebuffer);
+
 					context.bindPipeline(mainPipeline);
 					context.bindDescriptorSet(descriptorSet, mainPipeline);
 					// Drawing

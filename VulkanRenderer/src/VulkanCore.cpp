@@ -119,7 +119,6 @@ namespace sa {
 			m_instanceExtensions.push_back(glfwExtensions[i]);
 		}
 		m_instanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
-		m_instanceExtensions.push_back(VK_KHR_SURFACE_EXTENSION_NAME);
 
 		vk::InstanceCreateInfo instanceInfo{
 			.pApplicationInfo = &m_appInfo,
@@ -133,9 +132,7 @@ namespace sa {
 		}
 
 		if (!m_validationLayers.empty()) {
-			instanceInfo.ppEnabledLayerNames = m_validationLayers.data();
-			instanceInfo.enabledLayerCount = static_cast<uint32_t>(m_validationLayers.size());
-
+			instanceInfo.setPEnabledLayerNames(m_validationLayers);
 			std::cout << "---Layers---" << std::endl;
 			for (uint32_t i = 0; i < m_validationLayers.size(); i++) {
 				std::cout << m_validationLayers[i] << std::endl;
@@ -259,9 +256,9 @@ namespace sa {
 
 	void VulkanCore::init(vk::ApplicationInfo appInfo) {
 		m_appInfo = appInfo;
-#ifdef RENDERER_VALIDATION
+#ifdef _DEBUG
 			setupDebug();
-#endif // RENDERER_VALIDATION
+#endif // _DEBUG
 		createInstance();
 		findPhysicalDevice();
 		createDevice();
