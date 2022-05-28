@@ -15,7 +15,11 @@ namespace sa {
 
 	public:
 		Pipeline(VulkanCore* pCore, vk::RenderPass renderPass, const ShaderSet& shaderSet, uint32_t subpassIndex, Extent extent, PipelineConfig config);
+		Pipeline(VulkanCore* pCore, const ShaderSet& shaderSet, PipelineConfig config);
+
 		void create(VulkanCore* pCore, vk::RenderPass renderPass, const ShaderSet& shaderSet, uint32_t subpassIndex, Extent extent, PipelineConfig config);
+		void create(VulkanCore* pCore, const ShaderSet& shaderSet, PipelineConfig config);
+
 		void destroy();
 	
 		void bind(CommandBufferSet* cmd);

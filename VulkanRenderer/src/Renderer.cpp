@@ -151,6 +151,13 @@ namespace sa {
 		return pRenderProgram->createPipeline(set, subpassIndex, extent);
 	}
 
+	ResourceID Renderer::createComputePipeline(const std::string& computeShader) {
+		Shader cShader(m_pCore->getDevice(), computeShader.c_str(), vk::ShaderStageFlagBits::eCompute);
+		ShaderSet set(m_pCore->getDevice(), cShader);
+		PipelineConfig config = {};
+		return ResourceManager::get().insert<Pipeline>(m_pCore.get(), set, config);
+	}
+
 	void Renderer::destroyPipeline(ResourceID pipeline) {
 		ResourceManager::get().remove<Pipeline>(pipeline);
 	}

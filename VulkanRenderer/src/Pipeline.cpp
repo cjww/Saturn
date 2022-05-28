@@ -6,6 +6,10 @@ namespace sa {
 		create(pCore, renderPass, shaderSet, subpassIndex, extent, config);
 	}
 
+	Pipeline::Pipeline(VulkanCore* pCore, const ShaderSet& shaderSet, PipelineConfig config) {
+		create(pCore, shaderSet, config);
+	}
+
 	void Pipeline::create(VulkanCore* pCore, vk::RenderPass renderPass, const ShaderSet& shaderSet, uint32_t subpassIndex, Extent extent, PipelineConfig config) {
 		m_pCore = pCore;
 		m_shaderSet = shaderSet;
@@ -32,6 +36,10 @@ namespace sa {
 			config
 		);
 
+	}
+
+	void Pipeline::create(VulkanCore* pCore, const ShaderSet& shaderSet, PipelineConfig config) {
+		
 	}
 
 	void Pipeline::destroy() {

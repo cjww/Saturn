@@ -134,6 +134,7 @@ namespace sa {
 
 		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& fragmentShader);
 		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& geometryShader, const std::string& fragmentShader);
+		ResourceID createComputePipeline(const std::string& computeShader);
 		void destroyPipeline(ResourceID pipeline);
 
 		ResourceID allocateDescriptorSet(ResourceID pipeline, uint32_t setIndex, uint32_t backBufferCount = 1ui32);
