@@ -249,12 +249,17 @@ namespace sa {
 			m_transferQueue.pop();
 		}
 
-		return RenderContext(pCommandBufferSet);
+		return RenderContext(m_pCore.get(), pCommandBufferSet);
 	}
 
 	void Renderer::endFrame(ResourceID swapchain) {
 		Swapchain* pSwapchain = RenderContext::getSwapchain(swapchain);
-		pSwapchain->endFrame(m_pCore->getGraphicsQueue());
+		pSwapchain->endFrame();
+	}
+
+	Context Renderer::createComputeContext() {
+		ResourceID id = ResourceManager::get().insert(m_pCore->allocateComputeCommandBufferSet(1, vk::CommandBufferLevel::ePrimary));
+		return Context(m_pCore.get(), id);
 	}
 
 

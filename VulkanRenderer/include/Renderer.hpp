@@ -156,6 +156,7 @@ namespace sa {
 		RenderContext beginFrame(ResourceID swapchain);
 		void endFrame(ResourceID swapchain);
 
+		Context createComputeContext();
 
 		/*
 		void initImGUI(GLFWwindow* window, uint32_t renderpass, uint32_t subpass);

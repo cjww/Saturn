@@ -56,12 +56,12 @@ namespace sa {
 	{
 	}
 
-	RenderContext::RenderContext(CommandBufferSet* pCommandBufferSet)
+	RenderContext::RenderContext(VulkanCore* pCore, CommandBufferSet* pCommandBufferSet)
 		: m_pCommandBufferSet(pCommandBufferSet)
+		, m_pCore(pCore)
 	{
 
 	}
-
 
 	void RenderContext::beginRenderProgram(ResourceID renderProgram, ResourceID framebuffer, Rect renderArea) {
 		RenderProgram* pRenderProgram = getRenderProgram(renderProgram);
@@ -80,6 +80,12 @@ namespace sa {
 
 	void RenderContext::bindPipeline(ResourceID pipeline) {
 		Pipeline* pPipeline = getPipeline(pipeline);
+
+		if (pPipeline->isCompute()) {
+			if (!canDoCompute())
+				throw std::runtime_error("This context can not handle compute pipelines, check this before binding");
+		}
+
 		pPipeline->bind(m_pCommandBufferSet);
 	}
 
@@ -147,7 +153,47 @@ namespace sa {
 	}
 
 	void RenderContext::dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
+		if (!canDoCompute())
+			throw std::runtime_error("Dispatching compute pipeline not supported by this context");
 		m_pCommandBufferSet->getBuffer().dispatch(groupCountX, groupCountY, groupCountZ);
+	}
+
+	bool RenderContext::canDoCompute() const {
+		return m_pCore->getComputeQueue() == m_pCore->getGraphicsQueue();
+	}
+
+	Context::Context(VulkanCore* pCore, ResourceID commandBufferSetID) 
+		: RenderContext(pCore, ResourceManager::get().get<CommandBufferSet>(commandBufferSetID))
+	{
+		m_pFence = std::shared_ptr<vk::Fence>(new vk::Fence, [=](vk::Fence* p) {
+			m_pCore->getDevice().destroyFence(*p);
+			delete p;
+		});
+		*m_pFence = m_pCore->getDevice().createFence({ .flags = vk::FenceCreateFlagBits::eSignaled });
+		m_commandBufferSetID = commandBufferSetID;
+	}
+
+	void Context::begin() {
+		m_pCommandBufferSet->begin(0, vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+	}
+
+	void Context::end() {
+		m_pCommandBufferSet->end();
+	}
+
+	void Context::submit() {
+		waitToFinish();
+		m_pCore->getDevice().resetFences(*m_pFence);
+		m_pCommandBufferSet->submit(*m_pFence);
+	}
+
+	void Context::waitToFinish(size_t timeout) {
+		m_pCore->getDevice().waitForFences(*m_pFence, VK_FALSE, timeout);
+	}
+
+	void Context::destroy() {
+		ResourceManager::get().remove<CommandBufferSet>(m_commandBufferSetID);
+		m_pCommandBufferSet = nullptr;
 	}
 
 }

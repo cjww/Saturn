@@ -116,19 +116,19 @@ namespace sa {
 		}
 		m_imageFences[m_imageIndex] = m_inFlightFences[m_frameIndex];
 	
-		m_commandBufferSet.begin(m_frameIndex);
+		m_commandBufferSet.begin(m_frameIndex, vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
 		return &m_commandBufferSet;
 	}
 
-	void Swapchain::endFrame(vk::Queue queue) {
+	void Swapchain::endFrame() {
 
 		m_commandBufferSet.end();
 
 		m_device.resetFences(m_inFlightFences[m_frameIndex]);
 
 		// Submit
-		m_commandBufferSet.submit(queue, m_inFlightFences[m_frameIndex], m_renderFinishedSemaphore[m_frameIndex], m_imageAvailableSemaphore[m_frameIndex]);
+		m_commandBufferSet.submit(m_inFlightFences[m_frameIndex], m_renderFinishedSemaphore[m_frameIndex], m_imageAvailableSemaphore[m_frameIndex]);
 
 		// Present
 		vk::Result result;
@@ -140,7 +140,7 @@ namespace sa {
 			.pImageIndices = &m_imageIndex,
 			.pResults = &result
 		};
-		checkError(queue.presentKHR(presentInfo), "Failed to present", false);
+		checkError(m_commandBufferSet.getTargetQueue().presentKHR(presentInfo), "Failed to present", false);
 		checkError(result, "Failed to present", false);
 
 		m_frameIndex = (m_frameIndex + 1) % static_cast<uint32_t>(m_images.size());

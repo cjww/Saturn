@@ -238,8 +238,8 @@ namespace sa {
 	}
 
 	void VulkanCore::createCommandPools() {
-		m_graphicsCommandPool.create(m_device, m_graphicsQueueInfo.family, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
-		m_computeCommandPool.create(m_device, m_computeQueueInfo.family, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
+		m_graphicsCommandPool.create(m_device, m_graphicsQueueInfo.family, m_graphicsQueue, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
+		m_computeCommandPool.create(m_device, m_computeQueueInfo.family, m_computeQueue, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
 	}
 
 	bool VulkanCore::isDepthFormat(vk::Format format) {

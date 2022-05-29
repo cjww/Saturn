@@ -51,7 +51,7 @@ namespace sa {
 
 
 		CommandBufferSet* beginFrame();
-		void endFrame(vk::Queue queue);
+		void endFrame();
 
 		std::vector<vk::ImageView> getImageViews() const;
 		Extent getExtent() const;

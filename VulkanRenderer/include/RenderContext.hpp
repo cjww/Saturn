@@ -5,17 +5,20 @@
 
 namespace vk {
 	class Sampler;
+	class Queue;
+	class Fence;
 }
 
 namespace sa {
 	class CommandBufferSet;
+	class VulkanCore;
 	
 	class Swapchain;
 	class RenderProgram;
 	class FramebufferSet;
 	class Pipeline;
 	class DescriptorSet;
-	
+
 
 	typedef uint32_t ShaderStageFlags;
 
@@ -31,9 +34,10 @@ namespace sa {
 	
 
 	class RenderContext {
-	private:
+	protected:
 		CommandBufferSet* m_pCommandBufferSet;
-		
+		VulkanCore* m_pCore;
+
 		friend class RenderProgramFactory;
 		friend class Renderer;
 		static Swapchain* getSwapchain(ResourceID id);
@@ -48,7 +52,7 @@ namespace sa {
 	public:
 		RenderContext();
 
-		RenderContext(CommandBufferSet* pCommandBufferSet);
+		RenderContext(VulkanCore* pCore, CommandBufferSet* pCommandBufferSet);
 
 		void beginRenderProgram(ResourceID renderProgram, ResourceID framebuffer, Rect renderArea = { {0, 0}, {0, 0} });
 		void nextSubpass();
@@ -75,10 +79,30 @@ namespace sa {
 
 		void dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
 
+		bool canDoCompute() const;
+
 		operator bool() {
 			return m_pCommandBufferSet != nullptr;
 		}
 	};
+
+	class Context : public RenderContext {
+	private:
+		std::shared_ptr<vk::Fence> m_pFence;
+		ResourceID m_commandBufferSetID;
+		uint32_t m_bufferIndex;
+	public:
+		Context(VulkanCore* pCore, ResourceID commandBufferSetID);
+		void begin();
+		void end();
+
+		void submit();
+
+		void waitToFinish(size_t timeout = UINT64_MAX);
+
+		void destroy();
+	};
+
 
 	template<typename T>
 	inline void RenderContext::pushConstants(ResourceID pipeline, ShaderStageFlags stages, uint32_t offset, const std::vector<T>& values) {

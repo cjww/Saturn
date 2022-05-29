@@ -26,7 +26,7 @@ private:
 
 public:
 	float speed = 10.f;
-	float sensitivty = 10.f;
+	float sensitivty = 1.f;
 		
 	bool mouseLocked;
 
@@ -409,7 +409,7 @@ int main() {
 		ResourceID computePipeline = renderer.createComputePipeline("ComputeShader.comp.spv");
 		ResourceID computeDescriptorSet = renderer.allocateDescriptorSet(computePipeline, 0, window.getSwapchainImageCount());
 
-		std::vector<glm::mat4> data(100000);
+		std::vector<glm::mat4> data(100000, glm::mat4(1));
 
 		sa::Buffer configBuffer = renderer.createBuffer(sa::BufferType::UNIFORM);
 		configBuffer.write(data.size());		
@@ -420,12 +420,28 @@ int main() {
 		renderer.updateDescriptorSet(computeDescriptorSet, 0, configBuffer);
 		renderer.updateDescriptorSet(computeDescriptorSet, 2, outputBuffer);
 
-		data = outputBuffer.getContent<glm::mat4>();
-		
 
 		auto now = std::chrono::high_resolution_clock::now();
 		float dt = 0;
-		float timer = 0.0f;
+		float timer = 10.0f;
+		
+		sa::Context computeContext = renderer.createComputeContext();
+		computeContext.begin();
+			computeContext.bindPipeline(computePipeline);
+			computeContext.bindDescriptorSet(computeDescriptorSet, computePipeline);
+			computeContext.pushConstant(computePipeline, sa::ShaderStageFlagBits::COMPUTE, 0, timer);
+
+			int groupcount = ((data.size()) / 256) + 1;
+			computeContext.dispatch(groupcount, 1, 1);
+		computeContext.end();
+		
+		computeContext.submit();
+		
+		computeContext.waitToFinish(); // wait until all commands have been excecuted
+
+		computeContext.destroy();
+
+		timer = 0.0f;
 		while (window.isOpen()) {
 			window.pollEvents();
 			
@@ -436,20 +452,22 @@ int main() {
 
 			data = outputBuffer.getContent<glm::mat4>();
 			
-
 			sa::RenderContext context = window.beginFrame();
 			if (context) {
 				
 				uniformBuffer.write(ubo);
 				context.updateDescriptorSet(descriptorSet, 0, uniformBuffer);
 				context.updateDescriptorSet(descriptorSet, 1, outputBuffer);
+				/*
+				if (context.canDoCompute()) {
+					context.bindPipeline(computePipeline);
+					context.bindDescriptorSet(computeDescriptorSet, computePipeline);
+					context.pushConstant(computePipeline, sa::ShaderStageFlagBits::COMPUTE, 0, timer);
 
-				context.bindPipeline(computePipeline);
-				context.bindDescriptorSet(computeDescriptorSet, computePipeline);
-				context.pushConstant(computePipeline, sa::ShaderStageFlagBits::COMPUTE, 0, timer);
-
-				int groupcount = ((data.size()) / 256) + 1;
-				context.dispatch(groupcount, 1, 1);
+					int groupcount = ((data.size()) / 256) + 1;
+					context.dispatch(groupcount, 1, 1);
+				}
+				*/
 
 				context.beginRenderProgram(mainRenderProgram, mainFramebuffer);
 
