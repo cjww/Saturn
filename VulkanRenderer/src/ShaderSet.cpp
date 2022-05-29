@@ -201,6 +201,7 @@ namespace sa {
 		m_descriptorPool = nullptr;
 		if (poolSizes.size() > 0) {
 			vk::DescriptorPoolCreateInfo poolInfo{
+				.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
 				.maxSets = UINT16_MAX,
 			};
 			poolInfo.setPoolSizes(poolSizes);
@@ -262,6 +263,7 @@ namespace sa {
 		m_descriptorPool = nullptr;
 		if (poolSizes.size() > 0) {
 			vk::DescriptorPoolCreateInfo poolInfo{
+				.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
 				.maxSets = UINT16_MAX,
 			};
 			poolInfo.setPoolSizes(poolSizes);

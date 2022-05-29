@@ -14,15 +14,16 @@ layout(set = 0, binding = 0) uniform UniformBufferObject {
     mat4 projection;
 }ubo;
 
-layout(push_constant) uniform PushConstant {
-    mat4 world;
-}pc;
+layout(set = 0, binding = 1) readonly buffer Objects {
+    mat4 worldMat[];
+}objects;
 
 void main() {
     
     //gl_Position = vec4(triangle[gl_VertexIndex], 1.0);
-    gl_Position = ubo.projection * ubo.view * pc.world * in_vertexPosition;
-    out_vertexWorldPos = pc.world * in_vertexPosition;
+    mat4 world = objects.worldMat[gl_InstanceIndex];
+    gl_Position = ubo.projection * ubo.view * world * in_vertexPosition;
+    out_vertexWorldPos = world * in_vertexPosition;
     out_vertexColor = in_vertexColor;
     out_vertexUV = in_vertexUV;
 }

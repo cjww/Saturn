@@ -60,6 +60,7 @@ void main() {
         float randomTime = rand(vec2(x, y)) + 1;
         vec3 translation = vec3(x * 2, y * 2, sin(pc.time * randomTime) * rand(vec2(x, y)) * 2);
 
+        //translation = vec3(sin(pc.time), 0, 0);
         outputData.data[gID] = identity() * translate(translation);
     }
 }

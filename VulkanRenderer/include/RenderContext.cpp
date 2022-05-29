@@ -146,4 +146,8 @@ namespace sa {
 		m_pCommandBufferSet->getBuffer().drawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 	}
 
+	void RenderContext::dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
+		m_pCommandBufferSet->getBuffer().dispatch(groupCountX, groupCountY, groupCountZ);
+	}
+
 }

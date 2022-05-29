@@ -191,7 +191,11 @@ namespace sa {
 		addResources(compiler, res.subpass_inputs, vk::DescriptorType::eInputAttachment, nullptr);
 		// TODO ...
 
-
+		if (m_stage == vk::ShaderStageFlagBits::eCompute) {
+			spirv_cross::SpecializationConstant x, y, z;
+			compiler.get_work_group_size_specialization_constants(x, y, z);
+			//auto workGoupX = compiler.get_constant(x.);
+		}
 
 		m_pushConstantRanges.clear();
 		for (auto& p : res.push_constant_buffers) {

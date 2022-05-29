@@ -63,7 +63,7 @@ namespace sa {
 		case BufferType::STORAGE:
 			m_pBuffer = m_pCore->createBuffer(vk::BufferUsageFlagBits::eStorageBuffer,
 				VMA_MEMORY_USAGE_AUTO, 
-				VMA_ALLOCATION_CREATE_DEDICATED_MEMORY_BIT,
+				VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT,
 				size, initialData);
 			break;
 		}

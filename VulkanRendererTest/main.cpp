@@ -255,6 +255,35 @@ std::array<VertexColorUV, 4> quad = {
 };
 
 
+std::array<VertexColorUV, 8> box = {
+	// forward
+	VertexColorUV{ { -1.0f, 1.0f, 1.0f, 1.0f }, { 1, 1, 1, 1 }, { 0, 1 } },
+	VertexColorUV{ { 1.0f, 1.0f, 1.0f, 1.0f }, { 1, 1, 1, 1 }, { 1, 1 } },
+	VertexColorUV{ { -1.0f, -1.0f, 1.0f, 1.0f }, { 1, 1, 1, 1 }, { 1, 0 } },
+	VertexColorUV{ { 1.0f, -1.0f, 1.0f, 1.0f }, { 1, 1, 1, 1 }, { 0, 0 } },
+	// back
+	VertexColorUV{ { -1.0f, 1.0f, -1.0f, 1.0f }, { 1, 1, 1, 1 }, { 0, 1 } },
+	VertexColorUV{ { 1.0f, 1.0f, -1.0f, 1.0f }, { 1, 1, 1, 1 }, { 1, 1 } },
+	VertexColorUV{ { -1.0f, -1.0f, -1.0f, 1.0f }, { 1, 1, 1, 1 }, { 1, 0 } },
+	VertexColorUV{ { 1.0f, -1.0f, -1.0f, 1.0f }, { 1, 1, 1, 1 }, { 0, 0 } }
+};
+
+std::array<uint32_t, 36> boxIndices = {
+	// Forward
+	0, 1, 2, 1, 3, 2,
+	// Right
+	1, 5, 3, 5, 7, 3,
+	// Back
+	5, 4, 7, 4, 6, 7,
+	// Left
+	4, 0, 6, 0, 2, 6,
+	// Top
+	4, 5, 0, 5, 1, 0,
+	// Bottom
+	7, 6, 3, 6, 2, 3
+};
+
+
 int main() {
 
 #ifdef _WIN32
@@ -337,6 +366,15 @@ int main() {
 			1, 2, 3
 		});
 
+		sa::Buffer boxVertexBuffer = renderer.createBuffer(
+			sa::BufferType::VERTEX);
+		boxVertexBuffer.write(box);
+		sa::Buffer boxIndexBuffer = renderer.createBuffer(
+			sa::BufferType::INDEX);
+		boxIndexBuffer.write(boxIndices);
+		
+
+
 
 		ResourceID descriptorSet = renderer.allocateDescriptorSet(mainPipeline, 0, window.getSwapchainImageCount());
 
@@ -356,25 +394,34 @@ int main() {
 
 
 
-		std::vector<PushConstant> objects;
-
-		PushConstant pc = {};
-		pc.world = glm::mat4(1);
-		objects.push_back(pc);
-
-		pc.world = glm::translate(pc.world, glm::vec3(0.5, 0, 0));
-		objects.push_back(pc);
-
 
 		ResourceID descriptorSetPost = renderer.allocateDescriptorSet(postPipeline, 0, window.getSwapchainImageCount());
 
 		sa::Image image("Box.png");
 		sa::Texture2D texture = renderer.createTexture2D(image);
 		ResourceID sampler = renderer.createSampler();
-		renderer.updateDescriptorSet(descriptorSet, 1, texture, sampler);
+		renderer.updateDescriptorSet(descriptorSet, 2, texture, sampler);
 
 		renderer.updateDescriptorSet(descriptorSetPost, 0, colorTexture);
 		renderer.updateDescriptorSet(descriptorSetPost, 1, positionsTexture);
+
+		//Compute
+		ResourceID computePipeline = renderer.createComputePipeline("ComputeShader.comp.spv");
+		ResourceID computeDescriptorSet = renderer.allocateDescriptorSet(computePipeline, 0, window.getSwapchainImageCount());
+
+		std::vector<glm::mat4> data(100000);
+
+		sa::Buffer configBuffer = renderer.createBuffer(sa::BufferType::UNIFORM);
+		configBuffer.write(data.size());		
+
+		sa::Buffer outputBuffer = renderer.createBuffer(sa::BufferType::STORAGE);
+		outputBuffer.write(data);
+
+		renderer.updateDescriptorSet(computeDescriptorSet, 0, configBuffer);
+		renderer.updateDescriptorSet(computeDescriptorSet, 2, outputBuffer);
+
+		data = outputBuffer.getContent<glm::mat4>();
+		
 
 		auto now = std::chrono::high_resolution_clock::now();
 		float dt = 0;
@@ -384,33 +431,41 @@ int main() {
 			
 			timer += dt;
 			ubo.view = camera.getView(dt);
-			objects[0].world = glm::rotate(objects[0].world, dt, {0.f, 1.0f, 0.f});
-			objects[1].world = glm::translate(glm::mat4(1), { 0.f, std::sin(timer * 2), 0.f });
-
+			
 			window.setWindowTitle("FPS: " + std::to_string(1 / dt));
+
+			data = outputBuffer.getContent<glm::mat4>();
+			
 
 			sa::RenderContext context = window.beginFrame();
 			if (context) {
 				
 				uniformBuffer.write(ubo);
 				context.updateDescriptorSet(descriptorSet, 0, uniformBuffer);
+				context.updateDescriptorSet(descriptorSet, 1, outputBuffer);
+
+				context.bindPipeline(computePipeline);
+				context.bindDescriptorSet(computeDescriptorSet, computePipeline);
+				context.pushConstant(computePipeline, sa::ShaderStageFlagBits::COMPUTE, 0, timer);
+
+				int groupcount = ((data.size()) / 256) + 1;
+				context.dispatch(groupcount, 1, 1);
 
 				context.beginRenderProgram(mainRenderProgram, mainFramebuffer);
 
 					context.bindPipeline(mainPipeline);
 					context.bindDescriptorSet(descriptorSet, mainPipeline);
 					// Drawing
-					context.bindVertexBuffers(0, { vertexBuffer });
-					context.bindIndexBuffer(indexBuffer);
-					for (const auto& object : objects) {
-						context.pushConstant(mainPipeline, sa::ShaderStageFlagBits::VERTEX, 0, object);
+					context.bindVertexBuffers(0, { boxVertexBuffer });
+					context.bindIndexBuffer(boxIndexBuffer);
 
-						context.drawIndexed(indexBuffer.getElementCount<uint32_t>(), 1);
-					}
+					context.drawIndexed(boxIndices.size(), data.size());
 
 				context.nextSubpass();
 
 					context.bindPipeline(postPipeline);
+					context.bindVertexBuffers(0, { vertexBuffer });
+					context.bindIndexBuffer(indexBuffer);
 					context.bindDescriptorSet(descriptorSetPost, postPipeline);
 					
 					context.drawIndexed(6, 1);

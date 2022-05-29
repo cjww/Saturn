@@ -39,7 +39,24 @@ namespace sa {
 	}
 
 	void Pipeline::create(VulkanCore* pCore, const ShaderSet& shaderSet, PipelineConfig config) {
-		
+		m_pCore = pCore;
+		m_shaderSet = shaderSet;
+
+		vk::PipelineLayoutCreateInfo layoutInfo;
+		layoutInfo
+			.setPushConstantRanges(shaderSet.getPushConstantRanges())
+			.setSetLayouts(shaderSet.getDescriptorSetLayouts());
+
+
+		m_layout = m_pCore->getDevice().createPipelineLayout(layoutInfo);
+
+		vk::ComputePipelineCreateInfo info{
+			.stage = shaderSet.getShaderInfos()[0],
+			.layout = m_layout,
+		};
+		auto result = m_pCore->getDevice().createComputePipeline(nullptr, info);
+		checkError(result.result, "Failed to create pipeline", true);
+		m_pipeline = result.value;
 	}
 
 	void Pipeline::destroy() {
