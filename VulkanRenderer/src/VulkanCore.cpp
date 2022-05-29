@@ -56,17 +56,16 @@ namespace sa {
 	uint32_t VulkanCore::getQueueFamilyIndex(vk::QueueFlags capabilities, vk::QueueFamilyProperties* prop) {
 		std::vector<vk::QueueFamilyProperties> queueFamilyProperties = m_physicalDevice.getQueueFamilyProperties();
 
-		uint32_t queueFamilyIndex = 0;
-		for (auto properties : queueFamilyProperties) {
+		for (uint32_t i = (uint32_t)queueFamilyProperties.size() - 1; i >= 0; i--) {
+			vk::QueueFamilyProperties& properties = queueFamilyProperties[i];
 			if (properties.queueCount > 0) {
 				if (properties.queueFlags & capabilities) {
 					if (prop != nullptr) {
 						*prop = properties;
 					}
-					return queueFamilyIndex;
+					return i;
 				}
 			}
-			queueFamilyIndex++;
 		}
 		return UINT32_MAX;
 	}
@@ -220,8 +219,7 @@ namespace sa {
 		};
 
 		if (!m_validationLayers.empty()) {
-			deviceInfo.setPpEnabledLayerNames(m_validationLayers.data());
-			deviceInfo.setEnabledLayerCount(m_validationLayers.size());
+			deviceInfo.setPEnabledLayerNames(m_validationLayers);
 		}
 
 

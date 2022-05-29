@@ -23,6 +23,14 @@ namespace sa {
 		for (size_t i = 0; i < count; i++) {
 			m_renderFinishedSemaphore[i] = m_device.createSemaphore({});
 		}
+
+		if (m_computeCommandBufferSet.isValid()) {
+			m_inFlightFencesCompute.resize(count);
+			for (size_t i = 0; i < count; i++) {
+				m_inFlightFencesCompute[i] = m_device.createFence({ .flags = vk::FenceCreateFlagBits::eSignaled });
+			}
+		}
+
 	}
 
 	void Swapchain::create(VulkanCore* pCore, GLFWwindow* pWindow) {
@@ -51,9 +59,13 @@ namespace sa {
 			));
 		}
 
-		createSyncronisationObjects();
 
 		m_commandBufferSet = pCore->allocateGraphicsCommandBufferSet(static_cast<uint32_t>(m_images.size()), vk::CommandBufferLevel::ePrimary);
+		if (m_commandBufferSet.getTargetQueue() != pCore->getComputeQueue()) {
+			m_computeCommandBufferSet = pCore->allocateComputeCommandBufferSet(static_cast<uint32_t>(m_images.size()), vk::CommandBufferLevel::ePrimary);
+		}
+
+		createSyncronisationObjects();
 
 		DEBUG_LOG_INFO("Created Swapchain\n\tImage count: ", m_images.size(), "\n\tFormat: ", vk::to_string(m_format));
 
@@ -68,8 +80,13 @@ namespace sa {
 		for (auto semaphore : m_imageAvailableSemaphore) {
 			m_device.destroySemaphore(semaphore);
 		}
+
 		for (auto semaphore : m_renderFinishedSemaphore) {
 			m_device.destroySemaphore(semaphore);
+		}
+
+		for (auto fence : m_inFlightFencesCompute) {
+			m_device.destroyFence(fence);
 		}
 
 		for (auto imageView : m_imageViews) {
@@ -85,13 +102,19 @@ namespace sa {
 		m_resizeCallback = function;
 	}
 
-	CommandBufferSet* Swapchain::beginFrame() {
+	std::tuple<CommandBufferSet*, CommandBufferSet*> Swapchain::beginFrame() {
 		if (!m_swapchain) {
-			return nullptr;
+			return { nullptr, nullptr };
 		}
 		checkError(
 			m_device.waitForFences(m_inFlightFences[m_frameIndex], VK_FALSE, UINT64_MAX),
 			"Failed to wait for in flight fence");
+
+		if (m_computeCommandBufferSet.isValid()) {
+			checkError(
+				m_device.waitForFences(m_inFlightFencesCompute[m_frameIndex], VK_FALSE, UINT64_MAX),
+				"Failed to wait for in flight fence");
+		}
 
 		vk::ResultValue<uint32_t> res = m_device.acquireNextImageKHR(m_swapchain, UINT64_MAX, m_imageAvailableSemaphore[m_frameIndex]);
 		if (res.result == vk::Result::eErrorOutOfDateKHR || res.result == vk::Result::eSuboptimalKHR) {
@@ -101,7 +124,7 @@ namespace sa {
 				m_resizeCallback(newExtent);
 				m_extent = newExtent;
 			}
-			return nullptr;
+			return { nullptr, nullptr };
 		}
 		checkError(
 			res.result,
@@ -117,17 +140,29 @@ namespace sa {
 		m_imageFences[m_imageIndex] = m_inFlightFences[m_frameIndex];
 	
 		m_commandBufferSet.begin(m_frameIndex, vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+		if (m_computeCommandBufferSet.isValid()) {
+			m_computeCommandBufferSet.begin(m_frameIndex, vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+			
+			return { &m_commandBufferSet, &m_computeCommandBufferSet };
+		}
 
-		return &m_commandBufferSet;
+		return { &m_commandBufferSet, nullptr};
 	}
 
 	void Swapchain::endFrame() {
 
 		m_commandBufferSet.end();
+		
 
 		m_device.resetFences(m_inFlightFences[m_frameIndex]);
 
+
 		// Submit
+		if (m_computeCommandBufferSet.isRecording()) {
+			m_computeCommandBufferSet.end();
+			m_device.resetFences(m_inFlightFencesCompute[m_frameIndex]);
+			m_computeCommandBufferSet.submit(m_inFlightFencesCompute[m_frameIndex]);
+		}
 		m_commandBufferSet.submit(m_inFlightFences[m_frameIndex], m_renderFinishedSemaphore[m_frameIndex], m_imageAvailableSemaphore[m_frameIndex]);
 
 		// Present

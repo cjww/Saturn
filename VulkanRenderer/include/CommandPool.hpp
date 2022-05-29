@@ -26,6 +26,7 @@ namespace sa {
 
 		uint32_t getBufferCount() const;
 
+		bool isValid() const;
 	};
 
 	class CommandPool {

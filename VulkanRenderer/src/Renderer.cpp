@@ -215,7 +215,7 @@ namespace sa {
 	RenderContext Renderer::beginFrame(ResourceID swapchain) {
 		Swapchain* pSwapchain = RenderContext::getSwapchain(swapchain);
 
-		CommandBufferSet* pCommandBufferSet = pSwapchain->beginFrame();
+		auto [pCommandBufferSet, pComputeCommandBufferSet] = pSwapchain->beginFrame();
 		if (!pCommandBufferSet) {
 			return {};
 		}
@@ -249,7 +249,7 @@ namespace sa {
 			m_transferQueue.pop();
 		}
 
-		return RenderContext(m_pCore.get(), pCommandBufferSet);
+		return RenderContext(m_pCore.get(), pCommandBufferSet, pComputeCommandBufferSet);
 	}
 
 	void Renderer::endFrame(ResourceID swapchain) {

@@ -424,7 +424,7 @@ int main() {
 		auto now = std::chrono::high_resolution_clock::now();
 		float dt = 0;
 		float timer = 10.0f;
-		
+		/*
 		sa::Context computeContext = renderer.createComputeContext();
 		computeContext.begin();
 			computeContext.bindPipeline(computePipeline);
@@ -440,6 +440,7 @@ int main() {
 		computeContext.waitToFinish(); // wait until all commands have been excecuted
 
 		computeContext.destroy();
+		*/
 
 		timer = 0.0f;
 		while (window.isOpen()) {
@@ -458,17 +459,14 @@ int main() {
 				uniformBuffer.write(ubo);
 				context.updateDescriptorSet(descriptorSet, 0, uniformBuffer);
 				context.updateDescriptorSet(descriptorSet, 1, outputBuffer);
-				/*
-				if (context.canDoCompute()) {
-					context.bindPipeline(computePipeline);
-					context.bindDescriptorSet(computeDescriptorSet, computePipeline);
-					context.pushConstant(computePipeline, sa::ShaderStageFlagBits::COMPUTE, 0, timer);
+				
+				context.bindPipeline(computePipeline);
+				context.bindDescriptorSet(computeDescriptorSet, computePipeline);
+				context.pushConstant(computePipeline, sa::ShaderStageFlagBits::COMPUTE, 0, timer);
 
-					int groupcount = ((data.size()) / 256) + 1;
-					context.dispatch(groupcount, 1, 1);
-				}
-				*/
-
+				int groupcount = ((data.size()) / 256) + 1;
+				context.dispatch(groupcount, 1, 1);
+				
 				context.beginRenderProgram(mainRenderProgram, mainFramebuffer);
 
 					context.bindPipeline(mainPipeline);

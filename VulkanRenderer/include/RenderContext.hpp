@@ -32,11 +32,12 @@ namespace sa {
 	};
 
 	
-
 	class RenderContext {
 	protected:
 		CommandBufferSet* m_pCommandBufferSet;
 		VulkanCore* m_pCore;
+
+		CommandBufferSet* m_pComputeCommandBufferSet;
 
 		friend class RenderProgramFactory;
 		friend class Renderer;
@@ -47,12 +48,10 @@ namespace sa {
 		static DescriptorSet* getDescriptorSet(ResourceID id);
 		static vk::Sampler* getSampler(ResourceID id);
 
-
-
 	public:
 		RenderContext();
 
-		RenderContext(VulkanCore* pCore, CommandBufferSet* pCommandBufferSet);
+		RenderContext(VulkanCore* pCore, CommandBufferSet* pCommandBufferSet, CommandBufferSet* pComputeCommandBufferSet);
 
 		void beginRenderProgram(ResourceID renderProgram, ResourceID framebuffer, Rect renderArea = { {0, 0}, {0, 0} });
 		void nextSubpass();

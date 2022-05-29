@@ -53,14 +53,17 @@ namespace sa {
 
 	RenderContext::RenderContext()
 		: m_pCommandBufferSet(nullptr)
+		, m_pComputeCommandBufferSet(nullptr)
 	{
 	}
 
-	RenderContext::RenderContext(VulkanCore* pCore, CommandBufferSet* pCommandBufferSet)
+	RenderContext::RenderContext(VulkanCore* pCore, CommandBufferSet* pCommandBufferSet, CommandBufferSet* pComputeCommandBufferSet)
 		: m_pCommandBufferSet(pCommandBufferSet)
+		, m_pComputeCommandBufferSet(pComputeCommandBufferSet)
 		, m_pCore(pCore)
 	{
-
+		if (!m_pComputeCommandBufferSet)
+			m_pComputeCommandBufferSet = m_pCommandBufferSet;
 	}
 
 	void RenderContext::beginRenderProgram(ResourceID renderProgram, ResourceID framebuffer, Rect renderArea) {
@@ -84,6 +87,9 @@ namespace sa {
 		if (pPipeline->isCompute()) {
 			if (!canDoCompute())
 				throw std::runtime_error("This context can not handle compute pipelines, check this before binding");
+			
+			pPipeline->bind(m_pComputeCommandBufferSet);
+			return;
 		}
 
 		pPipeline->bind(m_pCommandBufferSet);
@@ -121,12 +127,26 @@ namespace sa {
 
 	void RenderContext::bindDescriptorSet(ResourceID descriptorSet, ResourceID pipeline) {
 		Pipeline* pPipeline = getPipeline(pipeline);
-		DescriptorSet* pDedscriptorSet = getDescriptorSet(descriptorSet);
-		pPipeline->bindDescriptorSet(m_pCommandBufferSet, pDedscriptorSet);
+		DescriptorSet* pDescriptorSet = getDescriptorSet(descriptorSet);
+		if (pPipeline->isCompute()) {
+			if (!canDoCompute())
+				throw std::runtime_error("This context can not handle compute pipelines, check this before binding");
+
+			pPipeline->bindDescriptorSet(m_pComputeCommandBufferSet, pDescriptorSet);
+			return;
+		}
+		pPipeline->bindDescriptorSet(m_pCommandBufferSet, pDescriptorSet);
 	}
 
 	void RenderContext::pushConstants(ResourceID pipeline, ShaderStageFlags stages, uint32_t offset, size_t size, void* data) {
 		Pipeline* pPipeline = getPipeline(pipeline);
+		if (pPipeline->isCompute()) {
+			if (!canDoCompute())
+				throw std::runtime_error("This context can not handle compute pipelines, check this before binding");
+
+			pPipeline->pushConstants(m_pComputeCommandBufferSet, (vk::ShaderStageFlags)stages, offset, size, data);
+			return;
+		}
 		pPipeline->pushConstants(m_pCommandBufferSet, (vk::ShaderStageFlags)stages, offset, size, data);
 	}
 
@@ -141,6 +161,14 @@ namespace sa {
 				firstSet = pDescriptorSet->getSetIndex();
 			sets.push_back(pDescriptorSet->getSet(m_pCommandBufferSet->getBufferIndex()));
 		}
+		if (pPipeline->isCompute()) {
+			if (!canDoCompute())
+				throw std::runtime_error("This context can not handle compute pipelines, check this before binding");
+
+			pPipeline->bindDescriptorSets(m_pComputeCommandBufferSet, firstSet, sets);
+			return;
+		}
+
 		pPipeline->bindDescriptorSets(m_pCommandBufferSet, firstSet, sets);
 	}
 
@@ -155,15 +183,19 @@ namespace sa {
 	void RenderContext::dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
 		if (!canDoCompute())
 			throw std::runtime_error("Dispatching compute pipeline not supported by this context");
-		m_pCommandBufferSet->getBuffer().dispatch(groupCountX, groupCountY, groupCountZ);
+		m_pComputeCommandBufferSet->getBuffer().dispatch(groupCountX, groupCountY, groupCountZ);
 	}
 
 	bool RenderContext::canDoCompute() const {
-		return m_pCore->getComputeQueue() == m_pCore->getGraphicsQueue();
+		return m_pCore->getComputeQueue() == m_pCommandBufferSet->getTargetQueue()
+			|| m_pCore->getComputeQueue() == m_pComputeCommandBufferSet->getTargetQueue();
 	}
 
 	Context::Context(VulkanCore* pCore, ResourceID commandBufferSetID) 
-		: RenderContext(pCore, ResourceManager::get().get<CommandBufferSet>(commandBufferSetID))
+		: RenderContext(
+			pCore, 
+			ResourceManager::get().get<CommandBufferSet>(commandBufferSetID), 
+			ResourceManager::get().get<CommandBufferSet>(commandBufferSetID))
 	{
 		m_pFence = std::shared_ptr<vk::Fence>(new vk::Fence, [=](vk::Fence* p) {
 			m_pCore->getDevice().destroyFence(*p);

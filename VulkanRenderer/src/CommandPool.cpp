@@ -69,7 +69,7 @@ namespace sa {
 
 	void CommandBufferSet::submit(vk::Fence fence, vk::Semaphore signalSemaphore, vk::Semaphore waitSemaphore) {
 		if (m_lastBufferIndex == -1)
-			throw std::runtime_error("Buffer was never recorder to");
+			throw std::runtime_error("Buffer was never recorded to");
 
 		vk::PipelineStageFlags waitStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
 
@@ -101,5 +101,9 @@ namespace sa {
 	
 	uint32_t CommandBufferSet::getBufferCount() const {
 		return (uint32_t)m_buffers.size();
+	}
+	
+	bool CommandBufferSet::isValid() const {
+		return m_buffers.size() > 0;
 	}
 }
