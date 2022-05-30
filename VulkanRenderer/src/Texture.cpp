@@ -8,7 +8,7 @@ namespace sa {
 		: m_pCore(pCore)
 		, m_pImage(nullptr)
 		, m_pStagingBuffer(nullptr)
-		, m_pView(nullptr)
+		, m_view(NULL_RESOURCE)
 	{
 	}
 	
@@ -21,7 +21,7 @@ namespace sa {
 	}
 
 	vk::ImageView* Texture::getView() const {
-		return m_pView.get();
+		return ResourceManager::get().get<vk::ImageView>(m_view);
 	}
 
 	TextureTypeFlags Texture::getTypeFlags() const {
@@ -66,18 +66,14 @@ namespace sa {
 	void Texture2D::create(TextureTypeFlags type, Extent extent) {
 
 		vk::ImageUsageFlags usage = (vk::ImageUsageFlags)type;
-		vk::Format format = m_pCore->getDefaultColorFormat();
 		vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
 
-		vk::ImageLayout layout = vk::ImageLayout::eUndefined;
+		vk::Format format = m_pCore->getDefaultColorFormat();
 
 		if (type & TextureTypeFlagBits::DEPTH_ATTACHMENT) {
-			format = m_pCore->getDefaultDepthFormat();
 			aspect = vk::ImageAspectFlagBits::eDepth;
-		}
-		if (type & TextureTypeFlagBits::STORAGE) {
-			layout = vk::ImageLayout::eGeneral;
-		}
+			format = m_pCore->getDefaultDepthFormat();
+		}		
 
 		DEBUG_LOG_INFO("Created 2D texture\nFormat: ", vk::to_string(format));
 		m_pImage = m_pCore->createImage2D(
@@ -89,7 +85,8 @@ namespace sa {
 			1
 		);
 
-		m_pView = std::make_shared<vk::ImageView>(m_pCore->createImageView(
+
+		m_view = ResourceManager::get().insert<vk::ImageView>(m_pCore->createImageView(
 			vk::ImageViewType::e2D,
 			m_pImage->image,
 			format,
@@ -97,13 +94,12 @@ namespace sa {
 			0,
 			0
 		));
+
 	}
 
 	void Texture2D::create(TextureTypeFlags type, Extent extent, FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types) {
 		vk::ImageUsageFlags usage = (vk::ImageUsageFlags)type;
 		vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
-
-		vk::ImageLayout layout = vk::ImageLayout::eUndefined;
 
 		vk::Format format = vk::Format::eUndefined;
 		vk::FormatFeatureFlags features;
@@ -119,7 +115,6 @@ namespace sa {
 		}
 		if (type & TextureTypeFlagBits::STORAGE) {
 			features |= vk::FormatFeatureFlagBits::eStorageImage;
-			layout = vk::ImageLayout::eGeneral;
 		}
 		if (type & TextureTypeFlagBits::TRANSFER_DST) {
 			features |= vk::FormatFeatureFlagBits::eTransferDst;
@@ -147,7 +142,7 @@ namespace sa {
 			1
 		);
 
-		m_pView = std::make_shared<vk::ImageView>(m_pCore->createImageView(
+		m_view = ResourceManager::get().insert<vk::ImageView>(m_pCore->createImageView(
 			vk::ImageViewType::e2D,
 			m_pImage->image,
 			format,
@@ -162,9 +157,10 @@ namespace sa {
 		m_pCore->getDevice().waitIdle();
 		if (m_pStagingBuffer)
 			m_pCore->destroyBuffer(m_pStagingBuffer);
-		m_pCore->getDevice().destroyImageView(*m_pView);
+
+		ResourceManager::get().remove<vk::ImageView>(m_view);
 		m_pCore->destroyImage(m_pImage);
-		m_pView = nullptr;
+		m_view = NULL_RESOURCE;
 	}
 
 

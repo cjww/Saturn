@@ -119,7 +119,7 @@ namespace sa {
 		pPipeline->bindDescriptorSet(m_pCommandBufferSet, pDescriptorSet);
 	}
 
-	void RenderContext::pushConstants(ResourceID pipeline, ShaderStageFlags stages, uint32_t offset, size_t size, void* data) {
+	void RenderContext::pushConstants(ResourceID pipeline, ShaderStageFlags stages, uint32_t offset, uint32_t size, void* data) {
 		Pipeline* pPipeline = getPipeline(pipeline);
 		pPipeline->pushConstants(m_pCommandBufferSet, (vk::ShaderStageFlags)stages, offset, size, data);
 	}
@@ -149,6 +149,38 @@ namespace sa {
 
 	void RenderContext::dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
 		m_pCommandBufferSet->getBuffer().dispatch(groupCountX, groupCountY, groupCountZ);
+	}
+
+	void RenderContext::barrier(const Texture& texture) {
+
+		DeviceImage* pImage = (DeviceImage*)texture;
+		vk::ImageLayout newLayout = vk::ImageLayout::eGeneral;
+
+
+		vk::ImageMemoryBarrier imageBarrier{
+			.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite,
+			.dstAccessMask = vk::AccessFlagBits::eShaderWrite | vk::AccessFlagBits::eShaderWrite,
+			.oldLayout = pImage->layout,
+			.newLayout = newLayout,
+			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.image = pImage->image,
+			.subresourceRange{
+				.aspectMask = vk::ImageAspectFlagBits::eColor,
+				.levelCount = 1,
+				.layerCount = 1,
+			},
+		};
+
+		pImage->layout = newLayout;
+
+		m_pCommandBufferSet->getBuffer().pipelineBarrier(
+			vk::PipelineStageFlagBits::eColorAttachmentOutput,
+			vk::PipelineStageFlagBits::eComputeShader,
+			(vk::DependencyFlags)0,
+			nullptr,
+			nullptr,
+			imageBarrier);
 	}
 
 	Context::Context(VulkanCore* pCore, ResourceID commandBufferSetID) 

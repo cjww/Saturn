@@ -39,6 +39,8 @@ namespace sa {
 			ResourceManager::get().setCleanupFunction<Pipeline>([](Pipeline* p) { p->destroy(); });
 			ResourceManager::get().setCleanupFunction<DescriptorSet>([](DescriptorSet* p) { p->destroy(); });
 			ResourceManager::get().setCleanupFunction<vk::Sampler>([&](vk::Sampler* p) { m_pCore->getDevice().destroySampler(*p); });
+			ResourceManager::get().setCleanupFunction<vk::ImageView>([&](vk::ImageView* p) { m_pCore->getDevice().destroyImageView(*p); });
+			ResourceManager::get().setCleanupFunction<vk::BufferView>([&](vk::BufferView* p) { m_pCore->getDevice().destroyBufferView(*p); });
 
 		}
 		catch (const std::exception& e) {
@@ -48,6 +50,8 @@ namespace sa {
 	Renderer::~Renderer() {
 		m_pCore->getDevice().waitIdle();
 
+		ResourceManager::get().clearContainer<vk::BufferView>();
+		ResourceManager::get().clearContainer<vk::ImageView>();
 		ResourceManager::get().clearContainer<vk::Sampler>();
 		ResourceManager::get().clearContainer<DescriptorSet>();
 		ResourceManager::get().clearContainer<Pipeline>();
@@ -202,8 +206,12 @@ namespace sa {
 		m_transferQueue.push(transfer);
 	}
 
-	ResourceID Renderer::createSampler() {
-		return ResourceManager::get().insert(m_pCore->createSampler());
+	ResourceID Renderer::createSampler(FilterMode filterMode) {
+		vk::SamplerCreateInfo info{
+			.magFilter = (vk::Filter)filterMode,
+			.minFilter = (vk::Filter)filterMode,
+		};
+		return ResourceManager::get().insert(m_pCore->createSampler(info));
 	}
 
 	RenderContext Renderer::beginFrame(ResourceID swapchain) {

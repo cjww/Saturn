@@ -7,7 +7,6 @@ namespace sa {
 	typedef uint16_t FormatDimensionFlags;
 	typedef uint16_t FormatTypeFlags;
 
-
 	enum FormatPrecisionFlagBits : FormatPrecisionFlags {
 		e64Bit = 1 << 0,
 		e32Bit = 1 << 1,

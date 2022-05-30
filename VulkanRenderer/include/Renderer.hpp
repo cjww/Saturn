@@ -19,6 +19,13 @@ namespace sa {
 	class VulkanCore;
 	class CommandBufferSet;
 
+	// Uses Vulkan values
+	enum class FilterMode {
+		NEAREST = 0,
+		LINEAR = 1,
+		CUBIC = 1000015000
+	};
+
 	struct DataTransfer {
 		enum Type {
 			BUFFER_TO_IMAGE,
@@ -150,7 +157,7 @@ namespace sa {
 
 		void queueTransfer(const DataTransfer& transfer);
 
-		ResourceID createSampler();
+		ResourceID createSampler(FilterMode filterMode = FilterMode::NEAREST);
 
 		RenderContext beginFrame(ResourceID swapchain);
 		void endFrame(ResourceID swapchain);

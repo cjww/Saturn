@@ -11,8 +11,6 @@ layout(location = 0) out vec4 out_color;
 layout(location = 1) out vec4 out_position;
 
 void main() {
-    out_color = vec4(0.5, 0.2, 0.7, 1);   
-    out_color = in_vertexColor;
 
     out_color = texture(myTexture, in_vertexUV);
     out_position = in_vertexWorldPos;

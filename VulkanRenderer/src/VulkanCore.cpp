@@ -558,11 +558,7 @@ namespace sa {
 	}
 
 
-	vk::Sampler VulkanCore::createSampler() {
-		vk::SamplerCreateInfo info {
-
-		};
-
+	vk::Sampler VulkanCore::createSampler(const vk::SamplerCreateInfo& info) {
 		return m_device.createSampler(info);
 	}
 

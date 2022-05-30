@@ -295,13 +295,15 @@ int main() {
 		sa::RenderWindow window(WIDTH, HEIGHT, "Test Window");
 		sa::Renderer& renderer = sa::Renderer::get();
 		
+		// FIRST PASS
+
+		sa::Texture2D colorTexture = renderer.createTexture2D(
+			sa::TextureTypeFlagBits::COLOR_ATTACHMENT |
+			sa::TextureTypeFlagBits::INPUT_ATTACHMENT,
+			window.getCurrentExtent());
+
 		sa::Texture2D depthTexture = renderer.createTexture2D(
 			sa::TextureTypeFlagBits::DEPTH_ATTACHMENT, 
-			window.getCurrentExtent());
-		sa::Texture2D colorTexture = renderer.createTexture2D(
-			sa::TextureTypeFlagBits::COLOR_ATTACHMENT | 
-			sa::TextureTypeFlagBits::INPUT_ATTACHMENT |
-			sa::TextureTypeFlagBits::SAMPLED,
 			window.getCurrentExtent());
 
 		sa::Texture2D positionsTexture = renderer.createTexture2D(
@@ -312,51 +314,95 @@ int main() {
 			sa::FormatDimensionFlagBits::e4, 
 			sa::FormatTypeFlagBits::SFLOAT);
 
+		sa::Texture2D combinedImage = renderer.createTexture2D(
+			sa::TextureTypeFlagBits::COLOR_ATTACHMENT |
+			sa::TextureTypeFlagBits::SAMPLED,
+			window.getCurrentExtent());
 
-
-
-		auto mainRenderProgram = renderer.createRenderProgram()
-			.addSwapchainAttachment(window.getSwapchainID()) // 0 swapchain
+		auto defferedProgram = renderer.createRenderProgram()
+			.addColorAttachment(false, colorTexture) // 0 color
 			.addDepthAttachment() // 1 depth
-			.addColorAttachment(true) // 2 color
-			.addColorAttachment(false, positionsTexture) // 3 positions
-			.beginSubpass()
-				.addAttachmentReference(2, sa::SubpassAttachmentUsage::ColorTarget)
-				.addAttachmentReference(3, sa::SubpassAttachmentUsage::ColorTarget)
-				.addAttachmentReference(1, sa::SubpassAttachmentUsage::DepthTarget)
-			.endSubpass()
+			.addColorAttachment(false, positionsTexture) // 2 positions
+			.addColorAttachment(true, combinedImage) // 3 combine
 			.beginSubpass()
 				.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
+				.addAttachmentReference(1, sa::SubpassAttachmentUsage::DepthTarget)
+				.addAttachmentReference(2, sa::SubpassAttachmentUsage::ColorTarget)
+			.endSubpass()
+			.beginSubpass()
+				.addAttachmentReference(3, sa::SubpassAttachmentUsage::ColorTarget)
+				.addAttachmentReference(0, sa::SubpassAttachmentUsage::Input)
 				.addAttachmentReference(2, sa::SubpassAttachmentUsage::Input)
-				.addAttachmentReference(3, sa::SubpassAttachmentUsage::Input)
 			.endSubpass()
 			.end();
-		
 
-		sa::Color clearColor = { 0.2f, 0.7f, 0.8f, 1.f };
-		renderer.setClearColor(mainRenderProgram, clearColor);
 
-		auto mainFramebuffer = renderer.createSwapchainFramebuffer(
-			mainRenderProgram, 
-			window.getSwapchainID(), 
-			{ depthTexture, colorTexture, positionsTexture });
+		auto gFramebuffer = renderer.createFramebuffer(
+			defferedProgram,
+			{ colorTexture, depthTexture, positionsTexture, combinedImage });
 		
-		auto mainPipeline = renderer.createGraphicsPipeline(
-			mainRenderProgram,
+		auto defferedPipeline = renderer.createGraphicsPipeline(
+			defferedProgram,
 			0,
 			window.getCurrentExtent(),
 			"TestShader.vert.spv",
 			"TestShader.frag.spv");
-
-
-		auto postPipeline = renderer.createGraphicsPipeline(
-			mainRenderProgram,
+		
+		auto combinePipeline = renderer.createGraphicsPipeline(
+			defferedProgram,
 			1,
 			window.getCurrentExtent(),
 			"PostProcess.vert.spv",
 			"PostProcess.frag.spv");
 
+		ResourceID defferedDescriptorSet = renderer.allocateDescriptorSet(defferedPipeline, 0);
 
+
+		sa::Buffer uniformBuffer = renderer.createBuffer(
+			sa::BufferType::UNIFORM);
+
+		CameraController camera(window);
+
+		UBO ubo = {};
+		ubo.view = glm::lookAt(glm::vec3{ 0, 0, 1 }, { 0, 0, 0 }, { 0, 1, 0 });
+		ubo.projection = camera.getProjection(90);
+
+		uniformBuffer.write(ubo);
+		renderer.updateDescriptorSet(defferedDescriptorSet, 0, uniformBuffer);
+
+		sa::Image image("Box.png");
+		sa::Texture2D texture = renderer.createTexture2D(image);
+		ResourceID sampler = renderer.createSampler();
+		renderer.updateDescriptorSet(defferedDescriptorSet, 2, texture, sampler);
+
+
+		ResourceID combineDescriptorSet = renderer.allocateDescriptorSet(combinePipeline, 0);
+		renderer.updateDescriptorSet(combineDescriptorSet, 0, colorTexture);
+		renderer.updateDescriptorSet(combineDescriptorSet, 1, positionsTexture);
+
+		// SECOND PASS
+
+		auto mainRenderProgram = renderer.createRenderProgram()
+			.addSwapchainAttachment(window.getSwapchainID()) // 0 swapchain
+			.beginSubpass()
+				.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
+			.endSubpass()
+			.end();
+
+		auto mainFramebuffer = renderer.createSwapchainFramebuffer(
+			mainRenderProgram, 
+			window.getSwapchainID(), 
+			{ });
+		
+		auto mainPipeline = renderer.createGraphicsPipeline(
+			mainRenderProgram,
+			0,
+			window.getCurrentExtent(),
+			"PostProcess.vert.spv",
+			"MainShader.frag.spv");
+
+		auto mainDescriptorSet = renderer.allocateDescriptorSet(mainPipeline, 0);
+		renderer.updateDescriptorSet(mainDescriptorSet, 0, combinedImage, sampler);
 
 		sa::Buffer vertexBuffer = renderer.createBuffer(
 			sa::BufferType::VERTEX, quad.size() * sizeof(VertexColorUV), quad.data());
@@ -374,37 +420,8 @@ int main() {
 			sa::BufferType::INDEX);
 		boxIndexBuffer.write(boxIndices);
 		
+		
 
-
-
-		ResourceID descriptorSet = renderer.allocateDescriptorSet(mainPipeline, 0);
-
-
-
-		sa::Buffer uniformBuffer = renderer.createBuffer(
-			sa::BufferType::UNIFORM);
-
-		CameraController camera(window);
-
-		UBO ubo = {};
-		ubo.view = glm::lookAt(glm::vec3{ 0, 0, 1 }, { 0, 0, 0 }, { 0, 1, 0 });
-		ubo.projection = camera.getProjection(90);
-
-		uniformBuffer.write(ubo); 
-		renderer.updateDescriptorSet(descriptorSet, 0, uniformBuffer);
-
-
-
-
-		ResourceID descriptorSetPost = renderer.allocateDescriptorSet(postPipeline, 0);
-
-		sa::Image image("Box.png");
-		sa::Texture2D texture = renderer.createTexture2D(image);
-		ResourceID sampler = renderer.createSampler();
-		renderer.updateDescriptorSet(descriptorSet, 2, texture, sampler);
-
-		renderer.updateDescriptorSet(descriptorSetPost, 0, colorTexture);
-		renderer.updateDescriptorSet(descriptorSetPost, 1, positionsTexture);
 
 		//Compute
 		ResourceID computePipeline = renderer.createComputePipeline("ComputeShader.comp.spv");
@@ -421,13 +438,17 @@ int main() {
 		renderer.updateDescriptorSet(computeDescriptorSet, 0, configBuffer);
 		renderer.updateDescriptorSet(computeDescriptorSet, 2, outputBuffer);
 
-
+		// Compute Blur
 		ResourceID blurPipeline = renderer.createComputePipeline("BlurShader.comp.spv");
 		ResourceID blurDescriptorSet = renderer.allocateDescriptorSet(blurPipeline, 0);
 
-		sa::Extent extent = { (uint32_t)(window.getCurrentExtent().width * 0.5f), (uint32_t)(window.getCurrentExtent().height * 0.5f) };
+		sa::Extent extent = { 
+			(uint32_t)(window.getCurrentExtent().width / 4.f),
+			(uint32_t)(window.getCurrentExtent().height / 4.f) 
+		};
+		//sa::Extent extent = window.getCurrentExtent();
 		sa::Texture2D outputImage = renderer.createTexture2D(
-			sa::TextureTypeFlagBits::STORAGE,
+			sa::TextureTypeFlagBits::STORAGE | sa::TextureTypeFlagBits::SAMPLED,
 			extent,
 			sa::FormatPrecisionFlagBits::e32Bit, sa::FormatDimensionFlagBits::e4, sa::FormatTypeFlagBits::SFLOAT);
 
@@ -435,32 +456,24 @@ int main() {
 			sa::BufferType::UNIFORM,
 			sizeof(extent), &extent);
 
+
+
 		renderer.updateDescriptorSet(blurDescriptorSet, 0, blurConfigBuffer);
-		renderer.updateDescriptorSet(blurDescriptorSet, 1, colorTexture, sampler);
+		renderer.updateDescriptorSet(blurDescriptorSet, 1, combinedImage, sampler);
 		renderer.updateDescriptorSet(blurDescriptorSet, 2, outputImage);
+
+		renderer.updateDescriptorSet(mainDescriptorSet, 1, outputImage, sampler);
+		
+		sa::Context tmp = renderer.createComputeContext();
+		tmp.begin();
+		tmp.barrier(outputImage);
+		tmp.end();
+		tmp.submit();
+		tmp.destroy();
 
 		auto now = std::chrono::high_resolution_clock::now();
 		float dt = 0;
-		float timer = 10.0f;
-		/*
-		sa::Context computeContext = renderer.createComputeContext();
-		computeContext.begin();
-			computeContext.bindPipeline(computePipeline);
-			computeContext.bindDescriptorSet(computeDescriptorSet, computePipeline);
-			computeContext.pushConstant(computePipeline, sa::ShaderStageFlagBits::COMPUTE, 0, timer);
-
-			int groupcount = ((data.size()) / 256) + 1;
-			computeContext.dispatch(groupcount, 1, 1);
-		computeContext.end();
-		
-		computeContext.submit();
-		
-		computeContext.waitToFinish(); // wait until all commands have been excecuted
-
-		computeContext.destroy();
-		*/
-		
-		timer = 0.0f;
+		float timer = 0.0f;
 		while (window.isOpen()) {
 			window.pollEvents();
 			
@@ -471,12 +484,13 @@ int main() {
 
 			data = outputBuffer.getContent<glm::mat4>();
 			
+
 			sa::RenderContext context = window.beginFrame();
 			if (context) {
 				
 				uniformBuffer.write(ubo);
-				context.updateDescriptorSet(descriptorSet, 0, uniformBuffer);
-				context.updateDescriptorSet(descriptorSet, 1, outputBuffer);
+				context.updateDescriptorSet(defferedDescriptorSet, 0, uniformBuffer);
+				context.updateDescriptorSet(defferedDescriptorSet, 1, outputBuffer);
 				
 				context.bindPipeline(computePipeline);
 				context.bindDescriptorSet(computeDescriptorSet, computePipeline);
@@ -485,10 +499,10 @@ int main() {
 				int groupcount = ((data.size()) / 256) + 1;
 				context.dispatch(groupcount, 1, 1);
 				
-				context.beginRenderProgram(mainRenderProgram, mainFramebuffer);
+				context.beginRenderProgram(defferedProgram, gFramebuffer);
 
-					context.bindPipeline(mainPipeline);
-					context.bindDescriptorSet(descriptorSet, mainPipeline);
+					context.bindPipeline(defferedPipeline);
+					context.bindDescriptorSet(defferedDescriptorSet, defferedPipeline);
 					// Drawing
 					context.bindVertexBuffers(0, { boxVertexBuffer });
 					context.bindIndexBuffer(boxIndexBuffer);
@@ -497,35 +511,39 @@ int main() {
 
 				context.nextSubpass();
 
-					context.bindPipeline(postPipeline);
+					context.bindPipeline(combinePipeline);
 					context.bindVertexBuffers(0, { vertexBuffer });
 					context.bindIndexBuffer(indexBuffer);
-					context.bindDescriptorSet(descriptorSetPost, postPipeline);
+					context.bindDescriptorSet(combineDescriptorSet, combinePipeline);
 					
 					context.drawIndexed(6, 1);
-				context.endRenderProgram(mainRenderProgram);
+				context.endRenderProgram(defferedProgram);
 				/*
+
+				context.barrier(outputImage);
+				*/
+
 				context.bindPipeline(blurPipeline);
 				context.bindDescriptorSet(blurDescriptorSet, blurPipeline);
 				int groupcountX = (extent.width / 32) + 1;
 				int groupcountY = (extent.height / 32) + 1;
 				context.dispatch(groupcountX, groupcountY, 1);
 
-				*/
+				context.beginRenderProgram(mainRenderProgram, mainFramebuffer);
+				context.bindPipeline(mainPipeline);
+				context.bindDescriptorSet(mainDescriptorSet, mainPipeline);
+				context.drawIndexed(6, 1);
+
+				context.endRenderProgram(mainRenderProgram);
+
 				window.display();
 			}
 
 			dt = std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - now).count();
-			
 			now = std::chrono::high_resolution_clock::now();
 
 		}
 
-		texture.destroy();
-		depthTexture.destroy();
-		colorTexture.destroy();
-		positionsTexture.destroy();
-		outputImage.destroy();
 	try {
 	}
 	catch (const std::exception& e) {

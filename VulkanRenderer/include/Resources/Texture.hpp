@@ -29,7 +29,7 @@ namespace sa {
 		VulkanCore* m_pCore;
 		DeviceImage* m_pImage;
 		DeviceBuffer* m_pStagingBuffer;
-		std::shared_ptr<vk::ImageView> m_pView;
+		ResourceID m_view;
 
 		TextureTypeFlags m_type;
 	public:

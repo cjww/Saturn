@@ -156,7 +156,7 @@ namespace sa {
 			vk::PipelineStageFlags dstStage);
 
 
-		vk::Sampler createSampler();
+		vk::Sampler createSampler(const vk::SamplerCreateInfo& info);
 
 		// Get functions
 		uint32_t getQueueFamily() const;

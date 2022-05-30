@@ -40,7 +40,7 @@ namespace sa {
 	void Buffer::create(BufferType type, size_t size, void* initialData) {
 		if (size == 0)
 			size = 1;
-		
+
 		switch (type) {
 		case BufferType::VERTEX:
 			m_pBuffer = m_pCore->createBuffer(vk::BufferUsageFlagBits::eVertexBuffer, 

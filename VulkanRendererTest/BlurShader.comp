@@ -8,19 +8,26 @@ layout(set = 0, binding = 0) uniform Config{
 
 layout(set = 0, binding = 1) uniform sampler2D sourceImage;
 
-layout(set = 0, binding = 2, rgba32f) uniform image2D outputImage;
-
-float rand(vec2 co){
-    return fract(sin(dot(co.xy ,vec2(12.9898,78.233))) * 43758.5453);
-}
-
+layout(set = 0, binding = 2, rgba32f) uniform writeonly image2D outputImage;
 
 void main() {
-    //grab global ID
-	vec2 uv = gl_GlobalInvocationID.xy / config.imageSize;
-    //make sure we dont access past the buffer size
-    vec4 color = texture(sourceImage, uv);
+    
+    vec4 color = vec4(0);
+    for(int x = -1; x <= 1; x++) {
+        for(int y = -1; y <= 1; y++) {
+            vec2 uv = vec2(gl_GlobalInvocationID.xy + ivec2(x, y)) / config.imageSize;
+            color += texture(sourceImage, uv);
+        }
+    }
+
+    color /= 9.0;
+    color.a = 1.0;
+    
     imageStore(outputImage, ivec2(gl_GlobalInvocationID.xy), color);
+    
+    //uint index = gl_GlobalInvocationID.x + gl_GlobalInvocationID.y * config.imageSize.x;
+    //imageStore(outputImage, index, color);
+    
 
     
 }

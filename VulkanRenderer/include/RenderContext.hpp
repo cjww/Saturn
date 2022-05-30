@@ -2,6 +2,7 @@
 
 #include "structs.hpp"
 #include "Resources/Buffer.hpp"
+#include "Resources\Texture.hpp"
 
 namespace vk {
 	class Sampler;
@@ -31,7 +32,6 @@ namespace sa {
 		COMPUTE = 32,
 	};
 
-	
 	class RenderContext {
 	protected:
 		CommandBufferSet* m_pCommandBufferSet;
@@ -63,7 +63,7 @@ namespace sa {
 		void bindDescriptorSets(const std::vector<ResourceID>& descriptorSets, ResourceID pipeline);
 		void bindDescriptorSet(ResourceID descriptorSet, ResourceID pipeline);
 
-		void pushConstants(ResourceID pipeline, ShaderStageFlags stages, uint32_t offset, size_t size, void* data);
+		void pushConstants(ResourceID pipeline, ShaderStageFlags stages, uint32_t offset, uint32_t size, void* data);
 
 		template<typename T>
 		void pushConstants(ResourceID pipeline, ShaderStageFlags stages, uint32_t offset, const std::vector<T>& values);
@@ -75,6 +75,8 @@ namespace sa {
 		void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0);
 
 		void dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
+
+		void barrier(const Texture& texture);
 
 		operator bool() {
 			return m_pCommandBufferSet != nullptr;
