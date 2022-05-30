@@ -383,14 +383,6 @@ namespace sa {
 		return m_device.createFramebuffer(info);
 	}
 
-	FramebufferSet VulkanCore::createFrameBufferSet(vk::RenderPass renderPass, std::vector<std::vector<vk::ImageView>> attachments, uint32_t width, uint32_t height, uint32_t layers) {
-		std::vector<vk::Framebuffer> framebuffers(attachments.size());
-		for (uint32_t i = 0; i < attachments.size(); i++) {
-			framebuffers[i] = createFrameBuffer(renderPass, attachments[i], width, height, layers);
-		}
-		return FramebufferSet(m_device, framebuffers, { width, height });
-	}
-
 	vk::Pipeline VulkanCore::createGraphicsPipeline(vk::PipelineLayout layout, vk::RenderPass renderPass, uint32_t subpassIndex, vk::Extent2D extent, std::vector<vk::PipelineShaderStageCreateInfo> shaderStages, vk::PipelineVertexInputStateCreateInfo vertexInput, vk::PipelineCache cache,  PipelineConfig config) {
 
 		vk::PipelineInputAssemblyStateCreateInfo input{

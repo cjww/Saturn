@@ -24,16 +24,35 @@ namespace sa {
 		INPUT_ATTACHMENT = 128,
 	};
 
-	// Wrapper for image pointer
-	class Texture2D {
-	private:
+	class Texture {
+	protected:
 		VulkanCore* m_pCore;
 		DeviceImage* m_pImage;
 		DeviceBuffer* m_pStagingBuffer;
 		std::shared_ptr<vk::ImageView> m_pView;
 
 		TextureTypeFlags m_type;
+	public:
+		Texture(VulkanCore* pCore);
+		Extent getExtent() const;
+		virtual uint32_t getDepth() const;
+		vk::ImageView* getView() const;
+		TextureTypeFlags getTypeFlags() const;
 		
+		operator const DeviceImage* () const {
+			return m_pImage;
+		}
+
+		operator DeviceImage* () const {
+			return m_pImage;
+		}
+
+	};
+
+	// Wrapper for image pointer
+	class Texture2D : public Texture {
+	private:
+
 	public:
 		Texture2D(VulkanCore* pCore, TextureTypeFlags type, Extent extent);
 		Texture2D(VulkanCore* pCore, TextureTypeFlags type, Extent extent,
@@ -48,12 +67,6 @@ namespace sa {
 			FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types);
 		void destroy();
 
-		Extent getExtent() const;
-		vk::ImageView* getView() const;
-
-		operator const DeviceImage* () const {
-			return m_pImage;
-		}
 
 	};
 

@@ -2,11 +2,12 @@
 
 
 #include "Tools/Logger.hpp"
+#include "structs.hpp"
 
 #include "CommandPool.hpp"
-#include "Resources/FramebufferSet.hpp"
 #include "Resources\ShaderSet.hpp"
 #include "Resources/DeviceMemoryManager.hpp"
+
 
 #include "FormatFlags.hpp"
 
@@ -118,12 +119,6 @@ namespace sa {
 		vk::ImageView createImageView(vk::ImageViewType type, vk::Image image, vk::Format format, vk::ImageAspectFlags aspectMask, uint32_t baseMipLevel, uint32_t baseArrayLevel);
 
 		vk::Framebuffer createFrameBuffer(vk::RenderPass renderPass, std::vector<vk::ImageView> attachments, uint32_t width, uint32_t height, uint32_t layers);
-		FramebufferSet createFrameBufferSet(
-			vk::RenderPass renderPass,
-			std::vector<std::vector<vk::ImageView>> attachments,
-			uint32_t width,
-			uint32_t height,
-			uint32_t layers);
 
 		vk::Pipeline createGraphicsPipeline(
 			vk::PipelineLayout layout,

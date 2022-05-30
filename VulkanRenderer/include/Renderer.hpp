@@ -19,7 +19,6 @@ namespace sa {
 	class VulkanCore;
 	class CommandBufferSet;
 
-	
 	struct DataTransfer {
 		enum Type {
 			BUFFER_TO_IMAGE,
@@ -128,8 +127,8 @@ namespace sa {
 		void setClearColor(ResourceID renderProgram, Color color, uint32_t attachmentIndex);
 		void setClearColor(ResourceID renderProgram, Color color);
 
-		ResourceID createFramebuffer(ResourceID renderProgram, const std::vector<Texture2D>& attachmentTextures, uint32_t count, uint32_t layers = 1ui32);
-		ResourceID createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<Texture2D>& additionalAttachmentTextures, uint32_t layers = 1ui32);
+		ResourceID createFramebuffer(ResourceID renderProgram, const std::vector<Texture>& attachmentTextures, uint32_t count, uint32_t layers = 1ui32);
+		ResourceID createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<Texture>& additionalAttachmentTextures, uint32_t layers = 1ui32);
 		void destroyFramebuffer(ResourceID framebuffer);
 
 		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& fragmentShader);

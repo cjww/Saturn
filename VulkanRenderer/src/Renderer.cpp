@@ -85,47 +85,31 @@ namespace sa {
 		pRenderProgram->setClearColor(color);
 	}
 
-	ResourceID Renderer::createFramebuffer(ResourceID renderProgram, const std::vector<Texture2D>& attachmentTextures, uint32_t count, uint32_t layers) {
+	ResourceID Renderer::createFramebuffer(ResourceID renderProgram, const std::vector<Texture>& attachmentTextures, uint32_t count, uint32_t layers) {
 		if (attachmentTextures.empty())
 			throw std::runtime_error("At least one attachmnet is required to create a framebuffer");
 
 		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
-
-		std::vector<std::vector<vk::ImageView>> framebufferViews(count);
-		Extent extent = attachmentTextures[0].getExtent();
-		for (uint32_t i = 0; i < count; i++) {
-			for (auto& texture : attachmentTextures) {
-				framebufferViews[i].push_back(*texture.getView());
-				if (extent.width != texture.getExtent().width || extent.height != texture.getExtent().height) {
-					throw std::runtime_error("All attachments must be of the same size");
-				}
-			}
-		}
-
+		
 		return ResourceManager::get().insert<FramebufferSet>(
-			m_pCore->createFrameBufferSet(pRenderProgram->getRenderPass(), framebufferViews, extent.width, extent.height, layers));
+			m_pCore.get(),
+			pRenderProgram->getRenderPass(),
+			attachmentTextures,
+			count,
+			attachmentTextures[0].getExtent(),
+			layers);
 	}
 
-	ResourceID Renderer::createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<Texture2D>& additionalAttachmentTextures, uint32_t layers) {
+	ResourceID Renderer::createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<Texture>& additionalAttachmentTextures, uint32_t layers) {
 		Swapchain* pSwapchain = RenderContext::getSwapchain(swapchain);
 		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
 
-		std::vector<vk::ImageView> swapchainViews = pSwapchain->getImageViews();
-		uint32_t count = static_cast<uint32_t>(swapchainViews.size());
-		std::vector<std::vector<vk::ImageView>> framebufferViews(count);
-		Extent extent = pSwapchain->getExtent();
-		for (uint32_t i = 0; i < count; i++) {
-			framebufferViews[i].resize(additionalAttachmentTextures.size() + 1);
-			framebufferViews[i][0] = swapchainViews[i];
-			for (uint32_t j = 1; j < (uint32_t)framebufferViews[i].size(); j++) {
-				framebufferViews[i][j] = *additionalAttachmentTextures[j - 1].getView();
-				if (extent.width != additionalAttachmentTextures[j - 1].getExtent().width || extent.height != additionalAttachmentTextures[j - 1].getExtent().height) {
-					throw std::runtime_error("All attachments must be of the same size");
-				}
-			}
-		}
-
-		return ResourceManager::get().insert<FramebufferSet>(m_pCore->createFrameBufferSet(pRenderProgram->getRenderPass(), framebufferViews, extent.width, extent.height, layers));
+		return ResourceManager::get().insert<FramebufferSet>(
+			m_pCore.get(),
+			pRenderProgram->getRenderPass(),
+			pSwapchain,
+			additionalAttachmentTextures,
+			layers);
 	}
 
 	void Renderer::destroyFramebuffer(ResourceID framebuffer) {
@@ -176,12 +160,20 @@ namespace sa {
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture2D& texture, ResourceID sampler) {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
-		pDescriptorSet->update(binding, vk::ImageLayout::eShaderReadOnlyOptimal, *texture.getView(), pSampler, UINT32_MAX);
+		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		if (texture.getTypeFlags() & TextureTypeFlagBits::STORAGE) {
+			layout = vk::ImageLayout::eGeneral;
+		}
+		pDescriptorSet->update(binding, layout, *texture.getView(), pSampler, UINT32_MAX);
 	}
 
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture2D& texture) {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
-		pDescriptorSet->update(binding, vk::ImageLayout::eShaderReadOnlyOptimal, *texture.getView(), nullptr, UINT32_MAX);
+		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		if (texture.getTypeFlags() & TextureTypeFlagBits::STORAGE) {
+			layout = vk::ImageLayout::eGeneral;
+		}
+		pDescriptorSet->update(binding, layout, *texture.getView(), nullptr, UINT32_MAX);
 	}
 
 	void Renderer::freeDescriptorSet(ResourceID descriptorSet) {

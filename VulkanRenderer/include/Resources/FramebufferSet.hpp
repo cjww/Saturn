@@ -2,18 +2,27 @@
 
 #include "structs.hpp"
 
+#include "Resources\Texture.hpp"
+
 namespace sa {
+	class VulkanCore;
+	class Swapchain;
+
 	class FramebufferSet {
 	private:
 		std::vector<vk::Framebuffer> m_buffers;
+		std::vector<DeviceImage*> m_images;
 		Extent m_extent;
 		vk::Device m_device;
 
 	public:
 		FramebufferSet();
-		FramebufferSet(vk::Device device, const std::vector<vk::Framebuffer>& buffers, Extent extent);
+		FramebufferSet(VulkanCore* pCore, vk::RenderPass renderPass, const std::vector<Texture>& images, uint32_t backBufferCount, Extent extent, uint32_t layers);
+		FramebufferSet(VulkanCore* pCore, vk::RenderPass renderPass, Swapchain* pSwapchain, const std::vector<Texture>& images, uint32_t layers);
 
-		void create(vk::Device device, const std::vector<vk::Framebuffer>& buffers, Extent extent);
+		void create(VulkanCore* pCore, vk::RenderPass renderPass, const std::vector<Texture>& images, uint32_t backBufferCount, Extent extent, uint32_t layers);
+		void create(VulkanCore* pCore, vk::RenderPass renderPass, Swapchain* pSwapchain, const std::vector<Texture>& images, uint32_t layers);
+		
 		void destroy();
 
 

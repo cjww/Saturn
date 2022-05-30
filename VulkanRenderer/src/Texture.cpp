@@ -4,28 +4,48 @@
 #include "VulkanCore.hpp"
 #include "Renderer.hpp"
 namespace sa {
-	Texture2D::Texture2D(VulkanCore* pCore, TextureTypeFlags type, Extent extent)
+	Texture::Texture(VulkanCore* pCore)
 		: m_pCore(pCore)
 		, m_pImage(nullptr)
 		, m_pStagingBuffer(nullptr)
+		, m_pView(nullptr)
 	{
+	}
+	
+	Extent Texture::getExtent() const {
+		return { m_pImage->extent.width, m_pImage->extent.height };
+	}
+
+	uint32_t Texture::getDepth() const {
+		return 1;
+	}
+
+	vk::ImageView* Texture::getView() const {
+		return m_pView.get();
+	}
+
+	TextureTypeFlags Texture::getTypeFlags() const {
+		return m_type;
+	}
+
+	Texture2D::Texture2D(VulkanCore* pCore, TextureTypeFlags type, Extent extent)
+		: Texture(pCore)
+	{
+		m_type = type;
 		create(type, extent);
 	}
 
 	Texture2D::Texture2D(VulkanCore* pCore, TextureTypeFlags type, Extent extent, FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types)
-		: m_pCore(pCore)
-		, m_pImage(nullptr)
-		, m_pStagingBuffer(nullptr)
+		: Texture(pCore)
 	{
+		m_type = type;
 		create(type, extent, precisions, dimensions, types);
 	}
 
 	Texture2D::Texture2D(VulkanCore* pCore, const Image& image)
-		: m_pCore(pCore)
-		, m_type(TextureTypeFlagBits::SAMPLED | TextureTypeFlagBits::TRANSFER_DST)
-		, m_pImage(nullptr)
-		, m_pStagingBuffer(nullptr)
+		: Texture(pCore)
 	{
+		m_type = TextureTypeFlagBits::SAMPLED | TextureTypeFlagBits::TRANSFER_DST;
 		create(m_type, image.getExtent());
 		
 		m_pStagingBuffer = m_pCore->createBuffer(
@@ -49,9 +69,14 @@ namespace sa {
 		vk::Format format = m_pCore->getDefaultColorFormat();
 		vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
 
+		vk::ImageLayout layout = vk::ImageLayout::eUndefined;
+
 		if (type & TextureTypeFlagBits::DEPTH_ATTACHMENT) {
 			format = m_pCore->getDefaultDepthFormat();
 			aspect = vk::ImageAspectFlagBits::eDepth;
+		}
+		if (type & TextureTypeFlagBits::STORAGE) {
+			layout = vk::ImageLayout::eGeneral;
 		}
 
 		DEBUG_LOG_INFO("Created 2D texture\nFormat: ", vk::to_string(format));
@@ -78,6 +103,8 @@ namespace sa {
 		vk::ImageUsageFlags usage = (vk::ImageUsageFlags)type;
 		vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
 
+		vk::ImageLayout layout = vk::ImageLayout::eUndefined;
+
 		vk::Format format = vk::Format::eUndefined;
 		vk::FormatFeatureFlags features;
 		if (type & TextureTypeFlagBits::DEPTH_ATTACHMENT) {
@@ -92,6 +119,7 @@ namespace sa {
 		}
 		if (type & TextureTypeFlagBits::STORAGE) {
 			features |= vk::FormatFeatureFlagBits::eStorageImage;
+			layout = vk::ImageLayout::eGeneral;
 		}
 		if (type & TextureTypeFlagBits::TRANSFER_DST) {
 			features |= vk::FormatFeatureFlagBits::eTransferDst;
@@ -139,11 +167,5 @@ namespace sa {
 		m_pView = nullptr;
 	}
 
-	Extent Texture2D::getExtent() const {
-		return { m_pImage->extent.width, m_pImage->extent.height };
-	}
 
-	vk::ImageView* Texture2D::getView() const {
-		return m_pView.get();
-	}
 }

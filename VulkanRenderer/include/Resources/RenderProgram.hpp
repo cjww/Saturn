@@ -3,7 +3,9 @@
 #include "VulkanCore.hpp"
 
 #include "Resources\Pipeline.hpp"
+#include "Resources\FramebufferSet.hpp"
 
+#include "structs.hpp"
 
 namespace sa {
 
