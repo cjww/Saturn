@@ -300,7 +300,8 @@ int main() {
 			window.getCurrentExtent());
 		sa::Texture2D colorTexture = renderer.createTexture2D(
 			sa::TextureTypeFlagBits::COLOR_ATTACHMENT | 
-			sa::TextureTypeFlagBits::INPUT_ATTACHMENT,
+			sa::TextureTypeFlagBits::INPUT_ATTACHMENT |
+			sa::TextureTypeFlagBits::SAMPLED,
 			window.getCurrentExtent());
 
 		sa::Texture2D positionsTexture = renderer.createTexture2D(
@@ -317,7 +318,7 @@ int main() {
 		auto mainRenderProgram = renderer.createRenderProgram()
 			.addSwapchainAttachment(window.getSwapchainID()) // 0 swapchain
 			.addDepthAttachment() // 1 depth
-			.addColorAttachment(false) // 2 color
+			.addColorAttachment(true) // 2 color
 			.addColorAttachment(false, positionsTexture) // 3 positions
 			.beginSubpass()
 				.addAttachmentReference(2, sa::SubpassAttachmentUsage::ColorTarget)
@@ -412,7 +413,7 @@ int main() {
 		std::vector<glm::mat4> data(100000, glm::mat4(1));
 
 		sa::Buffer configBuffer = renderer.createBuffer(sa::BufferType::UNIFORM);
-		configBuffer.write(data.size());		
+		configBuffer.write(data.size());
 
 		sa::Buffer outputBuffer = renderer.createBuffer(sa::BufferType::STORAGE);
 		outputBuffer.write(data);
@@ -420,6 +421,23 @@ int main() {
 		renderer.updateDescriptorSet(computeDescriptorSet, 0, configBuffer);
 		renderer.updateDescriptorSet(computeDescriptorSet, 2, outputBuffer);
 
+
+		ResourceID blurPipeline = renderer.createComputePipeline("BlurShader.comp.spv");
+		ResourceID blurDescriptorSet = renderer.allocateDescriptorSet(blurPipeline, 0, window.getSwapchainImageCount());
+
+		sa::Extent extent = { (uint32_t)(window.getCurrentExtent().width * 0.5f), (uint32_t)(window.getCurrentExtent().height * 0.5f) };
+		sa::Texture2D outputImage = renderer.createTexture2D(
+			sa::TextureTypeFlagBits::STORAGE,
+			extent,
+			sa::FormatPrecisionFlagBits::e32Bit, sa::FormatDimensionFlagBits::e4, sa::FormatTypeFlagBits::SFLOAT);
+
+		sa::Buffer blurConfigBuffer = renderer.createBuffer(
+			sa::BufferType::UNIFORM,
+			sizeof(extent), &extent);
+
+		renderer.updateDescriptorSet(blurDescriptorSet, 0, blurConfigBuffer);
+		renderer.updateDescriptorSet(blurDescriptorSet, 1, colorTexture, sampler);
+		renderer.updateDescriptorSet(blurDescriptorSet, 2, outputImage);
 
 		auto now = std::chrono::high_resolution_clock::now();
 		float dt = 0;
@@ -441,6 +459,13 @@ int main() {
 
 		computeContext.destroy();
 		*/
+		sa::Context tempContext = renderer.createComputeContext();
+		tempContext.begin();
+		tempContext.transferTextureLayout(outputImage);
+		tempContext.end();
+		tempContext.submit();
+		tempContext.waitToFinish();
+		tempContext.destroy();
 
 		timer = 0.0f;
 		while (window.isOpen()) {
@@ -486,7 +511,18 @@ int main() {
 					
 					context.drawIndexed(6, 1);
 				context.endRenderProgram(mainRenderProgram);
-				
+
+				context.transferResourceToComputeQueue(colorTexture);
+
+				context.bindPipeline(blurPipeline);
+				context.bindDescriptorSet(blurDescriptorSet, blurPipeline);
+				int groupcountX = (extent.width / 32) + 1;
+				int groupcountY = (extent.height / 32) + 1;
+				context.dispatch(groupcountX, groupcountY, 1);
+				/*
+				*/
+				context.transferResourceToGraphicsQueue(colorTexture);
+
 				window.display();
 			}
 
