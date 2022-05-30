@@ -518,7 +518,8 @@ namespace sa {
 	}
 
 	void VulkanCore::transferImageLayout(vk::CommandBuffer commandBuffer, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::AccessFlags srcAccessMask, vk::AccessFlags dstAccessMask, vk::Image image, vk::ImageAspectFlags imageAspect, vk::PipelineStageFlags srcStage, vk::PipelineStageFlags dstStage) {
-		vk::ImageMemoryBarrier copyBarrier{
+		
+		vk::ImageMemoryBarrier imageBarrier{
 			.dstAccessMask = dstAccessMask,
 			.oldLayout = oldLayout,
 			.newLayout = newLayout,
@@ -538,7 +539,7 @@ namespace sa {
 			(vk::DependencyFlags)0,
 			nullptr,
 			nullptr,
-			copyBarrier);
+			imageBarrier);
 	}
 
 
@@ -625,11 +626,11 @@ namespace sa {
 
 	vk::Format VulkanCore::getSupportedDepthFormat() {
 		std::vector<vk::Format> formats = {
-			vk::Format::eD16UnormS8Uint,
-			vk::Format::eD32SfloatS8Uint,
 			vk::Format::eD24UnormS8Uint,
-			vk::Format::eD32Sfloat,
+			vk::Format::eD16UnormS8Uint,
 			vk::Format::eD16Unorm,
+			vk::Format::eD32SfloatS8Uint,
+			vk::Format::eD32Sfloat,
 		};
 		vk::Format f = getFormat(
 			formats,

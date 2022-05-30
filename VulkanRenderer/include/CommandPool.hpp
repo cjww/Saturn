@@ -8,10 +8,11 @@ namespace sa {
 		int m_lastBufferIndex;
 		int m_currentBufferIndex;
 		vk::Queue m_targetQueue;
+		uint32_t m_queueFamilyIndex;
 
 	public:
 		CommandBufferSet();
-		CommandBufferSet(const std::vector<vk::CommandBuffer>& buffers, vk::Queue queue);
+		CommandBufferSet(const std::vector<vk::CommandBuffer>& buffers, vk::Queue queue, uint32_t queueFamilyIndex);
 		void begin(int bufferIndex, vk::CommandBufferUsageFlags usageFlags);
 		void end();
 		
@@ -23,6 +24,7 @@ namespace sa {
 		uint32_t getBufferIndex() const;
 
 		vk::Queue getTargetQueue() const;
+		uint32_t getQueueFamilyIndex() const;
 
 		uint32_t getBufferCount() const;
 
@@ -34,6 +36,7 @@ namespace sa {
 		vk::CommandPool m_commandPool;
 		vk::Device m_device;
 		vk::Queue m_queue;
+		uint32_t m_queueFamilyIndex;
 	public:
 		CommandPool() = default;
 

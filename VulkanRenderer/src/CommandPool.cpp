@@ -14,6 +14,7 @@ namespace sa {
 			.queueFamilyIndex = queueFamily
 		});
 		m_queue = queue;
+		m_queueFamilyIndex = queueFamily;
 	}
 
 	void CommandPool::destroy() {
@@ -25,7 +26,7 @@ namespace sa {
 			.commandPool = m_commandPool,
 			.level = level,
 			.commandBufferCount = count,
-		}), m_queue);
+		}), m_queue, m_queueFamilyIndex);
 	}
 	
 	CommandBufferSet::CommandBufferSet()
@@ -34,11 +35,12 @@ namespace sa {
 	{
 	}
 
-	CommandBufferSet::CommandBufferSet(const std::vector<vk::CommandBuffer>& buffers, vk::Queue queue)
+	CommandBufferSet::CommandBufferSet(const std::vector<vk::CommandBuffer>& buffers, vk::Queue queue, uint32_t queueFamilyIndex)
 		: m_buffers(buffers) 
 		, m_currentBufferIndex(-1)
 		, m_lastBufferIndex(-1)
 		, m_targetQueue(queue)
+		, m_queueFamilyIndex(queueFamilyIndex)
 	{
 
 	}
@@ -97,6 +99,10 @@ namespace sa {
 
 	vk::Queue CommandBufferSet::getTargetQueue() const {
 		return m_targetQueue;
+	}
+
+	uint32_t CommandBufferSet::getQueueFamilyIndex() const {
+		return m_queueFamilyIndex;
 	}
 	
 	uint32_t CommandBufferSet::getBufferCount() const {
