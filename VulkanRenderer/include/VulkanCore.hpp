@@ -76,13 +76,11 @@ namespace sa {
 		std::vector<const char*> m_deviceExtensions;
 
 
-		QueueInfo m_graphicsQueueInfo;
-		QueueInfo m_computeQueueInfo;
-		vk::Queue m_graphicsQueue;
-		vk::Queue m_computeQueue;
-
-		CommandPool m_graphicsCommandPool;
-		CommandPool m_computeCommandPool;
+		QueueInfo m_queueInfo;
+		std::vector<vk::Queue> m_queues;
+		
+		CommandPool m_commandPool;
+		
 
 		vk::Format m_defaultColorFormat;
 		vk::Format m_defaultDepthFormat;
@@ -115,7 +113,7 @@ namespace sa {
 		void cleanup();
 
 		vk::SurfaceKHR createSurface(GLFWwindow* pWindow);
-		vk::SwapchainKHR createSwapchain(vk::SurfaceKHR surface, uint32_t queueFamily, vk::Format* outFormat);
+		vk::SwapchainKHR createSwapchain(vk::SurfaceKHR surface, vk::Format* outFormat);
 		vk::ImageView createImageView(vk::ImageViewType type, vk::Image image, vk::Format format, vk::ImageAspectFlags aspectMask, uint32_t baseMipLevel, uint32_t baseArrayLevel);
 
 		vk::Framebuffer createFrameBuffer(vk::RenderPass renderPass, std::vector<vk::ImageView> attachments, uint32_t width, uint32_t height, uint32_t layers);
@@ -130,9 +128,8 @@ namespace sa {
 			vk::PipelineCache cache,
 			PipelineConfig config);
 
-		CommandBufferSet allocateGraphicsCommandBufferSet(uint32_t count, vk::CommandBufferLevel level);
-		CommandBufferSet allocateComputeCommandBufferSet(uint32_t count, vk::CommandBufferLevel level);
-
+		CommandBufferSet allocateCommandBufferSet(vk::CommandBufferLevel level);
+		
 		DeviceBuffer* createBuffer(vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags allocationFlags, size_t size, void* initialData);
 		void destroyBuffer(DeviceBuffer* pBuffer);
 
@@ -162,10 +159,8 @@ namespace sa {
 		vk::Sampler createSampler();
 
 		// Get functions
-		uint32_t getGraphicsQueueFamily() const;
-		vk::Queue getGraphicsQueue() const;
-		uint32_t getComputeQueueFamily() const;
-		vk::Queue getComputeQueue() const;
+		uint32_t getQueueFamily() const;
+		uint32_t getQueueCount() const;
 
 		vk::Instance getInstance() const;
 		vk::PhysicalDevice getPhysicalDevice() const;

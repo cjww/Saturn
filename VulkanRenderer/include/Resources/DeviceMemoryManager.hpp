@@ -52,9 +52,6 @@ namespace sa {
 		vk::PhysicalDevice m_physicalDevice;
 		vk::Device m_device;
 
-		std::vector<uint32_t> m_graphicsQueueFamilyIndices;
-		std::vector<uint32_t> m_computeQueueFamilyIndices;
-
 		std::vector<DeviceBuffer*> m_buffers;
 		std::vector<DeviceImage*> m_images;
 		
@@ -66,9 +63,7 @@ namespace sa {
 			vk::Instance instance,
 			vk::Device device,
 			vk::PhysicalDevice physicalDevice,
-			uint32_t apiVersion,
-			const std::vector<uint32_t>& graphicsQueueFamilyIndices,
-			const std::vector<uint32_t>& computeQueueFamilyIndices
+			uint32_t apiVersion
 		);
 		
 		void destroy();

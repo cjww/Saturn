@@ -7,7 +7,7 @@
 namespace sa {
 
 
-	void DeviceMemoryManager::create(vk::Instance instance, vk::Device device, vk::PhysicalDevice physicalDevice, uint32_t apiVersion, const std::vector<uint32_t>& graphicsQueueFamilyIndices, const std::vector<uint32_t>& computeQueueFamilyIndices) {
+	void DeviceMemoryManager::create(vk::Instance instance, vk::Device device, vk::PhysicalDevice physicalDevice, uint32_t apiVersion) {
 
 		m_instance = instance;
 		m_physicalDevice = physicalDevice;
@@ -19,9 +19,6 @@ namespace sa {
 		m_allocatorInfo.vulkanApiVersion = apiVersion;
 
 		vmaCreateAllocator(&m_allocatorInfo, &m_allocator);
-
-		m_graphicsQueueFamilyIndices = graphicsQueueFamilyIndices;
-		m_computeQueueFamilyIndices = computeQueueFamilyIndices;
 	}
 
 	void DeviceMemoryManager::destroy() {

@@ -72,8 +72,8 @@ namespace sa {
 		cmd->getBuffer().bindPipeline(bindPoint, m_pipeline);
 	}
 
-	DescriptorSet Pipeline::allocateDescriptSet(uint32_t setIndex, uint32_t count) {
-		return m_shaderSet.allocateDescriptorSet(setIndex, count);
+	DescriptorSet Pipeline::allocateDescriptSet(uint32_t setIndex) {
+		return m_shaderSet.allocateDescriptorSet(setIndex, m_pCore->getQueueCount());
 	}
 
 	void Pipeline::bindDescriptorSets(CommandBufferSet* cmd, std::vector<DescriptorSet*> sets) {

@@ -7,6 +7,9 @@
 
 #include "Resources/Swapchain.hpp"
 #include "Resources\RenderProgram.hpp"
+#include "Resources/FramebufferSet.hpp"
+#include "Resources/Pipeline.hpp"
+#include "Resources/DescriptorSet.hpp"
 
 namespace sa {
 
@@ -85,7 +88,7 @@ namespace sa {
 		pRenderProgram->setClearColor(color);
 	}
 
-	ResourceID Renderer::createFramebuffer(ResourceID renderProgram, const std::vector<Texture>& attachmentTextures, uint32_t count, uint32_t layers) {
+	ResourceID Renderer::createFramebuffer(ResourceID renderProgram, const std::vector<Texture>& attachmentTextures, uint32_t layers) {
 		if (attachmentTextures.empty())
 			throw std::runtime_error("At least one attachmnet is required to create a framebuffer");
 
@@ -95,7 +98,6 @@ namespace sa {
 			m_pCore.get(),
 			pRenderProgram->getRenderPass(),
 			attachmentTextures,
-			count,
 			attachmentTextures[0].getExtent(),
 			layers);
 	}
@@ -146,9 +148,9 @@ namespace sa {
 		ResourceManager::get().remove<Pipeline>(pipeline);
 	}
 
-	ResourceID Renderer::allocateDescriptorSet(ResourceID pipeline, uint32_t setIndex, uint32_t backBufferCount) {
+	ResourceID Renderer::allocateDescriptorSet(ResourceID pipeline, uint32_t setIndex) {
 		Pipeline* pPipeline = RenderContext::getPipeline(pipeline);
-		return ResourceManager::get().insert<DescriptorSet>(pPipeline->allocateDescriptSet(setIndex, backBufferCount));
+		return ResourceManager::get().insert<DescriptorSet>(pPipeline->allocateDescriptSet(setIndex));
 	}
 
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Buffer& buffer) {
@@ -207,7 +209,7 @@ namespace sa {
 	RenderContext Renderer::beginFrame(ResourceID swapchain) {
 		Swapchain* pSwapchain = RenderContext::getSwapchain(swapchain);
 
-		auto [pCommandBufferSet, pComputeCommandBufferSet] = pSwapchain->beginFrame();
+		CommandBufferSet* pCommandBufferSet = pSwapchain->beginFrame();
 		if (!pCommandBufferSet) {
 			return {};
 		}
@@ -241,7 +243,7 @@ namespace sa {
 			m_transferQueue.pop();
 		}
 
-		return RenderContext(m_pCore.get(), pCommandBufferSet, pComputeCommandBufferSet);
+		return RenderContext(m_pCore.get(), pCommandBufferSet);
 	}
 
 	void Renderer::endFrame(ResourceID swapchain) {
@@ -250,7 +252,7 @@ namespace sa {
 	}
 
 	Context Renderer::createComputeContext() {
-		ResourceID id = ResourceManager::get().insert(m_pCore->allocateComputeCommandBufferSet(1, vk::CommandBufferLevel::ePrimary));
+		ResourceID id = ResourceManager::get().insert(m_pCore->allocateCommandBufferSet(vk::CommandBufferLevel::ePrimary));
 		return Context(m_pCore.get(), id);
 	}
 

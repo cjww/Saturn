@@ -37,8 +37,6 @@ namespace sa {
 		CommandBufferSet* m_pCommandBufferSet;
 		VulkanCore* m_pCore;
 
-		CommandBufferSet* m_pComputeCommandBufferSet;
-
 		friend class RenderProgramFactory;
 		friend class Renderer;
 		static Swapchain* getSwapchain(ResourceID id);
@@ -51,7 +49,7 @@ namespace sa {
 	public:
 		RenderContext();
 
-		RenderContext(VulkanCore* pCore, CommandBufferSet* pCommandBufferSet, CommandBufferSet* pComputeCommandBufferSet);
+		RenderContext(VulkanCore* pCore, CommandBufferSet* pCommandBufferSet);
 
 		void beginRenderProgram(ResourceID renderProgram, ResourceID framebuffer, Rect renderArea = { {0, 0}, {0, 0} });
 		void nextSubpass();
@@ -77,8 +75,6 @@ namespace sa {
 		void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0);
 
 		void dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
-
-		bool canDoCompute() const;
 
 		operator bool() {
 			return m_pCommandBufferSet != nullptr;

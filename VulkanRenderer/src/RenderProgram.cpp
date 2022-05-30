@@ -98,7 +98,7 @@ namespace sa {
 
 		vk::RenderPassBeginInfo info{
 			.renderPass = m_renderPass,
-			.framebuffer = framebuffer->getBuffer(cmd->getBufferIndex()),
+			.framebuffer = framebuffer->getBuffer(cmd->getBufferIndex() % framebuffer->getBufferCount()),
 			.renderArea = rect,
 		};
 

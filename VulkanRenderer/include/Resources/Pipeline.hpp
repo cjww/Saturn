@@ -24,7 +24,7 @@ namespace sa {
 	
 		void bind(CommandBufferSet* cmd);
 
-		DescriptorSet allocateDescriptSet(uint32_t setIndex, uint32_t count);
+		DescriptorSet allocateDescriptSet(uint32_t setIndex);
 
 		void bindDescriptorSets(CommandBufferSet* cmd, std::vector<DescriptorSet*> sets);
 		void bindDescriptorSets(CommandBufferSet* cmd, uint32_t firstSet, std::vector<vk::DescriptorSet> sets);

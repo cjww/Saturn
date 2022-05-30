@@ -127,7 +127,7 @@ namespace sa {
 		void setClearColor(ResourceID renderProgram, Color color, uint32_t attachmentIndex);
 		void setClearColor(ResourceID renderProgram, Color color);
 
-		ResourceID createFramebuffer(ResourceID renderProgram, const std::vector<Texture>& attachmentTextures, uint32_t count, uint32_t layers = 1ui32);
+		ResourceID createFramebuffer(ResourceID renderProgram, const std::vector<Texture>& attachmentTextures, uint32_t layers = 1ui32);
 		ResourceID createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<Texture>& additionalAttachmentTextures, uint32_t layers = 1ui32);
 		void destroyFramebuffer(ResourceID framebuffer);
 
@@ -136,7 +136,7 @@ namespace sa {
 		ResourceID createComputePipeline(const std::string& computeShader);
 		void destroyPipeline(ResourceID pipeline);
 
-		ResourceID allocateDescriptorSet(ResourceID pipeline, uint32_t setIndex, uint32_t backBufferCount = 1ui32);
+		ResourceID allocateDescriptorSet(ResourceID pipeline, uint32_t setIndex);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Buffer& buffer);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture2D& texture, ResourceID sampler);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture2D& texture);

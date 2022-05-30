@@ -18,15 +18,11 @@ namespace sa {
 		std::vector<vk::ImageView> m_imageViews;
 
 		CommandBufferSet m_commandBufferSet;
-		CommandBufferSet m_computeCommandBufferSet; // since we dont know if the main commandBUffer set can submit compute commands
-
 		
 		std::vector<vk::Semaphore> m_imageAvailableSemaphore;
 		std::vector<vk::Semaphore> m_renderFinishedSemaphore;
 		std::vector<vk::Fence> m_inFlightFences;
 		std::vector<vk::Fence> m_imageFences;
-
-		std::vector<vk::Fence> m_inFlightFencesCompute;
 
 		uint32_t m_frameIndex;
 		uint32_t m_imageIndex;
@@ -55,7 +51,7 @@ namespace sa {
 		void setResizeCallback(std::function<void(Extent)> function);
 
 
-		std::tuple<CommandBufferSet*, CommandBufferSet*> beginFrame();
+		CommandBufferSet* beginFrame();
 		void endFrame();
 
 		std::vector<vk::ImageView> getImageViews() const;

@@ -1,9 +1,11 @@
 #include "pch.h"
 #include "CommandPool.hpp"
 
+#include "debugFunctions.h"
+
 namespace sa {
 	
-	void CommandPool::create(vk::Device device, uint32_t queueFamily, vk::Queue queue, vk::CommandPoolCreateFlags flags) {
+	void CommandPool::create(vk::Device device, uint32_t queueFamily, vk::CommandPoolCreateFlags flags) {
 		m_device = device;
 
 		if (m_commandPool) {
@@ -13,7 +15,6 @@ namespace sa {
 			.flags = flags,
 			.queueFamilyIndex = queueFamily
 		});
-		m_queue = queue;
 		m_queueFamilyIndex = queueFamily;
 	}
 
@@ -21,12 +22,8 @@ namespace sa {
 		m_device.destroyCommandPool(m_commandPool);
 	}
 
-	CommandBufferSet CommandPool::allocateCommandBufferSet(uint32_t count, vk::CommandBufferLevel level) {
-		return CommandBufferSet(m_device.allocateCommandBuffers(vk::CommandBufferAllocateInfo{
-			.commandPool = m_commandPool,
-			.level = level,
-			.commandBufferCount = count,
-		}), m_queue, m_queueFamilyIndex);
+	CommandBufferSet CommandPool::allocateCommandBufferSet(const std::vector<vk::Queue>& queues, vk::CommandBufferLevel level) {
+		return CommandBufferSet(m_device, m_commandPool, queues, m_queueFamilyIndex, level);
 	}
 	
 	CommandBufferSet::CommandBufferSet()
@@ -35,26 +32,30 @@ namespace sa {
 	{
 	}
 
-	CommandBufferSet::CommandBufferSet(const std::vector<vk::CommandBuffer>& buffers, vk::Queue queue, uint32_t queueFamilyIndex)
-		: m_buffers(buffers) 
-		, m_currentBufferIndex(-1)
+	CommandBufferSet::CommandBufferSet(vk::Device device, vk::CommandPool commandPool, const std::vector<vk::Queue>& queues, uint32_t queueFamilyIndex, vk::CommandBufferLevel level)
+		: m_currentBufferIndex(0)
 		, m_lastBufferIndex(-1)
-		, m_targetQueue(queue)
+		, m_queues(queues)
 		, m_queueFamilyIndex(queueFamilyIndex)
 	{
-
+		create(device, commandPool, queues, level);
 	}
 
-	void CommandBufferSet::begin(int bufferIndex, vk::CommandBufferUsageFlags usageFlags) {
-		if (m_currentBufferIndex != -1)
-			throw std::runtime_error("Buffer index was not -1 : Forgot to call end");
+	void CommandBufferSet::create(vk::Device device, vk::CommandPool commandPool, const std::vector<vk::Queue>& queues, vk::CommandBufferLevel level)
+	{
+		m_buffers = device.allocateCommandBuffers(vk::CommandBufferAllocateInfo{
+			.commandPool = commandPool,
+			.level = level,
+			.commandBufferCount = (uint32_t)queues.size(),
+		});
+	}
 
-		vk::CommandBuffer& buffer = m_buffers.at(bufferIndex);
+	void CommandBufferSet::begin(vk::CommandBufferUsageFlags usageFlags) {
+		vk::CommandBuffer& buffer = m_buffers.at(m_currentBufferIndex);
 		buffer.begin(vk::CommandBufferBeginInfo{
 			.flags = usageFlags,
 			.pInheritanceInfo = nullptr,
 		});
-		m_currentBufferIndex = bufferIndex;
 	}
 	
 	void CommandBufferSet::end() {
@@ -62,7 +63,7 @@ namespace sa {
 			throw std::runtime_error("Buffer index was -1 : Forgot to call begin");
 		m_buffers[m_currentBufferIndex].end();
 		m_lastBufferIndex = m_currentBufferIndex;
-		m_currentBufferIndex = -1;
+		m_currentBufferIndex = (m_currentBufferIndex + 1) % m_buffers.size();
 	}
 
 	bool CommandBufferSet::isRecording() const {
@@ -84,7 +85,16 @@ namespace sa {
 			.signalSemaphoreCount = (signalSemaphore) ? 1ui32 : 0ui32,
 			.pSignalSemaphores = (signalSemaphore)? &signalSemaphore : nullptr,
 		};
-		m_targetQueue.submit(info, fence);
+		m_queues[m_lastBufferIndex].submit(info, fence);
+	}
+
+	void CommandBufferSet::present(vk::Semaphore waitSempahore, vk::SwapchainKHR swapchain, uint32_t imageIndex) {
+		vk::PresentInfoKHR info;
+		info.setSwapchains(swapchain);
+		info.setImageIndices(imageIndex);
+		info.setWaitSemaphores(waitSempahore);
+		checkError(m_queues[m_lastBufferIndex].presentKHR(info), "Failed to present image" + std::to_string(imageIndex));
+
 	}
 
 	vk::CommandBuffer CommandBufferSet::getBuffer() const {
@@ -95,10 +105,6 @@ namespace sa {
 
 	uint32_t CommandBufferSet::getBufferIndex() const {
 		return m_currentBufferIndex;
-	}
-
-	vk::Queue CommandBufferSet::getTargetQueue() const {
-		return m_targetQueue;
 	}
 
 	uint32_t CommandBufferSet::getQueueFamilyIndex() const {

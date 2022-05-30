@@ -377,7 +377,7 @@ int main() {
 
 
 
-		ResourceID descriptorSet = renderer.allocateDescriptorSet(mainPipeline, 0, window.getSwapchainImageCount());
+		ResourceID descriptorSet = renderer.allocateDescriptorSet(mainPipeline, 0);
 
 
 
@@ -396,7 +396,7 @@ int main() {
 
 
 
-		ResourceID descriptorSetPost = renderer.allocateDescriptorSet(postPipeline, 0, window.getSwapchainImageCount());
+		ResourceID descriptorSetPost = renderer.allocateDescriptorSet(postPipeline, 0);
 
 		sa::Image image("Box.png");
 		sa::Texture2D texture = renderer.createTexture2D(image);
@@ -408,7 +408,7 @@ int main() {
 
 		//Compute
 		ResourceID computePipeline = renderer.createComputePipeline("ComputeShader.comp.spv");
-		ResourceID computeDescriptorSet = renderer.allocateDescriptorSet(computePipeline, 0, window.getSwapchainImageCount());
+		ResourceID computeDescriptorSet = renderer.allocateDescriptorSet(computePipeline, 0);
 
 		std::vector<glm::mat4> data(100000, glm::mat4(1));
 
@@ -423,7 +423,7 @@ int main() {
 
 
 		ResourceID blurPipeline = renderer.createComputePipeline("BlurShader.comp.spv");
-		ResourceID blurDescriptorSet = renderer.allocateDescriptorSet(blurPipeline, 0, window.getSwapchainImageCount());
+		ResourceID blurDescriptorSet = renderer.allocateDescriptorSet(blurPipeline, 0);
 
 		sa::Extent extent = { (uint32_t)(window.getCurrentExtent().width * 0.5f), (uint32_t)(window.getCurrentExtent().height * 0.5f) };
 		sa::Texture2D outputImage = renderer.createTexture2D(
@@ -459,14 +459,7 @@ int main() {
 
 		computeContext.destroy();
 		*/
-		sa::Context tempContext = renderer.createComputeContext();
-		tempContext.begin();
-		tempContext.transferTextureLayout(outputImage);
-		tempContext.end();
-		tempContext.submit();
-		tempContext.waitToFinish();
-		tempContext.destroy();
-
+		
 		timer = 0.0f;
 		while (window.isOpen()) {
 			window.pollEvents();
@@ -511,18 +504,14 @@ int main() {
 					
 					context.drawIndexed(6, 1);
 				context.endRenderProgram(mainRenderProgram);
-
-				context.transferResourceToComputeQueue(colorTexture);
-
+				/*
 				context.bindPipeline(blurPipeline);
 				context.bindDescriptorSet(blurDescriptorSet, blurPipeline);
 				int groupcountX = (extent.width / 32) + 1;
 				int groupcountY = (extent.height / 32) + 1;
 				context.dispatch(groupcountX, groupcountY, 1);
-				/*
-				*/
-				context.transferResourceToGraphicsQueue(colorTexture);
 
+				*/
 				window.display();
 			}
 
@@ -536,6 +525,7 @@ int main() {
 		depthTexture.destroy();
 		colorTexture.destroy();
 		positionsTexture.destroy();
+		outputImage.destroy();
 	try {
 	}
 	catch (const std::exception& e) {

@@ -56,7 +56,7 @@ namespace sa {
 	uint32_t VulkanCore::getQueueFamilyIndex(vk::QueueFlags capabilities, vk::QueueFamilyProperties* prop) {
 		std::vector<vk::QueueFamilyProperties> queueFamilyProperties = m_physicalDevice.getQueueFamilyProperties();
 
-		for (uint32_t i = (uint32_t)queueFamilyProperties.size() - 1; i >= 0; i--) {
+		for (uint32_t i = 0; i < (uint32_t)queueFamilyProperties.size(); i++) {
 			vk::QueueFamilyProperties& properties = queueFamilyProperties[i];
 			if (properties.queueCount > 0) {
 				if (properties.queueFlags & capabilities) {
@@ -185,21 +185,11 @@ namespace sa {
 
 	void VulkanCore::createDevice() {
 		m_deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-		m_graphicsQueueInfo = getQueueInfo(vk::QueueFlagBits::eGraphics, 1);
-		m_computeQueueInfo = getQueueInfo(vk::QueueFlagBits::eCompute, 1);
-
-		std::vector<QueueInfo> queueInfos;
-		if (m_graphicsQueueInfo.family == m_computeQueueInfo.family) {
-			m_graphicsQueueInfo = getQueueInfo(vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute, 2);
-			queueInfos.push_back(m_graphicsQueueInfo);
-		}
-		else {
-			queueInfos.push_back(m_graphicsQueueInfo);
-			queueInfos.push_back(m_computeQueueInfo);
-		}
-
+		
+		m_queueInfo = getQueueInfo(vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute, 6);
+		std::vector<QueueInfo> queueInfos = { m_queueInfo };
+	
 		vk::PhysicalDeviceFeatures features = m_physicalDevice.getFeatures();
-
 
 		std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
 		for (const auto& queueInfo : queueInfos) {
@@ -224,20 +214,14 @@ namespace sa {
 
 
 		m_device = m_physicalDevice.createDevice(deviceInfo);
-
-		m_graphicsQueue = m_device.getQueue(m_graphicsQueueInfo.family, 0);
-
-		if (m_graphicsQueueInfo.family != m_computeQueueInfo.family) {
-			m_computeQueue = m_device.getQueue(m_computeQueueInfo.family, 0);
-		}
-		else {
-			m_computeQueue = m_graphicsQueue;
+		m_queues.resize(m_queueInfo.queueCount);
+		for (uint32_t i = 0; i < m_queueInfo.queueCount; i++) {
+			m_queues[i] = m_device.getQueue(m_queueInfo.family, 0);
 		}
 	}
 
 	void VulkanCore::createCommandPools() {
-		m_graphicsCommandPool.create(m_device, m_graphicsQueueInfo.family, m_graphicsQueue, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
-		m_computeCommandPool.create(m_device, m_computeQueueInfo.family, m_computeQueue, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
+		m_commandPool.create(m_device, m_queueInfo.family, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
 	}
 
 	bool VulkanCore::isDepthFormat(vk::Format format) {
@@ -263,7 +247,7 @@ namespace sa {
 		
 		createCommandPools();
 
-		m_memoryManager.create(m_instance, m_device, m_physicalDevice, m_appInfo.apiVersion, { m_graphicsQueueInfo.family }, { m_computeQueueInfo.family });
+		m_memoryManager.create(m_instance, m_device, m_physicalDevice, m_appInfo.apiVersion);
 
 		fillFormats();
 
@@ -275,9 +259,8 @@ namespace sa {
 		
 		m_memoryManager.destroy();
 
-		m_graphicsCommandPool.destroy();
-		m_computeCommandPool.destroy();
-
+		m_commandPool.destroy();
+		
 		m_device.destroy();
 		m_instance.destroy();
 	}
@@ -292,8 +275,8 @@ namespace sa {
 		return surface;
 	}
 
-	vk::SwapchainKHR VulkanCore::createSwapchain(vk::SurfaceKHR surface, uint32_t queueFamily, vk::Format* outFormat) {
-		if (!m_physicalDevice.getSurfaceSupportKHR(queueFamily, surface)) {
+	vk::SwapchainKHR VulkanCore::createSwapchain(vk::SurfaceKHR surface, vk::Format* outFormat) {
+		if (!m_physicalDevice.getSurfaceSupportKHR(m_queueInfo.family, surface)) {
 			throw std::runtime_error("Surface unsupported by this Device");
 		}
 
@@ -336,7 +319,7 @@ namespace sa {
 			.imageUsage = vk::ImageUsageFlagBits::eColorAttachment,
 			.imageSharingMode = vk::SharingMode::eExclusive,
 			.queueFamilyIndexCount = 1,
-			.pQueueFamilyIndices = &queueFamily,
+			.pQueueFamilyIndices = &m_queueInfo.family,
 			.preTransform = surfaceCapabilities.currentTransform,
 			.compositeAlpha = vk::CompositeAlphaFlagBitsKHR::eOpaque,
 			.presentMode = presentMode,
@@ -479,12 +462,8 @@ namespace sa {
 		return result.value;
 	}
 
-	CommandBufferSet VulkanCore::allocateGraphicsCommandBufferSet(uint32_t count, vk::CommandBufferLevel level) {
-		return m_graphicsCommandPool.allocateCommandBufferSet(count, level);
-	}
-
-	CommandBufferSet VulkanCore::allocateComputeCommandBufferSet(uint32_t count, vk::CommandBufferLevel level) {
-		return m_computeCommandPool.allocateCommandBufferSet(count, level);
+	CommandBufferSet VulkanCore::allocateCommandBufferSet(vk::CommandBufferLevel level) {
+		return m_commandPool.allocateCommandBufferSet(m_queues, level);
 	}
 
 	DeviceBuffer* VulkanCore::createBuffer(vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags allocationFlags, size_t size, void* initialData) {
@@ -503,7 +482,7 @@ namespace sa {
 			vk::ImageType::e2D,
 			vk::ImageLayout::eUndefined,
 			mipLevels,
-			{ m_graphicsQueueInfo.family },
+			{ m_queueInfo.family },
 			sampleCount,
 			vk::SharingMode::eExclusive,
 			vk::ImageTiling::eOptimal,
@@ -587,20 +566,12 @@ namespace sa {
 		return m_device.createSampler(info);
 	}
 
-	uint32_t VulkanCore::getGraphicsQueueFamily() const {
-		return m_graphicsQueueInfo.family;
+	uint32_t VulkanCore::getQueueFamily() const {
+		return m_queueInfo.family;
 	}
 
-	vk::Queue VulkanCore::getGraphicsQueue() const {
-		return m_graphicsQueue;
-	}
-
-	uint32_t VulkanCore::getComputeQueueFamily() const {
-		return m_computeQueueInfo.family;
-	}
-
-	vk::Queue VulkanCore::getComputeQueue() const {
-		return m_computeQueue;
+	uint32_t VulkanCore::getQueueCount() const {
+		return (uint32_t)m_queues.size();
 	}
 
 	vk::Instance VulkanCore::getInstance() const {

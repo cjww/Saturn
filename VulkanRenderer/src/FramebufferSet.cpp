@@ -10,7 +10,7 @@ namespace sa{
 	{
 	}
 
-	FramebufferSet::FramebufferSet(VulkanCore* pCore, vk::RenderPass renderPass, const std::vector<Texture>& images, uint32_t backBufferCount, Extent extent, uint32_t layers) {
+	FramebufferSet::FramebufferSet(VulkanCore* pCore, vk::RenderPass renderPass, const std::vector<Texture>& images, Extent extent, uint32_t layers) {
 		m_device = pCore->getDevice();
 		m_extent = extent;
 		
@@ -18,7 +18,7 @@ namespace sa{
 			m_images.push_back((DeviceImage*)image);
 		}
 
-		create(pCore, renderPass, images, backBufferCount, extent, layers);
+		create(pCore, renderPass, images, extent, layers);
 	}
 
 
@@ -34,12 +34,12 @@ namespace sa{
 	}
 
 
-	void FramebufferSet::create(VulkanCore* pCore, vk::RenderPass renderPass, const std::vector<Texture>& images, uint32_t backBufferCount, Extent extent, uint32_t layers) {
+	void FramebufferSet::create(VulkanCore* pCore, vk::RenderPass renderPass, const std::vector<Texture>& images, Extent extent, uint32_t layers) {
 		if (m_buffers.size() > 0)
 			destroy();
 		
-		std::vector<std::vector<vk::ImageView>> framebufferViews(backBufferCount);
-		for (uint32_t i = 0; i < backBufferCount; i++) {
+		std::vector<std::vector<vk::ImageView>> framebufferViews(pCore->getQueueCount());
+		for (uint32_t i = 0; i < (uint32_t)framebufferViews.size(); i++) {
 			for (auto& texture : images) {
 				framebufferViews[i].push_back(*texture.getView());
 				if (extent.width != texture.getExtent().width || extent.height != texture.getExtent().height) {
@@ -49,7 +49,7 @@ namespace sa{
 		}
 
 		m_buffers.resize(framebufferViews.size());
-		for (uint32_t i = 0; i < framebufferViews.size(); i++) {
+		for (uint32_t i = 0; i < (uint32_t)framebufferViews.size(); i++) {
 			m_buffers[i] = pCore->createFrameBuffer(renderPass, framebufferViews[i], extent.width, extent.height, layers);
 		}
 	}
@@ -88,6 +88,10 @@ namespace sa{
 
 	vk::Framebuffer FramebufferSet::getBuffer(uint32_t index) const {
 		return m_buffers.at(index);
+	}
+
+	uint32_t FramebufferSet::getBufferCount() const {
+		return (uint32_t)m_buffers.size();
 	}
 
 
