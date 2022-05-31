@@ -47,71 +47,11 @@ namespace sa {
 		std::queue<DataTransfer> m_transferQueue;
 
 
-
-		/*
-		CommandBufferSet* m_pComputeCommandBufferSet;
-		*/
-
-
-		//DeviceMemoryManager* m_pDataManager;
-
 		/*
 		
-		std::unordered_map<VkCommandBuffer, VkFence> m_transferCommandBuffers;
-		std::vector<TransferCommand> m_transferCommandQueue;
-
-		std::vector<VkSemaphore> m_imageAvailableSemaphore;
-		std::vector<VkSemaphore> m_renderFinishedSemaphore;
-		std::vector<VkFence> m_inFlightFences;
-		std::vector<VkFence> m_imageFences;
-		uint32_t m_frameIndex;
-
-		// RESOURCES
-		std::vector<RenderPass> m_renderPasses;
-		std::vector<Framebuffer> m_framebuffers;
-		std::vector<Pipeline> m_pipelines;
-
-		std::vector<Swapchain> m_swapchains;
-		std::unordered_map<uint32_t, ResizeCallbackFunc> m_swapchainResizeCallbacks;
-
+		
 		VkDescriptorPool m_imGuiDescriptorPool;
 		std::unordered_map<Texture*, ImTextureID> m_imGuiImages;
-
-
-		
-		void createCommandPools();
-		void createCommandBuffers();
-		void createGraphicsCommandBuffers();
-
-		void createSyncronisationObjects();
-
-		VkSurfaceKHR createSurface(GLFWwindow* window);
-
-		VkFramebuffer createFramebuffer(VkExtent2D extent, VkRenderPass renderPass, const std::vector<VkImageView>& imageViews);
-
-		uint32_t createGraphicsPipeline(VkExtent2D extent, uint32_t renderPass, uint32_t subpassIndex,
-			const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts,
-			const std::vector<VkPushConstantRange>& pushConstantRanges,
-			const std::vector<VkPipelineShaderStageCreateInfo>& shaderStages,
-			VkPipelineVertexInputStateCreateInfo vertexInput,
-			vbl::PipelineConfig config = {});
-
-		uint32_t createComputePipeline(const std::vector<VkDescriptorSetLayout>& descriptorSetLayouts,
-			const std::vector<VkPushConstantRange>& pushConstantRanges,
-			VkPipelineShaderStageCreateInfo shaderStage);
-
-		void destroyFramebuffers();
-		void destroyRenderPasses();
-		void destroyPipelines();
-
-		void destroySwapchains();
-
-		void destroySyncronisationObjects();
-		void freeGraphicsCommandBuffers();
-
-		VkCommandBuffer beginTransferCommand(const Framebuffer& framebuffer, const RenderPass& renderPass, uint32_t subpass);
-		void endTransferCommand(const TransferCommand& command);
-
 
 		void createImGUIDescriptorPool();
 		ImGui_ImplVulkan_InitInfo getImGUIInitInfo() const;

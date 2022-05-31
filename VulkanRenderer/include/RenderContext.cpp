@@ -183,6 +183,53 @@ namespace sa {
 			imageBarrier);
 	}
 
+	void RenderContext::transitionTexture(const Texture& texture, Transition src, Transition dst) {
+
+		vk::AccessFlags srcAccess;
+		vk::AccessFlags dstAccess;
+		vk::PipelineStageFlags srcStage;
+		vk::PipelineStageFlags dstStage;
+		vk::ImageLayout newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+
+		if (texture.getTypeFlags() & TextureTypeFlagBits::STORAGE) {
+			newLayout = vk::ImageLayout::eGeneral;
+		}
+		//TODO
+		switch (src)
+		{
+		case sa::Transition::NONE:
+			srcAccess = (vk::AccessFlags)0;
+			break;
+		case sa::Transition::RENDER_PROGRAM_INPUT:
+			srcAccess = vk::AccessFlagBits::eInputAttachmentRead;
+			break;
+		case sa::Transition::RENDER_PROGRAM_OUTPUT:
+			srcAccess = vk::AccessFlagBits::eColorAttachmentWrite;
+			break;
+		case sa::Transition::COMPUTE_SHADER_READ:
+			srcAccess = vk::AccessFlagBits::eShaderRead;
+			break;
+		case sa::Transition::COMPUTE_SHADER_WRITE:
+			srcAccess = vk::AccessFlagBits::eShaderWrite;
+			break;
+		default:
+			break;
+		}
+
+		DeviceImage* pImage = (DeviceImage*)texture;
+		m_pCore->transferImageLayout(
+			m_pCommandBufferSet->getBuffer(),
+			pImage->layout,
+			newLayout,
+			srcAccess,
+			dstAccess,
+			pImage->image,
+			vk::ImageAspectFlagBits::eColor,
+			srcStage,
+			dstStage
+		);
+	}
+
 	Context::Context(VulkanCore* pCore, ResourceID commandBufferSetID) 
 		: RenderContext(
 			pCore, 

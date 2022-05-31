@@ -32,6 +32,16 @@ namespace sa {
 		COMPUTE = 32,
 	};
 
+
+
+	enum class Transition {
+		NONE,
+		RENDER_PROGRAM_INPUT,
+		RENDER_PROGRAM_OUTPUT,
+		COMPUTE_SHADER_READ,
+		COMPUTE_SHADER_WRITE,
+	};
+
 	class RenderContext {
 	protected:
 		CommandBufferSet* m_pCommandBufferSet;
@@ -77,6 +87,9 @@ namespace sa {
 		void dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
 
 		void barrier(const Texture& texture);
+
+		void transitionTexture(const Texture& texture, Transition src, Transition dst);
+
 
 		operator bool() {
 			return m_pCommandBufferSet != nullptr;
