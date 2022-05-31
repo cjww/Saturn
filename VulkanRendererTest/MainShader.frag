@@ -15,4 +15,5 @@ void main() {
     uv.y = 1 - uv.y;
     out_color = texture(colorTexture, uv);
     out_color += texture(blurredColorTexture, uv);
+    out_color.a = 1.0;
 }

@@ -13,14 +13,19 @@ layout(set = 0, binding = 2, rgba32f) uniform writeonly image2D outputImage;
 void main() {
     
     vec4 color = vec4(0);
-    for(int x = -1; x <= 1; x++) {
-        for(int y = -1; y <= 1; y++) {
+    for(int x = -4; x <= 4; x++) {
+        for(int y = -4; y <= 4; y++) {
             vec2 uv = vec2(gl_GlobalInvocationID.xy + ivec2(x, y)) / config.imageSize;
-            color += texture(sourceImage, uv);
+            vec4 sampledColor = texture(sourceImage, uv);
+            color += sampledColor;            
         }
     }
 
-    color /= 9.0;
+
+
+    float size = 4.0 + 4.0 + 1.0;
+    
+    color /= size * size;
     color.a = 1.0;
     
     imageStore(outputImage, ivec2(gl_GlobalInvocationID.xy), color);

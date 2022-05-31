@@ -319,11 +319,18 @@ int main() {
 			sa::TextureTypeFlagBits::SAMPLED,
 			window.getCurrentExtent());
 
+		sa::Texture2D brightnessTexture = renderer.createTexture2D(
+			sa::TextureTypeFlagBits::COLOR_ATTACHMENT |
+			sa::TextureTypeFlagBits::SAMPLED,
+			window.getCurrentExtent());
+
+
 		auto defferedProgram = renderer.createRenderProgram()
 			.addColorAttachment(false, colorTexture) // 0 color
 			.addDepthAttachment() // 1 depth
 			.addColorAttachment(false, positionsTexture) // 2 positions
 			.addColorAttachment(true, combinedImage) // 3 combine
+			.addColorAttachment(true, brightnessTexture) // 4 brightness
 			.beginSubpass()
 				.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
 				.addAttachmentReference(1, sa::SubpassAttachmentUsage::DepthTarget)
@@ -331,6 +338,7 @@ int main() {
 			.endSubpass()
 			.beginSubpass()
 				.addAttachmentReference(3, sa::SubpassAttachmentUsage::ColorTarget)
+				.addAttachmentReference(4, sa::SubpassAttachmentUsage::ColorTarget)
 				.addAttachmentReference(0, sa::SubpassAttachmentUsage::Input)
 				.addAttachmentReference(2, sa::SubpassAttachmentUsage::Input)
 			.endSubpass()
@@ -339,7 +347,7 @@ int main() {
 
 		auto gFramebuffer = renderer.createFramebuffer(
 			defferedProgram,
-			{ colorTexture, depthTexture, positionsTexture, combinedImage });
+			{ colorTexture, depthTexture, positionsTexture, combinedImage, brightnessTexture });
 		
 		auto defferedPipeline = renderer.createGraphicsPipeline(
 			defferedProgram,
@@ -372,7 +380,7 @@ int main() {
 
 		sa::Image image("Box.png");
 		sa::Texture2D texture = renderer.createTexture2D(image);
-		ResourceID sampler = renderer.createSampler();
+		ResourceID sampler = renderer.createSampler(sa::FilterMode::LINEAR);
 		renderer.updateDescriptorSet(defferedDescriptorSet, 2, texture, sampler);
 
 
@@ -443,8 +451,8 @@ int main() {
 		ResourceID blurDescriptorSet = renderer.allocateDescriptorSet(blurPipeline, 0);
 
 		sa::Extent extent = { 
-			(uint32_t)(window.getCurrentExtent().width / 4.f),
-			(uint32_t)(window.getCurrentExtent().height / 4.f) 
+			(uint32_t)(window.getCurrentExtent().width / 6.f),
+			(uint32_t)(window.getCurrentExtent().height / 6.f) 
 		};
 		//sa::Extent extent = window.getCurrentExtent();
 		sa::Texture2D outputImage = renderer.createTexture2D(
@@ -459,7 +467,7 @@ int main() {
 
 
 		renderer.updateDescriptorSet(blurDescriptorSet, 0, blurConfigBuffer);
-		renderer.updateDescriptorSet(blurDescriptorSet, 1, combinedImage, sampler);
+		renderer.updateDescriptorSet(blurDescriptorSet, 1, brightnessTexture, sampler);
 		renderer.updateDescriptorSet(blurDescriptorSet, 2, outputImage);
 
 		renderer.updateDescriptorSet(mainDescriptorSet, 1, outputImage, sampler);
