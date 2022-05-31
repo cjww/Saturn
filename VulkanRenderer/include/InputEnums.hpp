@@ -317,7 +317,7 @@ namespace sa {
 	*
 	*  @ingroup input
 	*  @{ */
-	enum class GamepadButtons {
+	enum class GamepadButton {
 
 		A = 0,
 		B = 1,

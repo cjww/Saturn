@@ -47,11 +47,9 @@ namespace sa {
 		if (s_onJoystickDetectFunction) {
 			if (state == GLFW_CONNECTED) {	
 				s_onJoystickDetectFunction((Joystick)jid, ConnectionState::CONNECTED);
-				DEBUG_LOG_INFO("JoyStick Connected: ", jid);
 			}
 			else if (state == GLFW_DISCONNECTED) {
 				s_onJoystickDetectFunction((Joystick)jid, ConnectionState::DISCONNECTED);
-				DEBUG_LOG_INFO("JoyStick Diconnected: ", jid);
 			}
 		}
 	}
@@ -90,11 +88,76 @@ namespace sa {
 		m_window = nullptr;
 	}
 
+	void Window::SetJoystickConnectedCallback(JoystickConnectedCallback func) {
+		s_onJoystickDetectFunction = func;
+	}
+
+	bool Window::IsGamepad(Joystick joystick) {
+		return glfwJoystickIsGamepad((int)joystick) == GLFW_TRUE;
+	}
+
+	bool Window::IsJoystickPresent(Joystick joystick) {
+		return glfwJoystickPresent((int)joystick);
+	}
+	
+	std::string Window::GetJoystickName(Joystick joystick) {
+		return glfwGetJoystickName((int)joystick);
+	}
+
+	GamepadState Window::GetGamepadState(Joystick joystick) {
+		GLFWgamepadstate state;
+		GamepadState gamepadState;
+		if (!glfwGetGamepadState((int)joystick, &state)) {
+			DEBUG_LOG_WARNING("Joystick ", (int)joystick, " was not a gamepad or not present");
+			return {};
+		}
+		for (int i = 0; i < 15; i++) {
+			gamepadState.buttons[i] = state.buttons[i];
+		}
+		for (int i = 0; i < 6; i++) {
+			if (abs(state.axes[i]) < s_gamepadAxisDeadzone) {
+				gamepadState.axes[i] = 0;
+				continue;
+			}
+			gamepadState.axes[i] = state.axes[i];
+		}
+		return gamepadState;
+	}
+
+	float Window::GetGamepadAxisDeadzone() {
+		return s_gamepadAxisDeadzone;
+	}
+
+	void Window::SetGamepadAxisDeadzone(float deadzone) {
+		s_gamepadAxisDeadzone = deadzone;
+	}
+
+	ResourceID Window::CreateCursor(const Image& image, Offset hot) {
+		GLFWimage gImage;
+		gImage.width = image.getWidth();
+		gImage.height = image.getHeight();
+		gImage.pixels = image.getPixels();
+		GLFWcursor* pCursor = glfwCreateCursor(&gImage, hot.x, hot.y);
+		if (!pCursor) {
+			return NULL_RESOURCE;
+		}
+		return ResourceManager::get().insert<GLFWcursor*>(pCursor);
+	}
+
+	ResourceID Window::CreateCursor(StandardCursor cursor) {
+		GLFWcursor* pCursor = glfwCreateStandardCursor((int)cursor);
+		if (!pCursor) {
+			return NULL_RESOURCE;
+		}
+		return ResourceManager::get().insert<GLFWcursor*>(pCursor);
+	}
+
 	Window::Window(uint32_t width, uint32_t height, const char* title) {
 		if (s_windowCount == 0) {
 			if (!glfwInit()) {
 				throw std::runtime_error("Failed to initialize GLFW!");
 			}
+			ResourceManager::get().setCleanupFunction<GLFWcursor*>([](GLFWcursor** p) { glfwDestroyCursor(*p); });
 		}
 		s_windowCount++;
 		create(width, height, title, nullptr);
@@ -128,6 +191,7 @@ namespace sa {
 
 			s_windowCount--;
 			if (s_windowCount == 0) {
+				ResourceManager::get().clearContainer<GLFWcursor*>();
 				glfwTerminate();
 			}
 		}
@@ -143,6 +207,15 @@ namespace sa {
 	void Window::pollEvents() {
 		glfwPollEvents();
 	}
+
+	void Window::waitEvents(float timeoutSeconds) {
+		if (timeoutSeconds < 0) {
+			glfwWaitEvents();
+			return;
+		}
+		glfwWaitEventsTimeout(timeoutSeconds);
+	}
+
 
 	void Window::close() {
 		glfwSetWindowShouldClose(m_window, GLFW_TRUE);
@@ -247,48 +320,25 @@ namespace sa {
 		return glfwGetInputMode(m_window, GLFW_CURSOR) == GLFW_CURSOR_DISABLED;
 	}
 
+	void Window::setCursor(ResourceID cursor) {
+		if (cursor == NULL_RESOURCE) {
+			glfwSetCursor(m_window, NULL);
+			return;
+		}
+		GLFWcursor** pCursor = ResourceManager::get().get<GLFWcursor*>(cursor);
+		if (!pCursor) {
+			DEBUG_LOG_WARNING("Tried to set invalid cursor");
+			return;
+		}
+		glfwSetCursor(m_window, *pCursor);
+	}
+
 	void Window::setKeyCallback(KeyCallback func) {
 		m_onKeyFunction = func;
 	}
 
 	void Window::setMouseButtonCallback(MouseButtonCallback func) {
 		m_onMouseButtonFunction = func;
-	}
-
-	void Window::SetJoystickConnectedCallback(JoystickConnectedCallback func) {
-		s_onJoystickDetectFunction = func;
-	}
-
-	bool Window::IsGamepad(Joystick joystick) {
-		return glfwJoystickIsGamepad((int)joystick) == GLFW_TRUE;
-	}
-
-	GamepadState Window::GetGamepadState(Joystick joystick) {
-		GLFWgamepadstate state;
-		GamepadState gamepadState;
-		if (!glfwGetGamepadState((int)joystick, &state)) {
-			DEBUG_LOG_WARNING("Joystick ", (int)joystick, " was not a gamepad or not present");
-			return {};
-		}
-		for (int i = 0; i < 15; i++) {
-			gamepadState.buttons[i] = state.buttons[i];
-		}
-		for (int i = 0; i < 6; i++) {
-			if (abs(state.axes[i]) < s_gamepadAxisDeadzone) {
-				gamepadState.axes[i] = 0;
-				continue;
-			}
-			gamepadState.axes[i] = state.axes[i];
-		}
-		return gamepadState;
-	}
-
-	float Window::GetGamepadAxisDeadzone() {
-		return s_gamepadAxisDeadzone;
-	}
-
-	void Window::SetGamepadAxisDeadzone(float deadzone) {
-		s_gamepadAxisDeadzone = deadzone;
 	}
 
 	void Window::setWasResized(bool value) {

@@ -3,9 +3,11 @@
 
 #include "structs.hpp"
 
-#include "InputEnums.hpp."
+#include "InputEnums.hpp"
+#include "Image.hpp"
 
 #include <set>
+#include <array>
 
 struct GLFWwindow;
 struct GLFWmonitor;
@@ -13,14 +15,26 @@ struct GLFWmonitor;
 
 namespace sa {
 
+	enum class StandardCursor {
+		ARROW		= 0x00036001,
+		IBEAM		= 0x00036002,
+		CROSSHAIR	= 0x00036003,
+		HAND		= 0x00036004,
+		HRESIZE		= 0x00036005,
+		VRESIZE		= 0x00036006
+	};
+
 	enum class ConnectionState {
 		CONNECTED,
 		DISCONNECTED
 	};
 
 	struct GamepadState {
-		bool buttons[15];
-		float axes[6];
+		std::array<bool, 15> buttons;
+		std::array<float, 6> axes;
+
+		bool getButton(GamepadButton button) { return buttons[(int)button]; }
+		float getAxis(GamepadAxis axis) { return axes[(int)axis]; };
 	};
 
 	typedef std::function<void(Key, InputAction, ModKeyFlags, int)> KeyCallback;
@@ -58,10 +72,16 @@ namespace sa {
 	public:
 		static void SetJoystickConnectedCallback(JoystickConnectedCallback func);
 		static bool IsGamepad(Joystick joystick);
+		static bool IsJoystickPresent(Joystick joystick);
+		static std::string GetJoystickName(Joystick joystick);
 		static GamepadState GetGamepadState(Joystick joystick);
 		static float GetGamepadAxisDeadzone();
 		static void SetGamepadAxisDeadzone(float deadzone);
 
+		static ResourceID CreateCursor(const Image& image, Offset hot = { 0, 0 });
+		static ResourceID CreateCursor(StandardCursor cursor);
+		
+		
 		Window(uint32_t width, uint32_t height, const char* title);
 		Window(uint32_t monitorIndex);
 
@@ -69,6 +89,7 @@ namespace sa {
 
 		bool isOpen();
 		void pollEvents();
+		void waitEvents(float timeoutSeconds = -1.f);
 
 		void close();
 
@@ -96,6 +117,7 @@ namespace sa {
 		void setCursorDisabled(bool value);
 		bool isCursorDisabled() const;
 
+		void setCursor(ResourceID cursor);
 
 		void setKeyCallback(KeyCallback func);
 		void setMouseButtonCallback(MouseButtonCallback func);

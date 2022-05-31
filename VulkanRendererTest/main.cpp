@@ -54,15 +54,15 @@ public:
 		if (sa::Window::IsGamepad(sa::Joystick::JOYSTICK_1)) {
 			sa::GamepadState state = sa::Window::GetGamepadState(sa::Joystick::JOYSTICK_1);
 
-			hori = state.axes[(int)sa::GamepadAxis::LEFT_X];
-			vert = state.axes[(int)sa::GamepadAxis::LEFT_Y] * -1.f;
-			
-			diff.x = state.axes[(int)sa::GamepadAxis::RIGHT_X];
-			diff.y = state.axes[(int)sa::GamepadAxis::RIGHT_Y];
+			hori = state.getAxis(sa::GamepadAxis::LEFT_X);
+			vert = state.getAxis(sa::GamepadAxis::LEFT_Y) * -1.f;
 
-			up = state.axes[(int)sa::GamepadAxis::LEFT_TRIGGER] - state.axes[(int)sa::GamepadAxis::RIGHT_TRIGGER];
+			diff.x = state.getAxis(sa::GamepadAxis::RIGHT_X);
+			diff.y = state.getAxis(sa::GamepadAxis::RIGHT_Y);
 
-			sprint = state.buttons[(int)sa::GamepadButtons::RIGHT_BUMPER];
+			up = state.getAxis(sa::GamepadAxis::LEFT_TRIGGER) - state.getAxis(sa::GamepadAxis::RIGHT_TRIGGER);
+
+			sprint = state.getButton(sa::GamepadButton::RIGHT_BUMPER);
 
 		}
 
@@ -313,6 +313,14 @@ int main() {
 		sa::RenderWindow window(WIDTH, HEIGHT, "Test Window");
 		sa::Renderer& renderer = sa::Renderer::get();
 		
+		ResourceID crossHairCursor = sa::Window::CreateCursor(sa::StandardCursor::CROSSHAIR);
+		window.setCursor(crossHairCursor);
+
+		sa::Window::SetJoystickConnectedCallback([](sa::Joystick joystick, sa::ConnectionState state) {
+			if (state == sa::ConnectionState::CONNECTED) {
+				DEBUG_LOG_INFO("Joystick", (int)joystick, "connected: ", sa::Window::GetJoystickName(joystick));
+			}
+		});
 
 		// FIRST PASS
 
@@ -396,6 +404,7 @@ int main() {
 
 		uniformBuffer.write(ubo);
 		renderer.updateDescriptorSet(defferedDescriptorSet, 0, uniformBuffer);
+
 
 		sa::Image image("Box.png");
 		sa::Texture2D texture = renderer.createTexture2D(image);
@@ -504,7 +513,7 @@ int main() {
 		
 		while (window.isOpen()) {
 			window.pollEvents();
-			
+
 			timer += dt;
 			ubo.view = camera.getView(dt);
 			
