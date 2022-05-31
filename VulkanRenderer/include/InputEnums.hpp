@@ -267,7 +267,7 @@ namespace sa {
 	*
 	*  @ingroup input
 	*  @{ */
-	enum class JoyStick {
+	enum class Joystick {
 		JOYSTICK_1 = 0,
 		JOYSTICK_2 = 1,
 		JOYSTICK_3 = 2,
@@ -295,7 +295,7 @@ namespace sa {
 	 *
 	 *  @ingroup input
 	 *  @{ */
-	enum class JoyStickHat {
+	enum class JoystickHat {
 
 		CENTERED           = 0,
 		UP                 = 1,
@@ -317,7 +317,7 @@ namespace sa {
 	*
 	*  @ingroup input
 	*  @{ */
-	enum class GamePadButtons {
+	enum class GamepadButtons {
 
 		A = 0,
 		B = 1,
@@ -349,7 +349,7 @@ namespace sa {
 	*
 	*  @ingroup input
 	*  @{ */
-	enum class GamePadAxis {
+	enum class GamepadAxis {
 		LEFT_X        = 0,
 		LEFT_Y        = 1,
 		RIGHT_X       = 2,

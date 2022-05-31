@@ -8,6 +8,7 @@
 #include <unordered_map>
 #include <queue>
 #include <set>
+#include <stdexcept>
 #include <memory>
 #include <functional>
 #include <optional>

@@ -14,6 +14,7 @@
 #include "glm\gtc\matrix_transform.hpp"
 #include "glm/gtx/transform.hpp"
 
+
 class CameraController {
 private:
 	sa::RenderWindow& window;
@@ -35,16 +36,36 @@ public:
 		viewPos = glm::vec3(0.f);
 		
 		mouseLocked = true;
-		window.setHideCursor(true);
+		window.setCursorDisabled(true);
 	};
 
 	glm::mat4 getView(float dt) {
-		int hori = window.getKey(sa::Key::D) - window.getKey(sa::Key::A);
-		int vert = window.getKey(sa::Key::W) - window.getKey(sa::Key::S);
+		float hori = window.getKey(sa::Key::D) - window.getKey(sa::Key::A);
+		float vert = window.getKey(sa::Key::W) - window.getKey(sa::Key::S);
 
-		glm::vec2 mPos = { window.getCursorPosition().x, window.getCursorPosition().y };
+	  	glm::vec2 mPos = { window.getCursorPosition().x, window.getCursorPosition().y };
 		glm::vec2 center = glm::vec2((float)window.getCurrentExtent().width / 2, (float)window.getCurrentExtent().height / 2);
 		glm::vec2 diff = mPos - center;
+		
+		float up = window.getKey(sa::Key::SPACE) - window.getKey(sa::Key::LEFT_CONTROL);
+		bool sprint = window.getKey(sa::Key::LEFT_SHIFT);
+		
+
+		if (sa::Window::IsGamepad(sa::Joystick::JOYSTICK_1)) {
+			sa::GamepadState state = sa::Window::GetGamepadState(sa::Joystick::JOYSTICK_1);
+
+			hori = state.axes[(int)sa::GamepadAxis::LEFT_X];
+			vert = state.axes[(int)sa::GamepadAxis::LEFT_Y] * -1.f;
+			
+			diff.x = state.axes[(int)sa::GamepadAxis::RIGHT_X];
+			diff.y = state.axes[(int)sa::GamepadAxis::RIGHT_Y];
+
+			up = state.axes[(int)sa::GamepadAxis::LEFT_TRIGGER] - state.axes[(int)sa::GamepadAxis::RIGHT_TRIGGER];
+
+			sprint = state.buttons[(int)sa::GamepadButtons::RIGHT_BUMPER];
+
+		}
+
 		if (mouseLocked) {
 			window.setCursorPosition({ center.x, center.y });
 		}
@@ -54,12 +75,10 @@ public:
 
 		if (window.getKey(sa::Key::ESCAPE) && !escapePressed) {
 			mouseLocked = !mouseLocked;
-			window.setHideCursor(mouseLocked);
+			window.setCursorDisabled(mouseLocked);
 		}
 		escapePressed = window.getKey(sa::Key::ESCAPE);
 
-		int up = window.getKey(sa::Key::SPACE) - window.getKey(sa::Key::LEFT_CONTROL);
-		bool sprint = window.getKey(sa::Key::LEFT_SHIFT);
 
 		viewForward = glm::vec3(glm::vec4(viewForward, 0.0f) * glm::rotate(diff.x * dt * sensitivty, glm::vec3(0, 1, 0)));
 
@@ -72,9 +91,9 @@ public:
 			finalSpeed *= 2;
 		}
 
-		viewPos += right * (float)hori * dt * finalSpeed;
-		viewPos += viewForward * (float)vert * dt * finalSpeed;
-		viewPos += glm::vec3(0, 1, 0) * (float)up * dt * finalSpeed;
+		viewPos += right * hori * dt * finalSpeed;
+		viewPos += viewForward * vert * dt * finalSpeed;
+		viewPos += glm::vec3(0, 1, 0) * up * dt * finalSpeed;
 
 		
 		return glm::lookAt(viewPos, viewPos + viewForward, glm::vec3(0, 1, 0));
@@ -283,7 +302,6 @@ std::array<uint32_t, 36> boxIndices = {
 	7, 6, 3, 6, 2, 3
 };
 
-
 int main() {
 
 #ifdef _WIN32
@@ -295,6 +313,7 @@ int main() {
 		sa::RenderWindow window(WIDTH, HEIGHT, "Test Window");
 		sa::Renderer& renderer = sa::Renderer::get();
 		
+
 		// FIRST PASS
 
 		sa::Texture2D colorTexture = renderer.createTexture2D(
@@ -482,6 +501,7 @@ int main() {
 		auto now = std::chrono::high_resolution_clock::now();
 		float dt = 0;
 		float timer = 0.0f;
+		
 		while (window.isOpen()) {
 			window.pollEvents();
 			

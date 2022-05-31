@@ -25,12 +25,10 @@ namespace sa {
 			usage[attachment.index] = attachment.usage;
 		}
 
-		vk::SubpassDependency dependency;
-		bool needDependency = false;
 		for (auto& attachment : subpassFactory.getAttachmentReferences()) {
 			auto [it, success] = indices.insert(attachment.index);
 			if (!success) {
-				needDependency = true;
+				vk::SubpassDependency dependency;
 				SubpassAttachmentUsage firstUsage = usage[attachment.index];
 				SubpassAttachmentUsage thisUsage = attachment.usage;
 
@@ -71,12 +69,10 @@ namespace sa {
 					break;
 				}
 
+				m_pProgram->addSubpassDependency(dependency);
 			}
 		}
-		if (needDependency) {
-			m_pProgram->addSubpassDependency(dependency);
-		}
-
+		
 		m_subpasses.push_back(subpassFactory);
 	}
 
