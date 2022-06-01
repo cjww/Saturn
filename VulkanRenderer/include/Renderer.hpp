@@ -91,8 +91,9 @@ namespace sa {
 		void freeDescriptorSet(ResourceID descriptorSet);
 
 		Buffer createBuffer(BufferType type, size_t size = 0ui64, void* initialData = nullptr);
-		Texture2D createTexture2D(TextureTypeFlags type, Extent extent);
-		Texture2D createTexture2D(TextureTypeFlags type, Extent extent, FormatPrecisionFlags formatPrecision, FormatDimensionFlags formatDimensions, FormatTypeFlags formatType);
+		Texture2D createTexture2D(TextureTypeFlags type, Extent extent, uint32_t sampleCount = 1);
+		Texture2D createTexture2D(TextureTypeFlags type, Extent extent, FormatPrecisionFlags formatPrecision, FormatDimensionFlags formatDimensions, FormatTypeFlags formatType, uint32_t sampleCount = 1);
+		Texture2D createTexture2D(TextureTypeFlags type, Extent extent, ResourceID swapchain, uint32_t sampleCount);
 		Texture2D createTexture2D(const Image& image);
 
 		void queueTransfer(const DataTransfer& transfer);

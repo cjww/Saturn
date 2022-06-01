@@ -11,6 +11,7 @@ namespace vk {
 namespace sa {
 	struct DeviceImage;
 	struct DeviceBuffer;
+	class Swapchain;
 
 	class VulkanCore;
 
@@ -54,19 +55,24 @@ namespace sa {
 	private:
 
 	public:
-		Texture2D(VulkanCore* pCore, TextureTypeFlags type, Extent extent);
+		Texture2D(VulkanCore* pCore, TextureTypeFlags type, Extent extent, uint32_t sampleCount = 1);
 		Texture2D(VulkanCore* pCore, TextureTypeFlags type, Extent extent,
-			FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types);
+			FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, uint32_t sampleCount = 1);
+		Texture2D(VulkanCore* pCore, TextureTypeFlags type, Extent extent,
+			Swapchain* pSwapchain, uint32_t sampleCount = 1);
+
 		Texture2D(VulkanCore* pCore, const Image& image);
 
 		Texture2D(const Texture2D&) = default;
 		Texture2D& operator=(const Texture2D&) = default;
 
-		void create(TextureTypeFlags type, Extent extent);
+		void create(TextureTypeFlags type, Extent extent, uint32_t sampleCount);
 		void create(TextureTypeFlags type, Extent extent,
-			FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types);
-		void destroy();
+			FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, uint32_t sampleCount);
+		void create(TextureTypeFlags type, Extent extent, Swapchain* pSwapchain, uint32_t sampleCount);
 
+
+		void destroy();
 
 	};
 

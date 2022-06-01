@@ -40,6 +40,7 @@ namespace sa {
 					dependency.setSrcAccessMask(vk::AccessFlagBits::eDepthStencilAttachmentWrite);
 					dependency.setSrcStageMask(vk::PipelineStageFlagBits::eEarlyFragmentTests);
 					break;
+				case SubpassAttachmentUsage::Resolve:
 				case SubpassAttachmentUsage::ColorTarget:
 					dependency.setSrcAccessMask(vk::AccessFlagBits::eColorAttachmentWrite);
 					dependency.setSrcStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
@@ -57,6 +58,7 @@ namespace sa {
 					dependency.setDstAccessMask(vk::AccessFlagBits::eDepthStencilAttachmentWrite);
 					dependency.setDstStageMask(vk::PipelineStageFlagBits::eEarlyFragmentTests);
 					break;
+				case SubpassAttachmentUsage::Resolve:
 				case SubpassAttachmentUsage::ColorTarget:
 					dependency.setDstAccessMask(vk::AccessFlagBits::eColorAttachmentWrite);
 					dependency.setDstStageMask(vk::PipelineStageFlagBits::eColorAttachmentOutput);
@@ -88,20 +90,26 @@ namespace sa {
 			vk::ImageLayout::eShaderReadOnlyOptimal,
 			m_pCore->getDefaultColorFormat(),
 			vk::AttachmentLoadOp::eClear,
-			(store) ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare
+			(store) ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare,
+			vk::SampleCountFlagBits::e1
 		);
 		return *this;
 	}
 
-	RenderProgramFactory& RenderProgramFactory::addColorAttachment(bool store, const Texture2D& sampleFormat) {
-		const DeviceImage* pDeviceImage = (const DeviceImage*)sampleFormat;
-
+	RenderProgramFactory& RenderProgramFactory::addColorAttachment(bool store, const Texture2D& framebufferTexture) {
+		const DeviceImage* pDeviceImage = (const DeviceImage*)framebufferTexture;
+		vk::ImageLayout finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
+		if (framebufferTexture.getTypeFlags() & TextureTypeFlagBits::INPUT_ATTACHMENT ||
+			framebufferTexture.getTypeFlags() & TextureTypeFlagBits::SAMPLED) {
+			finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		}
 		m_pProgram->addAttachment(
 			vk::ImageLayout::eUndefined,
-			vk::ImageLayout::eShaderReadOnlyOptimal,
+			finalLayout,
 			pDeviceImage->format,
 			vk::AttachmentLoadOp::eClear,
-			(store)? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare
+			(store)? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare,
+			pDeviceImage->sampleCount
 		);
 		return *this;
 	}
@@ -113,7 +121,8 @@ namespace sa {
 			vk::ImageLayout::ePresentSrcKHR,
 			pSwapChain->getFormat(),
 			vk::AttachmentLoadOp::eClear,
-			vk::AttachmentStoreOp::eStore
+			vk::AttachmentStoreOp::eStore,
+			vk::SampleCountFlagBits::e1
 		);
 		return *this;
 	}
@@ -124,7 +133,22 @@ namespace sa {
 			vk::ImageLayout::eDepthStencilAttachmentOptimal,
 			m_pCore->getDefaultDepthFormat(),
 			vk::AttachmentLoadOp::eClear,
-			vk::AttachmentStoreOp::eDontCare
+			vk::AttachmentStoreOp::eDontCare,
+			vk::SampleCountFlagBits::e1
+		);
+		return *this;
+	}
+
+	RenderProgramFactory& RenderProgramFactory::addDepthAttachment(const Texture2D& framebufferTexture) {
+		const DeviceImage* pDeviceImage = (const DeviceImage*)framebufferTexture;
+
+		m_pProgram->addAttachment(
+			vk::ImageLayout::eUndefined,
+			vk::ImageLayout::eDepthStencilAttachmentOptimal,
+			pDeviceImage->format,
+			vk::AttachmentLoadOp::eClear,
+			vk::AttachmentStoreOp::eDontCare,
+			pDeviceImage->sampleCount
 		);
 		return *this;
 	}
@@ -159,11 +183,10 @@ namespace sa {
 
 	RenderProgramFactory::SubpassFactory& RenderProgramFactory::SubpassFactory::addAttachmentReference(uint32_t index, SubpassAttachmentUsage usage) {
 		vk::AttachmentDescription desc = m_pProgramFactory->m_pProgram->getAttachment(index);
-
 		vk::ImageLayout layout;
-
 		switch (usage) {
 		case SubpassAttachmentUsage::ColorTarget:
+			m_pSubpass->setSampleCount(desc.samples);
 			layout = vk::ImageLayout::eColorAttachmentOptimal;
 			m_pSubpass->addColorAttachmentReference(index, layout);
 			break;
@@ -175,6 +198,11 @@ namespace sa {
 			layout = vk::ImageLayout::eShaderReadOnlyOptimal;
 			m_pSubpass->addInputAttachmentReference(index, layout);
 			break;
+		case SubpassAttachmentUsage::Resolve:
+			layout = vk::ImageLayout::eColorAttachmentOptimal;
+			m_pSubpass->addResolveAttachmentReference(index, layout);
+			break;
+
 		default:
 			throw std::runtime_error("Unsupported usage");
 			return *this;

@@ -18,13 +18,18 @@ namespace sa {
 		std::vector<vk::AttachmentReference> m_resolveAttachmentReferences;
 		std::optional<vk::AttachmentReference> m_depthAttachmentReference;
 		
+		vk::SampleCountFlagBits m_sampleCount;
 	public:
-		Subpass() = default;
+		Subpass();
 		
 		void addColorAttachmentReference(uint32_t index, vk::ImageLayout layout);
 		void addInputAttachmentReference(uint32_t index, vk::ImageLayout layout);
 		void addResolveAttachmentReference(uint32_t index, vk::ImageLayout layout);
 		void setDepthAttachmentReference(uint32_t index, vk::ImageLayout layout);
+
+		void setSampleCount(vk::SampleCountFlagBits sampleCount);
+		vk::SampleCountFlagBits getSampleCount() const;
+
 
 		vk::SubpassDescription getDescription();
 
@@ -40,6 +45,7 @@ namespace sa {
 		VulkanCore* m_pCore;
 		vk::RenderPass m_renderPass;
 
+
 		std::vector<Subpass> m_subpasses;
 		
 		std::vector<vk::SubpassDependency> m_dependencies;
@@ -51,7 +57,15 @@ namespace sa {
 		RenderProgram() = default;
 
 		Subpass& newSubpass();
-		void addAttachment(vk::ImageLayout intialLayout, vk::ImageLayout finalLayout, vk::Format format, vk::AttachmentLoadOp loadOp, vk::AttachmentStoreOp storeOp, vk::AttachmentLoadOp stencilLoadOp = vk::AttachmentLoadOp::eDontCare, vk::AttachmentStoreOp stencilStoreOp = vk::AttachmentStoreOp::eDontCare);
+		void addAttachment(
+			vk::ImageLayout intialLayout, 
+			vk::ImageLayout finalLayout, 
+			vk::Format format, 
+			vk::AttachmentLoadOp loadOp, 
+			vk::AttachmentStoreOp storeOp, 
+			vk::SampleCountFlagBits sampleCount,
+			vk::AttachmentLoadOp stencilLoadOp = vk::AttachmentLoadOp::eDontCare, 
+			vk::AttachmentStoreOp stencilStoreOp = vk::AttachmentStoreOp::eDontCare);
 		vk::AttachmentDescription getAttachment(uint32_t index) const;
 
 		void setClearColor(uint32_t attachmentIndex, Color color);

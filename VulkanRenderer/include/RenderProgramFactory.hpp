@@ -14,7 +14,8 @@ namespace sa {
 	enum SubpassAttachmentUsage {
 		ColorTarget,
 		DepthTarget,
-		Input
+		Input,
+		Resolve,
 	};
 
 	class RenderProgramFactory {
@@ -54,9 +55,12 @@ namespace sa {
 		RenderProgramFactory(VulkanCore* pCore);
 		
 		RenderProgramFactory& addColorAttachment(bool store);
-		RenderProgramFactory& addColorAttachment(bool store, const Texture2D& formatSample);
+		RenderProgramFactory& addColorAttachment(bool store, const Texture2D& framebufferTexture);
+		
 		RenderProgramFactory& addSwapchainAttachment(ResourceID swapchain);
 		RenderProgramFactory& addDepthAttachment();
+		RenderProgramFactory& addDepthAttachment(const Texture2D& framebufferTexture);
+
 
 
 		SubpassFactory beginSubpass();

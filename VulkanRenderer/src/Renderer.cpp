@@ -190,12 +190,17 @@ namespace sa {
 		return Buffer(m_pCore.get(), type, size, initialData);
 	}
 
-	Texture2D Renderer::createTexture2D(TextureTypeFlags type, Extent extent) {
-		return Texture2D(m_pCore.get(), type, extent);
+	Texture2D Renderer::createTexture2D(TextureTypeFlags type, Extent extent, uint32_t sampleCount) {
+		return Texture2D(m_pCore.get(), type, extent, sampleCount);
 	}
 
-	Texture2D Renderer::createTexture2D(TextureTypeFlags type, Extent extent, FormatPrecisionFlags formatPrecision, FormatDimensionFlags formatDimensions, FormatTypeFlags formatType) {
-		return Texture2D(m_pCore.get(), type, extent, formatPrecision, formatDimensions, formatType);
+	Texture2D Renderer::createTexture2D(TextureTypeFlags type, Extent extent, FormatPrecisionFlags formatPrecision, FormatDimensionFlags formatDimensions, FormatTypeFlags formatType, uint32_t sampleCount) {
+		return Texture2D(m_pCore.get(), type, extent, formatPrecision, formatDimensions, formatType, sampleCount);
+	}
+
+	Texture2D Renderer::createTexture2D(TextureTypeFlags type, Extent extent, ResourceID swapchain, uint32_t sampleCount) {
+		Swapchain* pSwapchain = RenderContext::getSwapchain(swapchain);
+		return Texture2D(m_pCore.get(), type, extent, pSwapchain, sampleCount);
 	}
 
 	Texture2D Renderer::createTexture2D(const Image& image) {

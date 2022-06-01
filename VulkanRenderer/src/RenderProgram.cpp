@@ -7,9 +7,10 @@ namespace sa {
 		return m_subpasses.emplace_back();
 	}
 
-	void RenderProgram::addAttachment(vk::ImageLayout intialLayout, vk::ImageLayout finalLayout, vk::Format format, vk::AttachmentLoadOp loadOp, vk::AttachmentStoreOp storeOp, vk::AttachmentLoadOp stencilLoadOp, vk::AttachmentStoreOp stencilStoreOp) {
+	void RenderProgram::addAttachment(vk::ImageLayout intialLayout, vk::ImageLayout finalLayout, vk::Format format, vk::AttachmentLoadOp loadOp, vk::AttachmentStoreOp storeOp, vk::SampleCountFlagBits sampleCount, vk::AttachmentLoadOp stencilLoadOp, vk::AttachmentStoreOp stencilStoreOp) {
 		vk::AttachmentDescription& desc = m_attachments.emplace_back(vk::AttachmentDescription{
 			.format = format,
+			.samples = sampleCount,
 			.loadOp = loadOp,
 			.storeOp = storeOp,
 			.stencilLoadOp = stencilLoadOp,
@@ -60,6 +61,11 @@ namespace sa {
 
 	ResourceID RenderProgram::createPipeline(const ShaderSet& shaders, uint32_t subpassIndex, Extent extent) {
 		PipelineConfig config = {};
+		config.multisample = {
+			.sampleShadingEnable = true,
+			.minSampleShading = 0.2f,
+			.sampleCount = m_subpasses[subpassIndex].getSampleCount(),
+		};
 		config.colorBlends.resize(m_subpasses.at(subpassIndex).getColorAttachments().size());
 		return ResourceManager::get().insert<Pipeline>(m_pCore, m_renderPass, shaders, subpassIndex, extent, config);
 	}
@@ -115,6 +121,12 @@ namespace sa {
 		return m_renderPass;
 	}
 	
+	Subpass::Subpass()
+		: m_sampleCount(vk::SampleCountFlagBits::e1)
+	{
+
+	}
+
 	void Subpass::addColorAttachmentReference(uint32_t index, vk::ImageLayout layout) {
 		m_colorAttachmentReferences.emplace_back(index, layout);
 	}
@@ -125,18 +137,25 @@ namespace sa {
 
 	void Subpass::addResolveAttachmentReference(uint32_t index, vk::ImageLayout layout) {
 		m_resolveAttachmentReferences.emplace_back(index, layout);
-
 	}
 
 	void Subpass::setDepthAttachmentReference(uint32_t index, vk::ImageLayout layout) {
 		m_depthAttachmentReference = { index, layout };
 	}
 
+	void Subpass::setSampleCount(vk::SampleCountFlagBits sampleCount) {
+		m_sampleCount = sampleCount;
+	}
+
+	vk::SampleCountFlagBits Subpass::getSampleCount() const {
+		return m_sampleCount;
+	}
+
 	vk::SubpassDescription Subpass::getDescription() {
 		return m_description
 			.setPipelineBindPoint(vk::PipelineBindPoint::eGraphics)
-			.setResolveAttachments(m_resolveAttachmentReferences)
 			.setColorAttachments(m_colorAttachmentReferences)
+			.setPResolveAttachments(m_resolveAttachmentReferences.data())
 			.setInputAttachments(m_inputAttachmentReferences)
 			.setPDepthStencilAttachment(m_depthAttachmentReference.has_value() ? &m_depthAttachmentReference.value() : nullptr)
 		;

@@ -31,7 +31,8 @@ namespace sa {
 		} rasterizer;
 
 		struct Multisample {
-			vk::Bool32 enable = false;
+			vk::Bool32 sampleShadingEnable = false;
+			float minSampleShading = 0.0f;
 			vk::SampleCountFlagBits sampleCount = vk::SampleCountFlagBits::e1;
 		} multisample;
 		struct ColorBlend {
@@ -174,7 +175,9 @@ namespace sa {
 		vk::Format getFormat(const std::vector<vk::Format>& candidates, vk::FormatFeatureFlags features, vk::ImageTiling tilling);
 		vk::Format getFormat(FormatPrecisionFlags precision, FormatDimensionFlags dimensions, FormatTypeFlags type, vk::FormatFeatureFlags features, vk::ImageTiling tilling);
 
-		
+		vk::SampleCountFlags getSupportedColorSampleCounts() const;
+		vk::SampleCountFlags getSupportedDepthSampleCounts() const;
+
 
 	};
 

@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Resources/Texture.hpp"
+#include "Resources\Swapchain.hpp"
 
 #include "VulkanCore.hpp"
 #include "Renderer.hpp"
@@ -28,25 +29,32 @@ namespace sa {
 		return m_type;
 	}
 
-	Texture2D::Texture2D(VulkanCore* pCore, TextureTypeFlags type, Extent extent)
+	Texture2D::Texture2D(VulkanCore* pCore, TextureTypeFlags type, Extent extent, uint32_t sampleCount)
 		: Texture(pCore)
 	{
 		m_type = type;
-		create(type, extent);
+		create(type, extent, sampleCount);
 	}
 
-	Texture2D::Texture2D(VulkanCore* pCore, TextureTypeFlags type, Extent extent, FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types)
+	Texture2D::Texture2D(VulkanCore* pCore, TextureTypeFlags type, Extent extent, FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, uint32_t sampleCount)
 		: Texture(pCore)
 	{
 		m_type = type;
-		create(type, extent, precisions, dimensions, types);
+		create(type, extent, precisions, dimensions, types, sampleCount);
+	}
+
+	Texture2D::Texture2D(VulkanCore* pCore, TextureTypeFlags type, Extent extent, Swapchain* pSwapchain, uint32_t sampleCount) 
+		: Texture(pCore)
+	{
+		m_type = type;
+		create(type, extent, pSwapchain, sampleCount);
 	}
 
 	Texture2D::Texture2D(VulkanCore* pCore, const Image& image)
 		: Texture(pCore)
 	{
 		m_type = TextureTypeFlagBits::SAMPLED | TextureTypeFlagBits::TRANSFER_DST;
-		create(m_type, image.getExtent());
+		create(m_type, image.getExtent(), 1);
 		
 		m_pStagingBuffer = m_pCore->createBuffer(
 			vk::BufferUsageFlagBits::eTransferSrc,
@@ -63,7 +71,7 @@ namespace sa {
 		Renderer::get().queueTransfer(transfer);
 	}
 	
-	void Texture2D::create(TextureTypeFlags type, Extent extent) {
+	void Texture2D::create(TextureTypeFlags type, Extent extent, uint32_t sampleCount) {
 
 		vk::ImageUsageFlags usage = (vk::ImageUsageFlags)type;
 		vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
@@ -80,7 +88,7 @@ namespace sa {
 			extent,
 			format,
 			usage,
-			vk::SampleCountFlagBits::e1,
+			(vk::SampleCountFlagBits)sampleCount,
 			1,
 			1
 		);
@@ -97,7 +105,7 @@ namespace sa {
 
 	}
 
-	void Texture2D::create(TextureTypeFlags type, Extent extent, FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types) {
+	void Texture2D::create(TextureTypeFlags type, Extent extent, FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, uint32_t sampleCount) {
 		vk::ImageUsageFlags usage = (vk::ImageUsageFlags)type;
 		vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
 
@@ -137,7 +145,7 @@ namespace sa {
 			extent,
 			format,
 			usage,
-			vk::SampleCountFlagBits::e1,
+			(vk::SampleCountFlagBits)sampleCount,
 			1,
 			1
 		);
@@ -147,6 +155,33 @@ namespace sa {
 			m_pImage->image,
 			format,
 			aspect,
+			0,
+			0
+		));
+
+	}
+
+	void Texture2D::create(TextureTypeFlags type, Extent extent, Swapchain* pSwapchain, uint32_t sampleCount) {
+
+		vk::ImageUsageFlags usage = (vk::ImageUsageFlags)type;
+		
+		DEBUG_LOG_INFO("Created 2D texture\nFormat: ", vk::to_string(pSwapchain->getFormat()));
+
+		m_pImage = m_pCore->createImage2D(
+			extent,
+			pSwapchain->getFormat(),
+			usage,
+			(vk::SampleCountFlagBits)sampleCount,
+			1,
+			1
+		);
+
+
+		m_view = ResourceManager::get().insert<vk::ImageView>(m_pCore->createImageView(
+			vk::ImageViewType::e2D,
+			m_pImage->image,
+			pSwapchain->getFormat(),
+			vk::ImageAspectFlagBits::eColor,
 			0,
 			0
 		));

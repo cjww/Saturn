@@ -388,7 +388,8 @@ namespace sa {
 
 		vk::PipelineMultisampleStateCreateInfo multisample{
 			.rasterizationSamples = config.multisample.sampleCount,
-			.sampleShadingEnable = false,
+			.sampleShadingEnable = config.multisample.sampleShadingEnable,
+			.minSampleShading = config.multisample.minSampleShading,
 		};
 
 		std::vector<vk::PipelineColorBlendAttachmentState> colorAttachments(config.colorBlends.size());
@@ -654,6 +655,16 @@ namespace sa {
 		}
 
 		return getFormat(candidates, features, tilling);
+	}
+
+	vk::SampleCountFlags VulkanCore::getSupportedColorSampleCounts() const {
+		vk::PhysicalDeviceProperties properties = m_physicalDevice.getProperties();
+		return properties.limits.framebufferColorSampleCounts;
+	}
+
+	vk::SampleCountFlags VulkanCore::getSupportedDepthSampleCounts() const {
+		vk::PhysicalDeviceProperties properties = m_physicalDevice.getProperties();
+		return properties.limits.framebufferDepthSampleCounts;
 	}
 
 }
