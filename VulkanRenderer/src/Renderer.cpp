@@ -63,10 +63,13 @@ namespace sa {
 	}
 
 	ResourceID Renderer::createSwapchain(GLFWwindow* pWindow) {
-		ResourceID id = ResourceManager::get().insert<Swapchain>();
-		Swapchain* pSwapchain = ResourceManager::get().get<Swapchain>(id);
-		pSwapchain->create(m_pCore.get(), pWindow);
-		return id;
+		return ResourceManager::get().insert<Swapchain>(m_pCore.get(), pWindow);
+	}
+
+	ResourceID Renderer::recreateSwapchain(GLFWwindow* pWindow, ResourceID oldSwapchain) {
+		m_pCore->getDevice().waitIdle();
+		destroySwapchain(oldSwapchain);
+		return createSwapchain(pWindow);
 	}
 
 	void Renderer::destroySwapchain(ResourceID id) {

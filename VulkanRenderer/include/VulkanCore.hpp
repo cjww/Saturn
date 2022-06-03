@@ -114,7 +114,7 @@ namespace sa {
 		void cleanup();
 
 		vk::SurfaceKHR createSurface(GLFWwindow* pWindow);
-		vk::SwapchainKHR createSwapchain(vk::SurfaceKHR surface, vk::Format* outFormat);
+		vk::SwapchainKHR createSwapchain(vk::SurfaceKHR surface, vk::Format* outFormat, vk::Extent2D* outExtent);
 		vk::ImageView createImageView(vk::ImageViewType type, vk::Image image, vk::Format format, vk::ImageAspectFlags aspectMask, uint32_t baseMipLevel, uint32_t baseArrayLevel);
 
 		vk::Framebuffer createFrameBuffer(vk::RenderPass renderPass, std::vector<vk::ImageView> attachments, uint32_t width, uint32_t height, uint32_t layers);

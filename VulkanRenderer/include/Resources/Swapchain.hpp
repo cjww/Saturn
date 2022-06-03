@@ -27,13 +27,9 @@ namespace sa {
 		uint32_t m_frameIndex;
 		uint32_t m_imageIndex;
 
-		std::function<void(Extent newExtent)> m_resizeCallback;
-
 		vk::Device m_device;
 		vk::PhysicalDevice m_physicalDevice;
 		vk::Instance m_instance;
-
-		vk::Queue m_graphicsQueue;
 
 		Extent m_extent;
 		vk::Format m_format;
@@ -43,13 +39,11 @@ namespace sa {
 
 	public:
 		Swapchain() = default;
+		Swapchain(VulkanCore* pCore, GLFWwindow* pWindow);
 
 		void create(VulkanCore* pCore, GLFWwindow* pWindow);
-
+		void recreate(GLFWwindow* pWindow);
 		void destroy();
-
-		void setResizeCallback(std::function<void(Extent)> function);
-
 
 		CommandBufferSet* beginFrame();
 		void endFrame();

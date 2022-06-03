@@ -10,12 +10,20 @@ namespace sa {
 		if (thisWindow->m_isIconified) {
 			return;
 		}
-		thisWindow->m_wasResized = true;
+
+		Extent extent = { width, height };
+		if (thisWindow->m_windowedExtent.width != extent.width || thisWindow->m_windowedExtent.height != height) {
+			thisWindow->m_wasResized = true;
+			thisWindow->m_windowedExtent = extent;
+			DEBUG_LOG_INFO("Window: Window resize ", width, height);
+		}
 	}
 
 	void Window::onIconify(GLFWwindow* window, int iconified) {
 		Window* thisWindow = (Window*)glfwGetWindowUserPointer(window);
 		thisWindow->m_isIconified = iconified;
+		DEBUG_LOG_WARNING("Window: Window iconified");
+
 	}
 
 	void Window::onKey(GLFWwindow* window, int key, int scancode, int action, int mods) {
@@ -182,7 +190,6 @@ namespace sa {
 		int xpos, ypos, width, height;
 		glfwGetMonitorWorkarea(monitor, &xpos, &ypos, &width, &height);
 		create(width, height, "", monitor);
-		m_windowedExtent = { 1000, 600 };
 	}
 
 	Window::~Window() {

@@ -180,7 +180,7 @@ namespace sa {
 			(vk::DependencyFlags)0,
 			nullptr,
 			nullptr,
-			imageBarrier);
+			nullptr);
 	}
 
 	void RenderContext::transitionTexture(const Texture& texture, Transition src, Transition dst) {
@@ -191,26 +191,59 @@ namespace sa {
 		vk::PipelineStageFlags dstStage;
 		vk::ImageLayout newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
-		if (texture.getTypeFlags() & TextureTypeFlagBits::STORAGE) {
-			newLayout = vk::ImageLayout::eGeneral;
-		}
+		
 		//TODO
-		switch (src)
-		{
+		switch (src) {
 		case sa::Transition::NONE:
 			srcAccess = (vk::AccessFlags)0;
+			srcStage = vk::PipelineStageFlagBits::eTopOfPipe;
 			break;
 		case sa::Transition::RENDER_PROGRAM_INPUT:
 			srcAccess = vk::AccessFlagBits::eInputAttachmentRead;
+			srcStage = vk::PipelineStageFlagBits::eFragmentShader;
 			break;
 		case sa::Transition::RENDER_PROGRAM_OUTPUT:
 			srcAccess = vk::AccessFlagBits::eColorAttachmentWrite;
+			srcStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
 			break;
 		case sa::Transition::COMPUTE_SHADER_READ:
 			srcAccess = vk::AccessFlagBits::eShaderRead;
+			srcStage = vk::PipelineStageFlagBits::eComputeShader;
 			break;
 		case sa::Transition::COMPUTE_SHADER_WRITE:
 			srcAccess = vk::AccessFlagBits::eShaderWrite;
+			srcStage = vk::PipelineStageFlagBits::eComputeShader;
+			break;
+		default:
+			break;
+		}
+
+		switch (dst) {
+		case sa::Transition::NONE:
+			dstAccess = (vk::AccessFlags)0;
+			dstStage = vk::PipelineStageFlagBits::eTopOfPipe;
+			break;
+		case sa::Transition::RENDER_PROGRAM_INPUT:
+			dstAccess = vk::AccessFlagBits::eInputAttachmentRead;
+			dstStage = vk::PipelineStageFlagBits::eFragmentShader;
+			break;
+		case sa::Transition::RENDER_PROGRAM_OUTPUT:
+			dstAccess = vk::AccessFlagBits::eColorAttachmentWrite;
+			dstStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+			break;
+		case sa::Transition::COMPUTE_SHADER_READ:
+			dstAccess = vk::AccessFlagBits::eShaderRead;
+			dstStage = vk::PipelineStageFlagBits::eComputeShader;
+			if (texture.getTypeFlags() & TextureTypeFlagBits::STORAGE) {
+				newLayout = vk::ImageLayout::eGeneral;
+			}
+			break;
+		case sa::Transition::COMPUTE_SHADER_WRITE:
+			dstAccess = vk::AccessFlagBits::eShaderWrite;
+			dstStage = vk::PipelineStageFlagBits::eComputeShader;
+			if (texture.getTypeFlags() & TextureTypeFlagBits::STORAGE) {
+				newLayout = vk::ImageLayout::eGeneral;
+			}
 			break;
 		default:
 			break;
@@ -228,6 +261,7 @@ namespace sa {
 			srcStage,
 			dstStage
 		);
+		pImage->layout = newLayout;
 	}
 
 	Context::Context(VulkanCore* pCore, ResourceID commandBufferSetID) 

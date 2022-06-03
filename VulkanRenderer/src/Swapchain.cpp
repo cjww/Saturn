@@ -26,6 +26,10 @@ namespace sa {
 
 	}
 
+	Swapchain::Swapchain(VulkanCore* pCore, GLFWwindow* pWindow) {
+		create(pCore, pWindow);
+	}
+
 	void Swapchain::create(VulkanCore* pCore, GLFWwindow* pWindow) {
 		m_device = pCore->getDevice();
 		m_instance = pCore->getInstance();
@@ -34,10 +38,10 @@ namespace sa {
 		m_frameIndex = 0;
 
 		m_surface = pCore->createSurface(pWindow);
-		m_swapchain = pCore->createSwapchain(m_surface, &m_format);
+		vk::Extent2D extent2D;
+		m_swapchain = pCore->createSwapchain(m_surface, &m_format, &extent2D);
 
-		vk::SurfaceCapabilitiesKHR surfaceCapabilties = pCore->getPhysicalDevice().getSurfaceCapabilitiesKHR(m_surface);
-		m_extent = { surfaceCapabilties.currentExtent.width, surfaceCapabilties.currentExtent.height };
+		m_extent = { extent2D.width, extent2D.height };
 
 		m_images = pCore->getDevice().getSwapchainImagesKHR(m_swapchain);
 
@@ -61,6 +65,10 @@ namespace sa {
 
 	}
 
+	void Swapchain::recreate(GLFWwindow* pWindow) {
+
+	}
+
 	void Swapchain::destroy() {
 
 		for (auto fence : m_inFlightFences) {
@@ -81,12 +89,8 @@ namespace sa {
 
 		m_device.destroySwapchainKHR(m_swapchain);
 		m_instance.destroySurfaceKHR(m_surface);
-
 	}
 
-	void Swapchain::setResizeCallback(std::function<void(Extent)> function) {
-		m_resizeCallback = function;
-	}
 
 	CommandBufferSet* Swapchain::beginFrame() {
 		if (!m_swapchain) {
@@ -95,22 +99,10 @@ namespace sa {
 		checkError(
 			m_device.waitForFences(m_inFlightFences[m_frameIndex], VK_FALSE, UINT64_MAX),
 			"Failed to wait for in flight fence");
-
+		
 		vk::ResultValue<uint32_t> res = m_device.acquireNextImageKHR(m_swapchain, UINT64_MAX, m_imageAvailableSemaphore[m_frameIndex]);
-		if (res.result == vk::Result::eErrorOutOfDateKHR || res.result == vk::Result::eSuboptimalKHR) {
-			if (m_resizeCallback) {
-				vk::SurfaceCapabilitiesKHR capabilities = m_physicalDevice.getSurfaceCapabilitiesKHR(m_surface);
-				Extent newExtent = { capabilities.currentExtent.width, capabilities.currentExtent.height };
-				m_resizeCallback(newExtent);
-				m_extent = newExtent;
-			}
-			return nullptr;
-		}
-		checkError(
-			res.result,
-			"Failed to acquire image",
-			true
-		);
+		checkError(res.result, "Failed to aquire next swapchain image", false);
+
 		m_imageIndex = res.value;
 		if (m_imageFences[m_imageIndex]) {
 			checkError(

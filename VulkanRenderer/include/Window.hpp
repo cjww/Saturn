@@ -39,7 +39,9 @@ namespace sa {
 
 	typedef std::function<void(Key, InputAction, ModKeyFlags, int)> KeyCallback;
 	typedef std::function<void(MouseButton, InputAction, ModKeyFlags)> MouseButtonCallback;
+
 	typedef std::function<void(Joystick, ConnectionState)> JoystickConnectedCallback;
+
 
 	class Window {
 	private:
@@ -57,7 +59,7 @@ namespace sa {
 
 		KeyCallback m_onKeyFunction;
 		MouseButtonCallback m_onMouseButtonFunction;
-
+		
 	protected:
 		static void onResize(GLFWwindow* window, int width, int height);
 		static void onIconify(GLFWwindow* window, int iconified);
@@ -68,7 +70,8 @@ namespace sa {
 
 		virtual void create(uint32_t width, uint32_t height, const char* title, GLFWmonitor* monitor);
 		virtual void shutDown();
-	
+
+		void setWasResized(bool value);
 	public:
 		static void SetJoystickConnectedCallback(JoystickConnectedCallback func);
 		static bool IsGamepad(Joystick joystick);
@@ -121,8 +124,7 @@ namespace sa {
 
 		void setKeyCallback(KeyCallback func);
 		void setMouseButtonCallback(MouseButtonCallback func);
-
-		void setWasResized(bool value);
+		
 		bool wasResized() const;
 		bool isIconified() const;
 

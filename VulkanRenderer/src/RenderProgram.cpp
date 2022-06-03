@@ -34,6 +34,8 @@ namespace sa {
 	}
 
 	vk::AttachmentDescription RenderProgram::getAttachment(uint32_t index) const {
+		if (index >= m_attachments.size())
+			throw std::runtime_error("Invalid attachment index: " + std::to_string(index));
 		return m_attachments.at(index);
 	}
 

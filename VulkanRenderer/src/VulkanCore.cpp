@@ -278,7 +278,7 @@ namespace sa {
 		return surface;
 	}
 
-	vk::SwapchainKHR VulkanCore::createSwapchain(vk::SurfaceKHR surface, vk::Format* outFormat) {
+	vk::SwapchainKHR VulkanCore::createSwapchain(vk::SurfaceKHR surface, vk::Format* outFormat, vk::Extent2D* outExtent) {
 		if (!m_physicalDevice.getSurfaceSupportKHR(m_queueInfo.family, surface)) {
 			throw std::runtime_error("Surface unsupported by this Device");
 		}
@@ -330,6 +330,7 @@ namespace sa {
 		};
 
 		if(outFormat) *outFormat = finalFormat.format;
+		if (outExtent) *outExtent = surfaceCapabilities.currentExtent;
 
 		return m_device.createSwapchainKHR(info);
 	}

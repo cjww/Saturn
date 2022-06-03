@@ -83,7 +83,7 @@ namespace sa {
 			format = m_pCore->getDefaultDepthFormat();
 		}		
 
-		DEBUG_LOG_INFO("Created 2D texture\nFormat: ", vk::to_string(format));
+		DEBUG_LOG_INFO("Created 2D texture\nExtent: { w:", extent.width, " h:", extent.height, "}\nFormat: ", vk::to_string(format), "\nSampleCount: ", sampleCount);
 		m_pImage = m_pCore->createImage2D(
 			extent,
 			format,
@@ -140,7 +140,7 @@ namespace sa {
 			}
 		}
 
-		DEBUG_LOG_INFO("Created 2D texture\nFormat: ", vk::to_string(format));
+		DEBUG_LOG_INFO("Created 2D texture\nExtent: { w:", extent.width, " h:", extent.height, "}\nFormat: ", vk::to_string(format), "\nSampleCount: ", sampleCount);
 		m_pImage = m_pCore->createImage2D(
 			extent,
 			format,

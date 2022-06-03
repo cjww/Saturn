@@ -2,10 +2,12 @@
 #include "Window.hpp"
 #include "Renderer.hpp"
 namespace sa {
+	typedef std::function<void(Extent)> RenderWindowResizeCallback;
+	
 	class RenderWindow : public Window {
 	private:
 		ResourceID m_swapchain;
-
+		RenderWindowResizeCallback m_resizeCallback;
 	protected:
 
 	public:
@@ -19,6 +21,8 @@ namespace sa {
 
 		ResourceID getSwapchainID() const;
 		uint32_t getSwapchainImageCount() const;
+
+		void setResizeCallback(RenderWindowResizeCallback func);
 	};
 }
 

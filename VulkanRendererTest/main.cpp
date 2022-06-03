@@ -323,7 +323,7 @@ void deffered(sa::RenderWindow& window) {
 		sa::FormatDimensionFlagBits::e4,
 		sa::FormatTypeFlagBits::SFLOAT);
 
-	sa::Texture2D combinedImage = renderer.createTexture2D(
+	sa::Texture2D shadedTexture = renderer.createTexture2D(
 		sa::TextureTypeFlagBits::COLOR_ATTACHMENT |
 		sa::TextureTypeFlagBits::SAMPLED,
 		window.getCurrentExtent());
@@ -338,7 +338,7 @@ void deffered(sa::RenderWindow& window) {
 		.addColorAttachment(false, colorTexture) // 0 color
 		.addDepthAttachment() // 1 depth
 		.addColorAttachment(false, positionsTexture) // 2 positions
-		.addColorAttachment(true, combinedImage) // 3 combine
+		.addColorAttachment(true, shadedTexture) // 3 combine
 		.addColorAttachment(true, brightnessTexture) // 4 brightness
 		.beginSubpass()
 		.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
@@ -348,7 +348,7 @@ void deffered(sa::RenderWindow& window) {
 		.beginSubpass()
 		.addAttachmentReference(3, sa::SubpassAttachmentUsage::ColorTarget)
 		.addAttachmentReference(4, sa::SubpassAttachmentUsage::ColorTarget)
-		.addAttachmentReference(5, sa::SubpassAttachmentUsage::Input)
+		.addAttachmentReference(0, sa::SubpassAttachmentUsage::Input)
 		.addAttachmentReference(2, sa::SubpassAttachmentUsage::Input)
 		.endSubpass()
 		.end();
@@ -356,7 +356,7 @@ void deffered(sa::RenderWindow& window) {
 
 	auto gFramebuffer = renderer.createFramebuffer(
 		defferedProgram,
-		{ colorTexture, depthTexture, positionsTexture, combinedImage, brightnessTexture });
+		{ colorTexture, depthTexture, positionsTexture, shadedTexture, brightnessTexture });
 
 	auto defferedPipeline = renderer.createGraphicsPipeline(
 		defferedProgram,
@@ -375,7 +375,7 @@ void deffered(sa::RenderWindow& window) {
 	ResourceID defferedDescriptorSet = renderer.allocateDescriptorSet(defferedPipeline, 0);
 
 
-	sa::Buffer uniformBuffer = renderer.createBuffer(
+	sa::Buffer sceneUniformBuffer = renderer.createBuffer(
 		sa::BufferType::UNIFORM);
 
 	CameraController camera(window);
@@ -384,12 +384,12 @@ void deffered(sa::RenderWindow& window) {
 	ubo.view = glm::lookAt(glm::vec3{ 0, 0, 1 }, { 0, 0, 0 }, { 0, 1, 0 });
 	ubo.projection = camera.getProjection(90);
 
-	uniformBuffer.write(ubo);
-	renderer.updateDescriptorSet(defferedDescriptorSet, 0, uniformBuffer);
+	sceneUniformBuffer.write(ubo);
+	renderer.updateDescriptorSet(defferedDescriptorSet, 0, sceneUniformBuffer);
 
 
-	sa::Image image("Box.png");
-	sa::Texture2D texture = renderer.createTexture2D(image);
+	sa::Image boxImage("Box.png");
+	sa::Texture2D texture = renderer.createTexture2D(boxImage);
 	ResourceID sampler = renderer.createSampler(sa::FilterMode::LINEAR);
 	renderer.updateDescriptorSet(defferedDescriptorSet, 2, texture, sampler);
 
@@ -420,7 +420,7 @@ void deffered(sa::RenderWindow& window) {
 		"MainShader.frag.spv");
 
 	auto mainDescriptorSet = renderer.allocateDescriptorSet(mainPipeline, 0);
-	renderer.updateDescriptorSet(mainDescriptorSet, 0, combinedImage, sampler);
+	renderer.updateDescriptorSet(mainDescriptorSet, 0, shadedTexture, sampler);
 
 	sa::Buffer vertexBuffer = renderer.createBuffer(
 		sa::BufferType::VERTEX, quad.size() * sizeof(VertexColorUV), quad.data());
@@ -461,11 +461,11 @@ void deffered(sa::RenderWindow& window) {
 	ResourceID blurDescriptorSet = renderer.allocateDescriptorSet(blurPipeline, 0);
 
 	sa::Extent extent = {
-		(uint32_t)(window.getCurrentExtent().width / 6.f),
-		(uint32_t)(window.getCurrentExtent().height / 6.f)
+		(uint32_t)(window.getCurrentExtent().width / 4.f),
+		(uint32_t)(window.getCurrentExtent().height / 4.f)
 	};
 	//sa::Extent extent = window.getCurrentExtent();
-	sa::Texture2D outputImage = renderer.createTexture2D(
+	sa::Texture2D blurredTexture = renderer.createTexture2D(
 		sa::TextureTypeFlagBits::STORAGE | sa::TextureTypeFlagBits::SAMPLED,
 		extent,
 		sa::FormatPrecisionFlagBits::e32Bit, sa::FormatDimensionFlagBits::e4, sa::FormatTypeFlagBits::SFLOAT);
@@ -478,13 +478,13 @@ void deffered(sa::RenderWindow& window) {
 
 	renderer.updateDescriptorSet(blurDescriptorSet, 0, blurConfigBuffer);
 	renderer.updateDescriptorSet(blurDescriptorSet, 1, brightnessTexture, sampler);
-	renderer.updateDescriptorSet(blurDescriptorSet, 2, outputImage);
+	renderer.updateDescriptorSet(blurDescriptorSet, 2, blurredTexture);
 
-	renderer.updateDescriptorSet(mainDescriptorSet, 1, outputImage, sampler);
+	renderer.updateDescriptorSet(mainDescriptorSet, 1, blurredTexture, sampler);
 
 	sa::Context tmp = renderer.createComputeContext();
 	tmp.begin();
-	tmp.barrier(outputImage);
+	tmp.transitionTexture(blurredTexture, sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_WRITE);
 	tmp.end();
 	tmp.submit();
 	tmp.destroy();
@@ -507,8 +507,10 @@ void deffered(sa::RenderWindow& window) {
 		sa::RenderContext context = window.beginFrame();
 		if (context) {
 
-			uniformBuffer.write(ubo);
-			context.updateDescriptorSet(defferedDescriptorSet, 0, uniformBuffer);
+			
+
+			sceneUniformBuffer.write(ubo);
+			context.updateDescriptorSet(defferedDescriptorSet, 0, sceneUniformBuffer);
 			context.updateDescriptorSet(defferedDescriptorSet, 1, outputBuffer);
 
 			context.bindPipeline(computePipeline);
@@ -537,10 +539,11 @@ void deffered(sa::RenderWindow& window) {
 
 			context.drawIndexed(6, 1);
 			context.endRenderProgram(defferedProgram);
-			/*
 
-			context.barrier(outputImage);
+			/*
+			context.barrier(brightnessTexture);
 			*/
+
 
 			context.bindPipeline(blurPipeline);
 			context.bindDescriptorSet(blurDescriptorSet, blurPipeline);
@@ -566,6 +569,10 @@ void deffered(sa::RenderWindow& window) {
 
 void forward(sa::RenderWindow& window) {
 	sa::Renderer& renderer = sa::Renderer::get();
+
+	window.setResizeCallback([](sa::Extent newExtent) {
+		DEBUG_LOG_INFO("CALLBACK: new Extent: ", newExtent.width, newExtent.height);
+	});
 
 	// FIRST PASS
 	sa::Texture2D colorTexture = renderer.createTexture2D(
@@ -692,7 +699,8 @@ int main() {
 #endif
 
 
-		const int WIDTH = 1000, HEIGHT = 600;
+	try {
+		const int WIDTH = 1400, HEIGHT = 800;
 		sa::RenderWindow window(WIDTH, HEIGHT, "Test Window");
 		
 		ResourceID crossHairCursor = sa::Window::CreateCursor(sa::StandardCursor::CROSSHAIR);
@@ -707,9 +715,6 @@ int main() {
 			}
 		});
 
-		
-
-	try {
 		
 		//deffered(window);
 		forward(window);

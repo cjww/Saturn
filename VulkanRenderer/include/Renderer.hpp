@@ -66,6 +66,7 @@ namespace sa {
 		virtual ~Renderer();
 
 		ResourceID createSwapchain(GLFWwindow* pWindow);
+		ResourceID recreateSwapchain(GLFWwindow* pWindow, ResourceID oldSwapchain);
 		void destroySwapchain(ResourceID swapchain);
 
 		uint32_t getSwapchainImageCount(ResourceID swapchain);
