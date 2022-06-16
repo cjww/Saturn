@@ -70,10 +70,15 @@ namespace sa {
 
 	}
 
-	void DescriptorSet::update(uint32_t binding, vk::ImageLayout imageLayout, vk::ImageView imageView, vk::Sampler* pSampler, uint32_t indexToUpdate) {
+	void DescriptorSet::update(uint32_t binding, vk::ImageView imageView, vk::Sampler* pSampler, uint32_t indexToUpdate) {
 		if (m_writes.size() <= binding) {
 			DEBUG_LOG_ERROR("Binding", binding, "out of bounds!");
 			throw std::runtime_error("Binding " + std::to_string(binding) + " out of bounds!");
+		}
+
+		vk::ImageLayout imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		if (getDescriptorType(binding) == vk::DescriptorType::eStorageImage) {
+			imageLayout = vk::ImageLayout::eGeneral;
 		}
 
 		vk::DescriptorImageInfo imageInfo{
@@ -94,6 +99,10 @@ namespace sa {
 
 	uint32_t DescriptorSet::getSetIndex() const {
 		return m_setIndex;
+	}
+
+	vk::DescriptorType DescriptorSet::getDescriptorType(int binding) const {
+		return m_writes[binding].descriptorType;
 	}
 
 }

@@ -45,6 +45,7 @@ namespace sa {
 		void recreate(GLFWwindow* pWindow);
 		void destroy();
 
+
 		CommandBufferSet* beginFrame();
 		void endFrame();
 
@@ -54,5 +55,6 @@ namespace sa {
 
 		uint32_t getImageCount() const;
 
+		const CommandBufferSet* getCommandBufferSet() const;
 	};
 }

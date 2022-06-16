@@ -50,11 +50,12 @@ namespace sa {
 		});
 	}
 
-	void CommandBufferSet::begin(vk::CommandBufferUsageFlags usageFlags) {
+	void CommandBufferSet::begin(vk::CommandBufferUsageFlags usageFlags, vk::CommandBufferInheritanceInfo* inheritanceinfo) {
 		vk::CommandBuffer& buffer = m_buffers.at(m_currentBufferIndex);
+
 		buffer.begin(vk::CommandBufferBeginInfo{
 			.flags = usageFlags,
-			.pInheritanceInfo = nullptr,
+			.pInheritanceInfo = inheritanceinfo,
 		});
 	}
 	
@@ -97,10 +98,11 @@ namespace sa {
 
 	}
 
-	vk::CommandBuffer CommandBufferSet::getBuffer() const {
-		if (m_currentBufferIndex == -1)
+	vk::CommandBuffer CommandBufferSet::getBuffer(uint32_t index) const {
+		if (index == -1) index = m_currentBufferIndex;
+		if (index == -1)
 			throw std::runtime_error("Buffer index was -1 : Forgot to call begin");
-		return m_buffers[m_currentBufferIndex];
+		return m_buffers[index];
 	}
 
 	uint32_t CommandBufferSet::getBufferIndex() const {

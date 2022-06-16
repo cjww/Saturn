@@ -41,8 +41,7 @@ namespace sa {
 
 	class Renderer {
 	protected:
-		//VulkanCore* m_pCore;
-
+		
 		std::unique_ptr<VulkanCore> m_pCore;
 		std::queue<DataTransfer> m_transferQueue;
 
@@ -104,7 +103,8 @@ namespace sa {
 		RenderContext beginFrame(ResourceID swapchain);
 		void endFrame(ResourceID swapchain);
 
-		Context createComputeContext();
+		DirectContext createDirectContext();
+		SubContext createSubContext(ResourceID framebuffer, ResourceID renderProgram, uint32_t subpassIndex);
 
 		/*
 		void initImGUI(GLFWwindow* window, uint32_t renderpass, uint32_t subpass);
@@ -113,27 +113,6 @@ namespace sa {
 		void cleanupImGUI();
 
 		ImTextureID getImTextureID(Texture* texture, const SamplerPtr& sampler);
-
-		uint32_t createSwapchain(GLFWwindow* window);
-		void recreateSwapchain(uint32_t swapchain);
-
-		void setOnSwapchainResizeCallback(uint32_t swapchain, ResizeCallbackFunc function);
-		void invokeSwapchainResize(uint32_t swapchain);
-
-		uint32_t getNextSwapchainImage(uint32_t swapchain);
-		// create renderpasses, framebuffers and pipelines
-
-		uint32_t createRenderPass(const std::vector<VkAttachmentDescription>& attachments,
-			const std::vector<VkSubpassDescription>& subpasses,
-			const std::vector<VkSubpassDependency>& dependencies);
-
-		VkAttachmentDescription getSwapchainAttachment(uint32_t swapchain) const;
-
-		uint32_t createSwapchainFramebuffer(uint32_t swapchain, uint32_t renderPass, const std::vector<Texture*>& additionalAttachments);
-		uint32_t createFramebuffer(uint32_t renderPass, VkExtent2D extent, const std::vector<Texture*>& attachments);
-
-		uint32_t createPipeline(const ShaderSetPtr& shaderSet, VkExtent2D extent = { 0, 0 }, uint32_t renderPass = 0, uint32_t subpassIndex = 0, vbl::PipelineConfig config = {});
-		uint32_t createPipeline(uint32_t swapchain, const ShaderSetPtr& shaderSet, uint32_t renderPass = 0, uint32_t subpassIndex = 0, vbl::PipelineConfig config = {});
 
 		//Resource creation
 		Texture* createDepthTexture(VkExtent2D extent);
@@ -164,47 +143,15 @@ namespace sa {
 		void destroyBuffer(Buffer* buffer);
 		void destroyTexture(Texture* texture);
 
-		ShaderPtr createShader(const char* path, VkShaderStageFlagBits stage);
-		ShaderSetPtr createShaderSet(const ShaderPtr& vertexShader, const ShaderPtr& fragmentShader);
-		ShaderSetPtr createShaderSet(const ShaderPtr& vertexShader, const ShaderPtr& geometryShader, const ShaderPtr& fragmentShader);
-		ShaderSetPtr createShaderSet(const ShaderPtr& computeShader);
-
-
-		CommandBufferPtr createCommandBuffer(bool isCompute = false);
-		void recordCommandBuffer(const CommandBufferPtr& commandBuffer, uint32_t framebuffer, uint32_t renderPass, uint32_t subpassIndex, std::function<void(uint32_t frameIndex)> drawCalls, bool isOneTimeRecord = false);
-		void recordCommandBuffer(const CommandBufferPtr& commandBuffer, std::function<void(uint32_t frameIndex)> drawCalls, bool isOneTimeRecord = false);
-		void executeCommandBuffer(const CommandBufferPtr& commandBuffer, bool isCompute = false);
-		void executeCommandBuffers(const std::vector<CommandBufferPtr>& commandBuffers, bool isCompute = false);
-
-		std::shared_ptr<VkFence> submitToComputeQueue(const CommandBufferPtr& commandBuffer);
-		void waitForFence(std::shared_ptr<VkFence> fence, uint64_t timeout = UINT64_MAX);
 
 		void waitDeviceIdle() const;
 
 		void updateDescriptorSet(const DescriptorSetPtr& descriptorSet, uint32_t binding, const Buffer* buffer, const Texture* image, const SamplerPtr& sampler, bool isOneTimeUpdate);
 
 		// Draw commands
-		void beginRenderPass(uint32_t renderPass, uint32_t framebuffer, VkSubpassContents contents, glm::vec3 clearColor = glm::vec3(0.0f));
-		void nextSubpass(VkSubpassContents contents);
-		void endRenderPass();
-
-		void transferTextureLayout(Texture* texture, VkImageLayout newLayout, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
-
-		void bindPipeline(uint32_t pipeline, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
-		void bindVertexBuffer(const Buffer* vertexBuffer, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
-		void bindVertexBuffers(const std::vector<Buffer*>& vertexBuffers, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
-
-		void bindIndexBuffer(const Buffer* indexbuffer, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
-
+		
 		void bindViewports(const std::vector<VkViewport>& viewports, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
 		void bindViewport(const VkViewport& viewport, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
-
-		void bindDescriptorSet(const DescriptorSetPtr& descriptorSet, uint32_t pipeline, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
-		void pushConstants(uint32_t pipeline, VkShaderStageFlags shaderStages, uint32_t offset, uint32_t size, void* data, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
-
-		void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex = 0U, uint32_t firstInstance = 0U, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
-		void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex = 0U, uint32_t firstInstance = 0U, uint32_t vertexOffset = 0U, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
-		void dispatchCompute(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
 		*/
 
 	};

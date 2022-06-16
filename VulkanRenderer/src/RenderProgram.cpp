@@ -94,7 +94,7 @@ namespace sa {
 		m_pCore->getDevice().destroyRenderPass(m_renderPass);
 	}
 
-	void RenderProgram::begin(CommandBufferSet* cmd, FramebufferSet* framebuffer, Rect renderArea) {
+	void RenderProgram::begin(CommandBufferSet* cmd, const FramebufferSet* framebuffer, Rect renderArea) {
 		
 		if (renderArea.extent.width == 0 || renderArea.extent.height == 0) {
 			renderArea.extent = framebuffer->getExtent();

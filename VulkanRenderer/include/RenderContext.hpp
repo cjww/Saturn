@@ -32,7 +32,18 @@ namespace sa {
 		COMPUTE = 32,
 	};
 
+	typedef uint32_t ContextUsageFlags;
 
+	enum ContextUsageFlagBits : ContextUsageFlags {
+		ONE_TIME_SUBMIT = 1,
+		RENDER_PROGRAM_CONTINUE = 2,
+		SIMULTANEOUS_USE = 4
+	};
+
+	enum class SubpassContents {
+		DIRECT,
+		SUB_CONTEXT
+	};
 
 	enum class Transition {
 		NONE,
@@ -41,6 +52,8 @@ namespace sa {
 		COMPUTE_SHADER_READ,
 		COMPUTE_SHADER_WRITE,
 	};
+
+	class SubContext;
 
 	class RenderContext {
 	protected:
@@ -62,8 +75,10 @@ namespace sa {
 		RenderContext(VulkanCore* pCore, CommandBufferSet* pCommandBufferSet);
 
 		void beginRenderProgram(ResourceID renderProgram, ResourceID framebuffer, Rect renderArea = { {0, 0}, {0, 0} });
-		void nextSubpass();
+		void nextSubpass(SubpassContents contentType);
 		void endRenderProgram(ResourceID renderProgram);
+
+		void executeSubContext(const sa::SubContext& context);
 
 		void bindPipeline(ResourceID pipeline);
 		void bindVertexBuffers(uint32_t firstBinding, const std::vector<Buffer>& buffers);
@@ -96,23 +111,41 @@ namespace sa {
 		}
 	};
 
-	class Context : public RenderContext {
-	private:
-		std::shared_ptr<vk::Fence> m_pFence;
+	class SubContext : public RenderContext {
+	protected:
 		ResourceID m_commandBufferSetID;
-		uint32_t m_bufferIndex;
+		
+		FramebufferSet* m_pFramebufferSet;
+		RenderProgram* m_pRenderProgram;
+		uint32_t m_subpassIndex;
+
 	public:
-		Context(VulkanCore* pCore, ResourceID commandBufferSetID);
-		void begin();
+		SubContext();
+		SubContext(VulkanCore* pCore, FramebufferSet* pFramebufferSet, RenderProgram* pRenderProgram, uint32_t subpassIndex);
+
+		void begin(ContextUsageFlags usageFlags = 0);
 		void end();
-
-		void submit();
-
-		void waitToFinish(size_t timeout = UINT64_MAX);
+		void preRecord(std::function<void(RenderContext&)> function, ContextUsageFlags usageFlags = 0);
 
 		void destroy();
 	};
 
+	class DirectContext : public RenderContext {
+	private:
+		std::shared_ptr<vk::Fence> m_pFence;
+		ResourceID m_commandBufferSetID;
+
+	public:
+		DirectContext(VulkanCore* pCore);
+
+		void begin(ContextUsageFlags usageFlags = 0);
+		void end();
+
+		void submit();
+		void waitToFinish(size_t timeout = UINT64_MAX);
+
+		void destroy();
+	};
 
 	template<typename T>
 	inline void RenderContext::pushConstants(ResourceID pipeline, ShaderStageFlags stages, uint32_t offset, const std::vector<T>& values) {

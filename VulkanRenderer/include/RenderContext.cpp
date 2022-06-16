@@ -69,13 +69,17 @@ namespace sa {
 		pRenderProgram->begin(m_pCommandBufferSet, pFramebuffer, renderArea);
 	}
 
-	void RenderContext::nextSubpass() {
-		m_pCommandBufferSet->getBuffer().nextSubpass(vk::SubpassContents::eInline);
+	void RenderContext::nextSubpass(SubpassContents contentType) {
+		m_pCommandBufferSet->getBuffer().nextSubpass((vk::SubpassContents)contentType);
 	}
 
 	void RenderContext::endRenderProgram(ResourceID renderProgram) {
 		RenderProgram* pRenderProgram = getRenderProgram(renderProgram);
 		pRenderProgram->end(m_pCommandBufferSet);
+	}
+
+	void RenderContext::executeSubContext(const sa::SubContext& context) {
+		m_pCommandBufferSet->getBuffer().executeCommands(context.m_pCommandBufferSet->getBuffer(m_pCommandBufferSet->getBufferIndex()));
 	}
 
 	void RenderContext::bindPipeline(ResourceID pipeline) {
@@ -191,8 +195,7 @@ namespace sa {
 		vk::PipelineStageFlags dstStage;
 		vk::ImageLayout newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
-		
-		//TODO
+
 		switch (src) {
 		case sa::Transition::NONE:
 			srcAccess = (vk::AccessFlags)0;
@@ -264,40 +267,86 @@ namespace sa {
 		pImage->layout = newLayout;
 	}
 
-	Context::Context(VulkanCore* pCore, ResourceID commandBufferSetID) 
-		: RenderContext(
-			pCore, 
-			ResourceManager::get().get<CommandBufferSet>(commandBufferSetID))
+	SubContext::SubContext()
+		: RenderContext()
 	{
-		m_pFence = std::shared_ptr<vk::Fence>(new vk::Fence, [=](vk::Fence* p) {
-			m_pCore->getDevice().destroyFence(*p);
-			delete p;
-		});
-		*m_pFence = m_pCore->getDevice().createFence({ .flags = vk::FenceCreateFlagBits::eSignaled });
-		m_commandBufferSetID = commandBufferSetID;
 	}
 
-	void Context::begin() {
-		m_pCommandBufferSet->begin(vk::CommandBufferUsageFlagBits::eSimultaneousUse);
+	SubContext::SubContext(VulkanCore* pCore, FramebufferSet* pFramebufferSet, RenderProgram* pRenderProgram, uint32_t subpassIndex) {
+		m_pCore = pCore;
+
+		m_commandBufferSetID = ResourceManager::get().insert(m_pCore->allocateCommandBufferSet(vk::CommandBufferLevel::eSecondary));
+		m_pCommandBufferSet = ResourceManager::get().get<CommandBufferSet>(m_commandBufferSetID);
+
+		m_pFramebufferSet = pFramebufferSet;
+		m_pRenderProgram = pRenderProgram;
+		m_subpassIndex = subpassIndex;
 	}
 
-	void Context::end() {
+	void SubContext::begin(ContextUsageFlags usageFlags) {
+
+		vk::CommandBufferInheritanceInfo inheritInfo{
+			.renderPass = m_pRenderProgram->getRenderPass(),
+			.subpass = m_subpassIndex,
+			.framebuffer = m_pFramebufferSet->getBuffer(m_pCommandBufferSet->getBufferIndex() % m_pFramebufferSet->getBufferCount()),
+			.occlusionQueryEnable = VK_FALSE,
+		};
+
+		m_pCommandBufferSet->begin((vk::CommandBufferUsageFlags)usageFlags, &inheritInfo);
+	}
+
+	void SubContext::end() {
 		m_pCommandBufferSet->end();
 	}
 
-	void Context::submit() {
+	void SubContext::preRecord(std::function<void(RenderContext&)> function, ContextUsageFlags usageFlags) {
+		for (uint32_t i = 0; i < m_pCommandBufferSet->getBufferCount(); i++) {
+			begin(usageFlags);
+			function(*this);
+			end();
+		}
+	}
+
+	void SubContext::destroy() {
+		ResourceManager::get().remove<CommandBufferSet>(m_commandBufferSetID);
+		m_pCommandBufferSet = nullptr;
+	}
+
+	DirectContext::DirectContext(VulkanCore* pCore) {
+		m_pCore = pCore;
+
+		m_commandBufferSetID = ResourceManager::get().insert(m_pCore->allocateCommandBufferSet(vk::CommandBufferLevel::ePrimary));
+		m_pCommandBufferSet = ResourceManager::get().get<CommandBufferSet>(m_commandBufferSetID);
+
+		m_pFence = std::shared_ptr<vk::Fence>(new vk::Fence, [=](vk::Fence* p) {
+			m_pCore->getDevice().destroyFence(*p);
+			delete p;
+			});
+		*m_pFence = m_pCore->getDevice().createFence({ .flags = vk::FenceCreateFlagBits::eSignaled });
+	}
+
+	void DirectContext::begin(ContextUsageFlags usageFlags) {
+		m_pCommandBufferSet->begin((vk::CommandBufferUsageFlags)usageFlags);
+	}
+
+	void DirectContext::end() {
+		m_pCommandBufferSet->end();
+	}
+
+	void DirectContext::submit() {
 		waitToFinish();
 		m_pCore->getDevice().resetFences(*m_pFence);
 		m_pCommandBufferSet->submit(*m_pFence);
 	}
 
-	void Context::waitToFinish(size_t timeout) {
+	void DirectContext::waitToFinish(size_t timeout) {
 		m_pCore->getDevice().waitForFences(*m_pFence, VK_FALSE, timeout);
 	}
 
-	void Context::destroy() {
+	void DirectContext::destroy() {
 		ResourceManager::get().remove<CommandBufferSet>(m_commandBufferSetID);
 		m_pCommandBufferSet = nullptr;
 	}
+
 
 }

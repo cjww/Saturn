@@ -149,4 +149,8 @@ namespace sa {
 		return m_images.size();
 	}
 
+	const CommandBufferSet* Swapchain::getCommandBufferSet() const {
+		return &m_commandBufferSet;
+	}
+
 }

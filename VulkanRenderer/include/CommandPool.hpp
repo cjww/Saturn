@@ -15,7 +15,7 @@ namespace sa {
 		CommandBufferSet(vk::Device device, vk::CommandPool commandPool, const std::vector<vk::Queue>& queues, uint32_t queueFamilyIndex, vk::CommandBufferLevel level);
 		void create(vk::Device device, vk::CommandPool commandPool, const std::vector<vk::Queue>& queues, vk::CommandBufferLevel level);
 
-		void begin(vk::CommandBufferUsageFlags usageFlags);
+		void begin(vk::CommandBufferUsageFlags usageFlags, vk::CommandBufferInheritanceInfo* inheritanceinfo = nullptr);
 		void end();
 		
 		bool isRecording() const;
@@ -24,7 +24,7 @@ namespace sa {
 
 		void present(vk::Semaphore waitSempahore, vk::SwapchainKHR swapchain, uint32_t imageIndex);
 
-		vk::CommandBuffer getBuffer() const;
+		vk::CommandBuffer getBuffer(uint32_t index = -1) const;
 		uint32_t getBufferIndex() const;
 
 		uint32_t getQueueFamilyIndex() const;

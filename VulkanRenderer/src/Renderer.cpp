@@ -169,20 +169,12 @@ namespace sa {
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture2D& texture, ResourceID sampler) {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
-		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
-		if (texture.getTypeFlags() & TextureTypeFlagBits::STORAGE) {
-			layout = vk::ImageLayout::eGeneral;
-		}
-		pDescriptorSet->update(binding, layout, *texture.getView(), pSampler, UINT32_MAX);
+		pDescriptorSet->update(binding, *texture.getView(), pSampler, UINT32_MAX);
 	}
 
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture2D& texture) {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
-		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
-		if (texture.getTypeFlags() & TextureTypeFlagBits::STORAGE) {
-			layout = vk::ImageLayout::eGeneral;
-		}
-		pDescriptorSet->update(binding, layout, *texture.getView(), nullptr, UINT32_MAX);
+		pDescriptorSet->update(binding, *texture.getView(), nullptr, UINT32_MAX);
 	}
 
 	void Renderer::freeDescriptorSet(ResourceID descriptorSet) {
@@ -267,9 +259,15 @@ namespace sa {
 		pSwapchain->endFrame();
 	}
 
-	Context Renderer::createComputeContext() {
-		ResourceID id = ResourceManager::get().insert(m_pCore->allocateCommandBufferSet(vk::CommandBufferLevel::ePrimary));
-		return Context(m_pCore.get(), id);
+	DirectContext Renderer::createDirectContext() {
+		return DirectContext(m_pCore.get());
+	}
+
+	SubContext Renderer::createSubContext(ResourceID framebuffer, ResourceID renderProgram, uint32_t subpassIndex) {
+		FramebufferSet* pFramebufferSet = RenderContext::getFramebufferSet(framebuffer);
+		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
+		
+		return SubContext(m_pCore.get(), pFramebufferSet, pRenderProgram, subpassIndex);
 	}
 
 

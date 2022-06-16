@@ -79,7 +79,7 @@ namespace sa {
 		void destroy();
 
 
-		void begin(CommandBufferSet* cmd, FramebufferSet* framebuffer, Rect renderArea);
+		void begin(CommandBufferSet* cmd, const FramebufferSet* framebuffer, Rect renderArea);
 		void end(CommandBufferSet* cmd);
 
 		vk::RenderPass getRenderPass() const;

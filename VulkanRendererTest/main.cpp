@@ -482,13 +482,26 @@ void deffered(sa::RenderWindow& window) {
 
 	renderer.updateDescriptorSet(mainDescriptorSet, 1, blurredTexture, sampler);
 
-	sa::Context tmp = renderer.createComputeContext();
-	tmp.begin();
+	sa::DirectContext tmp = renderer.createDirectContext();
+	tmp.begin(sa::ContextUsageFlagBits::SIMULTANEOUS_USE);
 	tmp.transitionTexture(blurredTexture, sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_WRITE);
 	tmp.end();
 	tmp.submit();
 	tmp.destroy();
 
+	sa::SubContext subContext = renderer.createSubContext(gFramebuffer, defferedProgram, 1);
+	/*
+	subContext.preRecord([=](sa::RenderContext& context) {
+		context.bindPipeline(combinePipeline);
+		context.bindVertexBuffers(0, { vertexBuffer });
+		context.bindIndexBuffer(indexBuffer);
+		context.bindDescriptorSet(combineDescriptorSet, combinePipeline);
+		context.drawIndexed(6, 1);
+	}, sa::ContextUsageFlagBits::RENDER_PROGRAM_CONTINUE);
+	*/
+
+
+	
 	auto now = std::chrono::high_resolution_clock::now();
 	float dt = 0;
 	float timer = 0.0f;
@@ -508,10 +521,21 @@ void deffered(sa::RenderWindow& window) {
 		if (context) {
 
 			
+			subContext.begin(sa::ContextUsageFlagBits::RENDER_PROGRAM_CONTINUE | sa::ContextUsageFlagBits::ONE_TIME_SUBMIT);
+			subContext.bindPipeline(combinePipeline);
+			subContext.bindVertexBuffers(0, { vertexBuffer });
+			subContext.bindIndexBuffer(indexBuffer);
+			subContext.bindDescriptorSet(combineDescriptorSet, combinePipeline);
+			subContext.drawIndexed(6, 1);
+			subContext.end();
 
 			sceneUniformBuffer.write(ubo);
 			context.updateDescriptorSet(defferedDescriptorSet, 0, sceneUniformBuffer);
 			context.updateDescriptorSet(defferedDescriptorSet, 1, outputBuffer);
+
+
+			context.transitionTexture(blurredTexture, sa::Transition::RENDER_PROGRAM_INPUT, sa::Transition::COMPUTE_SHADER_WRITE);
+
 
 			context.bindPipeline(computePipeline);
 			context.bindDescriptorSet(computeDescriptorSet, computePipeline);
@@ -530,19 +554,18 @@ void deffered(sa::RenderWindow& window) {
 
 			context.drawIndexed(boxIndices.size(), data.size());
 
-			context.nextSubpass();
-
+			context.nextSubpass(sa::SubpassContents::SUB_CONTEXT);
+			/*
 			context.bindPipeline(combinePipeline);
 			context.bindVertexBuffers(0, { vertexBuffer });
 			context.bindIndexBuffer(indexBuffer);
 			context.bindDescriptorSet(combineDescriptorSet, combinePipeline);
 
 			context.drawIndexed(6, 1);
-			context.endRenderProgram(defferedProgram);
-
-			/*
-			context.barrier(brightnessTexture);
 			*/
+			context.executeSubContext(subContext);
+
+			context.endRenderProgram(defferedProgram);
 
 
 			context.bindPipeline(blurPipeline);
@@ -550,6 +573,10 @@ void deffered(sa::RenderWindow& window) {
 			int groupcountX = (extent.width / 32) + 1;
 			int groupcountY = (extent.height / 32) + 1;
 			context.dispatch(groupcountX, groupcountY, 1);
+
+			//context.barrier(blurredTexture);
+
+			context.transitionTexture(blurredTexture, sa::Transition::COMPUTE_SHADER_WRITE, sa::Transition::RENDER_PROGRAM_INPUT);
 
 			context.beginRenderProgram(mainRenderProgram, mainFramebuffer);
 			context.bindPipeline(mainPipeline);
@@ -716,8 +743,8 @@ int main() {
 		});
 
 		
-		//deffered(window);
-		forward(window);
+		deffered(window);
+		//forward(window);
 
 
 	}

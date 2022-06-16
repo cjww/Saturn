@@ -29,11 +29,13 @@ namespace sa {
 		void destroy();
 
 		void update(uint32_t binding, vk::Buffer buffer, vk::DeviceSize bufferSize, vk::DeviceSize bufferOffset, uint32_t indexToUpdate);
-		void update(uint32_t binding, vk::ImageLayout imageLayout, vk::ImageView view, vk::Sampler* pSampler, uint32_t indexToUpdate);
+		void update(uint32_t binding, vk::ImageView view, vk::Sampler* pSampler, uint32_t indexToUpdate);
 
 		vk::DescriptorSet getSet(uint32_t index) const;
 
 		uint32_t getSetIndex() const;
+
+		vk::DescriptorType getDescriptorType(int binding) const;
 
 	};
 }
