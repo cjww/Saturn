@@ -103,8 +103,10 @@ namespace sa {
 		RenderContext beginFrame(ResourceID swapchain);
 		void endFrame(ResourceID swapchain);
 
-		DirectContext createDirectContext();
-		SubContext createSubContext(ResourceID framebuffer, ResourceID renderProgram, uint32_t subpassIndex);
+		ResourceID createContextPool();
+
+		DirectContext createDirectContext(ResourceID contextPool = NULL_RESOURCE);
+		SubContext createSubContext(ResourceID framebuffer, ResourceID renderProgram, uint32_t subpassIndex, ResourceID contextPool = NULL_RESOURCE);
 
 		/*
 		void initImGUI(GLFWwindow* window, uint32_t renderpass, uint32_t subpass);

@@ -80,8 +80,7 @@ namespace sa {
 		QueueInfo m_queueInfo;
 		std::vector<vk::Queue> m_queues;
 		
-		CommandPool m_commandPool;
-		
+		CommandPool m_mainCommandPool;
 
 		vk::Format m_defaultColorFormat;
 		vk::Format m_defaultDepthFormat;
@@ -101,7 +100,7 @@ namespace sa {
 		void findPhysicalDevice();
 		void createDevice();
 
-		void createCommandPools();
+		void createCommandPool();
 
 	public:
 
@@ -130,7 +129,8 @@ namespace sa {
 			PipelineConfig config);
 
 		CommandBufferSet allocateCommandBufferSet(vk::CommandBufferLevel level);
-		
+		CommandBufferSet allocateCommandBufferSet(vk::CommandBufferLevel level, CommandPool& commandPool);
+
 		DeviceBuffer* createBuffer(vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags allocationFlags, size_t size, void* initialData);
 		void destroyBuffer(DeviceBuffer* pBuffer);
 

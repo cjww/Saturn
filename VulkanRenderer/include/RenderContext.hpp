@@ -74,7 +74,7 @@ namespace sa {
 
 		RenderContext(VulkanCore* pCore, CommandBufferSet* pCommandBufferSet);
 
-		void beginRenderProgram(ResourceID renderProgram, ResourceID framebuffer, Rect renderArea = { {0, 0}, {0, 0} });
+		void beginRenderProgram(ResourceID renderProgram, ResourceID framebuffer, SubpassContents contents, Rect renderArea = { {0, 0}, {0, 0} });
 		void nextSubpass(SubpassContents contentType);
 		void endRenderProgram(ResourceID renderProgram);
 
@@ -121,7 +121,7 @@ namespace sa {
 
 	public:
 		SubContext();
-		SubContext(VulkanCore* pCore, FramebufferSet* pFramebufferSet, RenderProgram* pRenderProgram, uint32_t subpassIndex);
+		SubContext(VulkanCore* pCore, FramebufferSet* pFramebufferSet, RenderProgram* pRenderProgram, uint32_t subpassIndex, ResourceID contextPool);
 
 		void begin(ContextUsageFlags usageFlags = 0);
 		void end();
@@ -136,7 +136,7 @@ namespace sa {
 		ResourceID m_commandBufferSetID;
 
 	public:
-		DirectContext(VulkanCore* pCore);
+		DirectContext(VulkanCore* pCore, ResourceID contextPool);
 
 		void begin(ContextUsageFlags usageFlags = 0);
 		void end();

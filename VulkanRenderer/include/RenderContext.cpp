@@ -63,10 +63,10 @@ namespace sa {
 	
 	}
 
-	void RenderContext::beginRenderProgram(ResourceID renderProgram, ResourceID framebuffer, Rect renderArea) {
+	void RenderContext::beginRenderProgram(ResourceID renderProgram, ResourceID framebuffer, SubpassContents contents, Rect renderArea) {
 		RenderProgram* pRenderProgram = getRenderProgram(renderProgram);
 		FramebufferSet* pFramebuffer = getFramebufferSet(framebuffer);
-		pRenderProgram->begin(m_pCommandBufferSet, pFramebuffer, renderArea);
+		pRenderProgram->begin(m_pCommandBufferSet, pFramebuffer, (vk::SubpassContents)contents, renderArea);
 	}
 
 	void RenderContext::nextSubpass(SubpassContents contentType) {
@@ -272,10 +272,16 @@ namespace sa {
 	{
 	}
 
-	SubContext::SubContext(VulkanCore* pCore, FramebufferSet* pFramebufferSet, RenderProgram* pRenderProgram, uint32_t subpassIndex) {
+	SubContext::SubContext(VulkanCore* pCore, FramebufferSet* pFramebufferSet, RenderProgram* pRenderProgram, uint32_t subpassIndex, ResourceID contextPool) {
 		m_pCore = pCore;
 
-		m_commandBufferSetID = ResourceManager::get().insert(m_pCore->allocateCommandBufferSet(vk::CommandBufferLevel::eSecondary));
+		if (contextPool == NULL_RESOURCE) {
+			m_commandBufferSetID = ResourceManager::get().insert(m_pCore->allocateCommandBufferSet(vk::CommandBufferLevel::eSecondary));
+		}
+		else {
+			CommandPool* pool = ResourceManager::get().get<CommandPool>(contextPool);
+			m_commandBufferSetID = ResourceManager::get().insert(m_pCore->allocateCommandBufferSet(vk::CommandBufferLevel::eSecondary, *pool));
+		}
 		m_pCommandBufferSet = ResourceManager::get().get<CommandBufferSet>(m_commandBufferSetID);
 
 		m_pFramebufferSet = pFramebufferSet;
@@ -312,10 +318,18 @@ namespace sa {
 		m_pCommandBufferSet = nullptr;
 	}
 
-	DirectContext::DirectContext(VulkanCore* pCore) {
+	DirectContext::DirectContext(VulkanCore* pCore, ResourceID contextPool) {
 		m_pCore = pCore;
+		
+		if (contextPool == NULL_RESOURCE) {
+			m_commandBufferSetID = ResourceManager::get().insert(m_pCore->allocateCommandBufferSet(vk::CommandBufferLevel::ePrimary));
+		}
+		else {
+			CommandPool* pool = ResourceManager::get().get<CommandPool>(contextPool);
+			m_commandBufferSetID = ResourceManager::get().insert(m_pCore->allocateCommandBufferSet(vk::CommandBufferLevel::ePrimary, *pool));
+		}
 
-		m_commandBufferSetID = ResourceManager::get().insert(m_pCore->allocateCommandBufferSet(vk::CommandBufferLevel::ePrimary));
+
 		m_pCommandBufferSet = ResourceManager::get().get<CommandBufferSet>(m_commandBufferSetID);
 
 		m_pFence = std::shared_ptr<vk::Fence>(new vk::Fence, [=](vk::Fence* p) {

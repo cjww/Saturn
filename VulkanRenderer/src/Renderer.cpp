@@ -41,6 +41,7 @@ namespace sa {
 			ResourceManager::get().setCleanupFunction<vk::Sampler>([&](vk::Sampler* p) { m_pCore->getDevice().destroySampler(*p); });
 			ResourceManager::get().setCleanupFunction<vk::ImageView>([&](vk::ImageView* p) { m_pCore->getDevice().destroyImageView(*p); });
 			ResourceManager::get().setCleanupFunction<vk::BufferView>([&](vk::BufferView* p) { m_pCore->getDevice().destroyBufferView(*p); });
+			ResourceManager::get().setCleanupFunction<CommandPool>([&](CommandPool* p) { p->destroy(); });
 
 		}
 		catch (const std::exception& e) {
@@ -50,6 +51,7 @@ namespace sa {
 	Renderer::~Renderer() {
 		m_pCore->getDevice().waitIdle();
 
+		ResourceManager::get().clearContainer<CommandPool>();
 		ResourceManager::get().clearContainer<vk::BufferView>();
 		ResourceManager::get().clearContainer<vk::ImageView>();
 		ResourceManager::get().clearContainer<vk::Sampler>();
@@ -259,15 +261,21 @@ namespace sa {
 		pSwapchain->endFrame();
 	}
 
-	DirectContext Renderer::createDirectContext() {
-		return DirectContext(m_pCore.get());
+	ResourceID Renderer::createContextPool() {
+		ResourceID id = ResourceManager::get().insert<CommandPool>();
+		ResourceManager::get().get<CommandPool>(id)->create(m_pCore->getDevice(), m_pCore->getQueueFamily(), vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
+		return id;
 	}
 
-	SubContext Renderer::createSubContext(ResourceID framebuffer, ResourceID renderProgram, uint32_t subpassIndex) {
+	DirectContext Renderer::createDirectContext(ResourceID contextPool) {
+		return DirectContext(m_pCore.get(), contextPool);
+	}
+
+	SubContext Renderer::createSubContext(ResourceID framebuffer, ResourceID renderProgram, uint32_t subpassIndex, ResourceID contextPool) {
 		FramebufferSet* pFramebufferSet = RenderContext::getFramebufferSet(framebuffer);
 		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
 		
-		return SubContext(m_pCore.get(), pFramebufferSet, pRenderProgram, subpassIndex);
+		return SubContext(m_pCore.get(), pFramebufferSet, pRenderProgram, subpassIndex, contextPool);
 	}
 
 

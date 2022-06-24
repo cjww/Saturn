@@ -223,8 +223,8 @@ namespace sa {
 		}
 	}
 
-	void VulkanCore::createCommandPools() {
-		m_commandPool.create(m_device, m_queueInfo.family, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
+	void VulkanCore::createCommandPool() {
+		m_mainCommandPool.create(m_device, m_queueInfo.family, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
 	}
 
 	bool VulkanCore::isDepthFormat(vk::Format format) {
@@ -248,7 +248,7 @@ namespace sa {
 		findPhysicalDevice();
 		createDevice();
 		
-		createCommandPools();
+		createCommandPool();
 
 		m_memoryManager.create(m_instance, m_device, m_physicalDevice, m_appInfo.apiVersion);
 
@@ -261,9 +261,8 @@ namespace sa {
 	void VulkanCore::cleanup() {
 		
 		m_memoryManager.destroy();
+		m_mainCommandPool.destroy();
 
-		m_commandPool.destroy();
-		
 		m_device.destroy();
 		m_instance.destroy();
 	}
@@ -468,7 +467,11 @@ namespace sa {
 	}
 
 	CommandBufferSet VulkanCore::allocateCommandBufferSet(vk::CommandBufferLevel level) {
-		return m_commandPool.allocateCommandBufferSet(m_queues, level);
+		return m_mainCommandPool.allocateCommandBufferSet(m_queues, level);
+	}
+
+	CommandBufferSet VulkanCore::allocateCommandBufferSet(vk::CommandBufferLevel level, CommandPool& commandPool) {
+		return commandPool.allocateCommandBufferSet(m_queues, level);
 	}
 
 	DeviceBuffer* VulkanCore::createBuffer(vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags allocationFlags, size_t size, void* initialData) {

@@ -9,6 +9,7 @@
 
 #include <chrono>
 #include <array>
+#include <thread>
 
 #include "glm\common.hpp"
 #include "glm\gtc\matrix_transform.hpp"
@@ -544,7 +545,7 @@ void deffered(sa::RenderWindow& window) {
 			int groupcount = ((data.size()) / 256) + 1;
 			context.dispatch(groupcount, 1, 1);
 
-			context.beginRenderProgram(defferedProgram, gFramebuffer);
+			context.beginRenderProgram(defferedProgram, gFramebuffer, sa::SubpassContents::DIRECT);
 
 			context.bindPipeline(defferedPipeline);
 			context.bindDescriptorSet(defferedDescriptorSet, defferedPipeline);
@@ -578,7 +579,7 @@ void deffered(sa::RenderWindow& window) {
 
 			context.transitionTexture(blurredTexture, sa::Transition::COMPUTE_SHADER_WRITE, sa::Transition::RENDER_PROGRAM_INPUT);
 
-			context.beginRenderProgram(mainRenderProgram, mainFramebuffer);
+			context.beginRenderProgram(mainRenderProgram, mainFramebuffer, sa::SubpassContents::DIRECT);
 			context.bindPipeline(mainPipeline);
 			context.bindDescriptorSet(mainDescriptorSet, mainPipeline);
 			context.drawIndexed(6, 1);
@@ -679,6 +680,27 @@ void forward(sa::RenderWindow& window) {
 	float dt = 0;
 	float timer = 0.0f;
 
+	//Objects
+	struct Object {
+		glm::mat4 worldMat;
+		sa::SubContext context;
+	};
+
+	std::vector<Object> objects;
+	const uint32_t objectsPerThread = 32;
+	std::vector<std::thread> threads(10); // 10 objects per thread
+	std::vector<ResourceID> contextPools(threads.size()); // 10 objects per thread
+	for (int i = 0; i < threads.size(); i++) {
+		contextPools[i] = renderer.createContextPool();
+
+		for (int j = 0; j < objectsPerThread; j++) {
+			objects.emplace_back(Object{
+				glm::translate(glm::mat4(1), glm::vec3(j * 4, i * 4, 0)),
+				renderer.createSubContext(mainFramebuffer, mainRenderProgram, 0, contextPools[i])
+			});
+		}
+	}
+	
 	while (window.isOpen()) {
 		window.pollEvents();
 
@@ -686,28 +708,46 @@ void forward(sa::RenderWindow& window) {
 		ubo.view = camera.getView(dt);
 
 		window.setWindowTitle("FPS: " + std::to_string(1 / dt));
-
-
 		sa::RenderContext context = window.beginFrame();
 		if (context) {
 
 			uniformBuffer.write(ubo);
 			context.updateDescriptorSet(mainDescriptorSet, 0, uniformBuffer);
 			
+			for (int i = 0; i < threads.size(); i++) {
+				std::thread& thread = threads.at(i);
+				thread = std::thread([=, &objects]() {
+					for (int j = 0; j < objectsPerThread; j++) {
+						using namespace std::chrono_literals;
+						Object& object = objects[(i * objectsPerThread) + j];
+						//std::this_thread::sleep_for(5ms); // expensive work
+						object.worldMat = glm::translate(object.worldMat, glm::vec3(0, 1 * dt, 0));
 
-			context.beginRenderProgram(mainRenderProgram, mainFramebuffer);
 
-			context.bindPipeline(mainPipeline);
-			context.bindDescriptorSet(mainDescriptorSet, mainPipeline);
-			glm::mat4 world(1);
-			context.pushConstant(mainPipeline, sa::ShaderStageFlagBits::VERTEX, 0, world);
+						object.context.begin(sa::ContextUsageFlagBits::RENDER_PROGRAM_CONTINUE);
+						object.context.bindPipeline(mainPipeline);
+						object.context.bindDescriptorSet(mainDescriptorSet, mainPipeline);
+						object.context.bindVertexBuffers(0, { boxVertexBuffer });
+						object.context.bindIndexBuffer(boxIndexBuffer);
+						object.context.pushConstant(mainPipeline, sa::ShaderStageFlagBits::VERTEX, 0, object.worldMat);
+						object.context.drawIndexed(36, 1);
+						object.context.end();
+
+					}
+				});
+			}
+
+
+			for (auto& thread : threads) {
+				thread.join();
+			}
+		
+			context.beginRenderProgram(mainRenderProgram, mainFramebuffer, sa::SubpassContents::SUB_CONTEXT);
+
+			for (Object& obj : objects) {
+				context.executeSubContext(obj.context);
+			}
 			
-			// Drawing
-			context.bindVertexBuffers(0, { boxVertexBuffer });
-			context.bindIndexBuffer(boxIndexBuffer);
-
-			context.drawIndexed(boxIndices.size(), 1);
-
 			context.endRenderProgram(mainRenderProgram);
 
 			window.display();
@@ -743,8 +783,8 @@ int main() {
 		});
 
 		
-		deffered(window);
-		//forward(window);
+		//deffered(window);
+		forward(window);
 
 
 	}
