@@ -6,6 +6,8 @@
 #include "Resources/Pipeline.hpp"
 #include "Resources/Swapchain.hpp"
 
+#include "imgui_impl_vulkan.h"
+#include "imgui_impl_glfw.h"
 
 namespace sa {
 
@@ -63,6 +65,18 @@ namespace sa {
 	
 	}
 
+#ifndef IMGUI_DISABLE
+	void RenderContext::renderImGuiFrame() {
+		ImGui::Render();
+		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_pCommandBufferSet->getBuffer());
+
+		// Update and Render additional Platform Windows
+		if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+			ImGui::UpdatePlatformWindows();
+			ImGui::RenderPlatformWindowsDefault();
+		}
+	}
+#endif
 	void RenderContext::beginRenderProgram(ResourceID renderProgram, ResourceID framebuffer, SubpassContents contents, Rect renderArea) {
 		RenderProgram* pRenderProgram = getRenderProgram(renderProgram);
 		FramebufferSet* pFramebuffer = getFramebufferSet(framebuffer);

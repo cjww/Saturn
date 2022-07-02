@@ -24,3 +24,4 @@
 
 #include "Resources\ResourceManager.hpp"
 #include "Tools\Logger.hpp"
+#include "structs.hpp"

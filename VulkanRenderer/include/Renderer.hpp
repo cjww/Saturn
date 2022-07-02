@@ -1,10 +1,6 @@
 #pragma once
 
 #include "RenderProgramFactory.hpp"
-/*
-#include "imgui_impl_vulkan.h"
-#include "imgui_impl_glfw.h"
-*/
 
 #include "RenderContext.hpp"
 #include "Resources/Buffer.hpp"
@@ -12,7 +8,10 @@
 #include "Image.hpp"
 #include "FormatFlags.hpp"
 
-struct GLFWwindow;
+#include "Window.hpp"
+
+#include "imgui.h"
+
 
 namespace sa {
 
@@ -45,24 +44,26 @@ namespace sa {
 		std::unique_ptr<VulkanCore> m_pCore;
 		std::queue<DataTransfer> m_transferQueue;
 
-
-		/*
-		
-		
-		VkDescriptorPool m_imGuiDescriptorPool;
-		std::unordered_map<Texture*, ImTextureID> m_imGuiImages;
-
-		void createImGUIDescriptorPool();
-		ImGui_ImplVulkan_InitInfo getImGUIInitInfo() const;
-
-		*/
-
-		
-
 		Renderer();
 	public:
 		static Renderer& get();
 		virtual ~Renderer();
+#ifndef IMGUI_DISABLE
+		void initImGui(const Window& window, ResourceID renderProgram, uint32_t subpass);
+		void newImGuiFrame();
+
+		void imGuiImage(sa::Texture texture, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& tint_col, const ImVec4& border_col);
+
+#endif // !IMGUI_DISABLE
+		
+		/*
+#ifdef SA_INCLUDE_IMGUI
+		std::unordered_map<Texture, ImTextureID> m_imGuiImages;
+
+		void createImGUIDescriptorPool();
+		ImGui_ImplVulkan_InitInfo getImGUIInitInfo() const;
+#endif
+		*/
 
 		ResourceID createSwapchain(GLFWwindow* pWindow);
 		ResourceID recreateSwapchain(GLFWwindow* pWindow, ResourceID oldSwapchain);
@@ -160,4 +161,8 @@ namespace sa {
 
 
 	
+}
+
+namespace ImGui {
+	void Image(sa::Texture texture, const ImVec2& size, const ImVec2& uv0 = ImVec2(0, 0), const ImVec2& uv1 = ImVec2(1, 1), const ImVec4& tint_col = ImVec4(1, 1, 1, 1), const ImVec4& border_col = ImVec4(0, 0, 0, 0));
 }

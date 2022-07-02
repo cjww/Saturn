@@ -25,6 +25,10 @@ namespace sa {
 	CommandBufferSet CommandPool::allocateCommandBufferSet(const std::vector<vk::Queue>& queues, vk::CommandBufferLevel level) {
 		return CommandBufferSet(m_device, m_commandPool, queues, m_queueFamilyIndex, level);
 	}
+
+	CommandBufferSet CommandPool::allocateOneTimeCommandBuffer(vk::Queue queue, vk::CommandBufferLevel level) {
+		return CommandBufferSet(m_device, m_commandPool, { queue }, m_queueFamilyIndex, level);
+	}
 	
 	CommandBufferSet::CommandBufferSet()
 		: m_currentBufferIndex(-1)
@@ -37,6 +41,8 @@ namespace sa {
 		, m_lastBufferIndex(-1)
 		, m_queues(queues)
 		, m_queueFamilyIndex(queueFamilyIndex)
+		, m_device(device)
+		, m_commandPool(commandPool)
 	{
 		create(device, commandPool, queues, level);
 	}
@@ -48,6 +54,13 @@ namespace sa {
 			.level = level,
 			.commandBufferCount = (uint32_t)queues.size(),
 		});
+	}
+
+	void CommandBufferSet::destroy() {
+		m_device.freeCommandBuffers(m_commandPool, m_buffers);
+		m_currentBufferIndex = 0;
+		m_lastBufferIndex = -1;
+		m_buffers.clear();
 	}
 
 	void CommandBufferSet::begin(vk::CommandBufferUsageFlags usageFlags, vk::CommandBufferInheritanceInfo* inheritanceinfo) {

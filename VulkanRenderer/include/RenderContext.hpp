@@ -1,4 +1,5 @@
 #pragma once
+#include "imgui.h"
 
 #include "structs.hpp"
 #include "Resources/Buffer.hpp"
@@ -73,6 +74,9 @@ namespace sa {
 		RenderContext();
 
 		RenderContext(VulkanCore* pCore, CommandBufferSet* pCommandBufferSet);
+#ifndef IMGUI_DISABLE
+		void renderImGuiFrame();
+#endif
 
 		void beginRenderProgram(ResourceID renderProgram, ResourceID framebuffer, SubpassContents contents, Rect renderArea = { {0, 0}, {0, 0} });
 		void nextSubpass(SubpassContents contentType);

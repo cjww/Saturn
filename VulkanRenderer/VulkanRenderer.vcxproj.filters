@@ -143,7 +143,7 @@
     <ClCompile Include="src\Pipeline.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="include\RenderContext.cpp">
+    <ClCompile Include="src\RenderContext.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\DescriptorSet.cpp">
@@ -153,6 +153,27 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Image.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui_demo.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui_draw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui_impl_glfw.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui_impl_vulkan.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui_tables.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\imgui_widgets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

@@ -1,5 +1,8 @@
 #pragma once
-
+#ifndef IMGUI_DISABLE
+#include "imgui_impl_vulkan.h"
+#include "imgui_impl_glfw.h"
+#endif // !IMGUI_DISABLE
 
 #include "Tools/Logger.hpp"
 #include "structs.hpp"
@@ -8,8 +11,8 @@
 #include "Resources\ShaderSet.hpp"
 #include "Resources/DeviceMemoryManager.hpp"
 
-
 #include "FormatFlags.hpp"
+
 
 namespace sa {
 
@@ -89,6 +92,10 @@ namespace sa {
 
 		DeviceMemoryManager m_memoryManager;
 
+		vk::DescriptorPool m_imGuiDescriptorPool;
+		std::unordered_map<vk::ImageView*, VkDescriptorSet> m_imGuiImages;
+		vk::Sampler m_imGuiImageSampler;
+
 		void fillFormats();
 
 		uint32_t getQueueFamilyIndex(vk::QueueFlags capabilities, vk::QueueFamilyProperties* prop);
@@ -107,11 +114,15 @@ namespace sa {
 		static bool isDepthFormat(vk::Format format);
 		static bool isColorFormat(vk::Format format);
 
-
-
 		void init(vk::ApplicationInfo appInfo);
 		void cleanup();
 
+#ifndef IMGUI_DISABLE
+		void initImGui(GLFWwindow* pWindow, vk::RenderPass renderPass, uint32_t subpass);
+		void imGuiImage(vk::ImageView* imageView, vk::ImageLayout layout, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& tint_col, const ImVec4& border_col);
+
+#endif
+		
 		vk::SurfaceKHR createSurface(GLFWwindow* pWindow);
 		vk::SwapchainKHR createSwapchain(vk::SurfaceKHR surface, vk::Format* outFormat, vk::Extent2D* outExtent);
 		vk::ImageView createImageView(vk::ImageViewType type, vk::Image image, vk::Format format, vk::ImageAspectFlags aspectMask, uint32_t baseMipLevel, uint32_t baseArrayLevel);

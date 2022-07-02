@@ -136,7 +136,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)/include;$(VULKAN_SDK)/Include;$(ProjectDir)\deps\GLFW\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)/include;$(ProjectDir)/deps/imgui-docking;$(VULKAN_SDK)/Include;$(ProjectDir)\deps\GLFW\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <PrecompiledHeader>Create</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -159,7 +159,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)/include;$(VULKAN_SDK)/Include;$(ProjectDir)/deps/GLFW/Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)/include;$(ProjectDir)/deps/imgui-docking;$(VULKAN_SDK)/Include;$(ProjectDir)/deps/GLFW/Include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp20</LanguageStandard>
       <PrecompiledHeader>Create</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -204,7 +204,14 @@
     <ClInclude Include="include\Window.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="include\RenderContext.cpp" />
+    <ClCompile Include="src\imgui.cpp" />
+    <ClCompile Include="src\imgui_demo.cpp" />
+    <ClCompile Include="src\imgui_draw.cpp" />
+    <ClCompile Include="src\imgui_impl_glfw.cpp" />
+    <ClCompile Include="src\imgui_impl_vulkan.cpp" />
+    <ClCompile Include="src\imgui_tables.cpp" />
+    <ClCompile Include="src\imgui_widgets.cpp" />
+    <ClCompile Include="src\RenderContext.cpp" />
     <ClCompile Include="src\Buffer.cpp" />
     <ClCompile Include="src\DescriptorSet.cpp" />
     <ClCompile Include="src\Image.cpp" />

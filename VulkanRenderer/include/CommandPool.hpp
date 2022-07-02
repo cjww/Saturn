@@ -4,6 +4,9 @@ namespace sa {
 
 	class CommandBufferSet {
 	private:
+		vk::Device m_device;
+		vk::CommandPool m_commandPool;
+
 		std::vector<vk::CommandBuffer> m_buffers;
 		int m_lastBufferIndex;
 		int m_currentBufferIndex;
@@ -14,6 +17,7 @@ namespace sa {
 		CommandBufferSet();
 		CommandBufferSet(vk::Device device, vk::CommandPool commandPool, const std::vector<vk::Queue>& queues, uint32_t queueFamilyIndex, vk::CommandBufferLevel level);
 		void create(vk::Device device, vk::CommandPool commandPool, const std::vector<vk::Queue>& queues, vk::CommandBufferLevel level);
+		void destroy();
 
 		void begin(vk::CommandBufferUsageFlags usageFlags, vk::CommandBufferInheritanceInfo* inheritanceinfo = nullptr);
 		void end();
@@ -46,5 +50,7 @@ namespace sa {
 		void destroy();
 
 		CommandBufferSet allocateCommandBufferSet(const std::vector<vk::Queue>& queues, vk::CommandBufferLevel level);
+		CommandBufferSet allocateOneTimeCommandBuffer(vk::Queue queue, vk::CommandBufferLevel level);
+		
 	};
 }

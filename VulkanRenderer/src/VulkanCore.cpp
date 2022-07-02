@@ -5,7 +5,6 @@
 
 namespace sa {
 	void VulkanCore::fillFormats() {
-
 		m_formats.push_back({ FormatPrecisionFlagBits::e32Bit, FormatDimensionFlagBits::e4, FormatTypeFlagBits::SFLOAT, vk::Format::eR32G32B32A32Sfloat });
 		m_formats.push_back({ FormatPrecisionFlagBits::e32Bit, FormatDimensionFlagBits::e4, FormatTypeFlagBits::SINT, vk::Format::eR32G32B32A32Sint });
 		m_formats.push_back({ FormatPrecisionFlagBits::e32Bit, FormatDimensionFlagBits::e4, FormatTypeFlagBits::UINT, vk::Format::eR32G32B32A32Uint });
@@ -49,7 +48,7 @@ namespace sa {
 
 		m_formats.push_back({ FormatPrecisionFlagBits::e8Bit, FormatDimensionFlagBits::e4, FormatTypeFlagBits::SRGB, vk::Format::eB8G8R8A8Srgb });
 		m_formats.push_back({ FormatPrecisionFlagBits::e8Bit, FormatDimensionFlagBits::e4, FormatTypeFlagBits::UNORM, vk::Format::eB8G8R8A8Unorm });
-		
+		m_formats.push_back({ FormatPrecisionFlagBits::e8Bit, FormatDimensionFlagBits::e3, FormatTypeFlagBits::UNORM, vk::Format::eB8G8R8Unorm });
 	}
 
 
@@ -260,12 +259,119 @@ namespace sa {
 
 	void VulkanCore::cleanup() {
 		
+		if (m_imGuiDescriptorPool)
+			m_device.destroyDescriptorPool(m_imGuiDescriptorPool);
+
 		m_memoryManager.destroy();
 		m_mainCommandPool.destroy();
 
 		m_device.destroy();
 		m_instance.destroy();
 	}
+#ifndef IMGUI_DISABLE
+	void VulkanCore::initImGui(GLFWwindow* pWindow, vk::RenderPass renderPass, uint32_t subpass) {
+
+		IMGUI_CHECKVERSION();
+		ImGui::CreateContext();
+		ImGuiIO& io = ImGui::GetIO(); (void)io;
+		io.ConfigFlags |= ImGuiConfigFlags_NavEnableKeyboard;       // Enable Keyboard Controls
+		//io.ConfigFlags |= ImGuiConfigFlags_NavEnableGamepad;      // Enable Gamepad Controls
+		io.ConfigFlags |= ImGuiConfigFlags_DockingEnable;           // Enable Docking
+		io.ConfigFlags |= ImGuiConfigFlags_ViewportsEnable;         // Enable Multi-Viewport / Platform Windows
+		//io.ConfigViewportsNoAutoMerge = true;
+		//io.ConfigViewportsNoTaskBarIcon = true;
+
+		ImGui::StyleColorsDark();
+		
+		// When viewports are enabled we tweak WindowRounding/WindowBg so platform windows can look identical to regular ones.
+		ImGuiStyle& style = ImGui::GetStyle();
+		if (io.ConfigFlags & ImGuiConfigFlags_ViewportsEnable)
+		{
+			style.WindowRounding = 0.0f;
+			style.Colors[ImGuiCol_WindowBg].w = 1.0f;
+		}
+
+		ImGui_ImplGlfw_InitForVulkan(pWindow, true);
+		
+		vk::DescriptorPoolSize poolSizes[] =
+		{
+			{ vk::DescriptorType::eSampler, 1000 },
+			{ vk::DescriptorType::eCombinedImageSampler, 1000 },
+			{ vk::DescriptorType::eSampledImage, 1000 },
+			{ vk::DescriptorType::eStorageImage, 1000 },
+			{ vk::DescriptorType::eUniformTexelBuffer, 1000 },
+			{ vk::DescriptorType::eStorageTexelBuffer, 1000 },
+			{ vk::DescriptorType::eUniformBuffer, 1000 },
+			{ vk::DescriptorType::eStorageBuffer, 1000 },
+			{ vk::DescriptorType::eUniformBufferDynamic, 1000 },
+			{ vk::DescriptorType::eStorageBufferDynamic, 1000 },
+			{ vk::DescriptorType::eInputAttachment, 1000 }
+		};
+		vk::DescriptorPoolCreateInfo poolInfo = {
+			.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
+			.maxSets = 1000 * IM_ARRAYSIZE(poolSizes),
+			.poolSizeCount = (uint32_t)IM_ARRAYSIZE(poolSizes),
+			.pPoolSizes = poolSizes,
+		};
+		m_imGuiDescriptorPool = m_device.createDescriptorPool(poolInfo);
+		
+
+		ImGui_ImplVulkan_InitInfo info = {
+			.Instance = m_instance,
+			.PhysicalDevice = m_physicalDevice,
+			.Device = m_device,
+			.QueueFamily = m_queueInfo.family,
+			.Queue = m_queues[0],
+			.PipelineCache = VK_NULL_HANDLE,
+			.DescriptorPool = m_imGuiDescriptorPool,
+			.Subpass = subpass,
+			.MinImageCount = 2,
+			.ImageCount = (uint32_t)m_queues.size(),
+			.MSAASamples = VK_SAMPLE_COUNT_1_BIT,
+			.Allocator = nullptr,
+			.CheckVkResultFn = [](VkResult result) { checkError((vk::Result)result, "Failed to initialize ImGui with vulkan", false); },
+		};
+		
+		ImGui_ImplVulkan_Init(&info, renderPass);
+		CommandBufferSet commandBuffer = m_mainCommandPool.allocateOneTimeCommandBuffer(m_queues[0], vk::CommandBufferLevel::ePrimary);
+		commandBuffer.begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
+
+		ImGui_ImplVulkan_CreateFontsTexture(commandBuffer.getBuffer());
+
+		commandBuffer.end();
+		commandBuffer.submit();
+		m_queues[0].waitIdle();
+		commandBuffer.destroy();	
+		ImGui_ImplVulkan_DestroyFontUploadObjects();
+	}
+
+	void VulkanCore::imGuiImage(vk::ImageView* imageView, vk::ImageLayout layout, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& tint_col, const ImVec4& border_col) {
+
+		if (layout != vk::ImageLayout::eShaderReadOnlyOptimal &&
+			layout != vk::ImageLayout::eReadOnlyOptimal &&
+			layout != vk::ImageLayout::eAttachmentOptimal &&
+			layout != vk::ImageLayout::eGeneral &&
+			layout != vk::ImageLayout::eDepthStencilAttachmentOptimal &&
+			layout != vk::ImageLayout::eDepthReadOnlyStencilAttachmentOptimal &&
+			layout != vk::ImageLayout::eDepthAttachmentStencilReadOnlyOptimal &&
+			layout != vk::ImageLayout::eDepthReadOnlyOptimal &&
+			layout != vk::ImageLayout::eStencilReadOnlyOptimal) 
+		{
+			layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		}
+		VkDescriptorSet texture = VK_NULL_HANDLE;
+		if (m_imGuiImages.count(imageView)) {
+			texture = m_imGuiImages.at(imageView);
+		}
+		else {
+			texture = ImGui_ImplVulkan_AddTexture(m_imGuiImageSampler, *imageView, (VkImageLayout)layout);
+			m_imGuiImages[imageView] = texture;
+		}
+
+		ImGui::Image(texture, size, uv0, uv1, tint_col, border_col);
+	}
+
+#endif
 
 	vk::SurfaceKHR VulkanCore::createSurface(GLFWwindow* pWindow) {
 		VkSurfaceKHR surface;

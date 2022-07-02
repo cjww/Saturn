@@ -67,7 +67,7 @@ public:
 
 };
 
-#ifdef DEBUG_LOG
+#ifdef SA_DEBUG_LOG
 #define DEBUG_LOG_INFO(...) \
 	Logger::SetColor(FGColor::BrightGreen); \
 	DEBUG_LOG_OSTREAM << "[INFO: " << __FILENAME__ << ":" << __LINE__ << "] "; \

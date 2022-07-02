@@ -11,13 +11,11 @@
 #include "Resources/Pipeline.hpp"
 #include "Resources/DescriptorSet.hpp"
 
+#include "imgui_impl_glfw.h"
+#include "imgui_impl_vulkan.h"
+
 namespace sa {
 
-
-	Renderer& Renderer::get() {
-		static Renderer instance;
-		return instance;
-	}
 
 	Renderer::Renderer() {
 		try {
@@ -48,8 +46,22 @@ namespace sa {
 			DEBUG_LOG_ERROR(e.what());
 		}
 	}
+
+	Renderer& Renderer::get() {
+		static Renderer instance;
+		return instance;
+	}
+
 	Renderer::~Renderer() {
 		m_pCore->getDevice().waitIdle();
+
+#ifndef IMGUI_DISABLE
+		if (ImGui::GetCurrentContext() != NULL) {
+			ImGui_ImplVulkan_Shutdown();
+			ImGui_ImplGlfw_Shutdown();
+			ImGui::DestroyContext();
+		}
+#endif
 
 		ResourceManager::get().clearContainer<CommandPool>();
 		ResourceManager::get().clearContainer<vk::BufferView>();
@@ -63,6 +75,24 @@ namespace sa {
 
 		m_pCore->cleanup();
 	}
+
+#ifndef IMGUI_DISABLE
+	void Renderer::initImGui(const Window& window, ResourceID renderProgram, uint32_t subpass) {
+		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
+		m_pCore->initImGui(window.getWindowHandle(), pRenderProgram->getRenderPass(), subpass);
+	}
+	
+	void Renderer::newImGuiFrame() {
+		ImGui_ImplVulkan_NewFrame();
+		ImGui_ImplGlfw_NewFrame();
+		ImGui::NewFrame();
+	}
+
+	void Renderer::imGuiImage(sa::Texture texture, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& tint_col, const ImVec4& border_col) {
+		m_pCore->imGuiImage(texture.getView(), ((DeviceImage*)texture)->layout, size, uv0, uv1, tint_col, border_col);
+	}
+
+#endif
 
 	ResourceID Renderer::createSwapchain(GLFWwindow* pWindow) {
 		return ResourceManager::get().insert<Swapchain>(m_pCore.get(), pWindow);
@@ -281,3 +311,8 @@ namespace sa {
 
 }
 
+namespace ImGui {
+	void Image(sa::Texture texture, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& tint_col, const ImVec4& border_col) {
+		sa::Renderer::get().imGuiImage(texture, size, uv0, uv1, tint_col, border_col);
+	}
+}

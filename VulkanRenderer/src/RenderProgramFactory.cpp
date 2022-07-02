@@ -161,7 +161,7 @@ namespace sa {
 		vk::SubpassDependency dep{
 			.srcSubpass = 0,
 			.dstSubpass = 1,
-			.srcStageMask = vk::PipelineStageFlagBits::eAllGraphics,
+			.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput,
 			.dstStageMask = vk::PipelineStageFlagBits::eFragmentShader,
 			.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite,
 			.dstAccessMask = vk::AccessFlagBits::eShaderRead,

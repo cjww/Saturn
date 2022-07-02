@@ -1,8 +1,23 @@
-#define DEBUG_LOG
+
+
+
+
 
 #include <iostream>
 
+#define IM_VEC2_CLASS_EXTRA											\
+        constexpr ImVec2(const glm::vec2& f) : x(f.x), y(f.y) {}	\
+        operator glm::vec2() const { return glm::vec2(x ,y); }
 
+#define IM_VEC4_CLASS_EXTRA															\
+        constexpr ImVec4(const glm::vec4& f) : x(f.x), y(f.y), z(f.z), w(f.w) {}	\
+        operator glm::vec4() const { return glm::vec4(x, y, z, w); }
+
+#include "glm\common.hpp"
+#include "glm\gtc\matrix_transform.hpp"
+#include "glm/gtx/transform.hpp"
+
+#define SA_DEBUG_LOG
 #include <Renderer.hpp>
 #include <RenderWindow.hpp>
 #include <Tools\Logger.hpp>
@@ -11,9 +26,6 @@
 #include <array>
 #include <thread>
 
-#include "glm\common.hpp"
-#include "glm\gtc\matrix_transform.hpp"
-#include "glm/gtx/transform.hpp"
 
 
 class CameraController {
@@ -302,6 +314,68 @@ std::array<uint32_t, 36> boxIndices = {
 	// Bottom
 	7, 6, 3, 6, 2, 3
 };
+
+void imguiTest(sa::RenderWindow& window) {
+	sa::Renderer& renderer = sa::Renderer::get();
+
+
+	sa::Texture2D colorTexture = renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, window.getCurrentExtent());
+	sa::Texture2D depthTexture = renderer.createTexture2D(sa::TextureTypeFlagBits::DEPTH_ATTACHMENT, window.getCurrentExtent());
+
+	ResourceID renderProgram = renderer.createRenderProgram()
+		.addColorAttachment(true, colorTexture)
+		.addDepthAttachment(depthTexture)
+		.beginSubpass()
+			.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
+			.addAttachmentReference(1, sa::SubpassAttachmentUsage::DepthTarget)
+		.endSubpass()
+		.end();
+
+	ResourceID imguiProgram = renderer.createRenderProgram()
+		.addSwapchainAttachment(window.getSwapchainID())
+		.beginSubpass()
+			.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
+		.endSubpass()
+		.end();
+
+
+	ResourceID framebuffer = renderer.createFramebuffer(renderProgram, { colorTexture, depthTexture });
+	ResourceID imguiFramebuffer = renderer.createSwapchainFramebuffer(imguiProgram, window.getSwapchainID(), { });
+
+	renderer.initImGui(window, imguiProgram, 0);
+	renderer.setClearColor(renderProgram, { 1, 0, 1, 1 });
+
+	sa::Image image("Box.png");
+	sa::Texture boxTexture = renderer.createTexture2D(image);
+	while (window.isOpen()) {
+		window.pollEvents();
+		
+
+		renderer.newImGuiFrame();
+
+		ImGui::ShowDemoWindow();
+		
+		ImGui::Image(colorTexture, boxTexture.getExtent());
+		
+		
+		sa::RenderContext context = window.beginFrame();
+		if (context) {
+
+			context.beginRenderProgram(renderProgram, framebuffer, sa::SubpassContents::DIRECT);
+			
+
+			context.endRenderProgram(renderProgram);
+			context.beginRenderProgram(imguiProgram, imguiFramebuffer, sa::SubpassContents::DIRECT);
+			
+			context.renderImGuiFrame();
+			
+			context.endRenderProgram(imguiProgram);
+			
+			window.display();
+		
+		}
+	}
+}
 
 void deffered(sa::RenderWindow& window) {
 	sa::Renderer& renderer = sa::Renderer::get();
@@ -687,9 +761,9 @@ void forward(sa::RenderWindow& window) {
 	};
 
 	std::vector<Object> objects;
-	const uint32_t objectsPerThread = 32;
-	std::vector<std::thread> threads(10); // 10 objects per thread
-	std::vector<ResourceID> contextPools(threads.size()); // 10 objects per thread
+	const uint32_t objectsPerThread = 100;
+	std::vector<std::thread> threads(7);
+	std::vector<ResourceID> contextPools(threads.size());
 	for (int i = 0; i < threads.size(); i++) {
 		contextPools[i] = renderer.createContextPool();
 
@@ -722,7 +796,6 @@ void forward(sa::RenderWindow& window) {
 						Object& object = objects[(i * objectsPerThread) + j];
 						//std::this_thread::sleep_for(5ms); // expensive work
 						object.worldMat = glm::translate(object.worldMat, glm::vec3(0, 1 * dt, 0));
-
 
 						object.context.begin(sa::ContextUsageFlagBits::RENDER_PROGRAM_CONTINUE);
 						object.context.bindPipeline(mainPipeline);
@@ -782,9 +855,9 @@ int main() {
 			}
 		});
 
-		
+		imguiTest(window);
 		//deffered(window);
-		forward(window);
+		//forward(window);
 
 
 	}
