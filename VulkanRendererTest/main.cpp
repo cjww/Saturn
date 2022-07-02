@@ -354,9 +354,11 @@ void imguiTest(sa::RenderWindow& window) {
 		renderer.newImGuiFrame();
 
 		ImGui::ShowDemoWindow();
-		
-		ImGui::Image(colorTexture, boxTexture.getExtent());
-		
+
+		if (ImGui::ImageButton(colorTexture, boxTexture.getExtent())) {
+			DEBUG_LOG_WARNING("Hello button");
+		}
+
 		
 		sa::RenderContext context = window.beginFrame();
 		if (context) {

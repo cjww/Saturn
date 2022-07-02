@@ -119,7 +119,7 @@ namespace sa {
 
 #ifndef IMGUI_DISABLE
 		void initImGui(GLFWwindow* pWindow, vk::RenderPass renderPass, uint32_t subpass);
-		void imGuiImage(vk::ImageView* imageView, vk::ImageLayout layout, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& tint_col, const ImVec4& border_col);
+		VkDescriptorSet getImGuiImageDescriptoSet(vk::ImageView* imageView, vk::ImageLayout layout);
 
 #endif
 		

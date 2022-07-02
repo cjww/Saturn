@@ -345,7 +345,7 @@ namespace sa {
 		ImGui_ImplVulkan_DestroyFontUploadObjects();
 	}
 
-	void VulkanCore::imGuiImage(vk::ImageView* imageView, vk::ImageLayout layout, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& tint_col, const ImVec4& border_col) {
+	VkDescriptorSet VulkanCore::getImGuiImageDescriptoSet(vk::ImageView* imageView, vk::ImageLayout layout) {
 
 		if (layout != vk::ImageLayout::eShaderReadOnlyOptimal &&
 			layout != vk::ImageLayout::eReadOnlyOptimal &&
@@ -367,8 +367,8 @@ namespace sa {
 			texture = ImGui_ImplVulkan_AddTexture(m_imGuiImageSampler, *imageView, (VkImageLayout)layout);
 			m_imGuiImages[imageView] = texture;
 		}
-
-		ImGui::Image(texture, size, uv0, uv1, tint_col, border_col);
+		return texture;
+		
 	}
 
 #endif

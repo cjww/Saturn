@@ -89,7 +89,13 @@ namespace sa {
 	}
 
 	void Renderer::imGuiImage(sa::Texture texture, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& tint_col, const ImVec4& border_col) {
-		m_pCore->imGuiImage(texture.getView(), ((DeviceImage*)texture)->layout, size, uv0, uv1, tint_col, border_col);
+		VkDescriptorSet descSet = m_pCore->getImGuiImageDescriptoSet(texture.getView(), ((DeviceImage*)texture)->layout);
+		ImGui::Image(descSet, size, uv0, uv1, tint_col, border_col);
+	}
+
+	bool Renderer::imGuiImageButton(sa::Texture texture, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, int frame_padding, const ImVec4& bg_col, const ImVec4& tint_col) {
+		VkDescriptorSet descSet = m_pCore->getImGuiImageDescriptoSet(texture.getView(), ((DeviceImage*)texture)->layout);
+		return ImGui::ImageButton(descSet, size, uv0, uv1, frame_padding, bg_col, tint_col);
 	}
 
 #endif
@@ -314,5 +320,9 @@ namespace sa {
 namespace ImGui {
 	void Image(sa::Texture texture, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& tint_col, const ImVec4& border_col) {
 		sa::Renderer::get().imGuiImage(texture, size, uv0, uv1, tint_col, border_col);
+	}
+
+	bool ImageButton(sa::Texture texture, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, int frame_padding, const ImVec4& bg_col, const ImVec4& tint_col) {
+		return sa::Renderer::get().imGuiImageButton(texture, size, uv0, uv1, frame_padding, bg_col, tint_col);
 	}
 }
