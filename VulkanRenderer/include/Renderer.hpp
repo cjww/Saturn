@@ -48,6 +48,7 @@ namespace sa {
 	public:
 		static Renderer& get();
 		virtual ~Renderer();
+
 #ifndef IMGUI_DISABLE
 		void initImGui(const Window& window, ResourceID renderProgram, uint32_t subpass);
 		void newImGuiFrame();
@@ -55,17 +56,7 @@ namespace sa {
 		void imGuiImage(sa::Texture texture, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& tint_col, const ImVec4& border_col);
 		bool imGuiImageButton(sa::Texture texture, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, int frame_padding, const ImVec4& bg_col, const ImVec4& tint_col);
 
-
 #endif // !IMGUI_DISABLE
-		
-		/*
-#ifdef SA_INCLUDE_IMGUI
-		std::unordered_map<Texture, ImTextureID> m_imGuiImages;
-
-		void createImGUIDescriptorPool();
-		ImGui_ImplVulkan_InitInfo getImGUIInitInfo() const;
-#endif
-		*/
 
 		ResourceID createSwapchain(GLFWwindow* pWindow);
 		ResourceID recreateSwapchain(GLFWwindow* pWindow, ResourceID oldSwapchain);
@@ -97,7 +88,7 @@ namespace sa {
 		Texture2D createTexture2D(TextureTypeFlags type, Extent extent, uint32_t sampleCount = 1);
 		Texture2D createTexture2D(TextureTypeFlags type, Extent extent, FormatPrecisionFlags formatPrecision, FormatDimensionFlags formatDimensions, FormatTypeFlags formatType, uint32_t sampleCount = 1);
 		Texture2D createTexture2D(TextureTypeFlags type, Extent extent, ResourceID swapchain, uint32_t sampleCount);
-		Texture2D createTexture2D(const Image& image);
+		Texture2D createTexture2D(const Image& image, bool generateMipMaps);
 
 		void queueTransfer(const DataTransfer& transfer);
 
@@ -112,49 +103,15 @@ namespace sa {
 		SubContext createSubContext(ResourceID framebuffer, ResourceID renderProgram, uint32_t subpassIndex, ResourceID contextPool = NULL_RESOURCE);
 
 		/*
-		void initImGUI(GLFWwindow* window, uint32_t renderpass, uint32_t subpass);
-		void newFrameImGUI();
-		void endFrameImGUI();
-		void cleanupImGUI();
-
-		ImTextureID getImTextureID(Texture* texture, const SamplerPtr& sampler);
-
+		
 		//Resource creation
-		Texture* createDepthTexture(VkExtent2D extent);
-
-
-		Texture* createColorTexture2D(VkExtent2D extent, VkFormat format, VkImageUsageFlags usage, VkSampleCountFlagBits sampleCount = VK_SAMPLE_COUNT_1_BIT, uint32_t mipLevels = 1, uint32_t arrayLayers = 1);
-		Texture* createTexture2D(uint32_t framebuffer, uint32_t renderpass, uint32_t subpass, VkExtent2D extent, unsigned char* pixels, int channels = 4);
-		Texture* createColorAttachmentTexture(VkExtent2D extent, VkFormat format, uint32_t arrayLayers, uint32_t mipLevels, VkSampleCountFlagBits sampleCount, VkImageUsageFlags additionalUsage);
-
+		
 		Texture* createTexture3D(VkExtent3D extent, VkFormat format);
 
 		void updateTexture(Texture* dst, uint32_t framebuffer, uint32_t renderpass, uint32_t subpass, void* data, size_t size);
 
-		void queueTransferCommand(uint32_t framebuffer, uint32_t renderpass, uint32_t subpass, Buffer* srcBuffer, Texture* dstTexture);
-	
-
-
-		SamplerPtr createSampler(VkFilter minMagFilter, float maxAnisotropy = 16.0f, float minLod = 0.0f, float maxLod = 0.0f, float mipLodBias = 0.0f);
-		SamplerPtr createSampler(VkSamplerCreateInfo info);
-
-
-		Buffer* createVertexBuffer(VkDeviceSize size, void* initialData);
-		Buffer* createIndexBuffer(VkDeviceSize size, void* initialData);
-
-		Buffer* createUniformBuffer(VkDeviceSize size, void* initialData);
-		Buffer* createStorageBuffer(VkDeviceSize size, void* initialData);
-
-		void destroyBuffer(Buffer* buffer);
-		void destroyTexture(Texture* texture);
-
-
-		void waitDeviceIdle() const;
-
-		void updateDescriptorSet(const DescriptorSetPtr& descriptorSet, uint32_t binding, const Buffer* buffer, const Texture* image, const SamplerPtr& sampler, bool isOneTimeUpdate);
-
-		// Draw commands
 		
+		// Draw commands
 		void bindViewports(const std::vector<VkViewport>& viewports, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
 		void bindViewport(const VkViewport& viewport, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
 		*/

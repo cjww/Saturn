@@ -128,7 +128,11 @@ namespace sa {
 	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Buffer& buffer) {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		const DeviceBuffer* pDeviceBuffer = (const DeviceBuffer*)buffer;
-		pDescriptorSet->update(binding, pDeviceBuffer->buffer, pDeviceBuffer->size, 0, m_pCommandBufferSet->getBufferIndex());
+		vk::BufferView* pView = nullptr;
+		if (buffer.getType() == BufferType::UNIFORM_TEXEL || buffer.getType() == BufferType::STORAGE_TEXEL) {
+			pView = buffer.getView();
+		}
+		pDescriptorSet->update(binding, pDeviceBuffer->buffer, pDeviceBuffer->size, 0, pView, m_pCommandBufferSet->getBufferIndex());
 	}
 
 	void RenderContext::bindDescriptorSet(ResourceID descriptorSet, ResourceID pipeline) {
@@ -275,6 +279,8 @@ namespace sa {
 			dstAccess,
 			pImage->image,
 			vk::ImageAspectFlagBits::eColor,
+			pImage->mipLevels,
+			pImage->arrayLayers,
 			srcStage,
 			dstStage
 		);

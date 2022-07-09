@@ -27,6 +27,8 @@ namespace sa {
 		int getHeight() const;
 		int getChannelCount() const;
 
+		uint32_t calculateMipLevelCount() const;
+
 		unsigned char* getPixels() const;
 
 	};

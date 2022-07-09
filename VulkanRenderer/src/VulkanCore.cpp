@@ -440,7 +440,7 @@ namespace sa {
 		return m_device.createSwapchainKHR(info);
 	}
 
-	vk::ImageView VulkanCore::createImageView(vk::ImageViewType type, vk::Image image, vk::Format format, vk::ImageAspectFlags aspectMask, uint32_t baseMipLevel, uint32_t baseArrayLevel) {
+	vk::ImageView VulkanCore::createImageView(vk::ImageViewType type, vk::Image image, vk::Format format, vk::ImageAspectFlags aspectMask, uint32_t mipLevels, uint32_t baseMipLevel, uint32_t layers, uint32_t baseArrayLevel) {
 		vk::ImageViewCreateInfo info{
 			.image = image,
 			.viewType = type,
@@ -454,13 +454,24 @@ namespace sa {
 			.subresourceRange = {
 				.aspectMask = aspectMask,
 				.baseMipLevel = baseMipLevel,
-				.levelCount = 1,
+				.levelCount = mipLevels,
 				.baseArrayLayer = baseArrayLevel,
-				.layerCount = 1
+				.layerCount = layers
 			}
 		};
 
 		return m_device.createImageView(info);
+	}
+
+	vk::BufferView VulkanCore::createBufferView(vk::Buffer buffer, vk::Format format) {
+		vk::BufferViewCreateInfo info = {
+			.flags = (vk::BufferViewCreateFlags)0,
+			.buffer = buffer,
+			.format = format,
+			.offset = 0,
+			.range = VK_WHOLE_SIZE,
+		};
+		return m_device.createBufferView(info);
 	}
 
 	vk::Framebuffer VulkanCore::createFrameBuffer(vk::RenderPass renderPass, std::vector<vk::ImageView> attachments, uint32_t width, uint32_t height, uint32_t layers){
@@ -610,8 +621,7 @@ namespace sa {
 		m_memoryManager.destroyImage(pImage);
 	}
 
-	void VulkanCore::transferImageLayout(vk::CommandBuffer commandBuffer, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::AccessFlags srcAccessMask, vk::AccessFlags dstAccessMask, vk::Image image, vk::ImageAspectFlags imageAspect, vk::PipelineStageFlags srcStage, vk::PipelineStageFlags dstStage) {
-		
+	void VulkanCore::transferImageLayout(vk::CommandBuffer commandBuffer, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::AccessFlags srcAccessMask, vk::AccessFlags dstAccessMask, vk::Image image, vk::ImageAspectFlags imageAspect, uint32_t mipLevels, uint32_t layers, vk::PipelineStageFlags srcStage, vk::PipelineStageFlags dstStage) {
 		vk::ImageMemoryBarrier imageBarrier{
 			.dstAccessMask = dstAccessMask,
 			.oldLayout = oldLayout,
@@ -621,8 +631,8 @@ namespace sa {
 			.image = image,
 			.subresourceRange{
 				.aspectMask = imageAspect,
-				.levelCount = 1,
-				.layerCount = 1,
+				.levelCount = mipLevels,
+				.layerCount = layers,
 			},
 		};
 
@@ -636,7 +646,7 @@ namespace sa {
 	}
 
 
-	void VulkanCore::transferBufferToColorImage(vk::CommandBuffer commandBuffer, vk::Buffer buffer, vk::Image image, vk::Extent3D copyExtent, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::AccessFlags dstAccessMask, vk::PipelineStageFlags dstStage) {
+	void VulkanCore::transferBufferToColorImage(vk::CommandBuffer commandBuffer, vk::Buffer buffer, vk::Image image, uint32_t mipLevels, uint32_t layers, vk::Extent3D copyExtent, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::AccessFlags dstAccessMask, vk::PipelineStageFlags dstStage) {
 		transferImageLayout(commandBuffer,
 			oldLayout,
 			vk::ImageLayout::eTransferDstOptimal,
@@ -644,6 +654,8 @@ namespace sa {
 			vk::AccessFlagBits::eTransferWrite,
 			image, 
 			vk::ImageAspectFlagBits::eColor,
+			mipLevels,
+			layers,
 			vk::PipelineStageFlagBits::eHost,
 			vk::PipelineStageFlagBits::eTransfer);
 
@@ -660,6 +672,10 @@ namespace sa {
 
 		commandBuffer.copyBufferToImage(buffer, image, vk::ImageLayout::eTransferDstOptimal, copy);
 
+		if (mipLevels > 1) {
+			generateMipmaps(commandBuffer, image, copyExtent, mipLevels);
+			return;
+		}
 		transferImageLayout(commandBuffer,
 			vk::ImageLayout::eTransferDstOptimal,
 			newLayout,
@@ -667,10 +683,111 @@ namespace sa {
 			dstAccessMask,
 			image, 
 			vk::ImageAspectFlagBits::eColor,
+			mipLevels,
+			layers,
 			vk::PipelineStageFlagBits::eTransfer,
 			dstStage);
+	
 	}
 
+	void VulkanCore::generateMipmaps(vk::CommandBuffer commandBuffer, vk::Image image, vk::Extent3D extent, uint32_t mipLevels) {
+		vk::ImageMemoryBarrier barrier = {
+			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.image = image,
+			.subresourceRange = {
+				.aspectMask = vk::ImageAspectFlagBits::eColor,
+				.baseMipLevel = 0,
+				.levelCount = 1,
+				.baseArrayLayer = 0,
+				.layerCount = 1,
+			},
+		};
+
+		vk::Extent3D mipExtent = extent;
+		for (uint32_t i = 1; i < mipLevels; i++) {
+			barrier.subresourceRange.baseMipLevel = i - 1;
+			barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+			barrier.newLayout = vk::ImageLayout::eTransferSrcOptimal;
+			barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+			barrier.dstAccessMask = vk::AccessFlagBits::eTransferRead;
+
+			commandBuffer.pipelineBarrier(
+				vk::PipelineStageFlagBits::eTransfer,
+				vk::PipelineStageFlagBits::eTransfer,
+				(vk::DependencyFlags)0, 
+				nullptr, 
+				nullptr, 
+				barrier);
+
+			vk::ImageBlit blit = {
+				.srcSubresource = {
+					.aspectMask = vk::ImageAspectFlagBits::eColor,
+					.mipLevel = i - 1,
+					.baseArrayLayer = 0,
+					.layerCount = 1,
+				},
+				.dstSubresource = {
+					.aspectMask = vk::ImageAspectFlagBits::eColor,
+					.mipLevel = i,
+					.baseArrayLayer = 0,
+					.layerCount = 1,
+				},
+			};
+			blit.srcOffsets[0] = vk::Offset3D{ 0, 0, 0 };
+			blit.srcOffsets[1] = vk::Offset3D{
+				(int32_t)mipExtent.width,
+				(int32_t)mipExtent.height,
+				(int32_t)mipExtent.depth
+			};
+
+			if (mipExtent.width > 1) mipExtent.width /= 2;
+			if (mipExtent.height > 1) mipExtent.height /= 2;
+			if (mipExtent.depth > 1) mipExtent.depth /= 2;
+
+
+			blit.dstOffsets[0] = vk::Offset3D{ 0, 0, 0 };
+			blit.dstOffsets[1] = vk::Offset3D{
+				(int32_t)mipExtent.width,
+				(int32_t)mipExtent.height,
+				(int32_t)mipExtent.depth
+			};
+
+			commandBuffer.blitImage(
+				image, vk::ImageLayout::eTransferSrcOptimal, 
+				image, vk::ImageLayout::eTransferDstOptimal, 
+				blit, 
+				vk::Filter::eLinear);
+
+			barrier.oldLayout = vk::ImageLayout::eTransferSrcOptimal;
+			barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+			barrier.srcAccessMask = vk::AccessFlagBits::eTransferRead;
+			barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+
+			commandBuffer.pipelineBarrier(
+				vk::PipelineStageFlagBits::eTransfer,
+				vk::PipelineStageFlagBits::eFragmentShader,
+				(vk::DependencyFlags)0,
+				nullptr,
+				nullptr,
+				barrier);
+		}
+
+		barrier.subresourceRange.baseMipLevel = mipLevels - 1;
+		barrier.oldLayout = vk::ImageLayout::eTransferDstOptimal;
+		barrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		barrier.srcAccessMask = vk::AccessFlagBits::eTransferWrite;
+		barrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+
+		commandBuffer.pipelineBarrier(
+			vk::PipelineStageFlagBits::eTransfer,
+			vk::PipelineStageFlagBits::eFragmentShader,
+			(vk::DependencyFlags)0,
+			nullptr,
+			nullptr,
+			barrier);
+
+	}
 
 	vk::Sampler VulkanCore::createSampler(const vk::SamplerCreateInfo& info) {
 		return m_device.createSampler(info);

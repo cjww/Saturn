@@ -28,7 +28,7 @@ namespace sa {
 			uint32_t setIndex);
 		void destroy();
 
-		void update(uint32_t binding, vk::Buffer buffer, vk::DeviceSize bufferSize, vk::DeviceSize bufferOffset, uint32_t indexToUpdate);
+		void update(uint32_t binding, vk::Buffer buffer, vk::DeviceSize bufferSize, vk::DeviceSize bufferOffset, vk::BufferView* pView, uint32_t indexToUpdate);
 		void update(uint32_t binding, vk::ImageView view, vk::Sampler* pSampler, uint32_t indexToUpdate);
 
 		vk::DescriptorSet getSet(uint32_t index) const;

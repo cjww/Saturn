@@ -33,7 +33,7 @@ namespace sa {
 		: Texture(pCore)
 	{
 		m_type = type;
-		create(type, extent, sampleCount);
+		create(type, extent, sampleCount, 1);
 	}
 
 	Texture2D::Texture2D(VulkanCore* pCore, TextureTypeFlags type, Extent extent, FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, uint32_t sampleCount)
@@ -50,11 +50,18 @@ namespace sa {
 		create(type, extent, pSwapchain, sampleCount);
 	}
 
-	Texture2D::Texture2D(VulkanCore* pCore, const Image& image)
+	Texture2D::Texture2D(VulkanCore* pCore, const Image& image, bool generateMipmaps)
 		: Texture(pCore)
 	{
 		m_type = TextureTypeFlagBits::SAMPLED | TextureTypeFlagBits::TRANSFER_DST;
-		create(m_type, image.getExtent(), 1);
+
+		uint32_t mipLevels = 1;
+		if (generateMipmaps) {
+			mipLevels = image.calculateMipLevelCount();
+			m_type |= TextureTypeFlagBits::TRANSFER_SRC;
+		}
+
+		create(m_type, image.getExtent(), 1, mipLevels);
 		
 		m_pStagingBuffer = m_pCore->createBuffer(
 			vk::BufferUsageFlagBits::eTransferSrc,
@@ -71,7 +78,7 @@ namespace sa {
 		Renderer::get().queueTransfer(transfer);
 	}
 	
-	void Texture2D::create(TextureTypeFlags type, Extent extent, uint32_t sampleCount) {
+	void Texture2D::create(TextureTypeFlags type, Extent extent, uint32_t sampleCount, uint32_t mipLevels) {
 
 		vk::ImageUsageFlags usage = (vk::ImageUsageFlags)type;
 		vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
@@ -89,7 +96,7 @@ namespace sa {
 			format,
 			usage,
 			(vk::SampleCountFlagBits)sampleCount,
-			1,
+			mipLevels,
 			1
 		);
 
@@ -99,7 +106,9 @@ namespace sa {
 			m_pImage->image,
 			format,
 			aspect,
+			mipLevels,
 			0,
+			1,
 			0
 		));
 
@@ -155,7 +164,9 @@ namespace sa {
 			m_pImage->image,
 			format,
 			aspect,
+			1,
 			0,
+			1,
 			0
 		));
 
@@ -182,7 +193,9 @@ namespace sa {
 			m_pImage->image,
 			pSwapchain->getFormat(),
 			vk::ImageAspectFlagBits::eColor,
+			1,
 			0,
+			1,
 			0
 		));
 

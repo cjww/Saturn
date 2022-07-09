@@ -17,10 +17,11 @@ namespace sa {
 
 	typedef uint32_t TextureTypeFlags;
 	enum TextureTypeFlagBits : TextureTypeFlags {
+		TRANSFER_SRC = 1,
 		TRANSFER_DST = 2,
 		SAMPLED = 4,
 		STORAGE = 8,
-		COLOR_ATTACHMENT = 16,
+		COLOR_ATTACHMENT = 16,	
 		DEPTH_ATTACHMENT = 32,
 		INPUT_ATTACHMENT = 128,
 	};
@@ -54,6 +55,11 @@ namespace sa {
 	class Texture2D : public Texture {
 	private:
 
+		void create(TextureTypeFlags type, Extent extent, uint32_t sampleCount, uint32_t mipLevels);
+		void create(TextureTypeFlags type, Extent extent,
+			FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, uint32_t sampleCount);
+		void create(TextureTypeFlags type, Extent extent, Swapchain* pSwapchain, uint32_t sampleCount);
+
 	public:
 		Texture2D(VulkanCore* pCore, TextureTypeFlags type, Extent extent, uint32_t sampleCount = 1);
 		Texture2D(VulkanCore* pCore, TextureTypeFlags type, Extent extent,
@@ -61,15 +67,10 @@ namespace sa {
 		Texture2D(VulkanCore* pCore, TextureTypeFlags type, Extent extent,
 			Swapchain* pSwapchain, uint32_t sampleCount = 1);
 
-		Texture2D(VulkanCore* pCore, const Image& image);
+		Texture2D(VulkanCore* pCore, const Image& image, bool generateMipmaps);
 
 		Texture2D(const Texture2D&) = default;
 		Texture2D& operator=(const Texture2D&) = default;
-
-		void create(TextureTypeFlags type, Extent extent, uint32_t sampleCount);
-		void create(TextureTypeFlags type, Extent extent,
-			FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, uint32_t sampleCount);
-		void create(TextureTypeFlags type, Extent extent, Swapchain* pSwapchain, uint32_t sampleCount);
 
 
 		void destroy();

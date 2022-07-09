@@ -51,7 +51,7 @@ namespace sa {
 		m_device.freeDescriptorSets(m_descriptorPool, m_descriptorSets);
 	}
 
-	void DescriptorSet::update(uint32_t binding, vk::Buffer buffer, vk::DeviceSize bufferSize, vk::DeviceSize bufferOffset, uint32_t indexToUpdate) {
+	void DescriptorSet::update(uint32_t binding, vk::Buffer buffer, vk::DeviceSize bufferSize, vk::DeviceSize bufferOffset, vk::BufferView* pView, uint32_t indexToUpdate) {
 
 		if (m_writes.size() <= binding) {
 			DEBUG_LOG_ERROR("Binding", binding, "out of bounds!");
@@ -65,6 +65,8 @@ namespace sa {
 		};
 
 		m_writes[binding].setBufferInfo(bufferInfo);
+		
+		m_writes[binding].setPTexelBufferView(pView);
 
 		update(binding, indexToUpdate);
 

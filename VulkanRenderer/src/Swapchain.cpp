@@ -51,7 +51,9 @@ namespace sa {
 				image,
 				m_format,
 				vk::ImageAspectFlagBits::eColor,
+				1,
 				0,
+				1,
 				0
 			));
 		}

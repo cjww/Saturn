@@ -291,13 +291,13 @@ std::array<VertexColorUV, 8> box = {
 	// forward
 	VertexColorUV{ { -1.0f, 1.0f, 1.0f, 1.0f }, { 1, 1, 1, 1 }, { 0, 1 } },
 	VertexColorUV{ { 1.0f, 1.0f, 1.0f, 1.0f }, { 1, 1, 1, 1 }, { 1, 1 } },
-	VertexColorUV{ { -1.0f, -1.0f, 1.0f, 1.0f }, { 1, 1, 1, 1 }, { 1, 0 } },
-	VertexColorUV{ { 1.0f, -1.0f, 1.0f, 1.0f }, { 1, 1, 1, 1 }, { 0, 0 } },
+	VertexColorUV{ { -1.0f, -1.0f, 1.0f, 1.0f }, { 1, 1, 1, 1 }, { 0, 0 } },
+	VertexColorUV{ { 1.0f, -1.0f, 1.0f, 1.0f }, { 1, 1, 1, 1 }, { 1, 0 } },
 	// back
 	VertexColorUV{ { -1.0f, 1.0f, -1.0f, 1.0f }, { 1, 1, 1, 1 }, { 0, 1 } },
 	VertexColorUV{ { 1.0f, 1.0f, -1.0f, 1.0f }, { 1, 1, 1, 1 }, { 1, 1 } },
-	VertexColorUV{ { -1.0f, -1.0f, -1.0f, 1.0f }, { 1, 1, 1, 1 }, { 1, 0 } },
-	VertexColorUV{ { 1.0f, -1.0f, -1.0f, 1.0f }, { 1, 1, 1, 1 }, { 0, 0 } }
+	VertexColorUV{ { -1.0f, -1.0f, -1.0f, 1.0f }, { 1, 1, 1, 1 }, { 0, 0 } },
+	VertexColorUV{ { 1.0f, -1.0f, -1.0f, 1.0f }, { 1, 1, 1, 1 }, { 1, 0 } }
 };
 
 std::array<uint32_t, 36> boxIndices = {
@@ -319,15 +319,17 @@ void imguiTest(sa::RenderWindow& window) {
 	sa::Renderer& renderer = sa::Renderer::get();
 
 
-	sa::Texture2D colorTexture = renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, window.getCurrentExtent());
-	sa::Texture2D depthTexture = renderer.createTexture2D(sa::TextureTypeFlagBits::DEPTH_ATTACHMENT, window.getCurrentExtent());
-
+	sa::Texture2D colorTexture = renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT, window.getCurrentExtent(), 8);
+	sa::Texture2D depthTexture = renderer.createTexture2D(sa::TextureTypeFlagBits::DEPTH_ATTACHMENT, window.getCurrentExtent(), 8);
+	sa::Texture2D resolveTexture = renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, window.getCurrentExtent());
 	ResourceID renderProgram = renderer.createRenderProgram()
-		.addColorAttachment(true, colorTexture)
+		.addColorAttachment(false, colorTexture)
 		.addDepthAttachment(depthTexture)
+		.addColorAttachment(true, resolveTexture)
 		.beginSubpass()
 			.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
 			.addAttachmentReference(1, sa::SubpassAttachmentUsage::DepthTarget)
+			.addAttachmentReference(2, sa::SubpassAttachmentUsage::Resolve)
 		.endSubpass()
 		.end();
 
@@ -339,32 +341,87 @@ void imguiTest(sa::RenderWindow& window) {
 		.end();
 
 
-	ResourceID framebuffer = renderer.createFramebuffer(renderProgram, { colorTexture, depthTexture });
+	ResourceID framebuffer = renderer.createFramebuffer(renderProgram, { colorTexture, depthTexture, resolveTexture });
 	ResourceID imguiFramebuffer = renderer.createSwapchainFramebuffer(imguiProgram, window.getSwapchainID(), { });
 
 	renderer.initImGui(window, imguiProgram, 0);
-	renderer.setClearColor(renderProgram, { 1, 0, 1, 1 });
-
+	
 	sa::Image image("Box.png");
-	sa::Texture boxTexture = renderer.createTexture2D(image);
+	sa::Texture2D boxTexture = renderer.createTexture2D(image, true);
+
+	struct Object {
+		sa::Buffer vertexBuffer;
+		sa::Buffer indexBuffer;
+		glm::mat4 worldMat;
+	};
+
+	Object object;
+	object.vertexBuffer = renderer.createBuffer(sa::BufferType::VERTEX);
+	object.vertexBuffer.write(box);
+
+	object.indexBuffer = renderer.createBuffer(sa::BufferType::INDEX);
+	object.indexBuffer.write(boxIndices);
+
+	object.worldMat = glm::mat4(1);
+
+	CameraController camera(window);
+
+	ResourceID pipeline = renderer.createGraphicsPipeline(renderProgram, 0, window.getCurrentExtent(), "ForwardShader.vert.spv", "ForwardShader.frag.spv");
+
+	ResourceID descriptorSet = renderer.allocateDescriptorSet(pipeline, 0);
+
+	UBO ubo = {
+		camera.getView(0.1),
+		camera.getProjection(90)
+	};
+	sa::Buffer uniformBuffer = renderer.createBuffer(sa::BufferType::UNIFORM);
+	uniformBuffer.write(ubo);
+
+	ResourceID sampler = renderer.createSampler();
+
+	renderer.updateDescriptorSet(descriptorSet, 0, uniformBuffer);
+	renderer.updateDescriptorSet(descriptorSet, 1, boxTexture, sampler);
+
+	auto now = std::chrono::high_resolution_clock::now();
+
 	while (window.isOpen()) {
 		window.pollEvents();
 		
-
 		renderer.newImGuiFrame();
 
-		ImGui::ShowDemoWindow();
+		ImGui::DockSpaceOverViewport();
 
-		if (ImGui::ImageButton(colorTexture, boxTexture.getExtent())) {
-			DEBUG_LOG_WARNING("Hello button");
+
+		float dt = std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - now).count();
+		now = std::chrono::high_resolution_clock::now();
+
+		ubo.view = camera.getView(dt);
+		uniformBuffer.write(ubo);
+		if (ImGui::Begin("Settings")) {
+			ImGui::Text("Frame time: %f", dt);
+			ImGui::Text("FPS: %f", 1.0f/dt);
+
+			ImGui::End();
 		}
 
-		
+		if (ImGui::Begin("Scene")) {
+			ImGui::Image(resolveTexture, resolveTexture.getExtent());
+			ImGui::End();
+		}
+
 		sa::RenderContext context = window.beginFrame();
 		if (context) {
 
+			context.updateDescriptorSet(descriptorSet, 0, uniformBuffer);
+			
 			context.beginRenderProgram(renderProgram, framebuffer, sa::SubpassContents::DIRECT);
 			
+			context.bindPipeline(pipeline);
+			context.bindDescriptorSet(descriptorSet, pipeline);
+			context.bindVertexBuffers(0, { object.vertexBuffer });
+			context.bindIndexBuffer(object.indexBuffer);
+			context.pushConstant(pipeline, sa::ShaderStageFlagBits::VERTEX, 0, object.worldMat);
+			context.drawIndexed(object.indexBuffer.getElementCount<uint32_t>(), 1);
 
 			context.endRenderProgram(renderProgram);
 			context.beginRenderProgram(imguiProgram, imguiFramebuffer, sa::SubpassContents::DIRECT);
@@ -466,7 +523,7 @@ void deffered(sa::RenderWindow& window) {
 
 
 	sa::Image boxImage("Box.png");
-	sa::Texture2D texture = renderer.createTexture2D(boxImage);
+	sa::Texture2D texture = renderer.createTexture2D(boxImage, false);
 	ResourceID sampler = renderer.createSampler(sa::FilterMode::LINEAR);
 	renderer.updateDescriptorSet(defferedDescriptorSet, 2, texture, sampler);
 
@@ -731,7 +788,8 @@ void forward(sa::RenderWindow& window) {
 
 
 	sa::Image image("Box.png");
-	sa::Texture2D texture = renderer.createTexture2D(image);
+	
+	sa::Texture2D texture = renderer.createTexture2D(image, false);
 	ResourceID sampler = renderer.createSampler(sa::FilterMode::LINEAR);
 	renderer.updateDescriptorSet(mainDescriptorSet, 1, texture, sampler);
 

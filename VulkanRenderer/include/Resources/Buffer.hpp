@@ -1,5 +1,11 @@
 #pragma once
 
+#include "FormatFlags.hpp"
+
+namespace vk {
+	struct BufferView;
+}
+
 namespace sa {
 	struct DeviceBuffer;
 	class VulkanCore;
@@ -8,7 +14,9 @@ namespace sa {
 		VERTEX,
 		INDEX,
 		UNIFORM,
-		STORAGE
+		STORAGE,
+		UNIFORM_TEXEL,
+		STORAGE_TEXEL
 	};
 
 	std::string to_string(const BufferType& value);
@@ -18,6 +26,8 @@ namespace sa {
 		VulkanCore* m_pCore;
 		DeviceBuffer* m_pBuffer;
 		size_t m_size;
+
+		ResourceID m_view;
 
 		BufferType m_type;
 
@@ -31,8 +41,12 @@ namespace sa {
 
 		void resize(size_t newSize);
 
+		bool setFormat(FormatPrecisionFlags precision, FormatDimensionFlags dimensions, FormatTypeFlags type);
+
 		size_t getCapacity() const;
 		size_t getSize() const;
+
+		vk::BufferView* getView() const;
 
 		BufferType getType() const;
 

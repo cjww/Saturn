@@ -85,6 +85,10 @@ namespace sa {
 		return m_channels;
 	}
 
+	uint32_t Image::calculateMipLevelCount() const {
+		return static_cast<uint32_t>(std::floor(std::log2(std::max(m_width, m_height)))) + 1;
+	}
+
 	unsigned char* Image::getPixels() const {
 		return m_pixels;
 	}

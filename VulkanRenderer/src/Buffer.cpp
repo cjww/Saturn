@@ -16,6 +16,10 @@ namespace sa {
 			return "UNIFORM";
 		case sa::BufferType::STORAGE:
 			return "STORAGE";
+		case sa::BufferType::UNIFORM_TEXEL:
+			return "UNIFORM_TEXEL";
+		case sa::BufferType::STORAGE_TEXEL:
+			return "STORAGE_TEXEL";
 		default:
 			return "-";
 		}
@@ -26,11 +30,12 @@ namespace sa {
 		, m_pCore(nullptr)
 		, m_size(0)
 		, m_type(BufferType::VERTEX)
+		, m_view(NULL_RESOURCE)
 	{
 
 	}
 
-	Buffer::Buffer(VulkanCore* pCore, BufferType type, size_t size, void* initialData) {
+	Buffer::Buffer(VulkanCore* pCore, BufferType type, size_t size, void* initialData) : Buffer() {
 		m_pCore = pCore;
 		m_type = type;
 		m_size = (initialData) ? size : 0;
@@ -66,12 +71,29 @@ namespace sa {
 				VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT,
 				size, initialData);
 			break;
+		case BufferType::UNIFORM_TEXEL:
+			m_pBuffer = m_pCore->createBuffer(vk::BufferUsageFlagBits::eUniformTexelBuffer,
+				VMA_MEMORY_USAGE_AUTO,
+				VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+				size, initialData);
+			m_view = ResourceManager::get().insert<vk::BufferView>(m_pCore->createBufferView(m_pBuffer->buffer, vk::Format::eR32Sfloat));
+			break;
+		case BufferType::STORAGE_TEXEL:
+			m_pBuffer = m_pCore->createBuffer(vk::BufferUsageFlagBits::eStorageTexelBuffer,
+				VMA_MEMORY_USAGE_AUTO,
+				VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT,
+				size, initialData);
+			m_view = ResourceManager::get().insert<vk::BufferView>(m_pCore->createBufferView(m_pBuffer->buffer, vk::Format::eR32Sfloat));
+			break;
 		}
 	}
 
 	void Buffer::destroy() {
 		m_pCore->destroyBuffer(m_pBuffer);
-
+		if (m_view != NULL_RESOURCE) {
+			ResourceManager::get().remove<vk::BufferView>(m_view);
+			m_view = NULL_RESOURCE;
+		}
 		m_pBuffer = nullptr;
 		m_size = 0;
 	}
@@ -96,12 +118,29 @@ namespace sa {
 		free(data);
 	}
 
+	bool Buffer::setFormat(FormatPrecisionFlags precision, FormatDimensionFlags dimensions, FormatTypeFlags type) {
+		if (m_view == NULL_RESOURCE)
+			return false;
+
+		vk::Format format = m_pCore->getFormat(precision, dimensions, type, vk::FormatFeatureFlagBits::eUniformTexelBuffer | vk::FormatFeatureFlagBits::eStorageTexelBuffer, vk::ImageTiling::eOptimal);
+		if (format != vk::Format::eUndefined) {
+			ResourceManager::get().remove<vk::BufferView>(m_view);
+			m_view = ResourceManager::get().insert<vk::BufferView>(m_pCore->createBufferView(m_pBuffer->buffer, format));
+			return true;
+		}
+		return false;
+	}
+
 	size_t Buffer::getCapacity() const {
 		return m_pBuffer->size;
 	}
 
 	size_t Buffer::getSize() const {
 		return m_size;
+	}
+
+	vk::BufferView* Buffer::getView() const {
+		return ResourceManager::get().get<vk::BufferView>(m_view);
 	}
 
 	BufferType Buffer::getType() const {

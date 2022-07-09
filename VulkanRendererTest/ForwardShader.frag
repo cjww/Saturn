@@ -11,4 +11,6 @@ layout(location = 0) out vec4 out_color;
 
 void main() {
     out_color = texture(myTexture, in_vertexUV);
+    vec2 texCoord = in_vertexUV * ivec2(500, 500);
+
 }

@@ -4,20 +4,25 @@
 namespace sa {
 	void Shader::addResources(const spirv_cross::Compiler& compiler, const spirv_cross::SmallVector<spirv_cross::Resource>& resources, vk::DescriptorType type, vk::Sampler* immutableSamplers) {
 		for (auto& b : resources) {
+			const auto& t = compiler.get_type(b.type_id);
+			if ((type == vk::DescriptorType::eSampledImage || type == vk::DescriptorType::eCombinedImageSampler || type == vk::DescriptorType::eStorageImage) && t.image.dim == spv::Dim::DimBuffer) {
+				continue; // this is not a sampled image
+			}
+			if ((type == vk::DescriptorType::eUniformTexelBuffer || type == vk::DescriptorType::eStorageTexelBuffer) && t.image.dim != spv::Dim::DimBuffer) {
+				continue; // this is not a texel buffer
+			}
+			
 			vk::DescriptorSetLayoutBinding layoutBinding = {};
 			uint32_t set = compiler.get_decoration(b.id, spv::Decoration::DecorationDescriptorSet);
 			layoutBinding.binding = compiler.get_decoration(b.id, spv::Decoration::DecorationBinding);
 			size_t size = 0;
-			if (type != vk::DescriptorType::eSampledImage && 
-				type != vk::DescriptorType::eCombinedImageSampler &&
-				type != vk::DescriptorType::eInputAttachment &&
-				type != vk::DescriptorType::eStorageImage) {
+			
+			if (t.basetype == spirv_cross::SPIRType::BaseType::Struct) {
 				size = compiler.get_declared_struct_size(compiler.get_type(b.type_id));
 			}
+
 			layoutBinding.stageFlags = m_stage;
-
-			auto t = compiler.get_type(b.type_id);
-
+			
 			layoutBinding.descriptorCount = (t.array.size() > 0) ? t.array[0] : 1;
 			layoutBinding.descriptorType = type;
 			layoutBinding.pImmutableSamplers = immutableSamplers;
@@ -171,8 +176,8 @@ namespace sa {
 		m_info.setStage(m_stage);
 
 		spirv_cross::Compiler compiler(code);
+		compiler.build_combined_image_samplers();
 
-		//m_pCompiler = std::make_shared<spirv_cross::Compiler>(code);
 		for (auto ext : compiler.get_declared_extensions()) {
 			DEBUG_LOG_INFO("Shader uses vulkan extension: ", ext);
 		}
@@ -180,15 +185,23 @@ namespace sa {
 		m_descriptorSets.clear();
 		auto res = compiler.get_shader_resources();
 
-		addResources(compiler, res.uniform_buffers, vk::DescriptorType::eUniformBuffer, nullptr);
+		addResources(compiler, res.uniform_buffers, vk::DescriptorType::eUniformBuffer, nullptr); // uniform UBO {}
 
-		addResources(compiler, res.sampled_images, vk::DescriptorType::eCombinedImageSampler, nullptr);
-		addResources(compiler, res.separate_images, vk::DescriptorType::eSampledImage, nullptr);
+		addResources(compiler, res.separate_samplers, vk::DescriptorType::eSampler, nullptr); // sampler / samplerShadow
 
-		addResources(compiler, res.storage_images, vk::DescriptorType::eStorageImage, nullptr);
-		addResources(compiler, res.storage_buffers, vk::DescriptorType::eStorageBuffer, nullptr);
+		addResources(compiler, res.separate_images, vk::DescriptorType::eSampledImage, nullptr); // texture2D
+		addResources(compiler, res.separate_images, vk::DescriptorType::eUniformTexelBuffer, nullptr); // textureBuffer
 
-		addResources(compiler, res.subpass_inputs, vk::DescriptorType::eInputAttachment, nullptr);
+		addResources(compiler, res.sampled_images, vk::DescriptorType::eCombinedImageSampler, nullptr); // sampler2D
+		addResources(compiler, res.sampled_images, vk::DescriptorType::eUniformTexelBuffer, nullptr); // samplerBuffer
+
+		addResources(compiler, res.storage_images, vk::DescriptorType::eStorageImage, nullptr); // image2D
+		addResources(compiler, res.storage_images, vk::DescriptorType::eStorageTexelBuffer, nullptr); // imageBuffer
+
+		addResources(compiler, res.storage_buffers, vk::DescriptorType::eStorageBuffer, nullptr); // buffer SSBO {}
+		
+		addResources(compiler, res.subpass_inputs, vk::DescriptorType::eInputAttachment, nullptr); // subpassInput
+		
 		// TODO ...
 
 		if (m_stage == vk::ShaderStageFlagBits::eCompute) {

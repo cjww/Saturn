@@ -125,7 +125,9 @@ namespace sa {
 		
 		vk::SurfaceKHR createSurface(GLFWwindow* pWindow);
 		vk::SwapchainKHR createSwapchain(vk::SurfaceKHR surface, vk::Format* outFormat, vk::Extent2D* outExtent);
-		vk::ImageView createImageView(vk::ImageViewType type, vk::Image image, vk::Format format, vk::ImageAspectFlags aspectMask, uint32_t baseMipLevel, uint32_t baseArrayLevel);
+		vk::ImageView createImageView(vk::ImageViewType type, vk::Image image, vk::Format format, vk::ImageAspectFlags aspectMask,
+			uint32_t mipLevels, uint32_t baseMipLevel, uint32_t layers, uint32_t baseArrayLevel);
+		vk::BufferView createBufferView(vk::Buffer buffer, vk::Format format);
 
 		vk::Framebuffer createFrameBuffer(vk::RenderPass renderPass, std::vector<vk::ImageView> attachments, uint32_t width, uint32_t height, uint32_t layers);
 
@@ -155,18 +157,23 @@ namespace sa {
 			vk::AccessFlags dstAccessMask,
 			vk::Image image,
 			vk::ImageAspectFlags imageAspect,
+			uint32_t mipLevels,
+			uint32_t layers,
 			vk::PipelineStageFlags srcStage,
 			vk::PipelineStageFlags dstStage);
 
 		void transferBufferToColorImage(vk::CommandBuffer commandBuffer,
 			vk::Buffer buffer,
 			vk::Image image,
+			uint32_t mipLevels, 
+			uint32_t layers,
 			vk::Extent3D copyExtent,
 			vk::ImageLayout oldLayout,
 			vk::ImageLayout newLayout,
 			vk::AccessFlags dstAccessMask,
 			vk::PipelineStageFlags dstStage);
 
+		void generateMipmaps(vk::CommandBuffer commandBuffer, vk::Image image, vk::Extent3D extent, uint32_t mipLevels);
 
 		vk::Sampler createSampler(const vk::SamplerCreateInfo& info);
 

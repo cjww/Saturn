@@ -39,7 +39,7 @@ namespace sa {
 			ResourceManager::get().setCleanupFunction<vk::Sampler>([&](vk::Sampler* p) { m_pCore->getDevice().destroySampler(*p); });
 			ResourceManager::get().setCleanupFunction<vk::ImageView>([&](vk::ImageView* p) { m_pCore->getDevice().destroyImageView(*p); });
 			ResourceManager::get().setCleanupFunction<vk::BufferView>([&](vk::BufferView* p) { m_pCore->getDevice().destroyBufferView(*p); });
-			ResourceManager::get().setCleanupFunction<CommandPool>([&](CommandPool* p) { p->destroy(); });
+			ResourceManager::get().setCleanupFunction<CommandPool>([](CommandPool* p) { p->destroy(); });
 
 		}
 		catch (const std::exception& e) {
@@ -201,7 +201,11 @@ namespace sa {
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Buffer& buffer) {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		const DeviceBuffer* pDeviceBuffer = (const DeviceBuffer*)buffer;
-		pDescriptorSet->update(binding, pDeviceBuffer->buffer, pDeviceBuffer->size, 0, UINT32_MAX);
+		vk::BufferView* pView = nullptr;
+		if (buffer.getType() == BufferType::UNIFORM_TEXEL|| buffer.getType() == BufferType::STORAGE_TEXEL) {
+			pView = buffer.getView();
+		}
+		pDescriptorSet->update(binding, pDeviceBuffer->buffer, pDeviceBuffer->size, 0, pView, UINT32_MAX);
 	}
 
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture2D& texture, ResourceID sampler) {
@@ -236,8 +240,8 @@ namespace sa {
 		return Texture2D(m_pCore.get(), type, extent, pSwapchain, sampleCount);
 	}
 
-	Texture2D Renderer::createTexture2D(const Image& image) {
-		return Texture2D(m_pCore.get(), image);
+	Texture2D Renderer::createTexture2D(const Image& image, bool generateMipMaps) {
+		return Texture2D(m_pCore.get(), image, generateMipMaps);
 	}
 
 	void Renderer::queueTransfer(const DataTransfer& transfer) {
@@ -248,6 +252,10 @@ namespace sa {
 		vk::SamplerCreateInfo info{
 			.magFilter = (vk::Filter)filterMode,
 			.minFilter = (vk::Filter)filterMode,
+			.mipmapMode = vk::SamplerMipmapMode::eNearest,
+			.mipLodBias = 0.0f,
+			.minLod = 0,
+			.maxLod = 9,
 		};
 		return ResourceManager::get().insert(m_pCore->createSampler(info));
 	}
@@ -265,10 +273,18 @@ namespace sa {
 
 			switch (transfer.type) {
 			case DataTransfer::Type::BUFFER_TO_IMAGE:
+			{
+				vk::FormatProperties properties = m_pCore->getPhysicalDevice().getFormatProperties(transfer.dstImage->format);
+				if (transfer.dstImage->mipLevels > 1 && !(properties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eSampledImageFilterLinear)) {
+					DEBUG_LOG_WARNING("Mipmap not supported by format", vk::to_string(transfer.dstImage->format), ". No mipmaps generated");
+					transfer.dstImage->mipLevels = 1;
+				}
 				m_pCore->transferBufferToColorImage(
 					pCommandBufferSet->getBuffer(),
 					transfer.srcBuffer->buffer,
 					transfer.dstImage->image,
+					transfer.dstImage->mipLevels,
+					transfer.dstImage->arrayLayers,
 					transfer.dstImage->extent,
 					transfer.dstImage->layout,
 					vk::ImageLayout::eShaderReadOnlyOptimal,
@@ -276,6 +292,7 @@ namespace sa {
 					vk::PipelineStageFlagBits::eFragmentShader);
 				transfer.dstImage->layout = vk::ImageLayout::eShaderReadOnlyOptimal;
 				break;
+			}
 			case DataTransfer::Type::BUFFER_TO_BUFFER:
 			case DataTransfer::Type::IMAGE_TO_BUFFER:	
 			case DataTransfer::Type::IMAGE_TO_IMAGE:
