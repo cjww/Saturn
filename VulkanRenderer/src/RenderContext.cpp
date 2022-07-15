@@ -135,6 +135,28 @@ namespace sa {
 		pDescriptorSet->update(binding, pDeviceBuffer->buffer, pDeviceBuffer->size, 0, pView, m_pCommandBufferSet->getBufferIndex());
 	}
 
+	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture, ResourceID sampler) {
+		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
+		pDescriptorSet->update(binding, *texture.getView(), pSampler, m_pCommandBufferSet->getBufferIndex());
+	}
+
+	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture) {
+		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+		pDescriptorSet->update(binding, *texture.getView(), nullptr, m_pCommandBufferSet->getBufferIndex());
+	}
+
+	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement) {
+		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+		pDescriptorSet->update(binding, firstElement, textures, nullptr, m_pCommandBufferSet->getBufferIndex());
+	}
+
+	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, ResourceID sampler) {
+		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
+		pDescriptorSet->update(binding, VK_NULL_HANDLE, pSampler, m_pCommandBufferSet->getBufferIndex());
+	}
+
 	void RenderContext::bindDescriptorSet(ResourceID descriptorSet, ResourceID pipeline) {
 		Pipeline* pPipeline = getPipeline(pipeline);
 		DescriptorSet* pDescriptorSet = getDescriptorSet(descriptorSet);
@@ -143,7 +165,12 @@ namespace sa {
 
 	void RenderContext::pushConstants(ResourceID pipeline, ShaderStageFlags stages, uint32_t offset, uint32_t size, void* data) {
 		Pipeline* pPipeline = getPipeline(pipeline);
-		pPipeline->pushConstants(m_pCommandBufferSet, (vk::ShaderStageFlags)stages, offset, size, data);
+		if (offset != UINT32_MAX) {
+			pPipeline->pushConstants(m_pCommandBufferSet, (vk::ShaderStageFlags)stages, offset, size, data);
+		}
+		else {
+			pPipeline->pushConstants(m_pCommandBufferSet, (vk::ShaderStageFlags)stages, size, data);
+		}
 	}
 
 	void RenderContext::bindDescriptorSets(const std::vector<ResourceID>& descriptorSets, ResourceID pipeline) {

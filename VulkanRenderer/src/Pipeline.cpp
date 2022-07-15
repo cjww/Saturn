@@ -115,6 +115,18 @@ namespace sa {
 		cmd->getBuffer().pushConstants(m_layout, stages, offset, size, data);
 	}
 
+	void Pipeline::pushConstants(CommandBufferSet* cmd, vk::ShaderStageFlags stages, uint32_t size, void* data) {
+		uint32_t offset = UINT32_MAX;
+		const auto& pushConstantRanges = m_shaderSet.getPushConstantRanges();
+		for (auto range : pushConstantRanges) {
+			if (range.stageFlags & stages) {
+				if (range.offset < offset)
+					offset = range.offset;
+			}
+		}
+		cmd->getBuffer().pushConstants(m_layout, stages, offset, size, data);
+	}
+
 	bool Pipeline::isCompute() {
 		return !m_shaderSet.isGraphicsSet();
 	}

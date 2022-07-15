@@ -3,7 +3,7 @@
 #include "FormatFlags.hpp"
 
 namespace vk {
-	struct BufferView;
+	class BufferView;
 }
 
 namespace sa {

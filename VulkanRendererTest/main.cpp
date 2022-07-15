@@ -318,10 +318,12 @@ std::array<uint32_t, 36> boxIndices = {
 void imguiTest(sa::RenderWindow& window) {
 	sa::Renderer& renderer = sa::Renderer::get();
 
-
+	// Textures for rendering
 	sa::Texture2D colorTexture = renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT, window.getCurrentExtent(), 8);
 	sa::Texture2D depthTexture = renderer.createTexture2D(sa::TextureTypeFlagBits::DEPTH_ATTACHMENT, window.getCurrentExtent(), 8);
 	sa::Texture2D resolveTexture = renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, window.getCurrentExtent());
+	// Render programs
+	// One for the main rendering
 	ResourceID renderProgram = renderer.createRenderProgram()
 		.addColorAttachment(false, colorTexture)
 		.addDepthAttachment(depthTexture)
@@ -332,7 +334,7 @@ void imguiTest(sa::RenderWindow& window) {
 			.addAttachmentReference(2, sa::SubpassAttachmentUsage::Resolve)
 		.endSubpass()
 		.end();
-
+	// one to render onto imgui window
 	ResourceID imguiProgram = renderer.createRenderProgram()
 		.addSwapchainAttachment(window.getSwapchainID())
 		.beginSubpass()
@@ -340,21 +342,39 @@ void imguiTest(sa::RenderWindow& window) {
 		.endSubpass()
 		.end();
 
-
+	// corresponding framebuffers to the programs
 	ResourceID framebuffer = renderer.createFramebuffer(renderProgram, { colorTexture, depthTexture, resolveTexture });
 	ResourceID imguiFramebuffer = renderer.createSwapchainFramebuffer(imguiProgram, window.getSwapchainID(), { });
 
-	renderer.initImGui(window, imguiProgram, 0);
+	// main pipeline
+	ResourceID pipeline = renderer.createGraphicsPipeline(renderProgram, 0, window.getCurrentExtent(), "ForwardShader.vert.spv", "ForwardShader.frag.spv");
 	
+	sa::PipelineSettings pipelineSettings = {};
+	pipelineSettings.cullMode = sa::CullModeFlagBits::NONE;
+	pipelineSettings.depthTestEnabled = false;
+	ResourceID skyboxPipeline = renderer.createGraphicsPipeline(renderProgram, 0, window.getCurrentExtent(), "Skybox.vert.spv", "Skybox.frag.spv", pipelineSettings);
+
+	renderer.initImGui(window, imguiProgram, 0);
+
+	// Some test textures
 	sa::Image image("Box.png");
 	sa::Texture2D boxTexture = renderer.createTexture2D(image, true);
+	
+	sa::Image characterImage("Colored_Character_Animation.png");
+	sa::Texture2D characterTexture = renderer.createTexture2D(characterImage, true);
 
+	// structures
+	struct PushConstants {
+		glm::mat4 worldMat;
+		int textureIndex;
+	};
 	struct Object {
 		sa::Buffer vertexBuffer;
 		sa::Buffer indexBuffer;
-		glm::mat4 worldMat;
+		PushConstants pc;
 	};
 
+	// Test Object
 	Object object;
 	object.vertexBuffer = renderer.createBuffer(sa::BufferType::VERTEX);
 	object.vertexBuffer.write(box);
@@ -362,12 +382,12 @@ void imguiTest(sa::RenderWindow& window) {
 	object.indexBuffer = renderer.createBuffer(sa::BufferType::INDEX);
 	object.indexBuffer.write(boxIndices);
 
-	object.worldMat = glm::mat4(1);
+	object.pc.worldMat = glm::mat4(1);
+	object.pc.textureIndex = 0;
 
 	CameraController camera(window);
 
-	ResourceID pipeline = renderer.createGraphicsPipeline(renderProgram, 0, window.getCurrentExtent(), "ForwardShader.vert.spv", "ForwardShader.frag.spv");
-
+	// update to GPU
 	ResourceID descriptorSet = renderer.allocateDescriptorSet(pipeline, 0);
 
 	UBO ubo = {
@@ -380,9 +400,38 @@ void imguiTest(sa::RenderWindow& window) {
 	ResourceID sampler = renderer.createSampler();
 
 	renderer.updateDescriptorSet(descriptorSet, 0, uniformBuffer);
-	renderer.updateDescriptorSet(descriptorSet, 1, boxTexture, sampler);
+	
+	renderer.updateDescriptorSet(descriptorSet, 1, sampler);
+	renderer.updateDescriptorSet(descriptorSet, 2, { boxTexture, characterTexture });
 
+	// Skybox test
+	ResourceID skyboxDescriptorSet = renderer.allocateDescriptorSet(skyboxPipeline, 0);
+
+	/*
+	*/
+	sa::Image back("skybox/back.jpg");
+	sa::Image bottom("skybox/bottom.jpg");
+	sa::Image front("skybox/front.jpg");
+	sa::Image left("skybox/left.jpg");
+	sa::Image right("skybox/right.jpg");
+	sa::Image top("skybox/top.jpg");
+	sa::TextureCube cubeMap1 = renderer.createTextureCube({ right, left, top, bottom, front, back}, false);
+	
+	sa::Image skybox("cubemap_skybox.png");
+	sa::TextureCube cubeMap2 = renderer.createTextureCube(skybox, false);
+
+
+	renderer.updateDescriptorSet(skyboxDescriptorSet, 0, uniformBuffer);
+	renderer.updateDescriptorSet(skyboxDescriptorSet, 1, cubeMap1, sampler);
+
+
+
+
+
+	// Timing
 	auto now = std::chrono::high_resolution_clock::now();
+
+	renderer.setClearColor(renderProgram, sa::Color{ 1, 0, 1 , 1});
 
 	while (window.isOpen()) {
 		window.pollEvents();
@@ -391,16 +440,18 @@ void imguiTest(sa::RenderWindow& window) {
 
 		ImGui::DockSpaceOverViewport();
 
-
+		// Timing
 		float dt = std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - now).count();
 		now = std::chrono::high_resolution_clock::now();
 
 		ubo.view = camera.getView(dt);
+		glm::vec4 viewDir = ubo.view[2];
+		
 		uniformBuffer.write(ubo);
 		if (ImGui::Begin("Settings")) {
 			ImGui::Text("Frame time: %f", dt);
 			ImGui::Text("FPS: %f", 1.0f/dt);
-
+			ImGui::Text("View dir: (%f, %f, %f, %f)", viewDir.x, viewDir.y, viewDir.z, viewDir.w);
 			ImGui::End();
 		}
 
@@ -412,15 +463,37 @@ void imguiTest(sa::RenderWindow& window) {
 		sa::RenderContext context = window.beginFrame();
 		if (context) {
 
+			ImGui::DragInt("TextureIndex", &object.pc.textureIndex, 1.f, 0, 1);
+
+			static bool secondType = false;
+			if(ImGui::Checkbox("Skybox type", &secondType)) {
+				if (secondType) {
+					renderer.updateDescriptorSet(skyboxDescriptorSet, 1, cubeMap2, sampler);
+				}
+				else {
+					renderer.updateDescriptorSet(skyboxDescriptorSet, 1, cubeMap1, sampler);
+				}
+
+			}
 			context.updateDescriptorSet(descriptorSet, 0, uniformBuffer);
 			
 			context.beginRenderProgram(renderProgram, framebuffer, sa::SubpassContents::DIRECT);
 			
+			context.bindPipeline(skyboxPipeline);
+			context.bindDescriptorSet(skyboxDescriptorSet, skyboxPipeline);
+			context.draw(36, 1);
+
 			context.bindPipeline(pipeline);
 			context.bindDescriptorSet(descriptorSet, pipeline);
 			context.bindVertexBuffers(0, { object.vertexBuffer });
 			context.bindIndexBuffer(object.indexBuffer);
-			context.pushConstant(pipeline, sa::ShaderStageFlagBits::VERTEX, 0, object.worldMat);
+
+
+
+			context.pushConstant(pipeline, sa::ShaderStageFlagBits::VERTEX, object.pc.worldMat);
+			context.pushConstant(pipeline, sa::ShaderStageFlagBits::FRAGMENT, viewDir);
+			context.pushConstant(pipeline, sa::ShaderStageFlagBits::FRAGMENT, object.pc.textureIndex, 80);
+			
 			context.drawIndexed(object.indexBuffer.getElementCount<uint32_t>(), 1);
 
 			context.endRenderProgram(renderProgram);
@@ -862,7 +935,7 @@ void forward(sa::RenderWindow& window) {
 						object.context.bindDescriptorSet(mainDescriptorSet, mainPipeline);
 						object.context.bindVertexBuffers(0, { boxVertexBuffer });
 						object.context.bindIndexBuffer(boxIndexBuffer);
-						object.context.pushConstant(mainPipeline, sa::ShaderStageFlagBits::VERTEX, 0, object.worldMat);
+						object.context.pushConstant(mainPipeline, sa::ShaderStageFlagBits::VERTEX, object.worldMat);
 						object.context.drawIndexed(36, 1);
 						object.context.end();
 

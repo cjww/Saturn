@@ -32,7 +32,8 @@ namespace sa {
 		void bindDescriptorSet(CommandBufferSet* cmd, DescriptorSet* set);
 
 		void pushConstants(CommandBufferSet* cmd, vk::ShaderStageFlags stages, uint32_t offset, uint32_t size, void* data);
-		
+		void pushConstants(CommandBufferSet* cmd, vk::ShaderStageFlags stages, uint32_t size, void* data);
+
 		bool isCompute();
 	};
 

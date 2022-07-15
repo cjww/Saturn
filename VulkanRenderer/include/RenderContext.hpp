@@ -89,16 +89,23 @@ namespace sa {
 		void bindIndexBuffer(const Buffer& buffer);
 
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Buffer& buffer);
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture, ResourceID sampler);
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture);
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement = 0);
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, ResourceID sampler);
+
+
 		void bindDescriptorSets(const std::vector<ResourceID>& descriptorSets, ResourceID pipeline);
 		void bindDescriptorSet(ResourceID descriptorSet, ResourceID pipeline);
 
 		void pushConstants(ResourceID pipeline, ShaderStageFlags stages, uint32_t offset, uint32_t size, void* data);
 
 		template<typename T>
-		void pushConstants(ResourceID pipeline, ShaderStageFlags stages, uint32_t offset, const std::vector<T>& values);
+		void pushConstants(ResourceID pipeline, ShaderStageFlags stages, const std::vector<T>& values, uint32_t offset = UINT32_MAX);
 		
 		template<typename T>
-		void pushConstant(ResourceID pipeline, ShaderStageFlags stages, uint32_t offset, const T& value);
+		void pushConstant(ResourceID pipeline, ShaderStageFlags stages, const T& value, uint32_t offset = UINT32_MAX);
+
 
 		void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex = 0, uint32_t firstInstance = 0);
 		void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0);
@@ -152,12 +159,12 @@ namespace sa {
 	};
 
 	template<typename T>
-	inline void RenderContext::pushConstants(ResourceID pipeline, ShaderStageFlags stages, uint32_t offset, const std::vector<T>& values) {
+	inline void RenderContext::pushConstants(ResourceID pipeline, ShaderStageFlags stages, const std::vector<T>& values, uint32_t offset) {
 		pushConstants(pipeline, stages, offset, values.size() * sizeof(T), (void*)values.data());
 	}
 
 	template<typename T>
-	inline void RenderContext::pushConstant(ResourceID pipeline, ShaderStageFlags stages, uint32_t offset, const T& value) {
+	inline void RenderContext::pushConstant(ResourceID pipeline, ShaderStageFlags stages, const T& value, uint32_t offset) {
 		pushConstants(pipeline, stages, offset, sizeof(T), (void*)&value);
 	}
 

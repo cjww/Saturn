@@ -73,7 +73,7 @@ namespace sa {
 
 		void addSubpassDependency(vk::SubpassDependency dependency);
 
-		ResourceID createPipeline(const ShaderSet& shaders, uint32_t subpassIndex, Extent extent);
+		ResourceID createPipeline(const ShaderSet& shaders, uint32_t subpassIndex, Extent extent, PipelineConfig config);
 
 		void create(VulkanCore* pCore);
 		void destroy();

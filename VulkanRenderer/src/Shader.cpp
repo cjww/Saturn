@@ -213,10 +213,11 @@ namespace sa {
 		m_pushConstantRanges.clear();
 		for (auto& p : res.push_constant_buffers) {
 			size_t size = compiler.get_declared_struct_size(compiler.get_type(p.type_id));
+			uint32_t offset = compiler.type_struct_member_offset(compiler.get_type(p.base_type_id), 0);
 
 			vk::PushConstantRange range = {
 				.stageFlags = m_stage,
-				.offset = 0, // Modify when merged with other shader stage
+				.offset = offset, // Modify when merged with other shader stage
 				.size = static_cast<uint32_t>(size),
 			};
 			m_pushConstantRanges.push_back(range);

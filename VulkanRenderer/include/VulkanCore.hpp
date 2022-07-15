@@ -147,7 +147,7 @@ namespace sa {
 		DeviceBuffer* createBuffer(vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags allocationFlags, size_t size, void* initialData);
 		void destroyBuffer(DeviceBuffer* pBuffer);
 
-		DeviceImage* createImage2D(Extent extent, vk::Format format, vk::ImageUsageFlags usage, vk::SampleCountFlagBits sampleCount, uint32_t mipLevels = 1, uint32_t arrayLayers = 1);
+		DeviceImage* createImage2D(Extent extent, vk::Format format, vk::ImageUsageFlags usage, vk::SampleCountFlagBits sampleCount, uint32_t mipLevels = 1, uint32_t arrayLayers = 1, vk::ImageCreateFlags flags = (vk::ImageCreateFlags)0);
 		void destroyImage(DeviceImage* pImage);
 
 		void transferImageLayout(vk::CommandBuffer commandBuffer,

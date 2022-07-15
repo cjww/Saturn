@@ -15,7 +15,6 @@ namespace sa {
 		m_descriptorSetLayouts.resize(std::max(vertexShader.getDescriptorSetLayouts().size(), fragmentShader.getDescriptorSetLayouts().size()));
 		m_descriptorSets.resize(m_descriptorSetLayouts.size());
 		for (uint32_t setIndex = 0; setIndex < m_descriptorSetLayouts.size(); setIndex++) {
-			std::vector<vk::DescriptorSetLayoutBinding> bindings;
 			if (vertexShader.getDescriptorSetLayouts().size() > setIndex) {
 				const auto& vset = vertexShader.getDescriptorSetLayouts()[setIndex];
 				
@@ -23,7 +22,6 @@ namespace sa {
 				m_descriptorSets[setIndex].sizes.insert(m_descriptorSets[setIndex].sizes.end(), vset.sizes.begin(), vset.sizes.end());
 				m_descriptorSets[setIndex].writes.insert(m_descriptorSets[setIndex].writes.end(), vset.writes.begin(), vset.writes.end());
 
-				bindings.insert(bindings.end(), vset.bindings.begin(), vset.bindings.end());
 			}
 			if (fragmentShader.getDescriptorSetLayouts().size() > setIndex) {
 				const auto& fset = fragmentShader.getDescriptorSetLayouts()[setIndex];
@@ -32,25 +30,27 @@ namespace sa {
 				m_descriptorSets[setIndex].sizes.insert(m_descriptorSets[setIndex].sizes.end(), fset.sizes.begin(), fset.sizes.end());
 				m_descriptorSets[setIndex].writes.insert(m_descriptorSets[setIndex].writes.end(), fset.writes.begin(), fset.writes.end());
 
-				bindings.insert(bindings.end(), fset.bindings.begin(), fset.bindings.end());
 			}
 
+			
+			for (int i = 0; i < m_descriptorSets[setIndex].bindings.size() - 1; i++) {
+				for (int j = i + 1; j < m_descriptorSets[setIndex].bindings.size(); j++) {
+					if (m_descriptorSets[setIndex].bindings[i].binding == m_descriptorSets[setIndex].bindings[j].binding) {
+						m_descriptorSets[setIndex].bindings.erase(m_descriptorSets[setIndex].bindings.begin() + j);
+						m_descriptorSets[setIndex].writes.erase(m_descriptorSets[setIndex].writes.begin() + j);
+						m_descriptorSets[setIndex].sizes.erase(m_descriptorSets[setIndex].sizes.begin() + j);
+						j--;
+					}
+				}
+			}
 			vk::DescriptorSetLayoutCreateInfo layoutInfo;
-			layoutInfo.setBindings(bindings);
+			layoutInfo.setBindings(m_descriptorSets[setIndex].bindings);
 			m_descriptorSetLayouts[setIndex] = m_device.createDescriptorSetLayout(layoutInfo);
 		}
 	
 		m_pushConstantRanges = vertexShader.getPushConstantRanges();
 		m_pushConstantRanges.insert(m_pushConstantRanges.end(), fragmentShader.getPushConstantRanges().begin(), fragmentShader.getPushConstantRanges().end());
 		
-		uint32_t prevOffset = 0;
-		uint32_t prevSize = 0;
-		for (auto& range : m_pushConstantRanges) {
-			range.offset = prevSize + prevOffset;
-			prevOffset = range.offset;
-			prevSize = range.size;
-		}
-
 		m_shaderInfos.push_back(vertexShader.getInfo());
 		m_shaderInfos.push_back(fragmentShader.getInfo());
 
@@ -147,14 +147,6 @@ namespace sa {
 		m_pushConstantRanges.insert(m_pushConstantRanges.end(), fragmentShader.getPushConstantRanges().begin(), fragmentShader.getPushConstantRanges().end());
 		m_pushConstantRanges.insert(m_pushConstantRanges.end(), geometryShader.getPushConstantRanges().begin(), geometryShader.getPushConstantRanges().end());
 
-		uint32_t prevOffset = 0;
-		uint32_t prevSize = 0;
-		for (auto& range : m_pushConstantRanges) {
-			range.offset = prevSize + prevOffset;
-			prevOffset = range.offset;
-			prevSize = range.size;
-		}
-
 		m_shaderInfos.push_back(vertexShader.getInfo());
 		m_shaderInfos.push_back(fragmentShader.getInfo());
 		m_shaderInfos.push_back(geometryShader.getInfo());
@@ -236,14 +228,6 @@ namespace sa {
 
 		m_pushConstantRanges = computeShader.getPushConstantRanges();
 		
-		uint32_t prevOffset = 0;
-		uint32_t prevSize = 0;
-		for (auto& range : m_pushConstantRanges) {
-			range.offset = prevSize + prevOffset;
-			prevOffset = range.offset;
-			prevSize = range.size;
-		}
-
 		m_shaderInfos.push_back(computeShader.getInfo());
 		
 		std::set<vk::DescriptorType> descriptorTypes;

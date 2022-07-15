@@ -48,6 +48,8 @@ namespace sa {
 		operator DeviceImage* () const {
 			return m_pImage;
 		}
+		
+		void destroy();
 
 	};
 
@@ -71,10 +73,19 @@ namespace sa {
 
 		Texture2D(const Texture2D&) = default;
 		Texture2D& operator=(const Texture2D&) = default;
+		
+		
+	};
 
+	class TextureCube : public Texture {
+	private:
+		void create(TextureTypeFlags type, Extent extent, uint32_t sampleCount, uint32_t mipLevels);
+	public:
+		TextureCube(VulkanCore* pCore, const Image& image, bool generateMipmaps);
+		TextureCube(VulkanCore* pCore, const std::vector<Image>& images, bool generateMipmaps);
 
-		void destroy();
-
+		TextureCube(const TextureCube&) = default;
+		TextureCube& operator=(const TextureCube&) = default;
 	};
 
 }

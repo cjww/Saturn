@@ -7,6 +7,7 @@
 #include "Resources/Texture.hpp"
 #include "Image.hpp"
 #include "FormatFlags.hpp"
+#include "PipelineSettings.h"
 
 #include "Window.hpp"
 
@@ -72,15 +73,17 @@ namespace sa {
 		ResourceID createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<Texture>& additionalAttachmentTextures, uint32_t layers = 1ui32);
 		void destroyFramebuffer(ResourceID framebuffer);
 
-		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& fragmentShader);
-		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& geometryShader, const std::string& fragmentShader);
+		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& fragmentShader, PipelineSettings settings = {});
+		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& geometryShader, const std::string& fragmentShader, PipelineSettings settings = {});
 		ResourceID createComputePipeline(const std::string& computeShader);
 		void destroyPipeline(ResourceID pipeline);
 
 		ResourceID allocateDescriptorSet(ResourceID pipeline, uint32_t setIndex);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Buffer& buffer);
-		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture2D& texture, ResourceID sampler);
-		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture2D& texture);
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture, ResourceID sampler);
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture);
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement = 0);
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, ResourceID sampler);
 
 		void freeDescriptorSet(ResourceID descriptorSet);
 
@@ -89,6 +92,8 @@ namespace sa {
 		Texture2D createTexture2D(TextureTypeFlags type, Extent extent, FormatPrecisionFlags formatPrecision, FormatDimensionFlags formatDimensions, FormatTypeFlags formatType, uint32_t sampleCount = 1);
 		Texture2D createTexture2D(TextureTypeFlags type, Extent extent, ResourceID swapchain, uint32_t sampleCount);
 		Texture2D createTexture2D(const Image& image, bool generateMipMaps);
+		TextureCube createTextureCube(const Image& image, bool generateMipMaps);
+		TextureCube createTextureCube(const std::vector<Image>& image, bool generateMipMaps);
 
 		void queueTransfer(const DataTransfer& transfer);
 

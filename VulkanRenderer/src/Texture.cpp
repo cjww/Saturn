@@ -4,6 +4,9 @@
 
 #include "VulkanCore.hpp"
 #include "Renderer.hpp"
+
+#include "Resources/DeviceMemoryManager.hpp"
+
 namespace sa {
 	Texture::Texture(VulkanCore* pCore)
 		: m_pCore(pCore)
@@ -27,6 +30,16 @@ namespace sa {
 
 	TextureTypeFlags Texture::getTypeFlags() const {
 		return m_type;
+	}
+
+	void Texture::destroy() {
+		m_pCore->getDevice().waitIdle();
+		if (m_pStagingBuffer)
+			m_pCore->destroyBuffer(m_pStagingBuffer);
+
+		ResourceManager::get().remove<vk::ImageView>(m_view);
+		m_pCore->destroyImage(m_pImage);
+		m_view = NULL_RESOURCE;
 	}
 
 	Texture2D::Texture2D(VulkanCore* pCore, TextureTypeFlags type, Extent extent, uint32_t sampleCount)
@@ -201,15 +214,117 @@ namespace sa {
 
 	}
 
-	void Texture2D::destroy() {
-		m_pCore->getDevice().waitIdle();
-		if (m_pStagingBuffer)
-			m_pCore->destroyBuffer(m_pStagingBuffer);
+	void TextureCube::create(TextureTypeFlags type, Extent extent, uint32_t sampleCount, uint32_t mipLevels) {
 
-		ResourceManager::get().remove<vk::ImageView>(m_view);
-		m_pCore->destroyImage(m_pImage);
-		m_view = NULL_RESOURCE;
+		vk::ImageUsageFlags usage = (vk::ImageUsageFlags)type;
+		vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
+
+		if (mipLevels > 1) {
+			usage |= vk::ImageUsageFlagBits::eTransferSrc;
+		}
+
+		vk::Format format = m_pCore->getDefaultColorFormat();
+
+		DEBUG_LOG_INFO("Created Cube texture\nExtent: { w:", extent.width, " h:", extent.height, "}\nFormat: ", vk::to_string(format), "\nSampleCount: ", sampleCount);
+		m_pImage = m_pCore->createImage2D(
+			extent,
+			format,
+			usage,
+			(vk::SampleCountFlagBits)sampleCount,
+			mipLevels,
+			6,
+			vk::ImageCreateFlagBits::eCubeCompatible
+		);
+
+
+		m_view = ResourceManager::get().insert<vk::ImageView>(m_pCore->createImageView(
+			vk::ImageViewType::eCube,
+			m_pImage->image,
+			format,
+			aspect,
+			mipLevels,
+			0,
+			6,
+			0
+		));
+
 	}
 
+	TextureCube::TextureCube(VulkanCore* pCore, const Image& image, bool generateMipmaps) : Texture(pCore) {
+		m_type = TextureTypeFlagBits::SAMPLED | TextureTypeFlagBits::TRANSFER_DST;
+
+		uint32_t mipLevels = 1;
+		if (generateMipmaps) {
+			mipLevels = image.calculateMipLevelCount();
+			m_type |= TextureTypeFlagBits::TRANSFER_SRC;
+		}
+
+		sa::Extent subExtent = { image.getWidth() / 4, image.getHeight() / 3 };
+		create(m_type, subExtent, 1, mipLevels);
+
+		
+		m_pStagingBuffer = m_pCore->createBuffer(
+			vk::BufferUsageFlagBits::eTransferSrc,
+			VMA_MEMORY_USAGE_AUTO,
+			VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+			subExtent.width * subExtent.height * image.getChannelCount() * 6,
+			nullptr);
+		
+		// fill staging buffer
+		sa::Offset offsets[6] {
+			{ 2 * subExtent.width, subExtent.height }, //right
+			{ 0, subExtent.height }, //left
+			{ subExtent.width, 0 }, // top
+			{ subExtent.width, 2 * subExtent.height }, // bottom
+			{ subExtent.width, subExtent.height }, // front
+			{ 3 * subExtent.width, subExtent.height } // back
+		};
+		uint32_t size = 0;
+		for (int i = 0; i < 6; i++) {
+			size += image.getPixelSegment(subExtent, offsets[i], (unsigned char*)m_pStagingBuffer->mappedData + size);
+		}
+		
+		// transfer data
+		DataTransfer transfer{
+			.type = DataTransfer::Type::BUFFER_TO_IMAGE,
+			.srcBuffer = m_pStagingBuffer,
+			.dstImage = m_pImage,
+		};
+		Renderer::get().queueTransfer(transfer);
+	}
+
+	TextureCube::TextureCube(VulkanCore* pCore, const std::vector<Image>& images, bool generateMipmaps) : Texture(pCore) {
+		m_type = TextureTypeFlagBits::SAMPLED | TextureTypeFlagBits::TRANSFER_DST;
+		if (images.size() != 6)
+			throw std::runtime_error("Must contain 6 images");
+
+		uint32_t mipLevels = 1;
+		if (generateMipmaps) {
+			mipLevels = images[0].calculateMipLevelCount();
+			m_type |= TextureTypeFlagBits::TRANSFER_SRC;
+		}
+
+		create(m_type, images[0].getExtent(), 1, mipLevels);
+
+		size_t layerSize = images[0].getWidth() * images[0].getHeight() * images[0].getChannelCount();
+		m_pStagingBuffer = m_pCore->createBuffer(
+			vk::BufferUsageFlagBits::eTransferSrc,
+			VMA_MEMORY_USAGE_AUTO,
+			VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+			layerSize * 6,
+			nullptr);
+
+		for (int i = 0; i < 6; i++) {
+			memcpy((char*)m_pStagingBuffer->mappedData + layerSize * i, images[i].getPixels(), layerSize);
+		}
+
+		// transfer data
+		DataTransfer transfer{
+			.type = DataTransfer::Type::BUFFER_TO_IMAGE,
+			.srcBuffer = m_pStagingBuffer,
+			.dstImage = m_pImage,
+		};
+		Renderer::get().queueTransfer(transfer);
+	}
 
 }

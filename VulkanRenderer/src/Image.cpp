@@ -6,10 +6,11 @@
 
 namespace sa {
 	Image::Image(const char* path) {
-		m_pixels = stbi_load(path, &m_width, &m_height, &m_channels, 0);
+		m_pixels = stbi_load(path, &m_width, &m_height, &m_channels, STBI_rgb_alpha);
 		if (!m_pixels) {
 			throw std::runtime_error("Failed to load image " + std::string(path));
 		}
+		m_channels = 4;
 	}
 	
 	Image::Image(const std::string& path) : Image(path.c_str()){
@@ -91,5 +92,30 @@ namespace sa {
 
 	unsigned char* Image::getPixels() const {
 		return m_pixels;
+	}
+
+	uint32_t Image::getPixelSegment(sa::Extent extent, sa::Offset offset, unsigned char* buffer) const {
+		uint32_t size = extent.width * extent.height * getChannelCount();
+		if (buffer == nullptr) {
+			return size;
+		}
+
+		uint32_t channelCount = getChannelCount();
+		// offset into original image array
+		uint32_t byteOffset = channelCount * offset.x + channelCount * offset.y * getWidth();
+		// index to last point written to in buffer
+		uint32_t bytesWritten = 0;
+		// width of segement in bytes
+		uint32_t byteWidth = extent.width * channelCount;
+		// width off origianl image in bytes
+		uint32_t fullByteWidth = getWidth() * channelCount;
+
+		for (uint32_t y = 0; y < extent.height; y++) {
+			memcpy(buffer + bytesWritten, m_pixels + byteOffset, byteWidth);
+			bytesWritten += byteWidth;
+			byteOffset += fullByteWidth;
+		}
+
+		return bytesWritten;
 	}
 }

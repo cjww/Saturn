@@ -599,7 +599,7 @@ namespace sa {
 		m_memoryManager.destroyBuffer(pBuffer);
 	}
 
-	DeviceImage* VulkanCore::createImage2D(Extent extent, vk::Format format, vk::ImageUsageFlags usage, vk::SampleCountFlagBits sampleCount, uint32_t mipLevels, uint32_t arrayLayers) {
+	DeviceImage* VulkanCore::createImage2D(Extent extent, vk::Format format, vk::ImageUsageFlags usage, vk::SampleCountFlagBits sampleCount, uint32_t mipLevels, uint32_t arrayLayers, vk::ImageCreateFlags flags) {
 		return m_memoryManager.createImage(
 			{ extent.width, extent.height, 1 },
 			arrayLayers,
@@ -613,7 +613,8 @@ namespace sa {
 			vk::ImageTiling::eOptimal,
 			usage,
 			VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
-			vk::MemoryPropertyFlagBits::eDeviceLocal
+			vk::MemoryPropertyFlagBits::eDeviceLocal,
+			flags
 		);
 	}
 
@@ -659,18 +660,25 @@ namespace sa {
 			vk::PipelineStageFlagBits::eHost,
 			vk::PipelineStageFlagBits::eTransfer);
 
-		vk::BufferImageCopy copy{
-			.imageSubresource{
-				.aspectMask = vk::ImageAspectFlagBits::eColor,
-				.mipLevel = 0,
-				.baseArrayLayer = 0,
-				.layerCount = 1,
-			},
-			.imageOffset = { 0, 0, 0 },
-			.imageExtent = copyExtent,
-		};
+		std::vector<vk::BufferImageCopy> regions;
 
-		commandBuffer.copyBufferToImage(buffer, image, vk::ImageLayout::eTransferDstOptimal, copy);
+		for (uint32_t i = 0; i < layers; i++) {
+			vk::DeviceSize offset = copyExtent.width * copyExtent.height * copyExtent.depth * 4 * i; // TODO: warning, assumption
+			vk::BufferImageCopy copy{
+				.bufferOffset = offset,
+				.imageSubresource{
+					.aspectMask = vk::ImageAspectFlagBits::eColor,
+					.mipLevel = 0,
+					.baseArrayLayer = i,
+					.layerCount = 1,
+				},
+				.imageOffset = { 0, 0, 0 },
+				.imageExtent = copyExtent,
+			};
+			regions.push_back(copy);
+		}
+
+		commandBuffer.copyBufferToImage(buffer, image, vk::ImageLayout::eTransferDstOptimal, regions);
 
 		if (mipLevels > 1) {
 			generateMipmaps(commandBuffer, image, copyExtent, mipLevels);

@@ -82,7 +82,8 @@ namespace sa {
 			vk::ImageTiling tiling, 
 			vk::ImageUsageFlags usage,
 			VmaMemoryUsage memoryUsage, 
-			vk::MemoryPropertyFlags requiredMemoryProperties
+			vk::MemoryPropertyFlags requiredMemoryProperties,
+			vk::ImageCreateFlags flags
 		);
 		/*
 		DeviceImage* createDepthAttachmentTexture2D(vk::Extent2D extent, vk::SampleCountFlagBits sampleCount, uint32_t mipLevels = 1, uint32_t arrayLayers = 1);

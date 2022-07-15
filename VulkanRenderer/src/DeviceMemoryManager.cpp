@@ -71,7 +71,7 @@ namespace sa {
 	DeviceImage* DeviceMemoryManager::createImage(vk::Extent3D extent, uint32_t arrayLayers, vk::Format format,
 		vk::ImageType type, vk::ImageLayout initialLayout, uint32_t mipLevels, const std::vector<uint32_t>& queueFamilyIndices,
 		vk::SampleCountFlagBits sampleCount, vk::SharingMode sharingMode, vk::ImageTiling tiling, vk::ImageUsageFlags usage,
-		VmaMemoryUsage memoryUsage, vk::MemoryPropertyFlags requiredMemoryProperties)
+		VmaMemoryUsage memoryUsage, vk::MemoryPropertyFlags requiredMemoryProperties, vk::ImageCreateFlags flags)
 	{
 		m_images.push_back(new DeviceImage());
 		DeviceImage* image = m_images.back();
@@ -88,6 +88,7 @@ namespace sa {
 
 
 		vk::ImageCreateInfo info{
+			.flags = flags,
 			.imageType = type,
 			.format = format,
 			.extent = extent,

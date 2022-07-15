@@ -25,4 +25,5 @@ void main() {
     out_vertexWorldPos = world * in_vertexPosition;
     out_vertexColor = in_vertexColor;
     out_vertexUV = in_vertexUV;
+
 }

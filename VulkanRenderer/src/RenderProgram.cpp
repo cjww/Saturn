@@ -61,13 +61,13 @@ namespace sa {
 		m_dependencies.push_back(dependency);
 	}
 
-	ResourceID RenderProgram::createPipeline(const ShaderSet& shaders, uint32_t subpassIndex, Extent extent) {
-		PipelineConfig config = {};
+	ResourceID RenderProgram::createPipeline(const ShaderSet& shaders, uint32_t subpassIndex, Extent extent, PipelineConfig config) {
 		config.multisample = {
 			.sampleShadingEnable = true,
 			.minSampleShading = 0.2f,
 			.sampleCount = m_subpasses[subpassIndex].getSampleCount(),
 		};
+		
 		config.colorBlends.resize(m_subpasses.at(subpassIndex).getColorAttachments().size());
 		return ResourceManager::get().insert<Pipeline>(m_pCore, m_renderPass, shaders, subpassIndex, extent, config);
 	}

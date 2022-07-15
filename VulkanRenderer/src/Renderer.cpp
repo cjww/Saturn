@@ -163,23 +163,35 @@ namespace sa {
 		ResourceManager::get().remove<FramebufferSet>(framebuffer);
 	}
 
-	ResourceID Renderer::createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& fragmentShader) {
+	ResourceID Renderer::createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& fragmentShader, PipelineSettings settings) {
 		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
 		Shader vShader(m_pCore->getDevice(), vertexShader.c_str(), vk::ShaderStageFlagBits::eVertex);
 		Shader fShader(m_pCore->getDevice(), fragmentShader.c_str(), vk::ShaderStageFlagBits::eFragment);
 		ShaderSet set(m_pCore->getDevice(), vShader, fShader);
 
-		return pRenderProgram->createPipeline(set, subpassIndex, extent);
+		PipelineConfig config = {};
+		config.input.topology = (vk::PrimitiveTopology)settings.topology;
+		config.rasterizer.cullMode = (vk::CullModeFlags)settings.cullMode;
+		config.rasterizer.polygonMode = (vk::PolygonMode)settings.polygonMode;
+		config.depthStencil.depthTestEnable = settings.depthTestEnabled;
+
+		return pRenderProgram->createPipeline(set, subpassIndex, extent, config);
 	}
 	
-	ResourceID Renderer::createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& geometryShader, const std::string& fragmentShader) {
+	ResourceID Renderer::createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& geometryShader, const std::string& fragmentShader, PipelineSettings settings) {
 		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
 		Shader vShader(m_pCore->getDevice(), vertexShader.c_str(), vk::ShaderStageFlagBits::eVertex);
 		Shader gShader(m_pCore->getDevice(), geometryShader.c_str(), vk::ShaderStageFlagBits::eGeometry);
 		Shader fShader(m_pCore->getDevice(), fragmentShader.c_str(), vk::ShaderStageFlagBits::eFragment);
 		ShaderSet set(m_pCore->getDevice(), vShader, gShader, fShader);
 
-		return pRenderProgram->createPipeline(set, subpassIndex, extent);
+		PipelineConfig config = {};
+		config.input.topology = (vk::PrimitiveTopology)settings.topology;
+		config.rasterizer.cullMode = (vk::CullModeFlags)settings.cullMode;
+		config.rasterizer.polygonMode = (vk::PolygonMode)settings.polygonMode;
+		config.depthStencil.depthTestEnable = settings.depthTestEnabled;
+
+		return pRenderProgram->createPipeline(set, subpassIndex, extent, config);
 	}
 
 	ResourceID Renderer::createComputePipeline(const std::string& computeShader) {
@@ -208,15 +220,26 @@ namespace sa {
 		pDescriptorSet->update(binding, pDeviceBuffer->buffer, pDeviceBuffer->size, 0, pView, UINT32_MAX);
 	}
 
-	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture2D& texture, ResourceID sampler) {
+	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture, ResourceID sampler) {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
 		pDescriptorSet->update(binding, *texture.getView(), pSampler, UINT32_MAX);
 	}
 
-	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture2D& texture) {
+	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture) {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		pDescriptorSet->update(binding, *texture.getView(), nullptr, UINT32_MAX);
+	}
+
+	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement) {
+		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+		pDescriptorSet->update(binding, firstElement, textures, nullptr, UINT32_MAX);
+	}
+
+	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, ResourceID sampler) {
+		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
+		pDescriptorSet->update(binding, VK_NULL_HANDLE, pSampler, UINT32_MAX);
 	}
 
 	void Renderer::freeDescriptorSet(ResourceID descriptorSet) {
@@ -242,6 +265,14 @@ namespace sa {
 
 	Texture2D Renderer::createTexture2D(const Image& image, bool generateMipMaps) {
 		return Texture2D(m_pCore.get(), image, generateMipMaps);
+	}
+
+	TextureCube Renderer::createTextureCube(const Image& image, bool generateMipMaps) {
+		return TextureCube(m_pCore.get(), image, generateMipMaps);
+	}
+
+	TextureCube Renderer::createTextureCube(const std::vector<Image>& images, bool generateMipMaps) {
+		return TextureCube(m_pCore.get(), images, generateMipMaps);
 	}
 
 	void Renderer::queueTransfer(const DataTransfer& transfer) {

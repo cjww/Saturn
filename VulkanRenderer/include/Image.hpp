@@ -31,5 +31,7 @@ namespace sa {
 
 		unsigned char* getPixels() const;
 
+		uint32_t getPixelSegment(sa::Extent extent, sa::Offset offset, unsigned char* buffer) const;
+
 	};
 }
