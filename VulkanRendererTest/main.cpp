@@ -407,8 +407,6 @@ void imguiTest(sa::RenderWindow& window) {
 	// Skybox test
 	ResourceID skyboxDescriptorSet = renderer.allocateDescriptorSet(skyboxPipeline, 0);
 
-	/*
-	*/
 	sa::Image back("skybox/back.jpg");
 	sa::Image bottom("skybox/bottom.jpg");
 	sa::Image front("skybox/front.jpg");

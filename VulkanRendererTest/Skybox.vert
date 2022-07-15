@@ -51,5 +51,5 @@ void main() {
     mat4 view = ubo.view;
     view[3] = vec4(0, 0, 0, 1);
     gl_Position = ubo.projection * view * skyboxVertices[gl_VertexIndex];
-    out_texCoord = skyboxVertices[gl_VertexIndex].xyz;
+    out_texCoord = skyboxVertices[gl_VertexIndex].xyz * vec3(-1, 1, 1);
 }
