@@ -5,6 +5,10 @@ namespace sa {
 		uint32_t width, height;
 	};
 
+	struct Extent3D : public Extent {
+		uint32_t depth;
+	};
+
 	struct Offset {
 		int32_t x, y;
 	};

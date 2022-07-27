@@ -225,7 +225,6 @@ namespace sa {
 
 		vk::Format format = m_pCore->getDefaultColorFormat();
 
-		DEBUG_LOG_INFO("Created Cube texture\nExtent: { w:", extent.width, " h:", extent.height, "}\nFormat: ", vk::to_string(format), "\nSampleCount: ", sampleCount);
 		m_pImage = m_pCore->createImage2D(
 			extent,
 			format,
@@ -247,6 +246,7 @@ namespace sa {
 			6,
 			0
 		));
+		DEBUG_LOG_INFO("Created Cube texture\nExtent: { w:", extent.width, " h:", extent.height, "}\nFormat:", vk::to_string(format), "\nSampleCount:", sampleCount);
 
 	}
 
@@ -325,6 +325,62 @@ namespace sa {
 			.dstImage = m_pImage,
 		};
 		Renderer::get().queueTransfer(transfer);
+	}
+	
+	void Texture3D::create(TextureTypeFlags type, Extent3D extent, uint32_t sampleCount, uint32_t mipLevels, FormatPrecisionFlags formatPercisions, FormatDimensionFlags formatDimensions, FormatTypeFlags formatTypes) {
+
+		vk::Format format = vk::Format::eUndefined;
+		vk::FormatFeatureFlags features;
+		if (type & TextureTypeFlagBits::DEPTH_ATTACHMENT) {
+			features |= vk::FormatFeatureFlagBits::eDepthStencilAttachment;
+		}
+		if (type & TextureTypeFlagBits::SAMPLED) {
+			features |= vk::FormatFeatureFlagBits::eSampledImage;
+		}
+		if (type & TextureTypeFlagBits::COLOR_ATTACHMENT) {
+			features |= vk::FormatFeatureFlagBits::eColorAttachment;
+		}
+		if (type & TextureTypeFlagBits::STORAGE) {
+			features |= vk::FormatFeatureFlagBits::eStorageImage;
+		}
+		if (type & TextureTypeFlagBits::TRANSFER_DST) {
+			features |= vk::FormatFeatureFlagBits::eTransferDst;
+		}
+
+		format = m_pCore->getFormat(
+			formatPercisions, formatDimensions, formatTypes, 
+			features, 
+			vk::ImageTiling::eOptimal);
+		if (format == vk::Format::eUndefined) {
+			throw std::runtime_error("No supported image format found");
+		}
+
+		m_pImage = m_pCore->createImage3D(
+			extent, 
+			format, 
+			(vk::ImageUsageFlags)type, 
+			(vk::SampleCountFlagBits)sampleCount, 
+			1, 
+			1);
+		
+
+		m_view = ResourceManager::get().insert<vk::ImageView>(m_pCore->createImageView(
+			vk::ImageViewType::e3D,
+			m_pImage->image,
+			format,
+			vk::ImageAspectFlagBits::eColor,
+			mipLevels,
+			0,
+			1,
+			0
+		));
+
+		DEBUG_LOG_INFO("Created 3D texture\nExtent: { w:", extent.width, " h:", extent.height, " d:", extent.depth, " }\nFormat:", vk::to_string(format), "\nSampleCount:", sampleCount);
+	}
+
+	Texture3D::Texture3D(VulkanCore* pCore, TextureTypeFlags type, Extent3D extent, uint32_t sampleCount, uint32_t mipLevels, FormatPrecisionFlags formatPercisions, FormatDimensionFlags formatDimensions, FormatTypeFlags formatTypes) : Texture(pCore) {
+		m_type = type;
+		create(type, extent, sampleCount, mipLevels, formatPercisions, formatDimensions, formatTypes);
 	}
 
 }

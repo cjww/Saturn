@@ -74,21 +74,16 @@ namespace sa {
 
 	}
 
-	void DescriptorSet::update(uint32_t binding, vk::ImageView imageView, vk::Sampler* pSampler, uint32_t indexToUpdate) {
+	void DescriptorSet::update(uint32_t binding, vk::ImageView imageView, vk::ImageLayout layout, vk::Sampler* pSampler, uint32_t indexToUpdate) {
 		if (m_writes.size() <= binding) {
 			DEBUG_LOG_ERROR("Binding", binding, "out of bounds!");
 			throw std::runtime_error("Binding " + std::to_string(binding) + " out of bounds!");
 		}
 
-		vk::ImageLayout imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-		if (getDescriptorType(binding) == vk::DescriptorType::eStorageImage) {
-			imageLayout = vk::ImageLayout::eGeneral;
-		}
-
 		vk::DescriptorImageInfo imageInfo{
 			.sampler = (pSampler)? *pSampler : nullptr,
 			.imageView = imageView,
-			.imageLayout = imageLayout,
+			.imageLayout = layout,
 		};
 
 		m_writes[binding].setImageInfo(imageInfo);
@@ -104,7 +99,9 @@ namespace sa {
 		}
 
 		vk::ImageLayout imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-		if (getDescriptorType(binding) == vk::DescriptorType::eStorageImage) {
+		if (getDescriptorType(binding) == vk::DescriptorType::eStorageImage || 
+			(textures.front().getTypeFlags() & sa::TextureTypeFlagBits::STORAGE) == sa::TextureTypeFlagBits::STORAGE) 
+		{
 			imageLayout = vk::ImageLayout::eGeneral;
 		}
 

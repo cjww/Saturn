@@ -1,7 +1,7 @@
 #pragma once
 
 #define RENDERER_VALIDATION
-#define DEBUG_LOG
+#define SA_DEBUG_LOG
 
 
 #include <vector>

@@ -120,72 +120,7 @@ namespace sa {
 
 		return image;
 	}
-	/*
-	DeviceImage* DeviceMemoryManager::createDepthAttachmentTexture2D(vk::Extent2D extent, vk::SampleCountFlagBits sampleCount,
-		uint32_t mipLevels, uint32_t arrayLayers) 
-	{
-		auto image = createImage(
-			{ extent.width, extent.height, 1 },
-			arrayLayers,
-			getSupportedDepthFormat(),
-			vk::ImageType::e2D,
-			vk::ImageLayout::eUndefined,
-			mipLevels,
-			m_graphicsQueueFamilyIndices,
-			sampleCount,
-			vk::SharingMode::eExclusive,
-			vk::ImageTiling::eOptimal,
-			vk::ImageUsageFlagBits::eDepthStencilAttachment,
-			VMA_MEMORY_USAGE_GPU_ONLY,
-			vk::MemoryPropertyFlagBits::eDeviceLocal
-		);
 
-		return image;
-	}
-
-	DeviceImage* DeviceMemoryManager::createColorTexture2D(vk::Extent2D extent, vk::ImageUsageFlags usage, vk::Format format, vk::SampleCountFlagBits sampleCount,
-		uint32_t mipLevels, uint32_t arrayLayers) 
-	{
-		auto image = createImage(
-			{ extent.width, extent.height, 1 },
-			arrayLayers,
-			format,
-			vk::ImageType::e2D,
-			vk::ImageLayout::eUndefined,
-			mipLevels,
-			m_graphicsQueueFamilyIndices,
-			sampleCount,
-			vk::SharingMode::eExclusive,
-			vk::ImageTiling::eOptimal,
-			usage,
-			VMA_MEMORY_USAGE_GPU_ONLY,
-			vk::MemoryPropertyFlagBits::eDeviceLocal
-		);
-
-		return image;
-	}
-
-	DeviceImage* DeviceMemoryManager::createTexture3D(vk::Extent3D extent, vk::ImageUsageFlags usage, vk::SampleCountFlagBits sampleCount, vk::Format format, uint32_t mipLevels, uint32_t arrayLayers) {
-		auto image = createImage(
-			{ extent.width, extent.height, 1 },
-			arrayLayers,
-			format,
-			vk::ImageType::e3D,
-			vk::ImageLayout::eUndefined,
-			mipLevels,
-			m_graphicsQueueFamilyIndices,
-			sampleCount,
-			vk::SharingMode::eExclusive,
-			vk::ImageTiling::eOptimal,
-			usage,
-			VMA_MEMORY_USAGE_GPU_ONLY,
-			vk::MemoryPropertyFlagBits::eDeviceLocal
-		);
-
-		return image;
-	}
-	*/
-	
 	void DeviceMemoryManager::destroyBuffer(DeviceBuffer* buffer) {
 		vmaDestroyBuffer(m_allocator, buffer->buffer, buffer->allocation);
 		m_buffers.erase(std::find(m_buffers.begin(), m_buffers.end(), buffer));

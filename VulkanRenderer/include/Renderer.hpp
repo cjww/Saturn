@@ -94,6 +94,8 @@ namespace sa {
 		Texture2D createTexture2D(const Image& image, bool generateMipMaps);
 		TextureCube createTextureCube(const Image& image, bool generateMipMaps);
 		TextureCube createTextureCube(const std::vector<Image>& image, bool generateMipMaps);
+		Texture3D createTexture3D(TextureTypeFlags type, Extent3D extent, FormatPrecisionFlags formatPrecision = FormatPrecisionFlagBits::ANY_PRECISION, FormatDimensionFlags formatDimensions = FormatDimensionFlagBits::e1, FormatTypeFlags formatType = FormatTypeFlagBits::ANY_TYPE, uint32_t sampleCount = 1);
+
 
 		void queueTransfer(const DataTransfer& transfer);
 

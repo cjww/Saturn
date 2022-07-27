@@ -618,6 +618,25 @@ namespace sa {
 		);
 	}
 
+	DeviceImage* VulkanCore::createImage3D(Extent3D extent, vk::Format format, vk::ImageUsageFlags usage, vk::SampleCountFlagBits sampleCount, uint32_t mipLevels, uint32_t arrayLayers, vk::ImageCreateFlags flags) {
+		return m_memoryManager.createImage(
+			{ extent.width, extent.height, extent.depth },
+			arrayLayers,
+			format,
+			vk::ImageType::e3D,
+			vk::ImageLayout::eUndefined,
+			mipLevels,
+			{ m_queueInfo.family },
+			sampleCount,
+			vk::SharingMode::eExclusive,
+			vk::ImageTiling::eOptimal,
+			usage,
+			VMA_MEMORY_USAGE_AUTO_PREFER_DEVICE,
+			vk::MemoryPropertyFlagBits::eDeviceLocal,
+			flags
+		);
+	}
+
 	void VulkanCore::destroyImage(DeviceImage* pImage) {
 		m_memoryManager.destroyImage(pImage);
 	}

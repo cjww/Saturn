@@ -34,8 +34,10 @@ namespace sa {
 		ResourceID m_view;
 
 		TextureTypeFlags m_type;
-	public:
+		
 		Texture(VulkanCore* pCore);
+	public:
+
 		Extent getExtent() const;
 		virtual uint32_t getDepth() const;
 		vk::ImageView* getView() const;
@@ -62,7 +64,7 @@ namespace sa {
 			FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, uint32_t sampleCount);
 		void create(TextureTypeFlags type, Extent extent, Swapchain* pSwapchain, uint32_t sampleCount);
 
-	public:
+		friend class Renderer;
 		Texture2D(VulkanCore* pCore, TextureTypeFlags type, Extent extent, uint32_t sampleCount = 1);
 		Texture2D(VulkanCore* pCore, TextureTypeFlags type, Extent extent,
 			FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, uint32_t sampleCount = 1);
@@ -70,6 +72,8 @@ namespace sa {
 			Swapchain* pSwapchain, uint32_t sampleCount = 1);
 
 		Texture2D(VulkanCore* pCore, const Image& image, bool generateMipmaps);
+	public:
+
 
 		Texture2D(const Texture2D&) = default;
 		Texture2D& operator=(const Texture2D&) = default;
@@ -80,12 +84,26 @@ namespace sa {
 	class TextureCube : public Texture {
 	private:
 		void create(TextureTypeFlags type, Extent extent, uint32_t sampleCount, uint32_t mipLevels);
-	public:
+		
+		friend class Renderer;
 		TextureCube(VulkanCore* pCore, const Image& image, bool generateMipmaps);
 		TextureCube(VulkanCore* pCore, const std::vector<Image>& images, bool generateMipmaps);
+	public:
 
 		TextureCube(const TextureCube&) = default;
 		TextureCube& operator=(const TextureCube&) = default;
 	};
 
+	class Texture3D : public Texture {
+	private:
+		void create(TextureTypeFlags type, Extent3D extent, uint32_t sampleCount, uint32_t mipLevels, FormatPrecisionFlags formatPercisions, FormatDimensionFlags formatDimensions, FormatTypeFlags formatTypes);
+		
+		friend class Renderer;
+		Texture3D(VulkanCore* pCore, TextureTypeFlags type, Extent3D extent, uint32_t sampleCount, uint32_t mipLevels, FormatPrecisionFlags formatPercisions, FormatDimensionFlags formatDimensions, FormatTypeFlags formatTypes);
+
+	public:
+		Texture3D(const Texture3D&) = default;
+		Texture3D& operator=(const Texture3D&) = default;
+
+	};
 }

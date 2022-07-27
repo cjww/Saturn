@@ -223,12 +223,22 @@ namespace sa {
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture, ResourceID sampler) {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
-		pDescriptorSet->update(binding, *texture.getView(), pSampler, UINT32_MAX);
+		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		if ((texture.getTypeFlags() & sa::TextureTypeFlagBits::STORAGE) == sa::TextureTypeFlagBits::STORAGE) {
+			layout = vk::ImageLayout::eGeneral;
+		}
+
+		pDescriptorSet->update(binding, *texture.getView(), layout, pSampler, UINT32_MAX);
 	}
 
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture) {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
-		pDescriptorSet->update(binding, *texture.getView(), nullptr, UINT32_MAX);
+		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		if ((texture.getTypeFlags() & sa::TextureTypeFlagBits::STORAGE) == sa::TextureTypeFlagBits::STORAGE) {
+			layout = vk::ImageLayout::eGeneral;
+		}
+
+		pDescriptorSet->update(binding, *texture.getView(), layout, nullptr, UINT32_MAX);
 	}
 
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement) {
@@ -239,7 +249,7 @@ namespace sa {
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, ResourceID sampler) {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
-		pDescriptorSet->update(binding, VK_NULL_HANDLE, pSampler, UINT32_MAX);
+		pDescriptorSet->update(binding, VK_NULL_HANDLE, vk::ImageLayout::eUndefined, pSampler, UINT32_MAX);
 	}
 
 	void Renderer::freeDescriptorSet(ResourceID descriptorSet) {
@@ -273,6 +283,10 @@ namespace sa {
 
 	TextureCube Renderer::createTextureCube(const std::vector<Image>& images, bool generateMipMaps) {
 		return TextureCube(m_pCore.get(), images, generateMipMaps);
+	}
+
+	Texture3D Renderer::createTexture3D(TextureTypeFlags type, Extent3D extent, FormatPrecisionFlags formatPrecision, FormatDimensionFlags formatDimensions, FormatTypeFlags formatType, uint32_t sampleCount) {
+		return Texture3D(m_pCore.get(), type, extent, sampleCount, 1, formatPrecision, formatDimensions, formatType);
 	}
 
 	void Renderer::queueTransfer(const DataTransfer& transfer) {

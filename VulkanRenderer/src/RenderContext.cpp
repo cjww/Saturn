@@ -138,12 +138,22 @@ namespace sa {
 	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture, ResourceID sampler) {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
-		pDescriptorSet->update(binding, *texture.getView(), pSampler, m_pCommandBufferSet->getBufferIndex());
+		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		if ((texture.getTypeFlags() & sa::TextureTypeFlagBits::STORAGE) == sa::TextureTypeFlagBits::STORAGE) {
+			layout = vk::ImageLayout::eGeneral;
+		}
+
+		pDescriptorSet->update(binding, *texture.getView(), layout, pSampler, m_pCommandBufferSet->getBufferIndex());
 	}
 
 	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture) {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
-		pDescriptorSet->update(binding, *texture.getView(), nullptr, m_pCommandBufferSet->getBufferIndex());
+		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		if ((texture.getTypeFlags() & sa::TextureTypeFlagBits::STORAGE) == sa::TextureTypeFlagBits::STORAGE) {
+			layout = vk::ImageLayout::eGeneral;
+		}
+
+		pDescriptorSet->update(binding, *texture.getView(), layout, nullptr, m_pCommandBufferSet->getBufferIndex());
 	}
 
 	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement) {
@@ -154,7 +164,7 @@ namespace sa {
 	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, ResourceID sampler) {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
-		pDescriptorSet->update(binding, VK_NULL_HANDLE, pSampler, m_pCommandBufferSet->getBufferIndex());
+		pDescriptorSet->update(binding, VK_NULL_HANDLE, vk::ImageLayout::eUndefined, pSampler, m_pCommandBufferSet->getBufferIndex());
 	}
 
 	void RenderContext::bindDescriptorSet(ResourceID descriptorSet, ResourceID pipeline) {
@@ -262,6 +272,14 @@ namespace sa {
 			srcAccess = vk::AccessFlagBits::eShaderWrite;
 			srcStage = vk::PipelineStageFlagBits::eComputeShader;
 			break;
+		case sa::Transition::FRAGMENT_SHADER_READ:
+			dstAccess = vk::AccessFlagBits::eShaderRead;
+			dstStage = vk::PipelineStageFlagBits::eFragmentShader;
+			break;
+		case sa::Transition::FRAGMENT_SHADER_WRITE:
+			dstAccess = vk::AccessFlagBits::eShaderWrite;
+			dstStage = vk::PipelineStageFlagBits::eFragmentShader;
+			break;
 		default:
 			break;
 		}
@@ -293,6 +311,21 @@ namespace sa {
 				newLayout = vk::ImageLayout::eGeneral;
 			}
 			break;
+		case sa::Transition::FRAGMENT_SHADER_READ:
+			dstAccess = vk::AccessFlagBits::eShaderRead;
+			dstStage = vk::PipelineStageFlagBits::eFragmentShader;
+			if (texture.getTypeFlags() & TextureTypeFlagBits::STORAGE) {
+				newLayout = vk::ImageLayout::eGeneral;
+			}
+			break;
+		case sa::Transition::FRAGMENT_SHADER_WRITE:
+			dstAccess = vk::AccessFlagBits::eShaderWrite;
+			dstStage = vk::PipelineStageFlagBits::eFragmentShader;
+			if (texture.getTypeFlags() & TextureTypeFlagBits::STORAGE) {
+				newLayout = vk::ImageLayout::eGeneral;
+			}
+			break;
+
 		default:
 			break;
 		}

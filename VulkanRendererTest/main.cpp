@@ -271,6 +271,9 @@ struct PushConstant {
 	glm::mat4 world;
 };
 
+struct Vertex{
+	float position[4];
+};
 
 struct VertexColorUV {
 	float position[4];
@@ -315,6 +318,89 @@ std::array<uint32_t, 36> boxIndices = {
 	7, 6, 3, 6, 2, 3
 };
 
+void voxelTest(sa::RenderWindow& window) {
+	sa::Renderer& renderer = sa::Renderer::get();
+
+	sa::Texture2D depthTexture = renderer.createTexture2D(sa::TextureTypeFlagBits::DEPTH_ATTACHMENT, window.getCurrentExtent());
+
+	ResourceID renderProgram = renderer.createRenderProgram()
+		.addSwapchainAttachment(window.getSwapchainID())
+		.addDepthAttachment(depthTexture)
+		.beginSubpass()
+			.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
+			.addAttachmentReference(1, sa::SubpassAttachmentUsage::DepthTarget)
+		.endSubpass()
+		.end();
+
+	ResourceID framebuffer = renderer.createSwapchainFramebuffer(renderProgram, window.getSwapchainID(), { depthTexture });
+
+	sa::PipelineSettings settings = {};
+	settings.polygonMode = sa::PolygonMode::FILL;
+	settings.cullMode = sa::CullModeFlagBits::NONE;
+	settings.topology = sa::Topology::TRIANGLE_STRIP;
+
+	ResourceID pipeline = renderer.createGraphicsPipeline(renderProgram, 0, window.getCurrentExtent(),
+		"voxelPipeline.vert.spv", "voxelPipeline.geom.spv", "voxelPipeline.frag.spv", settings);
+
+	std::vector<Vertex> line = { 
+		{ -0.5f, 0.5f, 0.f, 1.f },
+		{ 0.5f, 0.5f, 0.f, 1.f },
+		{ 0.f, -0.5f, 0.f, 1.f }
+
+	};
+	sa::Buffer vertexBuffer = renderer.createBuffer(sa::BufferType::VERTEX, line.size() * sizeof(Vertex), line.data());
+
+	/*
+	*/
+	sa::Extent3D extent = { 64, 64, 64 };
+	sa::Texture3D tex3D = renderer.createTexture3D(sa::TextureTypeFlagBits::STORAGE | sa::TextureTypeFlagBits::SAMPLED, extent, sa::FormatPrecisionFlagBits::e8Bit, sa::FormatDimensionFlagBits::e4, sa::FormatTypeFlagBits::ANY_TYPE);
+	
+	sa::Texture2D storageTexture = renderer.createTexture2D(sa::TextureTypeFlagBits::STORAGE | sa::TextureTypeFlagBits::SAMPLED, { 128, 128 },
+		sa::FormatPrecisionFlagBits::ANY_PRECISION,
+		sa::FormatDimensionFlagBits::e4,
+		sa::FormatTypeFlagBits::ANY_TYPE);
+
+
+	ResourceID sampler = renderer.createSampler();
+
+	ResourceID descriptorSet0 = renderer.allocateDescriptorSet(pipeline, 0);
+	renderer.updateDescriptorSet(descriptorSet0, 0, storageTexture);
+
+	renderer.updateDescriptorSet(descriptorSet0, 1, tex3D);
+
+	renderer.updateDescriptorSet(descriptorSet0, 2, tex3D, sampler);
+
+	bool transitioned = false;
+
+	while (window.isOpen()) {
+		window.pollEvents();
+
+		sa::RenderContext context = window.beginFrame();
+		if (context) {
+			
+			if (!transitioned) {
+				context.transitionTexture(tex3D, sa::Transition::NONE, sa::Transition::FRAGMENT_SHADER_WRITE);
+				context.transitionTexture(storageTexture, sa::Transition::NONE, sa::Transition::FRAGMENT_SHADER_WRITE);
+				transitioned = true;
+			}
+
+			context.beginRenderProgram(renderProgram, framebuffer, sa::SubpassContents::DIRECT);
+			context.bindPipeline(pipeline);
+
+			context.bindDescriptorSet(descriptorSet0, pipeline);
+			context.bindVertexBuffers(0, { vertexBuffer });
+			context.draw(vertexBuffer.getElementCount<Vertex>(), 1);
+
+			context.endRenderProgram(renderProgram);
+
+		}
+		window.display();
+
+
+	}
+
+}
+
 void imguiTest(sa::RenderWindow& window) {
 	sa::Renderer& renderer = sa::Renderer::get();
 
@@ -322,6 +408,7 @@ void imguiTest(sa::RenderWindow& window) {
 	sa::Texture2D colorTexture = renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT, window.getCurrentExtent(), 8);
 	sa::Texture2D depthTexture = renderer.createTexture2D(sa::TextureTypeFlagBits::DEPTH_ATTACHMENT, window.getCurrentExtent(), 8);
 	sa::Texture2D resolveTexture = renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, window.getCurrentExtent());
+
 	// Render programs
 	// One for the main rendering
 	ResourceID renderProgram = renderer.createRenderProgram()
@@ -350,7 +437,7 @@ void imguiTest(sa::RenderWindow& window) {
 	ResourceID pipeline = renderer.createGraphicsPipeline(renderProgram, 0, window.getCurrentExtent(), "ForwardShader.vert.spv", "ForwardShader.frag.spv");
 	
 	sa::PipelineSettings pipelineSettings = {};
-	pipelineSettings.cullMode = sa::CullModeFlagBits::NONE;
+	pipelineSettings.cullMode = sa::CullModeFlagBits::FRONT;
 	pipelineSettings.depthTestEnabled = false;
 	ResourceID skyboxPipeline = renderer.createGraphicsPipeline(renderProgram, 0, window.getCurrentExtent(), "Skybox.vert.spv", "Skybox.frag.spv", pipelineSettings);
 
@@ -421,8 +508,6 @@ void imguiTest(sa::RenderWindow& window) {
 
 	renderer.updateDescriptorSet(skyboxDescriptorSet, 0, uniformBuffer);
 	renderer.updateDescriptorSet(skyboxDescriptorSet, 1, cubeMap1, sampler);
-
-
 
 
 
@@ -986,7 +1071,8 @@ int main() {
 			}
 		});
 
-		imguiTest(window);
+		voxelTest(window);
+		//imguiTest(window);
 		//deffered(window);
 		//forward(window);
 
