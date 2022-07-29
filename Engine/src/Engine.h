@@ -2,7 +2,7 @@
 
 #include "Graphics/IRenderTechnique.h"
 
-#include "ResourceManager.h"
+#include "AssetManager.h"
 #include "Scene.h"
 
 #include "Tools/Vector.h"
@@ -10,7 +10,7 @@
 #include "Tools\utils.h"
 #include "ScriptManager.h"
 
-#include "Graphics\RenderWindow.h"
+#include <RenderWindow.hpp>
 
 #include <rapidxml\rapidxml.hpp>
 

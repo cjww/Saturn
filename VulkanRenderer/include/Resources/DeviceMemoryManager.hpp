@@ -1,6 +1,6 @@
 #pragma once
 
-#include "debugFunctions.h"
+#include "debugFunctions.hpp"
 
 #include "vk_mem_alloc.h"
 

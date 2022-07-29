@@ -140,7 +140,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)deps\include\;$(ProjectDir)src\;$(VULKAN_SDK)\Include\;$(SolutionDir)DX11Renderer\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)deps\include\;$(ProjectDir)src\;$(SolutionDir)\VulkanRenderer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -156,10 +156,10 @@
       </Command>
     </PreBuildEvent>
     <Lib>
-      <AdditionalDependencies>lua51.lib;vulkan-1.lib;glfw3.lib;spirv-cross-cored.lib;spirv-cross-cppd.lib;spirv-cross-glsld.lib;openal32.lib;sfml-main-d.lib;sfml-window-d.lib;sfml-system-d.lib;sfml-network-d.lib;sfml-audio-d.lib;sfml-graphics-d.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>VulkanRenderer_$(Platform)$(Configuration).lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
-      <AdditionalLibraryDirectories>$(ProjectDir)deps\SFML-2.5.1\lib;$(ProjectDir)deps\GLFW\lib-vc2019\;$(ProjectDir)deps\lua\;$(VULKAN_SDK)\Lib;$(ProjectDir)deps\SPIRV\Debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)deps\lua\;$(SolutionDir)VulkanRenderer\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -170,7 +170,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)deps\include\;$(ProjectDir)src\;$(VULKAN_SDK)\Include\;$(SolutionDir)DX11Renderer\include\;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)deps\include\;$(ProjectDir)src\;$(SolutionDir)\VulkanRenderer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -188,19 +188,15 @@
       </Command>
     </PreBuildEvent>
     <Lib>
-      <AdditionalDependencies>lua51.lib;vulkan-1.lib;glfw3.lib;spirv-cross-core.lib;spirv-cross-cpp.lib;spirv-cross-glsl.lib;sfml-main.lib;sfml-window.lib;sfml-system.lib;sfml-network.lib;sfml-audio.lib;sfml-graphics.lib;openal32.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>VulkanRenderer_$(Platform)$(Configuration).lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
-      <AdditionalLibraryDirectories>$(ProjectDir)deps\SFML-2.5.1\lib;$(ProjectDir)deps\GLFW\lib-vc2019\;$(ProjectDir)deps\lua\;$(VULKAN_SDK)\Lib;$(ProjectDir)deps\SPIRV\Release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)deps\lua\;$(SolutionDir)VulkanRenderer\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\ECS\ComponentBase.cpp" />
     <ClCompile Include="src\ECS\ComponentType.cpp" />
-    <ClCompile Include="src\Graphics\Buffer.cpp" />
-    <ClCompile Include="src\Graphics\RenderWindow.cpp" />
-    <ClCompile Include="src\Graphics\Texture.cpp" />
-    <ClCompile Include="src\Graphics\Window.cpp" />
     <ClCompile Include="src\imgui-SFML.cpp" />
     <ClCompile Include="src\imgui.cpp" />
     <ClCompile Include="src\imgui_demo.cpp" />
@@ -210,13 +206,6 @@
     <ClCompile Include="src\imgui_stdlib.cpp" />
     <ClCompile Include="src\imgui_tables.cpp" />
     <ClCompile Include="src\imgui_widgets.cpp" />
-    <ClCompile Include="src\Graphics\Vulkan\DataManager.cpp" />
-    <ClCompile Include="src\Graphics\Vulkan\functions.cpp" />
-    <ClCompile Include="src\Graphics\Image.cpp" />
-    <ClCompile Include="src\Graphics\Vulkan\Renderer.cpp" />
-    <ClCompile Include="src\Graphics\Vulkan\Shader.cpp" />
-    <ClCompile Include="src\Graphics\Vulkan\ShaderSet.cpp" />
-    <ClCompile Include="src\Graphics\Vulkan\vulkan_base.cpp" />
     <ClCompile Include="src\ScriptManager.cpp" />
     <ClCompile Include="src\ECS\MetaComponent.cpp" />
     <ClCompile Include="src\pch.cpp">
@@ -226,12 +215,11 @@
     <ClCompile Include="src\Scene.cpp" />
     <ClCompile Include="src\Camera.cpp" />
     <ClCompile Include="src\Tools\CustomImGui.cpp" />
-    <ClCompile Include="src\Geometry\Rect.cpp" />
     <ClCompile Include="src\ECS\Entity.cpp" />
     <ClCompile Include="src\Engine.cpp" />
     <ClCompile Include="src\Graphics\ForwardRenderer.cpp" />
     <ClCompile Include="src\Graphics\IRenderTechnique.cpp" />
-    <ClCompile Include="src\ResourceManager.cpp" />
+    <ClCompile Include="src\AssetManager.cpp" />
     <ClCompile Include="src\Tools\Clock.cpp" />
     <ClCompile Include="src\Tools\Logger.cpp" />
     <ClCompile Include="src\Tools\Math.cpp" />
@@ -242,30 +230,16 @@
     <ClCompile Include="src\Tools\Vector.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Graphics\RenderWindow.h" />
     <ClInclude Include="src\ECS\ComponentBase.h" />
     <ClInclude Include="src\ECS\ComponentType.h" />
-    <ClInclude Include="src\Graphics\Buffer.h" />
-    <ClInclude Include="src\Graphics\Texture.h" />
-    <ClInclude Include="src\Graphics\Vulkan\IRenderPass.h" />
-    <ClInclude Include="src\Graphics\Window.hpp" />
     <ClInclude Include="src\internal\internalVector.h" />
     <ClInclude Include="src\Graphics\RenderWindow.hpp" />
-    <ClInclude Include="src\Graphics\Vulkan\common.hpp" />
-    <ClInclude Include="src\Graphics\Vulkan\DataManager.hpp" />
-    <ClInclude Include="src\Graphics\Vulkan\functions.hpp" />
-    <ClInclude Include="src\Graphics\Image.h" />
-    <ClInclude Include="src\Graphics\Vulkan\Renderer.hpp" />
-    <ClInclude Include="src\Graphics\Vulkan\Shader.hpp" />
-    <ClInclude Include="src\Graphics\Vulkan\ShaderSet.hpp" />
-    <ClInclude Include="src\Graphics\Vulkan\vulkan_base.hpp" />
     <ClInclude Include="src\ScriptManager.h" />
     <ClInclude Include="src\ECS\Events.h" />
     <ClInclude Include="src\ECS\MetaComponent.h" />
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\Scene.h" />
     <ClInclude Include="src\Tools\CustomImGui.h" />
-    <ClInclude Include="src\Geometry\Rect.h" />
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\ECS\Components.h" />
     <ClInclude Include="src\Engine.h" />
@@ -280,7 +254,7 @@
     <ClInclude Include="src\Tools\Vector.h" />
     <ClInclude Include="src\Vertex.h" />
     <ClInclude Include="src\ECS\Entity.h" />
-    <ClInclude Include="src\ResourceManager.h" />
+    <ClInclude Include="src\AssetManager.h" />
     <ClInclude Include="src\Tools\ScopeTimer.h" />
     <ClInclude Include="src\Tools\StopWatch.h" />
   </ItemGroup>

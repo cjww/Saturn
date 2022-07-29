@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "VulkanCore.hpp"
 
-#include "debugFunctions.h" // for checkError and debugCallback
+#include "debugFunctions.hpp" // for checkError and debugCallback
 
 namespace sa {
 	void VulkanCore::fillFormats() {

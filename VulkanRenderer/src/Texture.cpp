@@ -16,6 +16,10 @@ namespace sa {
 	{
 	}
 	
+	Texture::Texture() : Texture(nullptr) {
+
+	}
+
 	Extent Texture::getExtent() const {
 		return { m_pImage->extent.width, m_pImage->extent.height };
 	}
@@ -32,7 +36,13 @@ namespace sa {
 		return m_type;
 	}
 
+	bool Texture::isValid() const {
+		return m_pImage != nullptr;
+	}
+
 	void Texture::destroy() {
+		if (!isValid())
+			return;
 		m_pCore->getDevice().waitIdle();
 		if (m_pStagingBuffer)
 			m_pCore->destroyBuffer(m_pStagingBuffer);
@@ -53,7 +63,7 @@ namespace sa {
 		: Texture(pCore)
 	{
 		m_type = type;
-		create(type, extent, precisions, dimensions, types, sampleCount);
+		create(type, extent, precisions, dimensions, types, sampleCount, 1);
 	}
 
 	Texture2D::Texture2D(VulkanCore* pCore, TextureTypeFlags type, Extent extent, Swapchain* pSwapchain, uint32_t sampleCount) 
@@ -74,7 +84,14 @@ namespace sa {
 			m_type |= TextureTypeFlagBits::TRANSFER_SRC;
 		}
 
-		create(m_type, image.getExtent(), 1, mipLevels);
+		create(
+			m_type, 
+			image.getExtent(), 
+			sa::FormatPrecisionFlagBits::e8Bit, 
+			sa::FormatDimensionFlagBits::e4, 
+			sa::FormatTypeFlagBits::ANY_TYPE, 
+			1, 
+			mipLevels);
 		
 		m_pStagingBuffer = m_pCore->createBuffer(
 			vk::BufferUsageFlagBits::eTransferSrc,
@@ -90,18 +107,44 @@ namespace sa {
 		};
 		Renderer::get().queueTransfer(transfer);
 	}
+
+	Texture2D::Texture2D() : Texture() {
+	
+	}
 	
 	void Texture2D::create(TextureTypeFlags type, Extent extent, uint32_t sampleCount, uint32_t mipLevels) {
 
 		vk::ImageUsageFlags usage = (vk::ImageUsageFlags)type;
 		vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
 
-		vk::Format format = m_pCore->getDefaultColorFormat();
-
+		vk::Format format = vk::Format::eUndefined;
+		vk::FormatFeatureFlags features;
 		if (type & TextureTypeFlagBits::DEPTH_ATTACHMENT) {
+			features |= vk::FormatFeatureFlagBits::eDepthStencilAttachment;
 			aspect = vk::ImageAspectFlagBits::eDepth;
 			format = m_pCore->getDefaultDepthFormat();
-		}		
+		}
+		else {
+			if (type & TextureTypeFlagBits::SAMPLED) {
+				features |= vk::FormatFeatureFlagBits::eSampledImage;
+			}
+			if (type & TextureTypeFlagBits::COLOR_ATTACHMENT) {
+				features |= vk::FormatFeatureFlagBits::eColorAttachment;
+			}
+			if (type & TextureTypeFlagBits::STORAGE) {
+				features |= vk::FormatFeatureFlagBits::eStorageImage;
+			}
+			if (type & TextureTypeFlagBits::TRANSFER_DST) {
+				features |= vk::FormatFeatureFlagBits::eTransferDst;
+			}
+
+			format = m_pCore->getFormat(
+				FormatPrecisionFlagBits::ANY_PRECISION,
+				FormatDimensionFlagBits::ANY_DIMENSION,
+				FormatTypeFlagBits::ANY_TYPE,
+				features,
+				vk::ImageTiling::eOptimal);
+		}
 
 		DEBUG_LOG_INFO("Created 2D texture\nExtent: { w:", extent.width, " h:", extent.height, "}\nFormat: ", vk::to_string(format), "\nSampleCount: ", sampleCount);
 		m_pImage = m_pCore->createImage2D(
@@ -127,7 +170,7 @@ namespace sa {
 
 	}
 
-	void Texture2D::create(TextureTypeFlags type, Extent extent, FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, uint32_t sampleCount) {
+	void Texture2D::create(TextureTypeFlags type, Extent extent, FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, uint32_t sampleCount, uint32_t mipLevels) {
 		vk::ImageUsageFlags usage = (vk::ImageUsageFlags)type;
 		vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
 
@@ -168,7 +211,7 @@ namespace sa {
 			format,
 			usage,
 			(vk::SampleCountFlagBits)sampleCount,
-			1,
+			mipLevels,
 			1
 		);
 
@@ -177,7 +220,7 @@ namespace sa {
 			m_pImage->image,
 			format,
 			aspect,
-			1,
+			mipLevels,
 			0,
 			1,
 			0
@@ -326,6 +369,10 @@ namespace sa {
 		};
 		Renderer::get().queueTransfer(transfer);
 	}
+
+	TextureCube::TextureCube() : Texture() {
+	
+	}
 	
 	void Texture3D::create(TextureTypeFlags type, Extent3D extent, uint32_t sampleCount, uint32_t mipLevels, FormatPrecisionFlags formatPercisions, FormatDimensionFlags formatDimensions, FormatTypeFlags formatTypes) {
 
@@ -381,6 +428,10 @@ namespace sa {
 	Texture3D::Texture3D(VulkanCore* pCore, TextureTypeFlags type, Extent3D extent, uint32_t sampleCount, uint32_t mipLevels, FormatPrecisionFlags formatPercisions, FormatDimensionFlags formatDimensions, FormatTypeFlags formatTypes) : Texture(pCore) {
 		m_type = type;
 		create(type, extent, sampleCount, mipLevels, formatPercisions, formatDimensions, formatTypes);
+	}
+
+	Texture3D::Texture3D() : Texture() {
+	
 	}
 
 }

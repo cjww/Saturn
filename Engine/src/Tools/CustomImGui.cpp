@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "CustomImGui.h"
 
-
 namespace ImGui {
 
 	void displayTable(std::string name, sol::table table) {
@@ -56,9 +55,9 @@ namespace ImGui {
 	void Component(comp::Model* model) {
 		ImGui::Text("ModelID: %d", model->modelID);
 		ImGui::SameLine();
-		ImGui::Text("Name: %s", sa::ResourceManager::get().fetchResourceName(model->modelID).c_str());
+		ImGui::Text("Name: %s", sa::ResourceManager::get().idToKey(model->modelID).c_str());
 		if (model->modelID != NULL_RESOURCE) {
-			sa::ModelData* data = sa::ResourceManager::get().getModel(model->modelID);
+			sa::ModelData* data = sa::AssetManager::get().getModel(model->modelID);
 			for (const auto& mesh : data->meshes) {
 				ImGui::Spacing();
 				ImGui::Text("Material");

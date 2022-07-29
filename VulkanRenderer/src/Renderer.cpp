@@ -2,7 +2,7 @@
 #include "Renderer.hpp"
 
 #include "VulkanCore.hpp"
-#include "debugFunctions.h"
+#include "debugFunctions.hpp"
 
 
 #include "Resources/Swapchain.hpp"
@@ -374,6 +374,10 @@ namespace sa {
 		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
 		
 		return SubContext(m_pCore.get(), pFramebufferSet, pRenderProgram, subpassIndex, contextPool);
+	}
+
+	SubContext Renderer::createSubContext(ResourceID contextPool) {
+		return SubContext(m_pCore.get(), nullptr, nullptr, 0, contextPool);
 	}
 
 

@@ -2,6 +2,8 @@
 
 #include "FormatFlags.hpp"
 
+#include "ResourceManager.hpp"
+
 namespace vk {
 	class BufferView;
 }

@@ -1,14 +1,9 @@
 #pragma once
 #include "Camera.h"
 #include "Scene.h"
-#include "Texture.h"
 
-#include "Graphics\RenderWindow.h"
-#include "Graphics\Image.h"
-
-namespace vr {
-	struct Texture;
-}
+#include "Renderer.hpp"
+#include "RenderWindow.hpp"
 
 namespace sa {
 	class IRenderTechnique {
@@ -28,9 +23,7 @@ namespace sa {
 
 		virtual sa::Texture getOutputTexture() const = 0;
 
-		virtual sa::Texture createShaderTexture2D(const sa::Image& img) = 0;
-
-		sa::Vector2u getCurrentExtent() const;
+		sa::Extent getCurrentExtent() const;
 		
 	};
 }

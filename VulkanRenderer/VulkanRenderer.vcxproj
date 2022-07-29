@@ -180,7 +180,7 @@
     <ClInclude Include="include\FormatFlags.hpp" />
     <ClInclude Include="include\Image.hpp" />
     <ClInclude Include="include\InputEnums.hpp" />
-    <ClInclude Include="include\PipelineSettings.h" />
+    <ClInclude Include="include\PipelineSettings.hpp" />
     <ClInclude Include="include\Resources\Buffer.hpp" />
     <ClInclude Include="include\Resources\DescriptorSet.hpp" />
     <ClInclude Include="include\Resources\FramebufferSet.hpp" />
@@ -199,7 +199,7 @@
     <ClInclude Include="include\Resources\Swapchain.hpp" />
     <ClInclude Include="include\Resources\Texture.hpp" />
     <ClInclude Include="include\Tools\Logger.hpp" />
-    <ClInclude Include="include\debugFunctions.h" />
+    <ClInclude Include="include\debugFunctions.hpp" />
     <ClInclude Include="include\Renderer.hpp" />
     <ClInclude Include="include\VulkanCore.hpp" />
     <ClInclude Include="include\Window.hpp" />

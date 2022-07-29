@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "debugFunctions.h"
+#include "debugFunctions.hpp"
 
 namespace sa {
     

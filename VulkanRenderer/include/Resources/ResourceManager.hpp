@@ -4,6 +4,9 @@
 #include <unordered_map>
 #include <functional>
 
+#include <queue>
+#include <string>
+
 typedef size_t ResourceType;
 typedef uint32_t ResourceID;
 
@@ -24,6 +27,9 @@ namespace sa {
 			virtual void clear() = 0;
 
 			ResourceID getUniqueID();
+
+			virtual std::string idToKey(ResourceID id) const = 0;
+
 		};
 
 		template<typename T>
@@ -47,10 +53,12 @@ namespace sa {
 
 			void remove(ResourceID id) override;
 			void clear() override;
+			std::string idToKey(ResourceID id) const override;
 
 			void setCleanupFunction(std::function<void(T*)> function);
 
 			ResourceID keyToID(const std::string& key) const;
+
 
 		};
 
@@ -110,6 +118,9 @@ namespace sa {
 
 		template<typename T>
 		ResourceID keyToID(const std::string& key) const;
+	
+		std::string idToKey(ResourceID id) const;
+	
 	};
 
 	template<typename T>
@@ -247,6 +258,17 @@ namespace sa {
 		}
 
 		template<typename T>
+		std::string ResourceContainer<T>::idToKey(ResourceID id) const {
+			for (auto& [key, resourceID] : m_keys) {
+				if (resourceID == id) {
+					return key;
+				}
+			}
+			return "";
+		}
+
+
+		template<typename T>
 		inline void ResourceContainer<T>::setCleanupFunction(std::function<void(T*)> function) {
 			m_cleanupFunction = function;
 		}
@@ -259,5 +281,6 @@ namespace sa {
 			}
 			return m_keys.at(key);
 		}
+
 	}
 }

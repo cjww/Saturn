@@ -1,306 +1,182 @@
 #include "pch.h"
 #include "ForwardRenderer.h"
 
-#include "Graphics\Vulkan\Renderer.hpp"
+#include <Renderer.hpp>
 
 namespace sa {
 	
-	void ForwardRenderer::createTextures(VkExtent2D extent) {
-		m_pMainColorTexture = m_renderer->createColorAttachmentTexture(
-			extent,
-			VK_FORMAT_R8G8B8A8_UNORM,
-			1,
-			1,
-			VK_SAMPLE_COUNT_1_BIT,
-			VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+	void ForwardRenderer::createTextures(sa::Extent extent) {
+		m_mainColorTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, extent);
+		m_depthTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::DEPTH_ATTACHMENT, extent);
 
-		m_pDepthTexture = m_renderer->createDepthTexture(extent);
+		m_outputTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, extent);
 
-		m_pOutputTexture = m_renderer->createColorAttachmentTexture(
-			extent,
-			VK_FORMAT_R8G8B8A8_UNORM,
-			1,
-			1,
-			VK_SAMPLE_COUNT_1_BIT,
-			VK_IMAGE_USAGE_INPUT_ATTACHMENT_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+		m_brightnessTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::STORAGE, extent);
 
-		m_pBrightnessTexture = m_renderer->createColorAttachmentTexture(
-			extent,
-			m_pMainColorTexture->format,
-			1,
-			1,
-			VK_SAMPLE_COUNT_1_BIT,
-			VK_IMAGE_USAGE_STORAGE_BIT);
-
-		m_pBlurredBrightnessTexture = m_renderer->createColorAttachmentTexture(
-			extent,
-			m_pMainColorTexture->format,
-			1,
-			1,
-			VK_SAMPLE_COUNT_1_BIT,
-			VK_IMAGE_USAGE_STORAGE_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
+		m_blurredBrightnessTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::STORAGE, extent);
 
 	}
 
 	void ForwardRenderer::createRenderPasses() {
-		std::vector<VkAttachmentDescription> mainAttachments(3);
-		mainAttachments[0] = vr::getColorAttachment(m_pMainColorTexture->format, m_pMainColorTexture->sampleCount, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-		mainAttachments[1] = vr::getDepthAttachment(m_pDepthTexture->format, m_pDepthTexture->sampleCount);
-		mainAttachments[2] = vr::getColorAttachment(m_pBrightnessTexture->format, m_pBrightnessTexture->sampleCount);
 
-
-
-		std::vector<VkAttachmentReference> mainPassReferences(3);
-		mainPassReferences[0].attachment = 0; // m_pMainColorTexture / output
-		mainPassReferences[0].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-		mainPassReferences[1].attachment = 1; // m_pDepthTexture
-		mainPassReferences[1].layout = VK_IMAGE_LAYOUT_DEPTH_STENCIL_ATTACHMENT_OPTIMAL;
-
-		mainPassReferences[2].attachment = 2; // m_pBrightnessTexture
-		mainPassReferences[2].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-
-		VkSubpassDescription mainRenderpass;
-		mainRenderpass.flags = 0;
-		mainRenderpass.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-		mainRenderpass.inputAttachmentCount = 0;
-		mainRenderpass.preserveAttachmentCount = 0;
-
-		std::vector<VkAttachmentReference> colorRef = { mainPassReferences[0], mainPassReferences[2] };
-
-		mainRenderpass.colorAttachmentCount = colorRef.size();
-		mainRenderpass.pColorAttachments = colorRef.data();
-		mainRenderpass.pDepthStencilAttachment = &mainPassReferences[1];
-		mainRenderpass.pResolveAttachments = nullptr;
-
-
-		m_mainRenderPass = m_renderer->createRenderPass(mainAttachments, { mainRenderpass }, {});
-
-
-		std::vector<VkAttachmentDescription> postAttachments(1);
-		if (m_useImGui) {
-			postAttachments[0] = vr::getColorAttachment(m_pOutputTexture->format, m_pOutputTexture->sampleCount, VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL);
-		}
-		else {
-			postAttachments[0] = m_renderer->getSwapchainAttachment(m_pWindow->getSwapchainID());
-		}
-
-		std::vector<VkAttachmentReference> postPassReferences(1);
-		postPassReferences[0].attachment = 0; // output / swapchain
-		postPassReferences[0].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-
-
-		std::vector<VkSubpassDescription> postRenderpasses(1);
-		postRenderpasses[0].flags = 0;
-		postRenderpasses[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-		postRenderpasses[0].inputAttachmentCount = 0;
-		postRenderpasses[0].preserveAttachmentCount = 0;
-
-		postRenderpasses[0].colorAttachmentCount = 1;
-		postRenderpasses[0].pColorAttachments = &postPassReferences[0];
-		postRenderpasses[0].pDepthStencilAttachment = nullptr;
-		postRenderpasses[0].pResolveAttachments = nullptr;
-
-		m_postRenderpass = m_renderer->createRenderPass(postAttachments, postRenderpasses, {});
-
-		if (m_useImGui) {
-
-			std::vector<VkAttachmentDescription> imguiAttachments(1);
-			imguiAttachments[0] = m_renderer->getSwapchainAttachment(m_pWindow->getSwapchainID());
-
-
-			std::vector<VkAttachmentReference> imguiPassReferences(1);
-			imguiPassReferences[0].attachment = 0; // swapchain
-			imguiPassReferences[0].layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL;
-
-
-
-			std::vector<VkSubpassDescription> imguiRenderpasses(1);
-			imguiRenderpasses[0].flags = 0;
-			imguiRenderpasses[0].pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS;
-			imguiRenderpasses[0].inputAttachmentCount = 0;
-			imguiRenderpasses[0].preserveAttachmentCount = 0;
-
-			imguiRenderpasses[0].colorAttachmentCount = 1;
-			imguiRenderpasses[0].pColorAttachments = &imguiPassReferences[0];
-			imguiRenderpasses[0].pDepthStencilAttachment = nullptr;
-			imguiRenderpasses[0].pResolveAttachments = nullptr;
-
-			m_imguiRenderpass = m_renderer->createRenderPass(imguiAttachments, imguiRenderpasses, {});
-		}
-	}
-
-	void ForwardRenderer::createFramebuffers(VkExtent2D extent)
-	{
-		std::vector<vr::Texture*> additionalAttachments = { m_pMainColorTexture, m_pDepthTexture, m_pBrightnessTexture };
-
-		m_mainFramebuffer = m_renderer->createFramebuffer(m_mainRenderPass, extent, additionalAttachments);
-
-		if (m_useImGui) {
-			m_postFramebuffer = m_renderer->createFramebuffer(m_postRenderpass, extent, { m_pOutputTexture });
+		m_colorRenderProgram = m_renderer.createRenderProgram()
+			.addColorAttachment(true, m_mainColorTexture)
+			.addDepthAttachment(m_depthTexture)
+			.addColorAttachment(true, m_brightnessTexture)
+			.beginSubpass()
+				.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
+				.addAttachmentReference(1, sa::SubpassAttachmentUsage::DepthTarget)
+				.addAttachmentReference(2, sa::SubpassAttachmentUsage::ColorTarget)
+			.endSubpass()
+			.end();
 			
-			m_imguiFramebuffer = m_renderer->createSwapchainFramebuffer(m_pWindow->getSwapchainID(), m_imguiRenderpass, {});
-			m_renderer->initImGUI(m_pWindow->getWindowHandle(), m_imguiRenderpass, 0);
+
+		auto factory = m_renderer.createRenderProgram();
+		if (m_useImGui) {
+			factory.addColorAttachment(true, m_outputTexture);
 		}
 		else {
-			m_postFramebuffer = m_renderer->createSwapchainFramebuffer(m_pWindow->getSwapchainID(), m_postRenderpass, {});
+			factory.addSwapchainAttachment(m_pWindow->getSwapchainID());
+		}
+
+		m_postRenderProgram = factory.beginSubpass()
+			.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
+			.endSubpass()
+			.end();
+	
+
+		if (m_useImGui) {
+			m_imguiRenderProgram = m_renderer.createRenderProgram()
+				.addSwapchainAttachment(m_pWindow->getSwapchainID())
+				.beginSubpass()
+				.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
+				.endSubpass()
+				.end();
+		}
+
+	}
+
+	void ForwardRenderer::createFramebuffers(sa::Extent extent)
+	{
+		
+		m_colorFramebuffer = m_renderer.createFramebuffer(m_colorRenderProgram, { m_mainColorTexture, m_depthTexture, m_brightnessTexture });
+
+		if (m_useImGui) {
+			m_postFramebuffer = m_renderer.createFramebuffer(m_postRenderProgram, { m_outputTexture });
+
+			m_imguiFramebuffer = m_renderer.createSwapchainFramebuffer(m_imguiRenderProgram, m_pWindow->getSwapchainID(), {});
+			m_renderer.initImGui(*m_pWindow, m_imguiRenderProgram, 0);
+
+		}
+		else {
+			m_postFramebuffer = m_renderer.createSwapchainFramebuffer(m_postRenderProgram, m_pWindow->getSwapchainID(), {});
 		}
 	}
 
-	void ForwardRenderer::createPipelines(VkExtent2D extent) {
-		vbl::PipelineConfig pipelineConfig = {};
-		pipelineConfig.dynamicStates.push_back(VK_DYNAMIC_STATE_VIEWPORT);
-
-		pipelineConfig.colorBlends.resize(2);
-		m_colorPipeline = m_renderer->createPipeline(m_pColorShaders, extent, m_mainRenderPass, 0, pipelineConfig);
-
-		pipelineConfig.colorBlends.resize(1);
-		m_postProcessPipline = m_renderer->createPipeline(m_pPostProcessShaders, extent, m_postRenderpass, 0, pipelineConfig);
-	}
-
-	ForwardRenderer::ForwardRenderer() {
+	ForwardRenderer::ForwardRenderer() 
+		: m_renderer(sa::Renderer::get()) 
+	{
 
 	}
 
-	void ForwardRenderer::swapchainResizedCallback(uint32_t width, uint32_t height) {
-		std::cout << "resized: " << width << ", " << height << std::endl;
-		m_renderer->waitDeviceIdle();
+	void ForwardRenderer::swapchainResizedCallback(Extent extent) {
+		std::cout << "resized: " << extent.width << ", " << extent.height << std::endl;
+		
 
-		//TODO: should this be done here?
-		m_renderer->recreateSwapchain(m_pWindow->getSwapchainID());
-		VkExtent2D extent = { width, height };
 		createTextures(extent);
 		createRenderPasses();
 		createFramebuffers(extent);
-		createPipelines(extent);
+		
 
-		VkImageLayout layout = m_pMainColorTexture->layout;
-		m_pMainColorTexture->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		m_renderer->updateDescriptorSet(m_pInputDescriptorSet, 0, nullptr, m_pMainColorTexture, m_sampler, true);
-		m_pMainColorTexture->layout = layout;
+
+		m_colorPipeline = m_renderer.createGraphicsPipeline(m_colorRenderProgram, 0, extent,
+			"../Engine/shaders/Texture.vert.spv", "../Engine/shaders/Texture.frag.spv");
+
+		m_postProcessPipeline = m_renderer.createGraphicsPipeline(m_colorRenderProgram, 0, extent,
+			"../Engine/shaders/PostProcess.vert.spv", "../Engine/shaders/PostProcess.frag.spv");
+
+		m_renderer.updateDescriptorSet(m_postInputDescriptorSet, 0, m_mainColorTexture, m_sampler);
 
 	}
 
 	void ForwardRenderer::init(sa::RenderWindow* pWindow, bool setupImGui) {
-		m_renderer = &vr::Renderer::get();
 		m_useImGui = setupImGui;
 
 		m_pWindow = pWindow;
 		
 		// Setup callback
-		m_renderer->setOnSwapchainResizeCallback(m_pWindow->getSwapchainID(), 
-			std::bind(&ForwardRenderer::swapchainResizedCallback, this, std::placeholders::_1, std::placeholders::_2));
+		pWindow->setResizeCallback(std::bind(&ForwardRenderer::swapchainResizedCallback, this, std::placeholders::_1));
 
 		// Get Extent
-		sa::Vector2u windowExtent = m_pWindow->getCurrentExtent();
-		VkExtent2D extent = { windowExtent.x, windowExtent.y };
+		sa::Extent windowExtent = m_pWindow->getCurrentExtent();
 		
 		// Create pipeline resources
-		createTextures(extent);
+		createTextures(windowExtent);
 		createRenderPasses();
-		createFramebuffers(extent);
+		createFramebuffers(windowExtent);
 
 
-		vr::ShaderPtr vertexShader = m_renderer->createShader("../Engine/shaders/Texture.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-		vr::ShaderPtr fragmentShader = m_renderer->createShader("../Engine/shaders/Texture.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-		m_pColorShaders = m_renderer->createShaderSet(vertexShader, fragmentShader);
+		
+		m_colorPipeline = m_renderer.createGraphicsPipeline(m_colorRenderProgram, 0, windowExtent,
+			"../Engine/shaders/Texture.vert.spv", "../Engine/shaders/Texture.frag.spv");
 
-		vr::ShaderPtr postProcessVertexShader = m_renderer->createShader("../Engine/shaders/PostProcess.vert.spv", VK_SHADER_STAGE_VERTEX_BIT);
-		vr::ShaderPtr postProcessFragmentShader = m_renderer->createShader("../Engine/shaders/PostProcess.frag.spv", VK_SHADER_STAGE_FRAGMENT_BIT);
-		m_pPostProcessShaders = m_renderer->createShaderSet(postProcessVertexShader, postProcessFragmentShader);
+		m_postProcessPipeline = m_renderer.createGraphicsPipeline(m_postRenderProgram, 0, windowExtent,
+			"../Engine/shaders/PostProcess.vert.spv", "../Engine/shaders/PostProcess.frag.spv");
 
-		createPipelines(extent);
+		m_blurPipeline = m_renderer.createComputePipeline("../Engine/shaders/GaussianBlur.comp.spv");
+
+
+		// BLUR PASS
+		m_blurDescriptorSet =  m_renderer.allocateDescriptorSet(m_blurPipeline, 0);
+		m_renderer.updateDescriptorSet(m_blurDescriptorSet, 0, m_brightnessTexture);
+		m_renderer.updateDescriptorSet(m_blurDescriptorSet, 1, m_blurredBrightnessTexture);
+
+
+
+		m_blurContext = m_renderer.createSubContext();
+		m_blurContext.preRecord([=](sa::RenderContext& context) {
+			context.bindPipeline(m_blurPipeline);
+			context.bindDescriptorSet(m_blurDescriptorSet, m_blurPipeline);
+			context.dispatch(32, 32, 1);
+		}, (sa::ContextUsageFlags)0);
 		
 
-		vr::ShaderPtr blurComputeShader = m_renderer->createShader("../Engine/shaders/GaussianBlur.comp.spv", VK_SHADER_STAGE_COMPUTE_BIT);
-		m_pBlurComputeShader = m_renderer->createShaderSet(blurComputeShader);
-		m_blurPipeline = m_renderer->createPipeline(m_pBlurComputeShader);
-
-		/*
-		*/
-			// BLUR PASS
-		m_pBlurDescriptorSet = m_pBlurComputeShader->getDescriptorSet(0);
-		{
-			VkImageLayout layout = m_pBrightnessTexture->layout;
-			m_pBrightnessTexture->layout = VK_IMAGE_LAYOUT_GENERAL;
-			m_renderer->updateDescriptorSet(m_pBlurDescriptorSet, 0, nullptr, m_pBrightnessTexture, nullptr, true);
-			m_pBrightnessTexture->layout = layout;
-		}
-		{
-			VkImageLayout layout = m_pBlurredBrightnessTexture->layout;
-			m_pBlurredBrightnessTexture->layout = VK_IMAGE_LAYOUT_GENERAL;
-			m_renderer->updateDescriptorSet(m_pBlurDescriptorSet, 1, nullptr, m_pBlurredBrightnessTexture, nullptr, true);
-			m_pBlurredBrightnessTexture->layout = layout;
-		}
-
-
-		m_blurCommandBuffer = m_renderer->createCommandBuffer(true);
-		m_renderer->recordCommandBuffer(m_blurCommandBuffer, [&](uint32_t frameIndex) {
-			m_renderer->bindPipeline(m_blurPipeline, m_blurCommandBuffer, frameIndex);
-			m_renderer->bindDescriptorSet(m_pBlurDescriptorSet, m_blurPipeline, m_blurCommandBuffer, frameIndex);
-			m_renderer->dispatchCompute(32, 32, 1, m_blurCommandBuffer, frameIndex);
-		}, false);
-		
 
 		// Buffers DescriptorSets
 		PerFrameBuffer perFrame = {};
 		glm::mat4 proj = glm::perspective(glm::radians(60.f), 1000.f / 600.f, 0.001f, 100.0f);
 		glm::mat4 view = glm::lookAt(glm::vec3(0, 0, 1), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
 		perFrame.projViewMatrix = proj * view;
-		m_pPerFrameBuffer = m_renderer->createUniformBuffer(sizeof(PerFrameBuffer), &perFrame);
+		m_perFrameBuffer = m_renderer.createBuffer(sa::BufferType::UNIFORM, sizeof(PerFrameBuffer), &perFrame);
 
-		m_pPerFrameDescriptorSet = m_pColorShaders->getDescriptorSet(SET_PER_FRAME);
-		m_renderer->updateDescriptorSet(m_pPerFrameDescriptorSet, 0, m_pPerFrameBuffer, nullptr, nullptr, true);
-		
+		m_perFrameDescriptorSet = m_renderer.allocateDescriptorSet(m_colorPipeline, SET_PER_FRAME);
+		m_renderer.updateDescriptorSet(m_perFrameDescriptorSet, 0, m_perFrameBuffer);
+
 		//m_pLightBuffer = m_renderer->createUniformBuffer(sizeof(Light) * 64, nullptr);
 		//m_renderer->updateDescriptorSet(m_pPerFrameDescriptorSet, 1, m_pLightBuffer, nullptr, nullptr, true);
 
 		// Sampler
-		m_sampler = m_renderer->createSampler(VK_FILTER_LINEAR);
+		m_sampler = m_renderer.createSampler(sa::FilterMode::LINEAR);
 
 		// Texture DescriptorSets
-		m_pInputDescriptorSet = m_pPostProcessShaders->getDescriptorSet(0);
-		VkImageLayout layout = m_pMainColorTexture->layout;
-		m_pMainColorTexture->layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
-		m_renderer->updateDescriptorSet(m_pInputDescriptorSet, 0, nullptr, m_pMainColorTexture, m_sampler, true);
-		m_pMainColorTexture->layout = layout;
+		m_postInputDescriptorSet = m_renderer.allocateDescriptorSet(m_postRenderProgram, 0);
+		m_renderer.updateDescriptorSet(m_postInputDescriptorSet, 0, m_mainColorTexture, m_sampler);
+		
 		
 		sa::Image img("../Box.png");
-		// m_texture = m_renderer->createTexture2D(m_mainFramebuffer, m_mainRenderPass, 0, { img.getExtent().x, img.getExtent().y }, img.getPixels(), img.getChannelCount());
-		m_texture = m_renderer->createColorTexture2D({ img.getExtent().x, img.getExtent().y }, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
-		m_renderer->updateTexture(m_texture, m_mainFramebuffer, m_mainRenderPass, 0, img.getPixels(), img.getExtent().x * img.getExtent().y * img.getChannelCount());
+		m_boxTexture = m_renderer.createTexture2D(img, false);
+		m_renderer.updateDescriptorSet(m_perFrameDescriptorSet, 1, m_boxTexture, m_sampler);
+		//m_renderer->updateTexture(m_texture, m_mainFramebuffer, m_mainRenderPass, 0, img.getPixels(), img.getExtent().x * img.getExtent().y * img.getChannelCount());
 		
-
-		m_defaultTexture = m_renderer->createColorTexture2D({1, 1}, VK_FORMAT_R8G8B8A8_UNORM, VK_IMAGE_USAGE_TRANSFER_DST_BIT | VK_IMAGE_USAGE_SAMPLED_BIT);
-		unsigned char pixels[] = {
-			255, 0, 255, 255
-		};
-		m_renderer->updateTexture(m_defaultTexture, m_mainFramebuffer, m_mainRenderPass, 0, pixels, 4);
-
-		m_renderer->updateDescriptorSet(m_pPerFrameDescriptorSet, 1, nullptr, m_texture, m_sampler, true);
 	}
 
 	void ForwardRenderer::cleanup() {
 
-		m_pColorShaders.reset();
-		m_pPostProcessShaders.reset();
-	
-		m_pPerFrameDescriptorSet.reset();
-		m_pInputDescriptorSet.reset();
-
-		m_pBlurComputeShader.reset();
-
-		m_sampler.reset();
-		if (m_useImGui) {
-			m_renderer->cleanupImGUI();
-		}
 	}
 
 	void ForwardRenderer::beginFrameImGUI() {
 		if (m_useImGui) {
-			m_renderer->newFrameImGUI();
+			m_renderer.newImGuiFrame();
 		}
 	}
 
@@ -317,38 +193,29 @@ namespace sa {
 
 
 
-		if (!m_pWindow->frame()) {
+		sa::RenderContext context = m_pWindow->beginFrame();
+		if (!context) {
 			if(m_useImGui) ImGui::EndFrame();
 			return;
 		}
 
-		auto fence = m_renderer->submitToComputeQueue(m_blurCommandBuffer);
-		m_renderer->waitForFence(fence);
+		
+		context.executeSubContext(m_blurContext);
 
+		context.beginRenderProgram(m_colorRenderProgram, m_colorFramebuffer, sa::SubpassContents::DIRECT);
+		context.bindPipeline(m_colorPipeline);
 
-		m_renderer->beginRenderPass(m_mainRenderPass, m_mainFramebuffer, VK_SUBPASS_CONTENTS_INLINE);
-		m_renderer->bindPipeline(m_colorPipeline);
 
 		if(scene != nullptr) {
 			for (const auto& camera : scene->getActiveCameras()) {
-				VkViewport viewport;
-				Rect r = camera->getViewport();
-				glm::vec2 pos = r.getPosition();
-				glm::vec2 size = r.getSize();
-				viewport.x = pos.x;
-				viewport.y = pos.y;
-				viewport.width = size.x;
-				viewport.height = size.y;
-				viewport.maxDepth = 1.0f;
-				viewport.minDepth = 0.0f;
-
+				
 				PerFrameBuffer perFrame;
 				perFrame.projViewMatrix = camera->getProjectionMatrix() * camera->getViewMatrix();
-				memcpy(m_pPerFrameBuffer->mappedData, &perFrame, sizeof(perFrame));
+				m_perFrameBuffer.write(perFrame);
+				context.updateDescriptorSet(m_perFrameDescriptorSet, 0, m_perFrameBuffer);
 
-				m_renderer->updateDescriptorSet(m_pPerFrameDescriptorSet, 0, m_pPerFrameBuffer, nullptr, nullptr, false);
-				m_renderer->bindDescriptorSet(m_pPerFrameDescriptorSet, m_colorPipeline);
-				m_renderer->bindViewport(viewport);
+				context.bindDescriptorSet(m_perFrameDescriptorSet, m_colorPipeline);
+
 			
 				scene->forEach<comp::Transform, comp::Model>([&](const comp::Transform& transform, comp::Model& modelComp) {
 					
@@ -356,12 +223,12 @@ namespace sa {
 						return; // does not have to be drawn
 					}
 
-					if (modelComp.descriptorSet == nullptr) {
-						modelComp.descriptorSet = m_pColorShaders->getDescriptorSet(SET_PER_OBJECT);
+					if (modelComp.descriptorSet == NULL_RESOURCE) {
+						modelComp.descriptorSet = m_renderer.allocateDescriptorSet(m_colorPipeline, SET_PER_OBJECT);
 					}
 
 
-					sa::ModelData* model = sa::ResourceManager::get().getModel(modelComp.modelID);
+					sa::ModelData* model = sa::AssetManager::get().getModel(modelComp.modelID);
 					
 					sa::PerObjectBuffer perObject = {};
 					perObject.worldMatrix = glm::mat4(1);
@@ -372,22 +239,22 @@ namespace sa {
 					perObject.worldMatrix = glm::scale(perObject.worldMatrix, transform.scale);
 
 					if (!modelComp.buffer.isValid()) {
-						modelComp.buffer = sa::Buffer(sa::BufferType::UNIFORM, sizeof(sa::PerObjectBuffer), 1, &perObject);
+						modelComp.buffer = m_renderer.createBuffer(sa::BufferType::UNIFORM, sizeof(sa::PerObjectBuffer), &perObject);
 					}
 					else {
 						modelComp.buffer.write(perObject);
 					}
-					m_renderer->updateDescriptorSet(modelComp.descriptorSet, 0, (const vr::Buffer*)modelComp.buffer, nullptr, nullptr, false);
-					m_renderer->bindDescriptorSet(modelComp.descriptorSet, m_colorPipeline);
+					context.updateDescriptorSet(modelComp.descriptorSet, 0, modelComp.buffer);
+					context.bindDescriptorSet(modelComp.descriptorSet, m_colorPipeline);
 
 					for (const auto& mesh : model->meshes) {
-						m_renderer->bindVertexBuffer((const vr::Buffer*)mesh.vertexBuffer);
+						context.bindVertexBuffers(0, { mesh.vertexBuffer });
 						if (mesh.indexBuffer.isValid()) {
-							m_renderer->bindIndexBuffer((const vr::Buffer*)mesh.indexBuffer);
-							m_renderer->drawIndexed(mesh.indexBuffer.getElementCount(), 1);
+							context.bindIndexBuffer(mesh.indexBuffer);
+							context.drawIndexed(mesh.indexBuffer.getElementCount<uint32_t>(), 1);
 						}
 						else {
-							m_renderer->draw(mesh.vertexBuffer.getElementCount(), 1);
+							context.draw(mesh.vertexBuffer.getElementCount<VertexUV>(), 1);
 						}
 					}
 
@@ -399,28 +266,29 @@ namespace sa {
 		}
 
 		
-		m_renderer->endRenderPass();
-		m_renderer->beginRenderPass(m_postRenderpass, m_postFramebuffer, VK_SUBPASS_CONTENTS_INLINE);
-		m_renderer->bindPipeline(m_postProcessPipline);
-		m_renderer->bindDescriptorSet(m_pInputDescriptorSet, m_postProcessPipline);
-		m_renderer->draw(6, 1);
-		
-		if (m_useImGui) {
-			m_renderer->endRenderPass();
-			m_renderer->beginRenderPass(m_imguiRenderpass, m_imguiFramebuffer, VK_SUBPASS_CONTENTS_INLINE);
-			m_renderer->endFrameImGUI();
-		}
-		m_renderer->endRenderPass();
+		context.endRenderProgram(m_colorRenderProgram);
 
-		m_pWindow->display(true);
+		context.beginRenderProgram(m_postRenderProgram, m_postFramebuffer, sa::SubpassContents::DIRECT);
+		context.bindPipeline(m_postProcessPipeline);
+		context.bindDescriptorSet(m_postInputDescriptorSet, m_postProcessPipeline);
+		context.draw(6, 1);
+		
+		ResourceID renderProgram = m_postRenderProgram;
+
+		if (m_useImGui) {
+			context.endRenderProgram(m_postRenderProgram);
+			context.beginRenderProgram(m_imguiRenderProgram, m_imguiFramebuffer, sa::SubpassContents::DIRECT);
+			context.renderImGuiFrame();
+			renderProgram = m_imguiRenderProgram;
+		}
+		context.endRenderProgram(renderProgram);
+
+		m_pWindow->display();
 
 	}
 
 	sa::Texture ForwardRenderer::getOutputTexture() const {
-		return m_pOutputTexture;
+		return m_outputTexture;
 	}
 
-	sa::Texture ForwardRenderer::createShaderTexture2D(const sa::Image& img) {
-		return m_renderer->createTexture2D(m_mainFramebuffer, m_mainRenderPass, 0, { img.getExtent().x, img.getExtent().y }, img.getPixels(), img.getChannelCount());
-	}
 }

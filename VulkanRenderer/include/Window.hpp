@@ -8,6 +8,8 @@
 
 #include <set>
 #include <array>
+#include "Resources/ResourceManager.hpp"
+
 
 struct GLFWwindow;
 struct GLFWmonitor;

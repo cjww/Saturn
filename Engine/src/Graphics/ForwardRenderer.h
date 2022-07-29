@@ -1,85 +1,61 @@
 #pragma once
 #include "IRenderTechnique.h"
 
-//#include <Rendering/Vulkan/Renderer.hpp>
-
 #include "structs.h"
 #include "ECS\Components.h"
 
-#include "Graphics\RenderWindow.h"
-#include "Graphics\Image.h"
-
-namespace vr {
-	class Renderer;
-	
-	class ShaderSet;
-	typedef std::shared_ptr<ShaderSet> ShaderSetPtr;
-
-	class DescriptorSet;
-	typedef std::shared_ptr<DescriptorSet> DescriptorSetPtr;
-
-	struct Buffer;
-	struct Texture;
-	struct Image;
-}
 
 namespace sa {
 	class ForwardRenderer : public IRenderTechnique {
 	private:
-		vr::Renderer* m_renderer;
+		sa::Renderer& m_renderer;
 
-		vr::ShaderSetPtr m_pColorShaders;
-		vr::ShaderSetPtr m_pPostProcessShaders;
 
-		vr::ShaderSetPtr m_pBlurComputeShader;
-		vr::DescriptorSetPtr m_pBlurDescriptorSet;
+		ResourceID m_colorRenderProgram;
+		ResourceID m_colorPipeline;
+		ResourceID m_colorFramebuffer;
+
+		ResourceID m_postRenderProgram;
+		ResourceID m_postProcessPipeline;
+		ResourceID m_postFramebuffer;
+		ResourceID m_postInputDescriptorSet;
+
+		ResourceID m_blurPipeline;
+		ResourceID m_blurDescriptorSet;
+		sa::SubContext m_blurContext;
+
+		ResourceID m_perFrameDescriptorSet;
+
+		sa::Buffer m_perFrameBuffer;
+		sa::Buffer m_lightBuffer;
+
+
+		ResourceID m_imguiRenderProgram;
+		ResourceID m_imguiFramebuffer;
+
+		sa::Texture2D m_depthTexture;
+		sa::Texture2D m_mainColorTexture;
+
+		sa::Texture2D m_brightnessTexture;
+		sa::Texture2D m_blurredBrightnessTexture;
 		
-		vr::DescriptorSetPtr m_pPerFrameDescriptorSet;
-		vr::Buffer* m_pPerFrameBuffer;
-		vr::Buffer* m_pLightBuffer;
-
-		vr::DescriptorSetPtr m_pInputDescriptorSet;
-
-		uint32_t m_mainFramebuffer;
-		uint32_t m_postFramebuffer;
-		uint32_t m_imguiFramebuffer;
-
-		vr::Texture* m_pDepthTexture;
-		vr::Texture* m_pMainColorTexture;
-
-		vr::Texture* m_pBrightnessTexture;
-		vr::Texture* m_pBlurredBrightnessTexture;
+		sa::Texture2D m_outputTexture;
 		
-		vr::Texture* m_pOutputTexture;
+		ResourceID m_sampler;
 		
-		vr::SamplerPtr m_sampler;
+		//DEBUG 
+		sa::Texture2D m_boxTexture;
 		
-		uint32_t m_mainRenderPass;
-		uint32_t m_postRenderpass;
-		uint32_t m_imguiRenderpass;
-		
-		uint32_t m_colorPipeline;
-		uint32_t m_postProcessPipline;
-
-		uint32_t m_blurPipeline;
-
-		vr::CommandBufferPtr m_blurCommandBuffer;
-
-		//DEBUG
-		sa::Texture m_texture;
-		sa::Texture m_defaultTexture;
-
 		float timer = 0.0f;
 
-		void createTextures(VkExtent2D extent);
+		void createTextures(sa::Extent extent);
 		void createRenderPasses();
-		void createFramebuffers(VkExtent2D extent);
-		void createPipelines(VkExtent2D extent);
-
+		void createFramebuffers(sa::Extent extent);
+		
 	public:
 		ForwardRenderer();
 		
-		void swapchainResizedCallback(uint32_t width, uint32_t height);
+		void swapchainResizedCallback(Extent width);
 
 
 		virtual void init(sa::RenderWindow* pWindow, bool setupImGui) override;
@@ -91,8 +67,6 @@ namespace sa {
 
 		virtual sa::Texture getOutputTexture() const override;
 
-		virtual sa::Texture createShaderTexture2D(const sa::Image& img) override;
-		
 	};
 
 }

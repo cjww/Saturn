@@ -1,7 +1,7 @@
 #pragma once
 
 #include "VulkanCore.hpp"
-#include "debugFunctions.h"
+#include "debugFunctions.hpp"
 
 #include "CommandPool.hpp"
 

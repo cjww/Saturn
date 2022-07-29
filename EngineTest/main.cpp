@@ -1,11 +1,8 @@
-#include <Engine.h>
-#include <Graphics\RenderWindow.h>
-#include <Graphics\Image.h>
-#include <Graphics\Texture.h>
-
-
-#include <Tools\Clock.h>
 #include <filesystem>
+
+
+#include <Engine.h>
+#include <Tools\Clock.h>
 #include <Tools\ScopeTimer.h>
 
 int randomRange(int min, int max) {
@@ -13,12 +10,16 @@ int randomRange(int min, int max) {
 }
 
 void createTriangleEntity(sa::Engine& engine) {
+	sa::Renderer& renderer = sa::Renderer::get();
+
+
 	sa::Entity entity = engine.getCurrentScene()->createEntity();
 	comp::Model* model = entity.addComponent<comp::Model>();
 	entity.addComponent<comp::Transform>()->position = { (float)randomRange(-20, 20), (float)randomRange(-20, 20), randomRange(-10, 40)};
 	entity.addComponent<comp::Script>();
 
-	auto [modelID, modelData] = sa::ResourceManager::get().createModel();
+	ResourceID modelID = sa::ResourceManager::get().insert<sa::ModelData>();
+	sa::ModelData* modelData = sa::ResourceManager::get().get<sa::ModelData>(modelID);
 	model->modelID = modelID;
 
 	{
@@ -33,9 +34,9 @@ void createTriangleEntity(sa::Engine& engine) {
 		};
 
 		sa::Mesh mesh;
-		mesh.indexBuffer = sa::Buffer(sa::BufferType::INDEX);
+		mesh.indexBuffer = renderer.createBuffer(sa::BufferType::INDEX);
 		mesh.indexBuffer.write(indices);
-		mesh.vertexBuffer = sa::Buffer(sa::BufferType::VERTEX);
+		mesh.vertexBuffer = renderer.createBuffer(sa::BufferType::VERTEX);
 		mesh.vertexBuffer.write(vertices);
 
 		modelData->meshes.push_back(mesh);
@@ -44,7 +45,7 @@ void createTriangleEntity(sa::Engine& engine) {
 
 void createQuad(sa::Engine& engine) {
 	sa::Entity entity = engine.getCurrentScene()->createEntity();
-	entity.addComponent<comp::Model>()->modelID = sa::ResourceManager::get().loadQuad();
+	entity.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadQuad();
 	entity.addComponent<comp::Transform>()->position = { (float)randomRange(-50, 50), (float)randomRange(-50, 50), randomRange(-10, 40) };
 	//entity.addComponent<comp::Script>();
 }
@@ -52,7 +53,7 @@ void createQuad(sa::Engine& engine) {
 void regenerate(sa::Scene* scene) {
 	scene->forEach<comp::Model>([](comp::Model& model) {
 
-		sa::ModelData* modelData = sa::ResourceManager::get().getModel(model.modelID);
+		sa::ModelData* modelData = sa::AssetManager::get().getModel(model.modelID);
 
 		auto vertices = modelData->meshes[0].vertexBuffer.getContent<sa::VertexUV>();
 		auto indices = modelData->meshes[0].indexBuffer.getContent<uint32_t>();
@@ -108,10 +109,11 @@ int main() {
 	sa::Entity quad = engine.getCurrentScene()->createEntity("Actor");
 	quad.addComponent<comp::Transform>();
 	quad.addComponent<comp::Script>();
-	quad.addComponent<comp::Model>()->modelID = sa::ResourceManager::get().loadQuad();
+	quad.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadQuad();
 
 	sa::Image image("Box.png");
-	sa::Texture boxTexture = engine.getRenderTechnique()->createShaderTexture2D(image);
+	sa::Texture2D boxTexture = sa::Renderer::get().createTexture2D(image, false);
+
 
 	engine.init();
 

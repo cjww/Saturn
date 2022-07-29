@@ -18,7 +18,7 @@
     <ClInclude Include="include\Tools\Logger.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\debugFunctions.h">
+    <ClInclude Include="include\debugFunctions.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\Renderer.hpp">
@@ -90,7 +90,7 @@
     <ClInclude Include="include\InputEnums.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\PipelineSettings.h">
+    <ClInclude Include="include\PipelineSettings.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

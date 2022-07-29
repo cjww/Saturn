@@ -53,6 +53,7 @@ namespace sa {
 	typedef Vector<4, int> Vector4i;
 	typedef Vector<4, unsigned int> Vector4u;
 
+
 	// ------------- Definitions -------------
 
 	

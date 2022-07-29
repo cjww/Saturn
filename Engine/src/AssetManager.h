@@ -7,18 +7,12 @@
 
 #include <Vertex.h>
 
-#include "Graphics\Buffer.h"
+#include "Renderer.hpp"
 
 //--------------------------------------------------------------------------------------
-// ResourceManager is the class that will hold all resources. 
+// AssetManager is the class that will hold all assets. 
 //--------------------------------------------------------------------------------------
 
-typedef uint32_t ResourceID;
-#define NULL_RESOURCE (ResourceID)-1
-
-namespace vr {
-	struct Buffer;
-}
 
 namespace sa {
 
@@ -44,33 +38,27 @@ namespace sa {
 	};
 
 	// Singelton class
-	class ResourceManager
+	class AssetManager
 	{
 	private:	
 
 		ResourceID m_nextID;
 	
-		std::unordered_map<std::string, ResourceID> m_resourceIDs;
 		std::unordered_map<ResourceID, std::unique_ptr<ModelData>> m_models;
 		
 
-		ResourceManager();
+		AssetManager();
 
 	public:
-		~ResourceManager();
+		~AssetManager();
 	
-		static ResourceManager& get();
+		static AssetManager& get();
 
 		ResourceID loadModel(const std::filesystem::path& path);
 		ResourceID loadQuad();
 
 		ModelData* getModel(ResourceID id) const;
-
-		// creates empty model
-		std::tuple<ResourceID, ModelData*> createModel();
-
-
-		std::string fetchResourceName(ResourceID resource) const;
+		
 	};
 
 }

@@ -1,5 +1,6 @@
 #pragma once
-#include <ResourceManager.h>
+#include <Resources/Buffer.hpp>
+#include "AssetManager.h"
 #include "Tools\Vector.h"
 
 #include "sol\environment.hpp"
@@ -7,14 +8,6 @@
 #include "ComponentBase.h"
 
 #include "Entity.h"
-
-// Forward declarations
-namespace vr {
-	struct Buffer;
-	struct DescriptorSet;
-	typedef std::shared_ptr<DescriptorSet> DescriptorSetPtr;
-
-}
 
 
 namespace comp {
@@ -31,7 +24,7 @@ namespace comp {
 	struct Model : public sa::LuaAccessable {
 		ResourceID modelID = NULL_RESOURCE;
 		sa::Buffer buffer;
-		vr::DescriptorSetPtr descriptorSet = nullptr;
+		ResourceID descriptorSet = NULL_RESOURCE;
 
 		static void luaReg(sol::usertype<comp::Model>& type) {
 			type["id"] = &comp::Model::modelID;

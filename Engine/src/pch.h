@@ -23,7 +23,6 @@
 
 #include <functional>
 
-
 // Dependencies
 #include <entt/entt.hpp>
 #include <rapidxml/rapidxml.hpp>
@@ -33,32 +32,11 @@
 #include <lua.hpp>
 
 
-
-//#include <taskflow/taskflow.hpp>
-#define GLFW_INCLUDE_VULKAN
-#include <GLFW/glfw3.h>
-
-#define NOMINMAX
-#include <SPIRV\spirv_cross.hpp>
-
-
-
-
 // glm
 #include <glm/glm.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include <glm/mat4x4.hpp>
-
-#include <imgui.h>
-
-// Other
-#include "Graphics/Vulkan/Renderer.hpp"
-#include "Graphics/Window.hpp"
-
-#include <Tools/Logger.hpp>
-#include <Tools/utils.h>
-
 
 
 

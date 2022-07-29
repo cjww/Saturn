@@ -372,9 +372,9 @@ namespace sa {
 	void SubContext::begin(ContextUsageFlags usageFlags) {
 
 		vk::CommandBufferInheritanceInfo inheritInfo{
-			.renderPass = m_pRenderProgram->getRenderPass(),
+			.renderPass = m_pRenderProgram ? m_pRenderProgram->getRenderPass() : VK_NULL_HANDLE,
 			.subpass = m_subpassIndex,
-			.framebuffer = m_pFramebufferSet->getBuffer(m_pCommandBufferSet->getBufferIndex() % m_pFramebufferSet->getBufferCount()),
+			.framebuffer = m_pFramebufferSet ? m_pFramebufferSet->getBuffer(m_pCommandBufferSet->getBufferIndex() % m_pFramebufferSet->getBufferCount()) : VK_NULL_HANDLE,
 			.occlusionQueryEnable = VK_FALSE,
 		};
 

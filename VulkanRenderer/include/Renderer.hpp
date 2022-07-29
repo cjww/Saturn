@@ -7,7 +7,7 @@
 #include "Resources/Texture.hpp"
 #include "Image.hpp"
 #include "FormatFlags.hpp"
-#include "PipelineSettings.h"
+#include "PipelineSettings.hpp"
 
 #include "Window.hpp"
 
@@ -108,6 +108,7 @@ namespace sa {
 
 		DirectContext createDirectContext(ResourceID contextPool = NULL_RESOURCE);
 		SubContext createSubContext(ResourceID framebuffer, ResourceID renderProgram, uint32_t subpassIndex, ResourceID contextPool = NULL_RESOURCE);
+		SubContext createSubContext(ResourceID contextPool = NULL_RESOURCE);
 
 		/*
 		

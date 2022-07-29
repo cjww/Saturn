@@ -14,16 +14,16 @@ namespace sa {
     }
 
     Camera::Camera(const Window* pWindow)
-        : Camera(Vector2(pWindow->getCurrentExtent()))
+        : Camera(pWindow->getCurrentExtent())
     {
     }
 
-    Camera::Camera(Vector2 windowExtent)
+    Camera::Camera(Extent windowExtent)
         : Camera()
     {
-        m_viewport.setPosition(Vector2(0, 0));
-        m_viewport.setSize(windowExtent);
-        m_apectRatio = m_viewport.getSize().x / m_viewport.getSize().y;
+        m_viewport.offset = { 0, 0 };
+        m_viewport.extent = windowExtent;
+        m_apectRatio = m_viewport.extent.width / m_viewport.extent.height;
         m_projMat = glm::perspective(m_fov, m_apectRatio, m_near, m_far);
 
     }
@@ -40,7 +40,7 @@ namespace sa {
 
     void Camera::setViewport(Rect viewport) {
         m_viewport = viewport;
-        m_apectRatio = m_viewport.getSize().x / m_viewport.getSize().y;
+        m_apectRatio = m_viewport.extent.width / m_viewport.extent.height;
         m_projMat = glm::perspective(m_fov, m_apectRatio, m_near, m_far);
     }
 
