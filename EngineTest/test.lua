@@ -1,8 +1,5 @@
 --$using model transform
 
-
-print("Hello world ")
-
 function init()
 
     timer = 0.0

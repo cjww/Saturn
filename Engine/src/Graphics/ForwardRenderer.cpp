@@ -116,7 +116,6 @@ namespace sa {
 		createFramebuffers(windowExtent);
 
 
-		
 		m_colorPipeline = m_renderer.createGraphicsPipeline(m_colorRenderProgram, 0, windowExtent,
 			"../Engine/shaders/Texture.vert.spv", "../Engine/shaders/Texture.frag.spv");
 
@@ -164,7 +163,7 @@ namespace sa {
 		
 		
 		sa::Image img("../Box.png");
-		m_boxTexture = m_renderer.createTexture2D(img, false);
+		m_boxTexture = m_renderer.createTexture2D(img, true);
 		m_renderer.updateDescriptorSet(m_perFrameDescriptorSet, 1, m_boxTexture, m_sampler);
 		//m_renderer->updateTexture(m_texture, m_mainFramebuffer, m_mainRenderPass, 0, img.getPixels(), img.getExtent().x * img.getExtent().y * img.getChannelCount());
 		
@@ -211,6 +210,7 @@ namespace sa {
 				
 				PerFrameBuffer perFrame;
 				perFrame.projViewMatrix = camera->getProjectionMatrix() * camera->getViewMatrix();
+				//perFrame.projViewMatrix = sa::Matrix4x4();
 				m_perFrameBuffer.write(perFrame);
 				context.updateDescriptorSet(m_perFrameDescriptorSet, 0, m_perFrameBuffer);
 
@@ -232,6 +232,8 @@ namespace sa {
 					
 					sa::PerObjectBuffer perObject = {};
 					perObject.worldMatrix = glm::mat4(1);
+					/*
+					*/
 					perObject.worldMatrix = glm::translate(perObject.worldMatrix, transform.position);
 					perObject.worldMatrix = glm::rotate(perObject.worldMatrix, transform.rotation.x, glm::vec3(1, 0, 0));
 					perObject.worldMatrix = glm::rotate(perObject.worldMatrix, transform.rotation.y, glm::vec3(0, 1, 0));

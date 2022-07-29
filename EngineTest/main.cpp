@@ -47,7 +47,7 @@ void createQuad(sa::Engine& engine) {
 	sa::Entity entity = engine.getCurrentScene()->createEntity();
 	entity.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadQuad();
 	entity.addComponent<comp::Transform>()->position = { (float)randomRange(-50, 50), (float)randomRange(-50, 50), randomRange(-10, 40) };
-	//entity.addComponent<comp::Script>();
+	entity.addComponent<comp::Script>();
 }
 
 void regenerate(sa::Scene* scene) {
@@ -94,10 +94,11 @@ int main() {
 	engine.setup(&window);
 
 	sa::Camera camera(&window);
-	camera.setPosition({ 0, 0, 1 });
+	camera.setPosition({ 0, 0, -1 });
 	camera.lookAt({ 0, 0, 0 });
 	engine.getCurrentScene()->addActiveCamera(&camera);
 
+	
 	for (int i = 0; i < 1000; i++) {
 		//createTriangleEntity(engine);
 		createQuad(engine);
@@ -109,7 +110,9 @@ int main() {
 	sa::Entity quad = engine.getCurrentScene()->createEntity("Actor");
 	quad.addComponent<comp::Transform>();
 	quad.addComponent<comp::Script>();
+
 	quad.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadQuad();
+
 
 	sa::Image image("Box.png");
 	sa::Texture2D boxTexture = sa::Renderer::get().createTexture2D(image, false);
