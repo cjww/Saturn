@@ -31,19 +31,6 @@ namespace sa {
 			.end();
 			
 
-		auto factory = m_renderer.createRenderProgram();
-		if (m_useImGui) {
-			factory.addColorAttachment(true, m_outputTexture);
-		}
-		else {
-			factory.addSwapchainAttachment(m_pWindow->getSwapchainID());
-		}
-
-		m_postRenderProgram = factory.beginSubpass()
-			.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
-			.endSubpass()
-			.end();
-	
 
 		if (m_useImGui) {
 			m_imguiRenderProgram = m_renderer.createRenderProgram()
@@ -92,8 +79,11 @@ namespace sa {
 		m_colorPipeline = m_renderer.createGraphicsPipeline(m_colorRenderProgram, 0, extent,
 			"../Engine/shaders/Texture.vert.spv", "../Engine/shaders/Texture.frag.spv");
 
-		m_postProcessPipeline = m_renderer.createGraphicsPipeline(m_colorRenderProgram, 0, extent,
+		m_postProcessPipeline = m_renderer.createGraphicsPipeline(m_postRenderProgram, 0, extent,
 			"../Engine/shaders/PostProcess.vert.spv", "../Engine/shaders/PostProcess.frag.spv");
+
+		m_renderer.updateDescriptorSet(m_blurDescriptorSet, 0, m_brightnessTexture);
+		m_renderer.updateDescriptorSet(m_blurDescriptorSet, 1, m_blurredBrightnessTexture);
 
 		m_renderer.updateDescriptorSet(m_postInputDescriptorSet, 0, m_mainColorTexture, m_sampler);
 
@@ -113,6 +103,20 @@ namespace sa {
 		// Create pipeline resources
 		createTextures(windowExtent);
 		createRenderPasses();
+
+		auto factory = m_renderer.createRenderProgram();
+		if (m_useImGui) {
+			factory.addColorAttachment(true, m_outputTexture);
+		}
+		else {
+			factory.addSwapchainAttachment(m_pWindow->getSwapchainID());
+		}
+
+		m_postRenderProgram = factory.beginSubpass()
+			.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
+			.endSubpass()
+			.end();
+
 		createFramebuffers(windowExtent);
 
 
