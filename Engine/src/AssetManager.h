@@ -9,6 +9,8 @@
 
 #include "Renderer.hpp"
 
+#include "structs.h"
+
 //--------------------------------------------------------------------------------------
 // AssetManager is the class that will hold all assets. 
 //--------------------------------------------------------------------------------------
@@ -17,24 +19,30 @@
 namespace sa {
 
 	struct Material {
-		ResourceID diffuseMap = NULL_RESOURCE;
-		ResourceID normalMap = NULL_RESOURCE;
-		ResourceID specularMap = NULL_RESOURCE;
+		ResourceID pipeline;
+		ResourceID sampler;
+		sa::Texture2D diffuseMap;
+		sa::Texture2D normalMap;
+		sa::Texture2D specularMap;
 
-		glm::vec4 diffuseColor = glm::vec4(1, 1, 1, 1);
-		glm::vec4 specularColor = glm::vec4(1, 1, 1, 1);
+		struct Values {
+			Color diffuseColor = { 1, 1, 1, 1 };
+			Color specularColor = { 1, 1, 1, 1 };
 
+			float roughness;
+		} values;
+		sa::Buffer valueBuffer;
+
+		ResourceID descriptorSet;
 	};
 
 	struct Mesh {
 		sa::Buffer vertexBuffer;
 		sa::Buffer indexBuffer;
-		Material material;
 	};
 
 	struct ModelData {
 		std::vector<Mesh> meshes;
-
 	};
 
 	// Singelton class
@@ -44,8 +52,6 @@ namespace sa {
 
 		ResourceID m_nextID;
 	
-		std::unordered_map<ResourceID, std::unique_ptr<ModelData>> m_models;
-		
 
 		AssetManager();
 
@@ -54,11 +60,14 @@ namespace sa {
 	
 		static AssetManager& get();
 
+		ResourceID newMaterial(ResourceID pipeline);
+
 		ResourceID loadModel(const std::filesystem::path& path);
 		ResourceID loadQuad();
 
 		ModelData* getModel(ResourceID id) const;
-		
+		Material* getMaterial(ResourceID id) const;
+
 	};
 
 }

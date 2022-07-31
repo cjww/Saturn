@@ -57,12 +57,15 @@ namespace ImGui {
 		ImGui::SameLine();
 		ImGui::Text("Name: %s", sa::ResourceManager::get().idToKey(model->modelID).c_str());
 		if (model->modelID != NULL_RESOURCE) {
+			/*
 			sa::ModelData* data = sa::AssetManager::get().getModel(model->modelID);
 			for (const auto& mesh : data->meshes) {
 				ImGui::Spacing();
 				ImGui::Text("Material");
 				ImGui::ColorEdit4("Diffuse Color", (float*)&mesh.material.diffuseColor);
 			}
+			*/
+
 		}
 		
 	}

@@ -18,7 +18,6 @@ namespace sa {
 	}
 
 	void Scene::init() {
-
 	}
 
 	void Scene::update(float dt) {

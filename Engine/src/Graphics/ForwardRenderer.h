@@ -25,6 +25,7 @@ namespace sa {
 		sa::SubContext m_blurContext;
 
 		ResourceID m_perFrameDescriptorSet;
+		ResourceID m_materialDescriptorSet;
 
 		sa::Buffer m_perFrameBuffer;
 		sa::Buffer m_lightBuffer;
@@ -43,8 +44,11 @@ namespace sa {
 		
 		ResourceID m_sampler;
 		
+		
 		//DEBUG 
-		sa::Texture2D m_boxTexture;
+		std::unordered_map<ResourceID, std::vector<Mesh*>> m_materialMeshes;
+		
+		ResourceID m_matID;
 		
 		float timer = 0.0f;
 
@@ -52,6 +56,9 @@ namespace sa {
 		void createRenderPasses();
 		void createFramebuffers(sa::Extent extent);
 		
+		void updateMaterial(Material* pMaterial);
+		void bindMaterial(RenderContext& context, Material* pMaterial);
+
 	public:
 		ForwardRenderer();
 		

@@ -4,9 +4,11 @@ layout(location = 1) in vec2 in_vertexUV;
 
 layout(location = 0) out vec2 out_vertexUV;
 
-layout(set = 0, binding = 0) uniform Object {
-    mat4 world;
-} objectUbo;
+
+
+layout(push_constant) uniform PushConstants {
+    mat4 world[4];
+} pc;
 
 layout(set = 1, binding = 0) uniform Scene {
     mat4 projView;
@@ -14,9 +16,7 @@ layout(set = 1, binding = 0) uniform Scene {
 
 void main() {
 
-    //gl_Position = sceneUbo.proj * sceneUbo.view * objectUbo.model * in_vertexPosition;
-    gl_Position = sceneUbo.projView * objectUbo.world * in_vertexPosition;
-    //gl_Position = in_vertexPosition;
+    gl_Position = sceneUbo.projView * pc.world[gl_InstanceIndex] * in_vertexPosition;
     
     out_vertexUV = in_vertexUV;
 }

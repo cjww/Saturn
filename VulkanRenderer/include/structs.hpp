@@ -17,10 +17,12 @@ namespace sa {
 		double x, y;
 	};
 
+
 	struct Color {
 		float r, g, b, a;
 	};
-
+	
+	
 	struct Rect {
 		Offset offset;
 		Extent extent;

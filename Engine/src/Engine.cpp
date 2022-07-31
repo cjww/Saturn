@@ -148,6 +148,7 @@ namespace sa {
 
 	void Engine::setScene(Scene& scene) {
 		m_currentScene = &scene;
+		
 		if(m_isSetup)
 			init();
 	}
