@@ -52,6 +52,12 @@ namespace sa {
 		m_view = NULL_RESOURCE;
 	}
 
+	bool Texture::operator==(const Texture& other) {
+		if (!isValid() && !other.isValid()) return false;
+		return  (m_pImage == other.m_pImage && m_type == other.m_type);
+	}
+
+
 	Texture2D::Texture2D(VulkanCore* pCore, TextureTypeFlags type, Extent extent, uint32_t sampleCount)
 		: Texture(pCore)
 	{

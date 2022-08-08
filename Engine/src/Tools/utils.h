@@ -1,7 +1,11 @@
 #pragma once
 
+#include "Tools/utils.hpp"
+
 namespace sa {
 	namespace utils {
+
+		// string utility functions
 		char toLower(char c);
 		char toUpper(char c);
 

@@ -1,6 +1,10 @@
 #include "pch.h"
 #include "Camera.h"
 namespace sa {
+    void Camera::updateProjection() {
+        m_projMat = glm::perspective(m_fov, m_apectRatio, m_near, m_far);
+        
+    }
 
     Camera::Camera()
         : m_projMat(1)
@@ -10,7 +14,7 @@ namespace sa {
         , m_fov(glm::radians(60.0f))
         , m_apectRatio(1)
     {
-        m_projMat = glm::perspective(m_fov, m_apectRatio, m_near, m_far);
+        updateProjection();
     }
 
     Camera::Camera(const Window* pWindow)
@@ -24,24 +28,25 @@ namespace sa {
         m_viewport.offset = { 0, 0 };
         m_viewport.extent = windowExtent;
         m_apectRatio = (float)m_viewport.extent.width / m_viewport.extent.height;
-        m_projMat = glm::perspective(m_fov, m_apectRatio, m_near, m_far);
+        updateProjection();
 
     }
 
     void Camera::setFOVRadians(float fovRadians) {
         m_fov = fovRadians;
-        m_projMat = glm::perspective(m_fov, m_apectRatio, m_near, m_far);
+        updateProjection();
     }
 
     void Camera::setFOVDegrees(float fovDegrees) {
         m_fov = glm::radians(fovDegrees);
-        m_projMat = glm::perspective(m_fov, m_apectRatio, m_near, m_far);
+        updateProjection();
     }
 
     void Camera::setViewport(Rect viewport) {
         m_viewport = viewport;
         m_apectRatio = (float)m_viewport.extent.width / m_viewport.extent.height;
-        m_projMat = glm::perspective(m_fov, m_apectRatio, m_near, m_far);
+        updateProjection();
+
     }
 
     void Camera::lookAt(Vector3 target) {
@@ -72,7 +77,6 @@ namespace sa {
     Vector3 Camera::getRight() const {
         return glm::cross(m_forward, m_up);
     }
-
 
     Matrix4x4 Camera::getViewMatrix() const {
         return glm::lookAt(m_position, m_position + m_forward, m_up);

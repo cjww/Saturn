@@ -156,10 +156,10 @@
       </Command>
     </PreBuildEvent>
     <Lib>
-      <AdditionalDependencies>VulkanRenderer_$(Platform)$(Configuration).lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>VulkanRenderer_$(Platform)$(Configuration).lib;lua51.lib;assimp-vc143-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
-      <AdditionalLibraryDirectories>$(ProjectDir)deps\lua\;$(SolutionDir)VulkanRenderer\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)deps\lua\;$(SolutionDir)VulkanRenderer\lib;$(ProjectDir)deps\assimp-5.2.4\lib\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -188,15 +188,16 @@
       </Command>
     </PreBuildEvent>
     <Lib>
-      <AdditionalDependencies>VulkanRenderer_$(Platform)$(Configuration).lib;lua51.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>VulkanRenderer_$(Platform)$(Configuration).lib;lua51.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
-      <AdditionalLibraryDirectories>$(ProjectDir)deps\lua\;$(SolutionDir)VulkanRenderer\lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)deps\lua\;$(SolutionDir)VulkanRenderer\lib;$(ProjectDir)deps\assimp-5.2.4\lib\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\ECS\ComponentBase.cpp" />
     <ClCompile Include="src\ECS\ComponentType.cpp" />
+    <ClCompile Include="src\Graphics\Material.cpp" />
     <ClCompile Include="src\imgui-SFML.cpp" />
     <ClCompile Include="src\imgui.cpp" />
     <ClCompile Include="src\imgui_demo.cpp" />
@@ -232,6 +233,8 @@
   <ItemGroup>
     <ClInclude Include="src\ECS\ComponentBase.h" />
     <ClInclude Include="src\ECS\ComponentType.h" />
+    <ClInclude Include="src\CameraController.h" />
+    <ClInclude Include="src\Graphics\Material.h" />
     <ClInclude Include="src\internal\internalVector.h" />
     <ClInclude Include="src\Graphics\RenderWindow.hpp" />
     <ClInclude Include="src\ScriptManager.h" />

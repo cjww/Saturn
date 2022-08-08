@@ -18,6 +18,9 @@ namespace sa {
 		float m_apectRatio;
 		const float m_near = 0.001f;
 		const float m_far = 1000.0f;
+
+		void updateProjection();
+
 	public:
 		Camera();
 		Camera(const Window* pWindow);

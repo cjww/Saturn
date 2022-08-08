@@ -1,8 +1,8 @@
 #pragma once
 
 #define SET_PER_OBJECT 0
-#define SET_PER_FRAME 1
-#define SET_MAT 2
+#define SET_PER_FRAME 0
+#define SET_MAT 1
 
 #define MAX_VIEWPORT_COUNT 4
 

@@ -4,6 +4,10 @@
 #include <algorithm>
 #include <string>
 
+#define GLM_ENABLE_EXPERIMENTAL
+#include "glm/gtx/hash.hpp"
+
+
 namespace sa {
 
 	template<unsigned Comp, typename Type>
@@ -152,4 +156,13 @@ namespace sa {
 		return (other - *this).length();
 	}
 
+}
+
+namespace std {
+	template<unsigned Comp, typename Type>
+	struct hash<sa::Vector<Comp, Type>> {
+		size_t operator()(const sa::Vector<Comp, Type>& v) const {
+			return std::hash<glm::vec<Comp, Type>>()(v);
+		}
+	};
 }

@@ -1,14 +1,28 @@
 #pragma once
 
+#include "Tools/Vector.h"
+
 namespace sa {
 
 	struct VertexUV {
-		glm::vec4 position;
-		glm::vec2 texCoord;
+		Vector4 position;
+		Vector2 texCoord;
+		bool operator==(const VertexUV& other) const {
+			return this->position == other.position && this->texCoord == other.texCoord;
+		}
 	};
 
 	struct VertexColor {
-		glm::vec4 position;
-		glm::vec4 color;
+		Vector4 position;
+		Vector4 color;
+	};
+}
+
+namespace std {
+	template<>
+	struct hash<sa::VertexUV> {
+		size_t operator()(const sa::VertexUV& v) const {
+			return std::hash<sa::Vector4>()(v.position) ^ std::hash<sa::Vector2>()(v.texCoord);
+		}
 	};
 }

@@ -4,13 +4,11 @@ layout(location = 1) in vec2 in_vertexUV;
 
 layout(location = 0) out vec2 out_vertexUV;
 
-
-
 layout(push_constant) uniform PushConstants {
     mat4 world[4];
 } pc;
 
-layout(set = 1, binding = 0) uniform Scene {
+layout(set = 0, binding = 0) uniform Scene {
     mat4 projView;
 } sceneUbo;
 

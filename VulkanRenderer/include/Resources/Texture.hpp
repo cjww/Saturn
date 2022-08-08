@@ -56,6 +56,8 @@ namespace sa {
 
 		void destroy();
 
+		bool operator==(const Texture& other);
+
 	};
 
 	// Wrapper for image pointer

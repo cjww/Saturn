@@ -5,6 +5,8 @@
 #include <Tools\Clock.h>
 #include <Tools\ScopeTimer.h>
 
+#include <CameraController.h>
+
 int randomRange(int min, int max) {
 	return (rand() % (max - min)) - (max - min)/2;
 }
@@ -49,6 +51,20 @@ void createQuad(sa::Engine& engine) {
 	entity.addComponent<comp::Transform>()->position = { (float)randomRange(-50, 50), (float)randomRange(-50, 50), randomRange(-10, 40) };
 	entity.addComponent<comp::Script>();
 }
+
+void createBox(sa::Engine& engine) {
+	sa::Entity entity = engine.getCurrentScene()->createEntity();
+	ResourceID ids[2] = { 
+		sa::AssetManager::get().loadModel("Box.dae"),
+		sa::AssetManager::get().loadModel("GreenBox.dae")
+	};
+	int r = rand() % 2;
+	entity.addComponent<comp::Model>()->modelID = ids[r];
+
+	entity.addComponent<comp::Script>();
+	entity.addComponent<comp::Transform>()->position = { (float)randomRange(-50, 50), (float)randomRange(-50, 50), randomRange(-10, 40) };
+}
+
 
 void regenerate(sa::Scene* scene) {
 	scene->forEach<comp::Model>([](comp::Model& model) {
@@ -98,10 +114,30 @@ int main() {
 	camera.lookAt({ 0, 0, 0 });
 	engine.getCurrentScene()->addActiveCamera(&camera);
 
+	sa::CameraController controller(window, camera);
 	
+	sa::Entity entity = engine.getCurrentScene()->createEntity();
+	entity.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadModel("Suzanne.dae");
+	entity.addComponent<comp::Transform>();
+
+	sa::Entity entity1 = engine.getCurrentScene()->createEntity();
+	//entity1.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadModel(".dae");
+	comp::Transform* transform = entity1.addComponent<comp::Transform>();
+	transform->position = sa::Vector3(2, 0, 0);
+	//transform->scale = { .01f, .01f, .01f };
+
+	//entity1.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadModel("May holiday/Model/May holiday.fbx");
+	//entity1.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadModel("stone_ore_1/stone_ore_sample_low.fbx");
+	entity1.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadModel("stone_ore_1/stone_ore.fbx");
+
+
+
+
+
 	for (int i = 0; i < 1000; i++) {
 		//createTriangleEntity(engine);
-		createQuad(engine);
+		//createQuad(engine);
+		createBox(engine);
 	}
 
 	engine.createSystemScript("test.lua");
@@ -111,7 +147,7 @@ int main() {
 	quad.addComponent<comp::Transform>();
 	quad.addComponent<comp::Script>();
 
-	quad.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadQuad();
+	//quad.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadQuad();
 
 
 	sa::Image image("Box.png");
@@ -134,7 +170,10 @@ int main() {
 			window.setWindowTitle("FPS: " + std::to_string(1 / dt));
 			fpsClock.restart();
 		}
-		camera.setPosition(camera.getPosition() - camera.getForward() * dt);
+		
+		controller.update(dt);
+		
+		//entity.getComponent<comp::Transform>()->rotation.y += dt;
 		/*
 		if (generateTimer.getElapsedTime() > 0.5f) {
 			generateTimer.restart();

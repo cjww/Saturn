@@ -201,10 +201,12 @@
     <ClInclude Include="include\Tools\Logger.hpp" />
     <ClInclude Include="include\debugFunctions.hpp" />
     <ClInclude Include="include\Renderer.hpp" />
+    <ClInclude Include="include\Tools\utils.hpp" />
     <ClInclude Include="include\VulkanCore.hpp" />
     <ClInclude Include="include\Window.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="include\Tools\utils.cpp" />
     <ClCompile Include="src\imgui.cpp" />
     <ClCompile Include="src\imgui_demo.cpp" />
     <ClCompile Include="src\imgui_draw.cpp" />

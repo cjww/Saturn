@@ -46,9 +46,11 @@ namespace sa {
 			template<typename ...Args>
 			ResourceID insert(const Args& ...args);
 
+			ResourceID insert(const char* key, const T& value);
 			ResourceID insert(const std::string& key, const T& value);
 
 			T* get(ResourceID id) const;
+			T* get(const char* key) const;
 			T* get(const std::string& key) const;
 
 			void remove(ResourceID id) override;
@@ -57,6 +59,7 @@ namespace sa {
 
 			void setCleanupFunction(std::function<void(T*)> function);
 
+			ResourceID keyToID(const char* key) const;
 			ResourceID keyToID(const std::string& key) const;
 
 
@@ -97,6 +100,9 @@ namespace sa {
 		ResourceID insert(const Args&... args);
 
 		template<typename T>
+		ResourceID insert(const char* key, const T& value);
+		
+		template<typename T>
 		ResourceID insert(const std::string& key, const T& value);
 
 		template<typename T>
@@ -104,6 +110,9 @@ namespace sa {
 
 		template<typename T>
 		T* get(ResourceID id) const;
+
+		template<typename T>
+		T* get(const char* key) const;
 
 		template<typename T>
 		T* get(const std::string& key) const;
@@ -115,6 +124,9 @@ namespace sa {
 		void clearContainer();
 
 		void clearAll();
+
+		template<typename T>
+		ResourceID keyToID(const char* key) const;
 
 		template<typename T>
 		ResourceID keyToID(const std::string& key) const;
@@ -152,6 +164,11 @@ namespace sa {
 	}
 
 	template<typename T>
+	inline ResourceID ResourceManager::insert(const char* key, const T& value) {
+		return getContainer<T>()->insert(key, value);
+	}
+
+	template<typename T>
 	inline ResourceID ResourceManager::insert(const std::string& key, const T& value) {
 		return getContainer<T>()->insert(key, value);
 	}
@@ -167,6 +184,14 @@ namespace sa {
 		if (!container)
 			return nullptr;
 		return container->get(id);
+	}
+
+	template<typename T>
+	inline T* ResourceManager::get(const char* key) const {
+		details::ResourceContainer<T>* container = tryGetContainer<T>();
+		if (!container)
+			return nullptr;
+		return container->get(key);
 	}
 
 	template<typename T>
@@ -192,6 +217,14 @@ namespace sa {
 	}
 
 	template<typename T>
+	inline ResourceID ResourceManager::keyToID(const char* key) const {
+		details::ResourceContainer<T>* container = tryGetContainer<T>();
+		if (!container)
+			return NULL_RESOURCE;
+		return container->keyToID(key);
+	}
+
+	template<typename T>
 	inline ResourceID ResourceManager::keyToID(const std::string& key) const {
 		details::ResourceContainer<T>* container = tryGetContainer<T>();
 		if (!container)
@@ -213,6 +246,13 @@ namespace sa {
 		}
 
 		template<typename T>
+		inline ResourceID ResourceContainer<T>::insert(const char* key, const T& value) {
+			ResourceID id = insert(value);
+			m_keys[key] = id;
+			return id;
+		}
+
+		template<typename T>
 		inline ResourceID ResourceContainer<T>::insert(const std::string& key, const T& value) {
 			ResourceID id = insert(value);
 			m_keys[key] = id;
@@ -225,6 +265,14 @@ namespace sa {
 				return nullptr;
 
 			return m_resources.at(id).get();
+		}
+		
+		template<typename T>
+		inline T* ResourceContainer<T>::get(const char* key) const {
+			if (!m_keys.count(key)) {
+				return nullptr;
+			}
+			return get(m_keys.at(key));
 		}
 
 		template<typename T>
@@ -258,7 +306,7 @@ namespace sa {
 		}
 
 		template<typename T>
-		std::string ResourceContainer<T>::idToKey(ResourceID id) const {
+		inline std::string ResourceContainer<T>::idToKey(ResourceID id) const {
 			for (auto& [key, resourceID] : m_keys) {
 				if (resourceID == id) {
 					return key;
@@ -267,12 +315,18 @@ namespace sa {
 			return "";
 		}
 
-
 		template<typename T>
 		inline void ResourceContainer<T>::setCleanupFunction(std::function<void(T*)> function) {
 			m_cleanupFunction = function;
 		}
 
+		template<typename T>
+		inline ResourceID ResourceContainer<T>::keyToID(const char* key) const {
+			if (!m_keys.count(key)) {
+				return NULL_RESOURCE;
+			}
+			return m_keys.at(key);
+		}
 
 		template<typename T>
 		inline ResourceID ResourceContainer<T>::keyToID(const std::string& key) const {

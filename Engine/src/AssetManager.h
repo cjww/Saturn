@@ -11,6 +11,8 @@
 
 #include "structs.h"
 
+#include "Graphics/Material.h"
+
 //--------------------------------------------------------------------------------------
 // AssetManager is the class that will hold all assets. 
 //--------------------------------------------------------------------------------------
@@ -18,27 +20,10 @@
 
 namespace sa {
 
-	struct Material {
-		ResourceID pipeline;
-		ResourceID sampler;
-		sa::Texture2D diffuseMap;
-		sa::Texture2D normalMap;
-		sa::Texture2D specularMap;
-
-		struct Values {
-			Color diffuseColor = { 1, 1, 1, 1 };
-			Color specularColor = { 1, 1, 1, 1 };
-
-			float roughness;
-		} values;
-		sa::Buffer valueBuffer;
-
-		ResourceID descriptorSet;
-	};
-
 	struct Mesh {
 		sa::Buffer vertexBuffer;
 		sa::Buffer indexBuffer;
+		ResourceID materialID;
 	};
 
 	struct ModelData {
@@ -55,12 +40,16 @@ namespace sa {
 
 		AssetManager();
 
+		//void processNode(const aiScene* scene, const aiNode* node, ModelData* pModelData);
+		
+
 	public:
 		~AssetManager();
 	
 		static AssetManager& get();
 
-		ResourceID newMaterial(ResourceID pipeline);
+		Texture2D* loadDefaultTexture();
+		Texture2D* loadTexture(const std::filesystem::path& path, bool generateMipMaps);
 
 		ResourceID loadModel(const std::filesystem::path& path);
 		ResourceID loadQuad();

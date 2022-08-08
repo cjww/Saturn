@@ -14,7 +14,7 @@ namespace sa {
 		ResourceID m_colorRenderProgram;
 		ResourceID m_colorPipeline;
 		ResourceID m_colorFramebuffer;
-
+		
 		ResourceID m_postRenderProgram;
 		ResourceID m_postProcessPipeline;
 		ResourceID m_postFramebuffer;
@@ -41,24 +41,21 @@ namespace sa {
 		sa::Texture2D m_blurredBrightnessTexture;
 		
 		sa::Texture2D m_outputTexture;
-		
+		sa::Texture2D m_resolveTexture;
+
 		ResourceID m_sampler;
 		
 		
 		//DEBUG 
 		std::unordered_map<ResourceID, std::vector<Mesh*>> m_materialMeshes;
 		
-		ResourceID m_matID;
-		
+
 		float timer = 0.0f;
 
 		void createTextures(sa::Extent extent);
 		void createRenderPasses();
 		void createFramebuffers(sa::Extent extent);
 		
-		void updateMaterial(Material* pMaterial);
-		void bindMaterial(RenderContext& context, Material* pMaterial);
-
 	public:
 		ForwardRenderer();
 		

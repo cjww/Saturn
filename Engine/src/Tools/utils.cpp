@@ -3,6 +3,7 @@
 
 namespace sa {
 	namespace utils {
+
 		char toLower(char c) {
 			if (c >= 'A' && c <= 'Z')
 				return c + 32;
