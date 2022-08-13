@@ -128,7 +128,8 @@ int main() {
 
 	//entity1.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadModel("May holiday/Model/May holiday.fbx");
 	//entity1.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadModel("stone_ore_1/stone_ore_sample_low.fbx");
-	entity1.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadModel("stone_ore_1/stone_ore.fbx");
+	//entity1.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadModel("stone_ore_1/stone_ore.fbx");
+	entity1.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadModel("Survival_BackPack_2/Survival_BackPack.fbx");
 
 
 

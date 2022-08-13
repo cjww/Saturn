@@ -75,7 +75,7 @@ namespace sa {
 		}
 	}
 
-	std::vector<Texture2D> loadMaterialTexture(const std::filesystem::path& directory, aiMaterial* pMaterial, aiTextureType type, std::string typeName) {
+	std::vector<Texture2D> loadMaterialTexture(const std::filesystem::path& directory, aiMaterial* pMaterial, aiTextureType type) {
 		std::vector<Texture2D> textures;
 		for (unsigned int i = 0; i < pMaterial->GetTextureCount(type); i++) {
 			aiString str;
@@ -197,22 +197,46 @@ namespace sa {
 			if(!color.IsBlack())
 				material.values.diffuseColor = { color.r, color.g, color.b, 1 };
 			
+			// Specular Color
+			aMaterial->Get(AI_MATKEY_COLOR_SPECULAR, color);
+			if (!color.IsBlack())
+				material.values.specularColor = { color.r, color.g, color.b, 1 };
+
+
 			DEBUG_LOG_INFO("\tDiffuse color {", material.values.diffuseColor.r, material.values.diffuseColor.g, material.values.diffuseColor.b, "}");
-			
+			DEBUG_LOG_INFO("\tSpecular color {", material.values.specularColor.r, material.values.specularColor.g, material.values.specularColor.b, "}");
+
+			for (unsigned int i = aiTextureType::aiTextureType_NONE; i <= aiTextureType::aiTextureType_TRANSMISSION; i++) {
+				std::cout << i << ": " << aMaterial->GetTextureCount((aiTextureType)i) << std::endl;
+			}
+
 			// Diffuse Texture
-			std::vector<Texture2D> diffuseTextures = loadMaterialTexture(path.parent_path(), aMaterial, aiTextureType::aiTextureType_DIFFUSE, "texture_diffuse");
+			std::vector<Texture2D> diffuseTextures = loadMaterialTexture(path.parent_path(), aMaterial, aiTextureType::aiTextureType_DIFFUSE);
 			if (!diffuseTextures.empty()) {
 				material.setDiffuseMaps(diffuseTextures);
 				DEBUG_LOG_INFO("\tDiffuse Map found");
 			}
 
 			// Base Texture
-			std::vector<Texture2D> baseColorTextures = loadMaterialTexture(path.parent_path(), aMaterial, aiTextureType::aiTextureType_BASE_COLOR, "texture_base");
+			std::vector<Texture2D> baseColorTextures = loadMaterialTexture(path.parent_path(), aMaterial, aiTextureType::aiTextureType_BASE_COLOR);
 			if (!baseColorTextures.empty()) {
 				material.setDiffuseMaps(baseColorTextures);
 				DEBUG_LOG_INFO("\Base Map found");
 			}
 
+			// Normal Texture
+			std::vector<Texture2D> normalTextures = loadMaterialTexture(path.parent_path(), aMaterial, aiTextureType::aiTextureType_NORMALS);
+			if (!normalTextures.empty()) {
+				material.setNormalMaps(normalTextures);
+				DEBUG_LOG_INFO("\Normal Map found");
+			}
+
+			// Specular Texture
+			std::vector<Texture2D> specularTextures = loadMaterialTexture(path.parent_path(), aMaterial, aiTextureType::aiTextureType_SPECULAR);
+			if (!specularTextures.empty()) {
+				material.setSpecularMaps(specularTextures);
+				DEBUG_LOG_INFO("\Specular Map found");
+			}
 
 			ResourceID matId = sa::ResourceManager::get().insert<Material>(material);
 			DEBUG_LOG_INFO("\tRecieved ID:", matId);
