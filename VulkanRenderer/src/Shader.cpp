@@ -18,12 +18,21 @@ namespace sa {
 			size_t size = 0;
 			
 			if (t.basetype == spirv_cross::SPIRType::BaseType::Struct) {
-				size = compiler.get_declared_struct_size(compiler.get_type(b.type_id));
+				size = compiler.get_declared_struct_size(t);
 			}
 
 			layoutBinding.stageFlags = m_stage;
 			
-			layoutBinding.descriptorCount = (t.array.size() > 0) ? t.array[0] : 1;
+			if (t.array.size() > 0) {
+				layoutBinding.descriptorCount = t.array[0];
+				if (layoutBinding.descriptorCount == 1) {
+					layoutBinding.descriptorCount = 0;
+				}
+			}
+			else {
+				layoutBinding.descriptorCount = 1;
+			} 
+			
 			layoutBinding.descriptorType = type;
 			layoutBinding.pImmutableSamplers = immutableSamplers;
 

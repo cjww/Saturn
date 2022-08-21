@@ -175,6 +175,7 @@ namespace sa {
 			if (!features.geometryShader) {
 				score = 0;
 			}
+			
 			if (score > highestScore) {
 				highestScore = score;
 				m_physicalDevice = device;
@@ -192,6 +193,13 @@ namespace sa {
 		std::vector<QueueInfo> queueInfos = { m_queueInfo };
 	
 		vk::PhysicalDeviceFeatures features = m_physicalDevice.getFeatures();
+		vk::PhysicalDeviceDescriptorIndexingFeatures indexingFeatures;
+		
+		indexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
+		indexingFeatures.runtimeDescriptorArray = VK_TRUE;
+		indexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
+		indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
+		
 
 		std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
 		for (const auto& queueInfo : queueInfos) {
@@ -203,13 +211,14 @@ namespace sa {
 		}
 
 		vk::DeviceCreateInfo deviceInfo{
+			.pNext = &indexingFeatures,
 			.queueCreateInfoCount = static_cast<uint32_t>(queueCreateInfos.size()),
 			.pQueueCreateInfos = queueCreateInfos.data(),
 			.enabledExtensionCount = static_cast<uint32_t>(m_deviceExtensions.size()),
 			.ppEnabledExtensionNames = m_deviceExtensions.data(),
 			.pEnabledFeatures = &features
 		};
-
+		
 		if (!m_validationLayers.empty()) {
 			deviceInfo.setPEnabledLayerNames(m_validationLayers);
 		}

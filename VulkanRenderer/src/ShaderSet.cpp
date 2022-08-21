@@ -2,37 +2,31 @@
 #include "Resources/ShaderSet.hpp"
 
 namespace sa {
-	ShaderSet::ShaderSet(vk::Device device, const Shader& vertexShader, const Shader& fragmentShader)
-		: m_device(device)
-		, m_isGraphicsSet(true)
-		, m_vertexShader(vertexShader)
-		, m_fragmentShader(fragmentShader)
-	{
-		if ((vertexShader.getStage() | fragmentShader.getStage()) != (vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment)) {
-			throw std::runtime_error("Missing stages");
+	void ShaderSet::init(const std::vector<Shader>& shaders) {
+		size_t descriptorSetLayoutSize = 0;
+		for (const auto& shader : shaders) {
+			if (descriptorSetLayoutSize < shader.getDescriptorSetLayouts().size()) {
+				descriptorSetLayoutSize = shader.getDescriptorSetLayouts().size();
+			}
 		}
 
-		m_descriptorSetLayouts.resize(std::max(vertexShader.getDescriptorSetLayouts().size(), fragmentShader.getDescriptorSetLayouts().size()));
+		m_descriptorSetLayouts.resize(descriptorSetLayoutSize);
 		m_descriptorSets.resize(m_descriptorSetLayouts.size());
 		for (uint32_t setIndex = 0; setIndex < m_descriptorSetLayouts.size(); setIndex++) {
-			if (vertexShader.getDescriptorSetLayouts().size() > setIndex) {
-				const auto& vset = vertexShader.getDescriptorSetLayouts()[setIndex];
-				
-				m_descriptorSets[setIndex].bindings.insert(m_descriptorSets[setIndex].bindings.end(), vset.bindings.begin(), vset.bindings.end());
-				m_descriptorSets[setIndex].sizes.insert(m_descriptorSets[setIndex].sizes.end(), vset.sizes.begin(), vset.sizes.end());
-				m_descriptorSets[setIndex].writes.insert(m_descriptorSets[setIndex].writes.end(), vset.writes.begin(), vset.writes.end());
+			// merge all shaders bindings
+			for (const auto& shader : shaders) {
+				if (shader.getDescriptorSetLayouts().size() > setIndex) {
+					const auto& set = shader.getDescriptorSetLayouts()[setIndex];
 
-			}
-			if (fragmentShader.getDescriptorSetLayouts().size() > setIndex) {
-				const auto& fset = fragmentShader.getDescriptorSetLayouts()[setIndex];
-
-				m_descriptorSets[setIndex].bindings.insert(m_descriptorSets[setIndex].bindings.end(), fset.bindings.begin(), fset.bindings.end());
-				m_descriptorSets[setIndex].sizes.insert(m_descriptorSets[setIndex].sizes.end(), fset.sizes.begin(), fset.sizes.end());
-				m_descriptorSets[setIndex].writes.insert(m_descriptorSets[setIndex].writes.end(), fset.writes.begin(), fset.writes.end());
-
-			}
+					m_descriptorSets[setIndex].bindings.insert(m_descriptorSets[setIndex].bindings.end(), set.bindings.begin(), set.bindings.end());
+					m_descriptorSets[setIndex].sizes.insert(m_descriptorSets[setIndex].sizes.end(), set.sizes.begin(), set.sizes.end());
+					m_descriptorSets[setIndex].writes.insert(m_descriptorSets[setIndex].writes.end(), set.writes.begin(), set.writes.end());
+				}
 
 			
+			}
+
+			// erase duplicate bindings
 			for (int i = 0; i < m_descriptorSets[setIndex].bindings.size() - 1; i++) {
 				for (int j = i + 1; j < m_descriptorSets[setIndex].bindings.size(); j++) {
 					if (m_descriptorSets[setIndex].bindings[i].binding == m_descriptorSets[setIndex].bindings[j].binding) {
@@ -43,45 +37,51 @@ namespace sa {
 					}
 				}
 			}
+
+
+			// to support variable descriptor counts
+			vk::DescriptorSetLayoutBindingFlagsCreateInfo flagCreateInfo;
+			
+			std::vector<vk::DescriptorBindingFlags> flags(m_descriptorSets[setIndex].bindings.size(), (vk::DescriptorBindingFlags)0);
+			for (size_t i = 0; i < flags.size(); i++) {
+				if (m_descriptorSets[setIndex].bindings[i].descriptorCount == 0) {
+					m_descriptorSets[setIndex].bindings[i].descriptorCount = MAX_VARIABLE_DESCRIPTOR_COUNT;
+					flags[i] = vk::DescriptorBindingFlagBits::eVariableDescriptorCount | vk::DescriptorBindingFlagBits::ePartiallyBound;
+					if (i != flags.size() - 1) {
+						throw std::runtime_error("Variable count descriptors has to be on the last binding");
+					}
+				}
+			}
+			flagCreateInfo.setBindingFlags(flags);
+
+
+			// Create descriptorSet layout create info
 			vk::DescriptorSetLayoutCreateInfo layoutInfo;
+			layoutInfo.setPNext(&flagCreateInfo);
+
 			layoutInfo.setBindings(m_descriptorSets[setIndex].bindings);
 			m_descriptorSetLayouts[setIndex] = m_device.createDescriptorSetLayout(layoutInfo);
 		}
-	
-		m_pushConstantRanges = vertexShader.getPushConstantRanges();
-		m_pushConstantRanges.insert(m_pushConstantRanges.end(), fragmentShader.getPushConstantRanges().begin(), fragmentShader.getPushConstantRanges().end());
-		
-		m_shaderInfos.push_back(vertexShader.getInfo());
-		m_shaderInfos.push_back(fragmentShader.getInfo());
-
-		m_vertexAttributes = vertexShader.getVertexAttributes();
-		m_vertexBindings = vertexShader.getVertexBindings();
-
 
 		std::set<vk::DescriptorType> descriptorTypes;
 		std::vector<vk::DescriptorPoolSize> poolSizes;
-		for (const auto& set : vertexShader.getDescriptorSetLayouts()) {
-			for (const auto& binding : set.bindings) {
-				if (descriptorTypes.find(binding.descriptorType) == descriptorTypes.end()) {
-					vk::DescriptorPoolSize poolSize = {};
-					poolSize.descriptorCount = UINT16_MAX;
-					poolSize.type = binding.descriptorType;
-					poolSizes.push_back(poolSize);
-					descriptorTypes.insert(binding.descriptorType);
+		for (const auto& shader : shaders) {
+			m_pushConstantRanges.insert(m_pushConstantRanges.end(), shader.getPushConstantRanges().begin(), shader.getPushConstantRanges().end());
+			m_shaderInfos.push_back(shader.getInfo());
+
+			for (const auto& set : shader.getDescriptorSetLayouts()) {
+				for (const auto& binding : set.bindings) {
+					if (descriptorTypes.find(binding.descriptorType) == descriptorTypes.end()) {
+						vk::DescriptorPoolSize poolSize = {};
+						poolSize.descriptorCount = UINT16_MAX;
+						poolSize.type = binding.descriptorType;
+						poolSizes.push_back(poolSize);
+						descriptorTypes.insert(binding.descriptorType);
+					}
 				}
 			}
 		}
-		for (const auto& set : fragmentShader.getDescriptorSetLayouts()) {
-			for (const auto& binding : set.bindings) {
-				if (descriptorTypes.find(binding.descriptorType) == descriptorTypes.end()) {
-					vk::DescriptorPoolSize poolSize = {};
-					poolSize.descriptorCount = UINT16_MAX;
-					poolSize.type = binding.descriptorType;
-					poolSizes.push_back(poolSize);
-					descriptorTypes.insert(binding.descriptorType);
-				}
-			}
-		}
+		
 
 		m_descriptorPool = nullptr;
 		if (poolSizes.size() > 0) {
@@ -92,6 +92,119 @@ namespace sa {
 			poolInfo.setPoolSizes(poolSizes);
 			m_descriptorPool = m_device.createDescriptorPool(poolInfo);
 		}
+	}
+
+	ShaderSet::ShaderSet(vk::Device device, const Shader& vertexShader, const Shader& fragmentShader)
+		: m_device(device)
+		, m_isGraphicsSet(true)
+		, m_vertexShader(vertexShader)
+		, m_fragmentShader(fragmentShader)
+	{
+		if ((vertexShader.getStage() | fragmentShader.getStage()) != (vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment)) {
+			throw std::runtime_error("Missing stages");
+		}
+
+
+		init({ vertexShader, fragmentShader });
+
+		m_vertexAttributes = vertexShader.getVertexAttributes();
+		m_vertexBindings = vertexShader.getVertexBindings();
+
+		//m_descriptorSetLayouts.resize(std::max(vertexShader.getDescriptorSetLayouts().size(), fragmentShader.getDescriptorSetLayouts().size()));
+		//m_descriptorSets.resize(m_descriptorSetLayouts.size());
+		//for (uint32_t setIndex = 0; setIndex < m_descriptorSetLayouts.size(); setIndex++) {
+		//	if (vertexShader.getDescriptorSetLayouts().size() > setIndex) {
+		//		const auto& vset = vertexShader.getDescriptorSetLayouts()[setIndex];
+		//		
+		//		m_descriptorSets[setIndex].bindings.insert(m_descriptorSets[setIndex].bindings.end(), vset.bindings.begin(), vset.bindings.end());
+		//		m_descriptorSets[setIndex].sizes.insert(m_descriptorSets[setIndex].sizes.end(), vset.sizes.begin(), vset.sizes.end());
+		//		m_descriptorSets[setIndex].writes.insert(m_descriptorSets[setIndex].writes.end(), vset.writes.begin(), vset.writes.end());
+
+		//	}
+		//	if (fragmentShader.getDescriptorSetLayouts().size() > setIndex) {
+		//		const auto& fset = fragmentShader.getDescriptorSetLayouts()[setIndex];
+
+		//		m_descriptorSets[setIndex].bindings.insert(m_descriptorSets[setIndex].bindings.end(), fset.bindings.begin(), fset.bindings.end());
+		//		m_descriptorSets[setIndex].sizes.insert(m_descriptorSets[setIndex].sizes.end(), fset.sizes.begin(), fset.sizes.end());
+		//		m_descriptorSets[setIndex].writes.insert(m_descriptorSets[setIndex].writes.end(), fset.writes.begin(), fset.writes.end());
+
+		//	}
+
+		//	// erase duplicate bindings
+		//	for (int i = 0; i < m_descriptorSets[setIndex].bindings.size() - 1; i++) {
+		//		for (int j = i + 1; j < m_descriptorSets[setIndex].bindings.size(); j++) {
+		//			if (m_descriptorSets[setIndex].bindings[i].binding == m_descriptorSets[setIndex].bindings[j].binding) {
+		//				m_descriptorSets[setIndex].bindings.erase(m_descriptorSets[setIndex].bindings.begin() + j);
+		//				m_descriptorSets[setIndex].writes.erase(m_descriptorSets[setIndex].writes.begin() + j);
+		//				m_descriptorSets[setIndex].sizes.erase(m_descriptorSets[setIndex].sizes.begin() + j);
+		//				j--;
+		//			}
+		//		}
+		//	}
+
+		//	// to support variable descriptor counts
+		//	vk::DescriptorSetLayoutBindingFlagsCreateInfo flagCreateInfo;
+		//	flagCreateInfo.bindingCount = m_descriptorSets[setIndex].bindings.size();
+		//	std::vector<vk::DescriptorBindingFlags> flags(flagCreateInfo.bindingCount, (vk::DescriptorBindingFlags)0);
+		//	for (size_t i = 0; i < flagCreateInfo.bindingCount; i++) {
+		//		if (m_descriptorSets[setIndex].bindings[i].descriptorCount == 0) {
+		//			flags[i] = vk::DescriptorBindingFlagBits::eVariableDescriptorCount;
+		//		}	
+		//	}
+		//	flagCreateInfo.setBindingFlags(flags);
+
+
+		//	vk::DescriptorSetLayoutCreateInfo layoutInfo;
+		//	layoutInfo.setPNext(&flagCreateInfo);
+
+		//	layoutInfo.setBindings(m_descriptorSets[setIndex].bindings);
+		//	m_descriptorSetLayouts[setIndex] = m_device.createDescriptorSetLayout(layoutInfo);
+		//}
+	
+		//m_pushConstantRanges = vertexShader.getPushConstantRanges();
+		//m_pushConstantRanges.insert(m_pushConstantRanges.end(), fragmentShader.getPushConstantRanges().begin(), fragmentShader.getPushConstantRanges().end());
+		//
+		//m_shaderInfos.push_back(vertexShader.getInfo());
+		//m_shaderInfos.push_back(fragmentShader.getInfo());
+
+		//m_vertexAttributes = vertexShader.getVertexAttributes();
+		//m_vertexBindings = vertexShader.getVertexBindings();
+
+
+		//std::set<vk::DescriptorType> descriptorTypes;
+		//std::vector<vk::DescriptorPoolSize> poolSizes;
+		//for (const auto& set : vertexShader.getDescriptorSetLayouts()) {
+		//	for (const auto& binding : set.bindings) {
+		//		if (descriptorTypes.find(binding.descriptorType) == descriptorTypes.end()) {
+		//			vk::DescriptorPoolSize poolSize = {};
+		//			poolSize.descriptorCount = UINT16_MAX;
+		//			poolSize.type = binding.descriptorType;
+		//			poolSizes.push_back(poolSize);
+		//			descriptorTypes.insert(binding.descriptorType);
+		//		}
+		//	}
+		//}
+		//for (const auto& set : fragmentShader.getDescriptorSetLayouts()) {
+		//	for (const auto& binding : set.bindings) {
+		//		if (descriptorTypes.find(binding.descriptorType) == descriptorTypes.end()) {
+		//			vk::DescriptorPoolSize poolSize = {};
+		//			poolSize.descriptorCount = UINT16_MAX;
+		//			poolSize.type = binding.descriptorType;
+		//			poolSizes.push_back(poolSize);
+		//			descriptorTypes.insert(binding.descriptorType);
+		//		}
+		//	}
+		//}
+
+		//m_descriptorPool = nullptr;
+		//if (poolSizes.size() > 0) {
+		//	vk::DescriptorPoolCreateInfo poolInfo{
+		//		.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
+		//		.maxSets = UINT16_MAX,
+		//	};
+		//	poolInfo.setPoolSizes(poolSizes);
+		//	m_descriptorPool = m_device.createDescriptorPool(poolInfo);
+		//}
 	}
 
 	ShaderSet::ShaderSet(vk::Device device, const Shader& vertexShader, const Shader& geometryShader, const Shader& fragmentShader)

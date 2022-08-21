@@ -75,7 +75,7 @@ namespace sa {
     }
 
     Vector3 Camera::getRight() const {
-        return glm::cross(m_forward, m_up);
+        return glm::normalize(glm::cross(m_forward, m_up));
     }
 
     Matrix4x4 Camera::getViewMatrix() const {

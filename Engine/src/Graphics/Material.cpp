@@ -6,20 +6,28 @@
 #include "AssetManager.h"
 
 namespace sa {
-	void Material::setMaps(const std::vector<Texture2D>& textures, std::vector<Texture>& targetMaps, uint32_t& count) {
-		int i = 0;
-		for (auto& texture : textures) {
-			if (i > MAX_TEXTURE_MAP_COUNT) 
-				break;
-			if (!texture.isValid()) {
+	void Material::setTextures(const std::vector<BlendedTexture>& textures, MaterialTextureType type, uint32_t& count) {
+		count = std::min((uint32_t)textures.size(), MAX_TEXTURE_MAP_COUNT);
+		if (count == 0)
+			return;
+
+		auto& targetMaps = m_textures[type];
+		auto& targetBlend = m_blending[type];
+
+		targetMaps.resize(count);
+		targetBlend.resize(count);
+
+		for (uint32_t i = 0; i < count; i++) {
+			const BlendedTexture& blendedTex = textures[i];
+			if (!blendedTex.texture.isValid()) {
 				DEBUG_LOG_WARNING("Texture invalid, loading default texture");
-				targetMaps.push_back(*AssetManager::get().loadDefaultTexture());
+				targetMaps[i] = *AssetManager::get().loadDefaultTexture();
+				targetBlend[i++] = { blendedTex.blendOp, blendedTex.blendFactor };
 				continue;
 			}
-			targetMaps.push_back(texture);
-			i++;
+			targetMaps[i] = blendedTex.texture;
+			targetBlend[i++] = { blendedTex.blendOp, blendedTex.blendFactor};
 		}
-		count = static_cast<uint32_t>(targetMaps.size());
 	}
 
 	Material::Material()
@@ -48,6 +56,10 @@ namespace sa {
 
 	void Material::update() {
 		Renderer& renderer = Renderer::get();
+		values.diffuseMapCount = m_textures[MaterialTextureType::DIFFUSE].size();
+		values.normalMapCount = m_textures[MaterialTextureType::NORMALS].size();
+		values.specularMapCount = m_textures[MaterialTextureType::SPECULAR].size();
+
 		if (m_valueBuffer.isValid()) {
 			m_valueBuffer.write(values);
 			renderer.updateDescriptorSet(m_descriptorSet, 0, m_valueBuffer);
@@ -56,6 +68,14 @@ namespace sa {
 		if (m_sampler != NULL_RESOURCE)
 			renderer.updateDescriptorSet(m_descriptorSet, 1, m_sampler);
 
+		std::vector<Texture> textures = m_textures[MaterialTextureType::DIFFUSE];
+		textures.insert(textures.end(), m_textures[MaterialTextureType::NORMALS].begin(), m_textures[MaterialTextureType::NORMALS].end());
+
+		renderer.updateDescriptorSet(m_descriptorSet, 2, textures);
+
+		/*
+		renderer.updateDescriptorSet(m_descriptorSet, 3, m_textures[MaterialTextureType::NORMALS]);
+		renderer.updateDescriptorSet(m_descriptorSet, 4, m_textures[MaterialTextureType::SPECULAR]);
 		while (m_diffuseMaps.size() < MAX_TEXTURE_MAP_COUNT) {
 			m_diffuseMaps.push_back(*sa::AssetManager::get().loadDefaultTexture());
 			values.diffuseMapCount = m_diffuseMaps.size();
@@ -73,6 +93,7 @@ namespace sa {
 			values.specularMapCount = m_specularMaps.size();
 		}
 		renderer.updateDescriptorSet(m_descriptorSet, 4, m_specularMaps);
+		*/
 
 
 	}
@@ -84,16 +105,8 @@ namespace sa {
 		context.bindDescriptorSet(m_descriptorSet, pipeline);
 	}
 
-	void Material::setDiffuseMaps(const std::vector<Texture2D>& diffuseTextures) {
-		setMaps(diffuseTextures, m_diffuseMaps, values.diffuseMapCount);
-	}
-
-	void Material::setNormalMaps(const std::vector<Texture2D>& normalTextures) {
-		setMaps(normalTextures, m_normalMaps, values.normalMapCount);
-	}
-
-	void Material::setSpecularMaps(const std::vector<Texture2D>& specularTextures) {
-		setMaps(specularTextures, m_specularMaps, values.specularMapCount);
+	void Material::setTextures(const std::vector<BlendedTexture>& textures, MaterialTextureType type) {
+		setTextures(textures, type, values.diffuseMapCount);
 	}
 
 	bool Material::operator==(const Material& other) {

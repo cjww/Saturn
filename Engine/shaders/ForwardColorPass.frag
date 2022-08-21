@@ -1,6 +1,6 @@
 #version 450
-
-#define MAX_TEXTURE_MAP_COUNT 8
+#extension GL_EXT_nonuniform_qualifier : enable
+#define MAX_TEXTURE_MAP_COUNT 4
 
 layout(location = 0) in vec2 in_vertexUV;
 
@@ -19,10 +19,7 @@ layout(set = 1, binding = 0, std140) uniform MaterialValues {
 } material;
 
 layout(set = 1, binding = 1) uniform sampler samp;
-layout(set = 1, binding = 2) uniform texture2D diffuseMaps[MAX_TEXTURE_MAP_COUNT];
-layout(set = 1, binding = 3) uniform texture2D normalMaps[MAX_TEXTURE_MAP_COUNT];
-layout(set = 1, binding = 4) uniform texture2D specularMaps[MAX_TEXTURE_MAP_COUNT];
-
+layout(set = 1, binding = 2) uniform texture2D textures[];
 
 
 
@@ -37,13 +34,11 @@ void main() {
     
 
     vec4 diffuseColor = material.diffuseColor;
-    int i = 0;
-    diffuseColor *= texture(sampler2D(diffuseMaps[i], samp), in_vertexUV);
-    
-    /*
-    if (material.hasDiffuseMap) {
-    }
-    */
+    if(material.diffuseMapCount > 0)
+        diffuseColor *= texture(sampler2D(textures[0], samp), in_vertexUV);
+        
+    if(material.normalMapCount > 0)
+        diffuseColor *= texture(sampler2D(textures[1], samp), in_vertexUV);
 
     out_color = vec4(min(diffuseColor.xyz, 1), 1);
 }

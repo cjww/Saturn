@@ -4,6 +4,8 @@
 #include "Buffer.hpp"
 #include "DeviceMemoryManager.hpp"
 
+#define MAX_VARIABLE_DESCRIPTOR_COUNT 1024
+
 namespace sa {
 
 	struct DescriptorSetLayout {

@@ -1,6 +1,8 @@
 #pragma once
 #include "Resources/Shader.hpp"
 #include "Resources\DescriptorSet.hpp"
+
+
 namespace sa {
 
 	
@@ -22,6 +24,8 @@ namespace sa {
 		bool m_isGraphicsSet;
 
 		std::optional<Shader> m_vertexShader, m_geometryShader, m_fragmentShader, m_computeShader;
+
+		void init(const std::vector<Shader>& shaders);
 
 	public:
 		ShaderSet() = default;

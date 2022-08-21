@@ -6,14 +6,21 @@ namespace sa {
 	void DescriptorSet::create(vk::Device device, vk::DescriptorPool descriptorPool, uint32_t count, DescriptorSetLayout info, vk::DescriptorSetLayout layout, uint32_t setIndex) {
 		m_device = device;
 		m_descriptorPool = descriptorPool;
+		vk::DescriptorSetVariableDescriptorCountAllocateInfo varDescCountAllocInfo;
+		std::vector<uint32_t> counts(count, MAX_VARIABLE_DESCRIPTOR_COUNT);
+		varDescCountAllocInfo.setDescriptorCounts(counts);
 
-		
 		std::vector<vk::DescriptorSetLayout> layouts(count, layout);
 		vk::DescriptorSetAllocateInfo allocInfo{
 			.descriptorPool = m_descriptorPool,
 			.descriptorSetCount = static_cast<uint32_t>(count),
 			.pSetLayouts = layouts.data(),
 		};
+
+		if (info.bindings.back().descriptorCount == MAX_VARIABLE_DESCRIPTOR_COUNT) { // has a variable descriptor
+			allocInfo.setPNext(&varDescCountAllocInfo);
+		}
+		
 		m_descriptorSets = m_device.allocateDescriptorSets(allocInfo);
 
 		m_setIndex = setIndex;
@@ -93,6 +100,9 @@ namespace sa {
 	}
 
 	void DescriptorSet::update(uint32_t binding, uint32_t firstElement, const std::vector<Texture>& textures, vk::Sampler* pSampler, uint32_t indexToUpdate) {
+		if (textures.empty()) 
+			return;
+
 		if (m_writes.size() <= binding) {
 			DEBUG_LOG_ERROR("Binding", binding, "out of bounds!");
 			throw std::runtime_error("Binding " + std::to_string(binding) + " out of bounds!");
@@ -121,6 +131,8 @@ namespace sa {
 	}
 
 	void DescriptorSet::update(uint32_t binding, uint32_t firstElement, const std::vector<Buffer>& buffers, uint32_t indexToUpdate) {
+		if (buffers.empty())
+			return;
 
 		if (m_writes.size() <= binding) {
 			DEBUG_LOG_ERROR("Binding", binding, "out of bounds!");

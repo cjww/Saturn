@@ -47,8 +47,10 @@ namespace sa {
 					pos = node->mTransformation * pos; // TODO not sure how good this is
 
 					vertex.position = { pos.x, pos.y, pos.z , 1.f };
-					aiVector3D texCoord = aMesh->mTextureCoords[0][face.mIndices[k]]; // assumes 1 tex coord per vertex
-					vertex.texCoord = { texCoord.x, texCoord.y };
+					if (aMesh->HasTextureCoords(0)) {
+						aiVector3D texCoord = aMesh->mTextureCoords[0][face.mIndices[k]]; // assumes 1 tex coord per vertex
+						vertex.texCoord = { texCoord.x, texCoord.y };
+					}
 					if (vertexIndices.count(vertex)) {
 						indices.push_back(vertexIndices.at(vertex));
 						continue;
@@ -75,12 +77,27 @@ namespace sa {
 		}
 	}
 
-	std::vector<Texture2D> loadMaterialTexture(const std::filesystem::path& directory, aiMaterial* pMaterial, aiTextureType type) {
-		std::vector<Texture2D> textures;
-		for (unsigned int i = 0; i < pMaterial->GetTextureCount(type); i++) {
+	void loadMaterialTexture(Material& material, const std::filesystem::path& directory, aiTextureType type, aiTexture** ppAiTextures, aiMaterial* pAiMaterial) {
+		std::vector<BlendedTexture> textures(pAiMaterial->GetTextureCount(type));
+
+		for (size_t i = 0; i < textures.size(); i++) {
 			aiString str;
-			pMaterial->GetTexture(type, i, &str);
+			ai_real blending = 1.0f;
+			aiTextureOp op = aiTextureOp::aiTextureOp_Multiply;
+			pAiMaterial->GetTexture(type, i, &str, NULL, NULL, &blending, &op);
+
 			std::filesystem::path path(str.C_Str());
+			if (str.data[0] == '*') { // Texture is embeded
+				int index = std::atoi(str.data + 1);
+				aiTexture* pAiTex = ppAiTextures[index];
+				if (pAiTex->mHeight == 0) { // texture is compressed
+					path = std::string(pAiTex->mFilename.data) + "." +  std::string(pAiTex->achFormatHint);
+				}
+				else { // uncompressed
+					path = std::string(pAiTex->mFilename.data); // read from file anyway
+				}
+			}
+			path = directory / path;
 			
 			for (auto it = g_texturePaths.begin(); it != g_texturePaths.end() && !std::filesystem::exists(path); it++) {
 				path = directory / *it / path.filename();
@@ -93,16 +110,20 @@ namespace sa {
 			
 			path = std::filesystem::absolute(path);
 
-
 			Texture2D* tex = AssetManager::get().loadTexture(path, true);
 			if (!tex) {
 				DEBUG_LOG_ERROR("Failed to create texture,", path.string());
 				continue;
 			}
-			textures.push_back(*tex);
-			
+
+			DEBUG_LOG_INFO("Image found:", path.filename());
+			textures[i].texture = *tex;
+			textures[i].blendFactor = blending;
+			textures[i].blendOp = (TextureBlendOp)op;
+		
 		}
-		return textures;
+		
+		material.setTextures(textures, (MaterialTextureType)type);
 	}
 
 	AssetManager& AssetManager::get() {
@@ -150,16 +171,24 @@ namespace sa {
 		}
 
 		Assimp::Importer importer;
-		const aiScene* scene = importer.ReadFile(path.string(),
+
+		unsigned int flags = 
 			aiProcess_Triangulate |
 			aiProcess_FlipUVs |
 			aiProcess_JoinIdenticalVertices |
-			0
-		);
+			aiProcess_GenUVCoords |
+			aiProcess_ValidateDataStructure |
+			0;
+		if (!importer.ValidateFlags(flags)) {
+			DEBUG_LOG_ERROR("Assimp Flag validation failed");
+		}
+
+		const aiScene* scene = importer.ReadFile(path.string(), flags);
 
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
 			DEBUG_LOG_ERROR("Failed to read file ", path.string(), " : ", importer.GetErrorString());
 		}
+
 
 		DEBUG_LOG_INFO("Loaded file", path.string());
 		DEBUG_LOG_INFO("Meshes", scene->mNumMeshes);
@@ -207,36 +236,11 @@ namespace sa {
 			DEBUG_LOG_INFO("\tSpecular color {", material.values.specularColor.r, material.values.specularColor.g, material.values.specularColor.b, "}");
 
 			for (unsigned int i = aiTextureType::aiTextureType_NONE; i <= aiTextureType::aiTextureType_TRANSMISSION; i++) {
-				std::cout << i << ": " << aMaterial->GetTextureCount((aiTextureType)i) << std::endl;
+				//std::cout << i << ": " << aMaterial->GetTextureCount((aiTextureType)i) << std::endl;
+				loadMaterialTexture(material, path.parent_path(), (aiTextureType)i, scene->mTextures, aMaterial);
 			}
 
-			// Diffuse Texture
-			std::vector<Texture2D> diffuseTextures = loadMaterialTexture(path.parent_path(), aMaterial, aiTextureType::aiTextureType_DIFFUSE);
-			if (!diffuseTextures.empty()) {
-				material.setDiffuseMaps(diffuseTextures);
-				DEBUG_LOG_INFO("\tDiffuse Map found");
-			}
 
-			// Base Texture
-			std::vector<Texture2D> baseColorTextures = loadMaterialTexture(path.parent_path(), aMaterial, aiTextureType::aiTextureType_BASE_COLOR);
-			if (!baseColorTextures.empty()) {
-				material.setDiffuseMaps(baseColorTextures);
-				DEBUG_LOG_INFO("\Base Map found");
-			}
-
-			// Normal Texture
-			std::vector<Texture2D> normalTextures = loadMaterialTexture(path.parent_path(), aMaterial, aiTextureType::aiTextureType_NORMALS);
-			if (!normalTextures.empty()) {
-				material.setNormalMaps(normalTextures);
-				DEBUG_LOG_INFO("\Normal Map found");
-			}
-
-			// Specular Texture
-			std::vector<Texture2D> specularTextures = loadMaterialTexture(path.parent_path(), aMaterial, aiTextureType::aiTextureType_SPECULAR);
-			if (!specularTextures.empty()) {
-				material.setSpecularMaps(specularTextures);
-				DEBUG_LOG_INFO("\Specular Map found");
-			}
 
 			ResourceID matId = sa::ResourceManager::get().insert<Material>(material);
 			DEBUG_LOG_INFO("\tRecieved ID:", matId);

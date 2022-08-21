@@ -36,8 +36,8 @@ namespace sa {
 		TextureTypeFlags m_type;
 		
 		Texture(VulkanCore* pCore);
-		Texture();
 	public:
+		Texture();
 
 		Extent getExtent() const;
 		virtual uint32_t getDepth() const;

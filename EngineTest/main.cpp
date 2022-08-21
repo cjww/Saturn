@@ -65,6 +65,14 @@ void createBox(sa::Engine& engine) {
 	entity.addComponent<comp::Transform>()->position = { (float)randomRange(-50, 50), (float)randomRange(-50, 50), randomRange(-10, 40) };
 }
 
+void createModelEntity(sa::Engine& engine, const char* modelPath, float scale = 1.0f) {
+	sa::Entity entity = engine.getCurrentScene()->createEntity();
+	entity.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadModel(modelPath);
+	comp::Transform* transform = entity.addComponent<comp::Transform>();
+	transform->position = { (float)randomRange(-30, 30), (float)randomRange(-30, 30), randomRange(-10, 40) };
+	transform->scale *= scale;
+}
+
 
 void regenerate(sa::Scene* scene) {
 	scene->forEach<comp::Model>([](comp::Model& model) {
@@ -116,39 +124,35 @@ int main() {
 
 	sa::CameraController controller(window, camera);
 	
+	/*
 	sa::Entity entity = engine.getCurrentScene()->createEntity();
 	entity.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadModel("Suzanne.dae");
 	entity.addComponent<comp::Transform>();
+	*/
 
 	sa::Entity entity1 = engine.getCurrentScene()->createEntity();
-	//entity1.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadModel(".dae");
 	comp::Transform* transform = entity1.addComponent<comp::Transform>();
 	transform->position = sa::Vector3(2, 0, 0);
 	//transform->scale = { .01f, .01f, .01f };
+	transform->scale = { 100.f, 100.f, 100.f };
 
-	//entity1.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadModel("May holiday/Model/May holiday.fbx");
-	//entity1.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadModel("stone_ore_1/stone_ore_sample_low.fbx");
-	//entity1.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadModel("stone_ore_1/stone_ore.fbx");
-	entity1.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadModel("Survival_BackPack_2/Survival_BackPack.fbx");
+	//entity1.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadModel("Survival_BackPack_2/Survival_BackPack.fbx");
+	//entity1.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadModel("survival_guitar_backpack/scene.gltf");
+	entity1.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadModel("adamHead/adamHead.gltf");
 
-
+	//createModelEntity(engine, "stone_ore_1/stone_ore.fbx");
+	//createModelEntity(engine, "May holiday/Model/May holiday.fbx", 0.01f);
 
 
 
 	for (int i = 0; i < 1000; i++) {
 		//createTriangleEntity(engine);
 		//createQuad(engine);
-		createBox(engine);
+		//createBox(engine);
 	}
 
 	engine.createSystemScript("test.lua");
 	
-
-	sa::Entity quad = engine.getCurrentScene()->createEntity("Actor");
-	quad.addComponent<comp::Transform>();
-	quad.addComponent<comp::Script>();
-
-	//quad.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadQuad();
 
 
 	sa::Image image("Box.png");
@@ -162,7 +166,7 @@ int main() {
 	sa::Clock fpsClock;
 
 	sa::Clock generateTimer;
-	while (window.isOpen()) {
+ 	while (window.isOpen()) {
 		window.pollEvents();
 		float dt = clock.restart();
 		timer += dt;
