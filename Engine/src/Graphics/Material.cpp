@@ -57,8 +57,11 @@ namespace sa {
 	void Material::update() {
 		Renderer& renderer = Renderer::get();
 		values.diffuseMapCount = m_textures[MaterialTextureType::DIFFUSE].size();
+		values.diffuseMapFirst = 0;
 		values.normalMapCount = m_textures[MaterialTextureType::NORMALS].size();
+		values.normalMapFirst = values.diffuseMapCount;
 		values.specularMapCount = m_textures[MaterialTextureType::SPECULAR].size();
+		values.specularMapFirst = values.normalMapFirst;
 
 		if (m_valueBuffer.isValid()) {
 			m_valueBuffer.write(values);
@@ -70,6 +73,7 @@ namespace sa {
 
 		std::vector<Texture> textures = m_textures[MaterialTextureType::DIFFUSE];
 		textures.insert(textures.end(), m_textures[MaterialTextureType::NORMALS].begin(), m_textures[MaterialTextureType::NORMALS].end());
+		textures.insert(textures.end(), m_textures[MaterialTextureType::SPECULAR].begin(), m_textures[MaterialTextureType::SPECULAR].end());
 
 		renderer.updateDescriptorSet(m_descriptorSet, 2, textures);
 
@@ -108,16 +112,5 @@ namespace sa {
 	void Material::setTextures(const std::vector<BlendedTexture>& textures, MaterialTextureType type) {
 		setTextures(textures, type, values.diffuseMapCount);
 	}
-
-	bool Material::operator==(const Material& other) {
-		return values.diffuseColor == other.values.diffuseColor &&
-			values.specularColor == other.values.specularColor &&
-			utils::equals(values.roughness, other.values.roughness);
-			
-			//&&
-			//m_diffuseMaps == other.m_diffuseMaps &&
-			//m_normalMaps == other.m_normalMaps &&
-			//m_specularMaps == other.m_specularMaps;
-	}
-
+	
 }

@@ -212,13 +212,24 @@ namespace sa {
 		struct Values { // sent to shader
 			Color diffuseColor = { 1, 1, 1, 1 };
 			Color specularColor = { 1, 1, 1, 1 };
+			Color ambientColor = { 1, 1, 1, 1 };
+			Color emissiveColor = { 1, 1, 1, 1 };
 
+			uint32_t diffuseMapFirst = 0;
 			uint32_t diffuseMapCount = 0;
+
+			uint32_t normalMapFirst = 0;
 			uint32_t normalMapCount = 0;
+
+			uint32_t specularMapFirst = 0;
 			uint32_t specularMapCount = 0;
 			
-			float roughness;
+			uint32_t emissiveMapFirst = 0;
+			uint32_t emissiveMapCount = 0;
 
+			float opacity;
+			float shininess;
+			float shininessStrength;
 		} values;
 
 		Material();
@@ -232,7 +243,5 @@ namespace sa {
 	
 		void setTextures(const std::vector<BlendedTexture>& textures, MaterialTextureType type);
 		
-		bool operator==(const Material& other);
-
 	};
 }

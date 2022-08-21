@@ -28,6 +28,8 @@ namespace sa {
 	};
 
 	void processNode(const aiScene* scene, const aiNode* node, ModelData* pModelData) {
+		DEBUG_LOG_INFO("Processing Node :", node->mName.C_Str());
+
 		for (int i = 0; i < node->mNumMeshes; i++) {
 			Mesh mesh = {};
 			const aiMesh* aMesh = scene->mMeshes[node->mMeshes[i]];
@@ -37,6 +39,8 @@ namespace sa {
 
 			std::unordered_map<VertexUV, uint32_t> vertexIndices;
 			
+			DEBUG_LOG_INFO("Processing mesh :", aMesh->mName.C_Str());
+
 			for (int j = 0; j < aMesh->mNumFaces; j++) {
 				aiFace face = aMesh->mFaces[j];
 
@@ -51,6 +55,7 @@ namespace sa {
 						aiVector3D texCoord = aMesh->mTextureCoords[0][face.mIndices[k]]; // assumes 1 tex coord per vertex
 						vertex.texCoord = { texCoord.x, texCoord.y };
 					}
+					
 					if (vertexIndices.count(vertex)) {
 						indices.push_back(vertexIndices.at(vertex));
 						continue;
@@ -126,6 +131,14 @@ namespace sa {
 		material.setTextures(textures, (MaterialTextureType)type);
 	}
 
+	sa::Color getColor(aiMaterial* pMaterial, const char* pKey, unsigned int type, unsigned int idx, sa::Color defaultColor = SA_COLOR_WHITE) {
+		aiColor3D color = {};
+		pMaterial->Get(pKey, type, idx, color);
+		if (!color.IsBlack())
+			return { color.r, color.g, color.b, 1 };
+		return defaultColor;
+	}
+
 	AssetManager& AssetManager::get() {
 		static AssetManager instance;
 		return instance;
@@ -190,18 +203,11 @@ namespace sa {
 		}
 
 
-		DEBUG_LOG_INFO("Loaded file", path.string());
-		DEBUG_LOG_INFO("Meshes", scene->mNumMeshes);
-		for (int i = 0; i < scene->mNumMeshes; i++) {
-			aiMesh* m = scene->mMeshes[i];
-			DEBUG_LOG_INFO("\t", i);
-			DEBUG_LOG_INFO("\tVertices", m->mNumVertices);
-			DEBUG_LOG_INFO("\tBones", m->mNumBones);
-			DEBUG_LOG_INFO("\tMaterial", m->mMaterialIndex);
-		}
-
-		DEBUG_LOG_INFO("Animations", scene->mNumAnimations);
-		DEBUG_LOG_INFO("Lights", scene->mNumLights);
+		DEBUG_LOG_INFO(
+			"Loaded file", path.string(),
+			"\nMeshes", scene->mNumMeshes,
+			"\nAnimations", scene->mNumAnimations,
+			"\nLights", scene->mNumLights);
 
 
 
@@ -218,32 +224,26 @@ namespace sa {
 			aiMaterial* aMaterial = scene->mMaterials[i];
 			Material material;
 
-			DEBUG_LOG_INFO("\t[", i, "]:");
-
 			// Diffuse Color
-			aiColor3D color = {};
-			aMaterial->Get(AI_MATKEY_COLOR_DIFFUSE, color);
-			if(!color.IsBlack())
-				material.values.diffuseColor = { color.r, color.g, color.b, 1 };
-			
+			material.values.diffuseColor = getColor(aMaterial, AI_MATKEY_COLOR_DIFFUSE);
 			// Specular Color
-			aMaterial->Get(AI_MATKEY_COLOR_SPECULAR, color);
-			if (!color.IsBlack())
-				material.values.specularColor = { color.r, color.g, color.b, 1 };
+			material.values.specularColor = getColor(aMaterial, AI_MATKEY_COLOR_SPECULAR);
+
+			// Ambient Color
+			material.values.ambientColor = getColor(aMaterial, AI_MATKEY_COLOR_AMBIENT);
+			// Emissive Color
+			material.values.emissiveColor = getColor(aMaterial, AI_MATKEY_COLOR_EMISSIVE, SA_COLOR_BLACK);
 
 
-			DEBUG_LOG_INFO("\tDiffuse color {", material.values.diffuseColor.r, material.values.diffuseColor.g, material.values.diffuseColor.b, "}");
-			DEBUG_LOG_INFO("\tSpecular color {", material.values.specularColor.r, material.values.specularColor.g, material.values.specularColor.b, "}");
+			aMaterial->Get(AI_MATKEY_OPACITY, material.values.opacity);
+			aMaterial->Get(AI_MATKEY_SHININESS, material.values.shininess);
+			aMaterial->Get(AI_MATKEY_SHININESS_STRENGTH, material.values.shininessStrength);
 
 			for (unsigned int i = aiTextureType::aiTextureType_NONE; i <= aiTextureType::aiTextureType_TRANSMISSION; i++) {
-				//std::cout << i << ": " << aMaterial->GetTextureCount((aiTextureType)i) << std::endl;
 				loadMaterialTexture(material, path.parent_path(), (aiTextureType)i, scene->mTextures, aMaterial);
 			}
 
-
-
 			ResourceID matId = sa::ResourceManager::get().insert<Material>(material);
-			DEBUG_LOG_INFO("\tRecieved ID:", matId);
 			materials.push_back(matId);
 		}
 

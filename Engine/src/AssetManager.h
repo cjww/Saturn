@@ -40,9 +40,6 @@ namespace sa {
 
 		AssetManager();
 
-		//void processNode(const aiScene* scene, const aiNode* node, ModelData* pModelData);
-		
-
 	public:
 		~AssetManager();
 	
