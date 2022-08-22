@@ -6,6 +6,9 @@
 
 #define MAX_VIEWPORT_COUNT 4
 
+#include "Tools\Vector.h"
+#include "Tools\Matrix.h"
+
 namespace sa {
 	struct PerObjectBuffer {
 		glm::mat4 worldMatrix;
@@ -13,5 +16,6 @@ namespace sa {
 
 	struct PerFrameBuffer {
 		glm::mat4 projViewMatrix;
+		Vector3 viewPos;
 	};
 }

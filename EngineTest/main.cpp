@@ -124,6 +124,25 @@ int main() {
 
 	sa::CameraController controller(window, camera);
 	
+	engine.getCurrentScene()->on<sa::event::ComponentCreated<comp::Light>>([](auto& event, sa::Scene& scene) {
+		
+	});
+	
+	sa::Entity light = engine.getCurrentScene()->createEntity("Light");
+	comp::Light* lightComp = light.addComponent<comp::Light>();
+	lightComp->values.color = SA_COLOR_WHITE;
+	lightComp->values.position = { 3, -2, 3};
+	lightComp->values.strength = 5.0f;
+
+
+	sa::Entity light2 = engine.getCurrentScene()->createEntity("Light2");
+	lightComp = light2.addComponent<comp::Light>();
+	lightComp->values.color = {1.0f, 0.3f, 0.3f, 1.0f};
+	lightComp->values.position = { -5, -2.5, 5};
+	lightComp->values.strength = 7.0f;
+
+
+	engine.setScene(*engine.getCurrentScene());
 	/*
 	sa::Entity entity = engine.getCurrentScene()->createEntity();
 	entity.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadModel("Suzanne.dae");
@@ -135,11 +154,10 @@ int main() {
 	transform->position = sa::Vector3(2, 0, 0);
 	//transform->scale = { .01f, .01f, .01f };
 	transform->scale = { 100.f, 100.f, 100.f };
-
 	//entity1.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadModel("Survival_BackPack_2/Survival_BackPack.fbx");
 	//entity1.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadModel("survival_guitar_backpack/scene.gltf");
 	entity1.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadModel("adamHead/adamHead.gltf");
-
+	entity1.addComponent<comp::Script>();
 	//createModelEntity(engine, "stone_ore_1/stone_ore.fbx");
 	//createModelEntity(engine, "May holiday/Model/May holiday.fbx", 0.01f);
 

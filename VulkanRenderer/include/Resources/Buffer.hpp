@@ -55,6 +55,8 @@ namespace sa {
 		void write(void* data, size_t size, int offset = 0);
 		void append(void* data, size_t size);
 
+		void clear();
+
 		template<typename T>
 		size_t getElementCount() const;
 
@@ -80,6 +82,12 @@ namespace sa {
 
 		template<typename T>
 		Buffer& operator<<(const T& value);
+
+		template<typename T>
+		Buffer& operator<<(std::vector<T>& values);
+
+		template<typename T, size_t Size>
+		Buffer& operator<<(std::array<T, Size>& values);
 
 	};
 
@@ -114,6 +122,18 @@ namespace sa {
 	template<typename T>
 	inline Buffer& Buffer::operator<<(const T& value) {
 		append((void*)&value, sizeof(T));
+		return *this;
+	}
+
+	template<typename T>
+	inline Buffer& Buffer::operator<<(std::vector<T>& values) {
+		append(values.data(), values.size() * sizeof(T));
+		return *this;
+	}
+
+	template<typename T, size_t Size>
+	inline Buffer& Buffer::operator<<(std::array<T, Size>& values) {
+		append(values.data(), Size * sizeof(T));
 		return *this;
 	}
 }

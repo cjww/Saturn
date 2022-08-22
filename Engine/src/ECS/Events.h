@@ -3,6 +3,7 @@
 #include "Entity.h"
 
 namespace sa {
+	
 	namespace event {
 
 		struct SceneSet {
@@ -28,5 +29,19 @@ namespace sa {
 		struct UpdatedScene {
 			float dt;
 		};
+
+		template<typename T>
+		struct ComponentCreated {
+			Entity entity;
+			T& component;
+		};
+
+		template<typename T>
+		struct ComponentDestroyed {
+			Entity entity;
+			T& component;
+		};
+
+
 	}
 }

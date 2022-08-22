@@ -28,7 +28,6 @@ namespace sa {
 		ResourceID m_materialDescriptorSet;
 
 		sa::Buffer m_perFrameBuffer;
-		sa::Buffer m_lightBuffer;
 
 
 		ResourceID m_imguiRenderProgram;
@@ -45,13 +44,8 @@ namespace sa {
 
 		ResourceID m_sampler;
 		
+		sa::Buffer m_lightBuffer;
 		
-		//DEBUG 
-		std::unordered_map<ResourceID, std::vector<Mesh*>> m_materialMeshes;
-		
-
-		float timer = 0.0f;
-
 		void createTextures(sa::Extent extent);
 		void createRenderPasses();
 		void createFramebuffers(sa::Extent extent);
@@ -71,6 +65,7 @@ namespace sa {
 
 		virtual sa::Texture getOutputTexture() const override;
 
+		virtual void updateLights(Scene* pScene) override;
 	};
 
 }

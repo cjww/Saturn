@@ -166,6 +166,8 @@ namespace sa {
 		m_postInputDescriptorSet = m_renderer.allocateDescriptorSet(m_postRenderProgram, 0);
 		m_renderer.updateDescriptorSet(m_postInputDescriptorSet, 0, m_mainColorTexture, m_sampler);
 		
+		m_lightBuffer = m_renderer.createBuffer(sa::BufferType::UNIFORM);
+
 		// DEBUG
 		
 
@@ -182,17 +184,8 @@ namespace sa {
 	}
 
 	void ForwardRenderer::draw(Scene* scene) {
-		timer += 0.01f;
 
-		/*
-		unsigned char pixels[] = {
-			0, (std::sin(timer) + 1) * 0.5f * 255, 255, 255
-		};
-		m_renderer->updateTexture(m_defaultTexture, m_mainFramebuffer, m_mainRenderPass, 0, pixels, 4);
-		*/		
-		
-
-
+		//updateLights(scene);
 
 		sa::RenderContext context = m_pWindow->beginFrame();
 		if (!context) {
@@ -222,11 +215,11 @@ namespace sa {
 				perObject.worldMatrix = glm::mat4(1);
 
 				perObject.worldMatrix = glm::translate(perObject.worldMatrix, transform.position);
-				perObject.worldMatrix = glm::rotate(perObject.worldMatrix, transform.rotation.x, glm::vec3(1, 0, 0));
-				perObject.worldMatrix = glm::rotate(perObject.worldMatrix, transform.rotation.y, glm::vec3(0, 1, 0));
-				perObject.worldMatrix = glm::rotate(perObject.worldMatrix, transform.rotation.z, glm::vec3(0, 0, 1));
+				perObject.worldMatrix = glm::rotate(perObject.worldMatrix, glm::radians(transform.rotation.x), glm::vec3(1, 0, 0));
+				perObject.worldMatrix = glm::rotate(perObject.worldMatrix, glm::radians(transform.rotation.y), glm::vec3(0, 1, 0));
+				perObject.worldMatrix = glm::rotate(perObject.worldMatrix, glm::radians(transform.rotation.z), glm::vec3(0, 0, 1));
 				perObject.worldMatrix = glm::scale(perObject.worldMatrix, transform.scale);
-
+				 
 				for (auto& mesh : model->meshes) {
 					meshes[mesh.materialID].push_back({ &mesh, perObject.worldMatrix });
 				}
@@ -236,6 +229,7 @@ namespace sa {
 				
 				PerFrameBuffer perFrame;
 				perFrame.projViewMatrix = camera->getProjectionMatrix() * camera->getViewMatrix();
+				perFrame.viewPos = camera->getPosition();
 				m_perFrameBuffer.write(perFrame);
 				context.updateDescriptorSet(m_perFrameDescriptorSet, 0, m_perFrameBuffer);
 
@@ -329,6 +323,25 @@ namespace sa {
 
 	sa::Texture ForwardRenderer::getOutputTexture() const {
 		return m_outputTexture;
+	}
+
+	void ForwardRenderer::updateLights(Scene* pScene) {
+		std::vector<LightData> lights;
+		pScene->forEach<comp::Light>([&](const comp::Light& light) {
+			lights.push_back(light.values);
+		});
+		m_lightBuffer.clear();
+
+		struct L {
+			uint32_t count;
+			alignas(16) LightData lights[4];
+		};
+		L lightsStruct;
+		lightsStruct.count = lights.size();
+		memcpy(lightsStruct.lights, lights.data(), lights.size() * sizeof(LightData));
+
+		m_lightBuffer.write(lightsStruct);
+		m_renderer.updateDescriptorSet(m_perFrameDescriptorSet, 1, m_lightBuffer);
 	}
 
 }

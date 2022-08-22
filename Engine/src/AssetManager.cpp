@@ -34,10 +34,10 @@ namespace sa {
 			Mesh mesh = {};
 			const aiMesh* aMesh = scene->mMeshes[node->mMeshes[i]];
 			
-			std::vector<VertexUV> vertices;
+			std::vector<VertexNormalUV> vertices;
 			std::vector<uint32_t> indices;
 
-			std::unordered_map<VertexUV, uint32_t> vertexIndices;
+			std::unordered_map<VertexNormalUV, uint32_t> vertexIndices;
 			
 			DEBUG_LOG_INFO("Processing mesh :", aMesh->mName.C_Str());
 
@@ -45,15 +45,21 @@ namespace sa {
 				aiFace face = aMesh->mFaces[j];
 
 				for (int k = 0; k < face.mNumIndices; k++) {
-					sa::VertexUV vertex = {};
+					sa::VertexNormalUV vertex = {};
 					
 					aiVector3D pos = aMesh->mVertices[face.mIndices[k]];
 					pos = node->mTransformation * pos; // TODO not sure how good this is
-
 					vertex.position = { pos.x, pos.y, pos.z , 1.f };
+
 					if (aMesh->HasTextureCoords(0)) {
 						aiVector3D texCoord = aMesh->mTextureCoords[0][face.mIndices[k]]; // assumes 1 tex coord per vertex
 						vertex.texCoord = { texCoord.x, texCoord.y };
+					}
+
+					if (aMesh->HasNormals()) {
+						aiVector3D normal = aMesh->mNormals[face.mIndices[k]]; // assumes 1 tex coord per vertex
+						normal = node->mTransformation * normal;
+						vertex.normal = { normal.x, normal.y, normal.z, 1.f };
 					}
 					
 					if (vertexIndices.count(vertex)) {
@@ -121,7 +127,7 @@ namespace sa {
 				continue;
 			}
 
-			DEBUG_LOG_INFO("Image found:", path.filename());
+			DEBUG_LOG_INFO("Image found:", path.filename(), ", type:", toString((MaterialTextureType)type));
 			textures[i].texture = *tex;
 			textures[i].blendFactor = blending;
 			textures[i].blendOp = (TextureBlendOp)op;
@@ -237,7 +243,7 @@ namespace sa {
 
 			aMaterial->Get(AI_MATKEY_OPACITY, material.values.opacity);
 			aMaterial->Get(AI_MATKEY_SHININESS, material.values.shininess);
-			aMaterial->Get(AI_MATKEY_SHININESS_STRENGTH, material.values.shininessStrength);
+			aMaterial->Get(AI_MATKEY_METALLIC_FACTOR, material.values.metallic);
 
 			for (unsigned int i = aiTextureType::aiTextureType_NONE; i <= aiTextureType::aiTextureType_TRANSMISSION; i++) {
 				loadMaterialTexture(material, path.parent_path(), (aiTextureType)i, scene->mTextures, aMaterial);

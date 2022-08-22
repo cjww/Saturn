@@ -134,13 +134,18 @@ namespace sa {
 	}
 
 	Scene& Engine::getScene(const std::string& name) {
-		return m_scenes[std::hash<std::string>()(name)];
+		size_t size = m_scenes.size();
+		Scene& scene = m_scenes[std::hash<std::string>()(name)];
+		if (size != m_scenes.size()) {
+			// first use
+
+		}
+		return scene;
 	}
 
 	Scene* Engine::getCurrentScene() const {
 		return m_currentScene;
 	}
-
 
 	void Engine::setScene(const std::string& name) {
 		setScene(getScene(name));
@@ -148,7 +153,7 @@ namespace sa {
 
 	void Engine::setScene(Scene& scene) {
 		m_currentScene = &scene;
-		
+		m_pRenderTechnique->updateLights(&scene);
 		if(m_isSetup)
 			init();
 	}

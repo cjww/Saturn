@@ -58,10 +58,18 @@ namespace sa {
 		Renderer& renderer = Renderer::get();
 		values.diffuseMapCount = m_textures[MaterialTextureType::DIFFUSE].size();
 		values.diffuseMapFirst = 0;
+		
 		values.normalMapCount = m_textures[MaterialTextureType::NORMALS].size();
 		values.normalMapFirst = values.diffuseMapCount;
+		
 		values.specularMapCount = m_textures[MaterialTextureType::SPECULAR].size();
-		values.specularMapFirst = values.normalMapFirst;
+		values.specularMapFirst = values.normalMapFirst + values.normalMapCount;
+		
+		values.emissiveMapCount = m_textures[MaterialTextureType::EMISSIVE].size();
+		values.emissiveMapFirst = values.specularMapFirst + values.specularMapCount;
+
+		values.lightMapCount = m_textures[MaterialTextureType::LIGHTMAP].size();
+		values.lightMapFirst = values.emissiveMapFirst + values.emissiveMapCount;
 
 		if (m_valueBuffer.isValid()) {
 			m_valueBuffer.write(values);
@@ -74,31 +82,10 @@ namespace sa {
 		std::vector<Texture> textures = m_textures[MaterialTextureType::DIFFUSE];
 		textures.insert(textures.end(), m_textures[MaterialTextureType::NORMALS].begin(), m_textures[MaterialTextureType::NORMALS].end());
 		textures.insert(textures.end(), m_textures[MaterialTextureType::SPECULAR].begin(), m_textures[MaterialTextureType::SPECULAR].end());
+		textures.insert(textures.end(), m_textures[MaterialTextureType::EMISSIVE].begin(), m_textures[MaterialTextureType::EMISSIVE].end());
+		textures.insert(textures.end(), m_textures[MaterialTextureType::LIGHTMAP].begin(), m_textures[MaterialTextureType::LIGHTMAP].end());
 
 		renderer.updateDescriptorSet(m_descriptorSet, 2, textures);
-
-		/*
-		renderer.updateDescriptorSet(m_descriptorSet, 3, m_textures[MaterialTextureType::NORMALS]);
-		renderer.updateDescriptorSet(m_descriptorSet, 4, m_textures[MaterialTextureType::SPECULAR]);
-		while (m_diffuseMaps.size() < MAX_TEXTURE_MAP_COUNT) {
-			m_diffuseMaps.push_back(*sa::AssetManager::get().loadDefaultTexture());
-			values.diffuseMapCount = m_diffuseMaps.size();
-		}
-		renderer.updateDescriptorSet(m_descriptorSet, 2, m_diffuseMaps);
-
-		while (m_normalMaps.size() < MAX_TEXTURE_MAP_COUNT) {
-			m_normalMaps.push_back(*sa::AssetManager::get().loadDefaultTexture());
-			values.normalMapCount = m_normalMaps.size();
-		}
-		renderer.updateDescriptorSet(m_descriptorSet, 3, m_normalMaps);
-
-		while (m_specularMaps.size() < MAX_TEXTURE_MAP_COUNT) {
-			m_specularMaps.push_back(*sa::AssetManager::get().loadDefaultTexture());
-			values.specularMapCount = m_specularMaps.size();
-		}
-		renderer.updateDescriptorSet(m_descriptorSet, 4, m_specularMaps);
-		*/
-
 
 	}
 
@@ -113,4 +100,55 @@ namespace sa {
 		setTextures(textures, type, values.diffuseMapCount);
 	}
 	
+	std::string toString(MaterialTextureType type) {
+		switch (type) {
+		case MaterialTextureType::AMBIENT:
+			return "AMBIENT";
+		case MaterialTextureType::AMBIENT_OCCLUSION:
+			return "AMBIENT_OCCLUSION";
+		case MaterialTextureType::BASE_COLOR:
+			return "BASE_COLOR";
+		case MaterialTextureType::CLEARCOAT:
+			return "CLEARCOAT";
+		case MaterialTextureType::DIFFUSE:
+			return "DIFFUSE";
+		case MaterialTextureType::DIFFUSE_ROUGHNESS:
+			return "DIFFUSE_ROUGHNESS";
+		case MaterialTextureType::DISPLACEMENT:
+			return "DISPLACEMENT";
+		case MaterialTextureType::EMISSION_COLOR:
+			return "EMISSION_COLOR";
+		case MaterialTextureType::EMISSIVE:
+			return "EMISSIVE";
+		case MaterialTextureType::HEIGHT:
+			return "HEIGHT";
+		case MaterialTextureType::LIGHTMAP:
+			return "LIGHTMAP";
+		case MaterialTextureType::METALNESS:
+			return "METALNESS";
+		case MaterialTextureType::NONE:
+			return "NONE";
+		case MaterialTextureType::NORMALS:
+			return "NORMALS";
+		case MaterialTextureType::NORMAL_CAMERA:
+			return "NORMAL_CAMERA";
+		case MaterialTextureType::OPACITY:
+			return "OPACITY";
+		case MaterialTextureType::REFLECTION:
+			return "REFLECTION";
+		case MaterialTextureType::SHEEN:
+			return "SHEEN";
+		case MaterialTextureType::SHININESS:
+			return "SHININESS";
+		case MaterialTextureType::SPECULAR:
+			return "SPECULAR";
+		case MaterialTextureType::TRANSMISSION:
+			return "TRANSMISSION";
+		case MaterialTextureType::UNKNOWN:
+			return "UNKNOWN";
+		default:
+			return "-";
+		}
+	}
+
 }

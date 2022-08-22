@@ -172,6 +172,10 @@ namespace sa {
 		m_size += size;
 	}
 
+	void Buffer::clear() {
+		m_size = 0;
+	}
+
 	void* Buffer::data() {
 		return m_pBuffer->mappedData;
 	}

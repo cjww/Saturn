@@ -168,6 +168,8 @@ namespace sa {
 		UNKNOWN = 18,
 	};
 
+	std::string toString(MaterialTextureType type);
+
 	enum class TextureBlendOp {
 		/** T = T1 * T2 */
 		MULTIPLY = 0x0,
@@ -227,9 +229,12 @@ namespace sa {
 			uint32_t emissiveMapFirst = 0;
 			uint32_t emissiveMapCount = 0;
 
+			uint32_t lightMapFirst = 0;
+			uint32_t lightMapCount = 0;
+
 			float opacity;
 			float shininess;
-			float shininessStrength;
+			float metallic;
 		} values;
 
 		Material();
