@@ -44,12 +44,19 @@ struct Light {
 
 layout(set = 0, binding = 1, std140) uniform Lights {
     uint lightCount;
-    Light lights[4];
+    Light lights[8];
 } lightBuffer;
 
 void main() {
+    /*
+    out_color = vec4(material.opacity, 0, 0, 1);
+    return;
+    out_color = material.diffuseColor * texture(sampler2D(textures[material.diffuseMapFirst], samp), in_vertexUV);
+    return;
+    */
+
     out_brightness = vec4(1, 0, 0, 1);
-    vec4 ambientColor = material.ambientColor;
+    vec4 ambientColor = material.ambientColor * 0.1;
     vec4 diffuseColor = vec4(0, 0, 0, 1);
     vec4 specularColor = vec4(0, 0, 0, 1);
 
@@ -84,7 +91,7 @@ void main() {
             
             vec3 reflectDir = reflect(-toLight, in_vertexWorldNormal);
             float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-            specularColor += spec * light.color;
+            specularColor += radiance * spec;
         }
     }
     
@@ -93,7 +100,7 @@ void main() {
         vec4 color = texture(sampler2D(textures[material.lightMapFirst], samp), in_vertexUV);
         occlusion = color.r;
     }
-    
+  
     vec4 finalColor = (ambientColor + diffuseColor + specularColor) * occlusion * objectColor;
-    out_color = vec4(min(finalColor.xyz, 1), 1);
+    out_color = vec4(min(finalColor.xyz, 1), material.opacity);
 }

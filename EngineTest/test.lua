@@ -11,11 +11,11 @@ function init()
 
     --print("hello from entity " .. entity.name .. " : " .. entity.id)
     originalpos = transform.position.y
-    transform.rotation.x = -90;
+    --transform.rotation.x = -90;
 end
 
 function update(dt)
     timer = timer + dt;
-    transform.rotation.z = transform.rotation.z + dt * 10;
+    transform.rotation.y = transform.rotation.y + dt * 10;
     --transform.position.y = originalpos + math.sin(timer * 10)
 end

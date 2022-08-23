@@ -17,7 +17,7 @@ float normpdf(in float x, in float sigma)
 void main() {
     //out_color = subpassLoad(inputColor);
 	vec2 in_uv = in_vertPos / 2 + 0.5;
-	out_color = texture(texSampler, in_uv);
+	out_color = vec4(texture(texSampler, in_uv).xyz, 1);
 	return;
 	//declare stuff
 	const int mSize = 11;

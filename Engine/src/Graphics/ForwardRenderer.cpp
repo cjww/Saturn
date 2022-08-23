@@ -91,7 +91,7 @@ namespace sa {
 
 
 		m_colorPipeline = m_renderer.createGraphicsPipeline(m_colorRenderProgram, 0, extent,
-			"../Engine/shaders/Texture.vert.spv", "../Engine/shaders/Texture.frag.spv");
+			"../Engine/shaders/ForwardColorPass.vert.spv", "../Engine/shaders/ForwardColorPass.frag.spv");
 
 		m_postProcessPipeline = m_renderer.createGraphicsPipeline(m_postRenderProgram, 0, extent,
 			"../Engine/shaders/PostProcess.vert.spv", "../Engine/shaders/PostProcess.frag.spv");
@@ -119,7 +119,6 @@ namespace sa {
 		createRenderPasses();
 		createFramebuffers(windowExtent);
 
-		
 		m_colorPipeline = m_renderer.createGraphicsPipeline(m_colorRenderProgram, 0, windowExtent,
 			"../Engine/shaders/ForwardColorPass.vert.spv", "../Engine/shaders/ForwardColorPass.frag.spv");
 
@@ -147,17 +146,11 @@ namespace sa {
 
 		// Buffers DescriptorSets
 		PerFrameBuffer perFrame = {};
-		glm::mat4 proj = glm::perspective(glm::radians(60.f), 1000.f / 600.f, 0.001f, 100.0f);
-		glm::mat4 view = glm::lookAt(glm::vec3(0, 0, 1), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0));
-		perFrame.projViewMatrix = proj * view;
+		perFrame.projViewMatrix = sa::Matrix4x4(1);
 		m_perFrameBuffer = m_renderer.createBuffer(sa::BufferType::UNIFORM, sizeof(PerFrameBuffer), &perFrame);
 
 		m_perFrameDescriptorSet = m_renderer.allocateDescriptorSet(m_colorPipeline, SET_PER_FRAME);
 		m_renderer.updateDescriptorSet(m_perFrameDescriptorSet, 0, m_perFrameBuffer);
-
-
-		//m_pLightBuffer = m_renderer->createUniformBuffer(sizeof(Light) * 64, nullptr);
-		//m_renderer->updateDescriptorSet(m_pPerFrameDescriptorSet, 1, m_pLightBuffer, nullptr, nullptr, true);
 
 		// Sampler
 		m_sampler = m_renderer.createSampler(sa::FilterMode::LINEAR);
@@ -167,8 +160,6 @@ namespace sa {
 		m_renderer.updateDescriptorSet(m_postInputDescriptorSet, 0, m_mainColorTexture, m_sampler);
 		
 		m_lightBuffer = m_renderer.createBuffer(sa::BufferType::UNIFORM);
-
-		// DEBUG
 		
 
 	}
@@ -277,8 +268,29 @@ namespace sa {
 
 				});					
 				*/
-				
+				std::unordered_map<ResourceID, std::vector<std::tuple<Mesh*, Matrix4x4>>> transparentMaterials;
 				for (const auto& [materialID, pMeshes] : meshes) {
+					Material* mat = AssetManager::get().getMaterial(materialID);
+					if (mat->values.opacity < 1.0f) {
+						transparentMaterials[materialID] = pMeshes;
+						continue;
+					}
+					mat->bind(context, m_colorPipeline, m_sampler);
+					for (const auto& [pMesh, matrix] : pMeshes) {
+						context.pushConstant(m_colorPipeline, sa::ShaderStageFlagBits::VERTEX, matrix);
+
+						context.bindVertexBuffers(0, { pMesh->vertexBuffer });
+						if (pMesh->indexBuffer.isValid()) {
+							context.bindIndexBuffer(pMesh->indexBuffer);
+							context.drawIndexed(pMesh->indexBuffer.getElementCount<uint32_t>(), 1);
+						}
+						else {
+							context.draw(pMesh->vertexBuffer.getElementCount<VertexUV>(), 1);
+						}
+					}
+				}
+
+				for (const auto& [materialID, pMeshes] : transparentMaterials) {
 					Material* mat = AssetManager::get().getMaterial(materialID);
 					mat->bind(context, m_colorPipeline, m_sampler);
 					for (const auto& [pMesh, matrix] : pMeshes) {
@@ -334,7 +346,7 @@ namespace sa {
 
 		struct L {
 			uint32_t count;
-			alignas(16) LightData lights[4];
+			alignas(16) LightData lights[8];
 		};
 		L lightsStruct;
 		lightsStruct.count = lights.size();

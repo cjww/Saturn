@@ -34,6 +34,7 @@ namespace sa {
 		: m_pipeline(NULL_RESOURCE)
 		, m_sampler(NULL_RESOURCE)
 		, m_descriptorSet(NULL_RESOURCE)
+		, twoSided(false)
 	{
 	}
 

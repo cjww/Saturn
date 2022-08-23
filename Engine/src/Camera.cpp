@@ -3,7 +3,7 @@
 namespace sa {
     void Camera::updateProjection() {
         m_projMat = glm::perspective(m_fov, m_apectRatio, m_near, m_far);
-        
+        m_projMat[1][1] *= -1;
     }
 
     Camera::Camera()

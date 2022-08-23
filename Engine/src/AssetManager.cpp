@@ -15,17 +15,44 @@
 
 namespace sa {
 
-	std::vector<std::filesystem::path> g_texturePaths = {
-		"",
-		"textures",
-		"Textures",
-		"texture",
-		"Texture",
-		"../Texture",
-		"../texture",
-		"../Textures",
-		"../textures",
-	};
+	bool searchForFile(const std::filesystem::path& directory, const std::filesystem::path& filename, std::filesystem::path& outPath) {
+		outPath = directory / filename;
+		if (std::filesystem::exists(outPath)) {
+			return true;
+		}
+
+		std::filesystem::recursive_directory_iterator it(directory);
+		DEBUG_LOG_INFO("Looking for file:", filename.filename());
+		while(it != std::filesystem::end(it)) {
+			
+			if (it->path().filename() == filename.filename()) {
+				outPath = it->path();
+				DEBUG_LOG_INFO("Found in:", outPath);
+				return true;
+			}
+			it++;
+		}
+		std::filesystem::path dir = directory;
+		if (!dir.has_parent_path()) {
+			dir = std::filesystem::absolute(dir).parent_path();
+		}
+		std::filesystem::recursive_directory_iterator parentIt(dir);
+		
+		while(parentIt != std::filesystem::end(parentIt)) {
+			if (parentIt->path() == directory) {
+				parentIt.disable_recursion_pending();
+			}
+			else if (parentIt->path().filename() == filename.filename()) {
+				outPath = parentIt->path();
+				DEBUG_LOG_INFO("Found in:", outPath);
+				return true;
+			}
+			parentIt++;
+			
+		}
+
+		return false;
+	}
 
 	void processNode(const aiScene* scene, const aiNode* node, ModelData* pModelData) {
 		DEBUG_LOG_INFO("Processing Node :", node->mName.C_Str());
@@ -44,11 +71,11 @@ namespace sa {
 			for (int j = 0; j < aMesh->mNumFaces; j++) {
 				aiFace face = aMesh->mFaces[j];
 
-				for (int k = 0; k < face.mNumIndices; k++) {
+				for (int k = face.mNumIndices - 1; k >= 0; k--) {
 					sa::VertexNormalUV vertex = {};
 					
 					aiVector3D pos = aMesh->mVertices[face.mIndices[k]];
-					pos = node->mTransformation * pos; // TODO not sure how good this is
+					//pos = node->mTransformation * pos; // TODO not sure how good this is
 					vertex.position = { pos.x, pos.y, pos.z , 1.f };
 
 					if (aMesh->HasTextureCoords(0)) {
@@ -58,8 +85,8 @@ namespace sa {
 
 					if (aMesh->HasNormals()) {
 						aiVector3D normal = aMesh->mNormals[face.mIndices[k]]; // assumes 1 tex coord per vertex
-						normal = node->mTransformation * normal;
-						vertex.normal = { normal.x, normal.y, normal.z, 1.f };
+						//normal = node->mTransformation * normal;
+						vertex.normal = { normal.x, normal.y, normal.z, 0.f };
 					}
 					
 					if (vertexIndices.count(vertex)) {
@@ -97,37 +124,31 @@ namespace sa {
 			aiTextureOp op = aiTextureOp::aiTextureOp_Multiply;
 			pAiMaterial->GetTexture(type, i, &str, NULL, NULL, &blending, &op);
 
-			std::filesystem::path path(str.C_Str());
+			std::filesystem::path filename(str.C_Str());
+
 			if (str.data[0] == '*') { // Texture is embeded
 				int index = std::atoi(str.data + 1);
 				aiTexture* pAiTex = ppAiTextures[index];
 				if (pAiTex->mHeight == 0) { // texture is compressed
-					path = std::string(pAiTex->mFilename.data) + "." +  std::string(pAiTex->achFormatHint);
+					filename = std::string(pAiTex->mFilename.data) + "." +  std::string(pAiTex->achFormatHint);
 				}
 				else { // uncompressed
-					path = std::string(pAiTex->mFilename.data); // read from file anyway
+					filename = std::string(pAiTex->mFilename.data); // read from file anyway
 				}
 			}
-			path = directory / path;
-			
-			for (auto it = g_texturePaths.begin(); it != g_texturePaths.end() && !std::filesystem::exists(path); it++) {
-				path = directory / *it / path.filename();
-				DEBUG_LOG_INFO("Looking for file in", path);
-			}
-			if (!std::filesystem::exists(path)) {
-				DEBUG_LOG_ERROR("File not found:", path.filename());
+			std::filesystem::path finalPath;
+			if (!searchForFile(directory, filename, finalPath)) {
+				DEBUG_LOG_ERROR("File not found:", filename);
 				continue;
 			}
-			
-			path = std::filesystem::absolute(path);
 
-			Texture2D* tex = AssetManager::get().loadTexture(path, true);
+			Texture2D* tex = AssetManager::get().loadTexture(finalPath, true);
 			if (!tex) {
-				DEBUG_LOG_ERROR("Failed to create texture,", path.string());
+				DEBUG_LOG_ERROR("Failed to create texture,", finalPath.string());
 				continue;
 			}
 
-			DEBUG_LOG_INFO("Image found:", path.filename(), ", type:", toString((MaterialTextureType)type));
+			DEBUG_LOG_INFO("Image found:", finalPath.filename(), ", type:", toString((MaterialTextureType)type));
 			textures[i].texture = *tex;
 			textures[i].blendFactor = blending;
 			textures[i].blendOp = (TextureBlendOp)op;
@@ -181,22 +202,23 @@ namespace sa {
 	ResourceID AssetManager::loadModel(const std::filesystem::path& path) {
 
 		if (!std::filesystem::exists(path)) {
+			DEBUG_LOG_ERROR("No such file:", path);
 			return NULL_RESOURCE;
 		}
+		std::filesystem::path absolutePath = std::filesystem::absolute(path);
 
-		ResourceID id = ResourceManager::get().keyToID<ModelData>(path.string());
+		ResourceID id = ResourceManager::get().keyToID<ModelData>(absolutePath.string());
 		if (id != NULL_RESOURCE) {
 			return id;
 		}
 
 		Assimp::Importer importer;
 
-		unsigned int flags = 
-			aiProcess_Triangulate |
+		unsigned int flags =
+			aiProcessPreset_TargetRealtime_Quality |
 			aiProcess_FlipUVs |
-			aiProcess_JoinIdenticalVertices |
-			aiProcess_GenUVCoords |
-			aiProcess_ValidateDataStructure |
+			aiProcess_PreTransformVertices |
+			//aiProcess_MakeLeftHanded |
 			0;
 		if (!importer.ValidateFlags(flags)) {
 			DEBUG_LOG_ERROR("Assimp Flag validation failed");
@@ -206,6 +228,7 @@ namespace sa {
 
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
 			DEBUG_LOG_ERROR("Failed to read file ", path.string(), " : ", importer.GetErrorString());
+			return NULL_RESOURCE;
 		}
 
 
@@ -217,7 +240,7 @@ namespace sa {
 
 
 
-		id = ResourceManager::get().insert<ModelData>(path.string(), {});
+		id = ResourceManager::get().insert<ModelData>(absolutePath.string(), {});
 		ModelData* model = ResourceManager::get().get<ModelData>(id);
 
 		processNode(scene, scene->mRootNode, model);
@@ -239,16 +262,15 @@ namespace sa {
 			material.values.ambientColor = getColor(aMaterial, AI_MATKEY_COLOR_AMBIENT);
 			// Emissive Color
 			material.values.emissiveColor = getColor(aMaterial, AI_MATKEY_COLOR_EMISSIVE, SA_COLOR_BLACK);
-
-
+			
 			aMaterial->Get(AI_MATKEY_OPACITY, material.values.opacity);
 			aMaterial->Get(AI_MATKEY_SHININESS, material.values.shininess);
 			aMaterial->Get(AI_MATKEY_METALLIC_FACTOR, material.values.metallic);
-
-			for (unsigned int i = aiTextureType::aiTextureType_NONE; i <= aiTextureType::aiTextureType_TRANSMISSION; i++) {
-				loadMaterialTexture(material, path.parent_path(), (aiTextureType)i, scene->mTextures, aMaterial);
+			aMaterial->Get(AI_MATKEY_TWOSIDED, material.twoSided);
+			
+			for (unsigned int j = aiTextureType::aiTextureType_NONE; j <= aiTextureType::aiTextureType_TRANSMISSION; j++) {
+				loadMaterialTexture(material, path.parent_path(), (aiTextureType)j, scene->mTextures, aMaterial);
 			}
-
 			ResourceID matId = sa::ResourceManager::get().insert<Material>(material);
 			materials.push_back(matId);
 		}

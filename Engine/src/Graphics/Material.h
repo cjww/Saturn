@@ -237,6 +237,8 @@ namespace sa {
 			float metallic;
 		} values;
 
+		bool twoSided;
+
 		Material();
 
 		void init(ResourceID pipeline, ResourceID sampler);

@@ -38,7 +38,7 @@ namespace sa {
 
 			glm::vec2 mPos = { m_window.getCursorPosition().x, m_window.getCursorPosition().y };
 			glm::vec2 center = glm::vec2((float)m_window.getCurrentExtent().width / 2, (float)m_window.getCurrentExtent().height / 2);
-			glm::vec2 diff = mPos - center;
+			glm::vec2 diff = center - mPos;
 
 			float up = m_window.getKey(sa::Key::SPACE) - m_window.getKey(sa::Key::LEFT_CONTROL);
 			bool sprint = m_window.getKey(sa::Key::LEFT_SHIFT);
@@ -72,7 +72,7 @@ namespace sa {
 			}
 			escapePressed = m_window.getKey(sa::Key::ESCAPE);
 
-			m_camera.rotate(-diff.x * dt * sensitivty, Vector3(0, 1, 0));
+			m_camera.rotate(diff.x * dt * sensitivty, Vector3(0, 1, 0));
 			m_camera.rotate(diff.y * dt * sensitivty, m_camera.getRight());
 
 
@@ -84,7 +84,7 @@ namespace sa {
 			Vector3 position = m_camera.getPosition();
 			position += m_camera.getRight() * hori * dt * finalSpeed;
 			position += m_camera.getForward() * vert * dt * finalSpeed;
-			position += Vector3(0, 1, 0) * -up * dt * finalSpeed;
+			position += Vector3(0, 1, 0) * up * dt * finalSpeed;
 			m_camera.setPosition(position);
 
 		}

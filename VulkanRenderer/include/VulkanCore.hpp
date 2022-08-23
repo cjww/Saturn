@@ -39,7 +39,7 @@ namespace sa {
 			vk::SampleCountFlagBits sampleCount = vk::SampleCountFlagBits::e1;
 		} multisample;
 		struct ColorBlend {
-			vk::Bool32 enable = false;
+			vk::Bool32 enable = true;
 			vk::BlendOp colorBlendOp = vk::BlendOp::eAdd;
 			vk::BlendOp alphaBlendOp = vk::BlendOp::eAdd;
 			vk::BlendFactor srcColorBlendFactor = vk::BlendFactor::eSrcAlpha;
