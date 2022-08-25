@@ -14,11 +14,15 @@ int randomRange(int min, int max) {
 int g_row = 0;
 int g_column = 0;
 
-sa::Entity createModelEntity(sa::Engine& engine, const char* modelPath, float scale = 1.0f) {
-	sa::Entity entity = engine.getCurrentScene()->createEntity();
-	
-	auto future = sa::AssetManager::get().loadModelAsync(&entity.addComponent<comp::Model>()->modelID, modelPath);
-	
+std::unordered_map<sa::Entity, sa::ProgressView<ResourceID>> completions;
+
+sa::Entity createModelEntity(sa::Engine& engine, const std::filesystem::path& modelPath, float scale = 1.0f) {
+	sa::Entity entity = engine.getCurrentScene()->createEntity(modelPath.filename().string());
+
+	comp::Model* model = entity.addComponent<comp::Model>();
+
+	completions[entity] = sa::AssetManager::get().loadModelAsync(modelPath);
+
 	comp::Transform* transform = entity.addComponent<comp::Transform>();
 	transform->position = sa::Vector3(g_row, 0, g_column) * 10.f;
 	g_row++;
@@ -66,7 +70,6 @@ int main() {
 
 	engine.createSystemScript("test.lua");
 	
-
 	engine.init();
 
 	sa::Clock clock;
@@ -79,9 +82,19 @@ int main() {
 		float dt = clock.restart();
 		timer += dt;
 
+
 		if (fpsClock.getElapsedTime() > 0.5f) {
 			window.setWindowTitle("FPS: " + std::to_string(1 / dt));
 			fpsClock.restart();
+			
+			for (const auto& [entity, progress] : completions) {
+				std::cout << "Entity " << entity.getComponent<comp::Name>()->name << " : " << progress.getProgress() * 100 << "%" << std::endl;
+				if (progress.isDone()) {
+					entity.getComponent<comp::Model>()->modelID = progress.get();
+					completions.erase(entity);
+					break;
+				}
+			}
 		}
 		
 		controller.update(dt);

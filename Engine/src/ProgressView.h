@@ -7,55 +7,75 @@ namespace sa {
 	template<typename T>
 	class ProgressView {
 	private:
-		std::optional<T>& m_value;
-		std::atomic<float> m_progress;
-		std::atomic_int m_count;
-		int m_finishCount;
+		std::shared_future<std::optional<T>> m_future;
+		std::shared_ptr<std::atomic_int> m_count;
+		std::shared_ptr<unsigned int> m_maxCompletionCount;
 
 	public:
-		ProgressView(std::optional<T>& value, int finishCount);
+		ProgressView();
+		//ProgressView(ProgressView<T>&&) = default;
+
+		void setFuture(const std::shared_future<std::optional<T>>& future);
+		void setMaxCompletionCount(unsigned int count);
+
 
 		// called by the thread/threads doing the work
+		//void setProgress(float progress);
 		void increment();
-
-
 		float getProgress() const;
 
-		T get();
-
-		bool done() const;
+		T get() const;
+		void wait();
+		void wait(const std::chrono::seconds& timeout);
+		bool isDone() const;
 
 	};
 
 	template<typename T>
-	inline ProgressView<T>::ProgressView(std::optional<T>& value, int finishCount)
-		: m_finishCount(finishCount)
-		, m_value(value)
-		, m_count(0)
-		, m_progress(0.0f)
+	inline ProgressView<T>::ProgressView()
+		: m_count(std::make_shared<std::atomic_int>(0))
+		, m_maxCompletionCount(std::make_shared<unsigned int>(1U))
 	{
-		
 	}
 
 	template<typename T>
+	inline void ProgressView<T>::setFuture(const std::shared_future<std::optional<T>>& future) {
+		m_future = future;
+	}
+
+	template<typename T>
+	inline void ProgressView<T>::setMaxCompletionCount(unsigned int count) {
+		*m_maxCompletionCount = count;
+	}
+	
+	template<typename T>
 	inline void ProgressView<T>::increment() {
-		m_count++;
-		float p = (float)m_count.load() / m_finishCount;
-		m_progress.store(p);
+		m_count->fetch_add(1, std::memory_order::memory_order_relaxed);
 	}
 
 	template<typename T>
 	inline float ProgressView<T>::getProgress() const {
-		return m_progress;
+		return (float)m_count->load() / *m_maxCompletionCount;
 	}
 
 	template<typename T>
-	inline T ProgressView<T>::get() {
-		return m_value.value();
+	inline T ProgressView<T>::get() const {
+		return m_future.get().value();
 	}
-	template <typename T>
-	inline bool ProgressView<T>::done() const {
-		return m_count >= m_finishCount;
+
+	template<typename T>
+	inline void ProgressView<T>::wait() {
+		m_future.wait();
+	}
+
+	template<typename T>
+	inline void ProgressView<T>::wait(const std::chrono::seconds& timeout) {
+		m_future.wait_for(timeout);
+	}
+
+	template<typename T>
+	inline bool ProgressView<T>::isDone() const {
+		return m_future._Is_ready();
 	}
 
 }

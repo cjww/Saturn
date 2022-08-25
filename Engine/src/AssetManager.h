@@ -17,6 +17,8 @@
 
 #include "ProgressView.h"
 
+#include "ECS\Entity.h"
+#include "ECS/Components.h"
 //--------------------------------------------------------------------------------------
 // AssetManager is the class that will hold all assets. 
 //--------------------------------------------------------------------------------------
@@ -45,7 +47,7 @@ namespace sa {
 
 		AssetManager();
 
-		void loadAssimpModel(const std::filesystem::path& path, ModelData* pModel);
+		void loadAssimpModel(const std::filesystem::path& path, ModelData* pModel, ProgressView<ResourceID> progress);
 
 	public:
 		~AssetManager();
@@ -55,8 +57,8 @@ namespace sa {
 		Texture2D* loadDefaultTexture();
 		Texture2D* loadTexture(const std::filesystem::path& path, bool generateMipMaps);
 
-		ResourceID loadModel(const std::filesystem::path& path);
-		tf::Future<std::optional<ResourceID>> loadModelAsync(ResourceID* pId, const std::filesystem::path& path);
+		ResourceID loadModel(const std::filesystem::path& path, ProgressView<ResourceID> progress = {});
+		ProgressView<ResourceID> loadModelAsync(const std::filesystem::path& path);
 
 		ResourceID loadQuad();
 

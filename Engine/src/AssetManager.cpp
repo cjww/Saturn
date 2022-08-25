@@ -54,7 +54,7 @@ namespace sa {
 		return false;
 	}
 
-	void processNode(const aiScene* scene, const aiNode* node, ModelData* pModelData) {
+	void processNode(const aiScene* scene, const aiNode* node, ModelData* pModelData, sa::ProgressView<ResourceID> progress) {
 		//DEBUG_LOG_INFO("Processing Node :", node->mName.C_Str());
 
 		for (int i = 0; i < node->mNumMeshes; i++) {
@@ -108,10 +108,11 @@ namespace sa {
 			mesh.materialID = aMesh->mMaterialIndex;
 
 			pModelData->meshes.push_back(mesh);
+			progress.increment();
 		}
 
 		for (int i = 0; i < node->mNumChildren; i++) {
-			processNode(scene, node->mChildren[i], pModelData);
+			processNode(scene, node->mChildren[i], pModelData, progress);
 		}
 	}
 
@@ -199,7 +200,7 @@ namespace sa {
 		return tex;
 	}
 
-	ResourceID AssetManager::loadModel(const std::filesystem::path& path) {
+	ResourceID AssetManager::loadModel(const std::filesystem::path& path, ProgressView<ResourceID> progress) {
 
 		if (!std::filesystem::exists(path)) {
 			DEBUG_LOG_ERROR("No such file:", path);
@@ -215,17 +216,18 @@ namespace sa {
 		id = ResourceManager::get().insert<ModelData>(absolutePath.string(), {});
 		ModelData* model = ResourceManager::get().get<ModelData>(id);
 
-		loadAssimpModel(path, model);
+		loadAssimpModel(path, model, progress);
 
 		return id;
 	}
 
-	tf::Future<std::optional<ResourceID>> AssetManager::loadModelAsync(ResourceID* pId, const std::filesystem::path& path) {
-		*pId = NULL_RESOURCE;
-		return m_taskExecutor.async([=]() {
-			*pId = AssetManager::get().loadModel(path);
-			return *pId;
+	ProgressView<ResourceID> AssetManager::loadModelAsync(const std::filesystem::path& path) {
+		ProgressView<ResourceID> p;
+		auto future = m_taskExecutor.async([path, p]() {
+			return AssetManager::get().loadModel(path, p);
 		});
+		p.setFuture(future.share());
+		return p;
 	}
 
 	ResourceID AssetManager::loadQuad() {
@@ -279,7 +281,7 @@ namespace sa {
 		loadDefaultTexture();
 	}
 
-	void AssetManager::loadAssimpModel(const std::filesystem::path& path, ModelData* pModel) {
+	void AssetManager::loadAssimpModel(const std::filesystem::path& path, ModelData* pModel, ProgressView<ResourceID> progress) {
 
 		Assimp::Importer importer;
 
@@ -306,17 +308,21 @@ namespace sa {
 			"\nAnimations", scene->mNumAnimations,
 			"\nLights", scene->mNumLights);
 
+		progress.setMaxCompletionCount(scene->mNumMeshes + scene->mNumMaterials);
 
-		processNode(scene, scene->mRootNode, pModel);
-
+		processNode(scene, scene->mRootNode, pModel, progress);
 
 		// Materials
 
 		DEBUG_LOG_INFO("Material Count:", scene->mNumMaterials);
 		tf::Taskflow taskflow;
 		
+
+		
+		
+
 		std::vector<ResourceID> materials(scene->mNumMaterials);
-		taskflow.for_each_index(0U, scene->mNumMaterials, 1U, [&materials, path, scene](int i) {
+		taskflow.for_each_index(0U, scene->mNumMaterials, 1U, [&](int i) {
 				aiMaterial* aMaterial = scene->mMaterials[i];
 				Material material;
 
@@ -340,6 +346,8 @@ namespace sa {
 				}
 				ResourceID matId = sa::ResourceManager::get().insert<Material>(material);
 				materials[i] = matId;
+			
+				progress.increment();
 			});
 		//}
 
