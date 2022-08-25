@@ -55,7 +55,7 @@ namespace sa {
 	}
 
 	void processNode(const aiScene* scene, const aiNode* node, ModelData* pModelData) {
-		DEBUG_LOG_INFO("Processing Node :", node->mName.C_Str());
+		//DEBUG_LOG_INFO("Processing Node :", node->mName.C_Str());
 
 		for (int i = 0; i < node->mNumMeshes; i++) {
 			Mesh mesh = {};
@@ -66,7 +66,7 @@ namespace sa {
 
 			std::unordered_map<VertexNormalUV, uint32_t> vertexIndices;
 			
-			DEBUG_LOG_INFO("Processing mesh :", aMesh->mName.C_Str());
+			//DEBUG_LOG_INFO("Processing mesh :", aMesh->mName.C_Str());
 
 			for (int j = 0; j < aMesh->mNumFaces; j++) {
 				aiFace face = aMesh->mFaces[j];
@@ -148,7 +148,7 @@ namespace sa {
 				continue;
 			}
 
-			DEBUG_LOG_INFO("Image found:", finalPath.filename(), ", type:", toString((MaterialTextureType)type));
+			//DEBUG_LOG_INFO("Image found:", finalPath.filename(), ", type:", toString((MaterialTextureType)type));
 			textures[i].texture = *tex;
 			textures[i].blendFactor = blending;
 			textures[i].blendOp = (TextureBlendOp)op;
@@ -212,74 +212,20 @@ namespace sa {
 			return id;
 		}
 
-		Assimp::Importer importer;
-
-		unsigned int flags =
-			aiProcessPreset_TargetRealtime_Quality |
-			aiProcess_FlipUVs |
-			aiProcess_PreTransformVertices |
-			//aiProcess_MakeLeftHanded |
-			0;
-		if (!importer.ValidateFlags(flags)) {
-			DEBUG_LOG_ERROR("Assimp Flag validation failed");
-		}
-
-		const aiScene* scene = importer.ReadFile(path.string(), flags);
-
-		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-			DEBUG_LOG_ERROR("Failed to read file ", path.string(), " : ", importer.GetErrorString());
-			return NULL_RESOURCE;
-		}
-
-
-		DEBUG_LOG_INFO(
-			"Loaded file", path.string(),
-			"\nMeshes", scene->mNumMeshes,
-			"\nAnimations", scene->mNumAnimations,
-			"\nLights", scene->mNumLights);
-
-
-
 		id = ResourceManager::get().insert<ModelData>(absolutePath.string(), {});
 		ModelData* model = ResourceManager::get().get<ModelData>(id);
 
-		processNode(scene, scene->mRootNode, model);
-
-		std::vector<ResourceID> materials;
-		
-		// Materials
-		DEBUG_LOG_INFO("Material Count:", scene->mNumMaterials);
-		for (int i = 0; i < scene->mNumMaterials; i++) {
-			aiMaterial* aMaterial = scene->mMaterials[i];
-			Material material;
-
-			// Diffuse Color
-			material.values.diffuseColor = getColor(aMaterial, AI_MATKEY_COLOR_DIFFUSE);
-			// Specular Color
-			material.values.specularColor = getColor(aMaterial, AI_MATKEY_COLOR_SPECULAR);
-
-			// Ambient Color
-			material.values.ambientColor = getColor(aMaterial, AI_MATKEY_COLOR_AMBIENT);
-			// Emissive Color
-			material.values.emissiveColor = getColor(aMaterial, AI_MATKEY_COLOR_EMISSIVE, SA_COLOR_BLACK);
-			
-			aMaterial->Get(AI_MATKEY_OPACITY, material.values.opacity);
-			aMaterial->Get(AI_MATKEY_SHININESS, material.values.shininess);
-			aMaterial->Get(AI_MATKEY_METALLIC_FACTOR, material.values.metallic);
-			aMaterial->Get(AI_MATKEY_TWOSIDED, material.twoSided);
-			
-			for (unsigned int j = aiTextureType::aiTextureType_NONE; j <= aiTextureType::aiTextureType_TRANSMISSION; j++) {
-				loadMaterialTexture(material, path.parent_path(), (aiTextureType)j, scene->mTextures, aMaterial);
-			}
-			ResourceID matId = sa::ResourceManager::get().insert<Material>(material);
-			materials.push_back(matId);
-		}
-
-		for (auto& mesh : model->meshes) {
-			mesh.materialID = materials[mesh.materialID]; // swap index to material ID
-		}
+		loadAssimpModel(path, model);
 
 		return id;
+	}
+
+	tf::Future<std::optional<ResourceID>> AssetManager::loadModelAsync(ResourceID* pId, const std::filesystem::path& path) {
+		*pId = NULL_RESOURCE;
+		return m_taskExecutor.async([=]() {
+			*pId = AssetManager::get().loadModel(path);
+			return *pId;
+		});
 	}
 
 	ResourceID AssetManager::loadQuad() {
@@ -331,6 +277,78 @@ namespace sa {
 		: m_nextID(0)
 	{
 		loadDefaultTexture();
+	}
+
+	void AssetManager::loadAssimpModel(const std::filesystem::path& path, ModelData* pModel) {
+
+		Assimp::Importer importer;
+
+		unsigned int flags =
+			aiProcessPreset_TargetRealtime_Quality |
+			aiProcess_FlipUVs |
+			aiProcess_PreTransformVertices |
+			//aiProcess_MakeLeftHanded |
+			0;
+		if (!importer.ValidateFlags(flags)) {
+			DEBUG_LOG_ERROR("Assimp Flag validation failed");
+		}
+
+		const aiScene* scene = importer.ReadFile(path.string(), flags);
+
+		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
+			DEBUG_LOG_ERROR("Failed to read file ", path.string(), " : ", importer.GetErrorString());
+			return;
+		}
+
+		DEBUG_LOG_INFO(
+			"Loaded file", path.string(),
+			"\nMeshes", scene->mNumMeshes,
+			"\nAnimations", scene->mNumAnimations,
+			"\nLights", scene->mNumLights);
+
+
+		processNode(scene, scene->mRootNode, pModel);
+
+
+		// Materials
+
+		DEBUG_LOG_INFO("Material Count:", scene->mNumMaterials);
+		tf::Taskflow taskflow;
+		
+		std::vector<ResourceID> materials(scene->mNumMaterials);
+		taskflow.for_each_index(0U, scene->mNumMaterials, 1U, [&materials, path, scene](int i) {
+				aiMaterial* aMaterial = scene->mMaterials[i];
+				Material material;
+
+				// Diffuse Color
+				material.values.diffuseColor = getColor(aMaterial, AI_MATKEY_COLOR_DIFFUSE);
+				// Specular Color
+				material.values.specularColor = getColor(aMaterial, AI_MATKEY_COLOR_SPECULAR);
+
+				// Ambient Color
+				material.values.ambientColor = getColor(aMaterial, AI_MATKEY_COLOR_AMBIENT);
+				// Emissive Color
+				material.values.emissiveColor = getColor(aMaterial, AI_MATKEY_COLOR_EMISSIVE, SA_COLOR_BLACK);
+
+				aMaterial->Get(AI_MATKEY_OPACITY, material.values.opacity);
+				aMaterial->Get(AI_MATKEY_SHININESS, material.values.shininess);
+				aMaterial->Get(AI_MATKEY_METALLIC_FACTOR, material.values.metallic);
+				aMaterial->Get(AI_MATKEY_TWOSIDED, material.twoSided);
+
+				for (unsigned int j = aiTextureType::aiTextureType_NONE; j <= aiTextureType::aiTextureType_TRANSMISSION; j++) {
+					loadMaterialTexture(material, path.parent_path(), (aiTextureType)j, scene->mTextures, aMaterial);
+				}
+				ResourceID matId = sa::ResourceManager::get().insert<Material>(material);
+				materials[i] = matId;
+			});
+		//}
+
+		m_taskExecutor.run_and_wait(taskflow);
+
+
+		for (auto& mesh : pModel->meshes) {
+			mesh.materialID = materials[mesh.materialID]; // swap index to material ID
+		}
 	}
 
 	AssetManager::~AssetManager() {

@@ -290,7 +290,9 @@ namespace sa {
 	}
 
 	void Renderer::queueTransfer(const DataTransfer& transfer) {
+		m_transferMutex.lock();
 		m_transferQueue.push(transfer);
+		m_transferMutex.unlock();
 	}
 
 	ResourceID Renderer::createSampler(FilterMode filterMode) {
@@ -312,7 +314,8 @@ namespace sa {
 		if (!pCommandBufferSet) {
 			return {};
 		}
-
+		
+		m_transferMutex.lock();
 		while (!m_transferQueue.empty()) {
 			DataTransfer& transfer = m_transferQueue.front();
 
@@ -350,6 +353,7 @@ namespace sa {
 
 			m_transferQueue.pop();
 		}
+		m_transferMutex.unlock();
 
 		return RenderContext(m_pCore.get(), pCommandBufferSet);
 	}

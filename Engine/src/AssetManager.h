@@ -13,6 +13,10 @@
 
 #include "Graphics/Material.h"
 
+#include "taskflow\taskflow.hpp"
+
+#include "ProgressView.h"
+
 //--------------------------------------------------------------------------------------
 // AssetManager is the class that will hold all assets. 
 //--------------------------------------------------------------------------------------
@@ -34,11 +38,14 @@ namespace sa {
 	class AssetManager
 	{
 	private:	
+		tf::Executor m_taskExecutor;
 
 		ResourceID m_nextID;
 	
 
 		AssetManager();
+
+		void loadAssimpModel(const std::filesystem::path& path, ModelData* pModel);
 
 	public:
 		~AssetManager();
@@ -49,6 +56,8 @@ namespace sa {
 		Texture2D* loadTexture(const std::filesystem::path& path, bool generateMipMaps);
 
 		ResourceID loadModel(const std::filesystem::path& path);
+		tf::Future<std::optional<ResourceID>> loadModelAsync(ResourceID* pId, const std::filesystem::path& path);
+
 		ResourceID loadQuad();
 
 		ModelData* getModel(ResourceID id) const;

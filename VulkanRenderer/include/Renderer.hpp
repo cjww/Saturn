@@ -13,6 +13,7 @@
 
 #include "imgui.h"
 
+#include <mutex>
 
 namespace sa {
 
@@ -44,6 +45,7 @@ namespace sa {
 		
 		std::unique_ptr<VulkanCore> m_pCore;
 		std::queue<DataTransfer> m_transferQueue;
+		std::mutex m_transferMutex;
 
 		Renderer();
 	public:

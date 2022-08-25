@@ -6,6 +6,7 @@
 
 #include <queue>
 #include <string>
+#include <mutex>
 
 typedef size_t ResourceType;
 typedef uint32_t ResourceID;
@@ -20,6 +21,9 @@ namespace sa {
 		protected:
 			ResourceID m_nextID = 0;
 			std::queue<ResourceID> m_freeIDs;
+
+			std::mutex m_containerMutex;
+
 		public:
 			virtual ~BasicResourceContainer() = default;
 
@@ -240,22 +244,28 @@ namespace sa {
 
 		template<typename T>
 		inline ResourceID ResourceContainer<T>::insert(const T& value) {
+			m_containerMutex.lock();
 			ResourceID id = getUniqueID();
 			m_resources[id] = std::make_unique<T>(value);
+			m_containerMutex.unlock();
 			return id;
 		}
 
 		template<typename T>
 		inline ResourceID ResourceContainer<T>::insert(const char* key, const T& value) {
 			ResourceID id = insert(value);
+			m_containerMutex.lock();
 			m_keys[key] = id;
+			m_containerMutex.unlock();
 			return id;
 		}
 
 		template<typename T>
 		inline ResourceID ResourceContainer<T>::insert(const std::string& key, const T& value) {
 			ResourceID id = insert(value);
+			m_containerMutex.lock();
 			m_keys[key] = id;
+			m_containerMutex.unlock();
 			return id;
 		}
 
@@ -290,8 +300,10 @@ namespace sa {
 			if (m_cleanupFunction) {
 				m_cleanupFunction(m_resources.at(id).get());
 			}
+			m_containerMutex.lock();
 			m_resources.erase(id);
 			m_freeIDs.push(id);
+			m_containerMutex.unlock();
 		}
 
 		template<typename T>
@@ -301,8 +313,10 @@ namespace sa {
 					m_cleanupFunction(resPair.second.get());
 				}
 			}
+			m_containerMutex.lock();
 			m_resources.clear();
 			m_keys.clear();
+			m_containerMutex.unlock();
 		}
 
 		template<typename T>

@@ -23,6 +23,9 @@
 
 #include <functional>
 
+#include <mutex>
+
+
 // Dependencies
 #include <entt/entt.hpp>
 #include <rapidxml/rapidxml.hpp>

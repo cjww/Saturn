@@ -237,11 +237,13 @@
     <ClInclude Include="src\Graphics\Material.h" />
     <ClInclude Include="src\internal\internalVector.h" />
     <ClInclude Include="src\Graphics\RenderWindow.hpp" />
+    <ClInclude Include="src\ProgressView.h" />
     <ClInclude Include="src\ScriptManager.h" />
     <ClInclude Include="src\ECS\Events.h" />
     <ClInclude Include="src\ECS\MetaComponent.h" />
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\Scene.h" />
+    <ClInclude Include="src\ThreadManager.h" />
     <ClInclude Include="src\Tools\CustomImGui.h" />
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\ECS\Components.h" />

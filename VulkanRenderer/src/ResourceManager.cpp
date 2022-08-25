@@ -33,6 +33,7 @@ namespace sa {
 			if (!m_freeIDs.empty()) {
 				ResourceID id = m_freeIDs.front();
 				m_freeIDs.pop();
+				m_containerMutex.unlock();
 				return id;	
 			}
 			return m_nextID++;

@@ -16,7 +16,9 @@ int g_column = 0;
 
 sa::Entity createModelEntity(sa::Engine& engine, const char* modelPath, float scale = 1.0f) {
 	sa::Entity entity = engine.getCurrentScene()->createEntity();
-	entity.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadModel(modelPath);
+	
+	auto future = sa::AssetManager::get().loadModelAsync(&entity.addComponent<comp::Model>()->modelID, modelPath);
+	
 	comp::Transform* transform = entity.addComponent<comp::Transform>();
 	transform->position = sa::Vector3(g_row, 0, g_column) * 10.f;
 	g_row++;
@@ -52,26 +54,6 @@ int main() {
 
 	sa::CameraController controller(window, camera);
 	
-	engine.getCurrentScene()->on<sa::event::ComponentCreated<comp::Light>>([](auto& event, sa::Scene& scene) {
-		
-	});
-	/*
-	sa::Entity light = engine.getCurrentScene()->createEntity("Light");
-	comp::Light* lightComp = light.addComponent<comp::Light>();
-	lightComp->values.color = SA_COLOR_WHITE;
-	lightComp->values.position = { 3, -2, 3};
-	lightComp->values.strength = 100.0f;
-
-
-	sa::Entity light2 = engine.getCurrentScene()->createEntity("Light2");
-	lightComp = light2.addComponent<comp::Light>();
-	lightComp->values.color = {1.0f, 0.3f, 0.3f, 1.0f};
-	lightComp->values.position = { -5, -2.5, 5};
-	lightComp->values.strength = 7.0f;
-
-	*/
-
-	
 	createModelEntity(engine, "models/adamHead/adamHead.gltf");
 	createModelEntity(engine, "models/lieutenantHead/lieutenantHead.gltf");
 	
@@ -84,7 +66,6 @@ int main() {
 
 	engine.createSystemScript("test.lua");
 	
-
 
 	engine.init();
 
