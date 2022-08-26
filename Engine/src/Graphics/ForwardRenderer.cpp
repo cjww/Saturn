@@ -8,11 +8,11 @@ namespace sa {
 	void ForwardRenderer::createTextures(sa::Extent extent) {
 		m_mainColorTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, extent);
 		m_depthTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::DEPTH_ATTACHMENT, extent);
-		m_brightnessTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::STORAGE, extent);
+		m_brightnessTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::STORAGE | sa::TextureTypeFlagBits::SAMPLED, extent);
 
 		m_outputTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, extent);
 
-		m_blurredBrightnessTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::STORAGE, extent);
+		m_blurredBrightnessTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::SAMPLED | sa::TextureTypeFlagBits::STORAGE, extent);
 
 
 
@@ -39,7 +39,8 @@ namespace sa {
 			factory.addSwapchainAttachment(m_pWindow->getSwapchainID());
 		}
 
-		m_postRenderProgram = factory.beginSubpass()
+		m_postRenderProgram = factory
+			.beginSubpass()
 			.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
 			.endSubpass()
 			.addSubpassDependency()
@@ -100,6 +101,8 @@ namespace sa {
 		m_renderer.updateDescriptorSet(m_blurDescriptorSet, 1, m_blurredBrightnessTexture);
 
 		m_renderer.updateDescriptorSet(m_postInputDescriptorSet, 0, m_mainColorTexture, m_sampler);
+		m_renderer.updateDescriptorSet(m_postInputDescriptorSet, 1, m_blurredBrightnessTexture, m_sampler);
+
 
 	}
 
@@ -158,7 +161,8 @@ namespace sa {
 		// Texture DescriptorSets
 		m_postInputDescriptorSet = m_renderer.allocateDescriptorSet(m_postRenderProgram, 0);
 		m_renderer.updateDescriptorSet(m_postInputDescriptorSet, 0, m_mainColorTexture, m_sampler);
-		
+		m_renderer.updateDescriptorSet(m_postInputDescriptorSet, 1, m_blurredBrightnessTexture, m_sampler);
+
 		m_lightBuffer = m_renderer.createBuffer(sa::BufferType::UNIFORM);
 		
 
@@ -185,8 +189,6 @@ namespace sa {
 		}
 
 		
-		//context.executeSubContext(m_blurContext);
-
 		context.beginRenderProgram(m_colorRenderProgram, m_colorFramebuffer, sa::SubpassContents::DIRECT);
 		context.bindPipeline(m_colorPipeline);
 
@@ -225,49 +227,8 @@ namespace sa {
 				context.updateDescriptorSet(m_perFrameDescriptorSet, 0, m_perFrameBuffer);
 
 				context.bindDescriptorSet(m_perFrameDescriptorSet, m_colorPipeline);
-				/*
-				scene->forEach<comp::Transform, comp::Model>([&](const comp::Transform& transform, comp::Model& modelComp) {
-					
-					if (modelComp.modelID == NULL_RESOURCE) {
-						return; // does not have to be drawn
-					}
-
-					if (modelComp.descriptorSet == NULL_RESOURCE) {
-						modelComp.descriptorSet = m_renderer.allocateDescriptorSet(m_colorPipeline, SET_PER_OBJECT);
-					}
-
-
-					sa::ModelData* model = sa::AssetManager::get().getModel(modelComp.modelID);
 				
-					sa::PerObjectBuffer perObject = {};
-					perObject.worldMatrix = glm::mat4(1);
-					
-					perObject.worldMatrix = glm::translate(perObject.worldMatrix, transform.position);
-					perObject.worldMatrix = glm::rotate(perObject.worldMatrix, transform.rotation.x, glm::vec3(1, 0, 0));
-					perObject.worldMatrix = glm::rotate(perObject.worldMatrix, transform.rotation.y, glm::vec3(0, 1, 0));
-					perObject.worldMatrix = glm::rotate(perObject.worldMatrix, transform.rotation.z, glm::vec3(0, 0, 1));
-					perObject.worldMatrix = glm::scale(perObject.worldMatrix, transform.scale);
-				
-
-					context.pushConstant(m_colorPipeline, sa::ShaderStageFlagBits::VERTEX, perObject.worldMatrix);
-
-					for (const auto& mesh : model->meshes) {
-
-						Material* mat = AssetManager::get().getMaterial(mesh.materialID);
-						mat->bind(context, m_colorPipeline, m_sampler);
-
-						context.bindVertexBuffers(0, { mesh.vertexBuffer });
-						if (mesh.indexBuffer.isValid()) {
-							context.bindIndexBuffer(mesh.indexBuffer);
-							context.drawIndexed(mesh.indexBuffer.getElementCount<uint32_t>(), 1);
-						}
-						else {
-							context.draw(mesh.vertexBuffer.getElementCount<VertexUV>(), 1);
-						}
-					}
-
-				});					
-				*/
+				// Opaque pass
 				std::unordered_map<ResourceID, std::vector<std::tuple<Mesh*, Matrix4x4>>> transparentMaterials;
 				for (const auto& [materialID, pMeshes] : meshes) {
 					Material* mat = AssetManager::get().getMaterial(materialID);
@@ -290,6 +251,7 @@ namespace sa {
 					}
 				}
 
+				// Transparent pass
 				for (const auto& [materialID, pMeshes] : transparentMaterials) {
 					Material* mat = AssetManager::get().getMaterial(materialID);
 					mat->bind(context, m_colorPipeline, m_sampler);
@@ -313,6 +275,16 @@ namespace sa {
 
 		
 		context.endRenderProgram(m_colorRenderProgram);
+
+
+		context.transitionTexture(m_brightnessTexture, sa::Transition::RENDER_PROGRAM_OUTPUT, sa::Transition::COMPUTE_SHADER_READ);
+		context.transitionTexture(m_blurredBrightnessTexture, sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_WRITE);
+		context.executeSubContext(m_blurContext);
+		context.transitionTexture(m_blurredBrightnessTexture, sa::Transition::COMPUTE_SHADER_WRITE, sa::Transition::FRAGMENT_SHADER_READ);
+		context.transitionTexture(m_brightnessTexture, sa::Transition::COMPUTE_SHADER_READ, sa::Transition::RENDER_PROGRAM_OUTPUT);
+		/*
+
+		*/
 
 		context.beginRenderProgram(m_postRenderProgram, m_postFramebuffer, sa::SubpassContents::DIRECT);
 		context.bindPipeline(m_postProcessPipeline);
