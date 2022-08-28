@@ -200,6 +200,15 @@ namespace sa {
 		return tex;
 	}
 
+	std::tuple<ResourceID, ModelData*> AssetManager::newModel(const std::string& name) {
+		ResourceID id;
+		if(!name.empty())
+			id = ResourceManager::get().insert<ModelData>(name, {});
+		else
+			id = ResourceManager::get().insert<ModelData>();
+		return { id, ResourceManager::get().get<ModelData>(id) };
+	}
+
 	ResourceID AssetManager::loadModel(const std::filesystem::path& path, ProgressView<ResourceID> progress) {
 
 		if (!std::filesystem::exists(path)) {
@@ -228,6 +237,22 @@ namespace sa {
 		});
 		p.setFuture(future.share());
 		return p;
+	}
+
+	ResourceID AssetManager::loadDefaultMaterial() {
+		ResourceID id = ResourceManager::get().keyToID<Material>("default_material");
+		if (id != NULL_RESOURCE)
+			return id;
+		Material mat = {};
+		memset(&mat.values, 0, sizeof(mat.values));
+		mat.values.ambientColor = SA_COLOR_WHITE;
+		mat.values.diffuseColor = SA_COLOR_WHITE;
+		mat.values.specularColor = SA_COLOR_WHITE;
+		mat.values.opacity = 1.0f;
+		mat.values.shininess = 1.0f;
+		mat.twoSided = false;
+
+		return sa::ResourceManager::get().insert<Material>(mat);
 	}
 
 	ResourceID AssetManager::loadQuad() {

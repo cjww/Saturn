@@ -19,7 +19,7 @@ namespace sa {
 
 		class BasicResourceContainer {
 		protected:
-			ResourceID m_nextID = 0;
+			std::atomic<ResourceID> m_nextID = 0;
 			std::queue<ResourceID> m_freeIDs;
 
 			std::mutex m_containerMutex;

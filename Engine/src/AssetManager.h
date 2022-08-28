@@ -57,8 +57,12 @@ namespace sa {
 		Texture2D* loadDefaultTexture();
 		Texture2D* loadTexture(const std::filesystem::path& path, bool generateMipMaps);
 
+		std::tuple<ResourceID, ModelData*> newModel(const std::string& name = "");
+
 		ResourceID loadModel(const std::filesystem::path& path, ProgressView<ResourceID> progress = {});
 		ProgressView<ResourceID> loadModelAsync(const std::filesystem::path& path);
+
+		ResourceID loadDefaultMaterial();
 
 		ResourceID loadQuad();
 

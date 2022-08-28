@@ -55,6 +55,7 @@ namespace sa {
 		std::vector<DeviceBuffer*> m_buffers;
 		std::vector<DeviceImage*> m_images;
 		
+		std::mutex m_memoryMutex;
 
 	public:
 		DeviceMemoryManager() = default;

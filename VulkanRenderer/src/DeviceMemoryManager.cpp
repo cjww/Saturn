@@ -39,6 +39,8 @@ namespace sa {
 
 
 	DeviceBuffer* DeviceMemoryManager::createBuffer(vk::DeviceSize size, vk::BufferUsageFlags usage, VmaMemoryUsage memoryUsage, VmaAllocationCreateFlags allocationFlags, void* initialData) {
+		m_memoryMutex.lock();
+
 		m_buffers.push_back(new DeviceBuffer());
 		DeviceBuffer* buffer = m_buffers.back();
 
@@ -57,14 +59,14 @@ namespace sa {
 		vk::Result result = (vk::Result)vmaCreateBuffer(m_allocator, &cBufferInfo, &allocInfo, &cbuffer, &buffer->allocation, &info);
 		buffer->buffer = cbuffer;
 
-		checkError(result, "Failed to allocate buffer of size " + std::to_string(size), false);
+		checkError(result, "Failed to allocate buffer of size " + std::to_string(size));
 
 		buffer->size = size;
 		buffer->mappedData = info.pMappedData;
 		if (buffer->mappedData != nullptr && initialData != nullptr) {
 			memcpy(buffer->mappedData, initialData, buffer->size);
 		}
-
+		m_memoryMutex.unlock();
 		return buffer;
 	}
 
@@ -73,6 +75,7 @@ namespace sa {
 		vk::SampleCountFlagBits sampleCount, vk::SharingMode sharingMode, vk::ImageTiling tiling, vk::ImageUsageFlags usage,
 		VmaMemoryUsage memoryUsage, vk::MemoryPropertyFlags requiredMemoryProperties, vk::ImageCreateFlags flags)
 	{
+		m_memoryMutex.lock();
 		m_images.push_back(new DeviceImage());
 		DeviceImage* image = m_images.back();
 		image->format = format;
@@ -118,18 +121,27 @@ namespace sa {
 		);
 		image->image = cimage;
 
+		m_memoryMutex.unlock();
+
 		return image;
 	}
 
 	void DeviceMemoryManager::destroyBuffer(DeviceBuffer* buffer) {
+		m_memoryMutex.lock();
 		vmaDestroyBuffer(m_allocator, buffer->buffer, buffer->allocation);
 		m_buffers.erase(std::find(m_buffers.begin(), m_buffers.end(), buffer));
 		delete buffer;
+		buffer = nullptr;
+		m_memoryMutex.unlock();
+
 	}
 
 	void DeviceMemoryManager::destroyImage(DeviceImage* texture) {
+		m_memoryMutex.lock();
 		vmaDestroyImage(m_allocator, texture->image, texture->allocation);
 		m_images.erase(std::find(m_images.begin(), m_images.end(), texture));
 		delete texture;
+		texture = nullptr;
+		m_memoryMutex.unlock();
 	}
 }
