@@ -220,6 +220,12 @@ namespace sa {
 		pDescriptorSet->update(binding, pDeviceBuffer->buffer, pDeviceBuffer->size, 0, pView, UINT32_MAX);
 	}
 
+	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const DynamicBuffer& buffer) {
+		for (uint32_t i = 0; i < buffer.getBufferCount(); i++) {
+			updateDescriptorSet(descriptorSet, binding, buffer.getBuffer(i));
+		}
+	}
+
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture, ResourceID sampler) {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
@@ -258,6 +264,10 @@ namespace sa {
 
 	Buffer Renderer::createBuffer(BufferType type, size_t size, void* initialData) {
 		return Buffer(m_pCore.get(), type, size, initialData);
+	}
+
+	DynamicBuffer Renderer::createDynamicBuffer(BufferType type, size_t size, void* initialData) {
+		return DynamicBuffer(m_pCore.get(), type, m_pCore->getQueueCount(), size, initialData);
 	}
 
 	Texture2D Renderer::createTexture2D(TextureTypeFlags type, Extent extent, uint32_t sampleCount) {

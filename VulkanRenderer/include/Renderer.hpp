@@ -82,6 +82,7 @@ namespace sa {
 
 		ResourceID allocateDescriptorSet(ResourceID pipeline, uint32_t setIndex);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Buffer& buffer);
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const DynamicBuffer& buffer);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture, ResourceID sampler);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement = 0);
@@ -90,6 +91,8 @@ namespace sa {
 		void freeDescriptorSet(ResourceID descriptorSet);
 
 		Buffer createBuffer(BufferType type, size_t size = 0ui64, void* initialData = nullptr);
+		DynamicBuffer createDynamicBuffer(BufferType type, size_t size = 0ui64, void* initialData = nullptr);
+
 		Texture2D createTexture2D(TextureTypeFlags type, Extent extent, uint32_t sampleCount = 1);
 		Texture2D createTexture2D(TextureTypeFlags type, Extent extent, FormatPrecisionFlags formatPrecision, FormatDimensionFlags formatDimensions, FormatTypeFlags formatType, uint32_t sampleCount = 1);
 		Texture2D createTexture2D(TextureTypeFlags type, Extent extent, ResourceID swapchain, uint32_t sampleCount);
