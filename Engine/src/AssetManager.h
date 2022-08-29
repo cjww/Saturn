@@ -44,11 +44,14 @@ namespace sa {
 
 		ResourceID m_nextID;
 	
+		std::mutex m_mutex;
+
+		std::unordered_map<std::string, ProgressView<ResourceID>> m_loadingModels;
 
 		AssetManager();
 
-		void loadAssimpModel(const std::filesystem::path& path, ModelData* pModel, ProgressView<ResourceID> progress);
-
+		void loadAssimpModel(const std::filesystem::path& path, ModelData* pModel, ProgressView<ResourceID>& progress);
+		ResourceID loadModel(const std::filesystem::path& path, ProgressView<ResourceID>& progress);
 	public:
 		~AssetManager();
 	
@@ -59,8 +62,7 @@ namespace sa {
 
 		std::tuple<ResourceID, ModelData*> newModel(const std::string& name = "");
 
-		ResourceID loadModel(const std::filesystem::path& path, ProgressView<ResourceID> progress = {});
-		ProgressView<ResourceID> loadModelAsync(const std::filesystem::path& path);
+		ProgressView<ResourceID>& loadModel(const std::filesystem::path& path);
 
 		ResourceID loadDefaultMaterial();
 

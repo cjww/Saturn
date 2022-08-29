@@ -53,12 +53,12 @@ namespace comp {
 
 	struct Transform : public sa::LuaAccessable {
 		sa::Vector3 position = sa::Vector3(0);
-		sa::Vector3 rotation = sa::Vector3(0);
+		glm::quat rotation = glm::quat_identity<float, glm::packed_highp>();
 		sa::Vector3 scale = sa::Vector3(1);
 
+
 		sa::Matrix4x4 getMatrix() const {
-			sa::Matrix4x4 rotationMat = glm::toMat4(glm::quat(rotation));
-			return glm::translate(sa::Matrix4x4(1), position) * rotationMat * glm::scale(sa::Matrix4x4(1), scale);
+			return glm::translate(sa::Matrix4x4(1), position) * glm::toMat4(rotation) * glm::scale(sa::Matrix4x4(1), scale);
 		}
 
 		static void luaReg(sol::usertype<comp::Transform>& type) {

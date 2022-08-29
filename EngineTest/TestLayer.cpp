@@ -14,7 +14,11 @@ namespace sa {
 
 		comp::Model* model = entity.addComponent<comp::Model>();
 
-		m_completions[entity] = sa::AssetManager::get().loadModelAsync(modelPath);
+		m_completions.insert({ entity, sa::AssetManager::get().loadModel(modelPath) });
+		if (m_completions.at(entity).isDone()) {
+			entity.getComponent<comp::Model>()->modelID = m_completions.at(entity);
+			m_completions.erase(entity);
+		}
 
 		comp::Transform* transform = entity.addComponent<comp::Transform>();
 		transform->position = sa::Vector3(m_row, 0, m_column) * 10.f;
@@ -42,13 +46,24 @@ namespace sa {
 
 		engine.getCurrentScene()->addActiveCamera(&m_camera);
 
-
-		createModelEntity(engine, "models/adamHead/adamHead.gltf");
-		createModelEntity(engine, "models/lieutenantHead/lieutenantHead.gltf");
-		createModelEntity(engine, "models/steampunk_underwater_explorer/scene.gltf", 0.5f);
+		for (int i = 0; i < 30; i++) {
+			createModelEntity(engine, "models/adamHead/adamHead.gltf");
+		}
+		for (int i = 0; i < 30; i++) {
+			createModelEntity(engine, "models/lieutenantHead/lieutenantHead.gltf");
+		}
+		for (int i = 0; i < 30; i++) {
+			createModelEntity(engine, "models/adamHead/adamHead.gltf");
+		}
+		for (int i = 0; i < 30; i++) {
+			createModelEntity(engine, "models/steampunk_underwater_explorer/scene.gltf", 0.3f);
+		}
+		for (int i = 0; i < 30; i++) {
+			createModelEntity(engine, "models/lieutenantHead/lieutenantHead.gltf");
+		}
 		createModelEntity(engine, "models/steampunk_glasses__goggles/scene.gltf");
 		createModelEntity(engine, "models/viking_room/scene.gltf", 0.2f);
-
+		
 		engine.createSystemScript("test.lua");
 
 
@@ -59,16 +74,15 @@ namespace sa {
 		SA_PROFILE_FUNCTION();
 		m_pCameraController->update(dt);
 
-		if (m_infoClock.getElapsedTime() > 0.5f) {
-			m_infoClock.restart();
-
-			for (const auto& [entity, progress] : m_completions) {
+		for (const auto& [entity, progress] : m_completions) {
+			if (m_infoClock.getElapsedTime() > 0.5f) {
+				m_infoClock.restart();
 				std::cout << "Entity " << entity.getComponent<comp::Name>()->name << " : " << progress.getProgress() * 100 << "%" << std::endl;
-				if (progress.isDone()) {
-					entity.getComponent<comp::Model>()->modelID = progress.get();
-					m_completions.erase(entity);
-					break;
-				}
+			}
+			if (progress.isDone()) {
+				entity.getComponent<comp::Model>()->modelID = progress;
+				m_completions.erase(entity);
+				break;
 			}
 		}
 

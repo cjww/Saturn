@@ -8,33 +8,33 @@ namespace sa {
 	class ProgressView {
 	private:
 		std::shared_future<std::optional<T>> m_future;
-		std::shared_ptr<std::atomic_int> m_count;
-		std::shared_ptr<unsigned int> m_maxCompletionCount;
+		std::atomic_int m_count;
+		std::atomic_int m_maxCompletionCount;
 
 	public:
 		ProgressView();
-		//ProgressView(ProgressView<T>&&) = default;
 
 		void setFuture(const std::shared_future<std::optional<T>>& future);
 		void setMaxCompletionCount(unsigned int count);
 
 
 		// called by the thread/threads doing the work
-		//void setProgress(float progress);
 		void increment();
 		float getProgress() const;
 
-		T get() const;
+		T getValue() const;
 		void wait();
 		void wait(const std::chrono::seconds& timeout);
 		bool isDone() const;
+
+		operator T();
 
 	};
 
 	template<typename T>
 	inline ProgressView<T>::ProgressView()
-		: m_count(std::make_shared<std::atomic_int>(0))
-		, m_maxCompletionCount(std::make_shared<unsigned int>(1U))
+		: m_count(0)
+		, m_maxCompletionCount(1)
 	{
 	}
 
@@ -45,21 +45,21 @@ namespace sa {
 
 	template<typename T>
 	inline void ProgressView<T>::setMaxCompletionCount(unsigned int count) {
-		*m_maxCompletionCount = count;
+		m_maxCompletionCount.store(count);
 	}
 	
 	template<typename T>
 	inline void ProgressView<T>::increment() {
-		m_count->fetch_add(1, std::memory_order::memory_order_relaxed);
+		m_count.fetch_add(1, std::memory_order::memory_order_relaxed);
 	}
 
 	template<typename T>
 	inline float ProgressView<T>::getProgress() const {
-		return (float)m_count->load() / *m_maxCompletionCount;
+		return (float)m_count.load() / m_maxCompletionCount.load();
 	}
 
 	template<typename T>
-	inline T ProgressView<T>::get() const {
+	inline T ProgressView<T>::getValue() const {
 		return m_future.get().value();
 	}
 
@@ -76,6 +76,11 @@ namespace sa {
 	template<typename T>
 	inline bool ProgressView<T>::isDone() const {
 		return m_future._Is_ready();
+	}
+
+	template<typename T>
+	inline ProgressView<T>::operator T() {
+		return getValue();
 	}
 
 }

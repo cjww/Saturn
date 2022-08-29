@@ -89,10 +89,9 @@ namespace sa {
 		
 		m_postInputDescriptorSet = m_renderer.allocateDescriptorSet(m_postRenderProgram, 0);
 
-		m_renderer.updateDescriptorSet(m_postInputDescriptorSet, 0, m_mainColorTexture, m_sampler);
-		
-
 		m_blurredBrightnessTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::SAMPLED | sa::TextureTypeFlagBits::STORAGE, extent);
+		
+		m_renderer.updateDescriptorSet(m_postInputDescriptorSet, 0, m_mainColorTexture, m_sampler);
 		m_renderer.updateDescriptorSet(m_postInputDescriptorSet, 1, m_blurredBrightnessTexture, m_sampler);
 
 	}
@@ -104,6 +103,9 @@ namespace sa {
 
 		m_blurDescriptorSet = m_renderer.allocateDescriptorSet(m_blurPipeline, 0);
 
+		m_renderer.updateDescriptorSet(m_blurDescriptorSet, 0, m_brightnessTexture);
+		m_renderer.updateDescriptorSet(m_blurDescriptorSet, 1, m_blurredBrightnessTexture);
+		
 		m_blurContext = m_renderer.createSubContext();
 		m_blurContext.preRecord([=](sa::RenderContext& context) {
 			context.bindPipeline(m_blurPipeline);
@@ -151,7 +153,7 @@ namespace sa {
 		setupBlurPass();
 
 		
-		m_lightBuffer = m_renderer.createBuffer(sa::BufferType::UNIFORM);
+		m_lightBuffer = m_renderer.createBuffer(sa::BufferType::STORAGE);
 		
 	}
 
@@ -182,8 +184,8 @@ namespace sa {
 
 
 		if(scene != nullptr) {
-			std::unordered_map<ResourceID, std::vector<std::tuple<Mesh*, Matrix4x4>>> meshes;
 
+			std::unordered_map<ResourceID, std::vector<std::tuple<Mesh*, Matrix4x4>>> meshes;
 			{
 				SA_PROFILE_SCOPE("Collect meshes");
 				scene->forEach<comp::Transform, comp::Model>([&](const comp::Transform& transform, comp::Model& modelComp) {
@@ -193,18 +195,9 @@ namespace sa {
 					}
 
 					sa::ModelData* model = sa::AssetManager::get().getModel(modelComp.modelID);
-				
-					sa::PerObjectBuffer perObject = {};
-					perObject.worldMatrix = glm::mat4(1);
-
-					perObject.worldMatrix = glm::translate(perObject.worldMatrix, transform.position);
-					perObject.worldMatrix = glm::rotate(perObject.worldMatrix, glm::radians(transform.rotation.x), glm::vec3(1, 0, 0));
-					perObject.worldMatrix = glm::rotate(perObject.worldMatrix, glm::radians(transform.rotation.y), glm::vec3(0, 1, 0));
-					perObject.worldMatrix = glm::rotate(perObject.worldMatrix, glm::radians(transform.rotation.z), glm::vec3(0, 0, 1));
-					perObject.worldMatrix = glm::scale(perObject.worldMatrix, transform.scale);
 				 
 					for (auto& mesh : model->meshes) {
-						meshes[mesh.materialID].push_back({ &mesh, perObject.worldMatrix });
+						meshes[mesh.materialID].push_back({ &mesh, transform.getMatrix()});
 					}
 				});
 			}
@@ -265,6 +258,7 @@ namespace sa {
 				}
 
 			}
+			
 
 		}
 
@@ -324,7 +318,7 @@ namespace sa {
 
 		struct L {
 			uint32_t count;
-			alignas(16) LightData lights[8];
+			alignas(16) LightData lights[4096];
 		};
 		L lightsStruct;
 		lightsStruct.count = lights.size();

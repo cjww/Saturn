@@ -54,7 +54,7 @@ namespace sa {
 		return false;
 	}
 
-	void processNode(const aiScene* scene, const aiNode* node, ModelData* pModelData, sa::ProgressView<ResourceID> progress) {
+	void processNode(const aiScene* scene, const aiNode* node, ModelData* pModelData, sa::ProgressView<ResourceID>& progress) {
 		SA_PROFILE_FUNCTION();
 		for (int i = 0; i < node->mNumMeshes; i++) {
 			Mesh mesh = {};
@@ -204,33 +204,23 @@ namespace sa {
 			id = ResourceManager::get().insert<ModelData>();
 		return { id, ResourceManager::get().get<ModelData>(id) };
 	}
+	
+	
 
-	ResourceID AssetManager::loadModel(const std::filesystem::path& path, ProgressView<ResourceID> progress) {
+	ProgressView<ResourceID>& AssetManager::loadModel(const std::filesystem::path& path) {
 		SA_PROFILE_FUNCTION();
-
-		if (!std::filesystem::exists(path)) {
-			DEBUG_LOG_ERROR("No such file:", path);
-			return NULL_RESOURCE;
-		}
-		std::filesystem::path absolutePath = std::filesystem::absolute(path);
-
-		ResourceID id = ResourceManager::get().keyToID<ModelData>(absolutePath.string());
-		if (id != NULL_RESOURCE) {
-			return id;
+		auto absPath = std::filesystem::absolute(path).string();
+		
+		m_mutex.lock();
+		if (m_loadingModels.count(absPath)) {
+			m_mutex.unlock();
+			return m_loadingModels.at(absPath);
 		}
 
-		id = ResourceManager::get().insert<ModelData>(absolutePath.string(), {});
-		ModelData* model = ResourceManager::get().get<ModelData>(id);
+		ProgressView<ResourceID>& p = m_loadingModels[absPath];
+		m_mutex.unlock();
 
-		loadAssimpModel(path, model, progress);
-
-		return id;
-	}
-
-	ProgressView<ResourceID> AssetManager::loadModelAsync(const std::filesystem::path& path) {
-		SA_PROFILE_FUNCTION();
-		ProgressView<ResourceID> p;
-		auto future = m_taskExecutor.async([path, p]() {
+		auto future = m_taskExecutor.async([path, &p]() {
 			return AssetManager::get().loadModel(path, p);
 		});
 		p.setFuture(future.share());
@@ -304,7 +294,7 @@ namespace sa {
 		loadDefaultTexture();
 	}
 
-	void AssetManager::loadAssimpModel(const std::filesystem::path& path, ModelData* pModel, ProgressView<ResourceID> progress) {
+	void AssetManager::loadAssimpModel(const std::filesystem::path& path, ModelData* pModel, ProgressView<ResourceID>& progress) {
 		SA_PROFILE_FUNCTION();
 		Assimp::Importer importer;
 
@@ -341,9 +331,6 @@ namespace sa {
 		tf::Taskflow taskflow;
 		
 
-		
-		
-
 		std::vector<ResourceID> materials(scene->mNumMaterials);
 		taskflow.for_each_index(0U, scene->mNumMaterials, 1U, [&](int i) {
 				SA_PROFILE_SCOPE("Load material: " + std::to_string(i));
@@ -373,14 +360,37 @@ namespace sa {
 			
 				progress.increment();
 			});
-		//}
-
+		
 		m_taskExecutor.run_and_wait(taskflow);
 
 
 		for (auto& mesh : pModel->meshes) {
 			mesh.materialID = materials[mesh.materialID]; // swap index to material ID
 		}
+	}
+
+	ResourceID AssetManager::loadModel(const std::filesystem::path& path, ProgressView<ResourceID>& progress) {
+		SA_PROFILE_FUNCTION();
+
+		if (!std::filesystem::exists(path)) {
+			DEBUG_LOG_ERROR("No such file:", path);
+			return NULL_RESOURCE;
+		}
+		std::filesystem::path absolutePath = std::filesystem::absolute(path);
+
+		m_mutex.lock();
+		ResourceID id = ResourceManager::get().keyToID<ModelData>(absolutePath.string());
+		if (id != NULL_RESOURCE) {
+			m_mutex.unlock();
+			return id;
+		}
+		id = ResourceManager::get().insert<ModelData>(absolutePath.string(), {});
+		m_mutex.unlock();
+		ModelData* model = ResourceManager::get().get<ModelData>(id);
+
+		loadAssimpModel(path, model, progress);
+
+		return id;
 	}
 
 	AssetManager::~AssetManager() {

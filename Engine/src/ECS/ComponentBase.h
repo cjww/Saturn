@@ -19,8 +19,8 @@ namespace sa {
 
 		static sol::state& getState();
 
-		template<typename T>
-		static sol::usertype<T> luaReg();
+		template<typename T, typename ...Args>
+		static sol::usertype<T> luaReg(const std::string& customName = "", Args&&... args);
 
 		template<typename T>
 		static sol::usertype<T> registerComponent();
@@ -34,9 +34,9 @@ namespace sa {
 
 	// ----------------------------
 
-	template<typename T>
-	inline sol::usertype<T> LuaAccessable::luaReg() {
-		return getState().new_usertype<T>(sa::getComponentName<T>());
+	template<typename T, typename ...Args>
+	inline sol::usertype<T> LuaAccessable::luaReg(const std::string& customName, Args&&... args) {
+		return getState().new_usertype<T>((customName.empty()) ? sa::getComponentName<T>() : customName, args...);
 	}
 
 	template<typename T>

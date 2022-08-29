@@ -49,10 +49,18 @@ namespace sa {
 	void Engine::registerComponents() {
 		{
 			//auto type = m_scriptManager.registerType<Vector3>();
-			auto type = LuaAccessable::luaReg<Vector3>();
+			auto type = LuaAccessable::luaReg<Vector3>("Vec3", sol::constructors<Vector3(float, float, float), Vector3(float)>());
 			type["x"] = &Vector3::x;
 			type["y"] = &Vector3::y;
 			type["z"] = &Vector3::z;
+			
+		}
+		{
+			auto type = LuaAccessable::luaReg<glm::quat>("Quat");
+			type["rotate"] = [](glm::quat& self, float angle, Vector3 axis) {
+				self = glm::rotate(self, glm::radians(angle), axis);
+			};
+			type["Identity"] = &glm::quat_identity<float, glm::packed_highp>;
 		}
 
 	}

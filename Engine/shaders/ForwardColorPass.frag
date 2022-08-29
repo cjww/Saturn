@@ -42,9 +42,9 @@ struct Light {
     uint type;
 };
 
-layout(set = 0, binding = 1, std140) uniform Lights {
+layout(set = 0, binding = 1, std140) readonly buffer Lights {
     uint lightCount;
-    Light lights[8];
+    Light lights[4096];
 } lightBuffer;
 
 void main() {

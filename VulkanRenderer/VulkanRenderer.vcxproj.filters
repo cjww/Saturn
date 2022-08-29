@@ -185,7 +185,7 @@
     <ClCompile Include="src\imgui_widgets.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="include\Tools\utils.cpp">
+    <ClCompile Include="src\utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="include\Resources\DynamicBuffer.cpp">
