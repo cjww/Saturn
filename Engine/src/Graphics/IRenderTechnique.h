@@ -1,9 +1,12 @@
 #pragma once
+
 #include "Camera.h"
 #include "Scene.h"
 
 #include "Renderer.hpp"
 #include "RenderWindow.hpp"
+
+
 
 namespace sa {
 	class IRenderTechnique {

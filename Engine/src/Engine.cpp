@@ -58,14 +58,15 @@ namespace sa {
 	}
 
 	Scene& Engine::setup(sa::RenderWindow* pWindow, const std::filesystem::path& configPath) {
-	
+		SA_PROFILE_FUNCTION();
+
 		registerComponents();
 
 		m_currentScene = nullptr;
 		if(!configPath.empty())
 			loadFromFile(configPath);
-		if (pWindow)
-		{
+		
+		if (pWindow) {
 			m_pRenderTechnique = std::make_unique<ForwardRenderer>();
 			m_pRenderTechnique->init(pWindow, false);
 		}
@@ -85,6 +86,8 @@ namespace sa {
 
 	
 	void Engine::init() {
+		SA_PROFILE_FUNCTION();
+
 		if (m_currentScene) {
 			m_currentScene->init();
 			m_scriptManager.init(m_currentScene);
@@ -93,6 +96,7 @@ namespace sa {
 	}
 
 	void Engine::update(float dt) {
+		SA_PROFILE_FUNCTION();
 
 		if (m_currentScene) {
 			m_scriptManager.update(dt, m_currentScene);
@@ -108,6 +112,8 @@ namespace sa {
 	}
 
 	void Engine::cleanup() {
+		SA_PROFILE_FUNCTION();
+
 		if (m_pRenderTechnique) {
 			m_pRenderTechnique->cleanup();
 			m_pRenderTechnique.reset();
@@ -116,11 +122,15 @@ namespace sa {
 	}
 
 	void Engine::recordImGui() {
+		SA_PROFILE_FUNCTION();
+
 		if (m_pRenderTechnique)
 			m_pRenderTechnique->beginFrameImGUI();
 	}
 
 	void Engine::draw() {
+		SA_PROFILE_FUNCTION();
+
 		if (m_pRenderTechnique)
 			m_pRenderTechnique->draw(m_currentScene);	
 	}
@@ -152,8 +162,9 @@ namespace sa {
 	}
 
 	void Engine::setScene(Scene& scene) {
+		SA_PROFILE_FUNCTION();
+
 		m_currentScene = &scene;
-		m_pRenderTechnique->updateLights(&scene);
 		if(m_isSetup)
 			init();
 	}

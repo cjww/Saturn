@@ -55,8 +55,7 @@ namespace sa {
 	}
 
 	void processNode(const aiScene* scene, const aiNode* node, ModelData* pModelData, sa::ProgressView<ResourceID> progress) {
-		//DEBUG_LOG_INFO("Processing Node :", node->mName.C_Str());
-
+		SA_PROFILE_FUNCTION();
 		for (int i = 0; i < node->mNumMeshes; i++) {
 			Mesh mesh = {};
 			const aiMesh* aMesh = scene->mMeshes[node->mMeshes[i]];
@@ -66,8 +65,6 @@ namespace sa {
 
 			std::unordered_map<VertexNormalUV, uint32_t> vertexIndices;
 			
-			//DEBUG_LOG_INFO("Processing mesh :", aMesh->mName.C_Str());
-
 			for (int j = 0; j < aMesh->mNumFaces; j++) {
 				aiFace face = aMesh->mFaces[j];
 
@@ -75,7 +72,6 @@ namespace sa {
 					sa::VertexNormalUV vertex = {};
 					
 					aiVector3D pos = aMesh->mVertices[face.mIndices[k]];
-					//pos = node->mTransformation * pos; // TODO not sure how good this is
 					vertex.position = { pos.x, pos.y, pos.z , 1.f };
 
 					if (aMesh->HasTextureCoords(0)) {
@@ -85,7 +81,6 @@ namespace sa {
 
 					if (aMesh->HasNormals()) {
 						aiVector3D normal = aMesh->mNormals[face.mIndices[k]]; // assumes 1 tex coord per vertex
-						//normal = node->mTransformation * normal;
 						vertex.normal = { normal.x, normal.y, normal.z, 0.f };
 					}
 					
@@ -183,6 +178,7 @@ namespace sa {
 	}
 
 	Texture2D* AssetManager::loadTexture(const std::filesystem::path& path, bool generateMipMaps) {
+		SA_PROFILE_FUNCTION();
 		Texture2D* tex = ResourceManager::get().get<Texture2D>(path.string());
 		
 		if (!tex) {
@@ -210,6 +206,7 @@ namespace sa {
 	}
 
 	ResourceID AssetManager::loadModel(const std::filesystem::path& path, ProgressView<ResourceID> progress) {
+		SA_PROFILE_FUNCTION();
 
 		if (!std::filesystem::exists(path)) {
 			DEBUG_LOG_ERROR("No such file:", path);
@@ -231,6 +228,7 @@ namespace sa {
 	}
 
 	ProgressView<ResourceID> AssetManager::loadModelAsync(const std::filesystem::path& path) {
+		SA_PROFILE_FUNCTION();
 		ProgressView<ResourceID> p;
 		auto future = m_taskExecutor.async([path, p]() {
 			return AssetManager::get().loadModel(path, p);
@@ -307,7 +305,7 @@ namespace sa {
 	}
 
 	void AssetManager::loadAssimpModel(const std::filesystem::path& path, ModelData* pModel, ProgressView<ResourceID> progress) {
-
+		SA_PROFILE_FUNCTION();
 		Assimp::Importer importer;
 
 		unsigned int flags =
@@ -348,6 +346,7 @@ namespace sa {
 
 		std::vector<ResourceID> materials(scene->mNumMaterials);
 		taskflow.for_each_index(0U, scene->mNumMaterials, 1U, [&](int i) {
+				SA_PROFILE_SCOPE("Load material: " + std::to_string(i));
 				aiMaterial* aMaterial = scene->mMaterials[i];
 				Material material;
 

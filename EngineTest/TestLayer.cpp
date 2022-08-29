@@ -1,5 +1,7 @@
 
 #include "TestLayer.h"
+#define SA_PROFILER_ENABLE
+#include "Tools\Profiler.h"
 
 namespace sa {
 
@@ -54,6 +56,7 @@ namespace sa {
 	}
 
 	void TestLayer::onUpdate(float dt) {
+		SA_PROFILE_FUNCTION();
 		m_pCameraController->update(dt);
 
 		if (m_infoClock.getElapsedTime() > 0.5f) {

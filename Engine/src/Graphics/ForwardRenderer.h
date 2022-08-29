@@ -8,7 +8,7 @@
 namespace sa {
 	class ForwardRenderer : public IRenderTechnique {
 	private:
-		sa::Renderer& m_renderer;
+		Renderer& m_renderer;
 
 
 		ResourceID m_colorRenderProgram;
@@ -22,33 +22,33 @@ namespace sa {
 
 		ResourceID m_blurPipeline;
 		ResourceID m_blurDescriptorSet;
-		sa::SubContext m_blurContext;
+		SubContext m_blurContext;
 
 		ResourceID m_perFrameDescriptorSet;
 		ResourceID m_materialDescriptorSet;
 
-		sa::Buffer m_perFrameBuffer;
+		Buffer m_perFrameBuffer;
 
 
 		ResourceID m_imguiRenderProgram;
 		ResourceID m_imguiFramebuffer;
 
-		sa::Texture2D m_depthTexture;
-		sa::Texture2D m_mainColorTexture;
+		Texture2D m_depthTexture;
+		Texture2D m_mainColorTexture;
 
-		sa::Texture2D m_brightnessTexture;
-		sa::Texture2D m_blurredBrightnessTexture;
+		Texture2D m_brightnessTexture;
+		Texture2D m_blurredBrightnessTexture;
 		
-		sa::Texture2D m_outputTexture;
-		sa::Texture2D m_resolveTexture;
+		Texture2D m_outputTexture;
+		Texture2D m_resolveTexture;
 
 		ResourceID m_sampler;
 		
-		sa::Buffer m_lightBuffer;
+		Buffer m_lightBuffer;
 		
-		void createTextures(sa::Extent extent);
-		void createRenderPasses();
-		void createFramebuffers(sa::Extent extent);
+		void setupColorPass(Extent extent);
+		void setupPostPass(Extent extent);
+		void setupBlurPass();
 		
 	public:
 		ForwardRenderer();

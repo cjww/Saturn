@@ -234,6 +234,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Application.h" />
+    <ClInclude Include="src\Core.h" />
     <ClInclude Include="src\ECS\ComponentBase.h" />
     <ClInclude Include="src\ECS\ComponentType.h" />
     <ClInclude Include="src\CameraController.h" />

@@ -5,31 +5,48 @@
 
 namespace sa {
 	
-	void ForwardRenderer::createTextures(sa::Extent extent) {
+	void ForwardRenderer::setupColorPass(Extent extent) {
+		SA_PROFILE_FUNCTION();
+
 		m_mainColorTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, extent);
 		m_depthTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::DEPTH_ATTACHMENT, extent);
 		m_brightnessTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::STORAGE | sa::TextureTypeFlagBits::SAMPLED, extent);
 
-		m_outputTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, extent);
-
-		m_blurredBrightnessTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::SAMPLED | sa::TextureTypeFlagBits::STORAGE, extent);
-
-
-
-	}
-
-	void ForwardRenderer::createRenderPasses() {
 
 		m_colorRenderProgram = m_renderer.createRenderProgram()
 			.addColorAttachment(true, m_mainColorTexture)
 			.addDepthAttachment(m_depthTexture)
 			.addColorAttachment(true, m_brightnessTexture)
 			.beginSubpass()
-				.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
-				.addAttachmentReference(1, sa::SubpassAttachmentUsage::DepthTarget)
-				.addAttachmentReference(2, sa::SubpassAttachmentUsage::ColorTarget)
+			.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
+			.addAttachmentReference(1, sa::SubpassAttachmentUsage::DepthTarget)
+			.addAttachmentReference(2, sa::SubpassAttachmentUsage::ColorTarget)
 			.endSubpass()
 			.end();
+
+
+		m_colorFramebuffer = m_renderer.createFramebuffer(m_colorRenderProgram, { m_mainColorTexture, m_depthTexture, m_brightnessTexture });
+
+
+		m_colorPipeline = m_renderer.createGraphicsPipeline(m_colorRenderProgram, 0, extent,
+			"../Engine/shaders/ForwardColorPass.vert.spv", "../Engine/shaders/ForwardColorPass.frag.spv");
+
+		m_perFrameDescriptorSet = m_renderer.allocateDescriptorSet(m_colorPipeline, SET_PER_FRAME);
+
+
+		PerFrameBuffer perFrame = {};
+		perFrame.projViewMatrix = sa::Matrix4x4(1);
+		perFrame.viewPos = sa::Vector3(0);
+		m_perFrameBuffer = m_renderer.createBuffer(sa::BufferType::UNIFORM, sizeof(PerFrameBuffer), &perFrame);
+
+		m_renderer.updateDescriptorSet(m_perFrameDescriptorSet, 0, m_perFrameBuffer);
+
+	}
+
+	void ForwardRenderer::setupPostPass(Extent extent) {
+		SA_PROFILE_FUNCTION();
+
+		m_outputTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, extent);
 
 		auto factory = m_renderer.createRenderProgram();
 		if (m_useImGui) {
@@ -54,13 +71,7 @@ namespace sa {
 				.endSubpass()
 				.end();
 		}
-
-	}
-
-	void ForwardRenderer::createFramebuffers(sa::Extent extent)
-	{
-		
-		m_colorFramebuffer = m_renderer.createFramebuffer(m_colorRenderProgram, { m_mainColorTexture, m_depthTexture, m_brightnessTexture });
+	
 
 		if (m_useImGui) {
 			m_postFramebuffer = m_renderer.createFramebuffer(m_postRenderProgram, { m_outputTexture });
@@ -72,7 +83,36 @@ namespace sa {
 		else {
 			m_postFramebuffer = m_renderer.createSwapchainFramebuffer(m_postRenderProgram, m_pWindow->getSwapchainID(), {});
 		}
+
+		m_postProcessPipeline = m_renderer.createGraphicsPipeline(m_postRenderProgram, 0, extent,
+			"../Engine/shaders/PostProcess.vert.spv", "../Engine/shaders/PostProcess.frag.spv");
+		
+		m_postInputDescriptorSet = m_renderer.allocateDescriptorSet(m_postRenderProgram, 0);
+
+		m_renderer.updateDescriptorSet(m_postInputDescriptorSet, 0, m_mainColorTexture, m_sampler);
+		
+
+		m_blurredBrightnessTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::SAMPLED | sa::TextureTypeFlagBits::STORAGE, extent);
+		m_renderer.updateDescriptorSet(m_postInputDescriptorSet, 1, m_blurredBrightnessTexture, m_sampler);
+
 	}
+
+	void ForwardRenderer::setupBlurPass() {
+		SA_PROFILE_FUNCTION();
+
+		m_blurPipeline = m_renderer.createComputePipeline("../Engine/shaders/GaussianBlur.comp.spv");
+
+		m_blurDescriptorSet = m_renderer.allocateDescriptorSet(m_blurPipeline, 0);
+
+		m_blurContext = m_renderer.createSubContext();
+		m_blurContext.preRecord([=](sa::RenderContext& context) {
+			context.bindPipeline(m_blurPipeline);
+			context.bindDescriptorSet(m_blurDescriptorSet, m_blurPipeline);
+			context.dispatch(32, 32, 1);
+			}, (sa::ContextUsageFlags)0);
+
+	}
+
 
 	
 	ForwardRenderer::ForwardRenderer() 
@@ -84,29 +124,14 @@ namespace sa {
 	void ForwardRenderer::swapchainResizedCallback(Extent extent) {
 		std::cout << "resized: " << extent.width << ", " << extent.height << std::endl;
 		
-
-		createTextures(extent);
-		createRenderPasses();
-		createFramebuffers(extent);
-		
-
-
-		m_colorPipeline = m_renderer.createGraphicsPipeline(m_colorRenderProgram, 0, extent,
-			"../Engine/shaders/ForwardColorPass.vert.spv", "../Engine/shaders/ForwardColorPass.frag.spv");
-
-		m_postProcessPipeline = m_renderer.createGraphicsPipeline(m_postRenderProgram, 0, extent,
-			"../Engine/shaders/PostProcess.vert.spv", "../Engine/shaders/PostProcess.frag.spv");
-
-		m_renderer.updateDescriptorSet(m_blurDescriptorSet, 0, m_brightnessTexture);
-		m_renderer.updateDescriptorSet(m_blurDescriptorSet, 1, m_blurredBrightnessTexture);
-
-		m_renderer.updateDescriptorSet(m_postInputDescriptorSet, 0, m_mainColorTexture, m_sampler);
-		m_renderer.updateDescriptorSet(m_postInputDescriptorSet, 1, m_blurredBrightnessTexture, m_sampler);
-
+		setupColorPass(extent);
+		setupPostPass(extent);
 
 	}
 
 	void ForwardRenderer::init(sa::RenderWindow* pWindow, bool setupImGui) {
+		SA_PROFILE_FUNCTION();
+
 		m_useImGui = setupImGui;
 
 		m_pWindow = pWindow;
@@ -117,55 +142,17 @@ namespace sa {
 		// Get Extent
 		sa::Extent windowExtent = m_pWindow->getCurrentExtent();
 		
-		// Create pipeline resources
-		createTextures(windowExtent);
-		createRenderPasses();
-		createFramebuffers(windowExtent);
-
-		m_colorPipeline = m_renderer.createGraphicsPipeline(m_colorRenderProgram, 0, windowExtent,
-			"../Engine/shaders/ForwardColorPass.vert.spv", "../Engine/shaders/ForwardColorPass.frag.spv");
-
-		m_postProcessPipeline = m_renderer.createGraphicsPipeline(m_postRenderProgram, 0, windowExtent,
-			"../Engine/shaders/PostProcess.vert.spv", "../Engine/shaders/PostProcess.frag.spv");
-
-		m_blurPipeline = m_renderer.createComputePipeline("../Engine/shaders/GaussianBlur.comp.spv");
-
-
-		// BLUR PASS
-		m_blurDescriptorSet =  m_renderer.allocateDescriptorSet(m_blurPipeline, 0);
-		m_renderer.updateDescriptorSet(m_blurDescriptorSet, 0, m_brightnessTexture);
-		m_renderer.updateDescriptorSet(m_blurDescriptorSet, 1, m_blurredBrightnessTexture);
-
-
-
-		m_blurContext = m_renderer.createSubContext();
-		m_blurContext.preRecord([=](sa::RenderContext& context) {
-			context.bindPipeline(m_blurPipeline);
-			context.bindDescriptorSet(m_blurDescriptorSet, m_blurPipeline);
-			context.dispatch(32, 32, 1);
-		}, (sa::ContextUsageFlags)0);
 		
-
-
-		// Buffers DescriptorSets
-		PerFrameBuffer perFrame = {};
-		perFrame.projViewMatrix = sa::Matrix4x4(1);
-		m_perFrameBuffer = m_renderer.createBuffer(sa::BufferType::UNIFORM, sizeof(PerFrameBuffer), &perFrame);
-
-		m_perFrameDescriptorSet = m_renderer.allocateDescriptorSet(m_colorPipeline, SET_PER_FRAME);
-		m_renderer.updateDescriptorSet(m_perFrameDescriptorSet, 0, m_perFrameBuffer);
-
 		// Sampler
 		m_sampler = m_renderer.createSampler(sa::FilterMode::LINEAR);
 		
-		// Texture DescriptorSets
-		m_postInputDescriptorSet = m_renderer.allocateDescriptorSet(m_postRenderProgram, 0);
-		m_renderer.updateDescriptorSet(m_postInputDescriptorSet, 0, m_mainColorTexture, m_sampler);
-		m_renderer.updateDescriptorSet(m_postInputDescriptorSet, 1, m_blurredBrightnessTexture, m_sampler);
+		setupColorPass(windowExtent);
+		setupPostPass(windowExtent);
+		setupBlurPass();
 
+		
 		m_lightBuffer = m_renderer.createBuffer(sa::BufferType::UNIFORM);
 		
-
 	}
 
 	void ForwardRenderer::cleanup() {
@@ -179,9 +166,10 @@ namespace sa {
 	}
 
 	void ForwardRenderer::draw(Scene* scene) {
+		SA_PROFILE_FUNCTION();
 
 		updateLights(scene);
-
+		
 		sa::RenderContext context = m_pWindow->beginFrame();
 		if (!context) {
 			if(m_useImGui) ImGui::EndFrame();
@@ -195,31 +183,35 @@ namespace sa {
 
 		if(scene != nullptr) {
 			std::unordered_map<ResourceID, std::vector<std::tuple<Mesh*, Matrix4x4>>> meshes;
-			
-			scene->forEach<comp::Transform, comp::Model>([&](const comp::Transform& transform, comp::Model& modelComp) {
 
-				if (modelComp.modelID == NULL_RESOURCE) {
-					return; // does not have to be drawn
-				}
+			{
+				SA_PROFILE_SCOPE("Collect meshes");
+				scene->forEach<comp::Transform, comp::Model>([&](const comp::Transform& transform, comp::Model& modelComp) {
 
-				sa::ModelData* model = sa::AssetManager::get().getModel(modelComp.modelID);
+					if (modelComp.modelID == NULL_RESOURCE) {
+						return; // does not have to be drawn
+					}
+
+					sa::ModelData* model = sa::AssetManager::get().getModel(modelComp.modelID);
 				
-				sa::PerObjectBuffer perObject = {};
-				perObject.worldMatrix = glm::mat4(1);
+					sa::PerObjectBuffer perObject = {};
+					perObject.worldMatrix = glm::mat4(1);
 
-				perObject.worldMatrix = glm::translate(perObject.worldMatrix, transform.position);
-				perObject.worldMatrix = glm::rotate(perObject.worldMatrix, glm::radians(transform.rotation.x), glm::vec3(1, 0, 0));
-				perObject.worldMatrix = glm::rotate(perObject.worldMatrix, glm::radians(transform.rotation.y), glm::vec3(0, 1, 0));
-				perObject.worldMatrix = glm::rotate(perObject.worldMatrix, glm::radians(transform.rotation.z), glm::vec3(0, 0, 1));
-				perObject.worldMatrix = glm::scale(perObject.worldMatrix, transform.scale);
+					perObject.worldMatrix = glm::translate(perObject.worldMatrix, transform.position);
+					perObject.worldMatrix = glm::rotate(perObject.worldMatrix, glm::radians(transform.rotation.x), glm::vec3(1, 0, 0));
+					perObject.worldMatrix = glm::rotate(perObject.worldMatrix, glm::radians(transform.rotation.y), glm::vec3(0, 1, 0));
+					perObject.worldMatrix = glm::rotate(perObject.worldMatrix, glm::radians(transform.rotation.z), glm::vec3(0, 0, 1));
+					perObject.worldMatrix = glm::scale(perObject.worldMatrix, transform.scale);
 				 
-				for (auto& mesh : model->meshes) {
-					meshes[mesh.materialID].push_back({ &mesh, perObject.worldMatrix });
-				}
-			});
+					for (auto& mesh : model->meshes) {
+						meshes[mesh.materialID].push_back({ &mesh, perObject.worldMatrix });
+					}
+				});
+			}
 
 			for (const auto& camera : scene->getActiveCameras()) {
-				
+				SA_PROFILE_SCOPE("Draw camera");
+
 				PerFrameBuffer perFrame;
 				perFrame.projViewMatrix = camera->getProjectionMatrix() * camera->getViewMatrix();
 				perFrame.viewPos = camera->getPosition();
@@ -236,6 +228,7 @@ namespace sa {
 						transparentMaterials[materialID] = pMeshes;
 						continue;
 					}
+					SA_PROFILE_SCOPE("Draw material: " + std::to_string(materialID));
 					mat->bind(context, m_colorPipeline, m_sampler);
 					for (const auto& [pMesh, matrix] : pMeshes) {
 						context.pushConstant(m_colorPipeline, sa::ShaderStageFlagBits::VERTEX, matrix);
@@ -253,6 +246,8 @@ namespace sa {
 
 				// Transparent pass
 				for (const auto& [materialID, pMeshes] : transparentMaterials) {
+					SA_PROFILE_SCOPE("Draw Transparent material: " + std::to_string(materialID));
+
 					Material* mat = AssetManager::get().getMaterial(materialID);
 					mat->bind(context, m_colorPipeline, m_sampler);
 					for (const auto& [pMesh, matrix] : pMeshes) {
@@ -273,35 +268,44 @@ namespace sa {
 
 		}
 
-		
-		context.endRenderProgram(m_colorRenderProgram);
-
-
-		context.transitionTexture(m_brightnessTexture, sa::Transition::RENDER_PROGRAM_OUTPUT, sa::Transition::COMPUTE_SHADER_READ);
-		context.transitionTexture(m_blurredBrightnessTexture, sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_WRITE);
-		context.executeSubContext(m_blurContext);
-		context.transitionTexture(m_blurredBrightnessTexture, sa::Transition::COMPUTE_SHADER_WRITE, sa::Transition::FRAGMENT_SHADER_READ);
-		context.transitionTexture(m_brightnessTexture, sa::Transition::COMPUTE_SHADER_READ, sa::Transition::RENDER_PROGRAM_OUTPUT);
-		/*
-
-		*/
-
-		context.beginRenderProgram(m_postRenderProgram, m_postFramebuffer, sa::SubpassContents::DIRECT);
-		context.bindPipeline(m_postProcessPipeline);
-		context.bindDescriptorSet(m_postInputDescriptorSet, m_postProcessPipeline);
-		context.draw(6, 1);
-		
-		ResourceID renderProgram = m_postRenderProgram;
-
-		if (m_useImGui) {
-			context.endRenderProgram(m_postRenderProgram);
-			context.beginRenderProgram(m_imguiRenderProgram, m_imguiFramebuffer, sa::SubpassContents::DIRECT);
-			context.renderImGuiFrame();
-			renderProgram = m_imguiRenderProgram;
+		{
+			SA_PROFILE_SCOPE("End renderprogram");
+			context.endRenderProgram(m_colorRenderProgram);
 		}
-		context.endRenderProgram(renderProgram);
 
-		m_pWindow->display();
+		{
+			SA_PROFILE_SCOPE("Blur");
+			context.transitionTexture(m_brightnessTexture, sa::Transition::RENDER_PROGRAM_OUTPUT, sa::Transition::COMPUTE_SHADER_READ);
+			context.transitionTexture(m_blurredBrightnessTexture, sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_WRITE);
+			context.executeSubContext(m_blurContext);
+			context.transitionTexture(m_blurredBrightnessTexture, sa::Transition::COMPUTE_SHADER_WRITE, sa::Transition::FRAGMENT_SHADER_READ);
+			context.transitionTexture(m_brightnessTexture, sa::Transition::COMPUTE_SHADER_READ, sa::Transition::RENDER_PROGRAM_OUTPUT);
+		}
+		{
+			SA_PROFILE_SCOPE("Post");
+			context.beginRenderProgram(m_postRenderProgram, m_postFramebuffer, sa::SubpassContents::DIRECT);
+			context.bindPipeline(m_postProcessPipeline);
+			context.bindDescriptorSet(m_postInputDescriptorSet, m_postProcessPipeline);
+			context.draw(6, 1);
+		}
+		
+		{
+			SA_PROFILE_SCOPE("End or Imgui");
+			ResourceID renderProgram = m_postRenderProgram;
+			if (m_useImGui) {
+				context.endRenderProgram(m_postRenderProgram);
+				context.beginRenderProgram(m_imguiRenderProgram, m_imguiFramebuffer, sa::SubpassContents::DIRECT);
+				context.renderImGuiFrame();
+				renderProgram = m_imguiRenderProgram;
+			}
+			context.endRenderProgram(renderProgram);
+		
+		}
+		
+		{
+			SA_PROFILE_SCOPE("Display");
+			m_pWindow->display();
+		}
 
 	}
 
@@ -310,6 +314,8 @@ namespace sa {
 	}
 
 	void ForwardRenderer::updateLights(Scene* pScene) {
+		SA_PROFILE_FUNCTION();
+
 		std::vector<LightData> lights;
 		pScene->forEach<comp::Light>([&](const comp::Light& light) {
 			lights.push_back(light.values);

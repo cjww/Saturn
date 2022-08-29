@@ -1,6 +1,8 @@
 #pragma once
 #include "Clock.h"
-
+#include <fstream>
+#include <mutex>
+#include <string>
 namespace sa {
 
 	// Define SA_PROFILER_ENABLE to enable

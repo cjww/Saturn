@@ -1,7 +1,5 @@
 #pragma once
 
-#define SA_PROFILER_ENABLE
-
 #include "Graphics/IRenderTechnique.h"
 
 #include "AssetManager.h"

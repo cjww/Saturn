@@ -1,5 +1,6 @@
 #pragma once
-#define SA_PROFILER_ENABLE
+#include "Core.h"
+
 #include "Application.h"
 
 #include "Tools\Profiler.h"
