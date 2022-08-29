@@ -183,6 +183,7 @@
     <ClInclude Include="include\PipelineSettings.hpp" />
     <ClInclude Include="include\Resources\Buffer.hpp" />
     <ClInclude Include="include\Resources\DescriptorSet.hpp" />
+    <ClInclude Include="include\Resources\DynamicBuffer.h" />
     <ClInclude Include="include\Resources\FramebufferSet.hpp" />
     <ClInclude Include="include\RenderProgramFactory.hpp" />
     <ClInclude Include="include\Resources\Pipeline.hpp" />
@@ -206,6 +207,7 @@
     <ClInclude Include="include\Window.hpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="include\Resources\DynamicBuffer.cpp" />
     <ClCompile Include="include\Tools\utils.cpp" />
     <ClCompile Include="src\imgui.cpp" />
     <ClCompile Include="src\imgui_demo.cpp" />

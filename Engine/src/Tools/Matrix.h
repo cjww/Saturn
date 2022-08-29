@@ -1,5 +1,6 @@
 #pragma once
 #include <glm\glm.hpp>
+#include <algorithm>
 
 namespace sa {
 	template<unsigned Col, unsigned Row, typename Type>

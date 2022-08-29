@@ -1,5 +1,6 @@
 #pragma once
 #include "structs.hpp"
+#include <string>
 
 namespace sa {
 	class Image {

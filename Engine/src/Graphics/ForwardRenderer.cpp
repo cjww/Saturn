@@ -180,7 +180,7 @@ namespace sa {
 
 	void ForwardRenderer::draw(Scene* scene) {
 
-		//updateLights(scene);
+		updateLights(scene);
 
 		sa::RenderContext context = m_pWindow->beginFrame();
 		if (!context) {

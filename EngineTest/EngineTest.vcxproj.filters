@@ -18,11 +18,19 @@
     <ClCompile Include="main.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="TestLayer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <Xml Include="project.xml" />
   </ItemGroup>
   <ItemGroup>
     <None Include="test.lua" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="TestLayer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

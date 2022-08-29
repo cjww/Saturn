@@ -25,7 +25,10 @@ namespace sa {
 		Camera();
 		Camera(const Window* pWindow);
 		Camera(Extent windowExtent);
-
+		
+		Camera(const Camera&) = default;
+		Camera& operator=(const Camera&) = default;
+		
 		void setFOVRadians(float fovRadians);
 		void setFOVDegrees(float fovDegrees);
 

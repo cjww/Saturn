@@ -46,7 +46,6 @@ namespace sa {
         m_viewport = viewport;
         m_apectRatio = (float)m_viewport.extent.width / m_viewport.extent.height;
         updateProjection();
-
     }
 
     void Camera::lookAt(Vector3 target) {

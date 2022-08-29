@@ -150,12 +150,16 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp" />
+    <ClCompile Include="TestLayer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <Xml Include="project.xml" />
   </ItemGroup>
   <ItemGroup>
     <None Include="test.lua" />
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="TestLayer.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
