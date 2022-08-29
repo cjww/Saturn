@@ -43,7 +43,7 @@ namespace sa {
 
 		}
 		catch (const std::exception& e) {
-			DEBUG_LOG_ERROR(e.what());
+			SA_DEBUG_LOG_ERROR(e.what());
 		}
 	}
 
@@ -334,7 +334,7 @@ namespace sa {
 			{
 				vk::FormatProperties properties = m_pCore->getPhysicalDevice().getFormatProperties(transfer.dstImage->format);
 				if (transfer.dstImage->mipLevels > 1 && !(properties.optimalTilingFeatures & vk::FormatFeatureFlagBits::eSampledImageFilterLinear)) {
-					DEBUG_LOG_WARNING("Mipmap not supported by format", vk::to_string(transfer.dstImage->format), ". No mipmaps generated");
+					SA_DEBUG_LOG_WARNING("Mipmap not supported by format", vk::to_string(transfer.dstImage->format), ". No mipmaps generated");
 					transfer.dstImage->mipLevels = 1;
 				}
 				m_pCore->transferBufferToColorImage(

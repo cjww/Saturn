@@ -15,14 +15,14 @@ namespace sa {
 		if (thisWindow->m_windowedExtent.width != extent.width || thisWindow->m_windowedExtent.height != height) {
 			thisWindow->m_wasResized = true;
 			thisWindow->m_windowedExtent = extent;
-			DEBUG_LOG_INFO("Window: Window resize ", width, height);
+			SA_DEBUG_LOG_INFO("Window: Window resize ", width, height);
 		}
 	}
 
 	void Window::onIconify(GLFWwindow* window, int iconified) {
 		Window* thisWindow = (Window*)glfwGetWindowUserPointer(window);
 		thisWindow->m_isIconified = iconified;
-		DEBUG_LOG_WARNING("Window: Window iconified");
+		SA_DEBUG_LOG_WARNING("Window: Window iconified");
 
 	}
 
@@ -116,7 +116,7 @@ namespace sa {
 		GLFWgamepadstate state;
 		GamepadState gamepadState;
 		if (!glfwGetGamepadState((int)joystick, &state)) {
-			DEBUG_LOG_WARNING("Joystick ", (int)joystick, " was not a gamepad or not present");
+			SA_DEBUG_LOG_WARNING("Joystick ", (int)joystick, " was not a gamepad or not present");
 			return {};
 		}
 		for (int i = 0; i < 15; i++) {
@@ -334,7 +334,7 @@ namespace sa {
 		}
 		GLFWcursor** pCursor = ResourceManager::get().get<GLFWcursor*>(cursor);
 		if (!pCursor) {
-			DEBUG_LOG_WARNING("Tried to set invalid cursor");
+			SA_DEBUG_LOG_WARNING("Tried to set invalid cursor");
 			return;
 		}
 		glfwSetCursor(m_window, *pCursor);

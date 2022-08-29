@@ -68,28 +68,28 @@ public:
 };
 
 #ifdef DEBUG_LOG
-#define DEBUG_LOG_INFO(...) \
+#define SA_DEBUG_LOG_INFO(...) \
 	Logger::SetColor(FGColor::BrightGreen); \
 	DEBUG_LOG_OSTREAM << "[INFO: " << __FILENAME__ << ":" << __LINE__ << "] "; \
 	Logger::SetColor(FGColor::BrightWhite); \
 	Logger::Print(__VA_ARGS__); DEBUG_LOG_OSTREAM
 
-#define DEBUG_LOG_WARNING(...) \
+#define SA_DEBUG_LOG_WARNING(...) \
 	Logger::SetColor(FGColor::BrightYellow); \
 	DEBUG_LOG_OSTREAM << "[WARNING: " << __FILENAME__ << ":" << __LINE__ << "] "; \
 	Logger::SetColor(FGColor::BrightWhite); \
 	Logger::Print(__VA_ARGS__); DEBUG_LOG_OSTREAM
 
-#define DEBUG_LOG_ERROR(...) \
+#define SA_DEBUG_LOG_ERROR(...) \
 	Logger::SetColor(FGColor::BrightRed); \
 	DEBUG_LOG_OSTREAM << "[ERROR: " << __FILENAME__ << ":" << __LINE__ << "] "; \
 	Logger::SetColor(FGColor::BrightWhite); \
 	Logger::Print(__VA_ARGS__); DEBUG_LOG_OSTREAM
 
 #else
-#define DEBUG_LOG_INFO(...)
-#define DEBUG_LOG_WARNING(...)
-#define DEBUG_LOG_ERROR(...)
+#define SA_DEBUG_LOG_INFO(...)
+#define SA_DEBUG_LOG_WARNING(...)
+#define SA_DEBUG_LOG_ERROR(...)
 #endif //  DEBUG_LOG
 
 template<typename Arg>

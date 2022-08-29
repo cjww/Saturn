@@ -888,7 +888,7 @@ void forward(sa::RenderWindow& window) {
 	sa::Renderer& renderer = sa::Renderer::get();
 
 	window.setResizeCallback([](sa::Extent newExtent) {
-		DEBUG_LOG_INFO("CALLBACK: new Extent: ", newExtent.width, newExtent.height);
+		SA_DEBUG_LOG_INFO("CALLBACK: new Extent: ", newExtent.width, newExtent.height);
 	});
 
 	// FIRST PASS
@@ -1064,10 +1064,10 @@ int main() {
 
 		sa::Window::SetJoystickConnectedCallback([](sa::Joystick joystick, sa::ConnectionState state) {
 			if (state == sa::ConnectionState::CONNECTED) {
-				DEBUG_LOG_INFO("Joystick", (int)joystick, "connected: ", sa::Window::GetJoystickName(joystick));
+				SA_DEBUG_LOG_INFO("Joystick", (int)joystick, "connected: ", sa::Window::GetJoystickName(joystick));
 			}
 			else {
-				DEBUG_LOG_INFO("Joystick", (int)joystick, "disconnected");
+				SA_DEBUG_LOG_INFO("Joystick", (int)joystick, "disconnected");
 			}
 		});
 
@@ -1079,7 +1079,7 @@ int main() {
 
 	}
 	catch (const std::exception& e) {
-		DEBUG_LOG_ERROR(e.what());
+		SA_DEBUG_LOG_ERROR(e.what());
 		
 	}
 

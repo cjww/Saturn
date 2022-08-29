@@ -149,7 +149,7 @@ namespace sa {
 
 	void sa::Buffer::write(void* data, size_t size, int offset) {
 		if (!isValid()) {
-			DEBUG_LOG_ERROR("Buffer not initialized! Wrote 0 bytes");
+			SA_DEBUG_LOG_ERROR("Buffer not initialized! Wrote 0 bytes");
 			return;
 		}
 		if (getCapacity() < size) {
@@ -161,7 +161,7 @@ namespace sa {
 
 	void Buffer::append(void* data, size_t size) {
 		if (!isValid()) {
-			DEBUG_LOG_ERROR("Buffer not initialized! Wrote 0 bytes");
+			SA_DEBUG_LOG_ERROR("Buffer not initialized! Wrote 0 bytes");
 			return;
 		}
 		if (getCapacity() - getSize() < size) {

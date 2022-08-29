@@ -23,10 +23,10 @@ namespace sa {
 		auto ret = LuaAccessable::getState().do_string("return 'Loaded ' .. jit.version .. ' for ' .. jit.os .. ' ' .. jit.arch");
 		//auto ret = m_lua.do_string("return 'Loaded ' .. jit.version .. ' for ' .. jit.os .. ' ' .. jit.arch");
 		if (ret.valid()) {
-			DEBUG_LOG_INFO(ret[0].as<std::string>());	
+			SA_DEBUG_LOG_INFO(ret[0].as<std::string>());	
 		}
 		else {
-			DEBUG_LOG_WARNING("Failed to load luaJit");
+			SA_DEBUG_LOG_WARNING("Failed to load luaJit");
 		}
 
 
@@ -58,7 +58,7 @@ namespace sa {
 		std::ifstream file(path);
 		if (!file.is_open()) {
 			file.close();
-			DEBUG_LOG_ERROR("Could not open lua file: ", path);
+			SA_DEBUG_LOG_ERROR("Could not open lua file: ", path);
 			return;
 		}
 		
@@ -87,7 +87,7 @@ namespace sa {
 						script.components.push_back(type);
 					}
 					else {
-						DEBUG_LOG_WARNING(word, "was not a recognized component type, ignoring...");
+						SA_DEBUG_LOG_WARNING(word, "was not a recognized component type, ignoring...");
 					}
 				}
 			}
@@ -99,7 +99,7 @@ namespace sa {
 
 		auto ret = script.func();
 		if (!ret.valid()) {
-			DEBUG_LOG_ERROR(lua_tostring(lua, -1));
+			SA_DEBUG_LOG_ERROR(lua_tostring(lua, -1));
 		}
 
 		lua.stack_clear();

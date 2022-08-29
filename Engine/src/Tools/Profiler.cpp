@@ -21,7 +21,7 @@ namespace sa {
 		m_outputStream.open(filepath);
 		if (!m_outputStream.is_open())
 		{
-			DEBUG_LOG_ERROR("Failed to open session file");
+			SA_DEBUG_LOG_ERROR("Failed to open session file");
 			m_mutex.unlock();
 			return;
 		}

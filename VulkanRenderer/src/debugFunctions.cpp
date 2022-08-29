@@ -14,7 +14,7 @@ namespace sa {
             throw std::runtime_error(ss.str());
         }
         else {
-            DEBUG_LOG_ERROR(ss.str());
+            SA_DEBUG_LOG_ERROR(ss.str());
         }
     }
 
@@ -25,17 +25,17 @@ namespace sa {
         ss << pCallbackData->pMessage << std::endl;
 
         if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
-            DEBUG_LOG_WARNING(ss.str());
+            SA_DEBUG_LOG_WARNING(ss.str());
         }
         if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
-            DEBUG_LOG_ERROR(ss.str());
+            SA_DEBUG_LOG_ERROR(ss.str());
         }
         if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
-            DEBUG_LOG_INFO(ss.str());
+            SA_DEBUG_LOG_INFO(ss.str());
         }
         if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
             ss << " VERBOSE ";
-            DEBUG_LOG_INFO(ss.str());
+            SA_DEBUG_LOG_INFO(ss.str());
         }
         return VK_FALSE;
     }

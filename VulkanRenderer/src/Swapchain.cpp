@@ -63,7 +63,7 @@ namespace sa {
 
 		createSyncronisationObjects();
 
-		DEBUG_LOG_INFO("Created Swapchain\n\tImage count: ", m_images.size(), "\n\tFormat: ", vk::to_string(m_format));
+		SA_DEBUG_LOG_INFO("Created Swapchain\n\tImage count: ", m_images.size(), "\n\tFormat: ", vk::to_string(m_format));
 
 	}
 

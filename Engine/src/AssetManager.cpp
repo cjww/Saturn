@@ -22,12 +22,12 @@ namespace sa {
 		}
 
 		std::filesystem::recursive_directory_iterator it(directory);
-		DEBUG_LOG_INFO("Looking for file:", filename.filename());
+		SA_DEBUG_LOG_INFO("Looking for file:", filename.filename());
 		while(it != std::filesystem::end(it)) {
 			
 			if (it->path().filename() == filename.filename()) {
 				outPath = it->path();
-				DEBUG_LOG_INFO("Found in:", outPath);
+				SA_DEBUG_LOG_INFO("Found in:", outPath);
 				return true;
 			}
 			it++;
@@ -44,7 +44,7 @@ namespace sa {
 			}
 			else if (parentIt->path().filename() == filename.filename()) {
 				outPath = parentIt->path();
-				DEBUG_LOG_INFO("Found in:", outPath);
+				SA_DEBUG_LOG_INFO("Found in:", outPath);
 				return true;
 			}
 			parentIt++;
@@ -134,17 +134,17 @@ namespace sa {
 			}
 			std::filesystem::path finalPath;
 			if (!searchForFile(directory, filename, finalPath)) {
-				DEBUG_LOG_ERROR("File not found:", filename);
+				SA_DEBUG_LOG_ERROR("File not found:", filename);
 				continue;
 			}
 
 			Texture2D* tex = AssetManager::get().loadTexture(finalPath, true);
 			if (!tex) {
-				DEBUG_LOG_ERROR("Failed to create texture,", finalPath.string());
+				SA_DEBUG_LOG_ERROR("Failed to create texture,", finalPath.string());
 				continue;
 			}
 
-			//DEBUG_LOG_INFO("Image found:", finalPath.filename(), ", type:", toString((MaterialTextureType)type));
+			//SA_DEBUG_LOG_INFO("Image found:", finalPath.filename(), ", type:", toString((MaterialTextureType)type));
 			textures[i].texture = *tex;
 			textures[i].blendFactor = blending;
 			textures[i].blendOp = (TextureBlendOp)op;
@@ -185,7 +185,7 @@ namespace sa {
 			try {
 				Image img(path.string());
 				ResourceManager::get().insert<Texture2D>(path.string(), Renderer::get().createTexture2D(img, generateMipMaps));
-				DEBUG_LOG_INFO("Loaded texture", path.string());
+				SA_DEBUG_LOG_INFO("Loaded texture", path.string());
 			}
 			catch (const std::exception& e) {
 				return nullptr;
@@ -305,17 +305,17 @@ namespace sa {
 			//aiProcess_MakeLeftHanded |
 			0;
 		if (!importer.ValidateFlags(flags)) {
-			DEBUG_LOG_ERROR("Assimp Flag validation failed");
+			SA_DEBUG_LOG_ERROR("Assimp Flag validation failed");
 		}
 
 		const aiScene* scene = importer.ReadFile(path.string(), flags);
 
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-			DEBUG_LOG_ERROR("Failed to read file ", path.string(), " : ", importer.GetErrorString());
+			SA_DEBUG_LOG_ERROR("Failed to read file ", path.string(), " : ", importer.GetErrorString());
 			return;
 		}
 
-		DEBUG_LOG_INFO(
+		SA_DEBUG_LOG_INFO(
 			"Loaded file", path.string(),
 			"\nMeshes", scene->mNumMeshes,
 			"\nAnimations", scene->mNumAnimations,
@@ -327,7 +327,7 @@ namespace sa {
 
 		// Materials
 
-		DEBUG_LOG_INFO("Material Count:", scene->mNumMaterials);
+		SA_DEBUG_LOG_INFO("Material Count:", scene->mNumMaterials);
 		tf::Taskflow taskflow;
 		
 
@@ -373,7 +373,7 @@ namespace sa {
 		SA_PROFILE_FUNCTION();
 
 		if (!std::filesystem::exists(path)) {
-			DEBUG_LOG_ERROR("No such file:", path);
+			SA_DEBUG_LOG_ERROR("No such file:", path);
 			return NULL_RESOURCE;
 		}
 		std::filesystem::path absolutePath = std::filesystem::absolute(path);

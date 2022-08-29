@@ -62,7 +62,7 @@ namespace sa {
 			env.set_on(func);
 			auto r = func(args...);
 			if (!r.valid()) {
-				DEBUG_LOG_ERROR(lua_tostring(LuaAccessable::getState(), -1));
+				SA_DEBUG_LOG_ERROR(lua_tostring(LuaAccessable::getState(), -1));
 			}
 		}
 	}

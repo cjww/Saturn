@@ -94,7 +94,7 @@ namespace sa {
 	template<typename T, typename ...Args>
 	inline T* Entity::addComponent(Args&& ... args) {
 		if (this->isNull()) {
-			//DEBUG_LOG_ERROR("Entity was a null entity");
+			//SA_DEBUG_LOG_ERROR("Entity was a null entity");
 			throw std::runtime_error("Entity was a null entity");
 		}
 		return &m_pRegistry->emplace_or_replace<T>(m_entity, args...);
@@ -104,7 +104,7 @@ namespace sa {
 	template<typename T>
 	inline void Entity::removeComponent() {
 		if (this->isNull()) {
-			//DEBUG_LOG_ERROR("Entity was a null entity");
+			//SA_DEBUG_LOG_ERROR("Entity was a null entity");
 			throw std::runtime_error("Entity was a null entity");
 		}
 		m_pRegistry->remove<T>(m_entity);

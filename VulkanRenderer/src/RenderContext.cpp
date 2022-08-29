@@ -110,7 +110,7 @@ namespace sa {
 		vkBuffers.reserve(buffers.size());
 		for (const Buffer& buffer : buffers) {
 			if (buffer.getType() != BufferType::VERTEX) {
-				DEBUG_LOG_ERROR("All buffers must be of VERTEX type");
+				SA_DEBUG_LOG_ERROR("All buffers must be of VERTEX type");
 				return;
 			}
 			const DeviceBuffer* deviceBuffer = (const DeviceBuffer*)buffer;

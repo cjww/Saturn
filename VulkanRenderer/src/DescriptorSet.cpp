@@ -63,7 +63,7 @@ namespace sa {
 	void DescriptorSet::update(uint32_t binding, vk::Buffer buffer, vk::DeviceSize bufferSize, vk::DeviceSize bufferOffset, vk::BufferView* pView, uint32_t indexToUpdate) {
 
 		if (m_writes.size() <= binding) {
-			DEBUG_LOG_ERROR("Binding", binding, "out of bounds!");
+			SA_DEBUG_LOG_ERROR("Binding", binding, "out of bounds!");
 			throw std::runtime_error("Binding " + std::to_string(binding) + " out of bounds!");
 		}
 
@@ -83,7 +83,7 @@ namespace sa {
 
 	void DescriptorSet::update(uint32_t binding, vk::ImageView imageView, vk::ImageLayout layout, vk::Sampler* pSampler, uint32_t indexToUpdate) {
 		if (m_writes.size() <= binding) {
-			DEBUG_LOG_ERROR("Binding", binding, "out of bounds!");
+			SA_DEBUG_LOG_ERROR("Binding", binding, "out of bounds!");
 			throw std::runtime_error("Binding " + std::to_string(binding) + " out of bounds!");
 		}
 
@@ -104,7 +104,7 @@ namespace sa {
 			return;
 
 		if (m_writes.size() <= binding) {
-			DEBUG_LOG_ERROR("Binding", binding, "out of bounds!");
+			SA_DEBUG_LOG_ERROR("Binding", binding, "out of bounds!");
 			throw std::runtime_error("Binding " + std::to_string(binding) + " out of bounds!");
 		}
 
@@ -135,7 +135,7 @@ namespace sa {
 			return;
 
 		if (m_writes.size() <= binding) {
-			DEBUG_LOG_ERROR("Binding", binding, "out of bounds!");
+			SA_DEBUG_LOG_ERROR("Binding", binding, "out of bounds!");
 			throw std::runtime_error("Binding " + std::to_string(binding) + " out of bounds!");
 		}
 

@@ -188,7 +188,7 @@ namespace sa {
 		compiler.build_combined_image_samplers();
 
 		for (auto ext : compiler.get_declared_extensions()) {
-			DEBUG_LOG_INFO("Shader uses vulkan extension: ", ext);
+			SA_DEBUG_LOG_INFO("Shader uses vulkan extension: ", ext);
 		}
 
 		m_descriptorSets.clear();

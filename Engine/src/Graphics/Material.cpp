@@ -20,7 +20,7 @@ namespace sa {
 		for (uint32_t i = 0; i < count; i++) {
 			const BlendedTexture& blendedTex = textures[i];
 			if (!blendedTex.texture.isValid()) {
-				DEBUG_LOG_WARNING("Texture invalid, loading default texture");
+				SA_DEBUG_LOG_WARNING("Texture invalid, loading default texture");
 				targetMaps[i] = *AssetManager::get().loadDefaultTexture();
 				targetBlend[i++] = { blendedTex.blendOp, blendedTex.blendFactor };
 				continue;

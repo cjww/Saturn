@@ -106,7 +106,7 @@ namespace sa {
 				}
 			}
 			if (!found) {
-				DEBUG_LOG_WARNING("A validation layer requested was not present in available layers: ", m_validationLayers[i]);
+				SA_DEBUG_LOG_WARNING("A validation layer requested was not present in available layers: ", m_validationLayers[i]);
 				m_validationLayers.erase(m_validationLayers.begin() + i);
 				i--;
 			}
