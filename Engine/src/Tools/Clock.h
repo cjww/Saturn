@@ -8,25 +8,33 @@ namespace sa {
 	public:
 		Clock();
 
-		template<typename T = float, typename Ratio = std::ratio<1i64>>
-		T restart();
+		template<typename Duration = std::chrono::duration<float>>
+		auto getStartTime();
 
-		template<typename T = float, typename Ratio = std::ratio<1i64>>
-		T getElapsedTime() const;
+		template<typename Duration = std::chrono::duration<float>>
+		auto restart();
+
+		template<typename Duration = std::chrono::duration<float>>
+		auto getElapsedTime() const;
 	};
 
-	template<typename T, typename Ratio>
-	inline T Clock::restart() {
+	template<typename Duration>
+	inline auto Clock::getStartTime() {
+		return std::chrono::time_point_cast<Duration>(m_start).time_since_epoch().count();
+	}
+
+	template<typename Duration>
+	inline auto Clock::restart() {
 		auto now = std::chrono::high_resolution_clock::now();
-		auto duration = std::chrono::duration_cast<std::chrono::duration<T, Ratio>>(now - m_start);
+		auto duration = std::chrono::duration_cast<Duration>(now - m_start);
 		m_start = now;
 		return duration.count();
 	}
 
-	template<typename T, typename Ratio>
-	inline T Clock::getElapsedTime() const {
+	template<typename Duration>
+	inline auto Clock::getElapsedTime() const {
 		auto now = std::chrono::high_resolution_clock::now();
-		auto duration = std::chrono::duration_cast<std::chrono::duration<T, Ratio>>(now - m_start);;
+		auto duration = std::chrono::duration_cast<Duration>(now - m_start);
 		return duration.count();
 	}
 }

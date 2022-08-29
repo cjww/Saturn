@@ -226,6 +226,7 @@
     <ClCompile Include="src\Tools\Logger.cpp" />
     <ClCompile Include="src\Tools\Math.cpp" />
     <ClCompile Include="src\Tools\Matrix.cpp" />
+    <ClCompile Include="src\Tools\Profiler.cpp" />
     <ClCompile Include="src\Tools\ScopeTimer.cpp" />
     <ClCompile Include="src\Tools\StopWatch.cpp" />
     <ClCompile Include="src\Tools\utils.cpp" />
@@ -258,6 +259,7 @@
     <ClInclude Include="src\Tools\Logger.hpp" />
     <ClInclude Include="src\Tools\Math.h" />
     <ClInclude Include="src\Tools\Matrix.h" />
+    <ClInclude Include="src\Tools\Profiler.h" />
     <ClInclude Include="src\Tools\utils.h" />
     <ClInclude Include="src\Tools\Vector.h" />
     <ClInclude Include="src\Vertex.h" />
