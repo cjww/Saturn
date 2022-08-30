@@ -85,6 +85,12 @@ namespace sa {
 				size, initialData);
 			m_view = ResourceManager::get().insert<vk::BufferView>(m_pCore->createBufferView(m_pBuffer->buffer, vk::Format::eR32Sfloat));
 			break;
+		case BufferType::INDIRECT:
+			m_pBuffer = m_pCore->createBuffer(vk::BufferUsageFlagBits::eIndirectBuffer,
+				VMA_MEMORY_USAGE_AUTO,
+				VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT,
+				size, initialData);
+			break;
 		}
 	}
 
@@ -176,7 +182,7 @@ namespace sa {
 		m_size = 0;
 	}
 
-	void* Buffer::data() {
+	void* Buffer::data() const {
 		return m_pBuffer->mappedData;
 	}
 

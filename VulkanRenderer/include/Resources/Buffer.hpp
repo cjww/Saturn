@@ -18,7 +18,8 @@ namespace sa {
 		UNIFORM,
 		STORAGE,
 		UNIFORM_TEXEL,
-		STORAGE_TEXEL
+		STORAGE_TEXEL,
+		INDIRECT,
 	};
 
 	std::string to_string(const BufferType& value);
@@ -69,10 +70,10 @@ namespace sa {
 		template<typename T, size_t Size>
 		void write(const std::array<T, Size>& data);
 
-		void* data();
+		void* data() const;
 
 		template<typename T>
-		std::vector<T> getContent();
+		std::vector<T> getContent() const;
 
 		bool isValid() const;
 
@@ -113,7 +114,7 @@ namespace sa {
 	}
 
 	template<typename T>
-	inline std::vector<T> Buffer::getContent() {
+	inline std::vector<T> Buffer::getContent() const {
 		std::vector<T> elements(getElementCount<T>());
 		memcpy(elements.data(), data(), getSize());
 		return elements;

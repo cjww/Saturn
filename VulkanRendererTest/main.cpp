@@ -289,6 +289,10 @@ std::array<VertexColorUV, 4> quad = {
 	VertexColorUV{ { -0.5f, 0.5f, 0.0f, 1.0f },	{ 1.0f, 1.0f, 1.0f, 1.0f }, {0.0f, 0.0f} }
 };
 
+std::array<uint32_t, 6> quadIndices = {
+	0, 1, 3,
+	1, 2, 3
+};
 
 std::array<VertexColorUV, 8> box = {
 	// forward
@@ -465,9 +469,11 @@ void imguiTest(sa::RenderWindow& window) {
 	Object object;
 	object.vertexBuffer = renderer.createBuffer(sa::BufferType::VERTEX);
 	object.vertexBuffer.write(box);
+	object.vertexBuffer << quad;
 
 	object.indexBuffer = renderer.createBuffer(sa::BufferType::INDEX);
 	object.indexBuffer.write(boxIndices);
+	object.indexBuffer << quadIndices;
 
 	object.pc.worldMat = glm::mat4(1);
 	object.pc.textureIndex = 0;
@@ -510,6 +516,25 @@ void imguiTest(sa::RenderWindow& window) {
 	renderer.updateDescriptorSet(skyboxDescriptorSet, 1, cubeMap1, sampler);
 
 
+	sa::Buffer indirectCountBuffer = renderer.createBuffer(sa::BufferType::INDIRECT);
+	indirectCountBuffer << 2U;
+
+	sa::Buffer indirectBuffer = renderer.createBuffer(sa::BufferType::INDIRECT, sizeof(sa::DrawIndexedIndirectCommand) * 2);
+
+	sa::DrawIndexedIndirectCommand cmd = {};
+	cmd.firstIndex = 0;
+	cmd.indexCount = boxIndices.size();
+	cmd.firstInstance = 0;
+	cmd.instanceCount = 1;
+	cmd.vertexOffset = 0;
+	indirectBuffer << cmd;
+
+	cmd.firstIndex = boxIndices.size();
+	cmd.indexCount = quadIndices.size();
+	cmd.firstInstance = 1;
+	cmd.instanceCount = 2;
+	cmd.vertexOffset = box.size();
+	indirectBuffer << cmd;
 
 	// Timing
 	auto now = std::chrono::high_resolution_clock::now();
@@ -546,10 +571,8 @@ void imguiTest(sa::RenderWindow& window) {
 		sa::RenderContext context = window.beginFrame();
 		if (context) {
 
-			ImGui::DragInt("TextureIndex", &object.pc.textureIndex, 1.f, 0, 1);
-
 			static bool secondType = false;
-			if(ImGui::Checkbox("Skybox type", &secondType)) {
+			if (ImGui::Checkbox("Skybox type", &secondType)) {
 				if (secondType) {
 					renderer.updateDescriptorSet(skyboxDescriptorSet, 1, cubeMap2, sampler);
 				}
@@ -559,9 +582,9 @@ void imguiTest(sa::RenderWindow& window) {
 
 			}
 			context.updateDescriptorSet(descriptorSet, 0, uniformBuffer);
-			
+
 			context.beginRenderProgram(renderProgram, framebuffer, sa::SubpassContents::DIRECT);
-			
+
 			context.bindPipeline(skyboxPipeline);
 			context.bindDescriptorSet(skyboxDescriptorSet, skyboxPipeline);
 			context.draw(36, 1);
@@ -571,13 +594,19 @@ void imguiTest(sa::RenderWindow& window) {
 			context.bindVertexBuffers(0, { object.vertexBuffer });
 			context.bindIndexBuffer(object.indexBuffer);
 
+			glm::mat4 mat = glm::translate(glm::mat4(1), { 2, 0, 0 });
+			struct PC {
+				glm::mat4 mat[4];
+			} pc;
+			pc.mat[0] = object.pc.worldMat;
+			pc.mat[1] = mat;
+			mat = glm::translate(mat, { 2, 0, 0 });
+			pc.mat[2] = mat;
 
-
-			context.pushConstant(pipeline, sa::ShaderStageFlagBits::VERTEX, object.pc.worldMat);
-			context.pushConstant(pipeline, sa::ShaderStageFlagBits::FRAGMENT, viewDir);
-			context.pushConstant(pipeline, sa::ShaderStageFlagBits::FRAGMENT, object.pc.textureIndex, 80);
+			context.pushConstant(pipeline, sa::ShaderStageFlagBits::VERTEX, pc);
 			
-			context.drawIndexed(object.indexBuffer.getElementCount<uint32_t>(), 1);
+			//context.drawIndexed(object.indexBuffer.getElementCount<uint32_t>(), 1);
+			context.drawIndexedIndirect(indirectBuffer, 0, 2, sizeof(sa::DrawIndexedIndirectCommand));
 
 			context.endRenderProgram(renderProgram);
 			context.beginRenderProgram(imguiProgram, imguiFramebuffer, sa::SubpassContents::DIRECT);
@@ -1071,8 +1100,8 @@ int main() {
 			}
 		});
 
-		voxelTest(window);
-		//imguiTest(window);
+		//voxelTest(window);
+		imguiTest(window);
 		//deffered(window);
 		//forward(window);
 

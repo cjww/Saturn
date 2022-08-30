@@ -58,6 +58,14 @@ namespace sa {
 
 	class SubContext;
 
+	struct DrawIndexedIndirectCommand {
+		uint32_t indexCount = 0U;
+		uint32_t instanceCount = 0U;
+		uint32_t firstIndex = 0U;
+		int32_t  vertexOffset = 0;
+		uint32_t firstInstance = 0U;
+	};
+
 	class RenderContext {
 	protected:
 		CommandBufferSet* m_pCommandBufferSet;
@@ -113,6 +121,8 @@ namespace sa {
 
 		void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex = 0, uint32_t firstInstance = 0);
 		void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0);
+		void drawIndexedIndirect(const Buffer& buffer, uint32_t offset, uint32_t drawCount, uint32_t stride);
+		void drawIndexedIndirect(const Buffer& buffer, size_t offset, const Buffer& countBuffer, size_t countOffset, uint32_t stride, uint32_t maxDrawCount = 0);
 
 		void dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
 

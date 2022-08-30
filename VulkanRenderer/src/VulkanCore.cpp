@@ -203,7 +203,7 @@ namespace sa {
 
 		std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
 		for (const auto& queueInfo : queueInfos) {
-			queueCreateInfos.push_back(vk::DeviceQueueCreateInfo{
+			queueCreateInfos.push_back(vk::DeviceQueueCreateInfo {
 				.queueFamilyIndex = queueInfo.family,
 				.queueCount = queueInfo.queueCount,
 				.pQueuePriorities = queueInfo.priorities.data()
@@ -216,7 +216,7 @@ namespace sa {
 			.pQueueCreateInfos = queueCreateInfos.data(),
 			.enabledExtensionCount = static_cast<uint32_t>(m_deviceExtensions.size()),
 			.ppEnabledExtensionNames = m_deviceExtensions.data(),
-			.pEnabledFeatures = &features
+			.pEnabledFeatures = &features,
 		};
 		
 		if (!m_validationLayers.empty()) {

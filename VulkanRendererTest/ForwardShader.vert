@@ -15,12 +15,12 @@ layout(set = 0, binding = 0) uniform UniformBufferObject {
 }ubo;
 
 layout(push_constant) uniform PushConstant {
-    mat4 worldMat;
+    mat4 worldMat[4];
 }pc;
 
 void main() {
     
-    mat4 world = pc.worldMat;
+    mat4 world = pc.worldMat[gl_InstanceIndex];
     gl_Position = ubo.projection * ubo.view * world * in_vertexPosition;
     out_vertexWorldPos = world * in_vertexPosition;
     out_vertexColor = in_vertexColor;
