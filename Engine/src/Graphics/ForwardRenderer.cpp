@@ -92,7 +92,7 @@ namespace sa {
 		m_blurredBrightnessTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::SAMPLED | sa::TextureTypeFlagBits::STORAGE, extent);
 		
 		m_renderer.updateDescriptorSet(m_postInputDescriptorSet, 0, m_mainColorTexture, m_sampler);
-		m_renderer.updateDescriptorSet(m_postInputDescriptorSet, 1, m_blurredBrightnessTexture, m_sampler);
+		//m_renderer.updateDescriptorSet(m_postInputDescriptorSet, 1, m_blurredBrightnessTexture, m_sampler);
 
 	}
 
@@ -260,12 +260,14 @@ namespace sa {
 		}
 
 		{
+		/*
 			SA_PROFILE_SCOPE("Blur");
 			context.transitionTexture(m_brightnessTexture, sa::Transition::RENDER_PROGRAM_OUTPUT, sa::Transition::COMPUTE_SHADER_READ);
 			context.transitionTexture(m_blurredBrightnessTexture, sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_WRITE);
 			context.executeSubContext(m_blurContext);
 			context.transitionTexture(m_blurredBrightnessTexture, sa::Transition::COMPUTE_SHADER_WRITE, sa::Transition::FRAGMENT_SHADER_READ);
 			context.transitionTexture(m_brightnessTexture, sa::Transition::COMPUTE_SHADER_READ, sa::Transition::RENDER_PROGRAM_OUTPUT);
+		*/
 		}
 		{
 			SA_PROFILE_SCOPE("Post");

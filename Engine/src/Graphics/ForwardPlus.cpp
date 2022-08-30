@@ -129,6 +129,10 @@ namespace sa {
 		if (!context)
 			return;
 
+		context.beginRenderProgram(m_colorRenderProgram, m_colorFramebuffer, SubpassContents::DIRECT);
+		context.bindPipeline(m_colorPipeline);
+		context.bindDescriptorSet(m_sceneDescriptorSet, m_colorPipeline);
+		/*
 		for (const auto& camera : scene->getActiveCameras()) {
 
 
@@ -139,10 +143,6 @@ namespace sa {
 			
 			context.updateDescriptorSet(m_sceneDescriptorSet, 0, m_sceneUniformBuffer);
 
-			context.beginRenderProgram(m_colorRenderProgram, m_colorFramebuffer, SubpassContents::DIRECT);
-
-			context.bindPipeline(m_colorPipeline);
-			context.bindDescriptorSet(m_sceneDescriptorSet, m_colorPipeline);
 
 			scene->forEach<comp::Transform, comp::Model>([&](const comp::Transform& transform, const comp::Model& model) {
 				ModelData* pModelData = AssetManager::get().getModel(model.modelID);
@@ -168,20 +168,142 @@ namespace sa {
 				}
 			});
 
-			context.endRenderProgram(m_colorRenderProgram);
-
-			//context.transitionTexture(m_colorTexture, Transition::RENDER_PROGRAM_OUTPUT, Transition::FRAGMENT_SHADER_READ);
-
-			context.beginRenderProgram(m_composeRenderProgram, m_composeFramebuffer, SubpassContents::DIRECT);
-			
-			context.bindPipeline(m_composePipeline);
-			context.bindDescriptorSet(m_composeDescriptorSet, m_composePipeline);
-			context.draw(6, 1);
-
-			context.endRenderProgram(m_composeRenderProgram);
-
-			m_pWindow->display();
 		}
+		*/
+
+		/*
+		if (scene != nullptr) {
+
+			std::unordered_map<ResourceID, std::vector<std::tuple<Mesh*, Matrix4x4>>> meshes;
+			{
+				SA_PROFILE_SCOPE("Collect meshes");
+				scene->forEach<comp::Transform, comp::Model>([&](const comp::Transform& transform, comp::Model& modelComp) {
+
+					if (modelComp.modelID == NULL_RESOURCE) {
+						return; // does not have to be drawn
+					}
+
+					sa::ModelData* model = sa::AssetManager::get().getModel(modelComp.modelID);
+
+					for (auto& mesh : model->meshes) {
+						meshes[mesh.materialID].push_back({ &mesh, transform.getMatrix() });
+					}
+					});
+			}
+
+			for (const auto& camera : scene->getActiveCameras()) {
+				SA_PROFILE_SCOPE("Draw camera");
+
+				PerFrameBuffer perFrame;
+				perFrame.projViewMatrix = camera->getProjectionMatrix() * camera->getViewMatrix();
+				perFrame.viewPos = camera->getPosition();
+				m_sceneUniformBuffer.write(perFrame);
+				context.updateDescriptorSet(m_sceneDescriptorSet, 0, m_sceneUniformBuffer);
+
+				//context.bindDescriptorSet(m_sceneDescriptorSet, m_colorPipeline);
+
+				// Opaque pass
+				std::unordered_map<ResourceID, std::vector<std::tuple<Mesh*, Matrix4x4>>> transparentMaterials;
+				for (const auto& [materialID, pMeshes] : meshes) {
+					Material* mat = AssetManager::get().getMaterial(materialID);
+					if (mat->values.opacity < 1.0f) {
+						transparentMaterials[materialID] = pMeshes;
+						continue;
+					}
+					SA_PROFILE_SCOPE("Draw material: " + std::to_string(materialID));
+					mat->bind(context, m_colorPipeline, m_linearSampler);
+					for (const auto& [pMesh, matrix] : pMeshes) {
+						context.pushConstant(m_colorPipeline, sa::ShaderStageFlagBits::VERTEX, matrix);
+
+						context.bindVertexBuffers(0, { pMesh->vertexBuffer });
+						if (pMesh->indexBuffer.isValid()) {
+							context.bindIndexBuffer(pMesh->indexBuffer);
+							context.drawIndexed(pMesh->indexBuffer.getElementCount<uint32_t>(), 1);
+						}
+						else {
+							context.draw(pMesh->vertexBuffer.getElementCount<VertexUV>(), 1);
+						}
+					}
+				}
+
+				// Transparent pass
+				for (const auto& [materialID, pMeshes] : transparentMaterials) {
+					SA_PROFILE_SCOPE("Draw Transparent material: " + std::to_string(materialID));
+
+					Material* mat = AssetManager::get().getMaterial(materialID);
+					mat->bind(context, m_colorPipeline, m_linearSampler);
+					for (const auto& [pMesh, matrix] : pMeshes) {
+						context.pushConstant(m_colorPipeline, sa::ShaderStageFlagBits::VERTEX, matrix);
+
+						context.bindVertexBuffers(0, { pMesh->vertexBuffer });
+						if (pMesh->indexBuffer.isValid()) {
+							context.bindIndexBuffer(pMesh->indexBuffer);
+							context.drawIndexed(pMesh->indexBuffer.getElementCount<uint32_t>(), 1);
+						}
+						else {
+							context.draw(pMesh->vertexBuffer.getElementCount<VertexUV>(), 1);
+						}
+					}
+				}
+
+			}
+
+
+		}
+		*/
+
+		std::vector<std::tuple<ModelData*, Matrix4x4>> models;
+		scene->forEach<comp::Transform, comp::Model>([&](const comp::Transform& transform, const comp::Model& model) {
+			ModelData* pModelData = AssetManager::get().getModel(model.modelID);
+			if (!pModelData)
+				return;
+			models.push_back({ pModelData, transform.getMatrix() });
+		});
+
+		for (const auto& camera : scene->getActiveCameras()) {
+
+
+			PerFrameBuffer perFrame = {};
+			perFrame.projViewMatrix = camera->getProjectionMatrix() * camera->getViewMatrix();
+			perFrame.viewPos = camera->getPosition();
+			m_sceneUniformBuffer.write(perFrame);
+
+			context.updateDescriptorSet(m_sceneDescriptorSet, 0, m_sceneUniformBuffer);
+
+			for (const auto& [pModelData, transformation] : models) {
+				
+				context.pushConstant(m_colorPipeline, ShaderStageFlagBits::VERTEX, transformation);
+
+				for (const auto& mesh : pModelData->meshes) {
+					Material* mat = AssetManager::get().getMaterial(mesh.materialID);
+					if (mat)
+						mat->bind(context, m_colorPipeline, m_linearSampler);
+
+					context.bindVertexBuffers(0, { mesh.vertexBuffer });
+					if (mesh.indexBuffer.isValid()) {
+						context.bindIndexBuffer(mesh.indexBuffer);
+						context.drawIndexed(mesh.indexBuffer.getElementCount<uint32_t>(), 1);
+					}
+					else {
+						context.draw(mesh.vertexBuffer.getElementCount<VertexNormalUV>(), 1);
+					}
+
+				}
+			}
+		}
+
+		context.endRenderProgram(m_colorRenderProgram);
+		//context.transitionTexture(m_colorTexture, Transition::RENDER_PROGRAM_OUTPUT, Transition::FRAGMENT_SHADER_READ);
+
+		context.beginRenderProgram(m_composeRenderProgram, m_composeFramebuffer, SubpassContents::DIRECT);
+			
+		context.bindPipeline(m_composePipeline);
+		context.bindDescriptorSet(m_composeDescriptorSet, m_composePipeline);
+		context.draw(6, 1);
+
+		context.endRenderProgram(m_composeRenderProgram);
+
+		m_pWindow->display();
 	}
 
 	Texture ForwardPlus::getOutputTexture() const {

@@ -652,6 +652,7 @@ namespace sa {
 
 	void VulkanCore::transferImageLayout(vk::CommandBuffer commandBuffer, vk::ImageLayout oldLayout, vk::ImageLayout newLayout, vk::AccessFlags srcAccessMask, vk::AccessFlags dstAccessMask, vk::Image image, vk::ImageAspectFlags imageAspect, uint32_t mipLevels, uint32_t layers, vk::PipelineStageFlags srcStage, vk::PipelineStageFlags dstStage) {
 		vk::ImageMemoryBarrier imageBarrier{
+			.srcAccessMask = srcAccessMask,
 			.dstAccessMask = dstAccessMask,
 			.oldLayout = oldLayout,
 			.newLayout = newLayout,
