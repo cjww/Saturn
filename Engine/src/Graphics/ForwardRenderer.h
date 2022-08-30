@@ -8,8 +8,7 @@
 namespace sa {
 	class ForwardRenderer : public IRenderTechnique {
 	private:
-		Renderer& m_renderer;
-
+		
 
 		ResourceID m_colorRenderProgram;
 		ResourceID m_colorPipeline;
@@ -51,7 +50,6 @@ namespace sa {
 		void setupBlurPass();
 		
 	public:
-		ForwardRenderer();
 		
 		void swapchainResizedCallback(Extent width);
 

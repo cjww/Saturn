@@ -115,14 +115,6 @@ namespace sa {
 
 	}
 
-
-	
-	ForwardRenderer::ForwardRenderer() 
-		: m_renderer(sa::Renderer::get()) 
-	{
-
-	}
-
 	void ForwardRenderer::swapchainResizedCallback(Extent extent) {
 		std::cout << "resized: " << extent.width << ", " << extent.height << std::endl;
 		

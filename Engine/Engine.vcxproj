@@ -198,6 +198,7 @@
     <ClCompile Include="src\Application.cpp" />
     <ClCompile Include="src\ECS\ComponentBase.cpp" />
     <ClCompile Include="src\ECS\ComponentType.cpp" />
+    <ClCompile Include="src\Graphics\ForwardPlus.cpp" />
     <ClCompile Include="src\Graphics\Material.cpp" />
     <ClCompile Include="src\imgui-SFML.cpp" />
     <ClCompile Include="src\imgui.cpp" />
@@ -239,6 +240,7 @@
     <ClInclude Include="src\ECS\ComponentType.h" />
     <ClInclude Include="src\CameraController.h" />
     <ClInclude Include="src\EntryPoint.h" />
+    <ClInclude Include="src\Graphics\ForwardPlus.h" />
     <ClInclude Include="src\Graphics\Material.h" />
     <ClInclude Include="src\internal\internalVector.h" />
     <ClInclude Include="src\Graphics\RenderWindow.hpp" />

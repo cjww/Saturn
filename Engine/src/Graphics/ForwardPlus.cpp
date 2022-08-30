@@ -26,54 +26,104 @@ namespace sa {
 			.endSubpass()
 			.end();
 
+
+		auto composeProgramFactory = m_renderer.createRenderProgram();
+		if (m_useImGui) {
+			composeProgramFactory.addColorAttachment(true, m_outputTexture);
+		}
+		else {
+			composeProgramFactory.addSwapchainAttachment(m_pWindow->getSwapchainID());
+		}
+
+		m_composeRenderProgram = composeProgramFactory.beginSubpass()
+			.addAttachmentReference(0, SubpassAttachmentUsage::ColorTarget)
+			.endSubpass()
+			.addSubpassDependency()
+			.end();
+
+
 	}
 
 	void ForwardPlus::createFramebuffers(sa::Extent extent) {
 		if (m_colorFramebuffer != NULL_RESOURCE)
 			m_renderer.destroyFramebuffer(m_colorFramebuffer);
+	
 		m_colorFramebuffer = m_renderer.createFramebuffer(m_colorRenderProgram, { m_colorTexture, m_depthTexture });
+	
+		if (m_composeFramebuffer != NULL_RESOURCE)
+			m_renderer.destroyFramebuffer(m_composeFramebuffer);
+
+		if (m_useImGui) {
+			m_composeFramebuffer = m_renderer.createFramebuffer(m_composeRenderProgram, { m_outputTexture });
+		}
+		else {
+			m_composeFramebuffer = m_renderer.createSwapchainFramebuffer(m_composeRenderProgram, m_pWindow->getSwapchainID(), {});
+		}
+
 	}
 
-	void ForwardPlus::init(sa::Extent extent, bool setupImGui) {
+	void ForwardPlus::createPipelines(Extent extent) {
+		if (m_colorPipeline != NULL_RESOURCE)
+			m_renderer.destroyPipeline(m_colorPipeline);
+
+		m_colorPipeline = m_renderer.createGraphicsPipeline(m_colorRenderProgram, 0, extent,
+			"../Engine/shaders/ForwardPlusColorPass.vert.spv", "../Engine/shaders/ForwardPlusColorPass.frag.spv");
+	
+		if (m_composePipeline != NULL_RESOURCE)
+			m_renderer.destroyPipeline(m_composePipeline);
+
+		m_composePipeline = m_renderer.createGraphicsPipeline(m_composeRenderProgram, 0, extent,
+				"../Engine/shaders/Compose.vert.spv", "../Engine/shaders/Compose.frag.spv");
+
+	}
+
+	void ForwardPlus::init(sa::RenderWindow* pWindow, bool setupImGui) {
+		m_pWindow = pWindow;
 		sa::Extent extent = m_pWindow->getCurrentExtent();
 
 		createTextures(extent);
 		createRenderPasses();
 		createFramebuffers(extent);
+		createPipelines(extent);
 
-
-		m_colorPipeline = m_renderer.createGraphicsPipeline(m_colorRenderProgram, 0, extent,
-			"../Engine/shaders/ForwardPlusColorPass.vert.spv", "../Engine/shaders/ForwardPlusColorPass.frag.spv");
-
+		m_linearSampler = m_renderer.createSampler(FilterMode::LINEAR);
+		
 		PerFrameBuffer perFrame = {};
 		perFrame.projViewMatrix = sa::Matrix4x4(1);
 		perFrame.viewPos = sa::Vector3(0);
-		
-		m_sceneDescriptorSet = m_renderer.allocateDescriptorSet(m_colorPipeline, SET_PER_FRAME);
 		m_sceneUniformBuffer = m_renderer.createBuffer(BufferType::UNIFORM, sizeof(perFrame), &perFrame);
-
-		m_linearSampler = m_renderer.createSampler(FilterMode::LINEAR);
-
+		
 		m_lightBuffer = m_renderer.createBuffer(BufferType::STORAGE);
 		m_lightBuffer << 0U;
+		
+		m_sceneDescriptorSet = m_renderer.allocateDescriptorSet(m_colorPipeline, SET_PER_FRAME);
 
+		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 0, m_sceneUniformBuffer);
 		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 1, m_lightBuffer);
+
+		m_composeDescriptorSet = m_renderer.allocateDescriptorSet(m_composePipeline, 0);
+		m_renderer.updateDescriptorSet(m_composeDescriptorSet, 0, m_colorTexture, m_linearSampler);
 	}
 
 	void ForwardPlus::cleanup() {
+		/*
 		if (m_colorFramebuffer != NULL_RESOURCE)
 			m_renderer.destroyFramebuffer(m_colorFramebuffer);
+
+		if (m_composeFramebuffer != NULL_RESOURCE)
+			m_renderer.destroyFramebuffer(m_composeFramebuffer);
 
 		if (m_colorTexture.isValid()) m_colorTexture.destroy();
 		if (m_depthTexture.isValid()) m_depthTexture.destroy();
 		if (m_outputTexture.isValid()) m_outputTexture.destroy();
+		*/
 	}
 
 	void ForwardPlus::beginFrameImGUI() {
 
 	}
 
-	void ForwardPlus::draw(const Scene* scene) {
+	void ForwardPlus::draw(Scene* scene) {
 
 		RenderContext context = m_pWindow->beginFrame();
 		if (!context)
@@ -120,6 +170,16 @@ namespace sa {
 
 			context.endRenderProgram(m_colorRenderProgram);
 
+			//context.transitionTexture(m_colorTexture, Transition::RENDER_PROGRAM_OUTPUT, Transition::FRAGMENT_SHADER_READ);
+
+			context.beginRenderProgram(m_composeRenderProgram, m_composeFramebuffer, SubpassContents::DIRECT);
+			
+			context.bindPipeline(m_composePipeline);
+			context.bindDescriptorSet(m_composeDescriptorSet, m_composePipeline);
+			context.draw(6, 1);
+
+			context.endRenderProgram(m_composeRenderProgram);
+
 			m_pWindow->display();
 		}
 	}
@@ -129,7 +189,22 @@ namespace sa {
 	}
 
 	void ForwardPlus::updateLights(Scene* pScene) {
+		std::vector<LightData> lights;
+		pScene->forEach<comp::Light>([&](const comp::Light& light) {
+			lights.push_back(light.values);
+			});
+		m_lightBuffer.clear();
 
+		struct L {
+			uint32_t count;
+			alignas(16) LightData lights[4096];
+		};
+		L lightsStruct;
+		lightsStruct.count = lights.size();
+		memcpy(lightsStruct.lights, lights.data(), lights.size() * sizeof(LightData));
+
+		m_lightBuffer.write(lightsStruct);
+		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 1, m_lightBuffer);
 	}
 
 }

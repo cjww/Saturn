@@ -11,11 +11,15 @@
 namespace sa {
 	class IRenderTechnique {
 	protected:
+		Renderer& m_renderer;
+
 		bool m_useImGui;
 
 		sa::RenderWindow* m_pWindow;
 		
 	public:
+		IRenderTechnique();
+
 		virtual void init(sa::RenderWindow* pWindow, bool setupImGui = false) = 0;
 		virtual void cleanup() = 0;
 

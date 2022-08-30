@@ -46,8 +46,9 @@ namespace sa {
 
 		engine.getCurrentScene()->addActiveCamera(&m_camera);
 
+		createModelEntity(engine, "models/adamHead/adamHead.gltf");
+		/*
 		for (int i = 0; i < 30; i++) {
-			createModelEntity(engine, "models/adamHead/adamHead.gltf");
 		}
 		for (int i = 0; i < 30; i++) {
 			createModelEntity(engine, "models/lieutenantHead/lieutenantHead.gltf");
@@ -63,6 +64,7 @@ namespace sa {
 		}
 		createModelEntity(engine, "models/steampunk_glasses__goggles/scene.gltf");
 		createModelEntity(engine, "models/viking_room/scene.gltf", 0.2f);
+		*/
 		
 		engine.createSystemScript("test.lua");
 

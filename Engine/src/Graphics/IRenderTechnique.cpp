@@ -11,4 +11,10 @@ namespace sa {
         return m_pWindow->getCurrentExtent();
     }
 
+    IRenderTechnique::IRenderTechnique() 
+        : m_renderer(Renderer::get())
+    {
+
+    }
+
 }

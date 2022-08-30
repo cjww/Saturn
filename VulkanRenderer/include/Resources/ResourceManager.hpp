@@ -19,11 +19,8 @@ namespace sa {
 
 		class BasicResourceContainer {
 		protected:
-			std::atomic<ResourceID> m_nextID = 0;
+			ResourceID m_nextID = 0;
 			std::queue<ResourceID> m_freeIDs;
-
-			std::mutex m_containerMutex;
-
 		public:
 			virtual ~BasicResourceContainer() = default;
 
@@ -42,6 +39,9 @@ namespace sa {
 			std::unordered_map<ResourceID, std::unique_ptr<T>> m_resources;
 			std::unordered_map<std::string, ResourceID> m_keys;
 			std::function<void(T* value)> m_cleanupFunction;
+
+			std::mutex m_containerMutex;
+
 		public:
 			virtual ~ResourceContainer();
 
@@ -84,6 +84,7 @@ namespace sa {
 
 		std::unordered_map<ResourceType, std::unique_ptr<details::BasicResourceContainer>> m_containers;
 
+		std::mutex m_managerMutex;
 
 		template<typename T>
 		details::ResourceContainer<T>* getContainer();
@@ -142,9 +143,11 @@ namespace sa {
 	template<typename T>
 	inline details::ResourceContainer<T>* ResourceManager::getContainer() {
 		ResourceType type = std::hash<std::string>()(typeid(T).name());
+		m_managerMutex.lock();
 		if (!m_containers.count(type)) {
 			m_containers[type] = std::make_unique<details::ResourceContainer<T>>();
 		}
+		m_managerMutex.unlock();
 		return static_cast<details::ResourceContainer<T>*>(m_containers.at(type).get());
 	}
 
@@ -217,7 +220,9 @@ namespace sa {
 	template<typename T>
 	inline void ResourceManager::clearContainer() {
 		ResourceType type = std::hash<std::string>()(typeid(T).name());
+		m_managerMutex.lock();
 		m_containers.erase(type);
+		m_managerMutex.unlock();
 	}
 
 	template<typename T>

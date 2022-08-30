@@ -2,6 +2,7 @@
 #include "Engine.h"
 
 #include "Graphics\ForwardRenderer.h"
+#include "Graphics\ForwardPlus.h"
 
 namespace sa {
 	void Engine::loadXML(const std::filesystem::path& path, rapidxml::xml_document<>& xml, std::string& xmlStr) {
@@ -75,7 +76,7 @@ namespace sa {
 			loadFromFile(configPath);
 		
 		if (pWindow) {
-			m_pRenderTechnique = std::make_unique<ForwardRenderer>();
+			m_pRenderTechnique = std::make_unique<ForwardPlus>();
 			m_pRenderTechnique->init(pWindow, false);
 		}
 		setScene("MainScene");
