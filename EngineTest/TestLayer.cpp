@@ -15,6 +15,9 @@ namespace sa {
 		comp::Model* model = entity.addComponent<comp::Model>();
 
 		m_completions.insert({ entity, sa::AssetManager::get().loadModel(modelPath) });
+		
+		m_completions.at(entity).wait();
+
 		if (m_completions.at(entity).isDone()) {
 			entity.getComponent<comp::Model>()->modelID = m_completions.at(entity);
 			m_completions.erase(entity);
@@ -46,9 +49,7 @@ namespace sa {
 
 		engine.getCurrentScene()->addActiveCamera(&m_camera);
 
-		/*
-		*/
-		for (int i = 0; i < 30; i++) {
+		for (int i = 0; i < 4; i++) {
 			createModelEntity(engine, "models/adamHead/adamHead.gltf");
 		}
 		for (int i = 0; i < 30; i++) {
@@ -65,6 +66,8 @@ namespace sa {
 		}
 		createModelEntity(engine, "models/steampunk_glasses__goggles/scene.gltf");
 		createModelEntity(engine, "models/viking_room/scene.gltf", 0.2f);
+		/*
+		*/
 		
 		engine.createSystemScript("test.lua");
 
@@ -74,17 +77,8 @@ namespace sa {
 
 	void TestLayer::onUpdate(float dt) {
 		SA_PROFILE_FUNCTION();
-		/*
-		using namespace std::chrono_literals;
-		std::this_thread::sleep_for(0.2s);
-		*/
 
 		m_pCameraController->update(dt);
-
-		if (!m_pCameraController->mouseLocked) {
-			//m_camera.setPosition(m_camera.getPosition() + -m_camera.getForward() * (dt * 10));
-			m_camera.rotate(glm::radians(dt * 45), Vector3(0, 1, 0));
-		}
 
 		for (const auto& [entity, progress] : m_completions) {
 			if (m_infoClock.getElapsedTime() > 0.5f) {

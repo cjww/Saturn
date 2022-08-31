@@ -218,6 +218,7 @@ namespace sa {
 					for (const auto& [pMesh, matrix] : pMeshes) {
 						context.pushConstant(m_colorPipeline, sa::ShaderStageFlagBits::VERTEX, matrix);
 
+						/*
 						context.bindVertexBuffers(0, { pMesh->vertexBuffer });
 						if (pMesh->indexBuffer.isValid()) {
 							context.bindIndexBuffer(pMesh->indexBuffer);
@@ -226,6 +227,7 @@ namespace sa {
 						else {
 							context.draw(pMesh->vertexBuffer.getElementCount<VertexUV>(), 1);
 						}
+						*/
 					}
 				}
 
@@ -237,7 +239,7 @@ namespace sa {
 					mat->bind(context, m_colorPipeline, m_sampler);
 					for (const auto& [pMesh, matrix] : pMeshes) {
 						context.pushConstant(m_colorPipeline, sa::ShaderStageFlagBits::VERTEX, matrix);
-
+						/*
 						context.bindVertexBuffers(0, { pMesh->vertexBuffer });
 						if (pMesh->indexBuffer.isValid()) {
 							context.bindIndexBuffer(pMesh->indexBuffer);
@@ -246,6 +248,7 @@ namespace sa {
 						else {
 							context.draw(pMesh->vertexBuffer.getElementCount<VertexUV>(), 1);
 						}
+						*/
 					}
 				}
 

@@ -119,7 +119,6 @@ namespace sa {
 			}
 			m_pCore->destroyBuffer(m_pBuffer);
 		}
-		
 		create(m_type, newSize, data);
 		free(data);
 	}

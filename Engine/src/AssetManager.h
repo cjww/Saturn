@@ -27,8 +27,9 @@
 namespace sa {
 
 	struct Mesh {
-		sa::Buffer vertexBuffer;
-		sa::Buffer indexBuffer;
+		std::vector<VertexNormalUV> vertices;
+		std::vector<uint32_t> indices;
+
 		ResourceID materialID;
 	};
 

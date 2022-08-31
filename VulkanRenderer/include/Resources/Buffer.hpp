@@ -85,10 +85,13 @@ namespace sa {
 		Buffer& operator<<(const T& value);
 
 		template<typename T>
-		Buffer& operator<<(std::vector<T>& values);
+		Buffer& operator<<(const std::vector<T>& values);
 
 		template<typename T, size_t Size>
-		Buffer& operator<<(std::array<T, Size>& values);
+		Buffer& operator<<(const std::array<T, Size>& values);
+
+		template<typename T>
+		T& operator[](uint32_t index) const;
 
 	};
 
@@ -127,14 +130,20 @@ namespace sa {
 	}
 
 	template<typename T>
-	inline Buffer& Buffer::operator<<(std::vector<T>& values) {
-		append(values.data(), values.size() * sizeof(T));
+	inline Buffer& Buffer::operator<<(const std::vector<T>& values) {
+		append((void*)values.data(), values.size() * sizeof(T));
 		return *this;
 	}
 
 	template<typename T, size_t Size>
-	inline Buffer& Buffer::operator<<(std::array<T, Size>& values) {
-		append(values.data(), Size * sizeof(T));
+	inline Buffer& Buffer::operator<<(const std::array<T, Size>& values) {
+		append((void*)values.data(), Size * sizeof(T));
 		return *this;
+	}
+
+	template<typename T>
+	T& Buffer::operator[](uint32_t index) const {
+		T* arr = (T*)data();
+		return arr[index];
 	}
 }

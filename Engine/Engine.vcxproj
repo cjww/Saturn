@@ -199,6 +199,7 @@
     <ClCompile Include="src\ECS\ComponentBase.cpp" />
     <ClCompile Include="src\ECS\ComponentType.cpp" />
     <ClCompile Include="src\Graphics\ForwardPlus.cpp" />
+    <ClCompile Include="src\Graphics\ForwardRenderer.cpp" />
     <ClCompile Include="src\Graphics\Material.cpp" />
     <ClCompile Include="src\imgui-SFML.cpp" />
     <ClCompile Include="src\imgui.cpp" />
@@ -220,7 +221,6 @@
     <ClCompile Include="src\Tools\CustomImGui.cpp" />
     <ClCompile Include="src\ECS\Entity.cpp" />
     <ClCompile Include="src\Engine.cpp" />
-    <ClCompile Include="src\Graphics\ForwardRenderer.cpp" />
     <ClCompile Include="src\Graphics\IRenderTechnique.cpp" />
     <ClCompile Include="src\AssetManager.cpp" />
     <ClCompile Include="src\Tools\Clock.cpp" />

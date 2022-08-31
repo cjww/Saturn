@@ -2,6 +2,14 @@
 #include "Graphics/IRenderTechnique.h"
 
 namespace sa {
+
+	struct IndirectDrawData {
+		Material* pMaterial;
+		Mesh* pMesh;
+		std::vector<Matrix4x4> transformations;
+	};
+
+
 	class ForwardPlus : public IRenderTechnique {
 	private:
 
@@ -26,10 +34,17 @@ namespace sa {
 		
 		ResourceID m_linearSampler = NULL_RESOURCE;
 
+		Buffer m_vertexBuffer;
+		Buffer m_indexBuffer;
+
+		Buffer m_indirectIndexedBuffer;
+
 		void createTextures(Extent extent);
 		void createRenderPasses();
 		void createFramebuffers(Extent extent);
 		void createPipelines(Extent extent);
+
+		std::vector<IndirectDrawData> collectDrawData(Scene* pScene) const;
 
 	public:
 
@@ -38,7 +53,7 @@ namespace sa {
 
 		virtual void beginFrameImGUI() override;
 
-		virtual void draw(Scene* scene) override;
+		virtual void draw(Scene* pScene) override;
 
 		virtual Texture getOutputTexture() const override;
 

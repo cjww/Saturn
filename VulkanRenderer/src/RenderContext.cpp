@@ -223,6 +223,17 @@ namespace sa {
 		m_pCommandBufferSet->getBuffer().drawIndexedIndirectCount(pBuffer->buffer, offset, pCountBuffer->buffer, countOffset, maxDrawCount, stride);
 	}
 
+	void RenderContext::drawIndirect(const Buffer& buffer, uint32_t offset, uint32_t drawCount, uint32_t stride) {
+		const DeviceBuffer* pBuffer = (const DeviceBuffer*)buffer;
+		m_pCommandBufferSet->getBuffer().drawIndirect(pBuffer->buffer, offset, drawCount, stride);
+	}
+
+	void RenderContext::drawIndirect(const Buffer& buffer, size_t offset, const Buffer& countBuffer, size_t countOffset, uint32_t stride, uint32_t maxDrawCount) {
+		const DeviceBuffer* pBuffer = (const DeviceBuffer*)buffer;
+		const DeviceBuffer* pCountBuffer = (const DeviceBuffer*)countBuffer;
+		m_pCommandBufferSet->getBuffer().drawIndirectCount(pBuffer->buffer, offset, pCountBuffer->buffer, countOffset, maxDrawCount, stride);
+	}
+
 	void RenderContext::dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
 		m_pCommandBufferSet->getBuffer().dispatch(groupCountX, groupCountY, groupCountZ);
 	}

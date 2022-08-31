@@ -60,8 +60,8 @@ namespace sa {
 			Mesh mesh = {};
 			const aiMesh* aMesh = scene->mMeshes[node->mMeshes[i]];
 			
-			std::vector<VertexNormalUV> vertices;
-			std::vector<uint32_t> indices;
+			std::vector<VertexNormalUV>& vertices = mesh.vertices;
+			std::vector<uint32_t>& indices = mesh.indices;
 
 			std::unordered_map<VertexNormalUV, uint32_t> vertexIndices;
 			
@@ -94,12 +94,6 @@ namespace sa {
 					indices.push_back(vertices.size() - 1);
 				}
 			}
-			mesh.vertexBuffer = Renderer::get().createBuffer(sa::BufferType::VERTEX);
-			mesh.vertexBuffer.write(vertices);
-
-			mesh.indexBuffer = Renderer::get().createBuffer(sa::BufferType::INDEX);
-			mesh.indexBuffer.write(indices);
-
 			mesh.materialID = aMesh->mMaterialIndex;
 
 			pModelData->meshes.push_back(mesh);
@@ -240,7 +234,7 @@ namespace sa {
 		mat.values.shininess = 1.0f;
 		mat.twoSided = false;
 
-		return sa::ResourceManager::get().insert<Material>(mat);
+		return sa::ResourceManager::get().insert<Material>("default_material", mat);
 	}
 
 	ResourceID AssetManager::loadQuad() {
@@ -255,22 +249,18 @@ namespace sa {
 		
 		Mesh mesh = {};
 		
-		std::vector<VertexUV> vertices = {
-			{ glm::vec4(-0.5f, 0.5f, 0, 1), glm::vec2(0, 0) },
-			{ glm::vec4(0.5f, 0.5f, 0, 1), glm::vec2(1, 0) },
-			{ glm::vec4(0.5f, -0.5f, 0, 1), glm::vec2(1, 1) },
-			{ glm::vec4(-0.5f, -0.5f, 0, 1), glm::vec2(0, 1) }
+		mesh.vertices = {
+			{ glm::vec4(-0.5f, 0.5f, 0, 1), glm::vec4(0, 0, 1, 0), glm::vec2(0, 0) },
+			{ glm::vec4(0.5f, 0.5f, 0, 1), glm::vec4(0, 0, 1, 0), glm::vec2(1, 0) },
+			{ glm::vec4(0.5f, -0.5f, 0, 1), glm::vec4(0, 0, 1, 0), glm::vec2(1, 1) },
+			{ glm::vec4(-0.5f, -0.5f, 0, 1), glm::vec4(0, 0, 1, 0), glm::vec2(0, 1) }
 		};
 
-
-		mesh.vertexBuffer = renderer.createBuffer(BufferType::VERTEX, vertices.size() * sizeof(VertexUV), vertices.data());
-
-		std::vector<uint32_t> indices = {
+		mesh.indices = {
 			0, 1, 3,
 			1, 2, 3
 		};
-		mesh.indexBuffer = renderer.createBuffer(BufferType::INDEX, indices.size() * sizeof(uint32_t), indices.data());
-
+		
 		ModelData model = {};
 		model.meshes.push_back(mesh);
 		

@@ -52,8 +52,10 @@ void main() {
     out_color = vec4(material.opacity, 0, 0, 1);
     return;
     out_color = material.diffuseColor * texture(sampler2D(textures[material.diffuseMapFirst], samp), in_vertexUV);
-    return;
+    
     */
+    out_color = material.diffuseColor;
+    return;
 
     vec4 ambientColor = material.ambientColor * 0.1;
     vec4 diffuseColor = vec4(0, 0, 0, 1);
