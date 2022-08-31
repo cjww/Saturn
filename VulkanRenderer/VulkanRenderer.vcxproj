@@ -177,6 +177,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClInclude Include="include\DeviceMemoryStats.hpp" />
     <ClInclude Include="include\FormatFlags.hpp" />
     <ClInclude Include="include\Image.hpp" />
     <ClInclude Include="include\InputEnums.hpp" />

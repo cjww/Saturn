@@ -56,5 +56,7 @@ namespace sa {
 		uint32_t getImageCount() const;
 
 		const CommandBufferSet* getCommandBufferSet() const;
+	
+		uint32_t getFrameIndex() const;
 	};
 }

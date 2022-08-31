@@ -50,45 +50,45 @@ namespace sa {
 		case BufferType::VERTEX:
 			m_pBuffer = m_pCore->createBuffer(vk::BufferUsageFlagBits::eVertexBuffer, 
 				VMA_MEMORY_USAGE_AUTO, 
-				VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+				VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_WITHIN_BUDGET_BIT,
 				size, initialData);
 			break;
 		case BufferType::INDEX:
 			m_pBuffer = m_pCore->createBuffer(vk::BufferUsageFlagBits::eIndexBuffer,
 				VMA_MEMORY_USAGE_AUTO, 
-				VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+				VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_WITHIN_BUDGET_BIT,
 				size, initialData);
 			break;
 		case BufferType::UNIFORM:
 			m_pBuffer = m_pCore->createBuffer(vk::BufferUsageFlagBits::eUniformBuffer,
 				VMA_MEMORY_USAGE_AUTO,
-				VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+				VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_WITHIN_BUDGET_BIT,
 				size, initialData);
 			break;
 		case BufferType::STORAGE:
 			m_pBuffer = m_pCore->createBuffer(vk::BufferUsageFlagBits::eStorageBuffer,
 				VMA_MEMORY_USAGE_AUTO, 
-				VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT,
+				VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT | VMA_ALLOCATION_CREATE_WITHIN_BUDGET_BIT,
 				size, initialData);
 			break;
 		case BufferType::UNIFORM_TEXEL:
 			m_pBuffer = m_pCore->createBuffer(vk::BufferUsageFlagBits::eUniformTexelBuffer,
 				VMA_MEMORY_USAGE_AUTO,
-				VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT,
+				VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_WITHIN_BUDGET_BIT,
 				size, initialData);
 			m_view = ResourceManager::get().insert<vk::BufferView>(m_pCore->createBufferView(m_pBuffer->buffer, vk::Format::eR32Sfloat));
 			break;
 		case BufferType::STORAGE_TEXEL:
 			m_pBuffer = m_pCore->createBuffer(vk::BufferUsageFlagBits::eStorageTexelBuffer,
 				VMA_MEMORY_USAGE_AUTO,
-				VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT,
+				VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT | VMA_ALLOCATION_CREATE_WITHIN_BUDGET_BIT,
 				size, initialData);
 			m_view = ResourceManager::get().insert<vk::BufferView>(m_pCore->createBufferView(m_pBuffer->buffer, vk::Format::eR32Sfloat));
 			break;
 		case BufferType::INDIRECT:
 			m_pBuffer = m_pCore->createBuffer(vk::BufferUsageFlagBits::eIndirectBuffer,
 				VMA_MEMORY_USAGE_AUTO,
-				VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT,
+				VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT | VMA_ALLOCATION_CREATE_WITHIN_BUDGET_BIT,
 				size, initialData);
 			break;
 		}

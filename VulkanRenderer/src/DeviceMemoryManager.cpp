@@ -17,6 +17,7 @@ namespace sa {
 		m_allocatorInfo.instance = instance;
 		m_allocatorInfo.physicalDevice = physicalDevice;
 		m_allocatorInfo.vulkanApiVersion = apiVersion;
+		m_allocatorInfo.flags = VMA_ALLOCATOR_CREATE_EXT_MEMORY_BUDGET_BIT;
 
 		vmaCreateAllocator(&m_allocatorInfo, &m_allocator);
 	}
@@ -143,5 +144,26 @@ namespace sa {
 		delete texture;
 		texture = nullptr;
 		m_memoryMutex.unlock();
+	}
+
+	void DeviceMemoryManager::setCurrentFrameIndex(uint32_t frameIndex) {
+		vmaSetCurrentFrameIndex(m_allocator, frameIndex);
+	}
+
+	DeviceMemoryStats DeviceMemoryManager::getDeviceMemoryStats() const {
+		auto prop = m_physicalDevice.getMemoryProperties();
+
+		VmaBudget* budget = new VmaBudget[prop.memoryHeapCount];
+		vmaGetHeapBudgets(m_allocator, budget);
+
+		DeviceMemoryStats stats = {};
+		stats.usage = budget.usage;
+		stats.budget = budget.budget;
+		stats.allocationBytes = budget.statistics.allocationBytes;
+		stats.allocationCount = budget.statistics.allocationCount;
+		stats.blockBytes = budget.statistics.blockBytes;
+		stats.blockCount = budget.statistics.blockCount;
+
+		return stats;
 	}
 }

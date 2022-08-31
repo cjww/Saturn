@@ -120,6 +120,7 @@ namespace sa {
 			m_instanceExtensions.push_back(glfwExtensions[i]);
 		}
 		m_instanceExtensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
+		m_instanceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
 		vk::InstanceCreateInfo instanceInfo{
 			.pApplicationInfo = &m_appInfo,
@@ -188,7 +189,8 @@ namespace sa {
 
 	void VulkanCore::createDevice() {
 		m_deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-		
+		m_deviceExtensions.push_back("VK_EXT_memory_budget");
+
 		m_queueInfo = getQueueInfo(vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute, FRAMES_IN_FLIGHT);
 		std::vector<QueueInfo> queueInfos = { m_queueInfo };
 	
@@ -929,6 +931,14 @@ namespace sa {
 	vk::SampleCountFlags VulkanCore::getSupportedDepthSampleCounts() const {
 		vk::PhysicalDeviceProperties properties = m_physicalDevice.getProperties();
 		return properties.limits.framebufferDepthSampleCounts;
+	}
+
+	DeviceMemoryStats VulkanCore::getGPUMemoryUsage() const {
+		return m_memoryManager.getDeviceMemoryStats();
+	}
+
+	void VulkanCore::setMemoryManagerFrameIndex(uint32_t frameIndex) {
+		m_memoryManager.setCurrentFrameIndex(frameIndex);
 	}
 
 }

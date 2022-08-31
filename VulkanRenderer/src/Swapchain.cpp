@@ -155,4 +155,8 @@ namespace sa {
 		return &m_commandBufferSet;
 	}
 
+	uint32_t Swapchain::getFrameIndex() const {
+		return m_frameIndex;
+	}
+
 }

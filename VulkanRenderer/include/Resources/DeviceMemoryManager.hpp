@@ -4,6 +4,7 @@
 
 #include "vk_mem_alloc.h"
 
+#include "DeviceMemoryStats.hpp"
 
 namespace sa {
 	class DeviceResource {
@@ -94,6 +95,10 @@ namespace sa {
 
 		void destroyBuffer(DeviceBuffer* buffer);
 		void destroyImage(DeviceImage* texture);
+
+		void setCurrentFrameIndex(uint32_t frameIndex);
+
+		DeviceMemoryStats getDeviceMemoryStats() const;
 
 	};
 }

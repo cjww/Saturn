@@ -299,6 +299,10 @@ namespace sa {
 		return Texture3D(m_pCore.get(), type, extent, sampleCount, 1, formatPrecision, formatDimensions, formatType);
 	}
 
+	DeviceMemoryStats Renderer::getGPUMemoryUsage() const {
+		return m_pCore->getGPUMemoryUsage();
+	}
+	
 	void Renderer::queueTransfer(const DataTransfer& transfer) {
 		m_transferMutex.lock();
 		m_transferQueue.push(transfer);
@@ -324,7 +328,9 @@ namespace sa {
 		if (!pCommandBufferSet) {
 			return {};
 		}
-		
+
+		m_pCore->setMemoryManagerFrameIndex(pSwapchain->getFrameIndex());
+
 		m_transferMutex.lock();
 		while (!m_transferQueue.empty()) {
 			DataTransfer& transfer = m_transferQueue.front();

@@ -198,6 +198,10 @@ namespace sa {
 		vk::SampleCountFlags getSupportedColorSampleCounts() const;
 		vk::SampleCountFlags getSupportedDepthSampleCounts() const;
 
+		DeviceMemoryStats getGPUMemoryUsage() const;
+
+		// used by memory manager to check memory bugets 
+		void setMemoryManagerFrameIndex(uint32_t frameIndex);
 
 	};
 

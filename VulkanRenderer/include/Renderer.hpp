@@ -8,6 +8,7 @@
 #include "Image.hpp"
 #include "FormatFlags.hpp"
 #include "PipelineSettings.hpp"
+#include "DeviceMemoryStats.hpp"
 
 #include "Window.hpp"
 
@@ -101,6 +102,7 @@ namespace sa {
 		TextureCube createTextureCube(const std::vector<Image>& image, bool generateMipMaps);
 		Texture3D createTexture3D(TextureTypeFlags type, Extent3D extent, FormatPrecisionFlags formatPrecision = FormatPrecisionFlagBits::ANY_PRECISION, FormatDimensionFlags formatDimensions = FormatDimensionFlagBits::e1, FormatTypeFlags formatType = FormatTypeFlagBits::ANY_TYPE, uint32_t sampleCount = 1);
 
+		DeviceMemoryStats getGPUMemoryUsage() const;
 
 		void queueTransfer(const DataTransfer& transfer);
 

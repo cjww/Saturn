@@ -220,6 +220,7 @@ namespace sa {
 		context.bindPipeline(m_colorPipeline);
 		context.bindDescriptorSet(m_sceneDescriptorSet, m_colorPipeline);
 
+		auto stats = m_renderer.getGPUMemoryUsage();
 		
 		if (pScene != nullptr) {
 
