@@ -110,6 +110,7 @@ namespace sa {
 		void createCommandPool();
 
 	public:
+		static const unsigned int FRAMES_IN_FLIGHT = 3;
 
 		static bool isDepthFormat(vk::Format format);
 		static bool isColorFormat(vk::Format format);

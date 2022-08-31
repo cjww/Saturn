@@ -189,7 +189,7 @@ namespace sa {
 	void VulkanCore::createDevice() {
 		m_deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 		
-		m_queueInfo = getQueueInfo(vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute, 6);
+		m_queueInfo = getQueueInfo(vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute, FRAMES_IN_FLIGHT);
 		std::vector<QueueInfo> queueInfos = { m_queueInfo };
 	
 		vk::PhysicalDeviceFeatures features = m_physicalDevice.getFeatures();
