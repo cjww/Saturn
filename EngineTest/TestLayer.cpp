@@ -16,7 +16,7 @@ namespace sa {
 
 		m_completions.insert({ entity, sa::AssetManager::get().loadModel(modelPath) });
 		
-		m_completions.at(entity).wait();
+		//m_completions.at(entity).wait();
 
 		if (m_completions.at(entity).isDone()) {
 			entity.getComponent<comp::Model>()->modelID = m_completions.at(entity);
@@ -49,7 +49,7 @@ namespace sa {
 
 		engine.getCurrentScene()->addActiveCamera(&m_camera);
 
-		for (int i = 0; i < 4; i++) {
+		for (int i = 0; i < 30; i++) {
 			createModelEntity(engine, "models/adamHead/adamHead.gltf");
 		}
 		for (int i = 0; i < 30; i++) {
@@ -62,11 +62,11 @@ namespace sa {
 			createModelEntity(engine, "models/steampunk_underwater_explorer/scene.gltf", 0.3f);
 		}
 		for (int i = 0; i < 30; i++) {
-			createModelEntity(engine, "models/lieutenantHead/lieutenantHead.gltf");
+			createModelEntity(engine, "models/viking_room/scene.gltf", 0.2f);
+			createModelEntity(engine, "models/steampunk_glasses__goggles/scene.gltf");
 		}
-		createModelEntity(engine, "models/steampunk_glasses__goggles/scene.gltf");
-		createModelEntity(engine, "models/viking_room/scene.gltf", 0.2f);
 		/*
+		createModelEntity(engine, "models/viking_room/scene.gltf", 0.2f);
 		*/
 		
 		engine.createSystemScript("test.lua");

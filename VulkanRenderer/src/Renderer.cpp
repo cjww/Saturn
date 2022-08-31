@@ -219,8 +219,8 @@ namespace sa {
 		}
 		pDescriptorSet->update(binding, pDeviceBuffer->buffer, pDeviceBuffer->size, 0, pView, UINT32_MAX);
 	}
-
-	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const DynamicBuffer& buffer) {
+	
+	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, DynamicBuffer& buffer) {
 		for (uint32_t i = 0; i < buffer.getBufferCount(); i++) {
 			updateDescriptorSet(descriptorSet, binding, buffer.getBuffer(i));
 		}

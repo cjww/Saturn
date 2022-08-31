@@ -170,7 +170,9 @@ namespace sa {
 			return;
 		}
 		if (getCapacity() - getSize() < size) {
-			resize(getSize() + size);
+			size_t newSize = getSize() + size;
+			if (getSize() > 0) newSize = newSize << 1;
+			resize(newSize);
 		}
 		
 		memcpy((char*)m_pBuffer->mappedData + getSize(), data, size);

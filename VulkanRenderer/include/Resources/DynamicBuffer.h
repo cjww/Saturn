@@ -19,7 +19,9 @@ namespace sa {
 
 		//bool setFormat(FormatPrecisionFlags precision, FormatDimensionFlags dimensions, FormatTypeFlags type);
 
-		sa::Buffer getBuffer(uint32_t index = -1) const;
+		sa::Buffer& getBuffer(uint32_t index = -1);
+		const sa::Buffer& getBuffer(uint32_t index = -1) const;
+
 		uint32_t getBufferCount() const;
 
 		BufferType getType() const;
@@ -38,6 +40,8 @@ namespace sa {
 
 		void* data();
 
+		void clear();
+
 		template<typename T>
 		size_t getElementCount() const;
 
@@ -55,45 +59,56 @@ namespace sa {
 		template<typename T, size_t Size>
 		Buffer& operator<<(std::array<T, Size>& values);
 
+		operator const Buffer& ();
+
+		template<typename T>
+		T& at(uint32_t index) const;
+
 	};
 
 	template<typename T>
 	inline void DynamicBuffer::write(const T& data) {
-		write(&data, sizeof(T));
+		write((void*)&data, sizeof(T));
 	}
 
 	template<typename T>
 	inline void DynamicBuffer::write(const std::vector<T>& data) {
-		write(data.data(), data.size() * sizeof(T));
+		write((void*)data.data(), data.size() * sizeof(T));
 	}
 
 	template<typename T, size_t Size>
 	inline void DynamicBuffer::write(const std::array<T, Size>& data) {
-		write(data.data(), data.size() * sizeof(T));
+		write((void*)data.data(), data.size() * sizeof(T));
 	}
 	
 	template<typename T>
 	inline size_t DynamicBuffer::getElementCount() const{
-		return getBuffer().getElementCount<T>();
+		return getBuffer(m_currentBufferIndex).getElementCount<T>();
 	}
 
 	template<typename T>
 	inline std::vector<T> DynamicBuffer::getContent() {
-		return getBuffer().getContent<T>();
+		return getBuffer(m_currentBufferIndex).getContent<T>();
 	}
 
 	template<typename T>
 	inline Buffer& DynamicBuffer::operator<<(const T& value) {
-		return getBuffer() << value;
+		return getBuffer(m_currentBufferIndex) << value;
 	}
 
 	template<typename T>
 	inline Buffer& DynamicBuffer::operator<<(std::vector<T>& values) {
-		return getBuffer() << values;
+		return getBuffer(m_currentBufferIndex) << values;
 	}
 
 	template<typename T, size_t Size>
 	inline Buffer& DynamicBuffer::operator<<(std::array<T, Size>& values) {
-		return getBuffer() << values;
+		return getBuffer(m_currentBufferIndex) << values;
 	}
+
+	template<typename T>
+	inline T& DynamicBuffer::at(uint32_t index) const {
+		return getBuffer(m_currentBufferIndex).at<T>(index);
+	}
+
 }

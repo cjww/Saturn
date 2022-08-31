@@ -6,9 +6,11 @@ namespace sa {
 	struct IndirectDrawData {
 		Material* pMaterial;
 		Mesh* pMesh;
-		std::vector<Matrix4x4> transformations;
 	};
 
+	struct ObjectBuffer {
+		Matrix4x4 worldMat;
+	};
 
 	class ForwardPlus : public IRenderTechnique {
 	private:
@@ -29,22 +31,26 @@ namespace sa {
 		Texture2D m_outputTexture; // if using Imgui
 
 		ResourceID m_sceneDescriptorSet = NULL_RESOURCE;
-		Buffer m_sceneUniformBuffer;
-		Buffer m_lightBuffer;
 		
 		ResourceID m_linearSampler = NULL_RESOURCE;
 
-		Buffer m_vertexBuffer;
-		Buffer m_indexBuffer;
-
-		Buffer m_indirectIndexedBuffer;
+		std::vector<IndirectDrawData> m_draws;
+		
+		Buffer m_sceneUniformBuffer;
+		DynamicBuffer m_lightBuffer;
+		DynamicBuffer m_vertexBuffer;
+		DynamicBuffer m_indexBuffer;
+		DynamicBuffer m_indirectIndexedBuffer;
+		DynamicBuffer m_objectBuffer;
+		DynamicBuffer m_materialBuffer;
 
 		void createTextures(Extent extent);
 		void createRenderPasses();
 		void createFramebuffers(Extent extent);
 		void createPipelines(Extent extent);
 
-		std::vector<IndirectDrawData> collectDrawData(Scene* pScene) const;
+		void collectMeshes(Scene* pScene);
+
 
 	public:
 

@@ -91,7 +91,7 @@ namespace sa {
 		Buffer& operator<<(const std::array<T, Size>& values);
 
 		template<typename T>
-		T& operator[](uint32_t index) const;
+		T& at(uint32_t index) const;
 
 	};
 
@@ -120,7 +120,7 @@ namespace sa {
 	inline std::vector<T> Buffer::getContent() const {
 		std::vector<T> elements(getElementCount<T>());
 		memcpy(elements.data(), data(), getSize());
-		return elements;
+		return std::move(elements);
 	}
 	
 	template<typename T>
@@ -142,7 +142,7 @@ namespace sa {
 	}
 
 	template<typename T>
-	T& Buffer::operator[](uint32_t index) const {
+	T& Buffer::at(uint32_t index) const {
 		T* arr = (T*)data();
 		return arr[index];
 	}

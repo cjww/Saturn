@@ -5,7 +5,7 @@
 layout(location = 0) in vec2 in_vertexUV;
 layout(location = 1) in vec3 in_vertexWorldPos;
 layout(location = 2) in vec3 in_vertexWorldNormal;
-layout(location = 3) in vec3 in_viewPos;
+layout(location = 3) in flat vec3 in_viewPos;
 
 layout(location = 0) out vec4 out_color;
 layout(location = 1) out vec4 out_brightness;
@@ -42,7 +42,7 @@ struct Light {
     uint type;
 };
 
-layout(set = 0, binding = 1, std140) readonly buffer Lights {
+layout(set = 0, binding = 2, std140) readonly buffer Lights {
     uint lightCount;
     Light lights[4096];
 } lightBuffer;
@@ -54,7 +54,13 @@ void main() {
     out_color = material.diffuseColor * texture(sampler2D(textures[material.diffuseMapFirst], samp), in_vertexUV);
     
     */
-    out_color = material.diffuseColor;
+    uint bin = uint(in_viewPos.x);
+
+    out_color = vec4(0, 0, 0, 1);
+    out_color.x = bin & 4;
+    out_color.y = bin & 2;
+    out_color.z = bin & 1;
+
     return;
 
     vec4 ambientColor = material.ambientColor * 0.1;

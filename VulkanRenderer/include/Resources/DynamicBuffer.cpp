@@ -29,8 +29,19 @@ namespace sa{
 		}
 	}
 
-	sa::Buffer DynamicBuffer::getBuffer(uint32_t index) const {
-		return m_buffers.at((index != -1)? index : m_currentBufferIndex);
+	Buffer& DynamicBuffer::getBuffer(uint32_t index) {
+		if (index == -1) {
+			index = m_currentBufferIndex;
+			m_currentBufferIndex = (m_currentBufferIndex + 1) % m_buffers.size();
+		}
+		return m_buffers.at(index);
+	}
+
+	const Buffer& DynamicBuffer::getBuffer(uint32_t index) const {
+		if (index == -1) {
+			index = m_currentBufferIndex;
+		}
+		return m_buffers.at(index);
 	}
 
 	uint32_t DynamicBuffer::getBufferCount() const {
@@ -42,15 +53,19 @@ namespace sa{
 	}
 
 	void DynamicBuffer::write(void* data, size_t size, int offset) {
-		getBuffer().write(data, size, offset);
+		getBuffer(m_currentBufferIndex).write(data, size, offset);
 	}
 
 	void DynamicBuffer::append(void* data, size_t size) {
-		getBuffer().append(data, size);
+		getBuffer(m_currentBufferIndex).append(data, size);
 	}
 
 	void* DynamicBuffer::data() {
-		return getBuffer().data();
+		return getBuffer(m_currentBufferIndex).data();
+	}
+
+	void DynamicBuffer::clear() {
+		getBuffer(m_currentBufferIndex).clear();
 	}
 
 	bool DynamicBuffer::isValid() const {
@@ -58,6 +73,10 @@ namespace sa{
 			if (!buffer.isValid()) return false;
 		}
 		return true;
+	}
+
+	DynamicBuffer::operator const Buffer& () {
+		return getBuffer();
 	}
 
 

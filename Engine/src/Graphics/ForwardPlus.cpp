@@ -77,47 +77,77 @@ namespace sa {
 
 	}
 
-	std::vector<IndirectDrawData> ForwardPlus::collectDrawData(Scene* pScene) const {
+	void ForwardPlus::collectMeshes(Scene* pScene) {
 		SA_PROFILE_FUNCTION();
+		m_vertexBuffer.clear();
+		m_indexBuffer.clear();
+		m_indirectIndexedBuffer.clear();
+		m_objectBuffer.clear();
+		m_materialBuffer.clear();
 
-		std::vector<IndirectDrawData> draws;
-		unsigned int lastOpaqueIndex = 0;
+		m_draws.clear();
+		
+		uint32_t objectID = 0U;
 
-		pScene->forEach<comp::Transform, comp::Model>([&](const comp::Transform& transform, comp::Model& modelComp) {
+		pScene->forEach<comp::Transform, comp::Model>([&](const comp::Transform& transform, const comp::Model& modelComp) {
 			if (modelComp.modelID == NULL_RESOURCE)
 				return; // does not have to be drawn
-			
-			// Get Model
-			sa::ModelData* pModel = sa::AssetManager::get().getModel(modelComp.modelID);
 
+			// Store transformation
+			ObjectBuffer object = {};
+			object.worldMat = transform.getMatrix();
+			m_objectBuffer << object;
+
+			// Get Model
+			ModelData* pModel = sa::AssetManager::get().getModel(modelComp.modelID);
+			
+			// For each mesh
 			for (auto& mesh : pModel->meshes) {
 				Material* pMaterial = AssetManager::get().getMaterial(mesh.materialID);
+				
+				// Look if mesh is already in the vertexbuffer
 				bool found = false;
-				for (auto& draw : draws) {
+				uint32_t i = 0;
+				for (auto& draw : m_draws) {
 					if (draw.pMesh == &mesh && draw.pMaterial == pMaterial) {
-						draw.transformations.push_back(transform.getMatrix());
+						// If it is, add an instance	
+						auto& cmd = m_indirectIndexedBuffer.at<DrawIndexedIndirectCommand>(i);
+						cmd.instanceCount++;
+
 						found = true;
 						break;
 					}
+					i++;
 				}
 
 				if (!found) {
+					// If not, store data
 					IndirectDrawData data = {};
 					data.pMaterial = pMaterial;
 					data.pMesh = &mesh;
-					data.transformations.push_back(transform.getMatrix());
-					if (pMaterial->values.opacity < 1.0f) {
-						draws.push_back(data);
-					}
-					else {
-						draws.insert(draws.begin() + lastOpaqueIndex, data);
-						lastOpaqueIndex++;
-					}
+					m_draws.push_back(data);
+
+					// Push mesh into buffers
+					uint32_t vertexOffset = m_vertexBuffer.getElementCount<VertexNormalUV>();
+					m_vertexBuffer << mesh.vertices;
+
+					uint32_t firstIndex = m_indexBuffer.getElementCount<uint32_t>();
+					m_indexBuffer << mesh.indices;
+
+					// Create a draw command for this mesh
+					DrawIndexedIndirectCommand cmd = {};
+					cmd.firstIndex = firstIndex;
+					cmd.indexCount = mesh.indices.size();
+					cmd.firstInstance = objectID;
+					cmd.instanceCount = 1;
+					cmd.vertexOffset = vertexOffset;
+					m_indirectIndexedBuffer << cmd;
+					
 				}
 			}
+			objectID++;
 		});
-	
-		return std::move(draws);
+
 	}
 
 	void ForwardPlus::init(sa::RenderWindow* pWindow, bool setupImGui) {
@@ -136,20 +166,29 @@ namespace sa {
 		perFrame.viewPos = sa::Vector3(0);
 		m_sceneUniformBuffer = m_renderer.createBuffer(BufferType::UNIFORM, sizeof(perFrame), &perFrame);
 		
-		m_lightBuffer = m_renderer.createBuffer(BufferType::STORAGE);
-		m_lightBuffer << 0U;
+		unsigned int lightCount = 0;
+		m_lightBuffer = m_renderer.createDynamicBuffer(BufferType::STORAGE, sizeof(lightCount), &lightCount);
 		
 		m_sceneDescriptorSet = m_renderer.allocateDescriptorSet(m_colorPipeline, SET_PER_FRAME);
 
-		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 0, m_sceneUniformBuffer);
-		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 1, m_lightBuffer);
 
 		m_composeDescriptorSet = m_renderer.allocateDescriptorSet(m_composePipeline, 0);
 		m_renderer.updateDescriptorSet(m_composeDescriptorSet, 0, m_colorTexture, m_linearSampler);
 	
-		m_indirectIndexedBuffer = m_renderer.createBuffer(BufferType::INDIRECT, 256);
-		m_vertexBuffer = m_renderer.createBuffer(BufferType::VERTEX, 1024);
-		m_indexBuffer = m_renderer.createBuffer(BufferType::INDEX, 1024);
+		m_indirectIndexedBuffer = m_renderer.createDynamicBuffer(BufferType::INDIRECT, 256);
+		m_vertexBuffer = m_renderer.createDynamicBuffer(BufferType::VERTEX, 100000);
+		m_indexBuffer = m_renderer.createDynamicBuffer(BufferType::INDEX, 100000);
+		m_objectBuffer = m_renderer.createDynamicBuffer(BufferType::STORAGE);
+		
+		m_materialBuffer = m_renderer.createDynamicBuffer(BufferType::STORAGE);
+
+		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 0, m_objectBuffer);
+		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 1, m_sceneUniformBuffer);
+		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 2, m_lightBuffer);
+
+
+		//DEBUG
+		m_renderer.setClearColor(m_colorRenderProgram, Color{ 0.3f, 0.3f, 0.3f });
 
 	}
 
@@ -184,84 +223,32 @@ namespace sa {
 		
 		if (pScene != nullptr) {
 
-			std::vector<IndirectDrawData> draws = collectDrawData(pScene);
+			collectMeshes(pScene);
+
+			context.updateDescriptorSet(m_sceneDescriptorSet, 0, m_objectBuffer);
+			context.bindVertexBuffers(0, { m_vertexBuffer });
+			context.bindIndexBuffer(m_indexBuffer);
+
+			if (m_indirectIndexedBuffer.getElementCount<DrawIndexedIndirectCommand>() > 0) {
+
+				for (const auto& camera : pScene->getActiveCameras()) {
+					SA_PROFILE_SCOPE("Draw camera");
+
+					PerFrameBuffer perFrame;
+					perFrame.projViewMatrix = camera->getProjectionMatrix() * camera->getViewMatrix();
+					perFrame.viewPos = camera->getPosition();
+					m_sceneUniformBuffer.write(perFrame);
+					context.updateDescriptorSet(m_sceneDescriptorSet, 1, m_sceneUniformBuffer);
 
 
-			uint32_t materialIndex = 0;
+					AssetManager::get().getMaterial(AssetManager::get().loadDefaultMaterial())->bind(context, m_colorPipeline, m_linearSampler);
+					//draws[0].pMaterial->bind(context, m_colorPipeline, m_linearSampler);
 
-			uint32_t vertexOffset = 0;
-			uint32_t indexIndex = 0;
-
-			uint32_t totalInstanceCount = 0;
-			{
-				SA_PROFILE_SCOPE("Make indirect buffer");
-
-				m_indirectIndexedBuffer.clear();
-				m_vertexBuffer.clear();
-				m_indexBuffer.clear();
-				for (const auto& draw : draws) {
-					{
-						SA_PROFILE_SCOPE("Write vretecies and indices");
-						m_vertexBuffer << draw.pMesh->vertices;
-						m_indexBuffer << draw.pMesh->indices;
-					}
-
-					DrawIndexedIndirectCommand cmd = {};
-					cmd.firstIndex = indexIndex;
-					cmd.indexCount = draw.pMesh->indices.size();
-					indexIndex += draw.pMesh->indices.size();
 				
-					cmd.firstInstance = totalInstanceCount;
-					cmd.instanceCount = draw.transformations.size();
-					totalInstanceCount += cmd.instanceCount;
-					cmd.vertexOffset = vertexOffset;
-					vertexOffset += draw.pMesh->vertices.size();
-					{
-						SA_PROFILE_SCOPE("Write command");
+					//context.pushConstant(m_colorPipeline, sa::ShaderStageFlagBits::VERTEX, glm::mat4(1));
+					context.drawIndexedIndirect(m_indirectIndexedBuffer, 0, m_indirectIndexedBuffer.getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
 
-						m_indirectIndexedBuffer << cmd;
-					}
 				}
-			}
-
-			for (const auto& camera : pScene->getActiveCameras()) {
-				SA_PROFILE_SCOPE("Draw camera");
-
-				PerFrameBuffer perFrame;
-				perFrame.projViewMatrix = camera->getProjectionMatrix() * camera->getViewMatrix();
-				perFrame.viewPos = camera->getPosition();
-				m_sceneUniformBuffer.write(perFrame);
-				context.updateDescriptorSet(m_sceneDescriptorSet, 0, m_sceneUniformBuffer);
-
-				if (draws.empty())
-					break;
-				
-				//draws[0].pMaterial->bind(context, m_colorPipeline, m_linearSampler);
-				AssetManager::get().getMaterial(AssetManager::get().loadDefaultMaterial())->bind(context, m_colorPipeline, m_linearSampler);
-
-				
-				context.pushConstant(m_colorPipeline, sa::ShaderStageFlagBits::VERTEX, glm::mat4(1));
-				context.bindVertexBuffers(0, { m_vertexBuffer });
-				context.bindIndexBuffer(m_indexBuffer);
-				context.drawIndexedIndirect(m_indirectIndexedBuffer, 0, m_indirectIndexedBuffer.getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
-
-				/*
-				for (const auto& data : draws) {
-					
-					context.pushConstants(m_colorPipeline, sa::ShaderStageFlagBits::VERTEX, 0, data.transformations.size() * sizeof(Matrix4x4), (void*)data.transformations.data());
-
-					context.bindVertexBuffers(0, { data.pMesh->vertexBuffer });
-					if (data.pMesh->indexBuffer.isValid()) {
-						context.bindIndexBuffer(data.pMesh->indexBuffer);
-						context.drawIndexed(data.pMesh->indexBuffer.getElementCount<uint32_t>(), data.transformations.size());
-					}
-					else {
-						context.draw(data.pMesh->vertexBuffer.getElementCount<VertexUV>(), data.transformations.size());
-					}
-					
-				}
-				*/
-
 			}
 
 		}
