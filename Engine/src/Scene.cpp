@@ -18,14 +18,11 @@ namespace sa {
 	}
 
 	void Scene::init() {
+
 	}
 
 	void Scene::update(float dt) {
 		publish<event::UpdatedScene>(dt);
-	}
-
-	void Scene::render() {
-
 	}
 
 	Camera* Scene::newCamera() {
@@ -62,7 +59,7 @@ namespace sa {
 	}
 
 	Entity Scene::createEntity(const std::string& name) {
-		Entity e(&m_reg, m_reg.create());
+		Entity e(this, create());
 		e.addComponent<comp::Name>(name);
 		publish<event::EntityCreated>(e);
 		return e;
@@ -70,11 +67,11 @@ namespace sa {
 
 	void Scene::destroyEntity(const Entity& entity) {
 		publish<event::EntityDestroyed>(entity);
-		m_reg.destroy(entity);
+		destroy(entity);
 	}
 
 	size_t Scene::getEntityCount() const {
-		return m_reg.size();
+		return size();
 	}
 
 }

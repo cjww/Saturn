@@ -60,6 +60,14 @@ namespace sa{
 		getBuffer(m_currentBufferIndex).append(data, size);
 	}
 
+	void DynamicBuffer::resize(size_t newSize, BufferResizeFlags resizeFlags) {
+		getBuffer(m_currentBufferIndex).resize(newSize, resizeFlags);
+	}
+
+	void DynamicBuffer::reserve(size_t capacity, BufferResizeFlags resizeFlags) {
+		getBuffer(m_currentBufferIndex).reserve(capacity, resizeFlags);
+	}
+
 	void* DynamicBuffer::data() {
 		return getBuffer(m_currentBufferIndex).data();
 	}

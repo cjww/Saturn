@@ -3,11 +3,6 @@
 
 namespace sa {
 
-	struct IndirectDrawData {
-		Material* pMaterial;
-		Mesh* pMesh;
-	};
-
 	struct ObjectBuffer {
 		Matrix4x4 worldMat;
 	};
@@ -34,11 +29,11 @@ namespace sa {
 		
 		ResourceID m_linearSampler = NULL_RESOURCE;
 
-		std::vector<IndirectDrawData> m_draws;
-		std::vector<VertexNormalUV> m_vertices;
-		std::vector<uint32_t> m_indices;
-		std::vector<ObjectBuffer> m_objects;
-		std::vector<DrawIndexedIndirectCommand> m_indirectCommands;
+		std::vector<std::tuple<Mesh*, uint32_t>> m_meshes;
+		std::vector<Mesh*> m_uniqueMeshes;
+		std::vector<uint32_t> m_uniqueMeshCount;
+		std::vector<uint32_t> m_uniqueMeshFirstObjectIndex;
+
 
 		Buffer m_sceneUniformBuffer;
 		DynamicBuffer m_lightBuffer;

@@ -79,94 +79,74 @@ namespace sa {
 
 	void ForwardPlus::collectMeshes(Scene* pScene) {
 		SA_PROFILE_FUNCTION();
+		m_objectBuffer.clear();
 		m_vertexBuffer.clear();
 		m_indexBuffer.clear();
 		m_indirectIndexedBuffer.clear();
-		m_objectBuffer.clear();
-		m_materialBuffer.clear();
 
-		m_draws.clear();
+		m_materialBuffer.clear(); // TODO add material support
+
+		m_meshes.clear();
+		m_uniqueMeshes.clear();
+		m_uniqueMeshCount.clear();
+		m_uniqueMeshFirstObjectIndex.clear();
+
+
+		m_objectBuffer.reserve(pScene->view<comp::Transform, comp::Model>().size_hint() * sizeof(ObjectBuffer), IGNORE_CONTENT);
 		
-		m_vertices.clear();
-		m_indices.clear();
-		m_indirectCommands.clear();
-		m_objects.clear();
-
-		uint32_t objectID = 0U;
-
-		
-		pScene->forEach<comp::Transform, comp::Model>([&](const comp::Transform& transform, const comp::Model& modelComp) {
+		uint32_t objectIndex = 0U;
+		uint32_t vertexCount = 0;
+		uint32_t indexCount = 0;
+		pScene->view<comp::Transform, comp::Model>().each([&](const comp::Transform& transform, const comp::Model& modelComp) {
 			if (modelComp.modelID == NULL_RESOURCE)
 				return; // does not have to be drawn
 
-			// Store transformation
 			ObjectBuffer object = {};
 			object.worldMat = transform.getMatrix();
 			m_objectBuffer << object;
-			//m_objects.push_back(object);
-			// Get Model
-			ModelData* pModel = sa::AssetManager::get().getModel(modelComp.modelID);
 			
-			// For each mesh
+			ModelData* pModel = sa::AssetManager::get().getModel(modelComp.modelID);
+			m_meshes.reserve(m_meshes.size() + pModel->meshes.size());
 			for (auto& mesh : pModel->meshes) {
-				Material* pMaterial = AssetManager::get().getMaterial(mesh.materialID);
-				
-				// Look if mesh is already in the vertexbuffer
-				bool found = false;
-				uint32_t i = 0;
-				for (auto& draw : m_draws) {
-					if (draw.pMesh == &mesh && draw.pMaterial == pMaterial) {
-						// If it is, add an instance	
-						auto& cmd = m_indirectIndexedBuffer.at<DrawIndexedIndirectCommand>(i);
-						//auto& cmd = m_indirectCommands.at(i);
-						cmd.instanceCount++;
-
-						found = true;
-						break;
-					}
-					i++;
+				m_meshes.push_back({ &mesh, objectIndex });
+				auto it = std::find(m_uniqueMeshes.begin(), m_uniqueMeshes.end(), &mesh);
+				if (it == m_uniqueMeshes.end()) {
+					m_uniqueMeshes.push_back(&mesh);
+					vertexCount += mesh.vertices.size();
+					indexCount += mesh.indices.size();
+					m_uniqueMeshCount.push_back(1);
+					m_uniqueMeshFirstObjectIndex.push_back(objectIndex);
 				}
-
-				if (!found) {
-					// If not, store data
-					IndirectDrawData data = {};
-					data.pMaterial = pMaterial;
-					data.pMesh = &mesh;
-					m_draws.push_back(data);
-
-					// Push mesh into buffers
-					uint32_t vertexOffset = m_vertexBuffer.getElementCount<VertexNormalUV>();
-					m_vertexBuffer << mesh.vertices;
-					
-					//uint32_t vertexOffset = m_vertices.size();
-					//m_vertices.insert(m_vertices.end(), mesh.vertices.begin(), mesh.vertices.end());
-
-					uint32_t firstIndex = m_indexBuffer.getElementCount<uint32_t>();
-					m_indexBuffer << mesh.indices;
-
-					//uint32_t firstIndex = m_indices.size();
-					//m_indices.insert(m_indices.end(), mesh.indices.begin(), mesh.indices.end());
-
-					// Create a draw command for this mesh
-					DrawIndexedIndirectCommand cmd = {};
-					cmd.firstIndex = firstIndex;
-					cmd.indexCount = mesh.indices.size();
-					cmd.firstInstance = objectID;
-					cmd.instanceCount = 1;
-					cmd.vertexOffset = vertexOffset;
-					m_indirectIndexedBuffer << cmd;
-					//m_indirectCommands.push_back(cmd);
-					
+				else {
+					m_uniqueMeshCount[std::distance(m_uniqueMeshes.begin(), it)]++;
 				}
 			}
-			objectID++;
+			objectIndex++;
 		});
 
-		//m_vertexBuffer.write(m_vertices);
-		//m_indexBuffer.write(m_indices);
-		//m_objectBuffer.write(m_objects);
-		//m_indirectIndexedBuffer.write(m_indirectCommands);
+		m_vertexBuffer.reserve(vertexCount * sizeof(VertexNormalUV), IGNORE_CONTENT);
+		m_indexBuffer.reserve(indexCount * sizeof(uint32_t), IGNORE_CONTENT);
+		m_indirectIndexedBuffer.reserve(m_uniqueMeshes.size() * sizeof(DrawIndexedIndirectCommand), IGNORE_CONTENT);
 
+		for (size_t i = 0; i < m_uniqueMeshes.size(); i++) {
+			
+			// Push mesh into buffers
+			uint32_t vertexOffset = m_vertexBuffer.getElementCount<VertexNormalUV>();
+			m_vertexBuffer << m_uniqueMeshes[i]->vertices;
+
+			uint32_t firstIndex = m_indexBuffer.getElementCount<uint32_t>();
+			m_indexBuffer << m_uniqueMeshes[i]->indices;
+
+			// Create a draw command for this mesh
+			DrawIndexedIndirectCommand cmd = {};
+			cmd.firstIndex = firstIndex;
+			cmd.indexCount = m_uniqueMeshes[i]->indices.size();
+			cmd.firstInstance = m_uniqueMeshFirstObjectIndex[i];
+			cmd.instanceCount = m_uniqueMeshCount[i];
+			cmd.vertexOffset = vertexOffset;
+			m_indirectIndexedBuffer << cmd;
+
+		}
 	}
 
 	void ForwardPlus::init(sa::RenderWindow* pWindow, bool setupImGui) {

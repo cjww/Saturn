@@ -104,11 +104,14 @@ namespace sa {
 		m_size = 0;
 	}
 
-	void Buffer::resize(size_t newSize)
-	{
-		void* data = malloc(newSize);
-		if (isValid())
-		{
+	void Buffer::resize(size_t newSize, BufferResizeFlags resizeFlags) {
+		if (!isValid())
+			return;
+		void* data = nullptr;
+		
+		if (resizeFlags & BufferResizeFlagBits::PRESERVE_CONTENT) {
+			data = malloc(newSize);
+
 			//Save old data
 			memcpy(data, m_pBuffer->mappedData, std::min(newSize, getSize()));
 
@@ -117,11 +120,21 @@ namespace sa {
 				// if space for more initialize it to 0
 				memset((char*)data + getCapacity(), 0, diff);
 			}
-			m_pCore->destroyBuffer(m_pBuffer);
 		}
+		// Recreate buffer
+		m_pCore->destroyBuffer(m_pBuffer);
 		create(m_type, newSize, data);
-		free(data);
+		
+		if (data != nullptr)
+			free(data);
 	}
+
+	void Buffer::reserve(size_t capacity, BufferResizeFlags resizeFlags) {
+		if (getCapacity() < capacity) {
+			resize(capacity, resizeFlags);
+		}
+	}
+
 
 	bool Buffer::setFormat(FormatPrecisionFlags precision, FormatDimensionFlags dimensions, FormatTypeFlags type) {
 		if (m_view == NULL_RESOURCE)

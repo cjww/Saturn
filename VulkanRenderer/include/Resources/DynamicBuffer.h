@@ -38,6 +38,9 @@ namespace sa {
 		template<typename T, size_t Size>
 		void write(const std::array<T, Size>& data);
 
+		void resize(size_t newSize, BufferResizeFlags resizeFlags = PRESERVE_CONTENT);
+		void reserve(size_t capacity, BufferResizeFlags resizeFlags = PRESERVE_CONTENT);
+
 		void* data();
 
 		void clear();

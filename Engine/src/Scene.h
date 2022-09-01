@@ -12,12 +12,13 @@
 namespace sa {
 	typedef uint32_t SceneID;
 
-	class Scene : public entt::emitter<Scene> {
+	class Scene : public entt::emitter<Scene>, public entt::registry {
 	private:
 		std::vector<Camera*> m_cameras;
 		std::set<Camera*> m_activeCameras;
 
-		entt::registry m_reg;
+		using entt::registry::destroy;
+		using entt::registry::create;
 
 	public:
 		Scene();
@@ -25,7 +26,6 @@ namespace sa {
 
 		virtual void init();
 		virtual void update(float dt);
-		virtual void render();
 
 		Camera* newCamera();
 		Camera* newCamera(const Window* pWindow);
@@ -59,19 +59,19 @@ namespace sa {
 			std::is_assignable_v<std::function<void(Entity)>, F> &&
 			"Not a valid function signature");
 		if constexpr (std::is_assignable_v<std::function<void(Entity)>, F>) {
-			m_reg.each([&](const entt::entity e) {
-				Entity entity(&m_reg, e);
+			each([&](const entt::entity e) {
+				Entity entity(this, e);
 				func(entity);
 			});
 		}
 		else if constexpr (std::is_assignable_v<std::function<void(Entity, T&...)>, F>) {
-			m_reg.view<T...>().each([&](entt::entity e, T&... comp) {
-				Entity entity(&m_reg, e);
+			view<T...>().each([&](entt::entity e, T&... comp) {
+				Entity entity(this, e);
 				func(entity, comp...);
 			});
 		}
 		else if constexpr (std::is_assignable_v<std::function<void(T&...)>, F>) {
-			m_reg.view<T...>().each(func);
+			view<T...>().each(func);
 		}
 
 	}
@@ -85,8 +85,8 @@ namespace sa {
 			types[i] = components[i].getTypeId();
 		}
 
-		m_reg.runtime_view(std::cbegin(types), std::cend(types)).each([&](entt::entity e) {
-			Entity entity(&m_reg, e);
+		runtime_view(std::cbegin(types), std::cend(types)).each([&](entt::entity e) {
+			Entity entity(this, e);
 			func(entity);
 		});
 	}

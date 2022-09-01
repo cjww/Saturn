@@ -24,6 +24,13 @@ namespace sa {
 
 	std::string to_string(const BufferType& value);
 
+	typedef uint32_t BufferResizeFlags;
+
+	enum BufferResizeFlagBits : BufferResizeFlags {
+		IGNORE_CONTENT = 0,
+		PRESERVE_CONTENT = 1
+	};
+
 	class Buffer {
 	private:
 		VulkanCore* m_pCore;
@@ -42,7 +49,10 @@ namespace sa {
 		void create(BufferType type, size_t size, void* initialData);
 		void destroy();
 
-		void resize(size_t newSize);
+		// Resizes the buffer
+		void resize(size_t newSize, BufferResizeFlags resizeFlags = PRESERVE_CONTENT);
+		// Only expands the buffer if new capacity is bigger than current capacity, otherwise does nothing
+		void reserve(size_t capacity, BufferResizeFlags resizeFlags = PRESERVE_CONTENT);
 
 		bool setFormat(FormatPrecisionFlags precision, FormatDimensionFlags dimensions, FormatTypeFlags type);
 
