@@ -35,7 +35,11 @@ namespace sa {
 		ResourceID m_linearSampler = NULL_RESOURCE;
 
 		std::vector<IndirectDrawData> m_draws;
-		
+		std::vector<VertexNormalUV> m_vertices;
+		std::vector<uint32_t> m_indices;
+		std::vector<ObjectBuffer> m_objects;
+		std::vector<DrawIndexedIndirectCommand> m_indirectCommands;
+
 		Buffer m_sceneUniformBuffer;
 		DynamicBuffer m_lightBuffer;
 		DynamicBuffer m_vertexBuffer;

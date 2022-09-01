@@ -87,8 +87,14 @@ namespace sa {
 
 		m_draws.clear();
 		
+		m_vertices.clear();
+		m_indices.clear();
+		m_indirectCommands.clear();
+		m_objects.clear();
+
 		uint32_t objectID = 0U;
 
+		
 		pScene->forEach<comp::Transform, comp::Model>([&](const comp::Transform& transform, const comp::Model& modelComp) {
 			if (modelComp.modelID == NULL_RESOURCE)
 				return; // does not have to be drawn
@@ -97,7 +103,7 @@ namespace sa {
 			ObjectBuffer object = {};
 			object.worldMat = transform.getMatrix();
 			m_objectBuffer << object;
-
+			//m_objects.push_back(object);
 			// Get Model
 			ModelData* pModel = sa::AssetManager::get().getModel(modelComp.modelID);
 			
@@ -112,6 +118,7 @@ namespace sa {
 					if (draw.pMesh == &mesh && draw.pMaterial == pMaterial) {
 						// If it is, add an instance	
 						auto& cmd = m_indirectIndexedBuffer.at<DrawIndexedIndirectCommand>(i);
+						//auto& cmd = m_indirectCommands.at(i);
 						cmd.instanceCount++;
 
 						found = true;
@@ -130,9 +137,15 @@ namespace sa {
 					// Push mesh into buffers
 					uint32_t vertexOffset = m_vertexBuffer.getElementCount<VertexNormalUV>();
 					m_vertexBuffer << mesh.vertices;
+					
+					//uint32_t vertexOffset = m_vertices.size();
+					//m_vertices.insert(m_vertices.end(), mesh.vertices.begin(), mesh.vertices.end());
 
 					uint32_t firstIndex = m_indexBuffer.getElementCount<uint32_t>();
 					m_indexBuffer << mesh.indices;
+
+					//uint32_t firstIndex = m_indices.size();
+					//m_indices.insert(m_indices.end(), mesh.indices.begin(), mesh.indices.end());
 
 					// Create a draw command for this mesh
 					DrawIndexedIndirectCommand cmd = {};
@@ -142,11 +155,17 @@ namespace sa {
 					cmd.instanceCount = 1;
 					cmd.vertexOffset = vertexOffset;
 					m_indirectIndexedBuffer << cmd;
+					//m_indirectCommands.push_back(cmd);
 					
 				}
 			}
 			objectID++;
 		});
+
+		//m_vertexBuffer.write(m_vertices);
+		//m_indexBuffer.write(m_indices);
+		//m_objectBuffer.write(m_objects);
+		//m_indirectIndexedBuffer.write(m_indirectCommands);
 
 	}
 
