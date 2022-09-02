@@ -29,11 +29,9 @@ namespace sa {
 		
 		ResourceID m_linearSampler = NULL_RESOURCE;
 
-		std::vector<std::tuple<Mesh*, uint32_t>> m_meshes;
-		std::vector<Mesh*> m_uniqueMeshes;
-		std::vector<uint32_t> m_uniqueMeshCount;
-		std::vector<uint32_t> m_uniqueMeshFirstObjectIndex;
 
+		std::vector<ModelData*> m_models;
+		std::vector<std::vector<ObjectBuffer>> m_objects;
 
 		Buffer m_sceneUniformBuffer;
 		DynamicBuffer m_lightBuffer;
@@ -49,7 +47,7 @@ namespace sa {
 		void createPipelines(Extent extent);
 
 		void collectMeshes(Scene* pScene);
-
+		
 
 	public:
 
