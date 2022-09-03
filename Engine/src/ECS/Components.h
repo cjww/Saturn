@@ -19,8 +19,8 @@ namespace sa {
 		DIRECTIONAL = 1
 	};
 
-	struct LightData {
-		alignas(16) Color color = SA_COLOR_WHITE;	// 16 bytes
+	struct alignas(16) LightData {
+		Color color = SA_COLOR_WHITE;	// 16 bytes
 		sa::Vector3 position = sa::Vector3(0);		// 12 bytes - 16 offset
 		float strength = 1.0f;						// 4 bytes - 28 offset
 		LightType type = LightType::POINT;			// 4 bytes - 32 offset - total 36 bytes

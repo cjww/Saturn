@@ -1,6 +1,9 @@
 #pragma once
 #include "Graphics/IRenderTechnique.h"
 
+#define MAX_MATERIAL_COUNT 4096
+#define MAX_LIGHT_COUNT 4096
+
 namespace sa {
 
 	struct alignas(16) ObjectData {
@@ -8,8 +11,13 @@ namespace sa {
 	};
 	
 	struct MaterialBuffer {
-		std::array<Material::Values, 4096> materials;
+		std::array<Material::Values, MAX_MATERIAL_COUNT> materials;
 		std::array<glm::uvec4, 2048> meshToMaterialIndex;
+	};
+
+	struct LightBuffer {
+		uint32_t count;
+		alignas(16) std::array<LightData, MAX_LIGHT_COUNT> lights;
 	};
 
 	class ForwardPlus : public IRenderTechnique {
@@ -35,12 +43,13 @@ namespace sa {
 		ResourceID m_linearSampler = NULL_RESOURCE;
 
 
+		// used for collecting meshes every frame
 		std::vector<ModelData*> m_models;
 		std::vector<std::vector<ObjectData>> m_objects;
-
 		std::vector<Material*> m_materials;
-		
 		std::vector<Texture> m_textures;
+		
+		std::vector<LightData> m_lights;
 
 		Buffer m_sceneUniformBuffer;
 		DynamicBuffer m_lightBuffer;

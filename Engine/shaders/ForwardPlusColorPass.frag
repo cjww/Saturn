@@ -56,10 +56,6 @@ layout(set = 0, binding = 5) uniform texture2D textures[];
 
 void main() {
 
-/*
-    out_color = vec4(1, 1, 1, 1);
-    return;
-*/
 
     uint materialIndex = materialBuffer.meshToMaterialIndex[in_meshIndex];
 
@@ -119,4 +115,8 @@ void main() {
     if(brightness > 0.8) {
         out_brightness = vec4(out_color.xyz, floor(out_color.a));
     }
+    /*
+    out_color = texture(sampler2D(textures[material.diffuseMapFirst], samp), in_vertexUV);
+    return;
+    */
 }

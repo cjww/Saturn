@@ -137,10 +137,7 @@ namespace sa {
 		uint32_t materialCount = 0;
 		uint32_t meshCount = 0;
 
-		struct MaterialBuffer {
-			std::array<Material::Values, 4096> materials;
-			std::array<glm::uvec4, 2048> meshToMaterialIndex;
-		} materialBuffer = {};
+		MaterialBuffer materialBuffer = {};
 		
 		m_materials.clear();
 
@@ -224,13 +221,10 @@ namespace sa {
 		perFrame.projViewMatrix = sa::Matrix4x4(1);
 		perFrame.viewPos = sa::Vector3(0);
 		m_sceneUniformBuffer = m_renderer.createBuffer(BufferType::UNIFORM, sizeof(perFrame), &perFrame);
-		struct {
-			unsigned int lightCount = 1;
-			LightData light = {};
-		}tmp;
-		tmp.light.position = { 5, 5, -5 };
-		tmp.light.strength = 40.f;
-		m_lightBuffer = m_renderer.createDynamicBuffer(BufferType::STORAGE, sizeof(tmp), &tmp);
+
+
+		uint32_t lightCount = 0U;
+		m_lightBuffer = m_renderer.createDynamicBuffer(BufferType::STORAGE, sizeof(uint32_t), &lightCount);
 
 		m_sceneDescriptorSet = m_renderer.allocateDescriptorSet(m_colorPipeline, SET_PER_FRAME);
 
@@ -277,6 +271,8 @@ namespace sa {
 
 	void ForwardPlus::draw(Scene* pScene) {
 
+		updateLights(pScene);
+
 		RenderContext context = m_pWindow->beginFrame();
 		if (!context)
 			return;
@@ -292,6 +288,7 @@ namespace sa {
 			collectMeshes(pScene);
 
 			context.updateDescriptorSet(m_sceneDescriptorSet, 0, m_objectBuffer);
+			context.updateDescriptorSet(m_sceneDescriptorSet, 2, m_lightBuffer);
 			context.updateDescriptorSet(m_sceneDescriptorSet, 3, m_materialBuffer);
 			context.updateDescriptorSet(m_sceneDescriptorSet, 5, m_textures);
 
@@ -383,22 +380,16 @@ namespace sa {
 	}
 
 	void ForwardPlus::updateLights(Scene* pScene) {
-		std::vector<LightData> lights;
+		m_lights.clear();
 		pScene->forEach<comp::Light>([&](const comp::Light& light) {
-			lights.push_back(light.values);
-			});
-		m_lightBuffer.clear();
-
-		struct L {
-			uint32_t count;
-			alignas(16) LightData lights[4096];
-		};
-		L lightsStruct;
-		lightsStruct.count = lights.size();
-		memcpy(lightsStruct.lights, lights.data(), lights.size() * sizeof(LightData));
+			m_lights.push_back(light.values);
+		});
+		
+		LightBuffer lightsStruct;
+		lightsStruct.count = m_lights.size();
+		std::copy(m_lights.begin(), m_lights.end(), lightsStruct.lights.begin());
 
 		m_lightBuffer.write(lightsStruct);
-		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 1, m_lightBuffer);
 	}
 
 }
