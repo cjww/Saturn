@@ -43,11 +43,12 @@ namespace sa {
 			vk::DescriptorSetLayoutBindingFlagsCreateInfo flagCreateInfo;
 			
 			std::vector<vk::DescriptorBindingFlags> flags(m_descriptorSets[setIndex].bindings.size(), (vk::DescriptorBindingFlags)0);
+
 			for (size_t i = 0; i < flags.size(); i++) {
 				if (m_descriptorSets[setIndex].bindings[i].descriptorCount == 0) {
 					m_descriptorSets[setIndex].bindings[i].descriptorCount = MAX_VARIABLE_DESCRIPTOR_COUNT;
 					flags[i] = vk::DescriptorBindingFlagBits::eVariableDescriptorCount | vk::DescriptorBindingFlagBits::ePartiallyBound;
-					if (i != flags.size() - 1) {
+					if (m_descriptorSets[setIndex].bindings[i].binding != m_descriptorSets[setIndex].bindings.size() - 1) {
 						throw std::runtime_error("Variable count descriptors has to be on the last binding");
 					}
 				}

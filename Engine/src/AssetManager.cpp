@@ -120,7 +120,7 @@ namespace sa {
 				int index = std::atoi(str.data + 1);
 				aiTexture* pAiTex = ppAiTextures[index];
 				if (pAiTex->mHeight == 0) { // texture is compressed
-					filename = std::string(pAiTex->mFilename.data) + "." +  std::string(pAiTex->achFormatHint);
+					filename = std::string(pAiTex->mFilename.data) + "." + std::string(pAiTex->achFormatHint);
 				}
 				else { // uncompressed
 					filename = std::string(pAiTex->mFilename.data); // read from file anyway
@@ -143,8 +143,9 @@ namespace sa {
 			textures[i].blendFactor = blending;
 			textures[i].blendOp = (TextureBlendOp)op;
 		
+			SA_DEBUG_LOG_INFO("Loaded texture: ", finalPath.filename(), ", type:", toString((MaterialTextureType)type), ", Material: ", &pAiMaterial);
 		}
-		
+
 		material.setTextures(textures, (MaterialTextureType)type);
 	}
 
@@ -179,7 +180,7 @@ namespace sa {
 			try {
 				Image img(path.string());
 				ResourceManager::get().insert<Texture2D>(path.string(), Renderer::get().createTexture2D(img, generateMipMaps));
-				SA_DEBUG_LOG_INFO("Loaded texture", path.string());
+				//SA_DEBUG_LOG_INFO("Loaded texture", path.string());
 			}
 			catch (const std::exception& e) {
 				return nullptr;
@@ -322,9 +323,12 @@ namespace sa {
 		
 
 		std::vector<ResourceID> materials(scene->mNumMaterials);
+		
 		taskflow.for_each_index(0U, scene->mNumMaterials, 1U, [&](int i) {
-				SA_PROFILE_SCOPE("Load material: " + std::to_string(i));
 				aiMaterial* aMaterial = scene->mMaterials[i];
+				SA_PROFILE_SCOPE(path.string() + ", Load material [" + std::to_string(i) + "] " + aMaterial->GetName().C_Str());
+				SA_DEBUG_LOG_INFO("Load material: ", path.string(), "-", aMaterial->GetName().C_Str());
+
 				Material material;
 
 				// Diffuse Color
@@ -341,13 +345,12 @@ namespace sa {
 				aMaterial->Get(AI_MATKEY_SHININESS, material.values.shininess);
 				aMaterial->Get(AI_MATKEY_METALLIC_FACTOR, material.values.metallic);
 				aMaterial->Get(AI_MATKEY_TWOSIDED, material.twoSided);
-
 				for (unsigned int j = aiTextureType::aiTextureType_NONE; j <= aiTextureType::aiTextureType_TRANSMISSION; j++) {
 					loadMaterialTexture(material, path.parent_path(), (aiTextureType)j, scene->mTextures, aMaterial);
 				}
+				material.update();
 				ResourceID matId = sa::ResourceManager::get().insert<Material>(material);
 				materials[i] = matId;
-			
 				progress.increment();
 			});
 		
@@ -360,7 +363,7 @@ namespace sa {
 	}
 
 	ResourceID AssetManager::loadModel(const std::filesystem::path& path, ProgressView<ResourceID>& progress) {
-		SA_PROFILE_FUNCTION();
+		SA_PROFILE_SCOPE("AssetManager::LoadModel(), path = " + path.string());
 
 		if (!std::filesystem::exists(path)) {
 			SA_DEBUG_LOG_ERROR("No such file:", path);

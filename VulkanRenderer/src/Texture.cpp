@@ -152,7 +152,7 @@ namespace sa {
 				vk::ImageTiling::eOptimal);
 		}
 
-		SA_DEBUG_LOG_INFO("Created 2D texture\nExtent: { w:", extent.width, " h:", extent.height, "}\nFormat: ", vk::to_string(format), "\nSampleCount: ", sampleCount);
+		//SA_DEBUG_LOG_INFO("Created 2D texture\nExtent: { w:", extent.width, " h:", extent.height, "}\nFormat: ", vk::to_string(format), "\nSampleCount: ", sampleCount);
 		m_pImage = m_pCore->createImage2D(
 			extent,
 			format,
@@ -211,7 +211,7 @@ namespace sa {
 			}
 		}
 
-		SA_DEBUG_LOG_INFO("Created 2D texture\nExtent: { w:", extent.width, " h:", extent.height, "}\nFormat: ", vk::to_string(format), "\nSampleCount: ", sampleCount);
+		//SA_DEBUG_LOG_INFO("Created 2D texture\nExtent: { w:", extent.width, " h:", extent.height, "}\nFormat: ", vk::to_string(format), "\nSampleCount: ", sampleCount);
 		m_pImage = m_pCore->createImage2D(
 			extent,
 			format,
@@ -238,7 +238,7 @@ namespace sa {
 
 		vk::ImageUsageFlags usage = (vk::ImageUsageFlags)type;
 		
-		SA_DEBUG_LOG_INFO("Created 2D texture\nFormat: ", vk::to_string(pSwapchain->getFormat()));
+		//SA_DEBUG_LOG_INFO("Created 2D texture\nFormat: ", vk::to_string(pSwapchain->getFormat()));
 
 		m_pImage = m_pCore->createImage2D(
 			extent,
@@ -295,7 +295,7 @@ namespace sa {
 			6,
 			0
 		));
-		SA_DEBUG_LOG_INFO("Created Cube texture\nExtent: { w:", extent.width, " h:", extent.height, "}\nFormat:", vk::to_string(format), "\nSampleCount:", sampleCount);
+		//SA_DEBUG_LOG_INFO("Created Cube texture\nExtent: { w:", extent.width, " h:", extent.height, "}\nFormat:", vk::to_string(format), "\nSampleCount:", sampleCount);
 
 	}
 
@@ -428,7 +428,7 @@ namespace sa {
 			0
 		));
 
-		SA_DEBUG_LOG_INFO("Created 3D texture\nExtent: { w:", extent.width, " h:", extent.height, " d:", extent.depth, " }\nFormat:", vk::to_string(format), "\nSampleCount:", sampleCount);
+		//SA_DEBUG_LOG_INFO("Created 3D texture\nExtent: { w:", extent.width, " h:", extent.height, " d:", extent.depth, " }\nFormat:", vk::to_string(format), "\nSampleCount:", sampleCount);
 	}
 
 	Texture3D::Texture3D(VulkanCore* pCore, TextureTypeFlags type, Extent3D extent, uint32_t sampleCount, uint32_t mipLevels, FormatPrecisionFlags formatPercisions, FormatDimensionFlags formatDimensions, FormatTypeFlags formatTypes) : Texture(pCore) {

@@ -86,6 +86,10 @@ namespace sa {
 		m_vertexBuffer.clear();
 		m_indexBuffer.clear();
 
+		m_materialBuffer.clear();
+
+		m_textures.clear();
+
 		uint32_t objectCount = 0;
 		uint32_t vertexCount = 0;
 		uint32_t indexCount = 0;
@@ -98,9 +102,9 @@ namespace sa {
 			if (!pModel)
 				return;
 
-			ObjectBuffer objectBuffer = {};
+			ObjectData objectBuffer = {};
 			objectBuffer.worldMat = transform.getMatrix();
-
+			
 			auto it = std::find(m_models.begin(), m_models.end(), pModel);
 			if (it == m_models.end()) {
 				m_models.push_back(pModel);
@@ -114,8 +118,8 @@ namespace sa {
 				for (const auto& mesh : pModel->meshes) {
 					vertexCount += mesh.vertices.size();
 					indexCount += mesh.indices.size();
+					uniqueMeshCount++;
 				}
-				uniqueMeshCount++;
 			}
 			else {
 				m_objects[std::distance(m_models.begin(), it)].push_back(objectBuffer);
@@ -123,12 +127,23 @@ namespace sa {
 			objectCount++;
 		});
 
-		m_objectBuffer.reserve(objectCount * sizeof(ObjectBuffer), IGNORE_CONTENT);
-		m_vertexBuffer.reserve(vertexCount * sizeof(VertexNormalUV));
-		m_indexBuffer.reserve(indexCount* sizeof(uint32_t));
-		m_indirectIndexedBuffer.reserve(uniqueMeshCount * sizeof(DrawIndexedIndirectCommand));
+		m_objectBuffer.reserve(				objectCount * sizeof(ObjectData),						IGNORE_CONTENT);
+		m_vertexBuffer.reserve(				vertexCount * sizeof(VertexNormalUV),					IGNORE_CONTENT);
+		m_indexBuffer.reserve(				indexCount * sizeof(uint32_t),							IGNORE_CONTENT);
+		m_indirectIndexedBuffer.reserve(	uniqueMeshCount * sizeof(DrawIndexedIndirectCommand),	IGNORE_CONTENT);
 
 		uint32_t firstInstance = 0;
+
+		uint32_t materialCount = 0;
+		uint32_t meshCount = 0;
+
+		struct MaterialBuffer {
+			std::array<Material::Values, 4096> materials;
+			std::array<glm::uvec4, 2048> meshToMaterialIndex;
+		} materialBuffer = {};
+		
+		m_materials.clear();
+
 		for (size_t i = 0; i < m_models.size(); i++) {
 			for (const auto& objectBuffer : m_objects[i]) {
 				m_objectBuffer << objectBuffer;
@@ -152,10 +167,46 @@ namespace sa {
 				cmd.instanceCount = m_objects[i].size();
 				cmd.vertexOffset = vertexOffset;
 				m_indirectIndexedBuffer << cmd;
+
+				//Material
+				Material* pMaterial = AssetManager::get().getMaterial(mesh.materialID);
+				auto it = std::find(m_materials.begin(), m_materials.end(), pMaterial);
+				if (it == m_materials.end()) {
+					uint32_t textureOffset = m_textures.size();
+					const std::vector<Texture>& matTextures = pMaterial->getTextures();
+					m_textures.insert(m_textures.end(), matTextures.begin(), matTextures.end());
+					
+					Material::Values values = pMaterial->values;
+					values.diffuseMapFirst = values.diffuseMapFirst + textureOffset;
+					values.emissiveMapFirst = values.emissiveMapFirst + textureOffset;
+					values.lightMapFirst = values.lightMapFirst + textureOffset;
+					values.normalMapFirst = values.normalMapFirst + textureOffset;
+					values.specularMapFirst = values.specularMapFirst + textureOffset;
+					//m_materialBuffer << values;
+
+					m_materials.push_back(pMaterial);
+					if (materialCount < materialBuffer.materials.size()) {
+						materialBuffer.materials[materialCount] = values;
+					}
+					if (meshCount < materialBuffer.meshToMaterialIndex.size()) {
+						materialBuffer.meshToMaterialIndex[meshCount].x = materialCount;
+					}
+					materialCount++;
+				}
+				else {
+					if (meshCount < materialBuffer.meshToMaterialIndex.size()) {
+						materialBuffer.meshToMaterialIndex[meshCount].x = std::distance(m_materials.begin(), it);
+					}
+				}
+				meshCount++;
+				
+
 			}
 			firstInstance += m_objects[i].size();
 		}
-
+		
+		m_materialBuffer.write(materialBuffer);
+		
 	}
 
 	void ForwardPlus::init(sa::RenderWindow* pWindow, bool setupImGui) {
@@ -173,19 +224,23 @@ namespace sa {
 		perFrame.projViewMatrix = sa::Matrix4x4(1);
 		perFrame.viewPos = sa::Vector3(0);
 		m_sceneUniformBuffer = m_renderer.createBuffer(BufferType::UNIFORM, sizeof(perFrame), &perFrame);
-		
-		unsigned int lightCount = 0;
-		m_lightBuffer = m_renderer.createDynamicBuffer(BufferType::STORAGE, sizeof(lightCount), &lightCount);
-		
+		struct {
+			unsigned int lightCount = 1;
+			LightData light = {};
+		}tmp;
+		tmp.light.position = { 5, 5, -5 };
+		tmp.light.strength = 40.f;
+		m_lightBuffer = m_renderer.createDynamicBuffer(BufferType::STORAGE, sizeof(tmp), &tmp);
+
 		m_sceneDescriptorSet = m_renderer.allocateDescriptorSet(m_colorPipeline, SET_PER_FRAME);
 
 
 		m_composeDescriptorSet = m_renderer.allocateDescriptorSet(m_composePipeline, 0);
 		m_renderer.updateDescriptorSet(m_composeDescriptorSet, 0, m_colorTexture, m_linearSampler);
 	
-		m_indirectIndexedBuffer = m_renderer.createDynamicBuffer(BufferType::INDIRECT, 256);
-		m_vertexBuffer = m_renderer.createDynamicBuffer(BufferType::VERTEX, 100000);
-		m_indexBuffer = m_renderer.createDynamicBuffer(BufferType::INDEX, 100000);
+		m_indirectIndexedBuffer = m_renderer.createDynamicBuffer(BufferType::INDIRECT);
+		m_vertexBuffer = m_renderer.createDynamicBuffer(BufferType::VERTEX);
+		m_indexBuffer = m_renderer.createDynamicBuffer(BufferType::INDEX);
 		m_objectBuffer = m_renderer.createDynamicBuffer(BufferType::STORAGE);
 		
 		m_materialBuffer = m_renderer.createDynamicBuffer(BufferType::STORAGE);
@@ -193,7 +248,9 @@ namespace sa {
 		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 0, m_objectBuffer);
 		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 1, m_sceneUniformBuffer);
 		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 2, m_lightBuffer);
-
+		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 3, m_materialBuffer);
+		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 4, m_linearSampler);
+		
 
 		//DEBUG
 		m_renderer.setClearColor(m_colorRenderProgram, Color{ 0.3f, 0.3f, 0.3f });
@@ -235,6 +292,9 @@ namespace sa {
 			collectMeshes(pScene);
 
 			context.updateDescriptorSet(m_sceneDescriptorSet, 0, m_objectBuffer);
+			context.updateDescriptorSet(m_sceneDescriptorSet, 3, m_materialBuffer);
+			context.updateDescriptorSet(m_sceneDescriptorSet, 5, m_textures);
+
 			context.bindVertexBuffers(0, { m_vertexBuffer });
 			context.bindIndexBuffer(m_indexBuffer);
 
@@ -250,7 +310,7 @@ namespace sa {
 					context.updateDescriptorSet(m_sceneDescriptorSet, 1, m_sceneUniformBuffer);
 
 
-					AssetManager::get().getMaterial(AssetManager::get().loadDefaultMaterial())->bind(context, m_colorPipeline, m_linearSampler);
+					//AssetManager::get().getMaterial(AssetManager::get().loadDefaultMaterial())->bind(context, m_colorPipeline, m_linearSampler);
 					//draws[0].pMaterial->bind(context, m_colorPipeline, m_linearSampler);
 
 				

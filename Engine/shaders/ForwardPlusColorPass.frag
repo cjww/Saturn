@@ -1,16 +1,18 @@
-#version 450
+#version 460
 #extension GL_EXT_nonuniform_qualifier : enable
+
 #define MAX_TEXTURE_MAP_COUNT 4
 
 layout(location = 0) in vec2 in_vertexUV;
 layout(location = 1) in vec3 in_vertexWorldPos;
 layout(location = 2) in vec3 in_vertexWorldNormal;
 layout(location = 3) in flat vec3 in_viewPos;
+layout(location = 4) in flat uint in_meshIndex;
 
 layout(location = 0) out vec4 out_color;
 layout(location = 1) out vec4 out_brightness;
 
-layout(set = 1, binding = 0, std140) uniform MaterialValues {
+struct Material {
     vec4 diffuseColor;
     vec4 specularColor;
     vec4 ambientColor;
@@ -30,10 +32,7 @@ layout(set = 1, binding = 0, std140) uniform MaterialValues {
     float opacity;
     float shininess;
     float metallic;
-} material;
-
-layout(set = 1, binding = 1) uniform sampler samp;
-layout(set = 1, binding = 2) uniform texture2D textures[];
+};
 
 struct Light {
     vec4 color;
@@ -47,21 +46,24 @@ layout(set = 0, binding = 2, std140) readonly buffer Lights {
     Light lights[4096];
 } lightBuffer;
 
+layout(set = 0, binding = 3, std140) readonly buffer Materials {
+    Material materials[4096];
+    uint meshToMaterialIndex[2048];
+} materialBuffer;
+
+layout(set = 0, binding = 4) uniform sampler samp;
+layout(set = 0, binding = 5) uniform texture2D textures[];
+
 void main() {
-    /*
-    out_color = vec4(material.opacity, 0, 0, 1);
-    return;
-    out_color = material.diffuseColor * texture(sampler2D(textures[material.diffuseMapFirst], samp), in_vertexUV);
-    
-    */
-    uint bin = uint(in_viewPos.x);
 
-    out_color = vec4(0, 0, 0, 1);
-    out_color.x = bin & 4;
-    out_color.y = bin & 2;
-    out_color.z = bin & 1;
-
+/*
+    out_color = vec4(1, 1, 1, 1);
     return;
+*/
+
+    uint materialIndex = materialBuffer.meshToMaterialIndex[in_meshIndex];
+
+    Material material = materialBuffer.materials[materialIndex];
 
     vec4 ambientColor = material.ambientColor * 0.1;
     vec4 diffuseColor = vec4(0, 0, 0, 1);

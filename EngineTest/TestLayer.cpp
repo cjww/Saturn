@@ -44,21 +44,22 @@ namespace sa {
 	void TestLayer::onAttach(Engine& engine, RenderWindow& window) {
 		m_camera.setViewport(Rect{ { 0, 0 }, window.getCurrentExtent() });
 		m_camera.setPosition({ 0, 0, -10 });
-		m_camera.lookAt({ 2, 0, 0 });
+		m_camera.lookAt({ 0, 0, 0 });
 		m_pCameraController = std::make_unique<CameraController>(window, m_camera);
 
 		engine.getCurrentScene()->addActiveCamera(&m_camera);
 
 
+		//createModelEntity(engine, "models/Box.gltf");
+
 		/*
-		for (int i = 0; i < 2; i++) {
+		for (int i = 0; i < 30; i++) {
 			createModelEntity(engine, "models/adamHead/adamHead.gltf");
-			createModelEntity(engine, "models/lieutenantHead/lieutenantHead.gltf", 2.0f);
+			createModelEntity(engine, "models/lieutenantHead/lieutenantHead.gltf");
 			createModelEntity(engine, "models/Suzanne.dae");
-
 		}
-
 		*/
+
 		for (int i = 0; i < 30; i++) {
 			createModelEntity(engine, "models/adamHead/adamHead.gltf");
 			createModelEntity(engine, "models/lieutenantHead/lieutenantHead.gltf");

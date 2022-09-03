@@ -203,7 +203,7 @@ namespace sa {
 
 		std::unordered_map<MaterialTextureType, std::vector<Texture>> m_textures;
 		std::unordered_map<MaterialTextureType, std::vector<std::pair<TextureBlendOp, float>>> m_blending;
-
+		std::vector<Texture> m_allTextures;
 
 		Buffer m_valueBuffer;
 		ResourceID m_descriptorSet;
@@ -211,7 +211,7 @@ namespace sa {
 		void setTextures(const std::vector<BlendedTexture>& textures, MaterialTextureType type, uint32_t& count);
 
 	public:
-		struct Values { // sent to shader
+		struct alignas(16) Values { // sent to shader
 			Color diffuseColor = { 1, 1, 1, 1 };
 			Color specularColor = { 1, 1, 1, 1 };
 			Color ambientColor = { 1, 1, 1, 1 };
@@ -232,9 +232,9 @@ namespace sa {
 			uint32_t lightMapFirst = 0;
 			uint32_t lightMapCount = 0;
 
-			float opacity;
-			float shininess;
-			float metallic;
+			float opacity = 1.0f;
+			float shininess = 1.0f;
+			float metallic = 0.0f;
 		} values;
 
 		bool twoSided;
@@ -249,6 +249,6 @@ namespace sa {
 		void bind(RenderContext& context, ResourceID pipeline, ResourceID sampler);
 	
 		void setTextures(const std::vector<BlendedTexture>& textures, MaterialTextureType type);
-		
+		const std::vector<Texture>& getTextures() const;
 	};
 }

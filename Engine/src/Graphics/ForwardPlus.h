@@ -3,8 +3,13 @@
 
 namespace sa {
 
-	struct ObjectBuffer {
+	struct alignas(16) ObjectData {
 		Matrix4x4 worldMat;
+	};
+	
+	struct MaterialBuffer {
+		std::array<Material::Values, 4096> materials;
+		std::array<glm::uvec4, 2048> meshToMaterialIndex;
 	};
 
 	class ForwardPlus : public IRenderTechnique {
@@ -31,7 +36,11 @@ namespace sa {
 
 
 		std::vector<ModelData*> m_models;
-		std::vector<std::vector<ObjectBuffer>> m_objects;
+		std::vector<std::vector<ObjectData>> m_objects;
+
+		std::vector<Material*> m_materials;
+		
+		std::vector<Texture> m_textures;
 
 		Buffer m_sceneUniformBuffer;
 		DynamicBuffer m_lightBuffer;

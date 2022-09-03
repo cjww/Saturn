@@ -22,11 +22,11 @@ namespace sa {
 			if (!blendedTex.texture.isValid()) {
 				SA_DEBUG_LOG_WARNING("Texture invalid, loading default texture");
 				targetMaps[i] = *AssetManager::get().loadDefaultTexture();
-				targetBlend[i++] = { blendedTex.blendOp, blendedTex.blendFactor };
+				targetBlend[i] = { blendedTex.blendOp, blendedTex.blendFactor };
 				continue;
 			}
 			targetMaps[i] = blendedTex.texture;
-			targetBlend[i++] = { blendedTex.blendOp, blendedTex.blendFactor};
+			targetBlend[i] = { blendedTex.blendOp, blendedTex.blendFactor};
 		}
 	}
 
@@ -71,7 +71,7 @@ namespace sa {
 
 		values.lightMapCount = m_textures[MaterialTextureType::LIGHTMAP].size();
 		values.lightMapFirst = values.emissiveMapFirst + values.emissiveMapCount;
-
+		/*
 		if (m_valueBuffer.isValid()) {
 			m_valueBuffer.write(values);
 			renderer.updateDescriptorSet(m_descriptorSet, 0, m_valueBuffer);
@@ -80,13 +80,14 @@ namespace sa {
 		if (m_sampler != NULL_RESOURCE)
 			renderer.updateDescriptorSet(m_descriptorSet, 1, m_sampler);
 
-		std::vector<Texture> textures = m_textures[MaterialTextureType::DIFFUSE];
-		textures.insert(textures.end(), m_textures[MaterialTextureType::NORMALS].begin(), m_textures[MaterialTextureType::NORMALS].end());
-		textures.insert(textures.end(), m_textures[MaterialTextureType::SPECULAR].begin(), m_textures[MaterialTextureType::SPECULAR].end());
-		textures.insert(textures.end(), m_textures[MaterialTextureType::EMISSIVE].begin(), m_textures[MaterialTextureType::EMISSIVE].end());
-		textures.insert(textures.end(), m_textures[MaterialTextureType::LIGHTMAP].begin(), m_textures[MaterialTextureType::LIGHTMAP].end());
+		*/
+		m_allTextures = m_textures[MaterialTextureType::DIFFUSE];
+		m_allTextures.insert(m_allTextures.end(), m_textures[MaterialTextureType::NORMALS].begin(), m_textures[MaterialTextureType::NORMALS].end());
+		m_allTextures.insert(m_allTextures.end(), m_textures[MaterialTextureType::SPECULAR].begin(), m_textures[MaterialTextureType::SPECULAR].end());
+		m_allTextures.insert(m_allTextures.end(), m_textures[MaterialTextureType::EMISSIVE].begin(), m_textures[MaterialTextureType::EMISSIVE].end());
+		m_allTextures.insert(m_allTextures.end(), m_textures[MaterialTextureType::LIGHTMAP].begin(), m_textures[MaterialTextureType::LIGHTMAP].end());
 
-		renderer.updateDescriptorSet(m_descriptorSet, 2, textures);
+		//renderer.updateDescriptorSet(m_descriptorSet, 2, m_allTextures);
 
 	}
 
@@ -99,6 +100,10 @@ namespace sa {
 
 	void Material::setTextures(const std::vector<BlendedTexture>& textures, MaterialTextureType type) {
 		setTextures(textures, type, values.diffuseMapCount);
+	}
+
+	const std::vector<Texture>& Material::getTextures() const {
+		return m_allTextures;
 	}
 	
 	std::string toString(MaterialTextureType type) {

@@ -17,8 +17,12 @@ namespace sa {
 			.pSetLayouts = layouts.data(),
 		};
 
-		if (info.bindings.back().descriptorCount == MAX_VARIABLE_DESCRIPTOR_COUNT) { // has a variable descriptor
-			allocInfo.setPNext(&varDescCountAllocInfo);
+		for (int i = 0; i < info.bindings.size(); i++) {
+			if (info.bindings[i].binding == info.bindings.size() - 1) {
+				if (info.bindings[i].descriptorCount == MAX_VARIABLE_DESCRIPTOR_COUNT) { // has a variable descriptor
+					allocInfo.setPNext(&varDescCountAllocInfo);
+				}
+			}
 		}
 		
 		m_descriptorSets = m_device.allocateDescriptorSets(allocInfo);
