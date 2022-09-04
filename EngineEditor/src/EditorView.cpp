@@ -87,16 +87,24 @@ void EditorView::onImGui() {
 			ImGui::Checkbox("Statistics", &showStats);
 			if (showStats) {
 				ImGui::SetNextWindowBgAlpha(0.2f);
-				if (ImGui::Begin("Statistics", 0, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDecoration)) {
+				if (ImGui::Begin("Statistics", 0, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize)) {
 
-					ImGui::Text("Frame time: %f", m_statistics.frameTime);
+					ImGui::Text("Frame time: %f ms", m_statistics.frameTime * 1000);
 					ImGui::Text("FPS: %f", 1 / m_statistics.frameTime);
 					auto stats = sa::Renderer::get().getGPUMemoryUsage();
 				
-					ImGui::Text("Gpu Memory Heaps");
+					ImGui::Text("GPU Memory usage");
+					uint32_t totalUsage = 0;
+					uint32_t totalBudget = 0;
+
+					ImGui::Indent();
 					for (auto& heap : stats.heaps) {
-						ImGui::Text("% u MB / % u MB, flags: %u", heap.usage / 1000000, heap.budget / 1000000, heap.flags);
+						ImGui::Text("%u MB / %u MB, flags: %u", heap.usage / 1000000, heap.budget / 1000000, heap.flags);
+						totalUsage += heap.usage;
+						totalBudget += heap.budget;
 					}
+					ImGui::Text("Total usage: %u MB / %u MB", totalUsage / 1000000, totalBudget / 1000000);
+					ImGui::Unindent();
 				}
 				ImGui::End();
 			}
