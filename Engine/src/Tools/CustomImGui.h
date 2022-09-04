@@ -3,8 +3,6 @@
 #include "ECS/Components.h"
 #include "ECS/Entity.h"
 
-#include "imgui_stdlib.h"
-
 #define IMGUI_BUFFER_SIZE_BIG 256U
 #define IMGUI_BUFFER_SIZE_NORMAL 128U
 #define IMGUI_BUFFER_SIZE_SMALL 64U

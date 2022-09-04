@@ -195,21 +195,13 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Tools\MemoryChecker.cpp" />
     <ClCompile Include="src\Application.cpp" />
     <ClCompile Include="src\ECS\ComponentBase.cpp" />
     <ClCompile Include="src\ECS\ComponentType.cpp" />
     <ClCompile Include="src\Graphics\ForwardPlus.cpp" />
     <ClCompile Include="src\Graphics\ForwardRenderer.cpp" />
     <ClCompile Include="src\Graphics\Material.cpp" />
-    <ClCompile Include="src\imgui-SFML.cpp" />
-    <ClCompile Include="src\imgui.cpp" />
-    <ClCompile Include="src\imgui_demo.cpp" />
-    <ClCompile Include="src\imgui_draw.cpp" />
-    <ClCompile Include="src\imgui_impl_glfw.cpp" />
-    <ClCompile Include="src\imgui_impl_vulkan.cpp" />
-    <ClCompile Include="src\imgui_stdlib.cpp" />
-    <ClCompile Include="src\imgui_tables.cpp" />
-    <ClCompile Include="src\imgui_widgets.cpp" />
     <ClCompile Include="src\ScriptManager.cpp" />
     <ClCompile Include="src\ECS\MetaComponent.cpp" />
     <ClCompile Include="src\pch.cpp">
@@ -234,6 +226,7 @@
     <ClCompile Include="src\Tools\Vector.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Tools\MemoryChecker.h" />
     <ClInclude Include="src\Application.h" />
     <ClInclude Include="src\Core.h" />
     <ClInclude Include="src\ECS\ComponentBase.h" />

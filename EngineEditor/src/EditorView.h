@@ -12,15 +12,23 @@ private:
 	sa::RenderWindow* m_pWindow;
 
 	bool m_isFocused;
-	glm::vec2 m_lastMousePos;
+	sa::Vector2 m_lastMousePos;
 	float m_mouseSensitivity;
 	float m_moveSpeed;
 
 	sa::Texture m_texture;
 	ImVec2 m_displayedSize;
-	vr::SamplerPtr m_pSampler;
+	ResourceID m_sampler;
 
 	sa::Entity m_selectedEntity;
+
+	struct Statistics {
+		float frameTime;
+		sa::DeviceMemoryStats gpuMemoryStats;
+	} m_statistics;
+	float m_statsUpdateTime;
+	float m_statsTimer;
+
 
 public:
 	EditorView(sa::Engine* pEngine, sa::RenderWindow* pWindow);

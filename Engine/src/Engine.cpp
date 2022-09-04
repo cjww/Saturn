@@ -4,6 +4,10 @@
 #include "Graphics\ForwardRenderer.h"
 #include "Graphics\ForwardPlus.h"
 
+
+#include "Tools\MemoryChecker.h"
+
+
 namespace sa {
 	void Engine::loadXML(const std::filesystem::path& path, rapidxml::xml_document<>& xml, std::string& xmlStr) {
 		std::ifstream file(path);
@@ -29,7 +33,7 @@ namespace sa {
 			xml_attribute<>* renderTechnique = rendererNode->first_attribute("RenderTechnique", 0, false);
 			if (strcmp(renderTechnique->value(), "Forward") == 0) {
 				if (strcmp(api->value(), "Vulkan") == 0) {
-					m_pRenderTechnique = std::make_unique<ForwardRenderer>();
+					//m_pRenderTechnique = std::make_unique<ForwardRenderer>();
 				}
 				else {
 					throw std::runtime_error("API not supported : " + std::string(api->value()));
@@ -66,33 +70,22 @@ namespace sa {
 
 	}
 
-	Scene& Engine::setup(sa::RenderWindow* pWindow, bool enableImgui) {
+	void Engine::setup(sa::RenderWindow* pWindow, bool enableImgui) {
 		SA_PROFILE_FUNCTION();
 
-		registerComponents();
-
 		m_currentScene = nullptr;
-		/*
-			if(!configPath.empty())
-			loadFromFile(configPath);
-		*/
+		m_pRenderTechnique = nullptr;
+
+		registerComponents();
 		
 		if (pWindow) {
-			m_pRenderTechnique = std::make_unique<ForwardPlus>();
+			m_pRenderTechnique = new ForwardPlus();
 			m_pRenderTechnique->init(pWindow, enableImgui);
 		}
 		setScene("MainScene");
 	
 
-		/*
-		Camera* cam = newCamera(pWindow); // DefaultCamera
-		cam->setPosition(glm::vec3(0, 0, 1));
-		cam->lookAt(glm::vec3(0, 0, 0));
-		addActiveCamera(cam);
-		*/
-
 		m_isSetup = true;
-		return *m_currentScene;
 	}
 
 	
@@ -112,12 +105,6 @@ namespace sa {
 		if (m_currentScene) {
 			m_scriptManager.update(dt, m_currentScene);
 			m_currentScene->update(dt);
-			if (m_pRenderTechnique->getCurrentExtent().width > 1.f || m_pRenderTechnique->getCurrentExtent().height > 1.f) {
-				for (auto& camera : m_currentScene->getActiveCameras()) {
-					camera->setViewport(sa::Rect{ { 0, 0 }, m_pRenderTechnique->getCurrentExtent() });
-				}
-			}
-		
 		}
 
 	}
@@ -127,7 +114,8 @@ namespace sa {
 
 		if (m_pRenderTechnique) {
 			m_pRenderTechnique->cleanup();
-			m_pRenderTechnique.reset();
+			delete m_pRenderTechnique;
+
 		}
 		m_scenes.clear();
 	}
@@ -151,7 +139,7 @@ namespace sa {
 	}
 
 	IRenderTechnique* Engine::getRenderTechnique() const {
-		return m_pRenderTechnique.get();
+		return m_pRenderTechnique;
 	}
 
 	Scene& Engine::getScene(const std::string& name) {

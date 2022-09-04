@@ -27,6 +27,7 @@ namespace sa{
 		for (auto& buffer : m_buffers) {
 			buffer.destroy();
 		}
+		m_currentBufferIndex = 0;
 	}
 
 	Buffer& DynamicBuffer::getBuffer(uint32_t index) {
@@ -42,6 +43,14 @@ namespace sa{
 			index = m_currentBufferIndex;
 		}
 		return m_buffers.at(index);
+	}
+
+	const Buffer& DynamicBuffer::getCurrentBuffer() const {
+		return getBuffer(m_currentBufferIndex);
+	}
+
+	void DynamicBuffer::manualIncrement() {
+		m_currentBufferIndex = (m_currentBufferIndex + 1) % m_buffers.size();
 	}
 
 	uint32_t DynamicBuffer::getBufferCount() const {

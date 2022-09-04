@@ -194,5 +194,8 @@
     <ClCompile Include="include\Resources\DynamicBuffer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\imgui_stdlib.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
 </Project>

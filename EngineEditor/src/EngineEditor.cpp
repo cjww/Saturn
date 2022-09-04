@@ -2,69 +2,54 @@
 
 #include <Tools\Clock.h>
 
-void EngineEditor::onImGui() {
-	
+#include "TestLayer.h"
 
-	ImGuiID viewPortDockSpaceID = ImGui::DockSpaceOverViewport();
-	if (ImGui::BeginMainMenuBar()) {
-		ImGui::Text("Saturn 3");
+namespace sa {
+
+	void EngineEditor::onAttach(sa::Engine& engine, sa::RenderWindow& renderWindow) {
+
+		m_editorModules.push_back(std::make_unique<EditorView>(&engine, &renderWindow));
+		EditorView* editorView = static_cast<EditorView*>(m_editorModules.back().get());
+
+		engine.getCurrentScene()->addActiveCamera(editorView->getCamera());
+		/*
+		//Testing multiple viewports
+		editorView->getCamera()->setViewport({ { 0, 0 }, {renderWindow.getCurrentExtent().width / 2, renderWindow.getCurrentExtent().height } });
+
+		testCamera.setPosition({ 0, 0, 5 });
+		testCamera.lookAt({ 0, 0, 0 });
+		testCamera.setViewport({ { (int)renderWindow.getCurrentExtent().width / 2, 0 }, { renderWindow.getCurrentExtent().width / 2, renderWindow.getCurrentExtent().height } });
+		engine.getCurrentScene()->addActiveCamera(&testCamera);
+		*/
+
+
+		m_editorModules.push_back(std::make_unique<EntityInspector>(&engine));
+
+		m_editorModules.push_back(std::make_unique<SceneView>(&engine));
+
+		getApp()->pushLayer(new TestLayer);
+
 	}
-	ImGui::EndMainMenuBar();
 
-	for (auto& module : m_editorModules) {
-		module->onImGui();
+	void EngineEditor::onDetach() {
+		m_editorModules.clear();
 	}
 
-	ImGui::ShowDemoWindow();
-}
+	void EngineEditor::onImGuiRender() {
+		ImGuiID viewPortDockSpaceID = ImGui::DockSpaceOverViewport();
+		if (ImGui::BeginMainMenuBar()) {
+			ImGui::Text("Saturn 3");
+		}
+		ImGui::EndMainMenuBar();
 
-EngineEditor::EngineEditor()
-	: m_window(1500, 800, "Saturn3")
-{
+		for (auto& module : m_editorModules) {
+			module->onImGui();
+		}
+	}
 
-}
-
-void EngineEditor::openProject(const std::string& projectPath) {
-	
-	sa::Scene& scene = m_engine.setup(&m_window, "../setup.xml");
-
-	m_editorModules.push_back(std::make_unique<EditorView>(&m_engine, &m_window));
-	EditorView* editorView = static_cast<EditorView*>(m_editorModules.back().get());
-
-	m_engine.getCurrentScene()->addActiveCamera(editorView->getCamera());
-
-		
-	m_editorModules.push_back(std::make_unique<EntityInspector>(&m_engine));
-	
-	m_editorModules.push_back(std::make_unique<SceneView>(&m_engine));
-	
-	sa::Entity e = scene.createEntity("Quad");
-	e.addComponent<comp::Transform>();
-	e.addComponent<comp::Model>()->modelID = sa::ResourceManager::get().loadQuad();
-	
-	m_engine.createSystemScript("test.lua");
-
-	sa::Clock clock;
-	while (m_window.isOpen()) {
-		m_window.pollEvents();
-
-		m_engine.recordImGui();
-
-		onImGui();
-
-		
-		float dt = clock.restart();
-		m_engine.update(dt);
-		m_window.setWindowTitle(std::to_string(1.0 / dt) + " fps");
-
+	void EngineEditor::onUpdate(float dt) {
 		for (auto& module : m_editorModules) {
 			module->update(dt);
 		}
-		m_engine.draw();
-
 	}
-
-	m_editorModules.clear();
-	m_engine.cleanup();
-	
 }

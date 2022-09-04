@@ -41,18 +41,18 @@ struct Light {
     uint type;
 };
 
-layout(set = 0, binding = 2, std140) readonly buffer Lights {
+layout(set = 0, binding = 1, std140) readonly buffer Lights {
     uint lightCount;
     Light lights[4096];
 } lightBuffer;
 
-layout(set = 0, binding = 3, std140) readonly buffer Materials {
+layout(set = 0, binding = 2, std140) readonly buffer Materials {
     Material materials[4096];
     uint meshToMaterialIndex[2048];
 } materialBuffer;
 
-layout(set = 0, binding = 4) uniform sampler samp;
-layout(set = 0, binding = 5) uniform texture2D textures[];
+layout(set = 0, binding = 3) uniform sampler samp;
+layout(set = 0, binding = 4) uniform texture2D textures[];
 
 void main() {
 

@@ -209,6 +209,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="include\Resources\DynamicBuffer.cpp" />
+    <ClCompile Include="src\imgui_stdlib.cpp" />
     <ClCompile Include="src\utils.cpp" />
     <ClCompile Include="src\imgui.cpp" />
     <ClCompile Include="src\imgui_demo.cpp" />

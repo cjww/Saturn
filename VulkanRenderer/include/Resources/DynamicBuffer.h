@@ -22,6 +22,8 @@ namespace sa {
 
 		sa::Buffer& getBuffer(uint32_t index = -1);
 		const sa::Buffer& getBuffer(uint32_t index = -1) const;
+		const sa::Buffer& getCurrentBuffer() const;
+		void manualIncrement();
 
 		uint32_t getBufferCount() const;
 

@@ -6,41 +6,43 @@
 
 namespace sa {
 	Application::Application(bool enableImGui) {
+		SA_PROFILE_FUNCTION();
+
 		m_imGuiEnabled = enableImGui;
+		// TODO read application settings
+		m_pWindow = std::make_unique<RenderWindow>(1400, 800, "Application");
+
+		m_engine.setup(m_pWindow.get(), m_imGuiEnabled);
+	}
+
+	Application::~Application() {
+		for (auto& layer : m_layers) {
+			delete layer;
+		}
 	}
 
 	void Application::pushLayer(IApplicationLayer* layer) {
 		m_layers.insert(m_layers.begin() + m_lastLayerIndex, layer);
 		m_lastLayerIndex++;
+		layer->m_pAppInstance = this;
+		layer->onAttach(m_engine, *m_pWindow.get());
 	}
 	
 	void Application::pushOverlay(IApplicationLayer* overlay) {
 		m_layers.push_back(overlay);
+		overlay->m_pAppInstance = this;
+		overlay->onAttach(m_engine, *m_pWindow.get());
 	}
 	
 	void Application::run() {
 		SA_PROFILE_FUNCTION();
-
-		{
-			SA_PROFILE_SCOPE("Setup");
-			// TODO read application settings
-			m_pWindow = std::make_unique<RenderWindow>(1000, 600, "Application");
-
-			m_engine.setup(m_pWindow.get(), m_imGuiEnabled);
-
-
-			for (const auto layer : m_layers) {
-				layer->onAttach(m_engine, *m_pWindow.get());
-			}
-
-			m_engine.init();
-		}
+		
+		m_engine.init();
 
 		Clock clock;
 		while (m_pWindow->isOpen()) {
 			SA_PROFILE_SCOPE("MainLoop");
 			m_pWindow->pollEvents();
-
 			float dt = clock.restart();
 
 			// Update engine 

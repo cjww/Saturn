@@ -7,6 +7,7 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm/gtx/hash.hpp"
 
+#include "structs.hpp"
 
 namespace sa {
 
@@ -34,6 +35,9 @@ namespace sa {
 		template<unsigned C, typename T>
 		Vector(const glm::vec<C, T>& other);
 
+		Vector(const Point& point);
+
+
 		Vector<Comp, Type>& operator+=(const Vector<Comp, Type>& other);
 		Vector<Comp, Type>& operator-=(const Vector<Comp, Type>& other);
 
@@ -56,6 +60,12 @@ namespace sa {
 	typedef Vector<4, float> Vector4;
 	typedef Vector<4, int> Vector4i;
 	typedef Vector<4, unsigned int> Vector4u;
+
+	template<>
+	inline Vector<2, float>::Vector(const Point& point)
+		: Vector(point.x, point.y)
+	{
+	}
 
 
 	// ------------- Definitions -------------

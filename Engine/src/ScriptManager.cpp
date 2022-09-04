@@ -17,19 +17,17 @@ namespace sa {
 	}
 
 	ScriptManager::ScriptManager() {
-		LuaAccessable::getState().open_libraries();
-		//m_lua.open_libraries();
+		SA_PROFILE_FUNCTION();
 
+		LuaAccessable::getState().open_libraries();
+		
 		auto ret = LuaAccessable::getState().do_string("return 'Loaded ' .. jit.version .. ' for ' .. jit.os .. ' ' .. jit.arch");
-		//auto ret = m_lua.do_string("return 'Loaded ' .. jit.version .. ' for ' .. jit.os .. ' ' .. jit.arch");
 		if (ret.valid()) {
 			SA_DEBUG_LOG_INFO(ret[0].as<std::string>());	
 		}
 		else {
 			SA_DEBUG_LOG_WARNING("Failed to load luaJit");
 		}
-
-
 	}
 
 	ScriptManager::~ScriptManager() {
@@ -38,6 +36,8 @@ namespace sa {
 
 
 	void ScriptManager::load(const std::string& path) {
+		SA_PROFILE_FUNCTION();
+
 		sol::state& lua = LuaAccessable::getState();
 
 
@@ -106,6 +106,7 @@ namespace sa {
 	}
 	
 	void ScriptManager::init(Scene* pScene) {
+		SA_PROFILE_FUNCTION();
 		sol::state& lua = LuaAccessable::getState();
 		for (auto& pair : m_scripts) {
 			Script& script = pair.second;
@@ -125,6 +126,7 @@ namespace sa {
 	}
 
 	void ScriptManager::update(float dt, Scene* pScene) {
+		SA_PROFILE_FUNCTION();
 		for (auto& pair : m_scripts) {
 			Script& script = pair.second;
 

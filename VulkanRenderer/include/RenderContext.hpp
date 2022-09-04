@@ -125,6 +125,8 @@ namespace sa {
 		template<typename T>
 		void pushConstant(ResourceID pipeline, ShaderStageFlags stages, const T& value, uint32_t offset = UINT32_MAX);
 
+		void setScissor(Rect scissor);
+		void setViewport(Rect viewport);
 
 		void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex = 0, uint32_t firstInstance = 0);
 		void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0);

@@ -7,47 +7,56 @@ EditorView::EditorView(sa::Engine* pEngine, sa::RenderWindow* pWindow)
 	m_isFocused = false;
 	m_selectedEntity = {};
 
-	sa::Rect viewport;
-	viewport.setSize(pWindow->getCurrentExtent());
-	viewport.setPosition({ 0, 0 });
+	sa::Rect viewport = { { 0, 0 }, pWindow->getCurrentExtent() };
 	m_camera.setViewport(viewport);
 
 	m_camera.setPosition(sa::Vector3(0, 0, 1));
 	m_camera.lookAt(sa::Vector3(0, 0, 0));
 
-	m_mouseSensitivity = 20.0f;
-	m_moveSpeed = 4.0f;
+	m_mouseSensitivity = 30.0f;
+	m_moveSpeed = 8.0f;
 
 	m_texture = m_pEngine->getRenderTechnique()->getOutputTexture();
-	m_pSampler = vr::Renderer::get().createSampler(VK_FILTER_NEAREST);
+	m_sampler = sa::Renderer::get().createSampler(sa::FilterMode::NEAREST);
 
+	m_statsUpdateTime = 0.5f;
+	m_statsTimer = m_statsUpdateTime;
 }
 
 EditorView::~EditorView() {
-	m_pSampler.reset();
+
 }
 
 void EditorView::update(float dt) {
+	SA_PROFILE_FUNCTION();
+
+	m_statsTimer -= dt;
+	if (m_statsTimer < 0.0f) {
+		m_statsTimer = m_statsUpdateTime;
+		
+		m_statistics.frameTime = dt;
+		m_statistics.gpuMemoryStats = sa::Renderer::get().getGPUMemoryUsage();
+	}
 
 	if (!m_isFocused) {
 		m_lastMousePos = m_pWindow->getCursorPosition();
 		return;
 	}
 
-	if (m_pWindow->getMouseButton(GLFW_MOUSE_BUTTON_1)) {
-		glm::vec mousePos = m_pWindow->getCursorPosition();
-		glm::vec2 delta = m_lastMousePos - mousePos;
-		m_camera.rotate(glm::radians(delta.x) * dt * m_mouseSensitivity, glm::vec3(0, 1, 0));
-		m_camera.rotate(glm::radians(delta.y) * dt * m_mouseSensitivity, -m_camera.getRight());
+	if (m_pWindow->getMouseButton(sa::MouseButton::BUTTON_2)) {
+		sa::Vector2 mousePos = m_pWindow->getCursorPosition();
+		sa::Vector2 delta = m_lastMousePos - mousePos;
+		m_camera.rotate(glm::radians(delta.x) * dt * m_mouseSensitivity, { 0, 1, 0 });
+		m_camera.rotate(glm::radians(delta.y) * dt * m_mouseSensitivity, m_camera.getRight());
 		m_lastMousePos = mousePos;
 	}
 	else {
 		m_lastMousePos = m_pWindow->getCursorPosition();
 	}
 
-	int forward = m_pWindow->getKey(GLFW_KEY_W) - m_pWindow->getKey(GLFW_KEY_S);
-	int right = m_pWindow->getKey(GLFW_KEY_D) - m_pWindow->getKey(GLFW_KEY_A);
-	int up = m_pWindow->getKey(GLFW_KEY_E) - m_pWindow->getKey(GLFW_KEY_Q);
+	int forward = m_pWindow->getKey(sa::Key::W) - m_pWindow->getKey(sa::Key::S);
+	int right = m_pWindow->getKey(sa::Key::D) - m_pWindow->getKey(sa::Key::A);
+	int up = m_pWindow->getKey(sa::Key::Q) - m_pWindow->getKey(sa::Key::E);
 
 	glm::vec3 camPos = m_camera.getPosition();
 	camPos += (float)forward * dt * m_moveSpeed * m_camera.getForward();
@@ -59,20 +68,41 @@ void EditorView::update(float dt) {
 }
 
 void EditorView::onImGui() {
+	SA_PROFILE_FUNCTION();
 
 	if (ImGui::Begin("Editor view", 0, ImGuiWindowFlags_MenuBar)) {
 		if (ImGui::BeginMenuBar()) {
 
-			if (ImGui::BeginMenu("Hello")) {
+			if (ImGui::BeginMenu("Menu")) {
+
+
 				for (int i = 0; i < 5; i++) {
 					ImGui::Button("something");
 				}
-
 				ImGui::EndMenu();
 			}
 
-			ImGui::EndMenuBar();
+			static bool showStats = false;
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - ImGui::GetFontSize() * 8);
+			ImGui::Checkbox("Statistics", &showStats);
+			if (showStats) {
+				ImGui::SetNextWindowBgAlpha(0.2f);
+				if (ImGui::Begin("Statistics", 0, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDecoration)) {
+
+					ImGui::Text("Frame time: %f", m_statistics.frameTime);
+					ImGui::Text("FPS: %f", 1 / m_statistics.frameTime);
+					auto stats = sa::Renderer::get().getGPUMemoryUsage();
+				
+					ImGui::Text("Gpu Memory Heaps");
+					for (auto& heap : stats.heaps) {
+						ImGui::Text("% u MB / % u MB, flags: %u", heap.usage / 1000000, heap.budget / 1000000, heap.flags);
+					}
+				}
+				ImGui::End();
+			}
+
 		}
+		ImGui::EndMenuBar();
 
 		sa::Scene* pScene = m_pEngine->getCurrentScene();
 		pScene->on<event::EntitySelected>([&](const event::EntitySelected& e, sa::Scene&) {
@@ -88,9 +118,9 @@ void EditorView::onImGui() {
 		// render outputTexture with constant aspect ratio
 		ImVec2 availSize = ImGui::GetContentRegionAvail();
 
-		float aspectRatio = (float)m_texture.getExtent().y / m_texture.getExtent().x;
-		availSize.y = std::min(availSize.x * aspectRatio, (float)m_texture.getExtent().y);
-		ImGui::Image(vr::Renderer::get().getImTextureID(m_texture, m_pSampler), availSize);
+		float aspectRatio = (float)m_texture.getExtent().height / m_texture.getExtent().width;
+		availSize.y = std::min(availSize.x * aspectRatio, (float)m_texture.getExtent().height);
+		ImGui::Image(m_texture, availSize);
 		m_displayedSize = availSize;
 
 		const ImU32 red = ImColor(ImVec4(1, 0, 0, 1));

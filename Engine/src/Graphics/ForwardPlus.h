@@ -51,8 +51,6 @@ namespace sa {
 		
 		std::vector<LightData> m_lights;
 
-		// this buffer stays a constant size
-		Buffer m_sceneUniformBuffer;
 		// These could expand
 		DynamicBuffer m_lightBuffer;
 		DynamicBuffer m_vertexBuffer;
@@ -78,7 +76,7 @@ namespace sa {
 
 		virtual void draw(Scene* pScene) override;
 
-		virtual Texture getOutputTexture() const override;
+		virtual const Texture& getOutputTexture() const override;
 
 		virtual void updateLights(Scene* pScene) override;
 

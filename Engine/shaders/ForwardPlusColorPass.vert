@@ -19,10 +19,10 @@ layout(set = 0, binding = 0) readonly buffer Objects {
     Object objects[2048];
 } objectBuffer;
 
-layout(set = 0, binding = 1) uniform Scene {
+layout(push_constant) uniform Camera {
     mat4 projView;
     vec3 viewPos;
-} sceneUbo;
+} camera;
 
 void main() {
 
@@ -30,13 +30,13 @@ void main() {
 
     mat4 worldMat = object.worldMat;
     
-    gl_Position = sceneUbo.projView * worldMat * in_vertexPosition;
+    gl_Position = camera.projView * worldMat * in_vertexPosition;
 
     out_vertexUV = in_vertexUV;
     out_vertexWorldPos = (worldMat * in_vertexPosition).xyz;
     out_vertexWorldNormal = normalize((worldMat * in_vertexNormal).xyz);
     
     out_meshIndex = gl_DrawID;
-    out_viewPos = sceneUbo.viewPos;
+    out_viewPos = camera.viewPos;
 
 }

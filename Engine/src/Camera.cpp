@@ -13,6 +13,7 @@ namespace sa {
         , m_up(0, 1, 0)
         , m_fov(glm::radians(60.0f))
         , m_apectRatio(1)
+        , m_viewport({ {0, 0}, { 128, 128 } })
     {
         updateProjection();
     }

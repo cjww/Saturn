@@ -22,6 +22,7 @@ namespace sa {
 	}
 
 	void Scene::update(float dt) {
+		SA_PROFILE_FUNCTION();
 		publish<event::UpdatedScene>(dt);
 	}
 

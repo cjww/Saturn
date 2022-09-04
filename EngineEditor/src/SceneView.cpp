@@ -12,7 +12,7 @@ void SceneView::makePopups() {
 			if (ImGui::Button("Quad")) {
 				sa::Entity entity = m_pEngine->getCurrentScene()->createEntity("Quad");
 				entity.addComponent<comp::Transform>();
-				entity.addComponent<comp::Model>()->modelID = sa::ResourceManager::get().loadQuad();
+				entity.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadQuad();
 			}
 			
 			ImGui::EndMenu();
@@ -32,6 +32,7 @@ SceneView::~SceneView() {
 }
 
 void SceneView::onImGui() {
+	SA_PROFILE_FUNCTION();
 	if (ImGui::Begin("Scene View")) {
 
 		sa::Scene* pScene = m_pEngine->getCurrentScene();
@@ -56,7 +57,7 @@ void SceneView::onImGui() {
 		makePopups();
 
 
-		ImGui::BeginListBox("##Entities");
+		ImGui::BeginListBox("##Entities", ImGui::GetContentRegionAvail());
 		static sa::Entity selected;
 		pScene->forEach([&](sa::Entity e) {
 			bool s = selected == e;

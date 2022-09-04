@@ -32,6 +32,8 @@ EntityInspector::~EntityInspector() {
 }
 
 void EntityInspector::onImGui() {
+	SA_PROFILE_FUNCTION();
+
 	if (ImGui::Begin("Inspector")) {
 
 		m_pEngine->getCurrentScene()->on<event::EntitySelected>([&](const event::EntitySelected& e, sa::Scene&) {

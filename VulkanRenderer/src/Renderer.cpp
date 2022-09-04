@@ -16,6 +16,19 @@
 
 namespace sa {
 
+	PipelineConfig toConfig(PipelineSettings userSettings) {
+		PipelineConfig config = {};
+		config.input.topology = (vk::PrimitiveTopology)userSettings.topology;
+		config.rasterizer.cullMode = (vk::CullModeFlags)userSettings.cullMode;
+		config.rasterizer.polygonMode = (vk::PolygonMode)userSettings.polygonMode;
+		config.depthStencil.depthTestEnable = userSettings.depthTestEnabled;
+		
+		config.dynamicStates.resize(userSettings.dynamicStates.size());
+		memcpy(config.dynamicStates.data(), userSettings.dynamicStates.data(), userSettings.dynamicStates.size() * sizeof(vk::DynamicState));
+		
+		return std::move(config);
+	}
+
 
 	Renderer::Renderer() {
 		try {
@@ -62,7 +75,7 @@ namespace sa {
 			ImGui::DestroyContext();
 		}
 #endif
-
+		
 		ResourceManager::get().clearContainer<CommandPool>();
 		ResourceManager::get().clearContainer<vk::BufferView>();
 		ResourceManager::get().clearContainer<vk::ImageView>();
@@ -169,11 +182,7 @@ namespace sa {
 		Shader fShader(m_pCore->getDevice(), fragmentShader.c_str(), vk::ShaderStageFlagBits::eFragment);
 		ShaderSet set(m_pCore->getDevice(), vShader, fShader);
 
-		PipelineConfig config = {};
-		config.input.topology = (vk::PrimitiveTopology)settings.topology;
-		config.rasterizer.cullMode = (vk::CullModeFlags)settings.cullMode;
-		config.rasterizer.polygonMode = (vk::PolygonMode)settings.polygonMode;
-		config.depthStencil.depthTestEnable = settings.depthTestEnabled;
+		PipelineConfig config = toConfig(settings);
 
 		return pRenderProgram->createPipeline(set, subpassIndex, extent, config);
 	}
@@ -185,11 +194,7 @@ namespace sa {
 		Shader fShader(m_pCore->getDevice(), fragmentShader.c_str(), vk::ShaderStageFlagBits::eFragment);
 		ShaderSet set(m_pCore->getDevice(), vShader, gShader, fShader);
 
-		PipelineConfig config = {};
-		config.input.topology = (vk::PrimitiveTopology)settings.topology;
-		config.rasterizer.cullMode = (vk::CullModeFlags)settings.cullMode;
-		config.rasterizer.polygonMode = (vk::PolygonMode)settings.polygonMode;
-		config.depthStencil.depthTestEnable = settings.depthTestEnabled;
+		PipelineConfig config = toConfig(settings);
 
 		return pRenderProgram->createPipeline(set, subpassIndex, extent, config);
 	}

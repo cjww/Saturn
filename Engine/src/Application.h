@@ -6,16 +6,22 @@
 int main(int argc, char** argv);
 
 namespace sa {
+	class Appliction;
+
 	class IApplicationLayer {
 	private:
-	
+		friend class Application;
+		Application* m_pAppInstance;
 	public:
-		
+		IApplicationLayer() = default;
+		virtual ~IApplicationLayer() = default;
+
 		virtual void onAttach(Engine& engine, RenderWindow& window) {}
 		virtual void onUpdate(float dt) {}
 		virtual void onImGuiRender() {}
 		virtual void onDetach() {}
 	
+		Application* getApp() const { return m_pAppInstance; }
 
 	};
 
@@ -30,9 +36,11 @@ namespace sa {
 		std::unique_ptr<sa::RenderWindow> m_pWindow;
 	
 		friend int ::main(int argc, char** argv);
+		
+
 	public:
 		Application(bool enableImGui);
-		~Application() = default;
+		virtual ~Application();
 
 		void pushLayer(IApplicationLayer* layer);
 		void pushOverlay(IApplicationLayer* overlay);

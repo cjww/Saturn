@@ -172,7 +172,7 @@ namespace sa {
 			deviceStats.heaps[i] = std::move(stats);
 		}
 
-		delete(budgets);
+		delete budgets;
 		return std::move(deviceStats);
 	}
 }

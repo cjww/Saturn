@@ -21,7 +21,7 @@ namespace sa {
 	class Engine {
 	private:
 		
-		std::unique_ptr<IRenderTechnique> m_pRenderTechnique;
+		IRenderTechnique* m_pRenderTechnique;
 
 		std::unordered_map<size_t, Scene> m_scenes;
 		Scene* m_currentScene;
@@ -43,7 +43,7 @@ namespace sa {
 	
 	public:
 		// Call this to set up engine
-		Scene& setup(sa::RenderWindow* pWindow = nullptr, bool enableImgui = false);
+		void setup(sa::RenderWindow* pWindow = nullptr, bool enableImgui = false);
 
 		// Call this reight before the main loop
 		void init();

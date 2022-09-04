@@ -204,6 +204,22 @@ namespace sa {
 		pPipeline->bindDescriptorSets(m_pCommandBufferSet, firstSet, sets);
 	}
 
+	void RenderContext::setScissor(Rect scissor) {
+		m_pCommandBufferSet->getBuffer().setScissor(0, vk::Rect2D{ { scissor.offset.x, scissor.offset.y }, { scissor.extent.width, scissor.extent.height } });
+	}
+
+	void RenderContext::setViewport(Rect viewport) {
+		vk::Viewport vp = {};
+		vp.width = viewport.extent.width;
+		vp.height = viewport.extent.height;
+		vp.maxDepth = 1.0f;
+		vp.minDepth = 0.0f;
+		vp.x = viewport.offset.x;
+		vp.y = viewport.offset.y;
+		m_pCommandBufferSet->getBuffer().setViewport(0, vp);
+	}
+
+
 	void RenderContext::draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) {
 		m_pCommandBufferSet->getBuffer().draw(vertexCount, instanceCount, firstVertex, firstInstance);
 	}

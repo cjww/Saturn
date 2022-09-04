@@ -66,8 +66,11 @@ namespace sa {
 		if (m_colorPipeline != NULL_RESOURCE)
 			m_renderer.destroyPipeline(m_colorPipeline);
 
+		PipelineSettings settings = {};
+		settings.dynamicStates.push_back(DynamicState::VIEWPORT);
+
 		m_colorPipeline = m_renderer.createGraphicsPipeline(m_colorRenderProgram, 0, extent,
-			"../Engine/shaders/ForwardPlusColorPass.vert.spv", "../Engine/shaders/ForwardPlusColorPass.frag.spv");
+			"../Engine/shaders/ForwardPlusColorPass.vert.spv", "../Engine/shaders/ForwardPlusColorPass.frag.spv", settings);
 	
 		if (m_composePipeline != NULL_RESOURCE)
 			m_renderer.destroyPipeline(m_composePipeline);
@@ -167,32 +170,34 @@ namespace sa {
 
 				//Material
 				Material* pMaterial = AssetManager::get().getMaterial(mesh.materialID);
-				auto it = std::find(m_materials.begin(), m_materials.end(), pMaterial);
-				if (it == m_materials.end()) {
-					uint32_t textureOffset = m_textures.size();
-					const std::vector<Texture>& matTextures = pMaterial->getTextures();
-					m_textures.insert(m_textures.end(), matTextures.begin(), matTextures.end());
+				if (pMaterial) {
+					auto it = std::find(m_materials.begin(), m_materials.end(), pMaterial);
+					if (it == m_materials.end()) {
+						uint32_t textureOffset = m_textures.size();
+						const std::vector<Texture>& matTextures = pMaterial->getTextures();
+						m_textures.insert(m_textures.end(), matTextures.begin(), matTextures.end());
 					
-					Material::Values values = pMaterial->values;
-					values.diffuseMapFirst = values.diffuseMapFirst + textureOffset;
-					values.emissiveMapFirst = values.emissiveMapFirst + textureOffset;
-					values.lightMapFirst = values.lightMapFirst + textureOffset;
-					values.normalMapFirst = values.normalMapFirst + textureOffset;
-					values.specularMapFirst = values.specularMapFirst + textureOffset;
-					//m_materialBuffer << values;
+						Material::Values values = pMaterial->values;
+						values.diffuseMapFirst = values.diffuseMapFirst + textureOffset;
+						values.emissiveMapFirst = values.emissiveMapFirst + textureOffset;
+						values.lightMapFirst = values.lightMapFirst + textureOffset;
+						values.normalMapFirst = values.normalMapFirst + textureOffset;
+						values.specularMapFirst = values.specularMapFirst + textureOffset;
+						//m_materialBuffer << values;
 
-					m_materials.push_back(pMaterial);
-					if (materialCount < materialBuffer.materials.size()) {
-						materialBuffer.materials[materialCount] = values;
+						m_materials.push_back(pMaterial);
+						if (materialCount < materialBuffer.materials.size()) {
+							materialBuffer.materials[materialCount] = values;
+						}
+						if (meshCount < materialBuffer.meshToMaterialIndex.size()) {
+							materialBuffer.meshToMaterialIndex[meshCount].x = materialCount;
+						}
+						materialCount++;
 					}
-					if (meshCount < materialBuffer.meshToMaterialIndex.size()) {
-						materialBuffer.meshToMaterialIndex[meshCount].x = materialCount;
-					}
-					materialCount++;
-				}
-				else {
-					if (meshCount < materialBuffer.meshToMaterialIndex.size()) {
-						materialBuffer.meshToMaterialIndex[meshCount].x = std::distance(m_materials.begin(), it);
+					else {
+						if (meshCount < materialBuffer.meshToMaterialIndex.size()) {
+							materialBuffer.meshToMaterialIndex[meshCount].x = std::distance(m_materials.begin(), it);
+						}
 					}
 				}
 				meshCount++;
@@ -207,6 +212,7 @@ namespace sa {
 	}
 
 	void ForwardPlus::init(sa::RenderWindow* pWindow, bool setupImGui) {
+		
 		m_useImGui = setupImGui;
 		m_pWindow = pWindow;
 		sa::Extent extent = m_pWindow->getCurrentExtent();
@@ -221,12 +227,6 @@ namespace sa {
 		}
 
 		m_linearSampler = m_renderer.createSampler(FilterMode::LINEAR);
-		
-		PerFrameBuffer perFrame = {};
-		perFrame.projViewMatrix = sa::Matrix4x4(1);
-		perFrame.viewPos = sa::Vector3(0);
-		m_sceneUniformBuffer = m_renderer.createBuffer(BufferType::UNIFORM, sizeof(perFrame), &perFrame);
-
 
 		uint32_t lightCount = 0U;
 		m_lightBuffer = m_renderer.createDynamicBuffer(BufferType::STORAGE, sizeof(uint32_t), &lightCount);
@@ -245,10 +245,9 @@ namespace sa {
 		m_materialBuffer = m_renderer.createDynamicBuffer(BufferType::STORAGE);
 
 		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 0, m_objectBuffer);
-		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 1, m_sceneUniformBuffer);
-		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 2, m_lightBuffer);
-		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 3, m_materialBuffer);
-		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 4, m_linearSampler);
+		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 1, m_lightBuffer);
+		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 2, m_materialBuffer);
+		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 3, m_linearSampler);
 		
 
 		//DEBUG
@@ -275,27 +274,29 @@ namespace sa {
 	}
 
 	void ForwardPlus::draw(Scene* pScene) {
+		
+		if (pScene)
+			updateLights(pScene);
 
-		updateLights(pScene);
 
 		RenderContext context = m_pWindow->beginFrame();
 		if (!context)
 			return;
 
+
+		//auto stats = m_renderer.getGPUMemoryUsage();
 		context.beginRenderProgram(m_colorRenderProgram, m_colorFramebuffer, SubpassContents::DIRECT);
 		context.bindPipeline(m_colorPipeline);
 		context.bindDescriptorSet(m_sceneDescriptorSet, m_colorPipeline);
-
-		auto stats = m_renderer.getGPUMemoryUsage();
 		
 		if (pScene != nullptr) {
 
 			collectMeshes(pScene);
 
 			context.updateDescriptorSet(m_sceneDescriptorSet, 0, m_objectBuffer);
-			context.updateDescriptorSet(m_sceneDescriptorSet, 2, m_lightBuffer);
-			context.updateDescriptorSet(m_sceneDescriptorSet, 3, m_materialBuffer);
-			context.updateDescriptorSet(m_sceneDescriptorSet, 5, m_textures);
+			context.updateDescriptorSet(m_sceneDescriptorSet, 1, m_lightBuffer);
+			context.updateDescriptorSet(m_sceneDescriptorSet, 2, m_materialBuffer);
+			context.updateDescriptorSet(m_sceneDescriptorSet, 4, m_textures);
 
 			context.bindVertexBuffers(0, { m_vertexBuffer });
 			context.bindIndexBuffer(m_indexBuffer);
@@ -304,16 +305,17 @@ namespace sa {
 
 				for (const auto& camera : pScene->getActiveCameras()) {
 					SA_PROFILE_SCOPE("Draw camera");
-
+					context.setViewport(camera->getViewport());
+					
 					PerFrameBuffer perFrame;
 					perFrame.projViewMatrix = camera->getProjectionMatrix() * camera->getViewMatrix();
 					perFrame.viewPos = camera->getPosition();
-					m_sceneUniformBuffer.write(perFrame);
-					context.updateDescriptorSet(m_sceneDescriptorSet, 1, m_sceneUniformBuffer);
+					context.pushConstant(m_colorPipeline, ShaderStageFlagBits::VERTEX, perFrame);
 
-					context.drawIndexedIndirect(m_indirectIndexedBuffer, 0, m_indirectIndexedBuffer.getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
+					context.drawIndexedIndirect(m_indirectIndexedBuffer.getCurrentBuffer(), 0, m_indirectIndexedBuffer.getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
 
 				}
+				m_indirectIndexedBuffer.manualIncrement();
 			}
 
 		}
@@ -335,7 +337,7 @@ namespace sa {
 		m_pWindow->display();
 	}
 
-	Texture ForwardPlus::getOutputTexture() const {
+	const Texture& ForwardPlus::getOutputTexture() const {
 		return m_outputTexture;
 	}
 

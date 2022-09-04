@@ -26,6 +26,7 @@ namespace sa {
 
 	public:
 		IRenderTechnique();
+		virtual ~IRenderTechnique() = default;
 
 		virtual void init(sa::RenderWindow* pWindow, bool setupImGui = false) = 0;
 		virtual void cleanup() = 0;
@@ -33,7 +34,7 @@ namespace sa {
 		virtual void beginFrameImGUI() = 0;
 
 		virtual void draw(Scene* scene) = 0;
-		virtual sa::Texture getOutputTexture() const = 0;
+		virtual const Texture& getOutputTexture() const = 0;
 
 		virtual void updateLights(Scene* pScene) = 0;
 

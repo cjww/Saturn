@@ -300,7 +300,7 @@ namespace sa {
 
 	}
 
-	sa::Texture ForwardRenderer::getOutputTexture() const {
+	const Texture& ForwardRenderer::getOutputTexture() const {
 		return m_outputTexture;
 	}
 

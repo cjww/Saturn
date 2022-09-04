@@ -1,22 +1,23 @@
 #pragma once
 
-#include <Engine.h>
+#include <Application.h>
+#include <RenderWindow.hpp>
 
 #include "EditorView.h"
 #include "SceneView.h"
 #include "EntityInspector.h"
 
-class EngineEditor {
-private:
-	sa::RenderWindow m_window;
-	sa::Engine m_engine;
+namespace sa {
 
-	std::vector<std::unique_ptr<EditorModule>> m_editorModules;
-
-	void onImGui();
-
-public:
-	EngineEditor();
-
-	void openProject(const std::string& projectPath);
-};
+	class EngineEditor : public IApplicationLayer {
+	private:
+		std::vector<std::unique_ptr<EditorModule>> m_editorModules;
+	public:
+		EngineEditor() = default;
+		
+		void onAttach(sa::Engine& engine, sa::RenderWindow& renderWindow) override;
+		void onDetach() override;
+		void onImGuiRender() override;
+		void onUpdate(float dt) override;
+	};
+}

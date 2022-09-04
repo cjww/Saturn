@@ -61,7 +61,7 @@ namespace sa {
 
 		virtual void draw(Scene* scene) override;
 
-		virtual sa::Texture getOutputTexture() const override;
+		virtual const Texture& getOutputTexture() const override;
 
 		virtual void updateLights(Scene* pScene) override;
 	};
