@@ -207,6 +207,7 @@ namespace sa {
 	}
 
 	void ForwardPlus::init(sa::RenderWindow* pWindow, bool setupImGui) {
+		m_useImGui = setupImGui;
 		m_pWindow = pWindow;
 		sa::Extent extent = m_pWindow->getCurrentExtent();
 
@@ -214,6 +215,10 @@ namespace sa {
 		createRenderPasses();
 		createFramebuffers(extent);
 		createPipelines(extent);
+
+		if (setupImGui) {
+			setupImGuiPass();
+		}
 
 		m_linearSampler = m_renderer.createSampler(FilterMode::LINEAR);
 		
@@ -266,7 +271,7 @@ namespace sa {
 	}
 
 	void ForwardPlus::beginFrameImGUI() {
-
+		m_renderer.newImGuiFrame();
 	}
 
 	void ForwardPlus::draw(Scene* pScene) {
@@ -306,12 +311,6 @@ namespace sa {
 					m_sceneUniformBuffer.write(perFrame);
 					context.updateDescriptorSet(m_sceneDescriptorSet, 1, m_sceneUniformBuffer);
 
-
-					//AssetManager::get().getMaterial(AssetManager::get().loadDefaultMaterial())->bind(context, m_colorPipeline, m_linearSampler);
-					//draws[0].pMaterial->bind(context, m_colorPipeline, m_linearSampler);
-
-				
-					//context.pushConstant(m_colorPipeline, sa::ShaderStageFlagBits::VERTEX, glm::mat4(1));
 					context.drawIndexedIndirect(m_indirectIndexedBuffer, 0, m_indirectIndexedBuffer.getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
 
 				}
@@ -319,51 +318,8 @@ namespace sa {
 
 		}
 		
-		/*
-		std::vector<std::tuple<ModelData*, Matrix4x4>> models;
-		scene->forEach<comp::Transform, comp::Model>([&](const comp::Transform& transform, const comp::Model& model) {
-			ModelData* pModelData = AssetManager::get().getModel(model.modelID);
-			if (!pModelData)
-				return;
-			models.push_back({ pModelData, transform.getMatrix() });
-		});
-
-		for (const auto& camera : scene->getActiveCameras()) {
-
-
-			PerFrameBuffer perFrame = {};
-			perFrame.projViewMatrix = camera->getProjectionMatrix() * camera->getViewMatrix();
-			perFrame.viewPos = camera->getPosition();
-			m_sceneUniformBuffer.write(perFrame);
-
-			context.updateDescriptorSet(m_sceneDescriptorSet, 0, m_sceneUniformBuffer);
-
-			for (const auto& [pModelData, transformation] : models) {
-				
-				context.pushConstant(m_colorPipeline, ShaderStageFlagBits::VERTEX, transformation);
-
-				for (const auto& mesh : pModelData->meshes) {
-					Material* mat = AssetManager::get().getMaterial(mesh.materialID);
-					if (mat)
-						mat->bind(context, m_colorPipeline, m_linearSampler);
-
-					context.bindVertexBuffers(0, { mesh.vertexBuffer });
-					if (mesh.indexBuffer.isValid()) {
-						context.bindIndexBuffer(mesh.indexBuffer);
-						context.drawIndexed(mesh.indexBuffer.getElementCount<uint32_t>(), 1);
-					}
-					else {
-						context.draw(mesh.vertexBuffer.getElementCount<VertexNormalUV>(), 1);
-					}
-
-				}
-			}
-		}
-		*/
-
 		context.endRenderProgram(m_colorRenderProgram);
-		//context.transitionTexture(m_colorTexture, Transition::RENDER_PROGRAM_OUTPUT, Transition::FRAGMENT_SHADER_READ);
-
+		
 		context.beginRenderProgram(m_composeRenderProgram, m_composeFramebuffer, SubpassContents::DIRECT);
 			
 		context.bindPipeline(m_composePipeline);
@@ -371,6 +327,10 @@ namespace sa {
 		context.draw(6, 1);
 
 		context.endRenderProgram(m_composeRenderProgram);
+
+		if (m_useImGui) {
+			drawImGui(context);
+		}
 
 		m_pWindow->display();
 	}
@@ -380,6 +340,7 @@ namespace sa {
 	}
 
 	void ForwardPlus::updateLights(Scene* pScene) {
+		SA_PROFILE_FUNCTION();
 		m_lights.clear();
 		pScene->forEach<comp::Light>([&](const comp::Light& light) {
 			m_lights.push_back(light.values);

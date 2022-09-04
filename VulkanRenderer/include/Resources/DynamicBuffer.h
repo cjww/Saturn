@@ -3,6 +3,7 @@
 #include "Resources\Buffer.hpp"
 
 namespace sa {
+	// Dynamic buffers can expand mid frame
 	class DynamicBuffer {
 	private:
 		std::vector<Buffer> m_buffers;

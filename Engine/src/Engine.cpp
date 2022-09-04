@@ -66,18 +66,20 @@ namespace sa {
 
 	}
 
-	Scene& Engine::setup(sa::RenderWindow* pWindow, const std::filesystem::path& configPath) {
+	Scene& Engine::setup(sa::RenderWindow* pWindow, bool enableImgui) {
 		SA_PROFILE_FUNCTION();
 
 		registerComponents();
 
 		m_currentScene = nullptr;
-		if(!configPath.empty())
+		/*
+			if(!configPath.empty())
 			loadFromFile(configPath);
+		*/
 		
 		if (pWindow) {
 			m_pRenderTechnique = std::make_unique<ForwardPlus>();
-			m_pRenderTechnique->init(pWindow, false);
+			m_pRenderTechnique->init(pWindow, enableImgui);
 		}
 		setScene("MainScene");
 	

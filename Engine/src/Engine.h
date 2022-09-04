@@ -43,7 +43,7 @@ namespace sa {
 	
 	public:
 		// Call this to set up engine
-		Scene& setup(sa::RenderWindow* pWindow = nullptr, const std::filesystem::path& configPath = "");
+		Scene& setup(sa::RenderWindow* pWindow = nullptr, bool enableImgui = false);
 
 		// Call this reight before the main loop
 		void init();

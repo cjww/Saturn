@@ -42,6 +42,9 @@ namespace sa {
 	}
 
 	void TestLayer::onAttach(Engine& engine, RenderWindow& window) {
+		m_pEngine = &engine;
+		m_pWindow = &window;
+
 		m_camera.setViewport(Rect{ { 0, 0 }, window.getCurrentExtent() });
 		m_camera.setPosition({ 0, 0, -10 });
 		m_camera.lookAt({ 0, 0, 0 });
@@ -105,6 +108,18 @@ namespace sa {
 			m_completions.erase(entitiesDone.front());
 			entitiesDone.pop();
 		}
+
+	}
+
+	void TestLayer::onImGuiRender() {
+
+		Texture outputTexture = m_pEngine->getRenderTechnique()->getOutputTexture();
+		
+		ImGui::Image(outputTexture, outputTexture.getExtent());
+
+
+		ImGui::ShowDemoWindow();
+		
 
 	}
 }

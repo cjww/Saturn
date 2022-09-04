@@ -24,12 +24,14 @@ namespace sa {
 		std::vector<IApplicationLayer*> m_layers;
 		unsigned int m_lastLayerIndex;
 
+		bool m_imGuiEnabled;
+
 		sa::Engine m_engine;
 		std::unique_ptr<sa::RenderWindow> m_pWindow;
 	
 		friend int ::main(int argc, char** argv);
 	public:
-		Application() = default;
+		Application(bool enableImGui);
 		~Application() = default;
 
 		void pushLayer(IApplicationLayer* layer);

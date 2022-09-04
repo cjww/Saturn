@@ -21,6 +21,9 @@ namespace sa {
 
 		std::unordered_map<sa::Entity, sa::ProgressView<ResourceID>&> m_completions;
 
+		Engine* m_pEngine;
+		RenderWindow* m_pWindow;
+
 		int randomRange(int min, int max);
 		Entity createModelEntity(Engine& engine, const std::filesystem::path& modelPath, float scale = 1.0f);
 
@@ -28,6 +31,7 @@ namespace sa {
 
 		void onAttach(Engine& engine, RenderWindow& window) override;
 		void onUpdate(float dt) override;
+		void onImGuiRender() override;
 	};
 
 }

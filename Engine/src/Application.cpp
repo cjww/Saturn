@@ -5,6 +5,10 @@
 #include "Tools\Profiler.h"
 
 namespace sa {
+	Application::Application(bool enableImGui) {
+		m_imGuiEnabled = enableImGui;
+	}
+
 	void Application::pushLayer(IApplicationLayer* layer) {
 		m_layers.insert(m_layers.begin() + m_lastLayerIndex, layer);
 		m_lastLayerIndex++;
@@ -22,7 +26,7 @@ namespace sa {
 			// TODO read application settings
 			m_pWindow = std::make_unique<RenderWindow>(1000, 600, "Application");
 
-			m_engine.setup(m_pWindow.get());
+			m_engine.setup(m_pWindow.get(), m_imGuiEnabled);
 
 
 			for (const auto layer : m_layers) {
@@ -46,9 +50,11 @@ namespace sa {
 			}
 
 			// Imgui
-			m_engine.recordImGui();
-			for (const auto layer : m_layers) {
-				layer->onImGuiRender();
+			if (m_imGuiEnabled) {
+				m_engine.recordImGui();
+				for (const auto layer : m_layers) {
+					layer->onImGuiRender();
+				}
 			}
 
 			// Draw engine

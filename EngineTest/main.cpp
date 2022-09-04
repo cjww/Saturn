@@ -8,8 +8,8 @@ namespace sa {
 	class TestApp : public Application {
 	private:
 	public:
-		TestApp()
-			: Application()
+		TestApp(bool enableImgui = false)
+			: Application(enableImgui)
 		{
 			pushLayer(new TestLayer());
 		}
