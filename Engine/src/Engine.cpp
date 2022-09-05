@@ -115,7 +115,6 @@ namespace sa {
 		if (m_pRenderTechnique) {
 			m_pRenderTechnique->cleanup();
 			delete m_pRenderTechnique;
-
 		}
 		m_scenes.clear();
 	}

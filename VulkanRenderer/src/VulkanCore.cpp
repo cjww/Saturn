@@ -935,7 +935,7 @@ namespace sa {
 	}
 
 	DeviceMemoryStats VulkanCore::getGPUMemoryUsage() const {
-		return m_memoryManager.getDeviceMemoryStats();
+		return std::move(m_memoryManager.getDeviceMemoryStats());
 	}
 
 	void VulkanCore::setMemoryManagerFrameIndex(uint32_t frameIndex) {

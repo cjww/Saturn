@@ -94,16 +94,16 @@ void EditorView::onImGui() {
 					auto stats = sa::Renderer::get().getGPUMemoryUsage();
 				
 					ImGui::Text("GPU Memory usage");
-					uint32_t totalUsage = 0;
-					uint32_t totalBudget = 0;
+					size_t totalUsage = 0;
+					size_t totalBudget = 0;
 
 					ImGui::Indent();
 					for (auto& heap : stats.heaps) {
-						ImGui::Text("%u MB / %u MB, flags: %u", heap.usage / 1000000, heap.budget / 1000000, heap.flags);
+						ImGui::Text("%llu MB / %llu MB, flags: %u", heap.usage / 1000000, heap.budget / 1000000, heap.flags);
 						totalUsage += heap.usage;
 						totalBudget += heap.budget;
 					}
-					ImGui::Text("Total usage: %u MB / %u MB", totalUsage / 1000000, totalBudget / 1000000);
+					ImGui::Text("Total usage: %llu MB / %llu MB", totalUsage / 1000000, totalBudget / 1000000);
 					ImGui::Unindent();
 				}
 				ImGui::End();

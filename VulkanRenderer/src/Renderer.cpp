@@ -305,7 +305,7 @@ namespace sa {
 	}
 
 	DeviceMemoryStats Renderer::getGPUMemoryUsage() const {
-		return m_pCore->getGPUMemoryUsage();
+		return std::move(m_pCore->getGPUMemoryUsage());
 	}
 	
 	void Renderer::queueTransfer(const DataTransfer& transfer) {
