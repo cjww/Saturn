@@ -59,7 +59,7 @@ namespace sa {
 		
 		RenderProgramFactory& addSwapchainAttachment(ResourceID swapchain);
 		RenderProgramFactory& addDepthAttachment();
-		RenderProgramFactory& addDepthAttachment(const Texture2D& framebufferTexture);
+		RenderProgramFactory& addDepthAttachment(const Texture2D& framebufferTexture, bool store = false);
 
 
 

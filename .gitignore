@@ -4,3 +4,5 @@ VulkanRenderer/lib
 RenderWindow/lib
 DX11Renderer/lib
 **/lib
+*.spv
+EngineEditor/profile_result.json

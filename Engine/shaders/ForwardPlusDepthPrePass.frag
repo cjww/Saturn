@@ -51,18 +51,11 @@ layout(set = 0, binding = 2, std140) readonly buffer Materials {
     uint meshToMaterialIndex[2048];
 } materialBuffer;
 
-layout(set = 0, binding = 3) readonly buffer LightIndices {
-	uint data[];
-} lightIndices;
-
-layout(set = 0, binding = 4) uniform sampler samp;
-layout(set = 0, binding = 5) uniform texture2D textures[];
+layout(set = 0, binding = 3) uniform sampler samp;
+layout(set = 0, binding = 4) uniform texture2D textures[];
 
 void main() {
 
-    ivec2 pos = ivec2(gl_FragCoord.xy);
-    ivec2 tileID = pos / ivec2(16, 16);
-    uint index = tileID.y * 88 + tileID.x;
 
     uint materialIndex = materialBuffer.meshToMaterialIndex[in_meshIndex];
 
@@ -87,14 +80,8 @@ void main() {
     }
     else {
         vec3 viewDir = normalize(in_viewPos - in_vertexWorldPos);
-        uint offset = index * 128;
-        
-        //for(int i = 0; lightIndices.data[i + offset] != -1; i++) {
-            //Light light = lightBuffer.lights[lightIndices.data[i + offset]];
-        
         for(int i = 0; i < lightBuffer.lightCount; i++) {
             Light light = lightBuffer.lights[i];
-
 
             vec3 toLight = light.position - in_vertexWorldPos;
             float lightDistance = length(toLight);
@@ -111,7 +98,6 @@ void main() {
             float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
             specularColor += radiance * spec;
         }
-       
     }
     
     float occlusion = 1.0;

@@ -59,6 +59,8 @@ namespace sa {
 		static AssetManager& get();
 
 		Texture2D* loadDefaultTexture();
+		Texture2D* loadDefaultBlackTexture();
+
 		Texture2D* loadTexture(const std::filesystem::path& path, bool generateMipMaps);
 
 		std::tuple<ResourceID, ModelData*> newModel(const std::string& name = "");

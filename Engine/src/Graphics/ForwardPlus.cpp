@@ -11,7 +11,7 @@ namespace sa {
 
 
 		m_colorTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, extent);
-		m_depthTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::DEPTH_ATTACHMENT, extent);
+		m_depthTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::DEPTH_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, extent);
 		
 		m_outputTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, extent);
 	}
@@ -42,6 +42,12 @@ namespace sa {
 			.end();
 
 
+		m_depthPreRenderProgram = m_renderer.createRenderProgram()
+			.addDepthAttachment(m_depthTexture, true)
+			.beginSubpass()
+			.addAttachmentReference(0, SubpassAttachmentUsage::DepthTarget)
+			.endSubpass()
+			.end();
 	}
 
 	void ForwardPlus::createFramebuffers(sa::Extent extent) {
@@ -59,6 +65,8 @@ namespace sa {
 		else {
 			m_composeFramebuffer = m_renderer.createSwapchainFramebuffer(m_composeRenderProgram, m_pWindow->getSwapchainID(), {});
 		}
+
+		m_depthPreFramebuffer = m_renderer.createFramebuffer(m_depthPreRenderProgram, { m_depthTexture });
 
 	}
 
@@ -78,6 +86,9 @@ namespace sa {
 		m_composePipeline = m_renderer.createGraphicsPipeline(m_composeRenderProgram, 0, extent,
 				"../Engine/shaders/Compose.vert.spv", "../Engine/shaders/Compose.frag.spv");
 
+
+		m_depthPrePipeline = m_renderer.createGraphicsPipeline(m_depthPreRenderProgram, 0, extent,
+			"../Engine/shaders/ForwardPlusColorPass.vert.spv", settings);
 	}
 
 	
@@ -227,6 +238,7 @@ namespace sa {
 		}
 
 		m_linearSampler = m_renderer.createSampler(FilterMode::LINEAR);
+		m_nearestSampler = m_renderer.createSampler(FilterMode::NEAREST);
 
 		uint32_t lightCount = 0U;
 		m_lightBuffer = m_renderer.createDynamicBuffer(BufferType::STORAGE, sizeof(uint32_t), &lightCount);
@@ -247,10 +259,45 @@ namespace sa {
 		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 0, m_objectBuffer);
 		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 1, m_lightBuffer);
 		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 2, m_materialBuffer);
-		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 3, m_linearSampler);
+		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 4, m_linearSampler);
 		
+		m_sceneDepthDescriptorSet = m_renderer.allocateDescriptorSet(m_depthPrePipeline, 0);
+		m_renderer.updateDescriptorSet(m_sceneDepthDescriptorSet, 0, m_objectBuffer);
+
+		m_lightCullingPipeline = m_renderer.createComputePipeline("../Engine/shaders/LightCulling1.comp.spv");
+		m_lightCullingDescriptorSet = m_renderer.allocateDescriptorSet(m_lightCullingPipeline, 0);
+		m_renderer.updateDescriptorSet(m_lightCullingDescriptorSet, 0, m_depthTexture, m_linearSampler);
+
+		m_tileCount = m_pWindow->getCurrentExtent();
+		m_tileCount += m_tileCount % TILE_SIZE;
+		m_tileCount /= TILE_SIZE;
+		
+		size_t totalTileCount = m_tileCount.x * m_tileCount.y;
+
+		m_lightIndexBuffer = m_renderer.createBuffer(BufferType::STORAGE, sizeof(uint32_t) * MAX_LIGHTS_PER_TILE * totalTileCount);
+		m_renderer.updateDescriptorSet(m_lightCullingDescriptorSet, 1, m_lightIndexBuffer);
+		m_renderer.updateDescriptorSet(m_lightCullingDescriptorSet, 2, m_lightBuffer);
+		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 3, m_lightIndexBuffer);
 
 		//DEBUG
+		m_debugLightHeatmap = m_renderer.createTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, { m_tileCount.x, m_tileCount.y });
+		m_debugLightHeatmapRenderProgram = m_renderer.createRenderProgram()
+			.addColorAttachment(true, m_debugLightHeatmap)
+			.beginSubpass()
+			.addAttachmentReference(0, SubpassAttachmentUsage::ColorTarget)
+			.endSubpass()
+			.end();
+
+		m_debugLightHeatmapFramebuffer = m_renderer.createFramebuffer(m_debugLightHeatmapRenderProgram, { m_debugLightHeatmap });
+		m_debugLightHeatmapPipeline = m_renderer.createGraphicsPipeline(m_debugLightHeatmapRenderProgram, 0, { m_tileCount.x, m_tileCount.y },
+			"../Engine/shaders/DebugHeatmap.vert.spv",
+			"../Engine/shaders/DebugHeatmap.frag.spv"
+			);
+		m_debugLightHeatmapDescriptorSet = m_renderer.allocateDescriptorSet(m_debugLightHeatmapPipeline, 0);
+		m_renderer.updateDescriptorSet(m_debugLightHeatmapDescriptorSet, 0, m_lightIndexBuffer);
+
+		m_renderer.updateDescriptorSet(m_composeDescriptorSet, 1, *AssetManager::get().loadDefaultBlackTexture(), m_nearestSampler);
+		
 		m_renderer.setClearColor(m_colorRenderProgram, Color{ 0.3f, 0.3f, 0.3f });
 
 	}
@@ -285,42 +332,87 @@ namespace sa {
 
 
 		//auto stats = m_renderer.getGPUMemoryUsage();
-		context.beginRenderProgram(m_colorRenderProgram, m_colorFramebuffer, SubpassContents::DIRECT);
-		context.bindPipeline(m_colorPipeline);
-		context.bindDescriptorSet(m_sceneDescriptorSet, m_colorPipeline);
 		
 		if (pScene != nullptr) {
 
 			collectMeshes(pScene);
 
-			context.updateDescriptorSet(m_sceneDescriptorSet, 0, m_objectBuffer);
-			context.updateDescriptorSet(m_sceneDescriptorSet, 1, m_lightBuffer);
-			context.updateDescriptorSet(m_sceneDescriptorSet, 2, m_materialBuffer);
-			context.updateDescriptorSet(m_sceneDescriptorSet, 4, m_textures);
+			context.updateDescriptorSet(m_sceneDepthDescriptorSet, 0, m_objectBuffer.getCurrentBuffer());
 
+
+			context.updateDescriptorSet(m_sceneDescriptorSet, 0, m_objectBuffer);
+			context.updateDescriptorSet(m_sceneDescriptorSet, 1, m_lightBuffer.getCurrentBuffer());
+			context.updateDescriptorSet(m_sceneDescriptorSet, 2, m_materialBuffer);
+			context.updateDescriptorSet(m_sceneDescriptorSet, 5, m_textures);
+
+			context.updateDescriptorSet(m_lightCullingDescriptorSet, 2, m_lightBuffer);
+			
 			context.bindVertexBuffers(0, { m_vertexBuffer });
 			context.bindIndexBuffer(m_indexBuffer);
 
-			if (m_indirectIndexedBuffer.getElementCount<DrawIndexedIndirectCommand>() > 0) {
+			for (const auto& camera : pScene->getActiveCameras()) {
+				SA_PROFILE_SCOPE("Draw camera");
+				
+				Matrix4x4 projViewMat = camera->getProjectionMatrix() * camera->getViewMatrix();
 
-				for (const auto& camera : pScene->getActiveCameras()) {
-					SA_PROFILE_SCOPE("Draw camera");
-					context.setViewport(camera->getViewport());
-					
-					PerFrameBuffer perFrame;
-					perFrame.projViewMatrix = camera->getProjectionMatrix() * camera->getViewMatrix();
-					perFrame.viewPos = camera->getPosition();
-					context.pushConstant(m_colorPipeline, ShaderStageFlagBits::VERTEX, perFrame);
+				PerFrameBuffer perFrame;
+				perFrame.projViewMatrix = projViewMat;
+				perFrame.viewPos = camera->getPosition();
 
+				// Depth prepass
+				context.beginRenderProgram(m_depthPreRenderProgram, m_depthPreFramebuffer, SubpassContents::DIRECT);
+				context.bindPipeline(m_depthPrePipeline);
+				context.setViewport(camera->getViewport());
+				context.bindDescriptorSet(m_sceneDepthDescriptorSet, m_depthPrePipeline);
+
+
+				if (m_indirectIndexedBuffer.getElementCount<DrawIndexedIndirectCommand>() > 0) {
+					context.pushConstant(m_depthPrePipeline, ShaderStageFlagBits::VERTEX, perFrame);
 					context.drawIndexedIndirect(m_indirectIndexedBuffer.getCurrentBuffer(), 0, m_indirectIndexedBuffer.getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
-
 				}
-				m_indirectIndexedBuffer.manualIncrement();
+
+				context.endRenderProgram(m_depthPreRenderProgram);
+				
+				// Light culling
+				context.bindPipeline(m_lightCullingPipeline);
+				//context.transitionTexture(m_lightHeatMap, Transition::NONE, Transition::COMPUTE_SHADER_WRITE);
+				context.bindDescriptorSet(m_lightCullingDescriptorSet, m_lightCullingPipeline);
+
+				context.pushConstant(m_lightCullingPipeline, ShaderStageFlagBits::COMPUTE, camera->getProjectionMatrix());
+				context.pushConstant(m_lightCullingPipeline, ShaderStageFlagBits::COMPUTE, camera->getViewMatrix(), sizeof(Matrix4x4));
+
+				context.dispatch(m_tileCount.x, m_tileCount.y, 1);
+
+				//context.transitionTexture(m_lightHeatMap, Transition::COMPUTE_SHADER_WRITE, Transition::FRAGMENT_SHADER_READ);
+
+				
+				//context.transitionTexture(m_depthTexture, Transition::COMPUTE_SHADER_READ, Transition::RENDER_PROGRAM_DEPTH_OUTPUT);
+				
+				// Main color pass
+				context.beginRenderProgram(m_colorRenderProgram, m_colorFramebuffer, SubpassContents::DIRECT);
+				context.bindPipeline(m_colorPipeline);
+				context.bindDescriptorSet(m_sceneDescriptorSet, m_colorPipeline);
+
+				context.setViewport(camera->getViewport());
+					
+				if (m_indirectIndexedBuffer.getElementCount<DrawIndexedIndirectCommand>() > 0) {
+					context.pushConstant(m_colorPipeline, ShaderStageFlagBits::VERTEX, perFrame);
+					context.drawIndexedIndirect(m_indirectIndexedBuffer.getCurrentBuffer(), 0, m_indirectIndexedBuffer.getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
+				}
+
+				context.endRenderProgram(m_colorRenderProgram);
 			}
+			m_indirectIndexedBuffer.manualIncrement();
+			
 
 		}
 		
-		context.endRenderProgram(m_colorRenderProgram);
+		context.beginRenderProgram(m_debugLightHeatmapRenderProgram, m_debugLightHeatmapFramebuffer, SubpassContents::DIRECT);
+		context.bindPipeline(m_debugLightHeatmapPipeline);
+		context.bindDescriptorSet(m_debugLightHeatmapDescriptorSet, m_debugLightHeatmapPipeline);
+		context.draw(6, 1);
+		context.endRenderProgram(m_debugLightHeatmapRenderProgram);
+
 		
 		context.beginRenderProgram(m_composeRenderProgram, m_composeFramebuffer, SubpassContents::DIRECT);
 			
@@ -354,5 +446,19 @@ namespace sa {
 
 		m_lightBuffer.write(lightsStruct);
 	}
+
+	const Texture2D& ForwardPlus::getLightHeatmap() const {
+		return m_debugLightHeatmap;
+	}
+
+	void ForwardPlus::setShowHeatmap(bool value) {
+		if (value) {
+			m_renderer.updateDescriptorSet(m_composeDescriptorSet, 1, m_debugLightHeatmap, m_nearestSampler);
+		}
+		else {
+			m_renderer.updateDescriptorSet(m_composeDescriptorSet, 1, *AssetManager::get().loadDefaultBlackTexture(), m_nearestSampler);
+		}
+	}
+
 
 }

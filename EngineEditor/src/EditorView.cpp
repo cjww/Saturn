@@ -1,5 +1,7 @@
 #include "EditorView.h"
 
+#include "Graphics\ForwardPlus.h"
+
 EditorView::EditorView(sa::Engine* pEngine, sa::RenderWindow* pWindow)
 	: EditorModule(pEngine)
 {
@@ -10,7 +12,7 @@ EditorView::EditorView(sa::Engine* pEngine, sa::RenderWindow* pWindow)
 	sa::Rect viewport = { { 0, 0 }, pWindow->getCurrentExtent() };
 	m_camera.setViewport(viewport);
 
-	m_camera.setPosition(sa::Vector3(0, 0, 1));
+	m_camera.setPosition(sa::Vector3(0, 0, 5));
 	m_camera.lookAt(sa::Vector3(0, 0, 0));
 
 	m_mouseSensitivity = 30.0f;
@@ -83,12 +85,14 @@ void EditorView::onImGui() {
 			}
 
 			static bool showStats = false;
-			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - ImGui::GetFontSize() * 8);
+			//ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - ImGui::GetFontSize() * 8);
 			ImGui::Checkbox("Statistics", &showStats);
 			if (showStats) {
 				ImGui::SetNextWindowBgAlpha(0.2f);
 				if (ImGui::Begin("Statistics", 0, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize)) {
 
+					ImGui::Text("Entity Count: %llu", m_pEngine->getCurrentScene()->getEntityCount());
+					
 					ImGui::Text("Frame time: %f ms", m_statistics.frameTime * 1000);
 					ImGui::Text("FPS: %f", 1 / m_statistics.frameTime);
 					auto stats = sa::Renderer::get().getGPUMemoryUsage();
@@ -108,6 +112,13 @@ void EditorView::onImGui() {
 				}
 				ImGui::End();
 			}
+			static bool showLightHeatmap = false;
+			if (ImGui::Checkbox("Show Light Heatmap", &showLightHeatmap)) {
+				sa::ForwardPlus* forwardPlusTechnique = dynamic_cast<sa::ForwardPlus*>(m_pEngine->getRenderTechnique());
+				forwardPlusTechnique->setShowHeatmap(showLightHeatmap);
+			}
+			
+
 
 		}
 		ImGui::EndMenuBar();
@@ -157,6 +168,21 @@ void EditorView::onImGui() {
 			}
 		}
 		
+
+
+		/*
+		sa::ForwardPlus* forwardPlusTechnique = dynamic_cast<sa::ForwardPlus*>(m_pEngine->getRenderTechnique());
+		if (forwardPlusTechnique) {
+			const sa::Texture2D& texture = forwardPlusTechnique->getLightHeatmap();
+			ImGui::SetNextWindowBgAlpha(0.5f);
+			if (ImGui::Begin("Heatmap")) {
+				availSize = ImGui::GetContentRegionAvail();
+				ImGui::Image(texture, availSize);
+				ImGui::End();
+			}
+		}
+		*/
+
 	}
 	ImGui::End();
 

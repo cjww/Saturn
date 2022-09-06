@@ -258,19 +258,19 @@ namespace sa {
 	void RenderContext::barrier(const Texture& texture) {
 
 		DeviceImage* pImage = (DeviceImage*)texture;
-		vk::ImageLayout newLayout = vk::ImageLayout::eGeneral;
+		vk::ImageLayout newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
 
 		vk::ImageMemoryBarrier imageBarrier{
 			.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite,
-			.dstAccessMask = vk::AccessFlagBits::eShaderWrite | vk::AccessFlagBits::eShaderWrite,
+			.dstAccessMask = vk::AccessFlagBits::eShaderRead,
 			.oldLayout = pImage->layout,
 			.newLayout = newLayout,
 			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 			.image = pImage->image,
 			.subresourceRange{
-				.aspectMask = vk::ImageAspectFlagBits::eColor,
+				.aspectMask = vk::ImageAspectFlagBits::eDepth,
 				.levelCount = 1,
 				.layerCount = 1,
 			},
@@ -295,6 +295,7 @@ namespace sa {
 		vk::PipelineStageFlags dstStage;
 		vk::ImageLayout newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 
+		vk::ImageAspectFlags aspectFlags = vk::ImageAspectFlagBits::eColor;
 
 		switch (src) {
 		case sa::Transition::NONE:
@@ -308,6 +309,11 @@ namespace sa {
 		case sa::Transition::RENDER_PROGRAM_OUTPUT:
 			srcAccess = vk::AccessFlagBits::eColorAttachmentWrite;
 			srcStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+			break;
+		case sa::Transition::RENDER_PROGRAM_DEPTH_OUTPUT:
+			srcAccess = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+			srcStage = vk::PipelineStageFlagBits::eEarlyFragmentTests;
+			aspectFlags = vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil;
 			break;
 		case sa::Transition::COMPUTE_SHADER_READ:
 			srcAccess = vk::AccessFlagBits::eShaderRead;
@@ -341,6 +347,13 @@ namespace sa {
 		case sa::Transition::RENDER_PROGRAM_OUTPUT:
 			dstAccess = vk::AccessFlagBits::eColorAttachmentWrite;
 			dstStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+			newLayout = vk::ImageLayout::eColorAttachmentOptimal;
+			break;
+		case sa::Transition::RENDER_PROGRAM_DEPTH_OUTPUT:
+			dstAccess = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+			dstStage = vk::PipelineStageFlagBits::eEarlyFragmentTests;
+			newLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+			aspectFlags = vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil;
 			break;
 		case sa::Transition::COMPUTE_SHADER_READ:
 			dstAccess = vk::AccessFlagBits::eShaderRead;
@@ -383,7 +396,7 @@ namespace sa {
 			srcAccess,
 			dstAccess,
 			pImage->image,
-			vk::ImageAspectFlagBits::eColor,
+			aspectFlags,
 			pImage->mipLevels,
 			pImage->arrayLayers,
 			srcStage,

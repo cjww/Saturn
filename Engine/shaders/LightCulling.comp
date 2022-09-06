@@ -1,0 +1,160 @@
+#version 430
+#extension GL_ARB_compute_shader : enable
+
+#define TILE_SIZE 16
+
+
+layout(set = 0, binding = 0) uniform sampler2D depthImage;  
+
+
+//layout(set = 0, binding = 1) uniform writeonly image2D heatmap;
+layout(set = 0, binding = 1) writeonly buffer LightIndices {
+	uint data[];
+} lightIndices;
+
+
+
+struct Light {
+    vec4 color;
+    vec3 position;
+    float strength;
+    uint type;
+};
+
+layout(set = 0, binding = 2, std140) readonly buffer Lights {
+    uint lightCount;
+    Light lights[4096];
+} lightBuffer;
+
+
+layout(push_constant) uniform PushConstants {
+	mat4 projection;
+	mat4 view;
+} pc;
+
+shared uint sh_minDepth;
+shared uint sh_maxDepth;
+shared vec4 sh_frustumPlanes[6];
+
+shared uint sh_visibleLightCount;
+shared uint sh_visibleLightIndices[128];
+
+
+float linearizeDepth(float d, float zNear, float zFar);
+
+layout (local_size_x = TILE_SIZE, local_size_y = TILE_SIZE) in;
+void main() {
+    ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
+	ivec2 tileID = ivec2(gl_WorkGroupID.xy);
+	ivec2 tileNumber = ivec2(gl_NumWorkGroups.xy);
+	
+	if(gl_LocalInvocationIndex == 0) { // Done by one thread in the group
+		// initialize shared variables
+		sh_minDepth = ~0;
+		sh_maxDepth = 0;
+
+		sh_visibleLightCount = 0;
+
+	}
+
+	barrier();
+
+	ivec2 screenSize = textureSize(depthImage, 0);
+	vec2 uv = vec2(pos) / screenSize;
+	
+	// get depth
+	float depth = texelFetch(depthImage, pos, 0).r; // depth in range [0, 1]
+	float near = 0.01;
+	float far = 1000.0;
+	depth = linearizeDepth(depth, near, far); // depth in range [near, far]
+
+	// updated shared variables
+	uint uDepth = uint(depth);
+	atomicMin(sh_minDepth, uDepth);
+	atomicMax(sh_maxDepth, uDepth);
+
+
+	barrier();
+
+
+	if(gl_LocalInvocationIndex == 0) {
+		mat4 viewProjection = pc.projection * pc.view;
+		
+		// make frustum planes
+		float minDepth = sh_minDepth;
+		float maxDepth = sh_maxDepth;
+
+		// From https://github.com/bcrusco/Forward-Plus-Renderer/blob/master/Forward-Plus/Forward-Plus/source/shaders/light_culling.comp.glsl#L63
+		// Steps based on tile sale
+		vec2 negativeStep = (2.0 * vec2(tileID)) / vec2(tileNumber);
+		vec2 positiveStep = (2.0 * vec2(tileID + ivec2(1, 1))) / vec2(tileNumber);
+
+		// Set up starting values for planes using steps and min and max z values
+		sh_frustumPlanes[0] = vec4(1.0, 0.0, 0.0, 1.0 - negativeStep.x); // Left
+		sh_frustumPlanes[1] = vec4(-1.0, 0.0, 0.0, -1.0 + positiveStep.x); // Right
+		sh_frustumPlanes[2] = vec4(0.0, 1.0, 0.0, 1.0 - negativeStep.y); // Bottom
+		sh_frustumPlanes[3] = vec4(0.0, -1.0, 0.0, -1.0 + positiveStep.y); // Top
+		sh_frustumPlanes[4] = vec4(0.0, 0.0, -1.0, -minDepth); // Near
+		sh_frustumPlanes[5] = vec4(0.0, 0.0, 1.0, maxDepth); // Far
+
+		// Transform the first four planes
+		for (uint i = 0; i < 4; i++) {
+			sh_frustumPlanes[i] = sh_frustumPlanes[i] * viewProjection;
+			sh_frustumPlanes[i] /= length(sh_frustumPlanes[i].xyz);
+		}
+
+		// Transform the depth planes
+		sh_frustumPlanes[4] = sh_frustumPlanes[4] * pc.view;
+		sh_frustumPlanes[4] /= length(sh_frustumPlanes[4].xyz);
+		sh_frustumPlanes[5] = sh_frustumPlanes[5] * pc.view;
+		sh_frustumPlanes[5] /= length(sh_frustumPlanes[5].xyz);
+
+	}
+
+	barrier();
+
+	uint threadCount = TILE_SIZE * TILE_SIZE;
+	uint passCount = (lightBuffer.lightCount + threadCount - 1) / threadCount;
+	for(uint i = 0; i < passCount; i++) {
+		uint lightIndex = i * threadCount + gl_LocalInvocationIndex;
+
+		if(lightIndex >= lightBuffer.lightCount) {
+			break;
+		}
+
+		vec3 lightPos = lightBuffer.lights[lightIndex].position;
+		float radius = lightBuffer.lights[lightIndex].strength;
+
+		float dist = 0.0;
+		for(uint j = 0; j < 6; j++) {
+			dist = dot(vec4(lightPos, 1), sh_frustumPlanes[j]) + radius;
+			
+			if(dist < 0.0)
+				break;
+		}
+
+		if(dist > 0.0) {
+			uint offset = atomicAdd(sh_visibleLightCount, 1);
+			sh_visibleLightIndices[offset] = lightIndex;
+		}
+		
+	}
+
+	barrier();
+
+	if(gl_LocalInvocationIndex == 0) {
+		uint index = tileID.y * tileNumber.x + tileID.x;
+		uint offset = index * 128;
+		for(uint i = 0; i < sh_visibleLightCount; i++) {
+			lightIndices.data[i + offset] = sh_visibleLightIndices[i];
+		}
+		if(sh_visibleLightCount != 128) {
+			lightIndices.data[sh_visibleLightCount + offset] = -1;
+		}
+	}
+
+}
+
+float linearizeDepth(float d, float zNear, float zFar) {
+    return zNear * zFar / (zFar + d * (zNear - zFar));
+}

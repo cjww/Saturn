@@ -36,6 +36,7 @@ namespace sa {
 		Vector(const glm::vec<C, T>& other);
 
 		Vector(const Point& point);
+		Vector(const Extent& extent);
 
 
 		Vector<Comp, Type>& operator+=(const Vector<Comp, Type>& other);
@@ -66,6 +67,13 @@ namespace sa {
 		: Vector(point.x, point.y)
 	{
 	}
+
+	template<>
+	inline Vector<2, unsigned int>::Vector(const Extent& extent)
+		: Vector(extent.width, extent.height)
+	{
+	}
+	
 
 
 	// ------------- Definitions -------------

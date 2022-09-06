@@ -127,7 +127,7 @@ namespace sa {
 		vk::FormatFeatureFlags features;
 		if (type & TextureTypeFlagBits::DEPTH_ATTACHMENT) {
 			features |= vk::FormatFeatureFlagBits::eDepthStencilAttachment;
-			aspect = vk::ImageAspectFlagBits::eDepth;
+			aspect = vk::ImageAspectFlagBits::eDepth;// | vk::ImageAspectFlagBits::eStencil;
 			format = m_pCore->getDefaultDepthFormat();
 		}
 		else {

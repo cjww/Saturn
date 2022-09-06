@@ -172,6 +172,16 @@ namespace sa {
 		return sa::ResourceManager::get().get<Texture2D>(id);
 	}
 
+	Texture2D* AssetManager::loadDefaultBlackTexture() {
+		Texture2D* tex = ResourceManager::get().get<Texture2D>("default_black");
+		if (tex)
+			return tex;
+
+		sa::Image img(2, 2, sa::Color{ 0, 0, 0, 0 });
+		ResourceID id = sa::ResourceManager::get().insert<Texture2D>("default_black", sa::Renderer::get().createTexture2D(img, false));
+		return sa::ResourceManager::get().get<Texture2D>(id);
+	}
+
 	Texture2D* AssetManager::loadTexture(const std::filesystem::path& path, bool generateMipMaps) {
 		SA_PROFILE_FUNCTION();
 		Texture2D* tex = ResourceManager::get().get<Texture2D>(path.string());
@@ -262,6 +272,8 @@ namespace sa {
 			1, 2, 3
 		};
 		
+		mesh.materialID = loadDefaultMaterial();
+
 		ModelData model = {};
 		model.meshes.push_back(mesh);
 		

@@ -89,4 +89,12 @@ namespace sa {
     Rect Camera::getViewport() const {
         return m_viewport;
     }
+
+    float Camera::getNear() const {
+        return m_near;
+    }
+    
+    float Camera::getFar() const {
+        return m_far;
+    }
 }

@@ -111,6 +111,9 @@ namespace sa {
 			(store)? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare,
 			pDeviceImage->sampleCount
 		);
+
+		DeviceImage* pImage = (DeviceImage*)framebufferTexture;
+		pImage->layout = finalLayout;
 		return *this;
 	}
 
@@ -139,17 +142,26 @@ namespace sa {
 		return *this;
 	}
 
-	RenderProgramFactory& RenderProgramFactory::addDepthAttachment(const Texture2D& framebufferTexture) {
+	RenderProgramFactory& RenderProgramFactory::addDepthAttachment(const Texture2D& framebufferTexture, bool store) {
 		const DeviceImage* pDeviceImage = (const DeviceImage*)framebufferTexture;
+
+		vk::ImageLayout finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+		if (framebufferTexture.getTypeFlags() & TextureTypeFlagBits::INPUT_ATTACHMENT ||
+			framebufferTexture.getTypeFlags() & TextureTypeFlagBits::SAMPLED) {
+			finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		}
 
 		m_pProgram->addAttachment(
 			vk::ImageLayout::eUndefined,
-			vk::ImageLayout::eDepthStencilAttachmentOptimal,
+			finalLayout,
 			pDeviceImage->format,
 			vk::AttachmentLoadOp::eClear,
-			vk::AttachmentStoreOp::eDontCare,
+			(store) ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare,
 			pDeviceImage->sampleCount
 		);
+
+		DeviceImage* pImage = (DeviceImage*)framebufferTexture;
+		pImage->layout = finalLayout;
 		return *this;
 	}
 

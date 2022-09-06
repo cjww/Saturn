@@ -41,7 +41,28 @@ namespace sa {
 		ResourceID m_sceneDescriptorSet = NULL_RESOURCE;
 		
 		ResourceID m_linearSampler = NULL_RESOURCE;
+		ResourceID m_nearestSampler = NULL_RESOURCE;
 
+		ResourceID m_depthPreRenderProgram = NULL_RESOURCE;
+		ResourceID m_depthPreFramebuffer = NULL_RESOURCE;
+		ResourceID m_depthPrePipeline = NULL_RESOURCE;
+		ResourceID m_sceneDepthDescriptorSet = NULL_RESOURCE;
+
+		ResourceID m_lightCullingPipeline;
+		ResourceID m_lightCullingDescriptorSet;
+
+		
+		const uint32_t TILE_SIZE = 16U;
+		const uint32_t MAX_LIGHTS_PER_TILE = 128;
+		Vector2u m_tileCount;
+		Buffer m_lightIndexBuffer;
+
+		ResourceID m_debugLightHeatmapRenderProgram;
+		ResourceID m_debugLightHeatmapPipeline;
+		ResourceID m_debugLightHeatmapFramebuffer;
+		Texture2D m_debugLightHeatmap;
+		ResourceID m_debugLightHeatmapDescriptorSet;
+		bool m_showHeatmapOverlay;
 
 		// used for collecting meshes every frame
 		std::vector<ModelData*> m_models;
@@ -80,6 +101,9 @@ namespace sa {
 
 		virtual void updateLights(Scene* pScene) override;
 
+
+		const Texture2D& getLightHeatmap() const;
+		void setShowHeatmap(bool value);
 
 	};
 }

@@ -102,7 +102,11 @@ namespace sa {
 	}
 
 	void Renderer::imGuiImage(sa::Texture texture, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& tint_col, const ImVec4& border_col) {
-		VkDescriptorSet descSet = m_pCore->getImGuiImageDescriptoSet(texture.getView(), ((DeviceImage*)texture)->layout);
+		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		if (texture.getTypeFlags() & TextureTypeFlagBits::STORAGE) {
+			layout = vk::ImageLayout::eGeneral;
+		}
+		VkDescriptorSet descSet = m_pCore->getImGuiImageDescriptoSet(texture.getView(), layout);
 		ImGui::Image(descSet, size, uv0, uv1, tint_col, border_col);
 	}
 
@@ -174,6 +178,16 @@ namespace sa {
 
 	void Renderer::destroyFramebuffer(ResourceID framebuffer) {
 		ResourceManager::get().remove<FramebufferSet>(framebuffer);
+	}
+
+	ResourceID Renderer::createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, PipelineSettings settings) {
+		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
+		Shader vShader(m_pCore->getDevice(), vertexShader.c_str(), vk::ShaderStageFlagBits::eVertex);
+		ShaderSet set(m_pCore->getDevice(), vShader);
+
+		PipelineConfig config = toConfig(settings);
+		
+		return pRenderProgram->createPipeline(set, subpassIndex, extent, config);
 	}
 
 	ResourceID Renderer::createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& fragmentShader, PipelineSettings settings) {
