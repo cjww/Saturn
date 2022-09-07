@@ -29,4 +29,4 @@ shaders: $(SHADERS)
 	glslangValidator -V $< -o $@ 
 
 clean:
-	rm *.spv
+	rm $(SHADER_DIR)/*.spv

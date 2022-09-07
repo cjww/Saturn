@@ -264,7 +264,7 @@ namespace sa {
 		m_sceneDepthDescriptorSet = m_renderer.allocateDescriptorSet(m_depthPrePipeline, 0);
 		m_renderer.updateDescriptorSet(m_sceneDepthDescriptorSet, 0, m_objectBuffer);
 
-		m_lightCullingPipeline = m_renderer.createComputePipeline("../Engine/shaders/LightCulling1.comp.spv");
+		m_lightCullingPipeline = m_renderer.createComputePipeline("../Engine/shaders/LightCulling2.comp.spv");
 		m_lightCullingDescriptorSet = m_renderer.allocateDescriptorSet(m_lightCullingPipeline, 0);
 		m_renderer.updateDescriptorSet(m_lightCullingDescriptorSet, 0, m_depthTexture, m_linearSampler);
 

@@ -10,6 +10,5 @@ void main() {
 	vec2 uv = in_vertPos / 2 + 0.5;
 	vec4 color = texture(colorTexture, uv);
 	color += texture(lightmap, uv);
-	
 	out_color = vec4(min(color, 1).xyz, 1);
 }
