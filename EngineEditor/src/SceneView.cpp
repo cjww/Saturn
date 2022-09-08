@@ -62,7 +62,7 @@ void SceneView::onImGui() {
 		pScene->forEach([&](sa::Entity e) {
 			bool s = selected == e;
 
-			if (ImGui::Selectable(e.getComponent<comp::Name>()->name.c_str(), &s)) {
+			if (ImGui::Selectable((e.getComponent<comp::Name>()->name + "##" + std::to_string((uint32_t)e)).c_str(), &s)) {
 				if (s) {
 					selected = e;
 					m_pEngine->getCurrentScene()->publish<event::EntitySelected>(selected);

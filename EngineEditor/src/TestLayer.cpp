@@ -9,13 +9,18 @@ namespace sa {
 		return (rand() % (max - min)) - (max - min) / 2;
 	}
 
-	Entity createLight(Engine& engine, Vector3 position) {
+	float TestLayer::randomRange(float min, float max) {
+		return randomRange((int)min * 1000, (int)max * 1000) / 1000.f;
+	}
+
+
+	Entity createLight(Engine& engine, Vector3 position, Color color = SA_COLOR_WHITE) {
 		sa::Entity light = engine.getCurrentScene()->createEntity("Point Light");
-		light.addComponent<comp::Transform>()->position = position;
+		light.addComponent<comp::Transform>()->position = position + Vector3(0, 0, -0.1f);
 		light.addComponent<comp::Model>()->modelID = AssetManager::get().loadQuad();
 		
 		comp::Light* lightComp = light.addComponent<comp::Light>();
-		lightComp->values.color = SA_COLOR_WHITE;
+		lightComp->values.color = color;
 		lightComp->values.position = position;
 		return light;
 	}
@@ -69,19 +74,32 @@ namespace sa {
 		comp::Transform* transform = groundEntity.addComponent<comp::Transform>();
 		transform->scale = { 500, 500, 1 };
 		transform->rotation = glm::rotate(transform->rotation, glm::radians(-90.f), { 1, 0, 0 });
-		transform->position.y -= 2;
+		transform->position.y -= 1;
 		
+		/*
 		createModelEntity(engine, "resources/models/adamHead/adamHead.gltf");
 		createLight(engine, Vector3(2.f, 2.f, -3.f));
 
-		/*
+		*/
 		Entity entity = createModelEntity(engine, "resources/models/sponza/scene.gltf");
 		entity.removeComponent<comp::Script>();
 
-		for (int i = 0; i < 10; i++) {
-			createLight(engine, Vector3(i * 2, 2, -3 + (i % 2)));
+		for (int i = 0; i < 100; i++) {
+			Vector3 pos = Vector3(randomRange(-50, 50), 0, randomRange(-50, 50));
+			Color color = Color{ randomRange(0.5f, 1.f), randomRange(0.5f, 1.f), randomRange(0.5f, 1.f), 1 };
+
+			Color colors[] = {
+				SA_COLOR_WHITE,
+				SA_COLOR_BLUE,
+				SA_COLOR_RED,
+				SA_COLOR_GREEN,
+				SA_COLOR_YELLOW,
+				SA_COLOR_CYAN,
+				SA_COLOR_MAGENTA,
+			};
+
+			createLight(engine, pos, colors[rand() % 7]);
 		}
-		*/
 
 		/*
 		for (int i = 0; i < 30; i++) {

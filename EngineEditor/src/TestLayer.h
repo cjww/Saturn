@@ -22,6 +22,8 @@ namespace sa {
 		RenderWindow* m_pWindow;
 
 		int randomRange(int min, int max);
+		float randomRange(float min, float max);
+
 		Entity createModelEntity(Engine& engine, const std::filesystem::path& modelPath, float scale = 1.0f);
 
 	public:

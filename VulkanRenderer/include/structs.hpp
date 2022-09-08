@@ -7,6 +7,10 @@
 #define SA_COLOR_GREEN sa::Color{ 0, 1, 0, 1 }
 #define SA_COLOR_BLUE sa::Color{ 0, 0, 1, 1 }
 
+#define SA_COLOR_YELLOW sa::Color{ 1, 1, 0, 1 }
+#define SA_COLOR_CYAN sa::Color{ 0, 1, 1, 1 }
+#define SA_COLOR_MAGENTA sa::Color{ 1, 0, 1, 1 }
+
 
 namespace sa {
 	struct Extent {

@@ -103,7 +103,7 @@ void main() {
             
             float diffuseFactor = max(dot(in_vertexWorldNormal, toLight), 0.0);
             //float attenuation = light.attenuationRadius / lightDistance;
-            float attenuation = (1 - lightDistance / (light.attenuationRadius * 0.5)) / 0.2;
+            float attenuation = (1 - lightDistance / (light.attenuationRadius)) / 0.2;
             attenuation = clamp(attenuation, 0.0, 1.0);
             vec4 radiance = light.color * attenuation * light.intensity; 
 

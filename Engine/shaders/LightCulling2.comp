@@ -94,13 +94,13 @@ void main() {
 	float minDepth, maxDepth;
 	
 	barrier();
+	minDepth = uintBitsToFloat(minDepthInt);
+	maxDepth = uintBitsToFloat(maxDepthInt);
 
 	// Step 2: One thread should calculate the frustum planes to be used for this tile
 	if (gl_LocalInvocationIndex == 0) {
 		// Convert the min and max across the entire tile back to float
-		minDepth = uintBitsToFloat(minDepthInt);
-		maxDepth = uintBitsToFloat(maxDepthInt);
-
+	
 		vec2 tileTopLeftClipSpace = 1 - (2.0 * tileID / tileNumber); // [1, -1]
 		vec2 tileSizeClipSpace = 1 / (tileNumber * 0.5);
 		
@@ -108,6 +108,7 @@ void main() {
 		frustumPlanes[1] = vec4(-1.0, 0.0, 0.0, -(tileTopLeftClipSpace.x - tileSizeClipSpace.x)) * viewProjection; // Right
 		frustumPlanes[2] = vec4(0.0, 1.0, 0.0, tileTopLeftClipSpace.y) * viewProjection; // Bottom
 		frustumPlanes[3] = vec4(0.0, -1.0, 0.0, -(tileTopLeftClipSpace.y - tileSizeClipSpace.y)) * viewProjection; // Top
+
 		frustumPlanes[4] = vec4(0.0, 0.0, 1.0, maxDepth) * pc.view; // Far
 		frustumPlanes[5] = vec4(0.0, 0.0, -1.0, -minDepth) * pc.view; // Near
 	
