@@ -21,7 +21,7 @@ EditorView::EditorView(sa::Engine* pEngine, sa::RenderWindow* pWindow)
 	m_texture = m_pEngine->getRenderTechnique()->getOutputTexture();
 	m_sampler = sa::Renderer::get().createSampler(sa::FilterMode::NEAREST);
 
-	m_statsUpdateTime = 0.5f;
+	m_statsUpdateTime = 0.1f;
 	m_statsTimer = m_statsUpdateTime;
 }
 
@@ -32,12 +32,16 @@ EditorView::~EditorView() {
 void EditorView::update(float dt) {
 	SA_PROFILE_FUNCTION();
 
+	
 	m_statsTimer -= dt;
 	if (m_statsTimer < 0.0f) {
 		m_statsTimer = m_statsUpdateTime;
-		
 		m_statistics.frameTime = dt;
 		m_statistics.gpuMemoryStats = sa::Renderer::get().getGPUMemoryUsage();
+		
+		std::copy(m_frameTimeGraph.begin() + 1, m_frameTimeGraph.end(), m_frameTimeGraph.begin());
+		m_frameTimeGraph[m_frameTimeGraph.size() - 1] = dt * 1000;
+		
 	}
 
 	if (!m_isFocused) {
@@ -88,21 +92,21 @@ void EditorView::onImGui() {
 			//ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - ImGui::GetFontSize() * 8);
 			ImGui::Checkbox("Statistics", &showStats);
 			if (showStats) {
-				ImGui::SetNextWindowBgAlpha(0.2f);
+				ImGui::SetNextWindowBgAlpha(0.3f);
 				if (ImGui::Begin("Statistics", 0, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize)) {
 
 					ImGui::Text("Entity Count: %llu", m_pEngine->getCurrentScene()->getEntityCount());
 					
-					ImGui::Text("Frame time: %f ms", m_statistics.frameTime * 1000);
 					ImGui::Text("FPS: %f", 1 / m_statistics.frameTime);
-					auto stats = sa::Renderer::get().getGPUMemoryUsage();
+					ImGui::Text("Frame time: %f ms", m_statistics.frameTime * 1000);
+					ImGui::PlotLines("Frame time", m_frameTimeGraph.data(), m_frameTimeGraph.size(), 0, 0, 0.0f, 100.f, ImVec2{0, 50});
 				
 					ImGui::Text("GPU Memory usage");
 					size_t totalUsage = 0;
 					size_t totalBudget = 0;
 
 					ImGui::Indent();
-					for (auto& heap : stats.heaps) {
+					for (auto& heap : m_statistics.gpuMemoryStats.heaps) {
 						ImGui::Text("%llu MB / %llu MB, flags: %u", heap.usage / 1000000, heap.budget / 1000000, heap.flags);
 						totalUsage += heap.usage;
 						totalBudget += heap.budget;

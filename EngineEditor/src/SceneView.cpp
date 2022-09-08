@@ -57,28 +57,29 @@ void SceneView::onImGui() {
 		makePopups();
 
 
-		ImGui::BeginListBox("##Entities", ImGui::GetContentRegionAvail());
-		static sa::Entity selected;
-		pScene->forEach([&](sa::Entity e) {
-			bool s = selected == e;
+		if (ImGui::BeginListBox("##Entities", ImGui::GetContentRegionAvail())) {
+			static sa::Entity selected;
+			pScene->forEach([&](sa::Entity e) {
+				bool s = selected == e;
 
-			if (ImGui::Selectable((e.getComponent<comp::Name>()->name + "##" + std::to_string((uint32_t)e)).c_str(), &s)) {
-				if (s) {
-					selected = e;
-					m_pEngine->getCurrentScene()->publish<event::EntitySelected>(selected);
+				if (ImGui::Selectable((e.getComponent<comp::Name>()->name + "##" + std::to_string((uint32_t)e)).c_str(), &s)) {
+					if (s) {
+						selected = e;
+						m_pEngine->getCurrentScene()->publish<event::EntitySelected>(selected);
+					}
+					else {
+						selected = {};
+						m_pEngine->getCurrentScene()->publish<event::EntityDeselected>(selected);
+					}
 				}
-				else {
-					selected = {};
-					m_pEngine->getCurrentScene()->publish<event::EntityDeselected>(selected);
+				if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup)) {
+					hovered = e;
+					itemMenu = true;
 				}
-			}
-			if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup)) {
-				hovered = e;
-				itemMenu = true;
-			}
-		});
+			});
 	
-		ImGui::EndListBox();
+			ImGui::EndListBox();
+		}
 
 		
 		if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows) 

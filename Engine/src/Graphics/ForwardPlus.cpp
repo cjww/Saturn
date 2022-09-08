@@ -100,7 +100,9 @@ namespace sa {
 		m_vertexBuffer.clear();
 		m_indexBuffer.clear();
 
-		m_materialBuffer.clear();
+
+		m_materialData.clear();
+		m_materialIndices.clear();
 
 		m_textures.clear();
 
@@ -151,8 +153,8 @@ namespace sa {
 		uint32_t materialCount = 0;
 		uint32_t meshCount = 0;
 
-		MaterialBuffer materialBuffer = {};
-		
+		//MaterialBuffer materialBuffer = {};
+
 		m_materials.clear();
 
 		for (size_t i = 0; i < m_models.size(); i++) {
@@ -197,18 +199,12 @@ namespace sa {
 						//m_materialBuffer << values;
 
 						m_materials.push_back(pMaterial);
-						if (materialCount < materialBuffer.materials.size()) {
-							materialBuffer.materials[materialCount] = values;
-						}
-						if (meshCount < materialBuffer.meshToMaterialIndex.size()) {
-							materialBuffer.meshToMaterialIndex[meshCount].x = materialCount;
-						}
+						m_materialData.push_back(values);
+						m_materialIndices.push_back(materialCount);
 						materialCount++;
 					}
 					else {
-						if (meshCount < materialBuffer.meshToMaterialIndex.size()) {
-							materialBuffer.meshToMaterialIndex[meshCount].x = std::distance(m_materials.begin(), it);
-						}
+						m_materialIndices.push_back(std::distance(m_materials.begin(), it));
 					}
 				}
 				meshCount++;
@@ -218,7 +214,9 @@ namespace sa {
 			firstInstance += m_objects[i].size();
 		}
 		
-		m_materialBuffer.write(materialBuffer);
+		m_materialBuffer.write(m_materialData);
+		m_materialIndicesBuffer.write(m_materialIndices);
+
 		
 	}
 
@@ -253,13 +251,14 @@ namespace sa {
 		m_vertexBuffer = m_renderer.createDynamicBuffer(BufferType::VERTEX);
 		m_indexBuffer = m_renderer.createDynamicBuffer(BufferType::INDEX);
 		m_objectBuffer = m_renderer.createDynamicBuffer(BufferType::STORAGE);
-		
+
 		m_materialBuffer = m_renderer.createDynamicBuffer(BufferType::STORAGE);
+		m_materialIndicesBuffer = m_renderer.createDynamicBuffer(BufferType::STORAGE);
 
 		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 0, m_objectBuffer);
 		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 1, m_lightBuffer);
 		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 2, m_materialBuffer);
-		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 4, m_linearSampler);
+		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 5, m_linearSampler);
 		
 		m_sceneDepthDescriptorSet = m_renderer.allocateDescriptorSet(m_depthPrePipeline, 0);
 		m_renderer.updateDescriptorSet(m_sceneDepthDescriptorSet, 0, m_objectBuffer);
@@ -277,7 +276,7 @@ namespace sa {
 		m_lightIndexBuffer = m_renderer.createBuffer(BufferType::STORAGE, sizeof(uint32_t) * MAX_LIGHTS_PER_TILE * totalTileCount);
 		m_renderer.updateDescriptorSet(m_lightCullingDescriptorSet, 1, m_lightIndexBuffer);
 		m_renderer.updateDescriptorSet(m_lightCullingDescriptorSet, 2, m_lightBuffer);
-		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 3, m_lightIndexBuffer);
+		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 4, m_lightIndexBuffer);
 
 		//DEBUG
 		m_debugLightHeatmap = m_renderer.createTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, { m_tileCount.x, m_tileCount.y });
@@ -330,9 +329,6 @@ namespace sa {
 		if (!context)
 			return;
 
-
-		//auto stats = m_renderer.getGPUMemoryUsage();
-		
 		if (pScene != nullptr) {
 
 			collectMeshes(pScene);
@@ -343,7 +339,9 @@ namespace sa {
 			context.updateDescriptorSet(m_sceneDescriptorSet, 0, m_objectBuffer);
 			context.updateDescriptorSet(m_sceneDescriptorSet, 1, m_lightBuffer.getCurrentBuffer());
 			context.updateDescriptorSet(m_sceneDescriptorSet, 2, m_materialBuffer);
-			context.updateDescriptorSet(m_sceneDescriptorSet, 5, m_textures);
+			context.updateDescriptorSet(m_sceneDescriptorSet, 3, m_materialIndicesBuffer);
+
+			context.updateDescriptorSet(m_sceneDescriptorSet, 6, m_textures);
 
 			context.updateDescriptorSet(m_lightCullingDescriptorSet, 2, m_lightBuffer);
 			
@@ -375,7 +373,6 @@ namespace sa {
 				
 				// Light culling
 				context.bindPipeline(m_lightCullingPipeline);
-				//context.transitionTexture(m_lightHeatMap, Transition::NONE, Transition::COMPUTE_SHADER_WRITE);
 				context.bindDescriptorSet(m_lightCullingDescriptorSet, m_lightCullingPipeline);
 
 				context.pushConstant(m_lightCullingPipeline, ShaderStageFlagBits::COMPUTE, camera->getProjectionMatrix());
@@ -383,11 +380,6 @@ namespace sa {
 
 				context.dispatch(m_tileCount.x, m_tileCount.y, 1);
 
-				//context.transitionTexture(m_lightHeatMap, Transition::COMPUTE_SHADER_WRITE, Transition::FRAGMENT_SHADER_READ);
-
-				
-				//context.transitionTexture(m_depthTexture, Transition::COMPUTE_SHADER_READ, Transition::RENDER_PROGRAM_DEPTH_OUTPUT);
-				
 				// Main color pass
 				context.beginRenderProgram(m_colorRenderProgram, m_colorFramebuffer, SubpassContents::DIRECT);
 				context.bindPipeline(m_colorPipeline);
@@ -435,16 +427,14 @@ namespace sa {
 
 	void ForwardPlus::updateLights(Scene* pScene) {
 		SA_PROFILE_FUNCTION();
+		
 		m_lights.clear();
 		pScene->forEach<comp::Light>([&](const comp::Light& light) {
 			m_lights.push_back(light.values);
 		});
 		
-		LightBuffer lightsStruct;
-		lightsStruct.count = m_lights.size();
-		std::copy(m_lights.begin(), m_lights.end(), lightsStruct.lights.begin());
-
-		m_lightBuffer.write(lightsStruct);
+		m_lightBuffer.write(static_cast<uint32_t>(m_lights.size()));
+		m_lightBuffer.append(m_lights, 16);
 	}
 
 	const Texture2D& ForwardPlus::getLightHeatmap() const {

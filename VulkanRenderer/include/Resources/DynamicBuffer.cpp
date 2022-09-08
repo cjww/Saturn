@@ -65,8 +65,8 @@ namespace sa{
 		getBuffer(m_currentBufferIndex).write(data, size, offset);
 	}
 
-	void DynamicBuffer::append(void* data, size_t size) {
-		getBuffer(m_currentBufferIndex).append(data, size);
+	void DynamicBuffer::append(void* data, size_t size, int alignment) {
+		getBuffer(m_currentBufferIndex).append(data, size, alignment);
 	}
 
 	void DynamicBuffer::resize(size_t newSize, BufferResizeFlags resizeFlags) {

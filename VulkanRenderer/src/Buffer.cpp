@@ -177,19 +177,20 @@ namespace sa {
 		m_size = size;
 	}
 
-	void Buffer::append(void* data, size_t size) {
+	void Buffer::append(void* data, size_t size, int alignment) {
 		if (!isValid()) {
 			SA_DEBUG_LOG_ERROR("Buffer not initialized! Wrote 0 bytes");
 			return;
 		}
-		if (getCapacity() - getSize() < size) {
-			size_t newSize = getSize() + size;
-			if (getSize() > 0) newSize = newSize << 1;
+		if (alignment != 0) {
+			alignment = alignment - (getSize() % alignment);
+		}
+		if (getCapacity() - getSize() < size + alignment) {
+			size_t newSize = getSize() + size + alignment;
 			resize(newSize);
 		}
-		
-		memcpy((char*)m_pBuffer->mappedData + getSize(), data, size);
-		m_size += size;
+		memcpy((char*)m_pBuffer->mappedData + getSize() + alignment, data, size);
+		m_size += size + alignment;
 	}
 
 	void Buffer::clear() {

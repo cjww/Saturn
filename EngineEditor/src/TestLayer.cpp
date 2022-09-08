@@ -77,17 +77,15 @@ namespace sa {
 		transform->position.y -= 1;
 		
 		/*
+		Entity entity = createModelEntity(engine, "resources/models/sponza/scene.gltf");
+		entity.removeComponent<comp::Script>();
+
 		createModelEntity(engine, "resources/models/adamHead/adamHead.gltf");
 		createLight(engine, Vector3(2.f, 2.f, -3.f));
 
 		*/
-		Entity entity = createModelEntity(engine, "resources/models/sponza/scene.gltf");
-		entity.removeComponent<comp::Script>();
-
-		for (int i = 0; i < 100; i++) {
-			Vector3 pos = Vector3(randomRange(-50, 50), 0, randomRange(-50, 50));
-			Color color = Color{ randomRange(0.5f, 1.f), randomRange(0.5f, 1.f), randomRange(0.5f, 1.f), 1 };
-
+		for (int i = 0; i < 4096 * 2; i++) {
+			Vector3 pos = Vector3(randomRange(0, 200), 0, randomRange(0, 200));
 			Color colors[] = {
 				SA_COLOR_WHITE,
 				SA_COLOR_BLUE,
@@ -102,6 +100,7 @@ namespace sa {
 		}
 
 		/*
+		*/
 		for (int i = 0; i < 30; i++) {
 			createModelEntity(engine, "resources/models/adamHead/adamHead.gltf");
 			createModelEntity(engine, "resources/models/lieutenantHead/lieutenantHead.gltf");
@@ -122,7 +121,6 @@ namespace sa {
 			createModelEntity(engine, "resources/models/viking_room/scene.gltf", 0.2f);
 			createModelEntity(engine, "resources/models/steampunk_glasses__goggles/scene.gltf");
 		}
-		*/
 		
 		//createModelEntity(engine, "models/viking_room/scene.gltf", 0.2f);
 		

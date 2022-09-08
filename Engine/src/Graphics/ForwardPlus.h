@@ -4,20 +4,16 @@
 #define MAX_MATERIAL_COUNT 4096
 #define MAX_LIGHT_COUNT 4096
 
+
 namespace sa {
 
 	struct alignas(16) ObjectData {
 		Matrix4x4 worldMat;
 	};
-	
-	struct MaterialBuffer {
-		std::array<Material::Values, MAX_MATERIAL_COUNT> materials;
-		std::array<glm::uvec4, 2048> meshToMaterialIndex;
-	};
 
 	struct LightBuffer {
 		uint32_t count;
-		alignas(16) std::array<LightData, MAX_LIGHT_COUNT> lights;
+		alignas(16) std::vector<LightData> lights;
 	};
 
 	class ForwardPlus : public IRenderTechnique {
@@ -53,7 +49,7 @@ namespace sa {
 
 		
 		const uint32_t TILE_SIZE = 16U;
-		const uint32_t MAX_LIGHTS_PER_TILE = 128;
+		const uint32_t MAX_LIGHTS_PER_TILE = 4096;
 		Vector2u m_tileCount;
 		Buffer m_lightIndexBuffer;
 
@@ -67,10 +63,13 @@ namespace sa {
 		// used for collecting meshes every frame
 		std::vector<ModelData*> m_models;
 		std::vector<std::vector<ObjectData>> m_objects;
-		std::vector<Material*> m_materials;
 		std::vector<Texture> m_textures;
-		
+		std::vector<Material*> m_materials;
+		std::vector<Material::Values> m_materialData;
+		std::vector<uint32_t> m_materialIndices;
+
 		std::vector<LightData> m_lights;
+		
 
 		// These could expand
 		DynamicBuffer m_lightBuffer;
@@ -79,6 +78,8 @@ namespace sa {
 		DynamicBuffer m_indirectIndexedBuffer;
 		DynamicBuffer m_objectBuffer;
 		DynamicBuffer m_materialBuffer;
+		DynamicBuffer m_materialIndicesBuffer;
+
 
 		void createTextures(Extent extent);
 		void createRenderPasses();

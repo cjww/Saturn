@@ -7,7 +7,6 @@
 
 #include "Tools\MemoryChecker.h"
 
-
 namespace sa {
 	void Engine::loadXML(const std::filesystem::path& path, rapidxml::xml_document<>& xml, std::string& xmlStr) {
 		std::ifstream file(path);
@@ -67,6 +66,17 @@ namespace sa {
 			};
 			type["Identity"] = &glm::quat_identity<float, glm::packed_highp>;
 		}
+		/*
+		{
+			//auto type = m_scriptManager.registerType<Vector3>();
+			auto type = LuaAccessable::luaReg<Color>("Color");
+			type["r"] = &Color::r;
+			type["g"] = &Color::g;
+			type["b"] = &Color::b;
+			type["a"] = &Color::a;
+
+		}
+		*/
 
 	}
 

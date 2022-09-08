@@ -83,9 +83,12 @@ namespace comp {
 		}
 	};
 
-	struct Light {
+	struct Light : public sa::LuaAccessable {
 		unsigned int index;
 		sa::LightData values;
+		static void luaReg(sol::usertype<comp::Light>& type) {
+			//type["color"] = [](comp::Light& light) -> sa::Color& {return std::ref(light.values.color); };
+		}
 	};
 
 };

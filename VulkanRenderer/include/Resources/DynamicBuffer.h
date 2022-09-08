@@ -30,7 +30,7 @@ namespace sa {
 		BufferType getType() const;
 
 		void write(void* data, size_t size, int offset = 0);
-		void append(void* data, size_t size);
+		void append(void* data, size_t size, int alignment = 0);
 
 		template<typename T>
 		void write(const T& data);
@@ -40,6 +40,15 @@ namespace sa {
 
 		template<typename T, size_t Size>
 		void write(const std::array<T, Size>& data);
+
+		template<typename T>
+		void append(const T& data, int alignment = 0);
+
+		template<typename T>
+		void append(const std::vector<T>& data, int alignment = 0);
+
+		template<typename T, size_t Size>
+		void append(const std::array<T, Size>& data, int alignment = 0);
 
 		void resize(size_t newSize, BufferResizeFlags resizeFlags = PRESERVE_CONTENT);
 		void reserve(size_t capacity, BufferResizeFlags resizeFlags = PRESERVE_CONTENT);
@@ -87,6 +96,21 @@ namespace sa {
 		write((void*)data.data(), data.size() * sizeof(T));
 	}
 	
+	template<typename T>
+	inline void DynamicBuffer::append(const T& data, int alignment) {
+		append((void*)&data, sizeof(T), alignment);
+	}
+
+	template<typename T>
+	inline void DynamicBuffer::append(const std::vector<T>& data, int alignment) {
+		append((void*)data.data(), data.size() * sizeof(T), alignment);
+	}
+
+	template<typename T, size_t Size>
+	inline void DynamicBuffer::append(const std::array<T, Size>& data, int alignment) {
+		append((void*)data.data(), Size * sizeof(T), alignment);
+	}
+
 	template<typename T>
 	inline size_t DynamicBuffer::getElementCount() const{
 		return getBuffer(m_currentBufferIndex).getElementCount<T>();

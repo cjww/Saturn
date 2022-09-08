@@ -2,6 +2,7 @@
 #extension GL_EXT_nonuniform_qualifier : enable
 
 #define MAX_TEXTURE_MAP_COUNT 4
+#define MAX_LIGHTS_PER_TILE 4096
 
 layout(location = 0) in vec2 in_vertexUV;
 layout(location = 1) in vec3 in_vertexWorldPos;
@@ -44,20 +45,25 @@ struct Light {
 
 layout(set = 0, binding = 1, std140) readonly buffer Lights {
     uint lightCount;
-    Light lights[4096];
+    Light lights[];
 } lightBuffer;
 
+
 layout(set = 0, binding = 2, std140) readonly buffer Materials {
-    Material materials[4096];
-    uint meshToMaterialIndex[2048];
+    Material materials[];
 } materialBuffer;
 
-layout(set = 0, binding = 3) readonly buffer LightIndices {
+layout(set = 0, binding = 3) readonly buffer MaterialIndices {
+	uint data[];
+} materialIndices;
+
+
+layout(set = 0, binding = 4) readonly buffer LightIndices {
 	uint data[];
 } lightIndices;
 
-layout(set = 0, binding = 4) uniform sampler samp;
-layout(set = 0, binding = 5) uniform texture2D textures[];
+layout(set = 0, binding = 5) uniform sampler samp;
+layout(set = 0, binding = 6) uniform texture2D textures[];
 
 void main() {
 
@@ -65,7 +71,7 @@ void main() {
     ivec2 tileID = pos / ivec2(16, 16);
     uint index = tileID.y * 88 + tileID.x;
 
-    uint materialIndex = materialBuffer.meshToMaterialIndex[in_meshIndex];
+    uint materialIndex = materialIndices.data[in_meshIndex];
 
     Material material = materialBuffer.materials[materialIndex];
 
@@ -88,9 +94,9 @@ void main() {
     }
     else {
         vec3 viewDir = normalize(in_viewPos - in_vertexWorldPos);
-        uint offset = index * 128;
+        uint offset = index * MAX_LIGHTS_PER_TILE;
         
-        for(int i = 0; lightIndices.data[i + offset] != -1; i++) {
+        for(int i = 0; i < MAX_LIGHTS_PER_TILE && lightIndices.data[i + offset] != -1; i++) {
             Light light = lightBuffer.lights[lightIndices.data[i + offset]];
         
         //for(int i = 0; i < lightBuffer.lightCount; i++) {

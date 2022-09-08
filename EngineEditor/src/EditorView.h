@@ -28,6 +28,8 @@ private:
 	} m_statistics;
 	float m_statsUpdateTime;
 	float m_statsTimer;
+	std::array<float, 100> m_frameTimeGraph;
+
 
 
 public:
