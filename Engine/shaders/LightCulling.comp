@@ -126,14 +126,18 @@ void main() {
 		float radius = lightBuffer.lights[lightIndex].strength;
 
 		float dist = 0.0;
+		bool passed = true;
 		for(uint j = 0; j < 6; j++) {
-			dist = dot(vec4(lightPos, 1), sh_frustumPlanes[j]) + radius;
+			dist = dot(vec4(lightPos, 1), sh_frustumPlanes[j]);
+			float attenuation = 1 / (dist * dist);
 			
-			if(dist < 0.0)
+			if(dist + attenuation < 0.0) {
+				passed = false;
 				break;
+			}
 		}
 
-		if(dist > 0.0) {
+		if(passed) {
 			uint offset = atomicAdd(sh_visibleLightCount, 1);
 			sh_visibleLightIndices[offset] = lightIndex;
 		}

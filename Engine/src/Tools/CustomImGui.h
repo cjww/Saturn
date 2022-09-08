@@ -16,6 +16,7 @@ namespace ImGui {
 	void Component(comp::Transform* transform);
 	void Component(comp::Model* model);
 	void Component(comp::Script* script);
+	void Component(comp::Light* light);
 
 
 	template<typename T>

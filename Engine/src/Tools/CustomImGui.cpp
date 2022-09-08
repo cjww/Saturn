@@ -78,5 +78,30 @@ namespace ImGui {
 
 	}
 
+	void Component(comp::Light* light) {
+		
+		ImGui::DragFloat3("Position", (float*)&light->values.position, 0.1f);
+
+		ImGui::ColorEdit4("Color", (float*)&light->values.color);
+		
+		ImGui::SliderFloat("Intensity", &light->values.intensity, 0.1f, 1.f);
+		ImGui::SliderFloat("Attenuation radius", &light->values.attenuationRadius, 2.f, 50.f);
+
+		static std::string preview = "-";
+		if (ImGui::BeginCombo("Type", preview.data())) {
+			if (ImGui::Selectable("Point")) {
+				light->values.type = sa::LightType::POINT;
+				preview = "Point";
+			}
+			if (ImGui::Selectable("Directional")) {
+				light->values.type = sa::LightType::DIRECTIONAL;
+				preview = "Directional";
+			}
+
+			ImGui::EndCombo();
+		}
+
+	}
+
 	
 }

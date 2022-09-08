@@ -61,7 +61,8 @@ void EntityInspector::onImGui() {
 			ImGui::Component<comp::Transform>(m_selectedEntity);
 			ImGui::Component<comp::Model>(m_selectedEntity);
 			ImGui::Component<comp::Script>(m_selectedEntity);
-			
+			ImGui::Component<comp::Light>(m_selectedEntity);
+
 			
 			
 			ImGui::Separator();

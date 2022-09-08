@@ -16,8 +16,7 @@ namespace sa {
 		
 		comp::Light* lightComp = light.addComponent<comp::Light>();
 		lightComp->values.color = SA_COLOR_WHITE;
-		lightComp->values.position = position + Vector3(0.f, 0.f, 0.1f);
-		lightComp->values.strength = 1.0f;
+		lightComp->values.position = position;
 		return light;
 	}
 
@@ -73,15 +72,16 @@ namespace sa {
 		transform->position.y -= 2;
 		
 		createModelEntity(engine, "resources/models/adamHead/adamHead.gltf");
+		createLight(engine, Vector3(2.f, 2.f, -3.f));
+
 		/*
 		Entity entity = createModelEntity(engine, "resources/models/sponza/scene.gltf");
 		entity.removeComponent<comp::Script>();
-		*/
 
 		for (int i = 0; i < 10; i++) {
-
 			createLight(engine, Vector3(i * 2, 2, -3 + (i % 2)));
 		}
+		*/
 
 		/*
 		for (int i = 0; i < 30; i++) {

@@ -37,7 +37,8 @@ struct Material {
 struct Light {
     vec4 color;
     vec3 position;
-    float strength;
+    float intensity;
+    float attenuationRadius;
     uint type;
 };
 
@@ -89,21 +90,22 @@ void main() {
         vec3 viewDir = normalize(in_viewPos - in_vertexWorldPos);
         uint offset = index * 128;
         
-        //for(int i = 0; lightIndices.data[i + offset] != -1; i++) {
-            //Light light = lightBuffer.lights[lightIndices.data[i + offset]];
+        for(int i = 0; lightIndices.data[i + offset] != -1; i++) {
+            Light light = lightBuffer.lights[lightIndices.data[i + offset]];
         
-        for(int i = 0; i < lightBuffer.lightCount; i++) {
-            Light light = lightBuffer.lights[i];
+        //for(int i = 0; i < lightBuffer.lightCount; i++) {
+          //  Light light = lightBuffer.lights[i];
 
 
             vec3 toLight = light.position - in_vertexWorldPos;
             float lightDistance = length(toLight);
             toLight = normalize(toLight);
-
-
+            
             float diffuseFactor = max(dot(in_vertexWorldNormal, toLight), 0.0);
-            float attenuation = 1 / (lightDistance * lightDistance);
-            vec4 radiance = light.color * attenuation * light.strength; 
+            //float attenuation = light.attenuationRadius / lightDistance;
+            float attenuation = (1 - lightDistance / (light.attenuationRadius * 0.5)) / 0.2;
+            attenuation = clamp(attenuation, 0.0, 1.0);
+            vec4 radiance = light.color * attenuation * light.intensity; 
 
             diffuseColor += radiance * diffuseFactor;
             

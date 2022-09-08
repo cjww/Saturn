@@ -16,14 +16,16 @@ namespace sa {
 
 	enum class LightType : uint32_t {
 		POINT = 0,
-		DIRECTIONAL = 1
+		DIRECTIONAL = 1,
+		SPOT = 2,
 	};
 
 	struct alignas(16) LightData {
 		Color color = SA_COLOR_WHITE;	// 16 bytes
 		sa::Vector3 position = sa::Vector3(0);		// 12 bytes - 16 offset
-		float strength = 1.0f;						// 4 bytes - 28 offset
-		LightType type = LightType::POINT;			// 4 bytes - 32 offset - total 36 bytes
+		float intensity = 1.0f;						// 4 bytes - 28 offset
+		float attenuationRadius = 7.0f;
+		LightType type = LightType::POINT;
 	};
 
 }
@@ -32,7 +34,6 @@ namespace sa {
 namespace comp {
 
 	struct Name : public sa::ComponentBase {
-		//std::string name;
 		std::string name;
 		
 		Name() {}
