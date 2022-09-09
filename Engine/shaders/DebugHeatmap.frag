@@ -9,9 +9,13 @@ layout(set = 0, binding = 0) readonly buffer LightIndices {
 	uint data[];
 } lightIndices;
 
+layout(push_constant) uniform PushConstants {
+    uint tileCountX;
+} pc;
+
 void main() {
     ivec2 pos = ivec2(gl_FragCoord.xy);
-    uint index = pos.y * 88 + pos.x;
+    uint index = pos.y * pc.tileCountX + pos.x;
 
     uint offset = index * MAX_LIGHTS_PER_TILE;
     uint lightCount = 0;

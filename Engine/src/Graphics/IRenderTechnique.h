@@ -28,6 +28,8 @@ namespace sa {
 		IRenderTechnique();
 		virtual ~IRenderTechnique() = default;
 
+		virtual void onWindowResize(Extent extent) = 0;
+
 		virtual void init(sa::RenderWindow* pWindow, bool setupImGui = false) = 0;
 		virtual void cleanup() = 0;
 

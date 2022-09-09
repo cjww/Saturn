@@ -2,6 +2,7 @@
 #extension GL_EXT_nonuniform_qualifier : enable
 
 #define MAX_LIGHTS_PER_TILE 1024
+#define TILE_SIZE 16
 
 layout(location = 0) in vec2 in_vertexUV;
 layout(location = 1) in vec3 in_vertexWorldPos;
@@ -10,7 +11,6 @@ layout(location = 3) in flat vec3 in_viewPos;
 layout(location = 4) in flat uint in_meshIndex;
 
 layout(location = 0) out vec4 out_color;
-layout(location = 1) out vec4 out_brightness;
 
 struct Material {
     vec4 diffuseColor;
@@ -64,11 +64,17 @@ layout(set = 0, binding = 4) readonly buffer LightIndices {
 layout(set = 0, binding = 5) uniform sampler samp;
 layout(set = 0, binding = 6) uniform texture2D textures[];
 
+layout(push_constant) uniform PushConstants {
+    mat4 projView;
+    vec3 viewPos;
+    uint tileCountX;
+} pc;
+
 void main() {
 
     ivec2 pos = ivec2(gl_FragCoord.xy);
-    ivec2 tileID = pos / ivec2(16, 16);
-    uint index = tileID.y * 88 + tileID.x;
+    ivec2 tileID = pos / ivec2(TILE_SIZE, TILE_SIZE);
+    uint index = tileID.y * pc.tileCountX + tileID.x;
 
     uint materialIndex = materialIndices.data[in_meshIndex];
 
@@ -127,10 +133,6 @@ void main() {
         
     out_color = vec4(min(finalColor.xyz, 1), material.opacity);
 
-    float brightness = (0.2126 * finalColor.r + 0.7152 * finalColor.g + 0.0722 * finalColor.b);
-    out_brightness = vec4(0, 0, 0, 1);
-    if(brightness > 0.8) {
-        out_brightness = vec4(out_color.xyz, floor(out_color.a));
-    }
-   
+    //float brightness = (0.2126 * finalColor.r + 0.7152 * finalColor.g + 0.0722 * finalColor.b);
+
 }

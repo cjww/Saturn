@@ -128,11 +128,11 @@ void EditorView::onImGui() {
 		ImGui::EndMenuBar();
 
 		sa::Scene* pScene = m_pEngine->getCurrentScene();
-		pScene->on<event::EntitySelected>([&](const event::EntitySelected& e, sa::Scene&) {
+		pScene->on<sa::event::EntitySelected>([&](const sa::event::EntitySelected& e, sa::Scene&) {
 			m_selectedEntity = e.entity;
 		});
 
-		pScene->on<event::EntityDeselected>([&](const event::EntityDeselected&, sa::Scene&) {
+		pScene->on<sa::event::EntityDeselected>([&](const sa::event::EntityDeselected&, sa::Scene&) {
 			m_selectedEntity = {};
 		});
 

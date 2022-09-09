@@ -115,7 +115,7 @@ namespace sa {
 
 	}
 
-	void ForwardRenderer::swapchainResizedCallback(Extent extent) {
+	void ForwardRenderer::onWindowResize(Extent extent) {
 		std::cout << "resized: " << extent.width << ", " << extent.height << std::endl;
 		
 		setupColorPass(extent);
@@ -131,7 +131,7 @@ namespace sa {
 		m_pWindow = pWindow;
 		
 		// Setup callback
-		pWindow->setResizeCallback(std::bind(&ForwardRenderer::swapchainResizedCallback, this, std::placeholders::_1));
+		pWindow->setResizeCallback(std::bind(&ForwardRenderer::onWindowResize, this, std::placeholders::_1));
 
 		// Get Extent
 		sa::Extent windowExtent = m_pWindow->getCurrentExtent();

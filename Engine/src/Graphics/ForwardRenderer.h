@@ -51,7 +51,7 @@ namespace sa {
 		
 	public:
 		
-		void swapchainResizedCallback(Extent width);
+		virtual void onWindowResize(Extent extent) override;
 
 
 		virtual void init(sa::RenderWindow* pWindow, bool setupImGui) override;

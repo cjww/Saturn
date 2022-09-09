@@ -39,19 +39,19 @@ namespace sa {
 		ResourceID m_depthPrePipeline = NULL_RESOURCE;
 		ResourceID m_sceneDepthDescriptorSet = NULL_RESOURCE;
 
-		ResourceID m_lightCullingPipeline;
-		ResourceID m_lightCullingDescriptorSet;
+		ResourceID m_lightCullingPipeline = NULL_RESOURCE;
+		ResourceID m_lightCullingDescriptorSet = NULL_RESOURCE;
 
 		
 		
 		Vector2u m_tileCount;
 		Buffer m_lightIndexBuffer;
 
-		ResourceID m_debugLightHeatmapRenderProgram;
-		ResourceID m_debugLightHeatmapPipeline;
-		ResourceID m_debugLightHeatmapFramebuffer;
+		ResourceID m_debugLightHeatmapRenderProgram = NULL_RESOURCE;
+		ResourceID m_debugLightHeatmapPipeline = NULL_RESOURCE;
+		ResourceID m_debugLightHeatmapFramebuffer = NULL_RESOURCE;
 		Texture2D m_debugLightHeatmap;
-		ResourceID m_debugLightHeatmapDescriptorSet;
+		ResourceID m_debugLightHeatmapDescriptorSet = NULL_RESOURCE;
 		
 		// used for collecting meshes every frame
 		std::vector<ModelData*> m_models;
@@ -73,16 +73,20 @@ namespace sa {
 		DynamicBuffer m_materialBuffer;
 		DynamicBuffer m_materialIndicesBuffer;
 
+		void createPreDepthPass(Extent extent);
+		void createLightCullingShader();
+		void createColorPass(Extent extent);
+		void createComposePass(Extent extent);
 
-		void createTextures(Extent extent);
-		void createRenderPasses();
-		void createFramebuffers(Extent extent);
-		void createPipelines(Extent extent);
+		void resizeLightIndexBuffer(Extent extent);
+		
+		void updateDescriptorSets();
 
 		void collectMeshes(Scene* pScene);
 		
 
 	public:
+		virtual void onWindowResize(Extent extent) override;
 
 		virtual void init(sa::RenderWindow* pWindow, bool setupImGui) override;
 		virtual void cleanup() override;

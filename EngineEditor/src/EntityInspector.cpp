@@ -36,11 +36,11 @@ void EntityInspector::onImGui() {
 
 	if (ImGui::Begin("Inspector")) {
 
-		m_pEngine->getCurrentScene()->on<event::EntitySelected>([&](const event::EntitySelected& e, sa::Scene&) {
+		m_pEngine->getCurrentScene()->on<sa::event::EntitySelected>([&](const sa::event::EntitySelected & e, sa::Scene&) {
 			m_selectedEntity = e.entity;
 		});
 
-		m_pEngine->getCurrentScene()->on<event::EntityDeselected>([&](const event::EntityDeselected&, sa::Scene&) {
+		m_pEngine->getCurrentScene()->on<sa::event::EntityDeselected>([&](const sa::event::EntityDeselected&, sa::Scene&) {
 			m_selectedEntity = {};
 		});
 

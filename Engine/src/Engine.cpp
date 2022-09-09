@@ -80,6 +80,11 @@ namespace sa {
 
 	}
 
+	void Engine::onWindowResize(Extent newExtent) {
+		publish<sa::event::WindowResized>(newExtent);
+		m_windowExtent = newExtent;
+	}
+
 	void Engine::setup(sa::RenderWindow* pWindow, bool enableImgui) {
 		SA_PROFILE_FUNCTION();
 
@@ -91,6 +96,23 @@ namespace sa {
 		if (pWindow) {
 			m_pRenderTechnique = new ForwardPlus();
 			m_pRenderTechnique->init(pWindow, enableImgui);
+			pWindow->setResizeCallback(std::bind(&Engine::onWindowResize, this, std::placeholders::_1));
+			m_windowExtent = pWindow->getCurrentExtent();
+
+			on<event::WindowResized>([&](event::WindowResized& e, Engine& emitter) {
+				m_pRenderTechnique->onWindowResize(e.newExtent);
+				for (const auto& [id, scene] : m_scenes) {
+					for (auto& cam : scene.getActiveCameras()) {
+						Rect viewport = cam->getViewport();
+						// resize viewport but keep relative size to window size
+						viewport.extent.width = e.newExtent.width * viewport.extent.width / m_windowExtent.width;
+						viewport.extent.height = e.newExtent.height * viewport.extent.height / m_windowExtent.height;
+
+						cam->setViewport(viewport);
+					}
+				}
+
+			});
 		}
 		setScene("MainScene");
 	

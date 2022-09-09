@@ -42,6 +42,9 @@ namespace sa {
 			T& component;
 		};
 
+		struct WindowResized {
+			Extent newExtent;
+		};
 
 	}
 }

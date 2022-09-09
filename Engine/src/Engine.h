@@ -18,7 +18,7 @@
 
 namespace sa {
 
-	class Engine {
+	class Engine : public entt::emitter<Engine> {
 	private:
 		
 		IRenderTechnique* m_pRenderTechnique;
@@ -40,7 +40,9 @@ namespace sa {
 		void loadFromFile(const std::filesystem::path& configPath);
 
 		void registerComponents();
-	
+		Extent m_windowExtent;
+		void onWindowResize(Extent newExtent);
+
 	public:
 		// Call this to set up engine
 		void setup(sa::RenderWindow* pWindow = nullptr, bool enableImgui = false);

@@ -44,7 +44,7 @@ void SceneView::onImGui() {
 				
 				if (ImGui::Button("Delete")) {
 					if (hovered) {
-						pScene->publish<event::EntityDeselected>(hovered);
+						pScene->publish<sa::event::EntityDeselected>(hovered);
 						pScene->destroyEntity(hovered);
 						ImGui::CloseCurrentPopup();
 					}
@@ -65,11 +65,11 @@ void SceneView::onImGui() {
 				if (ImGui::Selectable((e.getComponent<comp::Name>()->name + "##" + std::to_string((uint32_t)e)).c_str(), &s)) {
 					if (s) {
 						selected = e;
-						m_pEngine->getCurrentScene()->publish<event::EntitySelected>(selected);
+						m_pEngine->getCurrentScene()->publish<sa::event::EntitySelected>(selected);
 					}
 					else {
 						selected = {};
-						m_pEngine->getCurrentScene()->publish<event::EntityDeselected>(selected);
+						m_pEngine->getCurrentScene()->publish<sa::event::EntityDeselected>(selected);
 					}
 				}
 				if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup)) {
