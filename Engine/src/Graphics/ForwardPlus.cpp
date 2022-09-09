@@ -153,8 +153,6 @@ namespace sa {
 		uint32_t materialCount = 0;
 		uint32_t meshCount = 0;
 
-		//MaterialBuffer materialBuffer = {};
-
 		m_materials.clear();
 
 		for (size_t i = 0; i < m_models.size(); i++) {

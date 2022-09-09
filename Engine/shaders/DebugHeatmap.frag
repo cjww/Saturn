@@ -1,7 +1,7 @@
 #version 450
 #extension GL_EXT_nonuniform_qualifier : enable
 
-#define MAX_LIGHTS_PER_TILE 4096
+#define MAX_LIGHTS_PER_TILE 1024
 
 layout(location = 0) out vec4 out_color;
 
@@ -11,8 +11,6 @@ layout(set = 0, binding = 0) readonly buffer LightIndices {
 
 void main() {
     ivec2 pos = ivec2(gl_FragCoord.xy);
-    //ivec2 tileID = pos / ivec2(16, 16);
-    //uint index = tileID.y * 88 + tileID.x;
     uint index = pos.y * 88 + pos.x;
 
     uint offset = index * MAX_LIGHTS_PER_TILE;

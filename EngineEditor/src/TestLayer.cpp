@@ -84,7 +84,7 @@ namespace sa {
 		createLight(engine, Vector3(2.f, 2.f, -3.f));
 
 		*/
-		for (int i = 0; i < 4096 * 2; i++) {
+		for (int i = 0; i < 200; i++) {
 			Vector3 pos = Vector3(randomRange(0, 200), 0, randomRange(0, 200));
 			Color colors[] = {
 				SA_COLOR_WHITE,

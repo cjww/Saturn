@@ -1,8 +1,7 @@
 #version 460
 #extension GL_EXT_nonuniform_qualifier : enable
 
-#define MAX_TEXTURE_MAP_COUNT 4
-#define MAX_LIGHTS_PER_TILE 4096
+#define MAX_LIGHTS_PER_TILE 1024
 
 layout(location = 0) in vec2 in_vertexUV;
 layout(location = 1) in vec3 in_vertexWorldPos;
@@ -98,10 +97,6 @@ void main() {
         
         for(int i = 0; i < MAX_LIGHTS_PER_TILE && lightIndices.data[i + offset] != -1; i++) {
             Light light = lightBuffer.lights[lightIndices.data[i + offset]];
-        
-        //for(int i = 0; i < lightBuffer.lightCount; i++) {
-          //  Light light = lightBuffer.lights[i];
-
 
             vec3 toLight = light.position - in_vertexWorldPos;
             float lightDistance = length(toLight);
@@ -137,8 +132,5 @@ void main() {
     if(brightness > 0.8) {
         out_brightness = vec4(out_color.xyz, floor(out_color.a));
     }
-    /*
-    out_color = texture(sampler2D(textures[material.diffuseMapFirst], samp), in_vertexUV);
-    return;
-    */
+   
 }

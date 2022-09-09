@@ -1,19 +1,14 @@
 #pragma once
 #include "Graphics/IRenderTechnique.h"
 
-#define MAX_MATERIAL_COUNT 4096
-#define MAX_LIGHT_COUNT 4096
+#define TILE_SIZE 16U
+#define MAX_LIGHTS_PER_TILE 1024
 
 
 namespace sa {
 
 	struct alignas(16) ObjectData {
 		Matrix4x4 worldMat;
-	};
-
-	struct LightBuffer {
-		uint32_t count;
-		alignas(16) std::vector<LightData> lights;
 	};
 
 	class ForwardPlus : public IRenderTechnique {
@@ -48,8 +43,7 @@ namespace sa {
 		ResourceID m_lightCullingDescriptorSet;
 
 		
-		const uint32_t TILE_SIZE = 16U;
-		const uint32_t MAX_LIGHTS_PER_TILE = 4096;
+		
 		Vector2u m_tileCount;
 		Buffer m_lightIndexBuffer;
 
@@ -58,8 +52,7 @@ namespace sa {
 		ResourceID m_debugLightHeatmapFramebuffer;
 		Texture2D m_debugLightHeatmap;
 		ResourceID m_debugLightHeatmapDescriptorSet;
-		bool m_showHeatmapOverlay;
-
+		
 		// used for collecting meshes every frame
 		std::vector<ModelData*> m_models;
 		std::vector<std::vector<ObjectData>> m_objects;

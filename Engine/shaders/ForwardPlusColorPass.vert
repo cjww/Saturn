@@ -16,7 +16,7 @@ struct Object {
 };
 
 layout(set = 0, binding = 0) readonly buffer Objects {
-    Object objects[2048];
+    Object objects[];
 } objectBuffer;
 
 layout(push_constant) uniform Camera {
