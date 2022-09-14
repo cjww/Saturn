@@ -18,6 +18,9 @@ function init()
 end
 
 function update(dt)
+	
+	--print("system1: ", transform.position.x, transform.position.y, transform.position.z)
+
 	if up then
 		transform.position.y = interpolate(transform.position.y, -2, dt)
 

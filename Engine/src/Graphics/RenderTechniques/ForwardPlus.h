@@ -89,7 +89,7 @@ namespace sa {
 
 		virtual void onWindowResize(Extent extent) override;
 
-		virtual void init(sa::RenderWindow* pWindow) override;
+		virtual void init(sa::RenderWindow* pWindow, IRenderLayer* = nullptr) override;
 		virtual void cleanup() override;
 
 		virtual void updateData(RenderContext& context, Scene* pScene) override;

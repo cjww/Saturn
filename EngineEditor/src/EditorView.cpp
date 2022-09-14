@@ -1,6 +1,6 @@
 #include "EditorView.h"
 
-#include "Graphics\ForwardPlus.h"
+#include "Graphics\RenderTechniques\ForwardPlus.h"
 
 EditorView::EditorView(sa::Engine* pEngine, sa::RenderWindow* pWindow)
 	: EditorModule(pEngine)
@@ -17,9 +17,6 @@ EditorView::EditorView(sa::Engine* pEngine, sa::RenderWindow* pWindow)
 
 	m_mouseSensitivity = 30.0f;
 	m_moveSpeed = 8.0f;
-
-	m_texture = m_pEngine->getRenderPipeline().getRenderTechnique()->getOutputTexture();
-	m_sampler = sa::Renderer::get().createSampler(sa::FilterMode::NEAREST);
 
 	m_statsUpdateTime = 0.1f;
 	m_statsTimer = m_statsUpdateTime;
@@ -117,9 +114,11 @@ void EditorView::onImGui() {
 				ImGui::End();
 			}
 			static bool showLightHeatmap = false;
-			if (ImGui::Checkbox("Show Light Heatmap", &showLightHeatmap)) {
-				//sa::ForwardPlus* forwardPlusTechnique = dynamic_cast<sa::ForwardPlus*>(m_pEngine->getRenderTechnique());
-				//forwardPlusTechnique->setShowHeatmap(showLightHeatmap);
+			sa::ForwardPlus* forwardPlusTechnique = dynamic_cast<sa::ForwardPlus*>(m_pEngine->getRenderPipeline().getRenderTechnique());
+			if (forwardPlusTechnique) {
+				if (ImGui::Checkbox("Show Light Heatmap", &showLightHeatmap)) {
+					forwardPlusTechnique->setShowHeatmap(showLightHeatmap);
+				}
 			}
 			
 
@@ -141,10 +140,10 @@ void EditorView::onImGui() {
 		// render outputTexture with constant aspect ratio
 		ImVec2 availSize = ImGui::GetContentRegionAvail();
 
-		m_texture = m_pEngine->getRenderPipeline().getRenderTechnique()->getOutputTexture();
-		float aspectRatio = (float)m_texture.getExtent().height / m_texture.getExtent().width;
-		availSize.y = std::min(availSize.x * aspectRatio, (float)m_texture.getExtent().height);
-		ImGui::Image(m_texture, availSize);
+		sa::Texture texture = m_pEngine->getRenderPipeline().getRenderTechnique()->getOutputTexture();
+		float aspectRatio = (float)texture.getExtent().height / texture.getExtent().width;
+		availSize.y = std::min(availSize.x * aspectRatio, (float)texture.getExtent().height);
+		ImGui::Image(texture, availSize);
 		m_displayedSize = availSize;
 
 		const ImU32 red = ImColor(ImVec4(1, 0, 0, 1));
@@ -157,11 +156,7 @@ void EditorView::onImGui() {
 			if (transform) {
 				glm::vec3 pos = transform->position;
 
-				glm::mat4 mat(1);
-				mat = glm::rotate(mat, transform->rotation.x, glm::vec3(1, 0, 0));
-				mat = glm::rotate(mat, transform->rotation.y, glm::vec3(0, 1, 0));
-				mat = glm::rotate(mat, transform->rotation.z, glm::vec3(0, 0, 1));
-				
+				glm::mat4 mat = glm::toMat4(transform->rotation);
 				glm::vec3 x = glm::normalize(mat[0]);
 				glm::vec3 y = glm::normalize(mat[1]);
 				glm::vec3 z = glm::normalize(mat[2]);
@@ -173,20 +168,6 @@ void EditorView::onImGui() {
 			}
 		}
 		
-
-
-		/*
-		sa::ForwardPlus* forwardPlusTechnique = dynamic_cast<sa::ForwardPlus*>(m_pEngine->getRenderTechnique());
-		if (forwardPlusTechnique) {
-			const sa::Texture2D& texture = forwardPlusTechnique->getLightHeatmap();
-			ImGui::SetNextWindowBgAlpha(0.5f);
-			if (ImGui::Begin("Heatmap")) {
-				availSize = ImGui::GetContentRegionAvail();
-				ImGui::Image(texture, availSize);
-				ImGui::End();
-			}
-		}
-		*/
 
 	}
 	ImGui::End();

@@ -1,5 +1,5 @@
 #pragma once
-#include "IRenderTechnique.h"
+#include "Graphics/IRenderTechnique.h"
 
 #include "structs.h"
 #include "ECS\Components.h"
@@ -54,15 +54,13 @@ namespace sa {
 		virtual void onWindowResize(Extent extent) override;
 
 
-		virtual void init(sa::RenderWindow* pWindow) override;
+		virtual void init(sa::RenderWindow* pWindow, IRenderLayer* = nullptr) override;
 		virtual void cleanup() override;
 
 		virtual void updateData(RenderContext& context, Scene* pScene) override;
 		virtual void preRender(RenderContext& context, Camera* pCamera) override;
 		virtual void render(RenderContext& context, Camera* pCamera) override;
 		virtual void postRender(RenderContext& context) override;
-
-		virtual const Texture& getOutputTexture() const override;
 
 		virtual void updateLights(Scene* pScene) override;
 	};

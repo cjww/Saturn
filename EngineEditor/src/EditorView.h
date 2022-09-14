@@ -16,10 +16,8 @@ private:
 	float m_mouseSensitivity;
 	float m_moveSpeed;
 
-	sa::Texture m_texture;
 	ImVec2 m_displayedSize;
-	ResourceID m_sampler;
-
+	
 	sa::Entity m_selectedEntity;
 
 	struct Statistics {

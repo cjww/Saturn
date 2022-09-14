@@ -16,6 +16,8 @@ function init()
 end
 
 function update(dt)
+    --print("system2: ", transform.position.x, transform.position.y, transform.position.z)
+
     timer = timer + dt
     --transform.rotation.y = transform.rotation.y + dt * 10;
     transform.rotation:rotate(dt * 10, Vec3.new(0, 1, 0));

@@ -359,7 +359,7 @@ namespace sa {
 
 	}
 
-	void ForwardPlus::init(sa::RenderWindow* pWindow) {
+	void ForwardPlus::init(sa::RenderWindow* pWindow, IRenderLayer*) {
 		
 		m_pWindow = pWindow;
 		sa::Extent extent = m_pWindow->getCurrentExtent();

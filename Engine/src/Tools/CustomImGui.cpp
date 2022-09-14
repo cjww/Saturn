@@ -48,7 +48,10 @@ namespace ImGui {
 
 	void Component(comp::Transform* transform) {
 		ImGui::DragFloat3("Position", (float*)&transform->position, 0.1f);
-		ImGui::DragFloat3("Rotation", (float*)&transform->rotation, 0.1f);
+		glm::vec3 rotation = glm::degrees(glm::eulerAngles(transform->rotation));
+		if (ImGui::DragFloat3("Rotation", (float*)&rotation, 0.1f)) {
+			transform->rotation = glm::quat(glm::radians(rotation));
+		}
 		ImGui::DragFloat3("Scale", (float*)&transform->scale, 0.1f);
 	}
 

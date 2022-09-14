@@ -1,8 +1,8 @@
 #include "pch.h"
 #include "Engine.h"
 
-#include "Graphics\ForwardRenderer.h"
-#include "Graphics\ForwardPlus.h"
+#include "Graphics\RenderTechniques\ForwardPlus.h"
+#include "Graphics\RenderLayers\ImGuiRenderLayer.h"
 
 
 #include "Tools\MemoryChecker.h"

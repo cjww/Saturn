@@ -195,12 +195,15 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Graphics\IRenderLayer.cpp" />
+    <ClCompile Include="src\Graphics\RenderLayers\BloomRenderLayer.cpp" />
+    <ClCompile Include="src\Graphics\RenderLayers\ImGuiRenderLayer.cpp" />
     <ClCompile Include="src\Graphics\RenderPipeline.cpp" />
     <ClCompile Include="src\Tools\MemoryChecker.cpp" />
     <ClCompile Include="src\Application.cpp" />
     <ClCompile Include="src\ECS\ComponentBase.cpp" />
     <ClCompile Include="src\ECS\ComponentType.cpp" />
-    <ClCompile Include="src\Graphics\ForwardPlus.cpp" />
+    <ClCompile Include="src\Graphics\RenderTechniques\ForwardPlus.cpp" />
     <ClCompile Include="src\Graphics\Material.cpp" />
     <ClCompile Include="src\ScriptManager.cpp" />
     <ClCompile Include="src\ECS\MetaComponent.cpp" />
@@ -226,7 +229,11 @@
     <ClCompile Include="src\Tools\Vector.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Graphics\IRenderLayer.h" />
+    <ClInclude Include="src\Graphics\RenderLayers\BloomRenderLayer.h" />
+    <ClInclude Include="src\Graphics\RenderLayers\ImGuiRenderLayer.h" />
     <ClInclude Include="src\Graphics\RenderPipeline.h" />
+    <ClInclude Include="src\Graphics\RenderTechniques\ForwardPlus.h" />
     <ClInclude Include="src\Tools\MemoryChecker.h" />
     <ClInclude Include="src\Application.h" />
     <ClInclude Include="src\Core.h" />

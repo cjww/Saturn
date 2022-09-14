@@ -160,7 +160,7 @@ return entity;
 				entitiesDone.pop();
 			}
 
-			ImGui::End();
 		}
+		ImGui::End();
 	}
 }

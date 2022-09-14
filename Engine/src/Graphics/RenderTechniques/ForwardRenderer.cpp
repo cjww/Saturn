@@ -49,7 +49,7 @@ namespace sa {
 		m_outputTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, extent);
 
 		auto factory = m_renderer.createRenderProgram();
-		if (m_useImGui) {
+		if (!m_isRenderingToSwapchain) {
 			factory.addColorAttachment(true, m_outputTexture);
 		}
 		else {
