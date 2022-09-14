@@ -70,9 +70,7 @@ namespace sa {
 
 #ifndef IMGUI_DISABLE
 		if (ImGui::GetCurrentContext() != NULL) {
-			ImGui_ImplVulkan_Shutdown();
-			ImGui_ImplGlfw_Shutdown();
-			ImGui::DestroyContext();
+			cleanupImGui();
 		}
 #endif
 		
@@ -99,6 +97,13 @@ namespace sa {
 		ImGui_ImplVulkan_NewFrame();
 		ImGui_ImplGlfw_NewFrame();
 		ImGui::NewFrame();
+	}
+
+	void Renderer::cleanupImGui() {
+		m_pCore->cleanupImGui();
+		ImGui_ImplVulkan_Shutdown();
+		ImGui_ImplGlfw_Shutdown();
+		ImGui::DestroyContext();
 	}
 
 	void Renderer::imGuiImage(sa::Texture texture, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& tint_col, const ImVec4& border_col) {

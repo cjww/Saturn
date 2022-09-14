@@ -18,7 +18,7 @@ EditorView::EditorView(sa::Engine* pEngine, sa::RenderWindow* pWindow)
 	m_mouseSensitivity = 30.0f;
 	m_moveSpeed = 8.0f;
 
-	m_texture = m_pEngine->getRenderTechnique()->getOutputTexture();
+	m_texture = m_pEngine->getRenderPipeline().getRenderTechnique()->getOutputTexture();
 	m_sampler = sa::Renderer::get().createSampler(sa::FilterMode::NEAREST);
 
 	m_statsUpdateTime = 0.1f;
@@ -118,8 +118,8 @@ void EditorView::onImGui() {
 			}
 			static bool showLightHeatmap = false;
 			if (ImGui::Checkbox("Show Light Heatmap", &showLightHeatmap)) {
-				sa::ForwardPlus* forwardPlusTechnique = dynamic_cast<sa::ForwardPlus*>(m_pEngine->getRenderTechnique());
-				forwardPlusTechnique->setShowHeatmap(showLightHeatmap);
+				//sa::ForwardPlus* forwardPlusTechnique = dynamic_cast<sa::ForwardPlus*>(m_pEngine->getRenderTechnique());
+				//forwardPlusTechnique->setShowHeatmap(showLightHeatmap);
 			}
 			
 
@@ -141,6 +141,7 @@ void EditorView::onImGui() {
 		// render outputTexture with constant aspect ratio
 		ImVec2 availSize = ImGui::GetContentRegionAvail();
 
+		m_texture = m_pEngine->getRenderPipeline().getRenderTechnique()->getOutputTexture();
 		float aspectRatio = (float)m_texture.getExtent().height / m_texture.getExtent().width;
 		availSize.y = std::min(availSize.x * aspectRatio, (float)m_texture.getExtent().height);
 		ImGui::Image(m_texture, availSize);

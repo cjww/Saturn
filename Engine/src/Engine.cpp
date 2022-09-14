@@ -89,18 +89,23 @@ namespace sa {
 		SA_PROFILE_FUNCTION();
 
 		m_currentScene = nullptr;
-		m_pRenderTechnique = nullptr;
+		m_pWindow = pWindow;
+		
 
 		registerComponents();
 		
 		if (pWindow) {
-			m_pRenderTechnique = new ForwardPlus();
-			m_pRenderTechnique->init(pWindow, enableImgui);
+			m_renderPipeline.create(pWindow, new ForwardPlus(!enableImgui));
+			if (enableImgui)
+				m_renderPipeline.pushLayer(new ImGuiRenderLayer);
+
 			pWindow->setResizeCallback(std::bind(&Engine::onWindowResize, this, std::placeholders::_1));
 			m_windowExtent = pWindow->getCurrentExtent();
 
 			on<event::WindowResized>([&](event::WindowResized& e, Engine& emitter) {
-				m_pRenderTechnique->onWindowResize(e.newExtent);
+				//m_pRenderTechnique->onWindowResize(e.newExtent);
+				m_renderPipeline.onWindowResize(e.newExtent);
+
 				for (const auto& [id, scene] : m_scenes) {
 					for (auto& cam : scene.getActiveCameras()) {
 						Rect viewport = cam->getViewport();
@@ -112,11 +117,11 @@ namespace sa {
 					}
 				}
 
+
 			});
 		}
 		setScene("MainScene");
 	
-
 		m_isSetup = true;
 	}
 
@@ -143,34 +148,39 @@ namespace sa {
 
 	void Engine::cleanup() {
 		SA_PROFILE_FUNCTION();
-
+		/*
 		if (m_pRenderTechnique) {
 			m_pRenderTechnique->cleanup();
 			delete m_pRenderTechnique;
 		}
+		*/
 		m_scenes.clear();
 	}
 
 	void Engine::recordImGui() {
 		SA_PROFILE_FUNCTION();
-
+		/*
 		if (m_pRenderTechnique)
 			m_pRenderTechnique->beginFrameImGUI();
+		*/
+		m_renderPipeline.beginFrameImGUI();
 	}
 
 	void Engine::draw() {
 		SA_PROFILE_FUNCTION();
 
-		if (m_pRenderTechnique)
-			m_pRenderTechnique->draw(m_currentScene);	
+		if (!m_pWindow)
+			return;
+
+		m_renderPipeline.render(getCurrentScene());
 	}
 
 	std::chrono::duration<double, std::milli> Engine::getCPUFrameTime() const {
 		return m_frameTime.cpu;
 	}
-
-	IRenderTechnique* Engine::getRenderTechnique() const {
-		return m_pRenderTechnique;
+	
+	const RenderPipeline& Engine::getRenderPipeline() const {
+		return m_renderPipeline;
 	}
 
 	Scene& Engine::getScene(const std::string& name) {

@@ -134,13 +134,6 @@ namespace sa {
 		pDescriptorSet->update(binding, pDeviceBuffer->buffer, pDeviceBuffer->size, 0, pView, m_pCommandBufferSet->getBufferIndex());
 	}
 
-	/*
-	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, DynamicBuffer& buffer) {
-		updateDescriptorSet(descriptorSet, binding, buffer.getBuffer(m_pCommandBufferSet->getBufferIndex()));
-		buffer.setBufferIndex(m_pCommandBufferSet->getBufferIndex());
-	}
-	*/
-
 	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture, ResourceID sampler) {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		vk::Sampler* pSampler = RenderContext::getSampler(sampler);

@@ -10,38 +10,32 @@
 
 namespace sa {
 	class IRenderTechnique {
-	private:
-		ResourceID m_imGuiRenderProgram;
-		ResourceID m_imGuiFramebuffer;
-
 	protected:
 		Renderer& m_renderer;
 
-		bool m_useImGui;
+		bool m_isRenderingToSwapchain;
 
 		sa::RenderWindow* m_pWindow;
 
-
-		void setupImGuiPass();
+		sa::Texture2D m_outputTexture;
 
 	public:
-		IRenderTechnique();
+		IRenderTechnique(bool renderToSwapchain = true);
 		virtual ~IRenderTechnique() = default;
 
 		virtual void onWindowResize(Extent extent) = 0;
 
-		virtual void init(sa::RenderWindow* pWindow, bool setupImGui = false) = 0;
+		virtual void init(sa::RenderWindow* pWindow) = 0;
 		virtual void cleanup() = 0;
 
-		virtual void beginFrameImGUI() = 0;
+		virtual void updateData(RenderContext& context, Scene* pScene) = 0;
+		virtual void preRender(RenderContext& context, Camera* pCamera) = 0;
+		virtual void render(RenderContext& context, Camera* pCamera) = 0;
+		virtual void postRender(RenderContext& context) = 0;
 
-		virtual void draw(Scene* scene) = 0;
-		virtual const Texture& getOutputTexture() const = 0;
+		virtual const Texture& getOutputTexture() const;
 
 		virtual void updateLights(Scene* pScene) = 0;
-
-		void drawImGui(RenderContext& context);
-		bool isUsingImGui() const;
 
 		sa::Extent getCurrentExtent() const;
 		

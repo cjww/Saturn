@@ -140,11 +140,11 @@ namespace sa {
 		m_outputTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, extent);
 	
 		auto composeProgramFactory = m_renderer.createRenderProgram();
-		if (m_useImGui) {
-			composeProgramFactory.addColorAttachment(true, m_outputTexture);
+		if (m_isRenderingToSwapchain) {
+			composeProgramFactory.addSwapchainAttachment(m_pWindow->getSwapchainID());
 		}
 		else {
-			composeProgramFactory.addSwapchainAttachment(m_pWindow->getSwapchainID());
+			composeProgramFactory.addColorAttachment(true, m_outputTexture);
 		}
 
 		m_composeRenderProgram = composeProgramFactory.beginSubpass()
@@ -154,11 +154,11 @@ namespace sa {
 			.end();
 		
 
-		if (m_useImGui) {
-			m_composeFramebuffer = m_renderer.createFramebuffer(m_composeRenderProgram, { m_outputTexture });
+		if (m_isRenderingToSwapchain) {
+			m_composeFramebuffer = m_renderer.createSwapchainFramebuffer(m_composeRenderProgram, m_pWindow->getSwapchainID(), {});
 		}
 		else {
-			m_composeFramebuffer = m_renderer.createSwapchainFramebuffer(m_composeRenderProgram, m_pWindow->getSwapchainID(), {});
+			m_composeFramebuffer = m_renderer.createFramebuffer(m_composeRenderProgram, { m_outputTexture });
 		}
 
 
@@ -359,9 +359,8 @@ namespace sa {
 
 	}
 
-	void ForwardPlus::init(sa::RenderWindow* pWindow, bool setupImGui) {
+	void ForwardPlus::init(sa::RenderWindow* pWindow) {
 		
-		m_useImGui = setupImGui;
 		m_pWindow = pWindow;
 		sa::Extent extent = m_pWindow->getCurrentExtent();
 
@@ -369,10 +368,6 @@ namespace sa {
 		createLightCullingShader();
 		createColorPass(extent);
 		createComposePass(extent);
-
-		if (setupImGui) {
-			setupImGuiPass();
-		}
 
 		// Samplers
 		m_linearSampler = m_renderer.createSampler(FilterMode::LINEAR);
@@ -432,21 +427,9 @@ namespace sa {
 		*/
 	}
 
-	void ForwardPlus::beginFrameImGUI() {
-		m_renderer.newImGuiFrame();
-	}
-
-	void ForwardPlus::draw(Scene* pScene) {
-		
-		if (pScene)
+	void ForwardPlus::updateData(RenderContext& context, Scene* pScene) {
+		if (pScene) {
 			updateLights(pScene);
-
-
-		RenderContext context = m_pWindow->beginFrame();
-		if (!context)
-			return;
-
-		if (pScene != nullptr) {
 
 			collectMeshes(pScene);
 
@@ -463,64 +446,82 @@ namespace sa {
 
 			context.updateDescriptorSet(m_lightCullingDescriptorSet, 2, m_lightBuffer);
 
-			
-			context.bindVertexBuffers(0, { m_vertexBuffer });
-			context.bindIndexBuffer(m_indexBuffer);
-
-			for (const auto& camera : pScene->getActiveCameras()) {
-				SA_PROFILE_SCOPE("Draw camera");
-				
-				Matrix4x4 projViewMat = camera->getProjectionMatrix() * camera->getViewMatrix();
-
-				PerFrameBuffer perFrame;
-				perFrame.projViewMatrix = projViewMat;
-				perFrame.viewPos = camera->getPosition();
-
-				// Depth prepass
-				context.beginRenderProgram(m_depthPreRenderProgram, m_depthPreFramebuffer, SubpassContents::DIRECT);
-				context.bindPipeline(m_depthPrePipeline);
-				context.setViewport(camera->getViewport());
-				context.bindDescriptorSet(m_sceneDepthDescriptorSet, m_depthPrePipeline);
-
-
-				if (m_indirectIndexedBuffer.getElementCount<DrawIndexedIndirectCommand>() > 0) {
-					context.pushConstant(m_depthPrePipeline, ShaderStageFlagBits::VERTEX, perFrame);
-					context.drawIndexedIndirect(m_indirectIndexedBuffer.getCurrentBuffer(), 0, m_indirectIndexedBuffer.getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
-				}
-
-				context.endRenderProgram(m_depthPreRenderProgram);
-				
-				// Light culling
-				context.bindPipeline(m_lightCullingPipeline);
-				context.bindDescriptorSet(m_lightCullingDescriptorSet, m_lightCullingPipeline);
-
-				context.pushConstant(m_lightCullingPipeline, ShaderStageFlagBits::COMPUTE, camera->getProjectionMatrix());
-				context.pushConstant(m_lightCullingPipeline, ShaderStageFlagBits::COMPUTE, camera->getViewMatrix(), sizeof(Matrix4x4));
-
-				context.dispatch(m_tileCount.x, m_tileCount.y, 1);
-
-				// Main color pass
-				context.beginRenderProgram(m_colorRenderProgram, m_colorFramebuffer, SubpassContents::DIRECT);
-				context.bindPipeline(m_colorPipeline);
-				context.bindDescriptorSet(m_sceneDescriptorSet, m_colorPipeline);
-
-				context.setViewport(camera->getViewport());
-					
-				if (m_indirectIndexedBuffer.getElementCount<DrawIndexedIndirectCommand>() > 0) {
-					context.pushConstant(m_colorPipeline, ShaderStageFlagBits::VERTEX | ShaderStageFlagBits::FRAGMENT, perFrame);
-					context.pushConstant(m_colorPipeline, ShaderStageFlagBits::FRAGMENT, m_tileCount.x, sizeof(perFrame));
-
-					context.drawIndexedIndirect(m_indirectIndexedBuffer.getCurrentBuffer(), 0, m_indirectIndexedBuffer.getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
-				}
-
-				context.endRenderProgram(m_colorRenderProgram);
-			}
-			m_indirectIndexedBuffer.manualIncrement();
-			
-
 		}
-		/*
-		*/
+	}
+
+	void ForwardPlus::preRender(RenderContext& context, Camera* pCamera) {
+		if (!pCamera)
+			return;
+		
+
+		context.bindVertexBuffers(0, { m_vertexBuffer });
+		context.bindIndexBuffer(m_indexBuffer);
+
+		Matrix4x4 projViewMat = pCamera->getProjectionMatrix() * pCamera->getViewMatrix();
+
+		PerFrameBuffer perFrame;
+		perFrame.projViewMatrix = projViewMat;
+		perFrame.viewPos = pCamera->getPosition();
+
+		// Depth prepass
+		context.beginRenderProgram(m_depthPreRenderProgram, m_depthPreFramebuffer, SubpassContents::DIRECT);
+		context.bindPipeline(m_depthPrePipeline);
+		context.setViewport(pCamera->getViewport());
+		context.bindDescriptorSet(m_sceneDepthDescriptorSet, m_depthPrePipeline);
+
+
+		if (m_indirectIndexedBuffer.getElementCount<DrawIndexedIndirectCommand>() > 0) {
+			context.pushConstant(m_depthPrePipeline, ShaderStageFlagBits::VERTEX, perFrame);
+			context.drawIndexedIndirect(m_indirectIndexedBuffer.getCurrentBuffer(), 0, m_indirectIndexedBuffer.getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
+		}
+
+		context.endRenderProgram(m_depthPreRenderProgram);
+
+		// Light culling
+		context.bindPipeline(m_lightCullingPipeline);
+		context.bindDescriptorSet(m_lightCullingDescriptorSet, m_lightCullingPipeline);
+
+		context.pushConstant(m_lightCullingPipeline, ShaderStageFlagBits::COMPUTE, pCamera->getProjectionMatrix());
+		context.pushConstant(m_lightCullingPipeline, ShaderStageFlagBits::COMPUTE, pCamera->getViewMatrix(), sizeof(Matrix4x4));
+
+		context.dispatch(m_tileCount.x, m_tileCount.y, 1);
+
+	}
+
+	void ForwardPlus::render(RenderContext& context, Camera* pCamera) {
+		if (!pCamera)
+			return;
+			
+
+		Matrix4x4 projViewMat = pCamera->getProjectionMatrix() * pCamera->getViewMatrix();
+
+		PerFrameBuffer perFrame;
+		perFrame.projViewMatrix = projViewMat;
+		perFrame.viewPos = pCamera->getPosition();
+
+		// Main color pass
+		context.beginRenderProgram(m_colorRenderProgram, m_colorFramebuffer, SubpassContents::DIRECT);
+		context.bindPipeline(m_colorPipeline);
+		context.bindDescriptorSet(m_sceneDescriptorSet, m_colorPipeline);
+
+		context.setViewport(pCamera->getViewport());
+					
+		if (m_indirectIndexedBuffer.getElementCount<DrawIndexedIndirectCommand>() > 0) {
+			context.pushConstant(m_colorPipeline, ShaderStageFlagBits::VERTEX | ShaderStageFlagBits::FRAGMENT, perFrame);
+			context.pushConstant(m_colorPipeline, ShaderStageFlagBits::FRAGMENT, m_tileCount.x, sizeof(perFrame));
+
+			context.drawIndexedIndirect(m_indirectIndexedBuffer.getCurrentBuffer(), 0, m_indirectIndexedBuffer.getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
+		}
+
+		context.endRenderProgram(m_colorRenderProgram);
+
+		
+	}
+
+	void ForwardPlus::postRender(RenderContext& context) {
+		
+		m_indirectIndexedBuffer.manualIncrement();
+
 		context.beginRenderProgram(m_debugLightHeatmapRenderProgram, m_debugLightHeatmapFramebuffer, SubpassContents::DIRECT);
 		context.bindPipeline(m_debugLightHeatmapPipeline);
 		context.bindDescriptorSet(m_debugLightHeatmapDescriptorSet, m_debugLightHeatmapPipeline);
@@ -536,16 +537,6 @@ namespace sa {
 		context.draw(6, 1);
 
 		context.endRenderProgram(m_composeRenderProgram);
-
-		if (m_useImGui) {
-			drawImGui(context);
-		}
-
-		m_pWindow->display();
-	}
-
-	const Texture& ForwardPlus::getOutputTexture() const {
-		return m_outputTexture;
 	}
 
 	void ForwardPlus::updateLights(Scene* pScene) {

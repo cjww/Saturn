@@ -107,8 +107,7 @@ namespace sa {
 		void bindIndexBuffer(const Buffer& buffer);
 
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Buffer& buffer);
-		//void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, DynamicBuffer& buffer);
-
+		
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture, ResourceID sampler);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement = 0);

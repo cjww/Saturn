@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Graphics/IRenderTechnique.h"
+#include "Graphics/RenderPipeline.h"
 
 #include "AssetManager.h"
 #include "Scene.h"
@@ -15,13 +15,14 @@
 #include <rapidxml\rapidxml.hpp>
 
 
-
 namespace sa {
 
 	class Engine : public entt::emitter<Engine> {
 	private:
 		
-		IRenderTechnique* m_pRenderTechnique;
+		RenderPipeline m_renderPipeline;
+		Extent m_windowExtent;
+		RenderWindow* m_pWindow;
 
 		std::unordered_map<size_t, Scene> m_scenes;
 		Scene* m_currentScene;
@@ -40,7 +41,6 @@ namespace sa {
 		void loadFromFile(const std::filesystem::path& configPath);
 
 		void registerComponents();
-		Extent m_windowExtent;
 		void onWindowResize(Extent newExtent);
 
 	public:
@@ -59,7 +59,7 @@ namespace sa {
 
 		std::chrono::duration<double, std::milli> getCPUFrameTime() const;
 
-		IRenderTechnique* getRenderTechnique() const;
+		const RenderPipeline& getRenderPipeline() const;
 
 		Scene& getScene(const std::string& name);
 		Scene* getCurrentScene() const;

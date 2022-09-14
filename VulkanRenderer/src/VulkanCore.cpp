@@ -270,9 +270,7 @@ namespace sa {
 	}
 
 	void VulkanCore::cleanup() {
-		
-		if (m_imGuiDescriptorPool)
-			m_device.destroyDescriptorPool(m_imGuiDescriptorPool);
+		cleanupImGui();
 
 		m_memoryManager.destroy();
 		m_mainCommandPool.destroy();
@@ -355,6 +353,14 @@ namespace sa {
 		m_queues[0].waitIdle();
 		commandBuffer.destroy();	
 		ImGui_ImplVulkan_DestroyFontUploadObjects();
+	}
+
+	void VulkanCore::cleanupImGui() {
+		if (m_imGuiDescriptorPool) {
+			m_device.destroyDescriptorPool(m_imGuiDescriptorPool);
+			m_imGuiDescriptorPool = VK_NULL_HANDLE;
+		}
+		m_imGuiImages.clear();
 	}
 
 	VkDescriptorSet VulkanCore::getImGuiImageDescriptoSet(vk::ImageView* imageView, vk::ImageLayout layout) {

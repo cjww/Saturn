@@ -27,8 +27,7 @@ namespace sa {
 		ResourceID m_composePipeline = NULL_RESOURCE;
 
 		ResourceID m_composeDescriptorSet = NULL_RESOURCE;
-		Texture2D m_outputTexture; // if using Imgui
-
+		
 		ResourceID m_sceneDescriptorSet = NULL_RESOURCE;
 		
 		ResourceID m_linearSampler = NULL_RESOURCE;
@@ -86,19 +85,19 @@ namespace sa {
 		
 
 	public:
+		using IRenderTechnique::IRenderTechnique;
+
 		virtual void onWindowResize(Extent extent) override;
 
-		virtual void init(sa::RenderWindow* pWindow, bool setupImGui) override;
+		virtual void init(sa::RenderWindow* pWindow) override;
 		virtual void cleanup() override;
 
-		virtual void beginFrameImGUI() override;
-
-		virtual void draw(Scene* pScene) override;
-
-		virtual const Texture& getOutputTexture() const override;
+		virtual void updateData(RenderContext& context, Scene* pScene) override;
+		virtual void preRender(RenderContext& context, Camera* pCamera) override;
+		virtual void render(RenderContext& context, Camera* pCamera) override;
+		virtual void postRender(RenderContext& context) override;
 
 		virtual void updateLights(Scene* pScene) override;
-
 
 		const Texture2D& getLightHeatmap() const;
 		void setShowHeatmap(bool value);

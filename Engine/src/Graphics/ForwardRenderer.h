@@ -50,16 +50,17 @@ namespace sa {
 		void setupBlurPass();
 		
 	public:
-		
+		using IRenderTechnique::IRenderTechnique;
 		virtual void onWindowResize(Extent extent) override;
 
 
-		virtual void init(sa::RenderWindow* pWindow, bool setupImGui) override;
+		virtual void init(sa::RenderWindow* pWindow) override;
 		virtual void cleanup() override;
 
-		virtual void beginFrameImGUI() override;
-
-		virtual void draw(Scene* scene) override;
+		virtual void updateData(RenderContext& context, Scene* pScene) override;
+		virtual void preRender(RenderContext& context, Camera* pCamera) override;
+		virtual void render(RenderContext& context, Camera* pCamera) override;
+		virtual void postRender(RenderContext& context) override;
 
 		virtual const Texture& getOutputTexture() const override;
 

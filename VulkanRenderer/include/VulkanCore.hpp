@@ -120,8 +120,8 @@ namespace sa {
 
 #ifndef IMGUI_DISABLE
 		void initImGui(GLFWwindow* pWindow, vk::RenderPass renderPass, uint32_t subpass);
+		void cleanupImGui();
 		VkDescriptorSet getImGuiImageDescriptoSet(vk::ImageView* imageView, vk::ImageLayout layout);
-
 #endif
 		
 		vk::SurfaceKHR createSurface(GLFWwindow* pWindow);

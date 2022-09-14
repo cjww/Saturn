@@ -63,7 +63,7 @@ namespace sa {
 			.addSubpassDependency()
 			.end();
 
-		if (m_useImGui) {
+		if (!m_isRenderingToSwapchain) {
 			m_imguiRenderProgram = m_renderer.createRenderProgram()
 				.addSwapchainAttachment(m_pWindow->getSwapchainID())
 				.beginSubpass()
@@ -73,7 +73,7 @@ namespace sa {
 		}
 	
 
-		if (m_useImGui) {
+		if (!m_isRenderingToSwapchain) {
 			m_postFramebuffer = m_renderer.createFramebuffer(m_postRenderProgram, { m_outputTexture });
 
 			m_imguiFramebuffer = m_renderer.createSwapchainFramebuffer(m_imguiRenderProgram, m_pWindow->getSwapchainID(), {});
@@ -123,10 +123,8 @@ namespace sa {
 
 	}
 
-	void ForwardRenderer::init(sa::RenderWindow* pWindow, bool setupImGui) {
+	void ForwardRenderer::init(sa::RenderWindow* pWindow) {
 		SA_PROFILE_FUNCTION();
-
-		m_useImGui = setupImGui;
 
 		m_pWindow = pWindow;
 		
@@ -159,12 +157,12 @@ namespace sa {
 		}
 	}
 
-	void ForwardRenderer::draw(Scene* scene) {
+	void ForwardRenderer::updateData(RenderContext& context, Scene* scene) {
 		SA_PROFILE_FUNCTION();
 
 		updateLights(scene);
 		
-		sa::RenderContext context = m_pWindow->beginFrame();
+		//sa::RenderContext context = m_pWindow->beginFrame();
 		if (!context) {
 			if(m_useImGui) ImGui::EndFrame();
 			return;

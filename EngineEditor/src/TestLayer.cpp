@@ -59,7 +59,7 @@ namespace sa {
 		lightBox.addComponent<comp::Model>()->modelID = AssetManager::get().loadQuad();
 		*/
 
-		return entity;
+return entity;
 	}
 
 	void TestLayer::onAttach(Engine& engine, RenderWindow& window) {
@@ -68,14 +68,14 @@ namespace sa {
 
 		//createModelEntity(engine, "resources/models/Box.gltf");
 
-		
+
 		Entity groundEntity = engine.getCurrentScene()->createEntity("Ground");
 		groundEntity.addComponent<comp::Model>()->modelID = AssetManager::get().loadQuad();
 		comp::Transform* transform = groundEntity.addComponent<comp::Transform>();
 		transform->scale = { 500, 500, 1 };
 		transform->rotation = glm::rotate(transform->rotation, glm::radians(-90.f), { 1, 0, 0 });
 		transform->position.y -= 1;
-		
+
 		/*
 		Entity entity = createModelEntity(engine, "resources/models/sponza/scene.gltf");
 		entity.removeComponent<comp::Script>();
@@ -99,8 +99,6 @@ namespace sa {
 			createLight(engine, pos, colors[rand() % 7]);
 		}
 
-		/*
-		*/
 		for (int i = 0; i < 30; i++) {
 			createModelEntity(engine, "resources/models/adamHead/adamHead.gltf");
 			createModelEntity(engine, "resources/models/lieutenantHead/lieutenantHead.gltf");
@@ -121,9 +119,9 @@ namespace sa {
 			createModelEntity(engine, "resources/models/viking_room/scene.gltf", 0.2f);
 			createModelEntity(engine, "resources/models/steampunk_glasses__goggles/scene.gltf");
 		}
-		
+
 		//createModelEntity(engine, "models/viking_room/scene.gltf", 0.2f);
-		
+
 		engine.createSystemScript("test.lua");
 		engine.createSystemScript("test2.lua");
 
@@ -134,28 +132,35 @@ namespace sa {
 
 	void TestLayer::onUpdate(float dt) {
 		SA_PROFILE_FUNCTION();
-
-		std::queue<Entity> entitiesDone;
-
-		for (const auto& [entity, progress] : m_completions) {
-			if (m_infoClock.getElapsedTime() > 0.5f) {
-				m_infoClock.restart();
-				std::cout << "Entity " << entity.getComponent<comp::Name>()->name << " : " << progress.getProgress() * 100 << "%" << std::endl;
-			}
-			if (progress.isDone()) {
-				entity.getComponent<comp::Model>()->modelID = progress;
-				entitiesDone.push(entity);
-			}
-		}
-
-		while (!entitiesDone.empty()) {
-			m_completions.erase(entitiesDone.front());
-			entitiesDone.pop();
-		}
+		
 
 	}
 
 	void TestLayer::onImGuiRender() {
+		if(ImGui::Begin("Test window")) {
+			std::queue<Entity> entitiesDone;
+			std::set<ProgressView<ResourceID>*> progressSet;
+			for (const auto& [entity, progress] : m_completions) {
+				size_t size = progressSet.size();
+				progressSet.insert(&progress);
+				if (size != progressSet.size()) {
+					ImGui::Text("%s##%u", entity.getComponent<comp::Name>()->name.c_str(), (uint32_t)entity);
+					ImGui::SameLine();
+					ImGui::ProgressBar(progress.getProgress());
+				}
 
+				if (progress.isDone()) {
+					entity.getComponent<comp::Model>()->modelID = progress;
+					entitiesDone.push(entity);
+				}
+			}
+
+			while (!entitiesDone.empty()) {
+				m_completions.erase(entitiesDone.front());
+				entitiesDone.pop();
+			}
+
+			ImGui::End();
+		}
 	}
 }

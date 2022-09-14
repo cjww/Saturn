@@ -195,12 +195,12 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Graphics\RenderPipeline.cpp" />
     <ClCompile Include="src\Tools\MemoryChecker.cpp" />
     <ClCompile Include="src\Application.cpp" />
     <ClCompile Include="src\ECS\ComponentBase.cpp" />
     <ClCompile Include="src\ECS\ComponentType.cpp" />
     <ClCompile Include="src\Graphics\ForwardPlus.cpp" />
-    <ClCompile Include="src\Graphics\ForwardRenderer.cpp" />
     <ClCompile Include="src\Graphics\Material.cpp" />
     <ClCompile Include="src\ScriptManager.cpp" />
     <ClCompile Include="src\ECS\MetaComponent.cpp" />
@@ -226,6 +226,7 @@
     <ClCompile Include="src\Tools\Vector.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Graphics\RenderPipeline.h" />
     <ClInclude Include="src\Tools\MemoryChecker.h" />
     <ClInclude Include="src\Application.h" />
     <ClInclude Include="src\Core.h" />
@@ -248,7 +249,6 @@
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\ECS\Components.h" />
     <ClInclude Include="src\Engine.h" />
-    <ClInclude Include="src\Graphics\ForwardRenderer.h" />
     <ClInclude Include="src\Graphics\IRenderTechnique.h" />
     <ClInclude Include="src\structs.h" />
     <ClInclude Include="src\Tools\Clock.h" />
