@@ -81,7 +81,7 @@ namespace sa {
 	}
 
 	void Engine::onWindowResize(Extent newExtent) {
-		publish<sa::event::WindowResized>(newExtent);
+		publish<sa::engine_event::WindowResized>(newExtent);
 		m_windowExtent = newExtent;
 	}
 
@@ -102,7 +102,7 @@ namespace sa {
 			pWindow->setResizeCallback(std::bind(&Engine::onWindowResize, this, std::placeholders::_1));
 			m_windowExtent = pWindow->getCurrentExtent();
 
-			on<event::WindowResized>([&](event::WindowResized& e, Engine& emitter) {
+			on<engine_event::WindowResized>([&](engine_event::WindowResized& e, Engine& emitter) {
 				//m_pRenderTechnique->onWindowResize(e.newExtent);
 				m_renderPipeline.onWindowResize(e.newExtent);
 
@@ -128,6 +128,8 @@ namespace sa {
 	
 	void Engine::init() {
 		SA_PROFILE_FUNCTION();
+
+		publish<engine_event::SceneSet>(m_currentScene);
 
 		if (m_currentScene) {
 			m_currentScene->init();
@@ -188,6 +190,9 @@ namespace sa {
 		Scene& scene = m_scenes[std::hash<std::string>()(name)];
 		if (size != m_scenes.size()) {
 			// first use
+			scene.on<scene_event::SceneRequest>([&](const sa::scene_event::SceneRequest e, Scene&){
+				setScene(e.sceneName);
+			});
 
 		}
 		return scene;
@@ -203,8 +208,8 @@ namespace sa {
 
 	void Engine::setScene(Scene& scene) {
 		SA_PROFILE_FUNCTION();
-
 		m_currentScene = &scene;
+		publish<engine_event::SceneSet>(m_currentScene);
 		if(m_isSetup)
 			init();
 	}

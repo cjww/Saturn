@@ -18,16 +18,13 @@
     <ClCompile Include="src\EditorModule.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\EditorView.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\EngineEditor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\EntityInspector.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\SceneView.cpp">
+    <ClCompile Include="src\SceneHierarchy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\SaturnEditorApp.cpp">
@@ -36,12 +33,12 @@
     <ClCompile Include="src\TestLayer.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\SceneView.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\EditorModule.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\EditorView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\EngineEditor.h">
@@ -53,14 +50,14 @@
     <ClInclude Include="src\Events.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\SceneView.h">
+    <ClInclude Include="src\SceneHierarchy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\TestLayer.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="test.lua" />
+    <ClInclude Include="src\SceneView.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>

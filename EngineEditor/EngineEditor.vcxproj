@@ -177,24 +177,21 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\EditorModule.cpp" />
-    <ClCompile Include="src\EditorView.cpp" />
     <ClCompile Include="src\EngineEditor.cpp" />
     <ClCompile Include="src\EntityInspector.cpp" />
     <ClCompile Include="src\SaturnEditorApp.cpp" />
+    <ClCompile Include="src\SceneHierarchy.cpp" />
     <ClCompile Include="src\SceneView.cpp" />
     <ClCompile Include="src\TestLayer.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\EditorModule.h" />
-    <ClInclude Include="src\EditorView.h" />
     <ClInclude Include="src\EngineEditor.h" />
     <ClInclude Include="src\EntityInspector.h" />
     <ClInclude Include="src\Events.h" />
+    <ClInclude Include="src\SceneHierarchy.h" />
     <ClInclude Include="src\SceneView.h" />
     <ClInclude Include="src\TestLayer.h" />
-  </ItemGroup>
-  <ItemGroup>
-    <None Include="test.lua" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

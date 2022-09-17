@@ -25,6 +25,16 @@ void EntityInspector::makePopups() {
 
 EntityInspector::EntityInspector(sa::Engine* pEngine) : EditorModule(pEngine) {
 	m_selectedEntity = {};
+
+	pEngine->on<sa::engine_event::SceneSet>([&](const sa::engine_event::SceneSet& sceneSetEvent, sa::Engine& engine) {
+		sceneSetEvent.newScene->on<sa::editor_event::EntitySelected>([&](const sa::editor_event::EntitySelected& e, sa::Scene&) {
+			m_selectedEntity = e.entity;
+		});
+
+		sceneSetEvent.newScene->on<sa::editor_event::EntityDeselected>([&](const sa::editor_event::EntityDeselected&, sa::Scene&) {
+			m_selectedEntity = {};
+		});
+	});
 }
 
 EntityInspector::~EntityInspector() {
@@ -35,14 +45,6 @@ void EntityInspector::onImGui() {
 	SA_PROFILE_FUNCTION();
 
 	if (ImGui::Begin("Inspector")) {
-
-		m_pEngine->getCurrentScene()->on<sa::event::EntitySelected>([&](const sa::event::EntitySelected & e, sa::Scene&) {
-			m_selectedEntity = e.entity;
-		});
-
-		m_pEngine->getCurrentScene()->on<sa::event::EntityDeselected>([&](const sa::event::EntityDeselected&, sa::Scene&) {
-			m_selectedEntity = {};
-		});
 
 		if (m_selectedEntity) {
 			

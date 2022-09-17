@@ -1,13 +1,25 @@
 #pragma once
-#include "Camera.h"
 #include "Entity.h"
 
 namespace sa {
+	class Scene;
+	class Camera;
 	
-	namespace event {
+	namespace engine_event {
 
 		struct SceneSet {
-			std::string newSceneName;
+			Scene* newScene;
+		};
+
+		struct WindowResized {
+			Extent newExtent;
+		};
+
+	}
+	namespace scene_event {
+
+		struct SceneRequest {
+			std::string sceneName;
 		};
 
 		struct AddedCamera {
@@ -41,10 +53,5 @@ namespace sa {
 			Entity entity;
 			T& component;
 		};
-
-		struct WindowResized {
-			Extent newExtent;
-		};
-
 	}
 }

@@ -3,7 +3,7 @@
 
 // Editor events
 namespace sa {
-	namespace event {
+	namespace editor_event {
 
 		struct EntitySelected {
 			Entity entity;

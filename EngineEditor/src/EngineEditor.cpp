@@ -8,14 +8,14 @@ namespace sa {
 
 	void EngineEditor::onAttach(sa::Engine& engine, sa::RenderWindow& renderWindow) {
 
-		m_editorModules.push_back(std::make_unique<EditorView>(&engine, &renderWindow));
-		EditorView* editorView = static_cast<EditorView*>(m_editorModules.back().get());
+		m_editorModules.push_back(std::make_unique<SceneView>(&engine, &renderWindow));
+		SceneView* sceneView = static_cast<SceneView*>(m_editorModules.back().get());
 
-		engine.getCurrentScene()->addActiveCamera(editorView->getCamera());
+		engine.getCurrentScene()->addActiveCamera(sceneView->getCamera());
 
 		m_editorModules.push_back(std::make_unique<EntityInspector>(&engine));
 
-		m_editorModules.push_back(std::make_unique<SceneView>(&engine));
+		m_editorModules.push_back(std::make_unique<SceneHierarchy>(&engine));
 
 		getApp()->pushLayer(new TestLayer);
 

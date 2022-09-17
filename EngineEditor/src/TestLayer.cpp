@@ -48,18 +48,7 @@ namespace sa {
 		}
 		transform->scale *= scale;
 		entity.addComponent<comp::Script>();
-		/*
-		comp::Light* lightComp = entity.addComponent<comp::Light>();
-		lightComp->values.color = SA_COLOR_WHITE;
-		lightComp->values.position = transform->position + sa::Vector3(3, 2, -3);
-		lightComp->values.strength = 10.0f;
-
-		sa::Entity lightBox = engine.getCurrentScene()->createEntity("LightBox");
-		lightBox.addComponent<comp::Transform>()->position = lightComp->values.position;
-		lightBox.addComponent<comp::Model>()->modelID = AssetManager::get().loadQuad();
-		*/
-
-return entity;
+		return entity;
 	}
 
 	void TestLayer::onAttach(Engine& engine, RenderWindow& window) {
@@ -76,14 +65,14 @@ return entity;
 		transform->rotation = glm::rotate(transform->rotation, glm::radians(-90.f), { 1, 0, 0 });
 		transform->position.y -= 1;
 
+		createModelEntity(engine, "resources/models/adamHead/adamHead.gltf");
 		/*
 		Entity entity = createModelEntity(engine, "resources/models/sponza/scene.gltf");
 		entity.removeComponent<comp::Script>();
 
-		createModelEntity(engine, "resources/models/adamHead/adamHead.gltf");
 		createLight(engine, Vector3(2.f, 2.f, -3.f));
-
 		*/
+
 		for (int i = 0; i < 200; i++) {
 			Vector3 pos = Vector3(randomRange(0, 200), 0, randomRange(0, 200));
 			Color colors[] = {
@@ -99,6 +88,7 @@ return entity;
 			createLight(engine, pos, colors[rand() % 7]);
 		}
 
+		/*
 		for (int i = 0; i < 30; i++) {
 			createModelEntity(engine, "resources/models/adamHead/adamHead.gltf");
 			createModelEntity(engine, "resources/models/lieutenantHead/lieutenantHead.gltf");
@@ -119,6 +109,7 @@ return entity;
 			createModelEntity(engine, "resources/models/viking_room/scene.gltf", 0.2f);
 			createModelEntity(engine, "resources/models/steampunk_glasses__goggles/scene.gltf");
 		}
+		*/
 
 		//createModelEntity(engine, "models/viking_room/scene.gltf", 0.2f);
 
@@ -144,7 +135,7 @@ return entity;
 				size_t size = progressSet.size();
 				progressSet.insert(&progress);
 				if (size != progressSet.size()) {
-					ImGui::Text("%s##%u", entity.getComponent<comp::Name>()->name.c_str(), (uint32_t)entity);
+					ImGui::Text("%s", entity.getComponent<comp::Name>()->name.c_str());
 					ImGui::SameLine();
 					ImGui::ProgressBar(progress.getProgress());
 				}

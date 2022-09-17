@@ -23,7 +23,7 @@ namespace sa {
 
 	void Scene::update(float dt) {
 		SA_PROFILE_FUNCTION();
-		publish<event::UpdatedScene>(dt);
+		publish<scene_event::UpdatedScene>(dt);
 	}
 
 	Camera* Scene::newCamera() {
@@ -41,14 +41,14 @@ namespace sa {
 		size_t s = m_activeCameras.size();
 		m_activeCameras.insert(camera);
 		if(s != m_activeCameras.size())
-			publish<event::AddedCamera>(camera);
+			publish<scene_event::AddedCamera>(camera);
 	}
 
 	void Scene::removeActiveCamera(Camera* camera) {
 		size_t s = m_activeCameras.size();
 		m_activeCameras.erase(camera);
 		if (s != m_activeCameras.size())
-			publish<event::RemovedCamera>(camera);
+			publish<scene_event::RemovedCamera>(camera);
 	}
 
 	std::set<Camera*> Scene::getActiveCameras() const {
@@ -56,18 +56,18 @@ namespace sa {
 	}
 
 	void Scene::setScene(const std::string& name) {
-		publish<event::SceneSet>(name);
+		publish<scene_event::SceneRequest>(name);
 	}
 
 	Entity Scene::createEntity(const std::string& name) {
 		Entity e(this, create());
 		e.addComponent<comp::Name>(name);
-		publish<event::EntityCreated>(e);
+		publish<scene_event::EntityCreated>(e);
 		return e;
 	}
 
 	void Scene::destroyEntity(const Entity& entity) {
-		publish<event::EntityDestroyed>(entity);
+		publish<scene_event::EntityDestroyed>(entity);
 		destroy(entity);
 	}
 

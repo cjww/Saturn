@@ -3,8 +3,8 @@
 #include <Application.h>
 #include <RenderWindow.hpp>
 
-#include "EditorView.h"
 #include "SceneView.h"
+#include "SceneHierarchy.h"
 #include "EntityInspector.h"
 
 namespace sa {
