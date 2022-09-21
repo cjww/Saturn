@@ -4,6 +4,9 @@
 #include "Components.h"
 
 namespace sa {
+    void Entity::reg() {
+        
+    }
 
     Entity::Entity(entt::registry* pRegistry, entt::entity entity)
         : m_pRegistry(pRegistry)
@@ -58,12 +61,22 @@ namespace sa {
     }
 
     void updateEntityType() {
-        auto type = LuaAccessable::luaReg<Entity>();
+        auto type = LuaAccessable::registerType<Entity>();
         for (const auto& name : LuaAccessable::getRegisteredComponents()) {
             auto varName = utils::toLower(name);
-            type[varName] = sol::property([=](const Entity& self) -> sol::lua_value {
-                auto metaComp = self.getComponent(name);
+            type[varName] = sol::property(
+            [=](const Entity& self) -> sol::lua_value {
+                MetaComponent metaComp = self.getComponent(name);
                 return LuaAccessable::cast(metaComp);
+            },
+            [=](Entity& self, sol::lua_value component) {
+                if (!component.is<sol::nil_t>()) {
+                    // Add component
+                    MetaComponent mc = self.addComponent(name);
+                    LuaAccessable::copy(mc, component);
+                    return;
+                }
+                self.removeComponent(name);
             });
         }
         type["id"] = sol::readonly_property(&Entity::operator entt::id_type);

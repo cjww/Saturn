@@ -11,7 +11,10 @@
 namespace ImGui {
 	static struct PopupPayload {
 		sa::ComponentType type;
+		std::string name;
 	} payload;
+
+	void displayLuaTable(std::string name, sol::table table);
 
 	void Component(comp::Transform* transform);
 	void Component(comp::Model* model);

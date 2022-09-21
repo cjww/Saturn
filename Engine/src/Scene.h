@@ -9,6 +9,8 @@
 
 #include "Tools\utils.h"
 
+#include "ScriptManager.h"
+
 namespace sa {
 	typedef uint32_t SceneID;
 
@@ -19,6 +21,9 @@ namespace sa {
 
 		using entt::registry::destroy;
 		using entt::registry::create;
+
+		ScriptManager m_scriptManager;
+
 
 	public:
 		Scene();
@@ -38,6 +43,10 @@ namespace sa {
 
 		Entity createEntity(const std::string& name = "Entity");
 		void destroyEntity(const Entity& entity);
+
+		void addScript(const Entity& entity, const std::filesystem::path& path);
+		void removeScript(const Entity& entity, const std::string& name);
+		std::vector<ScriptManager::EntityScript> getAssignedScripts(const Entity& entity) const;
 
 		size_t getEntityCount() const;
 

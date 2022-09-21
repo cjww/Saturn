@@ -43,10 +43,15 @@ namespace comp {
 
 	struct Model : public sa::LuaAccessable {
 		ResourceID modelID = NULL_RESOURCE;
-		sa::Buffer buffer;
-		ResourceID descriptorSet = NULL_RESOURCE;
 
-		static void luaReg(sol::usertype<comp::Model>& type) {
+		Model() = default;
+		Model(const std::string& name);
+
+		static void reg() {
+			auto type = registerType<Model>("",
+				sol::constructors<Model(), Model(const std::string&)>()
+				);
+
 			type["id"] = &comp::Model::modelID;
 		}
 
@@ -62,7 +67,8 @@ namespace comp {
 			return glm::translate(sa::Matrix4x4(1), position) * glm::toMat4(rotation) * glm::scale(sa::Matrix4x4(1), scale);
 		}
 
-		static void luaReg(sol::usertype<comp::Transform>& type) {
+		static void reg() {
+			auto type = registerType<Transform>();
 			type["position"] = &comp::Transform::position;
 			type["rotation"] = &comp::Transform::rotation;
 			type["scale"] = &comp::Transform::scale;
@@ -72,7 +78,8 @@ namespace comp {
 	struct Script : public sa::LuaAccessable {
 		sol::environment env;
 
-		static void luaReg(sol::usertype<comp::Script>& type) {
+		static void reg() {
+			auto type = registerType<Script>();
 			type["__index"] = [](const comp::Script& script, const std::string& key) {
 				return script.env[key];
 			};
@@ -86,8 +93,16 @@ namespace comp {
 	struct Light : public sa::LuaAccessable {
 		unsigned int index;
 		sa::LightData values;
-		static void luaReg(sol::usertype<comp::Light>& type) {
+
+		Light() = default;
+
+		static void reg() {
+			auto type = registerType<Light>("", 
+				sol::constructors<Light()>()
+			);
+			type["intensity"] = sol::property([](const Light& self) {return self.values.intensity; }, [](Light& self, float value) { self.values.intensity = value; });
 			//type["color"] = [](comp::Light& light) -> sa::Color& {return std::ref(light.values.color); };
+			
 		}
 	};
 

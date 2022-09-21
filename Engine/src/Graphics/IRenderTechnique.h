@@ -24,7 +24,7 @@ namespace sa {
 		//virtual void init(sa::RenderWindow* pWindow) = 0;
 		virtual void cleanup() = 0;
 
-		virtual void updateData(RenderContext& context, Scene* pScene) = 0;
+		virtual void updateData(RenderContext& context) = 0;
 		/*
 		virtual void preRender(RenderContext& context, Camera* pCamera) = 0;
 		virtual void render(RenderContext& context, Camera* pCamera) = 0;
@@ -33,6 +33,8 @@ namespace sa {
 
 
 		virtual void updateLights(Scene* pScene) = 0;
+		virtual void collectMeshes(Scene* pScene) = 0;
+
 
 		sa::Extent getCurrentExtent() const;
 		

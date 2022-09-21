@@ -50,26 +50,58 @@ namespace sa {
 		}
 	}
 
-	void Engine::registerComponents() {
+	void Engine::reg() {
 		{
-			//auto type = m_scriptManager.registerType<Vector3>();
-			auto type = LuaAccessable::luaReg<Vector3>("Vec3", sol::constructors<Vector3(float, float, float), Vector3(float)>());
+			auto type = LuaAccessable::registerType<Vector3>("Vec3", 
+				sol::constructors<Vector3(float, float, float), Vector3(float)>(),
+				sol::meta_function::addition, &Vector3::operator+=,
+				sol::meta_function::subtraction, &Vector3::operator-=,
+				sol::meta_function::multiplication, [](const Vector3& self, sol::lua_value value) -> Vector3 {
+					if (value.is<float>()) {
+						return self * value.as<float>();
+					}
+					else if (value.is<Vector3>()) {
+						return self * value.as<Vector3>();
+					}
+					throw std::runtime_error("Vec3 __mul: Unmatched type");
+				},
+				sol::meta_function::division, [](const Vector3& self, sol::lua_value value) -> Vector3 {
+					if (value.is<float>()) {
+						return self / value.as<float>();
+					}
+					else if (value.is<Vector3>()) {
+						return self / value.as<Vector3>();
+					}
+					throw std::runtime_error("Vec3 __div: Unmatched type");
+				},
+				
+				sol::meta_function::length, &Vector3::length,
+				sol::meta_function::to_string, &Vector3::toString
+			);
 			type["x"] = &Vector3::x;
 			type["y"] = &Vector3::y;
 			type["z"] = &Vector3::z;
-			
+			type["len"] = &Vector3::length;
+			type["cross"] = [](const Vector3& v1, const Vector3& v2) -> Vector3 {
+				return glm::cross(v1, v2);
+			};
+			type["dot"] = [](const Vector3& v1, const Vector3& v2) -> float {
+				return glm::dot((glm::vec3)v1, (glm::vec3)v2);
+			};
 		}
+		
+
 		{
-			auto type = LuaAccessable::luaReg<glm::quat>("Quat");
+			auto type = LuaAccessable::registerType<glm::quat>("Quat");
 			type["rotate"] = [](glm::quat& self, float angle, Vector3 axis) {
 				self = glm::rotate(self, glm::radians(angle), axis);
 			};
 			type["Identity"] = &glm::quat_identity<float, glm::packed_highp>;
 		}
+
 		/*
 		{
-			//auto type = m_scriptManager.registerType<Vector3>();
-			auto type = LuaAccessable::luaReg<Color>("Color");
+			auto type = LuaAccessable::registerType<Color>("Color");
 			type["r"] = &Color::r;
 			type["g"] = &Color::g;
 			type["b"] = &Color::b;
@@ -92,7 +124,7 @@ namespace sa {
 		m_pWindow = pWindow;
 		
 
-		registerComponents();
+		reg();
 		
 		if (pWindow) {
 			m_renderPipeline.create(pWindow, new ForwardPlus(!enableImgui));
@@ -103,7 +135,6 @@ namespace sa {
 			m_windowExtent = pWindow->getCurrentExtent();
 
 			on<engine_event::WindowResized>([&](engine_event::WindowResized& e, Engine& emitter) {
-				//m_pRenderTechnique->onWindowResize(e.newExtent);
 				m_renderPipeline.onWindowResize(e.newExtent);
 
 				for (const auto& [id, scene] : m_scenes) {
@@ -150,21 +181,13 @@ namespace sa {
 
 	void Engine::cleanup() {
 		SA_PROFILE_FUNCTION();
-		/*
-		if (m_pRenderTechnique) {
-			m_pRenderTechnique->cleanup();
-			delete m_pRenderTechnique;
-		}
-		*/
+		
 		m_scenes.clear();
 	}
 
 	void Engine::recordImGui() {
 		SA_PROFILE_FUNCTION();
-		/*
-		if (m_pRenderTechnique)
-			m_pRenderTechnique->beginFrameImGUI();
-		*/
+		
 		m_renderPipeline.beginFrameImGUI();
 	}
 
@@ -215,7 +238,7 @@ namespace sa {
 	}
 
 	void Engine::createSystemScript(const std::string& name) {
-		m_scriptManager.load(name);
+		m_scriptManager.loadSystemScript(name);
 	}
 
 }

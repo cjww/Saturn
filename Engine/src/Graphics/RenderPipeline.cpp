@@ -43,14 +43,18 @@ namespace sa {
 		// collect meshes
 		//m_taskflow.clear();
 		
-		
+		m_pRenderTechnique->updateLights(pScene);
+		m_pRenderTechnique->collectMeshes(pScene);
+		m_cameras = pScene->getActiveCameras();
+
+		//m_executor.async([&]() {
 		m_context = m_pWindow->beginFrame();
 		if (!m_context)
 			return false;
 		
-		m_pRenderTechnique->updateData(m_context, pScene);
+		m_pRenderTechnique->updateData(m_context);
 
-		for (auto cam : pScene->getActiveCameras()) {
+		for (auto cam : m_cameras) {
 			m_pRenderTechnique->preRender(m_context, cam);
 			for (auto& layer : m_layers) {
 				layer->preRender(m_context, cam);
@@ -67,6 +71,8 @@ namespace sa {
 		}
 
 		m_pWindow->display();
+		//});
+
 		return true;
 	}
 

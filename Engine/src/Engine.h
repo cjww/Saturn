@@ -40,7 +40,7 @@ namespace sa {
 		void loadXML(const std::filesystem::path& path, rapidxml::xml_document<>& xml, std::string& xmlStr);
 		void loadFromFile(const std::filesystem::path& configPath);
 
-		void registerComponents();
+		void reg();
 		void onWindowResize(Extent newExtent);
 
 	public:

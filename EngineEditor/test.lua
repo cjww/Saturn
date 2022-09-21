@@ -14,25 +14,26 @@ function init()
 			self.count = self.count + 1
 		end
 	}
-
+	print("system1: ", transform, _G)
+	
 end
 
 function update(dt)
 	
-	--print("system1: ", transform.position.x, transform.position.y, transform.position.z)
-
+	
 	if up then
 		transform.position.y = interpolate(transform.position.y, -2, dt)
-
+		
 		if transform.position.y + 2 < 0.1 then
 			up = false
 			myTable:myFunc()
 		end
 	else
 		transform.position.y = interpolate(transform.position.y, 0, dt)
-
+		
 		if transform.position.y > -0.1 then
 			up = true
 		end
 	end
+	
 end

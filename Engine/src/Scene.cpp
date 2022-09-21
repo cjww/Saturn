@@ -18,12 +18,13 @@ namespace sa {
 	}
 
 	void Scene::init() {
-
+		m_scriptManager.init(this);
 	}
 
 	void Scene::update(float dt) {
 		SA_PROFILE_FUNCTION();
 		publish<scene_event::UpdatedScene>(dt);
+		m_scriptManager.update(dt, this);
 	}
 
 	Camera* Scene::newCamera() {
@@ -69,6 +70,18 @@ namespace sa {
 	void Scene::destroyEntity(const Entity& entity) {
 		publish<scene_event::EntityDestroyed>(entity);
 		destroy(entity);
+	}
+
+	void Scene::addScript(const Entity& entity, const std::filesystem::path& path) {
+		m_scriptManager.addScript(entity, path);
+	}
+
+	void Scene::removeScript(const Entity& entity, const std::string& name) {
+		m_scriptManager.removeScript(entity, name);
+	}
+
+	std::vector<ScriptManager::EntityScript> Scene::getAssignedScripts(const Entity& entity) const {
+		return m_scriptManager.getEntityScripts(entity);
 	}
 
 	size_t Scene::getEntityCount() const {

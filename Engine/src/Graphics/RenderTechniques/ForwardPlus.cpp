@@ -427,26 +427,21 @@ namespace sa {
 		*/
 	}
 
-	void ForwardPlus::updateData(RenderContext& context, Scene* pScene) {
-		if (pScene) {
-			updateLights(pScene);
-
-			collectMeshes(pScene);
-
-			context.updateDescriptorSet(m_sceneDepthDescriptorSet, 0, m_objectBuffer.getCurrentBuffer());
+	void ForwardPlus::updateData(RenderContext& context) {
+		
+		context.updateDescriptorSet(m_sceneDepthDescriptorSet, 0, m_objectBuffer.getCurrentBuffer());
 
 
-			context.updateDescriptorSet(m_sceneDescriptorSet, 0, m_objectBuffer);
-			context.updateDescriptorSet(m_sceneDescriptorSet, 1, m_lightBuffer.getCurrentBuffer());
-			context.updateDescriptorSet(m_sceneDescriptorSet, 2, m_materialBuffer);
-			context.updateDescriptorSet(m_sceneDescriptorSet, 3, m_materialIndicesBuffer);
-			context.updateDescriptorSet(m_sceneDescriptorSet, 4, m_lightIndexBuffer);
+		context.updateDescriptorSet(m_sceneDescriptorSet, 0, m_objectBuffer);
+		context.updateDescriptorSet(m_sceneDescriptorSet, 1, m_lightBuffer.getCurrentBuffer());
+		context.updateDescriptorSet(m_sceneDescriptorSet, 2, m_materialBuffer);
+		context.updateDescriptorSet(m_sceneDescriptorSet, 3, m_materialIndicesBuffer);
+		context.updateDescriptorSet(m_sceneDescriptorSet, 4, m_lightIndexBuffer);
 
-			context.updateDescriptorSet(m_sceneDescriptorSet, 6, m_textures);
+		context.updateDescriptorSet(m_sceneDescriptorSet, 6, m_textures);
 
-			context.updateDescriptorSet(m_lightCullingDescriptorSet, 2, m_lightBuffer);
+		context.updateDescriptorSet(m_lightCullingDescriptorSet, 2, m_lightBuffer);
 
-		}
 	}
 
 	void ForwardPlus::preRender(RenderContext& context, Camera* pCamera) {

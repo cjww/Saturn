@@ -5,35 +5,44 @@
 #include "ECS/Entity.h"
 
 #include <sol/sol.hpp>
-#include "Scene.h"
 
 #include <Tools/Logger.hpp>
 
 
 namespace sa {
 
+	class Scene;
+
 	class ScriptManager {
 	public:
-		struct Script {
+		struct SystemScript {
 			sol::environment env;
 			sol::function func;
 			std::vector<ComponentType> components;
 		};
 
+		struct EntityScript {
+			std::string name;
+			sol::environment env;
+			EntityScript(std::string name, sol::environment env)
+				: name(name)
+				, env(env) 
+			{}
+		};
+
 	private:
 
-		std::unordered_map<std::string, Script> m_scripts;
-		std::unordered_map<size_t, sol::table> m_customComponents;
-
-
-		sol::state m_lua;
-
-		std::unordered_map<std::string, std::function<sol::lua_value(MetaComponent&)>> m_componentCasters;
-
-		sol::lua_value castComponent(MetaComponent& metaComp);
-
+		std::unordered_map<std::string, SystemScript> m_systemScripts;
+		
+		std::unordered_map<size_t, sol::safe_function> m_scripts;
+		std::unordered_map<Entity, std::unordered_map<std::string, size_t>> m_entityScriptIndices;
+		std::vector<EntityScript> m_allScripts;
+		
 		template<typename ...Args>
 		void tryCall(const sol::environment& env, const std::string& functionName, Args&& ...args);
+
+		template<typename ...Args>
+		void tryCall(const sol::environment& env, const sol::safe_function& function, Args&& ...args);
 
 		void setComponents(const Entity& entity, sol::environment& env, std::vector<ComponentType>& components);
 
@@ -42,41 +51,40 @@ namespace sa {
 		ScriptManager();
 		virtual ~ScriptManager();
 
-		void load(const std::string& path);
+		void loadSystemScript(const std::string& path);
+
+		void addScript(const Entity& entity, const std::filesystem::path& path);
+		void removeScript(const Entity& entity, const std::string& name);
+
+		std::vector<EntityScript> getEntityScripts(const Entity& entity) const;
 
 		void init(Scene* pScene);
 		void update(float dt, Scene* pScene);
-
-		template<typename T>
-		sol::usertype<T> registerComponent();
-
-		template<typename T>
-		sol::usertype<T> registerType();
 
 	};
 
 	template<typename ...Args>
 	inline void ScriptManager::tryCall(const sol::environment& env, const std::string& functionName, Args&& ...args) {
 		sol::safe_function func = env[functionName];
-		if (func != sol::nil) {
-			env.set_on(func);
-			auto r = func(args...);
-			if (!r.valid()) {
-				SA_DEBUG_LOG_ERROR(lua_tostring(LuaAccessable::getState(), -1));
-			}
+		if (func == sol::nil) {
+			return;
+		}
+		env.set_on(func);
+		auto r = func(args...);
+		if (!r.valid()) {
+			SA_DEBUG_LOG_ERROR(lua_tostring(LuaAccessable::getState(), -1));
 		}
 	}
-	
-	template<typename T>
-	inline sol::usertype<T> ScriptManager::registerComponent() {
-		m_componentCasters[getComponentName<T>()] = [](MetaComponent& comp) -> sol::lua_value {
-			return comp.cast<T>();
-		};
-		return registerType<T>();
-	}
 
-	template<typename T>
-	inline sol::usertype<T> ScriptManager::registerType() {
-		return m_lua.new_usertype<T>(getComponentName<T>());
+	template<typename ...Args>
+	inline void ScriptManager::tryCall(const sol::environment& env, const sol::safe_function& function, Args&& ...args) {
+		if (function == sol::nil) {
+			return;
+		}
+		env.set_on(function);
+		auto r = function(args...);
+		if (!r.valid()) {
+			SA_DEBUG_LOG_ERROR(lua_tostring(LuaAccessable::getState(), -1));
+		}
 	}
 }

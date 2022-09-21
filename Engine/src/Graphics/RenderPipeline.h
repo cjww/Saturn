@@ -11,8 +11,10 @@ namespace sa {
 
 		std::vector<IRenderLayer*> m_layers;
 
-		tf::Taskflow m_taskflow;
 		tf::Executor m_executor;
+
+		std::set<Camera*> m_cameras;
+
 	public:
 		RenderPipeline();
 		virtual ~RenderPipeline();

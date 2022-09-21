@@ -10,6 +10,15 @@ void EntityInspector::makePopups() {
 		ImGui::EndPopup();
 	}
 
+	if (ImGui::BeginPopup("Remove script?")) {
+		ImGui::Text("Remove?");
+		if (ImGui::Button("Yes")) {
+			ImGui::CloseCurrentPopup();
+			m_pEngine->getCurrentScene()->removeScript(m_selectedEntity, ImGui::payload.name);
+		}
+		ImGui::EndPopup();
+	}
+
 	if (ImGui::BeginPopup("Select Component")) {
 		for (auto type : sa::ComponentType::getRegisteredComponents()) {
 			if (type == sa::getComponentType<comp::Name>())
@@ -21,6 +30,17 @@ void EntityInspector::makePopups() {
 		}
 		ImGui::EndPopup();
 	}
+
+	if (ImGui::BeginPopup("Select Script")) {
+		std::string buffer;
+		if(ImGui::InputText("Script Name", &buffer, ImGuiInputTextFlags_EnterReturnsTrue)) {
+			m_pEngine->getCurrentScene()->addScript(m_selectedEntity, buffer);
+			ImGui::CloseCurrentPopup();
+		}
+
+		ImGui::EndPopup();
+	}
+
 }
 
 EntityInspector::EntityInspector(sa::Engine* pEngine) : EditorModule(pEngine) {
@@ -51,7 +71,6 @@ void EntityInspector::onImGui() {
 			makePopups();
 			
 			char buffer[IMGUI_BUFFER_SIZE_TINY];
-			//sa::Scene* pScene= m_pEngine->getCurrentScene();
 			comp::Name* nameComp = m_selectedEntity.getComponent<comp::Name>();
 
 			
@@ -65,15 +84,34 @@ void EntityInspector::onImGui() {
 			ImGui::Component<comp::Script>(m_selectedEntity);
 			ImGui::Component<comp::Light>(m_selectedEntity);
 
-			
+			// Display entity scripts
+			for (auto& script : m_pEngine->getCurrentScene()->getAssignedScripts(m_selectedEntity)) {
+				ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
+				static bool visable = true;
+
+				if (ImGui::CollapsingHeader(script.name.c_str(), &visable)) {
+					ImGui::displayLuaTable("Environment##" + script.name, script.env);
+				}
+				if (!visable) {
+					ImGui::OpenPopup("Remove script?");
+					ImGui::payload.name = script.name;
+					visable = true;
+				}
+			}
+
+
 			
 			ImGui::Separator();
 			ImGui::Spacing();
 			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 3);
-			
 			if (ImGui::Button("Add Component +", ImVec2(-ImGui::GetWindowContentRegionWidth() / 3.f, 0))) {
 				ImGui::OpenPopup("Select Component");
 			}
+			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 3);
+			if (ImGui::Button("Add Script +", ImVec2(-ImGui::GetWindowContentRegionWidth() / 3.f, 0))) {
+				ImGui::OpenPopup("Select Script");
+			}
+
 		}
 
 	}

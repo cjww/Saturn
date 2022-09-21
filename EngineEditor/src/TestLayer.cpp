@@ -47,7 +47,11 @@ namespace sa {
 			m_column++;
 		}
 		transform->scale *= scale;
-		entity.addComponent<comp::Script>();
+		//entity.addComponent<comp::Script>();
+
+		engine.getCurrentScene()->addScript(entity, "Movable.lua");
+		engine.getCurrentScene()->addScript(entity, "Inventory.lua");
+
 		return entity;
 	}
 
@@ -65,7 +69,7 @@ namespace sa {
 		transform->rotation = glm::rotate(transform->rotation, glm::radians(-90.f), { 1, 0, 0 });
 		transform->position.y -= 1;
 
-		createModelEntity(engine, "resources/models/adamHead/adamHead.gltf");
+		Entity adam = createModelEntity(engine, "resources/models/adamHead/adamHead.gltf");
 		/*
 		Entity entity = createModelEntity(engine, "resources/models/sponza/scene.gltf");
 		entity.removeComponent<comp::Script>();
@@ -88,12 +92,12 @@ namespace sa {
 			createLight(engine, pos, colors[rand() % 7]);
 		}
 
-		/*
 		for (int i = 0; i < 30; i++) {
 			createModelEntity(engine, "resources/models/adamHead/adamHead.gltf");
 			createModelEntity(engine, "resources/models/lieutenantHead/lieutenantHead.gltf");
 			createModelEntity(engine, "resources/models/Suzanne.dae");
 		}
+		/*
 
 		for (int i = 0; i < 30; i++) {
 			createModelEntity(engine, "resources/models/adamHead/adamHead.gltf");
@@ -112,11 +116,12 @@ namespace sa {
 		*/
 
 		//createModelEntity(engine, "models/viking_room/scene.gltf", 0.2f);
-
+		/*
 		engine.createSystemScript("test.lua");
 		engine.createSystemScript("test2.lua");
-
-
+		*/
+		engine.getCurrentScene()->addScript(adam, "Movable.lua");
+		engine.getCurrentScene()->addScript(adam, "Inventory.lua");
 
 
 	}

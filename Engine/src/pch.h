@@ -40,6 +40,9 @@
 #include <glm/gtc/matrix_transform.hpp>
 #include <glm/gtx/rotate_vector.hpp>
 #include <glm/mat4x4.hpp>
+#include <glm\geometric.hpp>
+
+#include <glm/common.hpp>
 
 // My code
 #include "Core.h"

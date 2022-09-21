@@ -12,6 +12,10 @@ namespace sa {
 		return s_casters[metaComponent.getTypeName()](metaComponent);
 	}
 
+	void LuaAccessable::copy(sa::MetaComponent& dest, sol::lua_value srcValue) {
+		s_copyCasters[dest.getTypeName()](dest, srcValue);
+	}
+
 	std::vector<std::string> LuaAccessable::getRegisteredComponents() {
 		std::vector<std::string> names;
 		names.reserve(s_casters.size());

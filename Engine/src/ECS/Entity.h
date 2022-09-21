@@ -13,6 +13,8 @@ namespace sa {
 		entt::registry* m_pRegistry;
 		entt::entity m_entity;
 	public:
+		static void reg();
+
 		Entity(entt::registry* pRegistry, entt::entity entity);
 		Entity(const Entity& other) = default;
 		Entity();
@@ -100,7 +102,6 @@ namespace sa {
 		return &m_pRegistry->emplace_or_replace<T>(m_entity, args...);
 	}
 
-
 	template<typename T>
 	inline void Entity::removeComponent() {
 		if (this->isNull()) {
@@ -134,8 +135,8 @@ namespace sa {
 		}
 		if constexpr (std::is_base_of_v<sa::LuaAccessable, std::decay_t<Comp>>) {
 			
-			auto type = LuaAccessable::registerComponent<Comp>();
-			Comp::luaReg(type);
+			LuaAccessable::registerComponent<Comp>();
+			Comp::reg();
 
 			updateEntityType();
 

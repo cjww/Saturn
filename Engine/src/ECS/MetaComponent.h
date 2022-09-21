@@ -14,6 +14,8 @@ namespace sa {
 
 		template<typename T>
 		T* cast();
+		template<typename... Args>
+		void emplace(Args&& ... args);
 		
 		void* data();
 
@@ -30,6 +32,11 @@ namespace sa {
 		if (!ptr)
 			return nullptr;
 		return *ptr;
+	}
+
+	template<typename ...Args>
+	inline void MetaComponent::emplace(Args && ...args) {
+		m_data.emplace(args...);
 	}
 
 }

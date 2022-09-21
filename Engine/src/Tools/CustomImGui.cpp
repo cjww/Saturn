@@ -3,36 +3,68 @@
 
 namespace ImGui {
 
-	void displayTable(std::string name, sol::table table) {
-		if (ImGui::TreeNode(name.c_str())) {
+	void displayLuaTable(std::string name, sol::table table) {
+		bool open = ImGui::TreeNode(name.c_str());
+		if (ImGui::IsItemHovered()) {
+			ImGui::SetTooltip("table");
+		}
+		if (open) {	
 			for (auto& [key, value] : table) {
 				switch (value.get_type()) {
 					case sol::type::userdata:
-						ImGui::Text("%s : userdata", key.as<std::string>().c_str());
+					{
+						std::string valueAsStr = sa::LuaAccessable::getState()["tostring"](value);
+						std::string str = key.as<std::string>() + " = " + valueAsStr;
+						ImGui::Text(str.c_str());
+						if(ImGui::IsItemHovered()) {
+							ImGui::SetTooltip("userdata");
+						}
 						break;
-					case sol::type::table:
-						displayTable(key.as<std::string>(), value.as<sol::table>());
+					}
+					case sol::type::table: 
+					{
+						std::string keyString;
+						if (!key.is<int>()) {
+							keyString = key.as<std::string>();
+						}
+						else {
+							keyString = std::to_string(key.as<int>());
+						}
+						displayLuaTable(keyString, value.as<sol::table>());
+
 						break;
+					}
 					case sol::type::function:
-						ImGui::Text("%s : function", key.as<std::string>().c_str());
+						ImGui::Text(key.as<std::string>().c_str());
+						if (ImGui::IsItemHovered()) {
+							ImGui::SetTooltip("function");
+						}
 						break;
-			
 					case sol::type::string: {
 						std::string v = value.as<std::string>();
 						ImGui::InputText(key.as<std::string>().c_str(), &v);
 						table[key] = v;
+						if (ImGui::IsItemHovered()) {
+							ImGui::SetTooltip("string");
+						}
 						break;
 					}
 					case sol::type::number: {
 						float v = value.as<float>();
 						ImGui::InputFloat(key.as<std::string>().c_str(), &v);
 						table[key] = v;
+						if (ImGui::IsItemHovered()) {
+							ImGui::SetTooltip("number");
+						}
 						break;
 					}
 					case sol::type::boolean: {
 						bool v = value.as<bool>();
 						ImGui::Checkbox(key.as<std::string>().c_str(), &v);
 						table[key] = v;
+						if (ImGui::IsItemHovered()) {
+							ImGui::SetTooltip("boolean");
+						}
 						break;
 					}
 					default:
@@ -44,6 +76,7 @@ namespace ImGui {
 
 			ImGui::TreePop();
 		}
+		
 	}
 
 	void Component(comp::Transform* transform) {
@@ -77,7 +110,7 @@ namespace ImGui {
 		if (!script->env.valid())
 			return;
 
-		displayTable("Environment", script->env);
+		displayLuaTable("Environment", script->env);
 
 	}
 

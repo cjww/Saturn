@@ -81,7 +81,6 @@ namespace sa {
 		
 		void updateDescriptorSets();
 
-		void collectMeshes(Scene* pScene);
 		
 
 	public:
@@ -92,12 +91,13 @@ namespace sa {
 		virtual void init(sa::RenderWindow* pWindow, IRenderLayer* = nullptr) override;
 		virtual void cleanup() override;
 
-		virtual void updateData(RenderContext& context, Scene* pScene) override;
+		virtual void updateData(RenderContext& context) override;
 		virtual void preRender(RenderContext& context, Camera* pCamera) override;
 		virtual void render(RenderContext& context, Camera* pCamera) override;
 		virtual void postRender(RenderContext& context) override;
 
 		virtual void updateLights(Scene* pScene) override;
+		virtual void collectMeshes(Scene* pScene) override;
 
 		const Texture2D& getLightHeatmap() const;
 		void setShowHeatmap(bool value);
