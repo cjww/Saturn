@@ -6,6 +6,8 @@ function init()
     entity.light = l
 
     timer = 0.0
+    print("init movable")
+    
 end
 
 

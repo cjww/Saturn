@@ -16,7 +16,7 @@ private:
 	float m_mouseSensitivity;
 	float m_moveSpeed;
 
-	ImVec2 m_displayedSize;
+	glm::vec2 m_displayedSize;
 	float m_deltaTime;
 	bool m_isDraging;
 	sa::Vector3 m_dragDirection;
@@ -39,7 +39,7 @@ public:
 	virtual ~SceneView() override;
 
 	// moves camera around scene according to input
-	void update(float dt);
+	virtual void update(float dt) override;
 
 	virtual void onImGui() override;
 

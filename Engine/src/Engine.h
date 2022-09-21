@@ -21,6 +21,8 @@ namespace sa {
 	private:
 		
 		RenderPipeline m_renderPipeline;
+		bool m_isImGuiRecording;
+
 		Extent m_windowExtent;
 		RenderWindow* m_pWindow;
 

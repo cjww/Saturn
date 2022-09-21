@@ -1,10 +1,11 @@
-
+local inventory
 function init()
 
     inventory = {}
 
     addItem({name = "Axe"})
-
+    print("init inventory")
+    
 end
 
 function update(dt)

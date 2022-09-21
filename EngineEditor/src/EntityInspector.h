@@ -13,8 +13,8 @@ class EntityInspector : public EditorModule {
 public:
 	EntityInspector(sa::Engine* pEngine);
 	virtual ~EntityInspector();
-	virtual void onImGui();
-	virtual void update(float dt);
+	virtual void onImGui() override;
+	virtual void update(float dt) override;
 
 	sa::Entity getEntity() const;
 	void setEntity(const sa::Entity& entity);

@@ -6,6 +6,7 @@
 #include "SceneView.h"
 #include "SceneHierarchy.h"
 #include "EntityInspector.h"
+#include "LuaConsole.h"
 
 namespace sa {
 

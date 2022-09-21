@@ -13,22 +13,23 @@ namespace sa {
 
 	class Scene;
 
+	struct SystemScript {
+		sol::environment env;
+		sol::function func;
+		std::vector<ComponentType> components;
+	};
+
+	struct EntityScript {
+		std::string name;
+		sol::environment env;
+		EntityScript(std::string name, sol::environment env)
+			: name(name)
+			, env(env) 
+		{}
+	};
+
 	class ScriptManager {
 	public:
-		struct SystemScript {
-			sol::environment env;
-			sol::function func;
-			std::vector<ComponentType> components;
-		};
-
-		struct EntityScript {
-			std::string name;
-			sol::environment env;
-			EntityScript(std::string name, sol::environment env)
-				: name(name)
-				, env(env) 
-			{}
-		};
 
 	private:
 
@@ -39,21 +40,19 @@ namespace sa {
 		std::vector<EntityScript> m_allScripts;
 		
 		template<typename ...Args>
-		void tryCall(const sol::environment& env, const std::string& functionName, Args&& ...args);
-
-		template<typename ...Args>
-		void tryCall(const sol::environment& env, const sol::safe_function& function, Args&& ...args);
+		static void tryCall(const sol::environment& env, const sol::safe_function& function, Args&& ...args);
 
 		void setComponents(const Entity& entity, sol::environment& env, std::vector<ComponentType>& components);
 
 
 	public:
+
 		ScriptManager();
 		virtual ~ScriptManager();
 
 		void loadSystemScript(const std::string& path);
 
-		void addScript(const Entity& entity, const std::filesystem::path& path);
+		std::optional<EntityScript> addScript(const Entity& entity, const std::filesystem::path& path);
 		void removeScript(const Entity& entity, const std::string& name);
 
 		std::vector<EntityScript> getEntityScripts(const Entity& entity) const;
@@ -61,6 +60,8 @@ namespace sa {
 		void init(Scene* pScene);
 		void update(float dt, Scene* pScene);
 
+		template<typename ...Args>
+		static void tryCall(const sol::environment& env, const std::string& functionName, Args&& ...args);
 	};
 
 	template<typename ...Args>

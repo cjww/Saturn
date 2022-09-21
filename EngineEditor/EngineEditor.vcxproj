@@ -176,6 +176,7 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="src\LuaConsole.cpp" />
     <ClCompile Include="src\EditorModule.cpp" />
     <ClCompile Include="src\EngineEditor.cpp" />
     <ClCompile Include="src\EntityInspector.cpp" />
@@ -185,6 +186,7 @@
     <ClCompile Include="src\TestLayer.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\LuaConsole.h" />
     <ClInclude Include="src\EditorModule.h" />
     <ClInclude Include="src\EngineEditor.h" />
     <ClInclude Include="src\EntityInspector.h" />

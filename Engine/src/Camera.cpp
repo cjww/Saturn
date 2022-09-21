@@ -49,6 +49,11 @@ namespace sa {
         updateProjection();
     }
 
+    void Camera::setAspectRatio(float aspectRatio) {
+        m_apectRatio = aspectRatio;
+        updateProjection();
+    }
+
     void Camera::lookAt(Vector3 target) {
         m_forward = target - m_position;
         m_forward = glm::normalize(m_forward);

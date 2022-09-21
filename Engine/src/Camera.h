@@ -33,6 +33,8 @@ namespace sa {
 		void setFOVDegrees(float fovDegrees);
 
 		void setViewport(Rect viewport);
+		
+		void setAspectRatio(float aspectRatio);
 
 		void lookAt(Vector3 target);
 	

@@ -11,6 +11,10 @@ namespace sa {
 			Scene* newScene;
 		};
 
+		struct SceneLoad {
+			Scene* scene;
+		};
+
 		struct WindowResized {
 			Extent newExtent;
 		};

@@ -122,7 +122,7 @@ namespace sa {
 
 		m_currentScene = nullptr;
 		m_pWindow = pWindow;
-		
+		m_isImGuiRecording = false;
 
 		reg();
 		
@@ -151,7 +151,8 @@ namespace sa {
 
 			});
 		}
-		setScene("MainScene");
+		// set scene silently
+		m_currentScene = &getScene("MainScene");
 	
 		m_isSetup = true;
 	}
@@ -160,11 +161,11 @@ namespace sa {
 	void Engine::init() {
 		SA_PROFILE_FUNCTION();
 
-		publish<engine_event::SceneSet>(m_currentScene);
-
 		if (m_currentScene) {
-			m_currentScene->init();
-			m_scriptManager.init(m_currentScene);
+			// inform about scene set
+			publish<engine_event::SceneSet>(m_currentScene);
+			publish<engine_event::SceneLoad>(m_currentScene);
+			m_currentScene->load();
 		}
 
 	}
@@ -173,7 +174,6 @@ namespace sa {
 		SA_PROFILE_FUNCTION();
 
 		if (m_currentScene) {
-			m_scriptManager.update(dt, m_currentScene);
 			m_currentScene->update(dt);
 		}
 
@@ -187,8 +187,8 @@ namespace sa {
 
 	void Engine::recordImGui() {
 		SA_PROFILE_FUNCTION();
-		
 		m_renderPipeline.beginFrameImGUI();
+		m_isImGuiRecording = true;
 	}
 
 	void Engine::draw() {
@@ -198,6 +198,7 @@ namespace sa {
 			return;
 
 		m_renderPipeline.render(getCurrentScene());
+		m_isImGuiRecording = false;
 	}
 
 	std::chrono::duration<double, std::milli> Engine::getCPUFrameTime() const {
@@ -231,10 +232,15 @@ namespace sa {
 
 	void Engine::setScene(Scene& scene) {
 		SA_PROFILE_FUNCTION();
+		if (m_currentScene) {
+			m_currentScene->unload();
+		}
 		m_currentScene = &scene;
 		publish<engine_event::SceneSet>(m_currentScene);
-		if(m_isSetup)
-			init();
+		if (m_isSetup) {
+			publish<engine_event::SceneLoad>(m_currentScene);
+			m_currentScene->load();
+		}
 	}
 
 	void Engine::createSystemScript(const std::string& name) {

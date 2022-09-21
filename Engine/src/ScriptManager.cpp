@@ -102,16 +102,16 @@ namespace sa {
 		lua.stack_clear();
 	}
 
-	void ScriptManager::addScript(const Entity& entity, const std::filesystem::path& path) {
+	std::optional<EntityScript> ScriptManager::addScript(const Entity& entity, const std::filesystem::path& path) {
 		if (!std::filesystem::exists(path)) {
 			SA_DEBUG_LOG_ERROR("File does not exist:", path);
-			return;
+			return {};
 		}
 
 
 		std::string scriptName = path.filename().replace_extension().string();
 		if (m_entityScriptIndices[entity].count(scriptName)) {
-			return; // don't add same script again
+			return {}; // don't add same script again
 		}
 
 		size_t hashedString = std::hash<std::string>()(scriptName);
@@ -136,6 +136,7 @@ namespace sa {
 		m_allScripts.emplace_back(scriptName, env);
 		m_entityScriptIndices[entity][scriptName] = m_allScripts.size() - 1;
 
+		return m_allScripts.back();
 	}
 
 	void ScriptManager::removeScript(const Entity& entity, const std::string& name) {
@@ -151,7 +152,7 @@ namespace sa {
 		}
 	}
 
-	std::vector<ScriptManager::EntityScript> ScriptManager::getEntityScripts(const Entity& entity) const {
+	std::vector<EntityScript> ScriptManager::getEntityScripts(const Entity& entity) const {
 		if (!m_entityScriptIndices.count(entity))
 			return {};
 

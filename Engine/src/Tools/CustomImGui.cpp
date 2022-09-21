@@ -80,7 +80,7 @@ namespace ImGui {
 	}
 
 	void Component(comp::Transform* transform) {
-		ImGui::DragFloat3("Position", (float*)&transform->position, 0.1f);
+		ImGui::DragFloat3("Position##Transform", (float*)&transform->position, 0.1f);
 		glm::vec3 rotation = glm::degrees(glm::eulerAngles(transform->rotation));
 		if (ImGui::DragFloat3("Rotation", (float*)&rotation, 0.1f)) {
 			transform->rotation = glm::quat(glm::radians(rotation));
@@ -116,7 +116,7 @@ namespace ImGui {
 
 	void Component(comp::Light* light) {
 		
-		ImGui::DragFloat3("Position", (float*)&light->values.position, 0.1f);
+		ImGui::DragFloat3("Position##Light", (float*)&light->values.position, 0.1f);
 
 		ImGui::ColorEdit4("Color", (float*)&light->values.color);
 		

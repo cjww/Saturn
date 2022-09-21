@@ -47,11 +47,7 @@ namespace sa {
 			m_column++;
 		}
 		transform->scale *= scale;
-		//entity.addComponent<comp::Script>();
-
-		engine.getCurrentScene()->addScript(entity, "Movable.lua");
-		engine.getCurrentScene()->addScript(entity, "Inventory.lua");
-
+		
 		return entity;
 	}
 

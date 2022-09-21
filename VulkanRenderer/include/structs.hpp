@@ -15,6 +15,13 @@
 namespace sa {
 	struct Extent {
 		uint32_t width, height;
+		bool operator==(const Extent& other) {
+			return width == other.width &&
+				height == other.height;
+		}
+		bool operator!=(const Extent& other) {
+			return !(*this == other);
+		}
 	};
 
 	struct Extent3D : public Extent {

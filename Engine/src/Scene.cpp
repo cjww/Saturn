@@ -7,7 +7,9 @@ namespace sa {
 
 	
 
-	Scene::Scene() {
+	Scene::Scene() 
+		: m_isLoaded(false)
+	{
 		
 	}
 
@@ -17,8 +19,13 @@ namespace sa {
 		}
 	}
 
-	void Scene::init() {
+	void Scene::load() {
 		m_scriptManager.init(this);
+		m_isLoaded = true;
+	}
+
+	void Scene::unload() {
+		m_isLoaded = false;
 	}
 
 	void Scene::update(float dt) {
@@ -73,14 +80,18 @@ namespace sa {
 	}
 
 	void Scene::addScript(const Entity& entity, const std::filesystem::path& path) {
-		m_scriptManager.addScript(entity, path);
+		std::optional<EntityScript> scriptOpt = m_scriptManager.addScript(entity, path);
+		if (!m_isLoaded || !scriptOpt.has_value())
+			return;
+
+		m_scriptManager.tryCall(scriptOpt.value().env, "init");
 	}
 
 	void Scene::removeScript(const Entity& entity, const std::string& name) {
 		m_scriptManager.removeScript(entity, name);
 	}
 
-	std::vector<ScriptManager::EntityScript> Scene::getAssignedScripts(const Entity& entity) const {
+	std::vector<EntityScript> Scene::getAssignedScripts(const Entity& entity) const {
 		return m_scriptManager.getEntityScripts(entity);
 	}
 

@@ -22,6 +22,8 @@ SceneView::SceneView(sa::Engine* pEngine, sa::RenderWindow* pWindow)
 	m_statsUpdateTime = 0.1f;
 	m_statsTimer = m_statsUpdateTime;
 
+	//m_displayedSize = { (float)pWindow->getCurrentExtent().width, (float)pWindow->getCurrentExtent().height };
+
 	pEngine->on<sa::engine_event::SceneSet>([&](const sa::engine_event::SceneSet& sceneSetEvent, sa::Engine& engine) {
 		sceneSetEvent.newScene->on<sa::editor_event::EntitySelected>([&](const sa::editor_event::EntitySelected& e, sa::Scene&) {
 			m_selectedEntity = e.entity;
@@ -81,6 +83,8 @@ void SceneView::update(float dt) {
 
 void SceneView::onImGui() {
 	SA_PROFILE_FUNCTION();
+
+	
 
 	if (ImGui::Begin("Scene view", 0, ImGuiWindowFlags_MenuBar)) {
 		if (ImGui::BeginMenuBar()) {
@@ -144,12 +148,15 @@ void SceneView::onImGui() {
 		m_isFocused = ImGui::IsWindowFocused();
 
 		// render outputTexture with constant aspect ratio
-		ImVec2 availSize = ImGui::GetContentRegionAvail();
+		ImVec2 imAvailSize = ImGui::GetContentRegionAvail();
+		glm::vec2 availSize(imAvailSize.x, imAvailSize.y);
 
+		if (availSize != m_displayedSize) {
+			m_camera.setAspectRatio(availSize.x / availSize.y);
+		}
+		
 		sa::Texture texture = m_pEngine->getRenderPipeline().getRenderTechnique()->getOutputTexture();
-		float aspectRatio = (float)texture.getExtent().height / texture.getExtent().width;
-		availSize.y = std::min(availSize.x * aspectRatio, (float)texture.getExtent().height);
-		ImGui::Image(texture, availSize);
+		ImGui::Image(texture, imAvailSize);
 		m_displayedSize = availSize;
 
 		const ImU32 red = ImColor(ImVec4(1, 0, 0, 1));
@@ -253,15 +260,14 @@ void SceneView::imGuiDrawLine(glm::vec3 p1, glm::vec3 p2, const ImColor& color, 
 	glm::vec3 cameraToPos1 = p1 - m_camera.getPosition();
 	glm::vec3 cameraToPos2 = p2 - m_camera.getPosition();
 
-	ImVec2 availSize = m_displayedSize;
 	if (glm::dot(cameraToPos1, forward) > 0 && glm::dot(cameraToPos2, forward) > 0) {
 
 		p1 = sa::math::worldToScreen(p1, &m_camera, 
 			{ contentMin.x, contentMin.y },
-			{ m_displayedSize.x, m_displayedSize.y });
+			m_displayedSize);
 		p2 = sa::math::worldToScreen(p2, &m_camera, 
 			{ contentMin.x, contentMin.y }, 
-			{ m_displayedSize.x, m_displayedSize.y });
+			m_displayedSize);
 
 		ImGui::GetWindowDrawList()->AddLine({ p1.x, p1.y }, { p2.x, p2.y }, color, thickness);
 

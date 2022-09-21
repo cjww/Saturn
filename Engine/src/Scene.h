@@ -24,12 +24,15 @@ namespace sa {
 
 		ScriptManager m_scriptManager;
 
+		bool m_isLoaded;
 
 	public:
 		Scene();
 		virtual ~Scene();
 
-		virtual void init();
+		virtual void load();
+		virtual void unload();
+
 		virtual void update(float dt);
 
 		Camera* newCamera();
@@ -46,7 +49,7 @@ namespace sa {
 
 		void addScript(const Entity& entity, const std::filesystem::path& path);
 		void removeScript(const Entity& entity, const std::string& name);
-		std::vector<ScriptManager::EntityScript> getAssignedScripts(const Entity& entity) const;
+		std::vector<EntityScript> getAssignedScripts(const Entity& entity) const;
 
 		size_t getEntityCount() const;
 
