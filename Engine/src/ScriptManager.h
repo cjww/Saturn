@@ -2,12 +2,13 @@
 
 #include "Tools\utils.h"
 #include "ECS/ComponentType.h"
-#include "ECS/Entity.h"
+
+#include "Ecs/ComponentBase.h"
 
 #include <sol/sol.hpp>
 
 #include <Tools/Logger.hpp>
-
+#include <filesystem>
 
 namespace sa {
 
@@ -22,9 +23,11 @@ namespace sa {
 	struct EntityScript {
 		std::string name;
 		sol::environment env;
-		EntityScript(std::string name, sol::environment env)
+		entt::entity owner;
+		EntityScript(std::string name, sol::environment env, entt::entity owner)
 			: name(name)
 			, env(env) 
+			, owner(owner)
 		{}
 	};
 
@@ -36,13 +39,13 @@ namespace sa {
 		std::unordered_map<std::string, SystemScript> m_systemScripts;
 		
 		std::unordered_map<size_t, sol::safe_function> m_scripts;
-		std::unordered_map<Entity, std::unordered_map<std::string, size_t>> m_entityScriptIndices;
+		std::unordered_map<entt::entity, std::unordered_map<std::string, size_t>> m_entityScriptIndices;
 		std::vector<EntityScript> m_allScripts;
 		
 		template<typename ...Args>
 		static void tryCall(const sol::environment& env, const sol::safe_function& function, Args&& ...args);
 
-		void setComponents(const Entity& entity, sol::environment& env, std::vector<ComponentType>& components);
+		void setComponents(const entt::entity& entity, sol::environment& env, std::vector<ComponentType>& components);
 
 
 	public:
@@ -52,10 +55,13 @@ namespace sa {
 
 		void loadSystemScript(const std::string& path);
 
-		std::optional<EntityScript> addScript(const Entity& entity, const std::filesystem::path& path);
-		void removeScript(const Entity& entity, const std::string& name);
+		std::optional<EntityScript> addScript(const entt::entity& entity, const std::filesystem::path& path);
+		void removeScript(const entt::entity& entity, const std::string& name);
+		void clearEntity(const entt::entity& entity);
+		std::optional<EntityScript> getScript(const entt::entity& entity, const std::string& name) const;
 
-		std::vector<EntityScript> getEntityScripts(const Entity& entity) const;
+
+		std::vector<EntityScript> getEntityScripts(const entt::entity& entity) const;
 
 		void init(Scene* pScene);
 		void update(float dt, Scene* pScene);

@@ -125,6 +125,8 @@ namespace sa {
 		m_isImGuiRecording = false;
 
 		reg();
+		Scene::reg();
+		Entity::reg();
 		
 		if (pWindow) {
 			m_renderPipeline.create(pWindow, new ForwardPlus(!enableImgui));

@@ -2,21 +2,69 @@
 #include "Entity.h"
 
 #include "Components.h"
+#include "Scene.h"
 
 namespace sa {
     void Entity::reg() {
-        
+        auto type = getType();
+     
+        type["id"] = sol::readonly_property(&Entity::operator entt::id_type);
+        type["name"] = sol::property(
+            [](const Entity& e) -> std::string { return e.getComponent<comp::Name>()->name; },
+            [](const Entity& e, const std::string& str) { e.getComponent<comp::Name>()->name = str; }
+        );
+
+        type["addScript"] = [](Entity& self, const std::string& path) {
+            self.addScript(path);
+        };
+        type["removeScript"] = [](Entity& self, const std::string& name) {
+            self.removeScript(name);
+        };
+
+        type["addComponent"] = [](Entity& self, const std::string& name) {
+            self.addComponent(name);
+        };
+        type["removeComponent"] = [](Entity& self, const std::string& name) {
+            self.removeComponent(name);
+        };
+
+
+        /*
+        type["__newindex"] = [](Entity& self, const std::string& key, const sol::lua_value& value) {
+            std::cout << "attempted to add new component " << key << " with value of type " <<
+                sol::type_name(LuaAccessable::getState(), value.value().get_type())
+                << std::endl;
+        };
+        */
+
+       type["__index"] = [](const Entity& self, std::string key) -> sol::lua_value {
+            key[0] = utils::toUpper(key[0]);
+            std::optional<EntityScript> optScript = self.getScript(key);
+            if (!optScript.has_value())
+                return sol::nil;
+            
+            return optScript.value().env;
+        };
+
     }
 
-    Entity::Entity(entt::registry* pRegistry, entt::entity entity)
-        : m_pRegistry(pRegistry)
+    sol::usertype<Entity>& Entity::getType() {
+        static sol::usertype<Entity> type = LuaAccessable::registerType<Entity>();
+        return type;
+    }
+
+    Entity::Entity(Scene* pScene, entt::entity entity)
+        : m_pScene(pScene)
         , m_entity(entity)
+        , m_pRegistry(pScene)
     {
     }
 
     Entity::Entity()
-        : m_pRegistry(nullptr)
-        , m_entity(entt::null) {
+        : m_pScene(nullptr)
+        , m_entity(entt::null)
+        , m_pRegistry(nullptr)
+    {
     }
 
     MetaComponent Entity::getComponent(ComponentType type) const {
@@ -55,42 +103,21 @@ namespace sa {
         removeComponent(type);
     }
 
-    bool Entity::isNull() const {
-        return m_pRegistry == nullptr
-            || !m_pRegistry->valid(m_entity);
+    void Entity::addScript(const std::filesystem::path& path) {
+        m_pScene->addScript(*this, path);
     }
 
-    void updateEntityType() {
-        auto type = LuaAccessable::registerType<Entity>();
-        for (const auto& name : LuaAccessable::getRegisteredComponents()) {
-            auto varName = utils::toLower(name);
-            type[varName] = sol::property(
-            [=](const Entity& self) -> sol::lua_value {
-                MetaComponent metaComp = self.getComponent(name);
-                return LuaAccessable::cast(metaComp);
-            },
-            [=](Entity& self, sol::lua_value component) {
-                if (!component.is<sol::nil_t>()) {
-                    // Add component
-                    MetaComponent mc = self.addComponent(name);
-                    LuaAccessable::copy(mc, component);
-                    return;
-                }
-                self.removeComponent(name);
-            });
-        }
-        type["id"] = sol::readonly_property(&Entity::operator entt::id_type);
-        type["name"] = sol::property(
-            [](const Entity& e) -> std::string { return e.getComponent<comp::Name>()->name; },
-            [](const Entity& e, const std::string& str) { e.getComponent<comp::Name>()->name = str; }
-            );
+    void Entity::removeScript(const std::string& name) {
+        m_pScene->removeScript(*this, name);
+    }
 
-        type["__newindex"] = [](Entity& self, const std::string& key, const sol::lua_value& value) {
-            std::cout << "attempted to add new component " << key << " with value of type " <<
-                sol::type_name(LuaAccessable::getState(), value.value().get_type()) 
-                << std::endl;
-        };
+    std::optional<EntityScript> Entity::getScript(const std::string& name) const {
+        return m_pScene->getScript(*this, name);
+    }
 
+    bool Entity::isNull() const {
+        return m_pScene == nullptr
+            || !m_pScene->valid(m_entity);
     }
 
 }

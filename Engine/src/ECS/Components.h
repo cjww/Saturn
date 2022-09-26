@@ -102,7 +102,6 @@ namespace comp {
 			);
 			type["intensity"] = sol::property([](const Light& self) {return self.values.intensity; }, [](Light& self, float value) { self.values.intensity = value; });
 			//type["color"] = [](comp::Light& light) -> sa::Color& {return std::ref(light.values.color); };
-			
 		}
 	};
 

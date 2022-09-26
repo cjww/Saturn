@@ -115,9 +115,11 @@ namespace sa {
 		/*
 		engine.createSystemScript("test.lua");
 		engine.createSystemScript("test2.lua");
-		*/
 		engine.getCurrentScene()->addScript(adam, "Movable.lua");
 		engine.getCurrentScene()->addScript(adam, "Inventory.lua");
+		*/
+		adam.addScript("Movable.lua");
+		adam.addScript("Inventory.lua");
 
 
 	}

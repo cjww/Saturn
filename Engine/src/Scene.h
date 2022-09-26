@@ -30,6 +30,8 @@ namespace sa {
 		Scene();
 		virtual ~Scene();
 
+		static void reg();
+
 		virtual void load();
 		virtual void unload();
 
@@ -47,8 +49,9 @@ namespace sa {
 		Entity createEntity(const std::string& name = "Entity");
 		void destroyEntity(const Entity& entity);
 
-		void addScript(const Entity& entity, const std::filesystem::path& path);
+		std::optional<EntityScript> addScript(const Entity& entity, const std::filesystem::path& path);
 		void removeScript(const Entity& entity, const std::string& name);
+		std::optional<EntityScript> getScript(const Entity& entity, const std::string& name) const;
 		std::vector<EntityScript> getAssignedScripts(const Entity& entity) const;
 
 		size_t getEntityCount() const;

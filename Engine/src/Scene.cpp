@@ -5,18 +5,29 @@
 
 namespace sa {
 
-	
-
-	Scene::Scene() 
+	Scene::Scene()
 		: m_isLoaded(false)
 	{
-		
+
 	}
 
 	Scene::~Scene() {
 		for (auto& cam : m_cameras) {
 			delete cam;
 		}
+	}
+
+	void Scene::reg() {
+		auto type = LuaAccessable::registerType<Scene>();
+		type["findEntitiesByName"] = [](Scene& self, const std::string& name) {
+			std::vector<Entity> entities;
+			self.each([&](entt::entity e) {
+				if (self.get<comp::Name>(e).name == name) {
+					entities.emplace_back(&self, e);
+				}
+			});
+			return sol::as_table(entities);
+		};
 	}
 
 	void Scene::load() {
@@ -76,19 +87,34 @@ namespace sa {
 
 	void Scene::destroyEntity(const Entity& entity) {
 		publish<scene_event::EntityDestroyed>(entity);
+		m_scriptManager.clearEntity(entity);
 		destroy(entity);
 	}
 
-	void Scene::addScript(const Entity& entity, const std::filesystem::path& path) {
-		std::optional<EntityScript> scriptOpt = m_scriptManager.addScript(entity, path);
-		if (!m_isLoaded || !scriptOpt.has_value())
-			return;
 
-		m_scriptManager.tryCall(scriptOpt.value().env, "init");
+	std::optional<EntityScript> Scene::addScript(const Entity& entity, const std::filesystem::path& path) {
+		std::optional<EntityScript> scriptOpt = m_scriptManager.addScript(entity, path);
+		if (!scriptOpt.has_value())
+			return scriptOpt;
+
+		EntityScript& script = scriptOpt.value();
+		script.env["scene"] = this;
+		script.env["entity"] = entity;
+		
+		if (!m_isLoaded)
+			return scriptOpt;
+
+		m_scriptManager.tryCall(script.env, "init");
+
+		return scriptOpt;
 	}
 
 	void Scene::removeScript(const Entity& entity, const std::string& name) {
 		m_scriptManager.removeScript(entity, name);
+	}
+
+	std::optional<EntityScript> Scene::getScript(const Entity& entity, const std::string& name) const {
+		return m_scriptManager.getScript(entity, name);
 	}
 
 	std::vector<EntityScript> Scene::getAssignedScripts(const Entity& entity) const {

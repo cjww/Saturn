@@ -14,7 +14,7 @@ void EntityInspector::makePopups() {
 		ImGui::Text("Remove?");
 		if (ImGui::Button("Yes")) {
 			ImGui::CloseCurrentPopup();
-			m_pEngine->getCurrentScene()->removeScript(m_selectedEntity, ImGui::payload.name);
+			m_selectedEntity.removeScript(ImGui::payload.name);
 		}
 		ImGui::EndPopup();
 	}
@@ -34,7 +34,7 @@ void EntityInspector::makePopups() {
 	if (ImGui::BeginPopup("Select Script")) {
 		std::string buffer;
 		if(ImGui::InputText("Script Name", &buffer, ImGuiInputTextFlags_EnterReturnsTrue)) {
-			m_pEngine->getCurrentScene()->addScript(m_selectedEntity, buffer);
+			m_selectedEntity.addScript(buffer);
 			ImGui::CloseCurrentPopup();
 		}
 

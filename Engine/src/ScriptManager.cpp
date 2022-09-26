@@ -5,11 +5,13 @@
 
 namespace sa {
 	
-	void ScriptManager::setComponents(const Entity& entity, sol::environment& env, std::vector<ComponentType>& components) {
+	void ScriptManager::setComponents(const entt::entity& entity, sol::environment& env, std::vector<ComponentType>& components) {
 		for (auto& type : components) {
+			/*
 			auto metaComp = type.invoke("get", entity);
 			std::string name = utils::toLower(type.getName());
 			env[name] = LuaAccessable::cast(metaComp);
+			*/
 		}
 	}
 
@@ -102,7 +104,7 @@ namespace sa {
 		lua.stack_clear();
 	}
 
-	std::optional<EntityScript> ScriptManager::addScript(const Entity& entity, const std::filesystem::path& path) {
+	std::optional<EntityScript> ScriptManager::addScript(const entt::entity& entity, const std::filesystem::path& path) {
 		if (!std::filesystem::exists(path)) {
 			SA_DEBUG_LOG_ERROR("File does not exist:", path);
 			return {};
@@ -132,27 +134,57 @@ namespace sa {
 			SA_DEBUG_LOG_ERROR(lua_tostring(lua, -1));
 		}
 
-		env["entity"] = entity;
-		m_allScripts.emplace_back(scriptName, env);
+		//env["entity"] = entity;
+		m_allScripts.emplace_back(scriptName, env, entity);
 		m_entityScriptIndices[entity][scriptName] = m_allScripts.size() - 1;
 
 		return m_allScripts.back();
 	}
 
-	void ScriptManager::removeScript(const Entity& entity, const std::string& name) {
+	void ScriptManager::removeScript(const entt::entity& entity, const std::string& name) {
+		size_t scriptCount = m_allScripts.size();
 		auto& entityScripts = m_entityScriptIndices[entity];
 		if (!entityScripts.count(name))
 			return; // script does not exist on this entity
-		size_t scriptIndex = entityScripts[name];
-		m_allScripts.erase(m_allScripts.begin() + scriptIndex);
-		entityScripts.erase(name);
-		for (auto& [name, index] : entityScripts) {
-			if (index > scriptIndex)
-				index--;
+		size_t scriptIndex = entityScripts.at(name);
+		if (scriptCount > 1) {
+			EntityScript& backScript = m_allScripts.back();
+			m_entityScriptIndices[backScript.owner][backScript.name] = scriptIndex;
+			m_allScripts[scriptIndex] = std::move(backScript);
 		}
+		else if (scriptCount == 0)
+			return;
+		
+		m_allScripts.pop_back();
+		entityScripts.erase(name);
 	}
 
-	std::vector<EntityScript> ScriptManager::getEntityScripts(const Entity& entity) const {
+	void ScriptManager::clearEntity(const entt::entity& entity) {
+		if (!m_entityScriptIndices.count(entity))
+			return;
+
+		auto& entityScripts = m_entityScriptIndices.at(entity);
+		size_t scriptCount = entityScripts.size();
+		for (auto& [name, index] : entityScripts) {
+			EntityScript& backScript = m_allScripts.back();
+			m_entityScriptIndices[backScript.owner][backScript.name] = index;
+			m_allScripts[index] = std::move(backScript);
+			m_allScripts.pop_back();
+		}
+		m_entityScriptIndices.erase(entity);
+	}
+
+	std::optional<EntityScript> ScriptManager::getScript(const entt::entity& entity, const std::string& name) const {
+		if (!m_entityScriptIndices.count(entity))
+			return {};
+		auto& entityScripts = m_entityScriptIndices.at(entity);
+		if (!entityScripts.count(name))
+			return {};
+
+		return m_allScripts.at(entityScripts.at(name));
+	}
+
+	std::vector<EntityScript> ScriptManager::getEntityScripts(const entt::entity& entity) const {
 		if (!m_entityScriptIndices.count(entity))
 			return {};
 
@@ -160,7 +192,7 @@ namespace sa {
 		for (auto& [name, index] : m_entityScriptIndices.at(entity)) {
 			scripts.push_back(m_allScripts[index]);
 		}
-		return std::move(scripts);
+		return scripts;
 	}
 	
 	void ScriptManager::init(Scene* pScene) {

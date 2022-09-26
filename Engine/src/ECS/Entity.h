@@ -5,17 +5,22 @@
 
 #include "ComponentBase.h"
 
+#include "ScriptManager.h"
 
 namespace sa {
 	
+	class Scene;
+
 	class Entity {
 	private:
+		Scene* m_pScene;
 		entt::registry* m_pRegistry;
 		entt::entity m_entity;
 	public:
 		static void reg();
+		static sol::usertype<Entity>& getType();
 
-		Entity(entt::registry* pRegistry, entt::entity entity);
+		Entity(Scene* pScene, entt::entity entity);
 		Entity(const Entity& other) = default;
 		Entity();
 		virtual ~Entity() = default;
@@ -43,6 +48,10 @@ namespace sa {
 		void removeComponent(ComponentType type);
 		void removeComponent(const std::string& name);
 
+		void addScript(const std::filesystem::path& path);
+		void removeScript(const std::string& name);
+		std::optional<EntityScript> getScript(const std::string& name) const;
+
 		bool isNull() const;
 
 		operator bool() const {
@@ -53,7 +62,7 @@ namespace sa {
 			return m_entity;
 		}
 
-		operator uint32_t() const {
+		explicit operator uint32_t() const {
 			return (uint32_t)m_entity;
 		}
 
@@ -62,19 +71,17 @@ namespace sa {
 		}
 
 		bool operator == (const Entity& other) const {
-			return m_entity == other.m_entity && m_pRegistry == other.m_pRegistry;
+			return m_entity == other.m_entity && m_pScene == other.m_pScene;
 		}
 
 		bool operator != (const Entity& other) const {
-			return !(m_entity == other.m_entity && m_pRegistry == other.m_pRegistry);
+			return !(m_entity == other.m_entity && m_pScene == other.m_pScene);
 		}
 
 	};
 
 	template<typename Comp>
 	void registerComponentType();
-
-	void updateEntityType();
 
 
 
@@ -138,8 +145,23 @@ namespace sa {
 			LuaAccessable::registerComponent<Comp>();
 			Comp::reg();
 
-			updateEntityType();
-
+			auto& type = Entity::getType();
+			std::string name = getComponentName<Comp>();
+			std::string varName = utils::toLower(name);
+			type[varName] = sol::property(
+				[=](const Entity& self) -> sol::lua_value {
+					MetaComponent metaComp = self.getComponent(name);
+					return LuaAccessable::cast(metaComp);
+				},
+				[=](Entity& self, sol::lua_value component) {
+					if (!component.is<sol::nil_t>()) {
+						// Add component
+						MetaComponent mc = self.addComponent(name);
+						LuaAccessable::copy(mc, component);
+						return;
+					}
+					self.removeComponent(name);
+				});
 		}
 
 	}
