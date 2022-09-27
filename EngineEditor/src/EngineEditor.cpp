@@ -9,9 +9,6 @@ namespace sa {
 	void EngineEditor::onAttach(sa::Engine& engine, sa::RenderWindow& renderWindow) {
 
 		m_editorModules.push_back(std::make_unique<SceneView>(&engine, &renderWindow));
-		SceneView* sceneView = static_cast<SceneView*>(m_editorModules.back().get());
-
-		engine.getCurrentScene()->addActiveCamera(sceneView->getCamera());
 
 		m_editorModules.push_back(std::make_unique<EntityInspector>(&engine));
 

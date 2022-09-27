@@ -23,14 +23,14 @@ namespace ImGui {
 
 
 	template<typename T>
-	void Component(sa::Entity entity);
+	void Component(const sa::Entity& entity);
 
 
 
 }
 
 template<typename T>
-void ImGui::Component(sa::Entity entity) {
+void ImGui::Component(const sa::Entity& entity) {
 	T* comp = entity.getComponent<T>();
 	if (!comp) return;
 

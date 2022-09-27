@@ -16,6 +16,7 @@ namespace sa {
 		Scene* m_pScene;
 		entt::registry* m_pRegistry;
 		entt::entity m_entity;
+		
 	public:
 		static void reg();
 		static sol::usertype<Entity>& getType();
@@ -51,6 +52,12 @@ namespace sa {
 		void addScript(const std::filesystem::path& path);
 		void removeScript(const std::string& name);
 		std::optional<EntityScript> getScript(const std::string& name) const;
+
+		void setParent(const Entity& parent);
+		void orphan();
+		const Entity& getParent() const;
+
+		void destroy();
 
 		bool isNull() const;
 
@@ -103,7 +110,6 @@ namespace sa {
 	template<typename T, typename ...Args>
 	inline T* Entity::addComponent(Args&& ... args) {
 		if (this->isNull()) {
-			//SA_DEBUG_LOG_ERROR("Entity was a null entity");
 			throw std::runtime_error("Entity was a null entity");
 		}
 		return &m_pRegistry->emplace_or_replace<T>(m_entity, args...);
@@ -112,7 +118,6 @@ namespace sa {
 	template<typename T>
 	inline void Entity::removeComponent() {
 		if (this->isNull()) {
-			//SA_DEBUG_LOG_ERROR("Entity was a null entity");
 			throw std::runtime_error("Entity was a null entity");
 		}
 		m_pRegistry->remove<T>(m_entity);

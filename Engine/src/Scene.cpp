@@ -28,6 +28,9 @@ namespace sa {
 			});
 			return sol::as_table(entities);
 		};
+
+		type["createEntity"] = &Scene::createEntity;
+
 	}
 
 	void Scene::load() {
@@ -43,6 +46,32 @@ namespace sa {
 		SA_PROFILE_FUNCTION();
 		publish<scene_event::UpdatedScene>(dt);
 		m_scriptManager.update(dt, this);
+		
+		/*
+		view<comp::Light, comp::Transform>().each([](comp::Light& light, const comp::Transform& transform) {
+			light.values.position
+		});
+
+		*/
+		view<comp::Transform>().each([&](const entt::entity& e, comp::Transform& transform) {
+			Entity entity(this, e);
+			if (!m_hierarchy.hasChildren(entity)) { 
+				return;
+			}
+			m_hierarchy.forEachChild(entity, [](const Entity& child, const Entity& parent) {
+				comp::Transform* transform = child.getComponent<comp::Transform>();
+				comp::Transform* parentTransform = parent.getComponent<comp::Transform>();
+				if (!transform || !parentTransform)
+					return;
+
+				transform->position = parentTransform->position + transform->relativePosition;
+			});
+			
+		});
+
+
+
+
 	}
 
 	Camera* Scene::newCamera() {
@@ -88,9 +117,13 @@ namespace sa {
 	void Scene::destroyEntity(const Entity& entity) {
 		publish<scene_event::EntityDestroyed>(entity);
 		m_scriptManager.clearEntity(entity);
+		m_hierarchy.destroy(entity);
 		destroy(entity);
 	}
 
+	size_t Scene::getEntityCount() const {
+		return size();
+	}
 
 	std::optional<EntityScript> Scene::addScript(const Entity& entity, const std::filesystem::path& path) {
 		std::optional<EntityScript> scriptOpt = m_scriptManager.addScript(entity, path);
@@ -121,8 +154,8 @@ namespace sa {
 		return m_scriptManager.getEntityScripts(entity);
 	}
 
-	size_t Scene::getEntityCount() const {
-		return size();
+	EntityHierarchy& Scene::getHierarchy() {
+		return m_hierarchy;
 	}
 
 }

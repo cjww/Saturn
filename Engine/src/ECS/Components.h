@@ -62,16 +62,31 @@ namespace comp {
 		glm::quat rotation = glm::quat_identity<float, glm::packed_highp>();
 		sa::Vector3 scale = sa::Vector3(1);
 
-
+		bool hasParent = false;
+		sa::Vector3 relativePosition;
+		
 		sa::Matrix4x4 getMatrix() const {
 			return glm::translate(sa::Matrix4x4(1), position) * glm::toMat4(rotation) * glm::scale(sa::Matrix4x4(1), scale);
 		}
 
 		static void reg() {
 			auto type = registerType<Transform>();
-			type["position"] = &comp::Transform::position;
-			type["rotation"] = &comp::Transform::rotation;
-			type["scale"] = &comp::Transform::scale;
+			type["position"] = sol::property(
+				[](Transform& self) -> sa::Vector3& {
+					if (self.hasParent)
+						return self.relativePosition;
+					return self.position;
+				},
+				[](Transform& self, const sa::Vector3& value) {
+					if (self.hasParent) {
+						self.relativePosition = value;
+						return;
+					}
+					self.position = value;
+				}
+			);
+			type["rotation"] = &Transform::rotation;
+			type["scale"] = &Transform::scale;
 		}
 	};
 
@@ -101,7 +116,12 @@ namespace comp {
 				sol::constructors<Light()>()
 			);
 			type["intensity"] = sol::property([](const Light& self) {return self.values.intensity; }, [](Light& self, float value) { self.values.intensity = value; });
-			//type["color"] = [](comp::Light& light) -> sa::Color& {return std::ref(light.values.color); };
+			type["attenuationRadius"] = sol::property([](const Light& self) {return self.values.attenuationRadius; }, [](Light& self, float value) { self.values.attenuationRadius = value; });
+			type["color"] = sol::property(
+				[](const comp::Light& light) {return sa::Vector4(light.values.color.r, light.values.color.g, light.values.color.b, light.values.color.a); },
+				[](comp::Light& self, const sa::Vector4& color) {self.values.color = sa::Color{ color.x, color.y, color.z, color.w }; }
+			);
+			
 		}
 	};
 

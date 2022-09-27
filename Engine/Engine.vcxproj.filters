@@ -105,6 +105,9 @@
     <ClCompile Include="src\ECS\Components.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\EntityHierarchy.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ECS\Entity.h">
@@ -228,6 +231,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Graphics\RenderTechniques\ForwardPlus.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\EntityHierarchy.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

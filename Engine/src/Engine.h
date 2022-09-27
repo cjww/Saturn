@@ -29,8 +29,6 @@ namespace sa {
 		std::unordered_map<size_t, Scene> m_scenes;
 		Scene* m_currentScene;
 
-		ScriptManager m_scriptManager;
-
 		struct FrameTime {
 			std::chrono::high_resolution_clock::time_point start;
 			std::chrono::duration<double, std::milli> cpu;
@@ -41,6 +39,8 @@ namespace sa {
 
 		void loadXML(const std::filesystem::path& path, rapidxml::xml_document<>& xml, std::string& xmlStr);
 		void loadFromFile(const std::filesystem::path& configPath);
+
+		void registerMath();
 
 		void reg();
 		void onWindowResize(Extent newExtent);
@@ -67,8 +67,6 @@ namespace sa {
 		Scene* getCurrentScene() const;
 		void setScene(const std::string& name);
 		void setScene(Scene& scene);
-
-		void createSystemScript(const std::string& name);
 
 	};
 }

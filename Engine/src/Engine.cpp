@@ -50,10 +50,10 @@ namespace sa {
 		}
 	}
 
-	void Engine::reg() {
+	void Engine::registerMath() {
 		{
-			auto type = LuaAccessable::registerType<Vector3>("Vec3", 
-				sol::constructors<Vector3(float, float, float), Vector3(float)>(),
+			auto type = LuaAccessable::registerType<Vector3>("Vec3",
+				sol::constructors<Vector3(float, float, float), Vector3(float), Vector3()>(),
 				sol::meta_function::addition, &Vector3::operator+=,
 				sol::meta_function::subtraction, &Vector3::operator-=,
 				sol::meta_function::multiplication, [](const Vector3& self, sol::lua_value value) -> Vector3 {
@@ -74,14 +74,19 @@ namespace sa {
 					}
 					throw std::runtime_error("Vec3 __div: Unmatched type");
 				},
-				
-				sol::meta_function::length, &Vector3::length,
-				sol::meta_function::to_string, &Vector3::toString
-			);
+
+					sol::meta_function::length, &Vector3::length,
+					sol::meta_function::to_string, &Vector3::toString
+					);
 			type["x"] = &Vector3::x;
 			type["y"] = &Vector3::y;
 			type["z"] = &Vector3::z;
-			type["len"] = &Vector3::length;
+			
+			type["xy"] = sol::readonly_property([](const Vector3& self) { return Vector2(self.x, self.y); });
+
+			type["unwrap"] = [](const Vector3& self) { return std::tuple(self.x, self.y, self.z); };
+
+			type["length"] = &Vector3::length;
 			type["cross"] = [](const Vector3& v1, const Vector3& v2) -> Vector3 {
 				return glm::cross(v1, v2);
 			};
@@ -89,7 +94,97 @@ namespace sa {
 				return glm::dot((glm::vec3)v1, (glm::vec3)v2);
 			};
 		}
-		
+		{
+			auto type = LuaAccessable::registerType<Vector4>("Vec4",
+				sol::constructors<Vector4(float, float, float, float), Vector4(float), Vector4(), Vector4(const Vector3&)>(),
+				sol::meta_function::addition, &Vector4::operator+=,
+				sol::meta_function::subtraction, &Vector4::operator-=,
+				sol::meta_function::multiplication, [](const Vector4& self, sol::lua_value value) {
+					if (value.is<float>()) {
+						return self * value.as<float>();
+					}
+					else if (value.is<Vector4>()) {
+						return self * value.as<Vector4>();
+					}
+					throw std::runtime_error("Vec4 __mul: Unmatched type");
+				},
+				sol::meta_function::division, [](const Vector4& self, sol::lua_value value) {
+					if (value.is<float>()) {
+						return self / value.as<float>();
+					}
+					else if (value.is<Vector4>()) {
+						return self / value.as<Vector4>();
+					}
+					throw std::runtime_error("Vec4 __div: Unmatched type");
+				},
+
+				sol::meta_function::length, &Vector4::length,
+				sol::meta_function::to_string, &Vector4::toString
+			);
+
+			type["x"] = &Vector4::x;
+			type["y"] = &Vector4::y;
+			type["z"] = &Vector4::z;
+			type["w"] = &Vector4::w;
+
+
+			type["r"] = &Vector4::x;
+			type["g"] = &Vector4::y;
+			type["b"] = &Vector4::z;
+			type["a"] = &Vector4::w;
+
+			type["xyz"] = sol::readonly_property([](const Vector4& self) { return Vector3(self.x, self.y, self.z); });
+			type["xy"] = sol::readonly_property([](const Vector4& self) { return Vector2(self.x, self.y); });
+
+			type["unwrap"] = [](const Vector4& self) { return std::tuple(self.x, self.y, self.z, self.w); };
+
+
+			type["length"] = &Vector4::length;
+			type["dot"] = [](const Vector4& v1, const Vector4& v2) -> float {
+				return glm::dot((glm::vec4)v1, (glm::vec4)v2);
+			};
+		}
+
+		{
+			auto type = LuaAccessable::registerType<Vector2>("Vec2",
+				sol::constructors<Vector2(float, float), Vector2(float), Vector2()>(),
+				sol::meta_function::addition, &Vector2::operator+=,
+				sol::meta_function::subtraction, &Vector2::operator-=,
+				sol::meta_function::multiplication, [](const Vector2& self, sol::lua_value value) {
+					if (value.is<float>()) {
+						return self * value.as<float>();
+					}
+					else if (value.is<Vector2>()) {
+						return self * value.as<Vector2>();
+					}
+					throw std::runtime_error("Vec2 __mul: Unmatched type");
+				},
+				sol::meta_function::division, [](const Vector2& self, sol::lua_value value) {
+					if (value.is<float>()) {
+						return self / value.as<float>();
+					}
+					else if (value.is<Vector2>()) {
+						return self / value.as<Vector2>();
+					}
+					throw std::runtime_error("Vec2 __div: Unmatched type");
+				},
+
+				sol::meta_function::length, &Vector2::length,
+				sol::meta_function::to_string, &Vector2::toString
+			);
+
+			type["x"] = &Vector2::x;
+			type["y"] = &Vector2::y;
+
+
+			type["unwrap"] = [](const Vector2& self) { return std::tuple(self.x, self.y); };
+
+
+			type["length"] = &Vector2::length;
+			type["dot"] = [](const Vector2& v1, const Vector2& v2) -> float {
+				return glm::dot((glm::vec2)v1, (glm::vec2)v2);
+			};
+		}
 
 		{
 			auto type = LuaAccessable::registerType<glm::quat>("Quat");
@@ -98,6 +193,29 @@ namespace sa {
 			};
 			type["Identity"] = &glm::quat_identity<float, glm::packed_highp>;
 		}
+	}
+
+	void Engine::reg() {
+		
+		registerMath();
+
+		auto& lua = LuaAccessable::getState();
+		lua["setScene"] = [&](const sol::lua_value& scene) {
+			if (scene.is<std::string>()) {
+				setScene(scene.as<std::string>());
+				return;
+			}
+			setScene(scene.as<Scene>());
+		};
+
+		lua["getScene"] = [&](sol::lua_value sceneName) {
+			if (sceneName.is<sol::nil_t>()) {
+				return getCurrentScene();
+			}
+			return &getScene(sceneName.as<std::string>());
+		};
+		
+
 
 		/*
 		{
@@ -243,10 +361,6 @@ namespace sa {
 			publish<engine_event::SceneLoad>(m_currentScene);
 			m_currentScene->load();
 		}
-	}
-
-	void Engine::createSystemScript(const std::string& name) {
-		m_scriptManager.loadSystemScript(name);
 	}
 
 }

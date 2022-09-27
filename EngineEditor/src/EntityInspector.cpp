@@ -78,6 +78,8 @@ void EntityInspector::onImGui() {
 			if (ImGui::InputText("Name##Entity", buffer, IMGUI_BUFFER_SIZE_TINY, ImGuiInputTextFlags_EnterReturnsTrue)) {
 				nameComp->name = buffer;
 			}
+			ImGui::SameLine();
+			ImGui::Text("ID: %u", (uint32_t)m_selectedEntity);
 			
 			ImGui::Component<comp::Transform>(m_selectedEntity);
 			ImGui::Component<comp::Model>(m_selectedEntity);

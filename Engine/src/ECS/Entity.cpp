@@ -29,15 +29,25 @@ namespace sa {
         };
 
 
-        /*
-        type["__newindex"] = [](Entity& self, const std::string& key, const sol::lua_value& value) {
-            std::cout << "attempted to add new component " << key << " with value of type " <<
-                sol::type_name(LuaAccessable::getState(), value.value().get_type())
-                << std::endl;
-        };
-        */
+        type["parent"] = sol::property(
+            [](const Entity& self) -> sol::lua_value {
+                const Entity& parent = self.getParent();
+                if (parent.isNull()) {
+                    return sol::nil;
+                }
+                return parent;
+            },
+            [](Entity& self, const sol::lua_value& parent) {
+                if (parent.is<sol::nil_t>()) {
+                    self.orphan();
+                    return;
+                }
+                self.setParent(parent.as<Entity>());
+            }
 
-       type["__index"] = [](const Entity& self, std::string key) -> sol::lua_value {
+        );
+        
+        type["__index"] = [](const Entity& self, std::string key) -> sol::lua_value {
             key[0] = utils::toUpper(key[0]);
             std::optional<EntityScript> optScript = self.getScript(key);
             if (!optScript.has_value())
@@ -113,6 +123,35 @@ namespace sa {
 
     std::optional<EntityScript> Entity::getScript(const std::string& name) const {
         return m_pScene->getScript(*this, name);
+    }
+
+    void Entity::setParent(const Entity& parent) {
+        if (parent == *this || m_pScene != parent.m_pScene)
+            return;
+        m_pScene->getHierarchy().setParent(*this, parent);
+        comp::Transform* transform = getComponent<comp::Transform>();
+        comp::Transform* parentTransform = parent.getComponent<comp::Transform>();
+
+        if (!transform || !parentTransform)
+            return;
+        transform->hasParent = true;
+        transform->relativePosition = transform->position - parentTransform->position;
+    }
+
+    void Entity::orphan() {
+        m_pScene->getHierarchy().orphan(*this);
+        comp::Transform* transform = getComponent<comp::Transform>();
+        if (!transform)
+            return;
+        transform->hasParent = false;
+    }
+
+    const Entity& Entity::getParent() const {
+        return m_pScene->getHierarchy().getParent(*this);
+    }
+
+    void Entity::destroy() {
+        m_pScene->destroyEntity(*this);
     }
 
     bool Entity::isNull() const {

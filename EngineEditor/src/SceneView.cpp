@@ -25,6 +25,9 @@ SceneView::SceneView(sa::Engine* pEngine, sa::RenderWindow* pWindow)
 	//m_displayedSize = { (float)pWindow->getCurrentExtent().width, (float)pWindow->getCurrentExtent().height };
 
 	pEngine->on<sa::engine_event::SceneSet>([&](const sa::engine_event::SceneSet& sceneSetEvent, sa::Engine& engine) {
+
+		sceneSetEvent.newScene->addActiveCamera(&m_camera);
+
 		sceneSetEvent.newScene->on<sa::editor_event::EntitySelected>([&](const sa::editor_event::EntitySelected& e, sa::Scene&) {
 			m_selectedEntity = e.entity;
 		});
@@ -142,8 +145,6 @@ void SceneView::onImGui() {
 		}
 		ImGui::EndMenuBar();
 
-		sa::Scene* pScene = m_pEngine->getCurrentScene();
-	
 
 		m_isFocused = ImGui::IsWindowFocused();
 

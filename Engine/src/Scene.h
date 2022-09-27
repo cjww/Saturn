@@ -10,6 +10,7 @@
 #include "Tools\utils.h"
 
 #include "ScriptManager.h"
+#include "EntityHierarchy.h"
 
 namespace sa {
 	typedef uint32_t SceneID;
@@ -24,7 +25,15 @@ namespace sa {
 
 		ScriptManager m_scriptManager;
 
+		EntityHierarchy m_hierarchy;
+
 		bool m_isLoaded;
+
+		friend class Entity;
+		void destroyEntity(const Entity& entity);
+		std::optional<EntityScript> addScript(const Entity& entity, const std::filesystem::path& path);
+		void removeScript(const Entity& entity, const std::string& name);
+		std::optional<EntityScript> getScript(const Entity& entity, const std::string& name) const;
 
 	public:
 		Scene();
@@ -37,6 +46,7 @@ namespace sa {
 
 		virtual void update(float dt);
 
+		// Camera
 		Camera* newCamera();
 		Camera* newCamera(const Window* pWindow);
 
@@ -44,17 +54,19 @@ namespace sa {
 		void removeActiveCamera(Camera* camera);
 		std::set<Camera*> getActiveCameras() const;
 
+		// Event emitter
 		void setScene(const std::string& name);
 
+		// Entity
 		Entity createEntity(const std::string& name = "Entity");
-		void destroyEntity(const Entity& entity);
+		size_t getEntityCount() const;
 
-		std::optional<EntityScript> addScript(const Entity& entity, const std::filesystem::path& path);
-		void removeScript(const Entity& entity, const std::string& name);
-		std::optional<EntityScript> getScript(const Entity& entity, const std::string& name) const;
+		// Scripts
 		std::vector<EntityScript> getAssignedScripts(const Entity& entity) const;
 
-		size_t getEntityCount() const;
+		// Hierarchy
+		EntityHierarchy& getHierarchy();
+
 
 		template<typename ...T, typename F>
 		void forEach(F func);

@@ -228,6 +228,7 @@
     <ClCompile Include="src\Tools\StopWatch.cpp" />
     <ClCompile Include="src\Tools\utils.cpp" />
     <ClCompile Include="src\Tools\Vector.cpp" />
+    <ClCompile Include="src\EntityHierarchy.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Graphics\IRenderLayer.h" />
@@ -266,6 +267,7 @@
     <ClInclude Include="src\Tools\Profiler.h" />
     <ClInclude Include="src\Tools\utils.h" />
     <ClInclude Include="src\Tools\Vector.h" />
+    <ClInclude Include="src\EntityHierarchy.h" />
     <ClInclude Include="src\Vertex.h" />
     <ClInclude Include="src\ECS\Entity.h" />
     <ClInclude Include="src\AssetManager.h" />
