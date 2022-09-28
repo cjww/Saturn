@@ -27,42 +27,76 @@ SceneHierarchy::SceneHierarchy(sa::Engine* pEngine) : EditorModule(pEngine) {
 	
 }
 
-SceneHierarchy::~SceneHierarchy() {
+void SceneHierarchy::elementEvents(const sa::Entity& e) {
+	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup)) {
+		m_hoveredEntity = e;
+	}
+	if (ImGui::BeginDragDropSource()) {
+		ImGui::SetDragDropPayload("Entity", &m_hoveredEntity, sizeof(sa::Entity));
+		ImGui::SetTooltip(m_hoveredEntity.getComponent<comp::Name>()->name.c_str());
+		ImGui::EndDragDropSource();
+	}
+	if (ImGui::BeginDragDropTarget()) {
+		const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Entity");
+		if (payload && payload->IsDelivery()) {
+			sa::Entity* entityPayload = (sa::Entity*)payload->Data;
+			m_parentChanges.push(std::make_pair(*entityPayload, e));
+		}
 
+		ImGui::EndDragDropTarget();
+	}
 }
 
-void SceneHierarchy::tree(const sa::Entity& child) {
-	bool s = m_selectedEntity == child;
-	if (m_pEngine->getCurrentScene()->getHierarchy().hasChildren(child)) {
+void SceneHierarchy::makeTree(sa::Entity e) {
+	bool s = m_selectedEntity == e;
+	// Tree node
+	if (m_pEngine->getCurrentScene()->getHierarchy().hasChildren(e)) {
+		if (!m_pEngine->getCurrentScene()->getHierarchy().hasParent(e)) {
+			ImGuiStyle& style = ImGui::GetStyle();
+			float oldpadding = style.TouchExtraPadding.y;
+			style.TouchExtraPadding.y = 2;
+			ImGui::PushStyleColor(ImGuiCol_Separator, ImVec4(0, 0, 0, 0));
+			ImGui::Separator();
+			ImGui::PopStyleColor();
+			style.TouchExtraPadding.y = oldpadding;
+			if (ImGui::BeginDragDropTarget()) {
+				const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Entity");
+				if (payload && payload->IsDelivery()) {
+					sa::Entity* payloadEntity = (sa::Entity*)payload->Data;
+					m_parentChanges.push(std::make_pair(*payloadEntity, sa::Entity()));
+				}
+				ImGui::EndDragDropTarget();
+			}
+		}
+
 		ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
 		if (s) flags |= ImGuiTreeNodeFlags_Selected;
-		bool opened = ImGui::TreeNodeEx((child.getComponent<comp::Name>()->name + "##" + std::to_string((uint32_t)child)).c_str(), flags);
+		bool opened = ImGui::TreeNodeEx((e.getComponent<comp::Name>()->name + "##" + std::to_string((uint32_t)e)).c_str(), flags);
 		if (ImGui::IsItemClicked()) {
 			if (s) {
 				m_pEngine->getCurrentScene()->publish<sa::editor_event::EntityDeselected>(m_selectedEntity);
 				m_selectedEntity = {};
 			}
 			else {
-				m_selectedEntity = child;
+				m_selectedEntity = e;
 				m_pEngine->getCurrentScene()->publish<sa::editor_event::EntitySelected>(m_selectedEntity);
 			}
 		}
-		if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup)) {
-			m_hoveredEntity = child;
-		}
+		elementEvents(e);
+		
 		if (opened) {
 
-			m_pEngine->getCurrentScene()->getHierarchy().forEachDirectChild(child, std::bind(&SceneHierarchy::tree, this, std::placeholders::_1));
-
+			m_pEngine->getCurrentScene()->getHierarchy().forEachDirectChild(e, std::bind(&SceneHierarchy::makeTree, this, std::placeholders::_1));
+			
 			ImGui::TreePop();
 		}
 		return;
 	}
-	// leaf node
+	// Leaf node
 	ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetTreeNodeToLabelSpacing());
-	if (ImGui::Selectable((child.getComponent<comp::Name>()->name + "##" + std::to_string((uint32_t)child)).c_str(), &s)) {
+	if (ImGui::Selectable((e.getComponent<comp::Name>()->name + "##" + std::to_string((uint32_t)e)).c_str(), &s)) {
 		if (s) {
-			m_selectedEntity = child;
+			m_selectedEntity = e;
 			m_pEngine->getCurrentScene()->publish<sa::editor_event::EntitySelected>(m_selectedEntity);
 		}
 		else {
@@ -70,13 +104,17 @@ void SceneHierarchy::tree(const sa::Entity& child) {
 			m_selectedEntity = {};
 		}
 	}
-	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup)) {
-		m_hoveredEntity = child;
-	}
+	elementEvents(e);
+}
+
+SceneHierarchy::~SceneHierarchy() {
+
 }
 
 void SceneHierarchy::onImGui() {
 	SA_PROFILE_FUNCTION();
+
+	ImGui::ShowStyleEditor();
 
 	if (ImGui::Begin("Scene Hierarchy")) {
 
@@ -101,66 +139,28 @@ void SceneHierarchy::onImGui() {
 		if (ImGui::BeginListBox("##Entities", ImGui::GetContentRegionAvail())) {
 			pScene->forEach([&](sa::Entity e) {
 				if (pScene->getHierarchy().hasParent(e))
-					return;
-
-				bool s = m_selectedEntity == e;
-				if (pScene->getHierarchy().hasChildren(e)) {
-					ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
-					if (s) flags |= ImGuiTreeNodeFlags_Selected;
-					bool opened = ImGui::TreeNodeEx((e.getComponent<comp::Name>()->name + "##" + std::to_string((uint32_t)e)).c_str(), flags);
-					if (ImGui::IsItemClicked()) {
-						if (s) {
-							m_pEngine->getCurrentScene()->publish<sa::editor_event::EntityDeselected>(m_selectedEntity);
-							m_selectedEntity = {};
-						}
-						else {
-							m_selectedEntity = e;
-							m_pEngine->getCurrentScene()->publish<sa::editor_event::EntitySelected>(m_selectedEntity);
-						}
-					}
-					if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup)) {
-						m_hoveredEntity = e;
-					}
-					if (opened) {
-
-						m_pEngine->getCurrentScene()->getHierarchy().forEachDirectChild(e, std::bind(&SceneHierarchy::tree, this, std::placeholders::_1));
-
-						ImGui::TreePop();
-					}
-					return;
-				}
-				ImGui::SetCursorPosX(ImGui::GetCursorPosX() + ImGui::GetTreeNodeToLabelSpacing());
-				if (ImGui::Selectable((e.getComponent<comp::Name>()->name + "##" + std::to_string((uint32_t)e)).c_str(), &s)) {
-					if (s) {
-						m_selectedEntity = e;
-						m_pEngine->getCurrentScene()->publish<sa::editor_event::EntitySelected>(m_selectedEntity);
-					}
-					else {
-						m_pEngine->getCurrentScene()->publish<sa::editor_event::EntityDeselected>(m_selectedEntity);
-						m_selectedEntity = {};
-					}
-				}
-				if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup)) {
-					m_hoveredEntity = e;
-				}
+					return; 
+				// only make trees from roots
+				makeTree(e);
 			});
+
+			while (!m_parentChanges.empty()) {
+				auto& pair = m_parentChanges.front();
+				if (!pair.second.isNull())
+					pair.first.setParent(pair.second);
+				else
+					pair.first.orphan();
+				m_parentChanges.pop();
+			}
 	
 			ImGui::EndListBox();
 		}
-
 		
 		if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows) 
 			&& ImGui::IsMouseClicked(ImGuiMouseButton_Right)) 
 		{		
 			ImGui::OpenPopup("SceneHierarchyMenu");
 		}
-
-		if (!ImGui::IsPopupOpen("SceneHierarchyMenu")) {
-			//itemMenu = false;
-			m_hoveredEntity = {};
-		}
-		
-
 		
 	}
 	ImGui::End();

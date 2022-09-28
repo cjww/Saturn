@@ -25,10 +25,8 @@ namespace sa {
 
 		bool hasChildren(const Entity& parent) const;
 		bool hasParent(const Entity& child) const;
-		/*
-		void forEachChild(const Entity& rootParent, std::function<void(Entity, Entity)> func);
-		void forEachDirectChild(const Entity& rootParent, std::function<void(Entity)> func);
-		*/
+		
+		std::unordered_set<Entity>& getChildren(const Entity& entity);
 
 		void forEachChild(const Entity& rootParent, std::function<void(const Entity&, const Entity&)> func);
 		void forEachDirectChild(const Entity& rootParent, std::function<void(const Entity&)> func);

@@ -18,7 +18,7 @@ namespace sa {
 		// if parent is child to target
 		bool isparent = isParent(parent, target);
 		if (isparent) {
-			orphan(parent);
+			parent.orphan();
 		}
 
 		m_parents[target] = parent;
@@ -62,21 +62,11 @@ namespace sa {
 	bool EntityHierarchy::hasParent(const Entity& child) const {
 		return m_parents.count(child) && !m_parents.at(child).isNull();
 	}
-	/*
-	void EntityHierarchy::forEachChild(const Entity& parent, std::function<void(Entity, Entity)> func) {
-		for (auto& node : m_children[parent]) {
-			func(node, parent);
-			forEachChild(node, func);
-		}
-	}
 
-	void EntityHierarchy::forEachDirectChild(const Entity& rootParent, std::function<void(Entity)> func) {
-		for (auto& node : m_children[rootParent]) {
-			func(node);
-		}
+	std::unordered_set<Entity>& EntityHierarchy::getChildren(const Entity& entity) {
+		return m_children[entity];
 	}
-	*/
-
+	
 	void EntityHierarchy::forEachChild(const Entity& parent, std::function<void(const Entity&, const Entity&)> func) {
 		for (auto& node : m_children[parent]) {
 			func(node, parent);

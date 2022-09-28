@@ -8,9 +8,12 @@ private:
 	sa::Entity m_selectedEntity;
 	sa::Entity m_hoveredEntity;
 
+	std::queue<std::pair<sa::Entity, sa::Entity>> m_parentChanges;
+
 	void makePopups();
 
-	void tree(const sa::Entity& child);
+	void elementEvents(const sa::Entity& e);
+	void makeTree(sa::Entity e);
 public:
 	
 	SceneHierarchy(sa::Engine* pEngine);

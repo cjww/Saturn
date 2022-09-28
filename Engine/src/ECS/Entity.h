@@ -54,7 +54,7 @@ namespace sa {
 		std::optional<EntityScript> getScript(const std::string& name) const;
 
 		void setParent(const Entity& parent);
-		void orphan();
+		void orphan() const;
 		const Entity& getParent() const;
 
 		void destroy();

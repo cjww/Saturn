@@ -138,7 +138,7 @@ namespace sa {
         transform->relativePosition = transform->position - parentTransform->position;
     }
 
-    void Entity::orphan() {
+    void Entity::orphan() const {
         m_pScene->getHierarchy().orphan(*this);
         comp::Transform* transform = getComponent<comp::Transform>();
         if (!transform)
