@@ -150,6 +150,15 @@ namespace sa {
         return m_pScene->getHierarchy().getParent(*this);
     }
 
+    bool Entity::hasParent() const {
+        return m_pScene->getHierarchy().hasParent(*this);
+    }
+    
+    bool Entity::hasChildren() const {
+        return m_pScene->getHierarchy().hasChildren(*this);
+    }
+
+
     void Entity::destroy() {
         m_pScene->destroyEntity(*this);
     }

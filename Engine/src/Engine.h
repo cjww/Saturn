@@ -26,7 +26,7 @@ namespace sa {
 		Extent m_windowExtent;
 		RenderWindow* m_pWindow;
 
-		std::unordered_map<size_t, Scene> m_scenes;
+		std::unordered_map<std::string, Scene> m_scenes;
 		Scene* m_currentScene;
 
 		struct FrameTime {
@@ -67,6 +67,8 @@ namespace sa {
 		Scene* getCurrentScene() const;
 		void setScene(const std::string& name);
 		void setScene(Scene& scene);
+
+		std::unordered_map<std::string, Scene>& getScenes();
 
 	};
 }

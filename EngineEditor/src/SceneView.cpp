@@ -92,15 +92,6 @@ void SceneView::onImGui() {
 	if (ImGui::Begin("Scene view", 0, ImGuiWindowFlags_MenuBar)) {
 		if (ImGui::BeginMenuBar()) {
 
-			if (ImGui::BeginMenu("Menu")) {
-
-
-				for (int i = 0; i < 5; i++) {
-					ImGui::Button("something");
-				}
-				ImGui::EndMenu();
-			}
-
 			static bool showStats = false;
 			//ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - ImGui::GetFontSize() * 8);
 			ImGui::Checkbox("Statistics", &showStats);

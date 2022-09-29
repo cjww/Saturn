@@ -56,6 +56,8 @@ namespace sa {
 		void setParent(const Entity& parent);
 		void orphan() const;
 		const Entity& getParent() const;
+		bool hasParent() const;
+		bool hasChildren() const;
 
 		void destroy();
 

@@ -330,16 +330,13 @@ namespace sa {
 	}
 
 	Scene& Engine::getScene(const std::string& name) {
-		size_t size = m_scenes.size();
-		Scene& scene = m_scenes[std::hash<std::string>()(name)];
-		if (size != m_scenes.size()) {
-			// first use
-			scene.on<scene_event::SceneRequest>([&](const sa::scene_event::SceneRequest e, Scene&){
+		auto [it, success] = m_scenes.emplace(name, name);
+		if (success) {
+			it->second.on<scene_event::SceneRequest>([&](const sa::scene_event::SceneRequest e, Scene&){
 				setScene(e.sceneName);
 			});
-
 		}
-		return scene;
+		return it->second;
 	}
 
 	Scene* Engine::getCurrentScene() const {
@@ -361,6 +358,10 @@ namespace sa {
 			publish<engine_event::SceneLoad>(m_currentScene);
 			m_currentScene->load();
 		}
+	}
+
+	std::unordered_map<std::string, Scene>& Engine::getScenes() {
+		return m_scenes;
 	}
 
 }

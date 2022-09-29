@@ -5,11 +5,13 @@
 
 namespace sa {
 
-	Scene::Scene()
+	Scene::Scene(const std::string& name)
 		: m_isLoaded(false)
-	{
+		, m_name(name)
 
+	{
 	}
+
 
 	Scene::~Scene() {
 		for (auto& cam : m_cameras) {
@@ -156,6 +158,10 @@ namespace sa {
 
 	EntityHierarchy& Scene::getHierarchy() {
 		return m_hierarchy;
+	}
+
+	const std::string& Scene::getName() const {
+		return m_name;
 	}
 
 }

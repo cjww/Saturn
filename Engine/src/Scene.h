@@ -29,6 +29,8 @@ namespace sa {
 
 		bool m_isLoaded;
 
+		std::string m_name;
+
 		friend class Entity;
 		void destroyEntity(const Entity& entity);
 		std::optional<EntityScript> addScript(const Entity& entity, const std::filesystem::path& path);
@@ -36,7 +38,8 @@ namespace sa {
 		std::optional<EntityScript> getScript(const Entity& entity, const std::string& name) const;
 
 	public:
-		Scene();
+		Scene(const std::string& name);
+
 		virtual ~Scene();
 
 		static void reg();
@@ -67,6 +70,7 @@ namespace sa {
 		// Hierarchy
 		EntityHierarchy& getHierarchy();
 
+		const std::string& getName() const;
 
 		template<typename ...T, typename F>
 		void forEach(F func);

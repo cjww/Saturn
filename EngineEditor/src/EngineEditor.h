@@ -12,6 +12,7 @@ namespace sa {
 
 	class EngineEditor : public IApplicationLayer {
 	private:
+		sa::Engine* m_pEngine;
 		std::vector<std::unique_ptr<EditorModule>> m_editorModules;
 	public:
 		EngineEditor() = default;
