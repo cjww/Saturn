@@ -32,6 +32,9 @@ SceneHierarchy::SceneHierarchy(sa::Engine* pEngine) : EditorModule(pEngine) {
 
 void SceneHierarchy::elementEvents(const sa::Entity& e) {
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup)) {
+		if (ImGui::IsPopupOpen("SceneHierarchyMenu") && m_hoveredEntity != e) {
+			ImGui::CloseCurrentPopup();
+		}
 		m_hoveredEntity = e;
 	}
 	if (ImGui::BeginDragDropSource()) {
@@ -125,7 +128,7 @@ void SceneHierarchy::onImGui() {
 		if (!m_hoveredEntity.isNull()) {
 			if (ImGui::BeginPopup("SceneHierarchyMenu")) {
 				
-				if (ImGui::Button("Delete")) {
+				if (ImGui::Button(("Delete " + m_hoveredEntity.getComponent<comp::Name>()->name).c_str())) {
 					pScene->publish<sa::editor_event::EntityDeselected>(m_hoveredEntity);
 					m_hoveredEntity.destroy();
 					ImGui::CloseCurrentPopup();

@@ -2,7 +2,7 @@
 
 void EntityInspector::makePopups() {
 	if (ImGui::BeginPopup("Remove?")) {
-		ImGui::Text("Remove?");
+		ImGui::Text("Remove %s?", ImGui::payload.type.getName().c_str());
 		if (ImGui::Button("Yes")) {
 			ImGui::CloseCurrentPopup();
 			m_selectedEntity.removeComponent(ImGui::payload.type);
@@ -11,7 +11,7 @@ void EntityInspector::makePopups() {
 	}
 
 	if (ImGui::BeginPopup("Remove script?")) {
-		ImGui::Text("Remove?");
+		ImGui::Text("Remove %s?", ImGui::payload.name);
 		if (ImGui::Button("Yes")) {
 			ImGui::CloseCurrentPopup();
 			m_selectedEntity.removeScript(ImGui::payload.name);
@@ -23,9 +23,8 @@ void EntityInspector::makePopups() {
 		for (auto type : sa::ComponentType::getRegisteredComponents()) {
 			if (type == sa::getComponentType<comp::Name>())
 				continue;
-			if (ImGui::Button(type.getName().c_str())) {
+			if (ImGui::MenuItem(type.getName().c_str())) {
 				m_selectedEntity.addComponent(type);
-				ImGui::CloseCurrentPopup();
 			}
 		}
 		ImGui::EndPopup();

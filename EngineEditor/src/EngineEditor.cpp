@@ -36,7 +36,6 @@ namespace sa {
 			static bool enterSceneNamePopup = false;
 			if (ImGui::BeginMenu(m_pEngine->getCurrentScene()->getName().c_str())) {
 				
-				ImGui::PushStyleVar(ImGuiStyleVar_ButtonTextAlign, ImVec2(0.5f, 0.5f));
 				auto& scenes = m_pEngine->getScenes();
 				for (auto& [name, scene] : scenes) {
 					if (ImGui::MenuItem(name.c_str())) {
@@ -48,8 +47,7 @@ namespace sa {
 				if (ImGui::MenuItem("New Scene + ")) {
 					enterSceneNamePopup = true;
 				}
-				ImGui::PopStyleVar();
-
+				
 
 				ImGui::EndMenu();
 			}
