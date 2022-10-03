@@ -12,6 +12,16 @@
 #include "ScriptManager.h"
 #include "EntityHierarchy.h"
 
+namespace physx {
+	class PxFoundation;
+	class PxPvd;
+	class PxPhysics;
+	class PxPvdTransport;
+	class PxScene;
+	class PxRigidDynamic;
+	class PxDefaultCpuDispatcher;
+}
+
 namespace sa {
 	typedef uint32_t SceneID;
 
@@ -30,6 +40,17 @@ namespace sa {
 		bool m_isLoaded;
 
 		std::string m_name;
+
+		physx::PxFoundation* m_pFoundation;
+		physx::PxPvd* m_pPvd;
+		physx::PxPhysics* m_pPhysics;
+		physx::PxPvdTransport* m_pTransport;
+		
+		physx::PxScene* m_pScene;
+		physx::PxRigidDynamic* m_pActor;
+		physx::PxDefaultCpuDispatcher* m_pDefaultCpuDispatcher;
+
+		Entity m_testEntity;
 
 		friend class Entity;
 		void destroyEntity(const Entity& entity);

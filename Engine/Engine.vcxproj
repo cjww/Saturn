@@ -140,10 +140,11 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)deps\include\;$(ProjectDir)src\;$(SolutionDir)\VulkanRenderer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)deps\PhysX\include;$(ProjectDir)deps\include\;$(ProjectDir)src\;$(SolutionDir)\VulkanRenderer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -156,10 +157,10 @@
       </Command>
     </PreBuildEvent>
     <Lib>
-      <AdditionalDependencies>VulkanRenderer_$(Platform)$(Configuration).lib;lua51.lib;assimp-vc143-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>VulkanRenderer_$(Platform)$(Configuration).lib;lua51.lib;PhysXExtensions_static_64.lib;PhysX_64.lib;PhysXCommon_64.lib;PhysXFoundation_64.lib;PhysXCooking_64.lib;assimp-vc143-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
-      <AdditionalLibraryDirectories>$(ProjectDir)deps\lua\;$(SolutionDir)VulkanRenderer\lib;$(ProjectDir)deps\assimp-5.2.4\lib\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)deps\lua\;$(SolutionDir)VulkanRenderer\lib;$(ProjectDir)deps\assimp-5.2.4\lib\$(Configuration);$(ProjectDir)deps\PhysX\bin\debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -170,7 +171,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)deps\include\;$(ProjectDir)src\;$(SolutionDir)\VulkanRenderer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)deps\PhysX\include;$(ProjectDir)deps\include\;$(ProjectDir)src\;$(SolutionDir)\VulkanRenderer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -188,10 +189,10 @@
       </Command>
     </PreBuildEvent>
     <Lib>
-      <AdditionalDependencies>VulkanRenderer_$(Platform)$(Configuration).lib;lua51.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>VulkanRenderer_$(Platform)$(Configuration).lib;lua51.lib;PhysXExtensions_static_64.lib;PhysX_64.lib;PhysXCommon_64.lib;PhysXFoundation_64.lib;PhysXCooking_64.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
-      <AdditionalLibraryDirectories>$(ProjectDir)deps\lua\;$(SolutionDir)VulkanRenderer\lib;$(ProjectDir)deps\assimp-5.2.4\lib\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)deps\lua\;$(SolutionDir)VulkanRenderer\lib;$(ProjectDir)deps\assimp-5.2.4\lib\$(Configuration);$(ProjectDir)deps\PhysX\bin\release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>

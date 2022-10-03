@@ -36,7 +36,7 @@ namespace sa {
 		comp::Light* lightComp = entity.addComponent<comp::Light>();
 		lightComp->values.color = SA_COLOR_WHITE;
 		lightComp->values.position = transform->position + sa::Vector3(3, 2, -3);
-		lightComp->values.strength = 10.0f;
+		lightComp->values.intensity = 10.0f;
 
 		return entity;
 	}
@@ -80,7 +80,7 @@ namespace sa {
 		
 		//createModelEntity(engine, "models/viking_room/scene.gltf", 0.2f);
 		
-		engine.createSystemScript("test.lua");
+		//engine.createSystemScript("test.lua");
 
 
 
@@ -112,13 +112,14 @@ namespace sa {
 	}
 
 	void TestLayer::onImGuiRender() {
-
+		/*
 		Texture outputTexture = m_pEngine->getRenderTechnique()->getOutputTexture();
 		
 		ImGui::Image(outputTexture, outputTexture.getExtent());
 
 
 		ImGui::ShowDemoWindow();
+		*/
 		
 
 	}

@@ -2,6 +2,25 @@
 #include "Scene.h"
 
 #include "ECS\Components.h"
+#include <PxPhysicsAPI.h>
+
+
+class ErrorCallback : public physx::PxErrorCallback {
+	virtual void reportError(physx::PxErrorCode::Enum code, const char* message, const char* file, int line) override {
+		SA_DEBUG_LOG_ERROR("Code:", (uint32_t)code, message, file, line);
+	}
+
+};
+
+class AllocatorCallback : public physx::PxAllocatorCallback {
+	virtual void* allocate(size_t size, const char* typeName, const char* filename, int line) override {
+		return malloc(size);
+	}
+	virtual void deallocate(void* ptr) override {
+		free(ptr);
+	}
+
+};
 
 namespace sa {
 
@@ -10,10 +29,55 @@ namespace sa {
 		, m_name(name)
 
 	{
+
+		static AllocatorCallback s_defaultAllocator;
+		static ErrorCallback s_defaultErrorCallback;
+
+		m_pFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, s_defaultAllocator, s_defaultErrorCallback);
+		if (!m_pFoundation) {
+			throw std::runtime_error("PxCreateFoundation failed!");
+		}
+
+		//m_pPvd = PxCreatePvd(*m_pFoundation);
+		//m_pTransport = PxDefaultPvdSocketTransportCreate();
+		//m_pPvd->connect()
+		m_pPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *m_pFoundation, physx::PxTolerancesScale());
+		if (!m_pPhysics) {
+			throw std::runtime_error("PxCreatePhysics failed!");
+		}
+
+		physx::PxSceneDesc desc(m_pPhysics->getTolerancesScale());
+		desc.gravity = physx::PxVec3(0.0f, -9.82f, 0.0f);
+		m_pDefaultCpuDispatcher = physx::PxDefaultCpuDispatcherCreate(4);
+		desc.cpuDispatcher = m_pDefaultCpuDispatcher;
+		desc.filterShader = physx::PxDefaultSimulationFilterShader;
+		/*
+		*/
+
+		m_pScene = m_pPhysics->createScene(desc);
+		if (!m_pScene)
+			throw std::runtime_error("createScene failed!");
+
+		m_testEntity = createEntity("TestPhysics");
+		m_testEntity.addComponent<comp::Transform>()->position = {0, 5, 0};
+		auto& progress = AssetManager::get().loadModel("resources/models/Suzanne.dae");
+		progress.wait();
+		m_testEntity.addComponent<comp::Model>()->modelID = progress;
+
+		m_pActor = m_pPhysics->createRigidDynamic(physx::PxTransform(physx::PxVec3(0, 5, 0)));
+		m_pScene->addActor(*m_pActor);
 	}
 
 
 	Scene::~Scene() {
+
+		m_pActor->release();
+		m_pScene->release();
+		m_pDefaultCpuDispatcher->release();
+
+		m_pPhysics->release();
+		m_pFoundation->release();
+
 		for (auto& cam : m_cameras) {
 			delete cam;
 		}
@@ -46,15 +110,17 @@ namespace sa {
 
 	void Scene::update(float dt) {
 		SA_PROFILE_FUNCTION();
+
+		m_pScene->simulate(dt);
+
+		m_pScene->fetchResults(true);
+
+		auto transform = m_pActor->getGlobalPose();
+		m_testEntity.getComponent<comp::Transform>()->position = { transform.p.x, transform.p.y, transform.p.z };
+
 		publish<scene_event::UpdatedScene>(dt);
 		m_scriptManager.update(dt, this);
-		
-		/*
-		view<comp::Light, comp::Transform>().each([](comp::Light& light, const comp::Transform& transform) {
-			light.values.position
-		});
 
-		*/
 		view<comp::Transform>().each([&](const entt::entity& e, comp::Transform& transform) {
 			Entity entity(this, e);
 			if (!m_hierarchy.hasChildren(entity)) { 
