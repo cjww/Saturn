@@ -11,17 +11,19 @@ function init()
     entity.light = l
 
     timer = 0.0
+    --[[
 
-
-    local suzanneList = scene:findEntitiesByName("Suzanne.dae")
-
-    firstSuzanne = suzanneList[2]
-
-    for k,v in ipairs(suzanneList) do
-        v.parent = entity
-    end
-
-    suzanneList[1].parent = nil
+        
+        local suzanneList = scene:findEntitiesByName("Suzanne.dae")
+        
+        firstSuzanne = suzanneList[2]
+        
+        for k,v in ipairs(suzanneList) do
+            v.parent = entity
+        end
+        
+        suzanneList[1].parent = nil
+        ]]
 
    -- setScene(otherScene)
 
@@ -37,8 +39,8 @@ function update(dt)
 
     if timer > 5 then
         timer = 0.0
-        print("ID moved", firstSuzanne.id)
-        firstSuzanne.transform.position.x = firstSuzanne.transform.position.x + 1
+        --print("ID moved", firstSuzanne.id)
+        --firstSuzanne.transform.position.x = firstSuzanne.transform.position.x + 1
     end
     entity.transform.rotation:rotate(dt * 45, Vec3.new(0, 1, 0))
 

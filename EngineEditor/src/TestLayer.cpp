@@ -64,6 +64,7 @@ namespace sa {
 		transform->scale = { 500, 500, 1 };
 		transform->rotation = glm::rotate(transform->rotation, glm::radians(-90.f), { 1, 0, 0 });
 		transform->position.y -= 1;
+		groundEntity.addComponent<comp::BoxCollider>(Vector3(100, 100, 1));
 
 		Entity adam = createModelEntity(engine, "resources/models/adamHead/adamHead.gltf");
 		/*
@@ -88,12 +89,12 @@ namespace sa {
 			createLight(engine, pos, colors[rand() % 7]);
 		}
 
+		/*
 		for (int i = 0; i < 30; i++) {
 			createModelEntity(engine, "resources/models/adamHead/adamHead.gltf");
 			createModelEntity(engine, "resources/models/lieutenantHead/lieutenantHead.gltf");
 			createModelEntity(engine, "resources/models/Suzanne.dae");
 		}
-		/*
 
 		for (int i = 0; i < 30; i++) {
 			createModelEntity(engine, "resources/models/adamHead/adamHead.gltf");
@@ -120,6 +121,22 @@ namespace sa {
 		*/
 		adam.addScript("Movable.lua");
 		adam.addScript("Inventory.lua");
+
+
+		Entity testEntity = engine.getCurrentScene()->createEntity("TestPhysics");
+		testEntity.addComponent<comp::Transform>()->position = { 0, 20, 0 };
+		auto& progress = AssetManager::get().loadModel("resources/models/Suzanne.dae");
+		progress.wait();
+		testEntity.addComponent<comp::Model>()->modelID = progress;
+		testEntity.addComponent<comp::RigidBody>();
+		testEntity.addComponent<comp::SphereCollider>(1.f);
+
+		Entity testEntity2 = engine.getCurrentScene()->createEntity("TestPhysics2");
+		testEntity2.addComponent<comp::Transform>()->position = { 0, 2, 0 };
+		
+		testEntity2.addComponent<comp::Model>()->modelID = progress;
+		testEntity2.addComponent<comp::RigidBody>(true);
+		testEntity2.addComponent<comp::SphereCollider>(1.f);
 
 
 	}

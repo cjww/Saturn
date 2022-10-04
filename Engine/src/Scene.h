@@ -13,13 +13,7 @@
 #include "EntityHierarchy.h"
 
 namespace physx {
-	class PxFoundation;
-	class PxPvd;
-	class PxPhysics;
-	class PxPvdTransport;
 	class PxScene;
-	class PxRigidDynamic;
-	class PxDefaultCpuDispatcher;
 }
 
 namespace sa {
@@ -41,22 +35,23 @@ namespace sa {
 
 		std::string m_name;
 
-		physx::PxFoundation* m_pFoundation;
-		physx::PxPvd* m_pPvd;
-		physx::PxPhysics* m_pPhysics;
-		physx::PxPvdTransport* m_pTransport;
-		
-		physx::PxScene* m_pScene;
-		physx::PxRigidDynamic* m_pActor;
-		physx::PxDefaultCpuDispatcher* m_pDefaultCpuDispatcher;
-
-		Entity m_testEntity;
+		physx::PxScene* m_pPhysicsScene;
 
 		friend class Entity;
 		void destroyEntity(const Entity& entity);
 		std::optional<EntityScript> addScript(const Entity& entity, const std::filesystem::path& path);
 		void removeScript(const Entity& entity, const std::string& name);
 		std::optional<EntityScript> getScript(const Entity& entity, const std::string& name) const;
+
+		friend class Engine;
+		void onRigidBodyConstruct(entt::registry& reg, entt::entity e);
+		void onRigidBodyDestroy(entt::registry& reg, entt::entity e);
+
+		void onSphereColliderConstruct(entt::registry& reg, entt::entity e);
+		void onSphereColliderDestroy(entt::registry& reg, entt::entity e);
+		void onBoxColliderConstruct(entt::registry& reg, entt::entity e);
+		void onBoxColliderDestroy(entt::registry& reg, entt::entity e);
+
 
 	public:
 		Scene(const std::string& name);
@@ -98,6 +93,9 @@ namespace sa {
 
 		template<typename F>
 		void forEach(const std::vector<ComponentType>& components, F func);
+
+		template<typename T, typename F>
+		void onConstruct(F func);
 
 	};
 	
@@ -141,5 +139,15 @@ namespace sa {
 			Entity entity(this, e);
 			func(entity);
 		});
+	}
+
+	template<typename T, typename F>
+	inline void Scene::onConstruct(F func) {
+		static_assert(
+			std::is_assignable_v<std::function<void(Scene*, Entity)>, F> &&
+			"Not a valid function signature");
+		on_construct<T>().connect<[](entt::registry& reg, entt::entity e) {
+			
+		}>();
 	}
 }

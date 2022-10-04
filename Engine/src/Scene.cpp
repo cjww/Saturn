@@ -2,81 +2,71 @@
 #include "Scene.h"
 
 #include "ECS\Components.h"
-#include <PxPhysicsAPI.h>
 
-
-class ErrorCallback : public physx::PxErrorCallback {
-	virtual void reportError(physx::PxErrorCode::Enum code, const char* message, const char* file, int line) override {
-		SA_DEBUG_LOG_ERROR("Code:", (uint32_t)code, message, file, line);
-	}
-
-};
-
-class AllocatorCallback : public physx::PxAllocatorCallback {
-	virtual void* allocate(size_t size, const char* typeName, const char* filename, int line) override {
-		return malloc(size);
-	}
-	virtual void deallocate(void* ptr) override {
-		free(ptr);
-	}
-
-};
+#include "PhysicsSystem.h"
+#include <PxScene.h>
+#include <PxRigidBody.h>
 
 namespace sa {
+
+	void Scene::onRigidBodyConstruct(entt::registry& reg, entt::entity e) {
+		comp::RigidBody& rb = reg.get<comp::RigidBody>(e);
+		comp::Transform& transform = reg.get_or_emplace<comp::Transform>(e);
+		rb.pActor = PhysicsSystem::get().createRigidBody(rb.isStatic, transform);
+		m_pPhysicsScene->addActor(*rb.pActor);
+	}
+
+	void Scene::onRigidBodyDestroy(entt::registry& reg, entt::entity e) {
+		if (reg.any_of<comp::SphereCollider>(e)) {
+			reg.erase<comp::SphereCollider>(e);
+		}
+		comp::RigidBody& rb = reg.get<comp::RigidBody>(e);
+		m_pPhysicsScene->removeActor(*rb.pActor);
+		rb.pActor->release();
+	}
+
+	void Scene::onSphereColliderConstruct(entt::registry& reg, entt::entity e) {
+		comp::SphereCollider& sc = reg.get<comp::SphereCollider>(e);
+		comp::RigidBody& rb = reg.get_or_emplace<comp::RigidBody>(e, true);
+		sc.pShape = PhysicsSystem::get().createSphere(sc.radius);
+		rb.pActor->attachShape(*sc.pShape);
+		
+	}
+
+	void Scene::onSphereColliderDestroy(entt::registry& reg, entt::entity e) {
+		comp::SphereCollider& sc = reg.get<comp::SphereCollider>(e);
+		comp::RigidBody& rb = reg.get<comp::RigidBody>(e);
+		rb.pActor->detachShape(*sc.pShape);
+		sc.pShape->release();
+	}
+
+	void Scene::onBoxColliderConstruct(entt::registry& reg, entt::entity e) {
+		comp::BoxCollider& bc = reg.get<comp::BoxCollider>(e);
+		comp::RigidBody& rb = reg.get_or_emplace<comp::RigidBody>(e, true);
+		bc.pShape = PhysicsSystem::get().createBox(bc.halfLengths);
+		rb.pActor->attachShape(*bc.pShape);
+
+	}
+
+	void Scene::onBoxColliderDestroy(entt::registry& reg, entt::entity e) {
+		comp::BoxCollider& bc = reg.get<comp::BoxCollider>(e);
+		comp::RigidBody& rb = reg.get<comp::RigidBody>(e);
+		rb.pActor->detachShape(*bc.pShape);
+		bc.pShape->release();
+	}
 
 	Scene::Scene(const std::string& name)
 		: m_isLoaded(false)
 		, m_name(name)
-
+		, m_pPhysicsScene(PhysicsSystem::get().createScene())
 	{
 
-		static AllocatorCallback s_defaultAllocator;
-		static ErrorCallback s_defaultErrorCallback;
 
-		m_pFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, s_defaultAllocator, s_defaultErrorCallback);
-		if (!m_pFoundation) {
-			throw std::runtime_error("PxCreateFoundation failed!");
-		}
-
-		//m_pPvd = PxCreatePvd(*m_pFoundation);
-		//m_pTransport = PxDefaultPvdSocketTransportCreate();
-		//m_pPvd->connect()
-		m_pPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *m_pFoundation, physx::PxTolerancesScale());
-		if (!m_pPhysics) {
-			throw std::runtime_error("PxCreatePhysics failed!");
-		}
-
-		physx::PxSceneDesc desc(m_pPhysics->getTolerancesScale());
-		desc.gravity = physx::PxVec3(0.0f, -9.82f, 0.0f);
-		m_pDefaultCpuDispatcher = physx::PxDefaultCpuDispatcherCreate(4);
-		desc.cpuDispatcher = m_pDefaultCpuDispatcher;
-		desc.filterShader = physx::PxDefaultSimulationFilterShader;
-		/*
-		*/
-
-		m_pScene = m_pPhysics->createScene(desc);
-		if (!m_pScene)
-			throw std::runtime_error("createScene failed!");
-
-		m_testEntity = createEntity("TestPhysics");
-		m_testEntity.addComponent<comp::Transform>()->position = {0, 5, 0};
-		auto& progress = AssetManager::get().loadModel("resources/models/Suzanne.dae");
-		progress.wait();
-		m_testEntity.addComponent<comp::Model>()->modelID = progress;
-
-		m_pActor = m_pPhysics->createRigidDynamic(physx::PxTransform(physx::PxVec3(0, 5, 0)));
-		m_pScene->addActor(*m_pActor);
+	
 	}
 
 
 	Scene::~Scene() {
-
-		m_pActor->release();
-		m_pScene->release();
-		m_pDefaultCpuDispatcher->release();
-
-		m_pPhysics->release();
-		m_pFoundation->release();
 
 		for (auto& cam : m_cameras) {
 			delete cam;
@@ -111,12 +101,16 @@ namespace sa {
 	void Scene::update(float dt) {
 		SA_PROFILE_FUNCTION();
 
-		m_pScene->simulate(dt);
+		view<comp::RigidBody, comp::Transform>().each([&](const comp::RigidBody& rb, const comp::Transform& transform) {
+			rb.pActor->setGlobalPose(transform, false);
+		});
 
-		m_pScene->fetchResults(true);
+		m_pPhysicsScene->simulate(dt);
+		m_pPhysicsScene->fetchResults(true);
 
-		auto transform = m_pActor->getGlobalPose();
-		m_testEntity.getComponent<comp::Transform>()->position = { transform.p.x, transform.p.y, transform.p.z };
+		view<comp::RigidBody, comp::Transform>().each([&](const comp::RigidBody& rb, comp::Transform& transform) {
+			transform = rb.pActor->getGlobalPose();
+		});
 
 		publish<scene_event::UpdatedScene>(dt);
 		m_scriptManager.update(dt, this);
@@ -217,6 +211,7 @@ namespace sa {
 	std::optional<EntityScript> Scene::getScript(const Entity& entity, const std::string& name) const {
 		return m_scriptManager.getScript(entity, name);
 	}
+
 
 	std::vector<EntityScript> Scene::getAssignedScripts(const Entity& entity) const {
 		return m_scriptManager.getEntityScripts(entity);

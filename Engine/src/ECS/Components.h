@@ -12,6 +12,8 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm\gtx/quaternion.hpp"
 
+#include "PhysicsSystem.h"
+
 namespace sa {
 
 	enum class LightType : uint32_t {
@@ -65,9 +67,14 @@ namespace comp {
 		bool hasParent = false;
 		sa::Vector3 relativePosition;
 		
-		sa::Matrix4x4 getMatrix() const {
-			return glm::translate(sa::Matrix4x4(1), position) * glm::toMat4(rotation) * glm::scale(sa::Matrix4x4(1), scale);
-		}
+		Transform() = default;
+		Transform(physx::PxTransform pxTransform);
+
+		comp::Transform& operator=(const physx::PxTransform pxTransform);
+
+		operator physx::PxTransform() const;
+
+		sa::Matrix4x4 getMatrix() const;
 
 		static void reg() {
 			auto type = registerType<Transform>();
@@ -122,6 +129,43 @@ namespace comp {
 				[](comp::Light& self, const sa::Vector4& color) {self.values.color = sa::Color{ color.x, color.y, color.z, color.w }; }
 			);
 			
+		}
+	};
+
+	struct RigidBody : public sa::ComponentBase {
+		physx::PxRigidActor* pActor = nullptr;
+		bool isStatic = false;
+
+		RigidBody() = default;
+		RigidBody(bool isStatic) 
+			: isStatic(isStatic)
+		{
+		};
+
+	};
+
+	struct SphereCollider : public sa::ComponentBase {
+		float radius = 1.f;
+		physx::PxMaterial* pMaterial = nullptr;
+		physx::PxShape* pShape = nullptr;
+
+		SphereCollider() = default;
+		SphereCollider(float radius) 
+			: radius(radius)
+		{
+		}
+	};
+
+
+	struct BoxCollider : public sa::ComponentBase {
+		sa::Vector3 halfLengths = sa::Vector3(1);
+		physx::PxMaterial* pMaterial = nullptr;
+		physx::PxShape* pShape = nullptr;
+
+		BoxCollider() = default;
+		BoxCollider(const sa::Vector3& halfLengths)
+			: halfLengths(halfLengths)
+		{
 		}
 	};
 

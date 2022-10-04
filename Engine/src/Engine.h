@@ -9,10 +9,12 @@
 
 #include "Tools\utils.h"
 #include "ScriptManager.h"
+#include "PhysicsSystem.h"
 
 #include <RenderWindow.hpp>
 
 #include <rapidxml\rapidxml.hpp>
+
 
 
 namespace sa {

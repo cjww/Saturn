@@ -337,6 +337,14 @@ namespace sa {
 			it->second.on<scene_event::SceneRequest>([&](const sa::scene_event::SceneRequest e, Scene&){
 				setScene(e.sceneName);
 			});
+			
+			it->second.on_construct<comp::RigidBody>().connect<&Scene::onRigidBodyConstruct>(it->second);
+			it->second.on_destroy<comp::RigidBody>().connect<&Scene::onRigidBodyDestroy>(it->second);
+			it->second.on_construct<comp::SphereCollider>().connect<&Scene::onSphereColliderConstruct>(it->second);
+			it->second.on_destroy<comp::SphereCollider>().connect<&Scene::onSphereColliderDestroy>(it->second);
+			it->second.on_construct<comp::BoxCollider>().connect<&Scene::onBoxColliderConstruct>(it->second);
+			it->second.on_destroy<comp::BoxCollider>().connect<&Scene::onBoxColliderDestroy>(it->second);
+
 		}
 		return it->second;
 	}
@@ -365,6 +373,5 @@ namespace sa {
 	std::unordered_map<std::string, Scene>& Engine::getScenes() {
 		return m_scenes;
 	}
-
 }
 

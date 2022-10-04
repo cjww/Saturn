@@ -201,6 +201,7 @@
     <ClCompile Include="src\Graphics\RenderLayers\BloomRenderLayer.cpp" />
     <ClCompile Include="src\Graphics\RenderLayers\ImGuiRenderLayer.cpp" />
     <ClCompile Include="src\Graphics\RenderPipeline.cpp" />
+    <ClCompile Include="src\PhysicsSystem.cpp" />
     <ClCompile Include="src\Tools\MemoryChecker.cpp" />
     <ClCompile Include="src\Application.cpp" />
     <ClCompile Include="src\ECS\ComponentBase.cpp" />
@@ -237,6 +238,7 @@
     <ClInclude Include="src\Graphics\RenderLayers\ImGuiRenderLayer.h" />
     <ClInclude Include="src\Graphics\RenderPipeline.h" />
     <ClInclude Include="src\Graphics\RenderTechniques\ForwardPlus.h" />
+    <ClInclude Include="src\PhysicsSystem.h" />
     <ClInclude Include="src\Tools\MemoryChecker.h" />
     <ClInclude Include="src\Application.h" />
     <ClInclude Include="src\Core.h" />
