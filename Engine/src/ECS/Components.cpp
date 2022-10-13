@@ -7,7 +7,11 @@
 
 namespace comp {
 	Model::Model(const std::string& name) {
-		sa::AssetManager::get().loadModel(name);
+		this->modelID = sa::AssetManager::get().loadModel(name);
+	}
+	Model::Model(ResourceID id)
+		: modelID(id)
+	{
 	}
 
 	Transform::Transform(physx::PxTransform pxTransform) {

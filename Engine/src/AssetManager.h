@@ -70,6 +70,7 @@ namespace sa {
 		ResourceID loadDefaultMaterial();
 
 		ResourceID loadQuad();
+		ResourceID loadBox();
 
 		ModelData* getModel(ResourceID id) const;
 		Material* getMaterial(ResourceID id) const;

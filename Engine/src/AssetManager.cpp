@@ -250,7 +250,6 @@ namespace sa {
 
 	ResourceID AssetManager::loadQuad() {
 		ResourceManager& resManager = ResourceManager::get();
-		Renderer& renderer = Renderer::get();
 
 		ResourceID id = resManager.keyToID<ModelData>("Quad");
 		if (id != NULL_RESOURCE) {
@@ -278,6 +277,81 @@ namespace sa {
 		model.meshes.push_back(mesh);
 		
 		id = resManager.insert<ModelData>("Quad", model);
+
+		return id;
+	}
+
+	ResourceID AssetManager::loadBox() {
+		ResourceManager& resManager = ResourceManager::get();
+		
+		ResourceID id = resManager.keyToID<ModelData>("Box");
+		if (id != NULL_RESOURCE) {
+			return id;
+		}
+
+
+		Mesh mesh = {};
+
+		mesh.vertices = {
+			{ glm::vec4(-0.5f, 0.5f, 0.5f, 1), glm::vec4(0, 0, 1, 0), glm::vec2(0, 0) },
+			{ glm::vec4(0.5f, 0.5f, 0.5f, 1), glm::vec4(0, 0, 1, 0), glm::vec2(1, 0) },
+			{ glm::vec4(0.5f, -0.5f, 0.5f, 1), glm::vec4(0, 0, 1, 0), glm::vec2(1, 1) },
+			{ glm::vec4(-0.5f, -0.5f, 0.5f, 1), glm::vec4(0, 0, 1, 0), glm::vec2(0, 1) },
+			
+			{ glm::vec4(0.5f, 0.5f, -0.5f, 1), glm::vec4(0, 0, -1, 0), glm::vec2(0, 0) },
+			{ glm::vec4(-0.5f, 0.5f, -0.5f, 1), glm::vec4(0, 0, -1, 0), glm::vec2(1, 0) },
+			{ glm::vec4(-0.5f, -0.5f, -0.5f, 1), glm::vec4(0, 0, -1, 0), glm::vec2(1, 1) },
+			{ glm::vec4(0.5f, -0.5f, -0.5f, 1), glm::vec4(0, 0, -1, 0), glm::vec2(0, 1) },
+
+			{ glm::vec4(0.5f, 0.5f, 0.5f, 1), glm::vec4(1, 0, 0, 0), glm::vec2(0, 0) },
+			{ glm::vec4(0.5f, 0.5f, -0.5f, 1), glm::vec4(1, 0, 0, 0), glm::vec2(1, 0) },
+			{ glm::vec4(0.5f, -0.5f, -0.5f, 1), glm::vec4(1, 0, 0, 0), glm::vec2(1, 1) },
+			{ glm::vec4(0.5f, -0.5f, 0.5f, 1), glm::vec4(1, 0, 0, 0), glm::vec2(0, 1) },
+
+			{ glm::vec4(-0.5f, 0.5f, -0.5f, 1), glm::vec4(-1, 0, 0, 0), glm::vec2(0, 0) },
+			{ glm::vec4(-0.5f, 0.5f, 0.5f, 1), glm::vec4(-1, 0, 0, 0), glm::vec2(1, 0) },
+			{ glm::vec4(-0.5f, -0.5f, 0.5f, 1), glm::vec4(-1, 0, 0, 0), glm::vec2(1, 1) },
+			{ glm::vec4(-0.5f, -0.5f, -0.5f, 1), glm::vec4(-1, 0, 0, 0), glm::vec2(0, 1) },
+
+			{ glm::vec4(-0.5f, -0.5f, 0.5f, 1), glm::vec4(0, -1, 0, 0), glm::vec2(0, 0) },
+			{ glm::vec4(0.5f, -0.5f, 0.5f, 1), glm::vec4(0, -1, 0, 0), glm::vec2(1, 0) },
+			{ glm::vec4(0.5f, -0.5f, -0.5f, 1), glm::vec4(0, -1, 0, 0), glm::vec2(1, 1) },
+			{ glm::vec4(-0.5f, -0.5f, -0.5f, 1), glm::vec4(0, -1, 0, 0), glm::vec2(0, 1) },
+
+			{ glm::vec4(0.5f, 0.5f, 0.5f, 1), glm::vec4(0, 1, 0, 0), glm::vec2(0, 0) },
+			{ glm::vec4(-0.5f, 0.5f, 0.5f, 1), glm::vec4(0, 1, 0, 0), glm::vec2(1, 0) },
+			{ glm::vec4(-0.5f, 0.5f, -0.5f, 1), glm::vec4(0, 1, 0, 0), glm::vec2(1, 1) },
+			{ glm::vec4(0.5f, 0.5f, -0.5f, 1), glm::vec4(0, 1, 0, 0), glm::vec2(0, 1) },
+
+
+		};
+
+		mesh.indices = {
+			0, 1, 3,
+			1, 2, 3,
+
+			4, 5, 7,
+			5, 6, 7,
+
+			8, 9, 11,
+			9, 10, 11,
+
+			12, 13, 15,
+			13, 14, 15,
+
+			16, 17, 19,
+			17, 18, 19,
+			
+			20, 21, 23,
+			21, 22, 23,
+		};
+
+		mesh.materialID = loadDefaultMaterial();
+
+		ModelData model = {};
+		model.meshes.push_back(mesh);
+
+		id = resManager.insert<ModelData>("Box", model);
 
 		return id;
 	}

@@ -27,7 +27,7 @@ namespace sa {
 
 	void Scene::onSphereColliderConstruct(entt::registry& reg, entt::entity e) {
 		comp::SphereCollider& sc = reg.get<comp::SphereCollider>(e);
-		comp::RigidBody& rb = reg.get_or_emplace<comp::RigidBody>(e, true);
+		comp::RigidBody& rb = reg.get_or_emplace<comp::RigidBody>(e);
 		sc.pShape = PhysicsSystem::get().createSphere(sc.radius);
 		rb.pActor->attachShape(*sc.pShape);
 		
@@ -42,7 +42,7 @@ namespace sa {
 
 	void Scene::onBoxColliderConstruct(entt::registry& reg, entt::entity e) {
 		comp::BoxCollider& bc = reg.get<comp::BoxCollider>(e);
-		comp::RigidBody& rb = reg.get_or_emplace<comp::RigidBody>(e, true);
+		comp::RigidBody& rb = reg.get_or_emplace<comp::RigidBody>(e);
 		bc.pShape = PhysicsSystem::get().createBox(bc.halfLengths);
 		rb.pActor->attachShape(*bc.pShape);
 

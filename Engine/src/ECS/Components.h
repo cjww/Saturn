@@ -48,6 +48,8 @@ namespace comp {
 
 		Model() = default;
 		Model(const std::string& name);
+		Model(ResourceID id);
+
 
 		static void reg() {
 			auto type = registerType<Model>("",
@@ -134,7 +136,7 @@ namespace comp {
 
 	struct RigidBody : public sa::ComponentBase {
 		physx::PxRigidActor* pActor = nullptr;
-		bool isStatic = false;
+		bool isStatic = true;
 
 		RigidBody() = default;
 		RigidBody(bool isStatic) 
