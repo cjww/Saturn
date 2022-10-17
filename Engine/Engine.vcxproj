@@ -214,7 +214,6 @@
     </ClCompile>
     <ClCompile Include="src\Scene.cpp" />
     <ClCompile Include="src\Camera.cpp" />
-    <ClCompile Include="src\Tools\CustomImGui.cpp" />
     <ClCompile Include="src\ECS\Entity.cpp" />
     <ClCompile Include="src\Engine.cpp" />
     <ClCompile Include="src\Graphics\IRenderTechnique.cpp" />
@@ -254,7 +253,6 @@
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\Scene.h" />
     <ClInclude Include="src\ThreadManager.h" />
-    <ClInclude Include="src\Tools\CustomImGui.h" />
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\ECS\Components.h" />
     <ClInclude Include="src\Engine.h" />

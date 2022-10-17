@@ -27,7 +27,6 @@ namespace sa {
 
 	void EngineEditor::onImGuiRender() {
 		ImGuiID viewPortDockSpaceID = ImGui::DockSpaceOverViewport();
-		
 
 		if (ImGui::BeginMainMenuBar()) {
 			ImGui::Text("Saturn 3");

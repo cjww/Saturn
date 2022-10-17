@@ -3,6 +3,8 @@
 #include "ECS/Components.h"
 #include "ECS/Entity.h"
 
+#include <filesystem>
+
 #define IMGUI_BUFFER_SIZE_BIG 256U
 #define IMGUI_BUFFER_SIZE_NORMAL 128U
 #define IMGUI_BUFFER_SIZE_SMALL 64U
@@ -25,6 +27,8 @@ namespace ImGui {
 	template<typename T>
 	void Component(const sa::Entity& entity);
 
+
+	void DirectoryView(const char* str_id, std::filesystem::path directory, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size = ImVec2(0, 0));
 
 
 }

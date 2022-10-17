@@ -90,7 +90,7 @@ namespace ImGui {
 		if (ImGui::DragFloat3("Rotation", (float*)&rotation, 0.1f)) {
 			transform->rotation = glm::quat(glm::radians(rotation));
 		}
-		ImGui::DragFloat3("Scale", (float*)&transform->scale, 0.1f);
+ImGui::DragFloat3("Scale", (float*)&transform->scale, 0.1f);
 	}
 
 	void Component(comp::Model* model) {
@@ -108,7 +108,7 @@ namespace ImGui {
 			*/
 
 		}
-		
+
 	}
 
 	void Component(comp::Script* script) {
@@ -120,11 +120,11 @@ namespace ImGui {
 	}
 
 	void Component(comp::Light* light) {
-		
+
 		ImGui::DragFloat3("Position##Light", (float*)&light->values.position, 0.1f);
 
 		ImGui::ColorEdit4("Color", (float*)&light->values.color);
-		
+
 		ImGui::SliderFloat("Intensity", &light->values.intensity, 0.1f, 1.f);
 		ImGui::SliderFloat("Attenuation radius", &light->values.attenuationRadius, 2.f, 50.f);
 
@@ -140,6 +140,84 @@ namespace ImGui {
 			}
 
 			ImGui::EndCombo();
+		}
+
+	}
+
+	void viewFile(std::filesystem::path filePath) {
+		ImGui::Selectable(filePath.filename().string().c_str());
+	}
+
+	void viewDirectory(std::filesystem::path directory, std::filesystem::path& openDirectory) {
+		bool opened = ImGui::TreeNode(directory.filename().string().c_str());
+		if (ImGui::IsItemClicked()) {
+			openDirectory = directory;
+		}
+		if (opened) {
+			for (const auto& entry : std::filesystem::directory_iterator(directory)) {
+				if (entry.is_directory()) {
+					viewDirectory(entry.path(), openDirectory);
+				}
+				else {
+					viewFile(entry.path());
+				}
+			}
+			ImGui::TreePop();
+		}
+	}
+
+	void DirectoryView(const char* str_id, std::filesystem::path directory, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size) {
+
+		ImVec2 contentArea = size;
+		if (size.x == 0.f && size.y == 0.f) {
+			contentArea = ImGui::GetContentRegionAvail();
+		}
+		ImVec2 overviewArea = contentArea;
+		overviewArea.x /= 4;
+		
+		ImVec2 viewArea = contentArea;
+		viewArea.x -= overviewArea.x;
+
+
+		if (ImGui::BeginChild((std::string(str_id) + "0").c_str(), overviewArea)) {
+			for (const auto& entry : std::filesystem::directory_iterator(directory)) {
+				if (entry.is_directory()) {
+					viewDirectory(entry.path(), openDirectory);
+				}
+				else {
+					viewFile(entry.path());
+				}
+			}
+			ImGui::EndChild();
+		}
+
+		if (!openDirectory.empty()) {
+			ImGui::SameLine();
+			if (ImGui::BeginChild((std::string(str_id) + "1").c_str(), viewArea)) {
+				
+				ImGui::Text(openDirectory.string().c_str());
+				ImGui::SameLine();
+
+				ImGui::SetNextItemWidth(200);
+				ImGui::SliderInt("Icon size", &iconSize, 20, 200);
+
+				ImVec2 vecSize;
+				vecSize.x = iconSize;
+				vecSize.y = iconSize;
+				
+				int i = 0;
+				for (const auto& entry : std::filesystem::directory_iterator(openDirectory)) {
+
+					ImGui::Button("B", vecSize);
+					ImGui::SameLine();
+					
+					if(ImGui::GetContentRegionMax().x - ImGui::GetCursorPosX() < vecSize.x) {
+						ImGui::NewLine();
+					}
+
+				}
+				ImGui::EndChild();
+			}
 		}
 
 	}
