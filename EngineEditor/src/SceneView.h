@@ -6,6 +6,8 @@
 
 #include <glm\gtc\matrix_transform.hpp>
 
+#include "ImGuizmo.h"
+
 class SceneView : public EditorModule {
 private:
 	sa::Camera m_camera;
@@ -18,12 +20,10 @@ private:
 
 	glm::vec2 m_displayedSize;
 	float m_deltaTime;
-	bool m_isDraging;
-	sa::Vector3 m_dragDirection;
-
+	
 	sa::Entity m_selectedEntity;
 	bool m_isWorldCoordinates;
-
+	
 	struct Statistics {
 		float frameTime;
 		sa::DeviceMemoryStats gpuMemoryStats;

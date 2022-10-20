@@ -5,6 +5,47 @@
 #include "TestLayer.h"
 
 namespace sa {
+	void EngineEditor::projectSelector() {
+		ImGui::BeginPopupModal("ProjectName");
+
+		if (ImGui::Begin("Select Project")) {
+			static std::filesystem::path directoryPath = "D:/";
+			static std::filesystem::path openPath;
+			static int iconSize = 50;
+
+			//ImGui::DirectoryView("EditorProjectSelector", directoryPath, openPath, iconSize);
+
+			//ImGui::DirectoryBrowser("EditorProjectSelector", directoryPath, openPath, iconSize);
+			if (ImGui::Button("New Project +")) {
+				ImGui::OpenPopup("Project Name");
+			}
+
+			static std::string name;
+			if (ImGui::MakeEnterNameModalPopup("Project Name", "New Project", name)) {
+
+			}
+
+		}
+		ImGui::End();
+	}
+
+	bool EngineEditor::openProject(const std::filesystem::path& projectPath) {
+		if (std::filesystem::is_directory(projectPath)) {
+			for (const auto& entry : std::filesystem::directory_iterator(projectPath)) {
+				if (entry.path().extension() == SA_PROJECT_FILE_EXT) {
+					m_projectPath = entry.path();
+					return true;
+				}
+			}
+		}
+		else if (projectPath.extension() == SA_PROJECT_FILE_EXT) {
+			m_projectPath = projectPath;
+			return true;
+		}
+
+		return false;
+		
+	}
 
 	void EngineEditor::onAttach(sa::Engine& engine, sa::RenderWindow& renderWindow) {
 		m_pEngine = &engine;
@@ -26,6 +67,14 @@ namespace sa {
 	}
 
 	void EngineEditor::onImGuiRender() {
+		ImGuizmo::BeginFrame();
+		/*
+		if (m_projectPath.empty()) {
+			projectSelector();
+			return;
+		}
+		*/
+
 		ImGuiID viewPortDockSpaceID = ImGui::DockSpaceOverViewport();
 
 		if (ImGui::BeginMainMenuBar()) {

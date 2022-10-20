@@ -1,0 +1,3 @@
+[submodule "EngineEditor/ImGuizmo"]
+	path = EngineEditor/ImGuizmo
+	url = https://github.com/CedricGuillemet/ImGuizmo.git

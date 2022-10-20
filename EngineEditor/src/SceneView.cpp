@@ -151,86 +151,47 @@ void SceneView::onImGui() {
 		ImGui::Image(texture, imAvailSize);
 		m_displayedSize = availSize;
 
-		const ImU32 red = ImColor(ImVec4(1, 0, 0, 1));
-		const ImU32 green = ImColor(ImVec4(0, 1, 0, 1));
-		const ImU32 blue = ImColor(ImVec4(0, 0, 1, 1));
+		// Gizmos
+		static ImGuizmo::OPERATION operation = ImGuizmo::TRANSLATE;
 		
+		ImGui::SetCursorPosY(45);
+		ImGui::SetCursorPosX(ImGui::GetWindowWidth() - 150);
+		
+		if (ImGui::Button("T", ImVec2(20, 20))) {
+			operation = ImGuizmo::OPERATION::TRANSLATE;
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("R", ImVec2(20, 20))) {
+			operation = ImGuizmo::OPERATION::ROTATE;
+		}
+		ImGui::SameLine();
+		if (ImGui::Button("S", ImVec2(20, 20))) {
+			operation = ImGuizmo::OPERATION::SCALE;
+		}
+
 		if (m_selectedEntity) {
 			comp::Transform* transform = m_selectedEntity.getComponent<comp::Transform>();
 
 			if (transform) {
 				glm::vec3 pos = transform->position;
 
-				glm::vec3 x = { 1, 0, 0 };
-				glm::vec3 y = { 0, 1, 0 };
-				glm::vec3 z = { 0, 0, 1 };
-
-				if (!m_isWorldCoordinates) {
-					glm::mat4 mat = glm::toMat4(transform->rotation);
-					x = glm::normalize(mat[0]);
-					y = glm::normalize(mat[1]);
-					z = glm::normalize(mat[2]);
-				}
-
-				bool mouseDown = ImGui::IsMouseDown(ImGuiMouseButton_Left);
-				if (m_isDraging && !mouseDown) {
-					m_isDraging = false;
-				}
-
-				if (m_isDraging) {
-
-					ImVec2 imWindowPos = ImGui::GetWindowPos();
-					ImVec2 contentMin = ImGui::GetWindowContentRegionMin();
+				ImGuizmo::SetOrthographic(false);
+				ImGuizmo::AllowAxisFlip(false);
+				ImGuizmo::SetDrawlist();
+				ImVec2 windowPos = ImGui::GetWindowPos();
+				ImGuizmo::SetRect(windowPos.x, windowPos.y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
 				
-					glm::vec2 windowPos = { imWindowPos.x, imWindowPos.y };
-					glm::vec2 min = { contentMin.x, contentMin.y };
-					windowPos += min;
-				
-					glm::vec2 screenSize = { m_displayedSize.x, m_displayedSize.y };
-				
-					
-					ImVec2 imDragDelta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left, 0.0f);
-					ImGui::ResetMouseDragDelta();
+				sa::Matrix4x4 transformMat = transform->getMatrix();
+				sa::Matrix4x4 projMat = m_camera.getProjectionMatrix();
+				projMat[1][1] *= -1;
 
-					ImVec2 imMousePos = ImGui::GetMousePos();
-					glm::vec2 mousePos = { imMousePos.x, imMousePos.y };
-					glm::vec2 lastMousePos = { imMousePos.x - imDragDelta.x, imMousePos.y - imDragDelta.y };
-					
-					glm::vec3 mousePosWorld = sa::math::screenToWorld(mousePos, &m_camera, windowPos, screenSize);
-					mousePosWorld = m_camera.getPosition() + mousePosWorld * glm::length(pos - m_camera.getPosition());
-
-					glm::vec3 lastMousePosWorld = sa::math::screenToWorld(lastMousePos, &m_camera, windowPos, screenSize);
-					lastMousePosWorld = m_camera.getPosition() + lastMousePosWorld * glm::length(pos - m_camera.getPosition());
-
-					glm::vec3 dragDeltaWorld = mousePosWorld - lastMousePosWorld;
-					
-					float angle = glm::dot(dragDeltaWorld, m_dragDirection);
-
-					transform->position += m_dragDirection * angle * 90.f;
-					
+				if (ImGuizmo::Manipulate(&m_camera.getViewMatrix()[0][0], &projMat[0][0],
+					operation, (ImGuizmo::MODE)m_isWorldCoordinates, &transformMat[0][0])) 
+				{
+					glm::vec3 rotation;
+					ImGuizmo::DecomposeMatrixToComponents(&transformMat[0][0], (float*)&transform->position, (float*)&rotation, (float*)&transform->scale);
+					transform->rotation = glm::quat(glm::radians(rotation));
 				}
-				
-				if (imGuiDrawVector(pos, x, red, 1)) {
-					if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-						m_isDraging = true;
-						m_dragDirection = x;
-					}
-				}
-				
-				if(imGuiDrawVector(pos, y, green, 1)) {
-					if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-						m_isDraging = true;
-						m_dragDirection = y;
-					}
-				}
-
-				if (imGuiDrawVector(pos, z, blue, 1)) {
-					if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-						m_isDraging = true;
-						m_dragDirection = z;
-					}
-				}
-
 			}
 		}
 		

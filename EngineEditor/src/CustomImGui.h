@@ -28,8 +28,13 @@ namespace ImGui {
 	void Component(const sa::Entity& entity);
 
 
-	void DirectoryView(const char* str_id, std::filesystem::path directory, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size = ImVec2(0, 0));
+	void DirectoryHierarchy(const char* str_id, const std::filesystem::path& directory, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size = ImVec2(0, 0));
 
+	void DirectoryView(const char* str_id, const std::filesystem::path& directory, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size = ImVec2(0, 0));
+	void DirectoryBrowser(const char* str_id, std::filesystem::path& directory, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size = ImVec2(0, 0));
+
+
+	bool MakeEnterNameModalPopup(const char* name, const char* hint, std::string& output);
 
 }
 

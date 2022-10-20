@@ -148,8 +148,15 @@ ImGui::DragFloat3("Scale", (float*)&transform->scale, 0.1f);
 		ImGui::Selectable(filePath.filename().string().c_str());
 	}
 
-	void viewDirectory(std::filesystem::path directory, std::filesystem::path& openDirectory) {
-		bool opened = ImGui::TreeNode(directory.filename().string().c_str());
+	void viewDirectory(const std::filesystem::path& directory, std::filesystem::path& openDirectory) {
+		//TODO: check permissions on directory before displaying
+		/*
+		auto status = std::filesystem::status(directory);
+		std::filesystem::perms perm = status.permissions();
+		std::filesystem::perms flags = std::filesystem::perms::owner_write | std::filesystem::perms::owner_read;
+		*/
+		
+		bool opened = ImGui::TreeNodeEx(directory.filename().string().c_str(), ImGuiTreeNodeFlags_OpenOnArrow);
 		if (ImGui::IsItemClicked()) {
 			openDirectory = directory;
 		}
@@ -166,7 +173,28 @@ ImGui::DragFloat3("Scale", (float*)&transform->scale, 0.1f);
 		}
 	}
 
-	void DirectoryView(const char* str_id, std::filesystem::path directory, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size) {
+	void DirectoryHierarchy(const char* str_id, const std::filesystem::path& directory, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size) {
+
+		ImVec2 contentArea = size;
+		if (size.x == 0.f && size.y == 0.f) {
+			contentArea = ImGui::GetContentRegionAvail();
+		}
+
+		if (ImGui::BeginChild(str_id, contentArea)) {
+			for (const auto& entry : std::filesystem::directory_iterator(directory)) {
+				if (entry.is_directory()) {
+					viewDirectory(entry.path(), openDirectory);
+				}
+				else {
+					viewFile(entry.path());
+				}
+			}
+			ImGui::EndChild();
+		}
+
+	}
+
+	void DirectoryView(const char* str_id, const std::filesystem::path& directory, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size) {
 
 		ImVec2 contentArea = size;
 		if (size.x == 0.f && size.y == 0.f) {
@@ -178,18 +206,7 @@ ImGui::DragFloat3("Scale", (float*)&transform->scale, 0.1f);
 		ImVec2 viewArea = contentArea;
 		viewArea.x -= overviewArea.x;
 
-
-		if (ImGui::BeginChild((std::string(str_id) + "0").c_str(), overviewArea)) {
-			for (const auto& entry : std::filesystem::directory_iterator(directory)) {
-				if (entry.is_directory()) {
-					viewDirectory(entry.path(), openDirectory);
-				}
-				else {
-					viewFile(entry.path());
-				}
-			}
-			ImGui::EndChild();
-		}
+		DirectoryHierarchy(str_id, directory, openDirectory, iconSize, overviewArea);
 
 		if (!openDirectory.empty()) {
 			ImGui::SameLine();
@@ -220,6 +237,58 @@ ImGui::DragFloat3("Scale", (float*)&transform->scale, 0.1f);
 			}
 		}
 
+	}
+
+	void DirectoryBrowser(const char* str_id, std::filesystem::path& directory, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size) {
+		if (ImGui::ArrowButton((std::string("parentDir_") + str_id).c_str(), ImGuiDir_Left)) {
+			directory = std::filesystem::absolute(directory);
+			directory = directory.parent_path();
+		}
+		DirectoryView(str_id, directory, openDirectory, iconSize, size);
+	}
+
+	bool MakeEnterNameModalPopup(const char* name, const char* hint, std::string& output) {
+		ImVec2 size = ImGui::GetContentRegionMax();
+		size.x /= 4;
+		size.y /= 4;
+		ImGui::SetNextWindowSize(size);
+
+		if (ImGui::BeginPopupModal(name, 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings)) {
+
+			ImGui::Text("Enter name: ");
+			static bool setFocus = true;
+			if (setFocus) {
+				ImGui::SetKeyboardFocusHere();
+				setFocus = false;
+			}
+			bool pressedEnter = ImGui::InputTextWithHint("Name", hint, &output, ImGuiInputTextFlags_EnterReturnsTrue);
+			static std::string erromsg;
+			ImGui::Spacing();
+			bool pressedOK = false;
+			if (ImGui::Button("Ok") || pressedEnter) {
+				if (!output.empty()) {
+					ImGui::CloseCurrentPopup();
+					erromsg = "";
+					setFocus = true;
+					pressedOK = true;
+				}
+				else {
+					erromsg = "Please enter a name";
+				}
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Cancel")) {
+				ImGui::CloseCurrentPopup();
+				erromsg = "";
+				setFocus = true;
+			}
+			if (!erromsg.empty()) {
+				ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), erromsg.c_str());
+			}
+			ImGui::EndPopup();
+			return pressedOK;
+		}
+		return false;
 	}
 
 	
