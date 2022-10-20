@@ -81,16 +81,16 @@ namespace ImGui {
 
 	void Component(comp::Transform* transform) {
 		if (!transform->hasParent) {
-			ImGui::DragFloat3("Position##Transform", (float*)&transform->position, 0.1f);
+			ImGui::DragFloat3("Position##Transform", (float*)&transform->position, 0.1f, 0.0f, 0.0f, "%.2f", ImGuiSliderFlags_NoRoundToFormat);
 		}
 		else {
-			ImGui::DragFloat3("Position##Transform", (float*)&transform->relativePosition, 0.1f);
+			ImGui::DragFloat3("Position##Transform", (float*)&transform->relativePosition, 0.1f, 0.0f, 0.0f, "%.2f", ImGuiSliderFlags_NoRoundToFormat);
 		}
 		glm::vec3 rotation = glm::degrees(glm::eulerAngles(transform->rotation));
-		if (ImGui::DragFloat3("Rotation", (float*)&rotation, 0.1f)) {
+		if (ImGui::DragFloat3("Rotation", (float*)&rotation, 0.1f, 0.0f, 0.0f, "%.2f", ImGuiSliderFlags_NoRoundToFormat)) {
 			transform->rotation = glm::quat(glm::radians(rotation));
 		}
-ImGui::DragFloat3("Scale", (float*)&transform->scale, 0.1f);
+		ImGui::DragFloat3("Scale", (float*)&transform->scale, 0.1f, 0.0f, 0.0f, "%.2f", ImGuiSliderFlags_NoRoundToFormat);
 	}
 
 	void Component(comp::Model* model) {

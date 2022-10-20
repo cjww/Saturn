@@ -92,13 +92,17 @@ void SceneView::onImGui() {
 	
 
 	if (ImGui::Begin("Scene view", 0, ImGuiWindowFlags_MenuBar)) {
+
+		static ImGuizmo::OPERATION operation = ImGuizmo::TRANSLATE;
+		static float snapDistance = 0.5f;
+		static float snapAngle = 45.0f;
 		if (ImGui::BeginMenuBar()) {
 
 			static bool showStats = false;
-			ImGui::Checkbox("Statistics", &showStats);
+
 			if (showStats) {
 				ImGui::SetNextWindowBgAlpha(0.3f);
-				if (ImGui::Begin("Statistics", 0, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize)) {
+				if (ImGui::Begin("Statistics", 0, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing)) {
 
 					ImGui::Text("Entity Count: %llu", m_pEngine->getCurrentScene()->getEntityCount());
 					
@@ -124,15 +128,27 @@ void SceneView::onImGui() {
 			
 			
 			
-			static bool showLightHeatmap = false;
-			sa::ForwardPlus* forwardPlusTechnique = dynamic_cast<sa::ForwardPlus*>(m_pEngine->getRenderPipeline().getRenderTechnique());
-			if (forwardPlusTechnique) {
-				if (ImGui::Checkbox("Show Light Heatmap", &showLightHeatmap)) {
-					forwardPlusTechnique->setShowHeatmap(showLightHeatmap);
+			if (ImGui::BeginMenu("View Settings")) {
+				ImGui::Checkbox("Statistics", &showStats);
+
+				ImGui::DragFloat("Snap Distance", &snapDistance, 0.5f, 0.0f, 100.f, "%.1f m");
+				ImGui::DragFloat("Snap Angle", &snapAngle, 1.f, 1.f, 180.f, "%.0f degrees");
+
+				static bool showLightHeatmap = false;
+				sa::ForwardPlus* forwardPlusTechnique = dynamic_cast<sa::ForwardPlus*>(m_pEngine->getRenderPipeline().getRenderTechnique());
+				if (forwardPlusTechnique) {
+					if (ImGui::Checkbox("Show Light Heatmap", &showLightHeatmap)) {
+						forwardPlusTechnique->setShowHeatmap(showLightHeatmap);
+					}
 				}
+				ImGui::EndMenu();
 			}
 			
 			ImGui::Checkbox("World Coordinates", &m_isWorldCoordinates);
+			
+			ImGui::RadioButton("T", (int*)&operation, ImGuizmo::OPERATION::TRANSLATE);
+			ImGui::RadioButton("R", (int*)&operation, ImGuizmo::OPERATION::ROTATE);
+			ImGui::RadioButton("S", (int*)&operation, ImGuizmo::OPERATION::SCALE);
 
 		}
 		ImGui::EndMenuBar();
@@ -151,11 +167,7 @@ void SceneView::onImGui() {
 		ImGui::Image(texture, imAvailSize);
 		m_displayedSize = availSize;
 
-		// Gizmos
-		static ImGuizmo::OPERATION operation = ImGuizmo::TRANSLATE;
 		
-		ImGui::SetCursorPosY(45);
-		ImGui::SetCursorPosX(ImGui::GetWindowWidth() - 150);
 		if (!ImGui::IsMouseDown(ImGuiMouseButton_Right) && m_isFocused) {
 			if (ImGui::IsKeyPressed(ImGuiKey_W))
 				operation = ImGuizmo::OPERATION::TRANSLATE;
@@ -166,21 +178,14 @@ void SceneView::onImGui() {
 			else if (ImGui::IsKeyPressed(ImGuiKey_Q))
 				operation = (ImGuizmo::OPERATION)0;
 		}
-
-		ImGui::RadioButton("T", (int*)&operation, ImGuizmo::OPERATION::TRANSLATE);
-		ImGui::SameLine();
-		ImGui::RadioButton("R", (int*)&operation, ImGuizmo::OPERATION::ROTATE);
-		ImGui::SameLine();
-		ImGui::RadioButton("S", (int*)&operation, ImGuizmo::OPERATION::SCALE);
-
-		static float snapDistance = 0.5f;
-		static float snapAngle = 45.0f;
+		
+		// Gizmos
+		
 		float snap = snapDistance;
 		bool doSnap = ImGui::IsKeyDown(ImGuiKey_LeftCtrl);
 		if (doSnap && operation == ImGuizmo::OPERATION::ROTATE) {
 			snap = snapAngle;
 		}
-
 
 		if (m_selectedEntity && operation) {
 			comp::Transform* transform = m_selectedEntity.getComponent<comp::Transform>();
@@ -204,8 +209,12 @@ void SceneView::onImGui() {
 					nullptr, (doSnap) ? snapAxis : nullptr))
 				{
 					glm::vec3 rotation;
+					glm::vec3 oldPosition = transform->position;
 					ImGuizmo::DecomposeMatrixToComponents(&transformMat[0][0], (float*)&transform->position, (float*)&rotation, (float*)&transform->scale);
 					transform->rotation = glm::quat(glm::radians(rotation));
+					if (transform->hasParent) {
+						transform->relativePosition += transform->position - oldPosition;
+					}
 				}
 
 			}
