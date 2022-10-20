@@ -3,6 +3,14 @@
 
 #include "GLFW/glfw3.h"
 
+#ifdef _WIN32
+#define GLFW_EXPOSE_NATIVE_WIN32
+#define NOMINMAX
+#include "GLFW/glfw3native.h"
+#endif // _WIN32
+
+
+
 namespace sa {
 
 	void Window::onResize(GLFWwindow* window, int width, int height) {
@@ -292,6 +300,15 @@ namespace sa {
 	GLFWwindow* Window::getWindowHandle() const {
 		return m_window;
 	}
+
+	void* Window::getWin32WindowHandle() const {
+#ifdef _WIN32
+		return glfwGetWin32Window(m_window);
+#else
+		return 0;
+#endif // _WIN32
+	}
+
 
 	int Window::getKey(Key keyCode) const {
 		return glfwGetKey(m_window, (int)keyCode);

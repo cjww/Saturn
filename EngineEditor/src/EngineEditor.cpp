@@ -4,48 +4,36 @@
 
 #include "TestLayer.h"
 
+#include "Tools\FileDialogs.h"
+
 namespace sa {
 	void EngineEditor::projectSelector() {
 		ImGui::BeginPopupModal("ProjectName");
 
 		if (ImGui::Begin("Select Project")) {
-			static std::filesystem::path directoryPath = "D:/";
-			static std::filesystem::path openPath;
-			static int iconSize = 50;
-
-			//ImGui::DirectoryView("EditorProjectSelector", directoryPath, openPath, iconSize);
-
-			//ImGui::DirectoryBrowser("EditorProjectSelector", directoryPath, openPath, iconSize);
+			
+			if (ImGui::Button("Open Project...")) {
+				if (FileDialogs::OpenFile("Saturn Project File (*.saproj)\0*.saproj\0", m_projectPath, std::filesystem::current_path())) {
+					std::cout << "Opened Project: " << m_projectPath << std::endl;
+					// open Project file
+					
+				}
+			}
+			ImGui::SameLine();
 			if (ImGui::Button("New Project +")) {
 				ImGui::OpenPopup("Project Name");
 			}
 
 			static std::string name;
 			if (ImGui::MakeEnterNameModalPopup("Project Name", "New Project", name)) {
-
+				std::cout << "Created new Project: " << name << std::endl;
+				//TODO create project folder and project file
 			}
 
 		}
 		ImGui::End();
 	}
 
-	bool EngineEditor::openProject(const std::filesystem::path& projectPath) {
-		if (std::filesystem::is_directory(projectPath)) {
-			for (const auto& entry : std::filesystem::directory_iterator(projectPath)) {
-				if (entry.path().extension() == SA_PROJECT_FILE_EXT) {
-					m_projectPath = entry.path();
-					return true;
-				}
-			}
-		}
-		else if (projectPath.extension() == SA_PROJECT_FILE_EXT) {
-			m_projectPath = projectPath;
-			return true;
-		}
-
-		return false;
-		
-	}
 
 	void EngineEditor::onAttach(sa::Engine& engine, sa::RenderWindow& renderWindow) {
 		m_pEngine = &engine;
@@ -58,7 +46,7 @@ namespace sa {
 
 		m_editorModules.push_back(std::make_unique<LuaConsole>(&engine));
 
-		getApp()->pushLayer(new TestLayer);
+		Application::get()->pushLayer(new TestLayer);
 
 	}
 
@@ -68,12 +56,10 @@ namespace sa {
 
 	void EngineEditor::onImGuiRender() {
 		ImGuizmo::BeginFrame();
-		/*
 		if (m_projectPath.empty()) {
 			projectSelector();
 			return;
 		}
-		*/
 
 		ImGuiID viewPortDockSpaceID = ImGui::DockSpaceOverViewport();
 

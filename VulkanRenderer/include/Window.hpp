@@ -10,7 +10,6 @@
 #include <array>
 #include "Resources/ResourceManager.hpp"
 
-
 struct GLFWwindow;
 struct GLFWmonitor;
 
@@ -109,6 +108,7 @@ namespace sa {
 		Extent getCurrentExtent() const;
 
 		GLFWwindow* getWindowHandle() const;
+		void* getWin32WindowHandle() const;
 
 		int getKey(Key keyCode) const;
 		int getMouseButton(MouseButton button) const;

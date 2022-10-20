@@ -10,7 +10,6 @@
 #include "EntityInspector.h"
 #include "LuaConsole.h"
 
-#define SA_PROJECT_FILE_EXT ".saproj"
 
 namespace sa {
 
@@ -25,8 +24,6 @@ namespace sa {
 	public:
 		EngineEditor() = default;
 		
-		bool openProject(const std::filesystem::path& projectPath);
-
 		void onAttach(sa::Engine& engine, sa::RenderWindow& renderWindow) override;
 		void onDetach() override;
 		void onImGuiRender() override;
