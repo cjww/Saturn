@@ -6,7 +6,7 @@
 
 #include <glm\gtc\matrix_transform.hpp>
 
-#include "ImGuizmo.h"
+#include <ImGuizmo.h>
 
 class SceneView : public EditorModule {
 private:

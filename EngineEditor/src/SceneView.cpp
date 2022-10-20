@@ -65,22 +65,24 @@ void SceneView::update(float dt) {
 
 	sa::Vector2 mousePos = m_pWindow->getCursorPosition();
 	if (m_pWindow->getMouseButton(sa::MouseButton::BUTTON_2)) {
+		// First-person controls
 		sa::Vector2 delta = m_lastMousePos - mousePos;
 		m_camera.rotate(glm::radians(delta.x) * dt * m_mouseSensitivity, { 0, 1, 0 });
 		m_camera.rotate(glm::radians(delta.y) * dt * m_mouseSensitivity, m_camera.getRight());
+		
+		int forward = m_pWindow->getKey(sa::Key::W) - m_pWindow->getKey(sa::Key::S);
+		int right = m_pWindow->getKey(sa::Key::D) - m_pWindow->getKey(sa::Key::A);
+		int up = m_pWindow->getKey(sa::Key::Q) - m_pWindow->getKey(sa::Key::E);
+
+		glm::vec3 camPos = m_camera.getPosition();
+		camPos += (float)forward * dt * m_moveSpeed * m_camera.getForward();
+		camPos += (float)right * dt * m_moveSpeed * m_camera.getRight();
+		camPos += (float)up * dt * m_moveSpeed * m_camera.getUp();
+
+		m_camera.setPosition(camPos);
 	}
 	m_lastMousePos = mousePos;
 		
-	int forward = m_pWindow->getKey(sa::Key::W) - m_pWindow->getKey(sa::Key::S);
-	int right = m_pWindow->getKey(sa::Key::D) - m_pWindow->getKey(sa::Key::A);
-	int up = m_pWindow->getKey(sa::Key::Q) - m_pWindow->getKey(sa::Key::E);
-
-	glm::vec3 camPos = m_camera.getPosition();
-	camPos += (float)forward * dt * m_moveSpeed * m_camera.getForward();
-	camPos += (float)right * dt * m_moveSpeed * m_camera.getRight();
-	camPos += (float)up * dt * m_moveSpeed * m_camera.getUp();
-
-	m_camera.setPosition(camPos);
 
 }
 
@@ -93,7 +95,6 @@ void SceneView::onImGui() {
 		if (ImGui::BeginMenuBar()) {
 
 			static bool showStats = false;
-			//ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - ImGui::GetFontSize() * 8);
 			ImGui::Checkbox("Statistics", &showStats);
 			if (showStats) {
 				ImGui::SetNextWindowBgAlpha(0.3f);
@@ -136,8 +137,7 @@ void SceneView::onImGui() {
 		}
 		ImGui::EndMenuBar();
 
-
-		m_isFocused = ImGui::IsWindowFocused();
+		m_isFocused = ImGui::IsWindowFocused() || ImGui::IsWindowHovered();
 
 		// render outputTexture with constant aspect ratio
 		ImVec2 imAvailSize = ImGui::GetContentRegionAvail();
@@ -156,20 +156,33 @@ void SceneView::onImGui() {
 		
 		ImGui::SetCursorPosY(45);
 		ImGui::SetCursorPosX(ImGui::GetWindowWidth() - 150);
-		
-		if (ImGui::Button("T", ImVec2(20, 20))) {
-			operation = ImGuizmo::OPERATION::TRANSLATE;
-		}
-		ImGui::SameLine();
-		if (ImGui::Button("R", ImVec2(20, 20))) {
-			operation = ImGuizmo::OPERATION::ROTATE;
-		}
-		ImGui::SameLine();
-		if (ImGui::Button("S", ImVec2(20, 20))) {
-			operation = ImGuizmo::OPERATION::SCALE;
+		if (!ImGui::IsMouseDown(ImGuiMouseButton_Right) && m_isFocused) {
+			if (ImGui::IsKeyPressed(ImGuiKey_W))
+				operation = ImGuizmo::OPERATION::TRANSLATE;
+			else if (ImGui::IsKeyPressed(ImGuiKey_E))
+				operation = ImGuizmo::OPERATION::ROTATE;
+			else if (ImGui::IsKeyPressed(ImGuiKey_R))
+				operation = ImGuizmo::OPERATION::SCALE;
+			else if (ImGui::IsKeyPressed(ImGuiKey_Q))
+				operation = (ImGuizmo::OPERATION)0;
 		}
 
-		if (m_selectedEntity) {
+		ImGui::RadioButton("T", (int*)&operation, ImGuizmo::OPERATION::TRANSLATE);
+		ImGui::SameLine();
+		ImGui::RadioButton("R", (int*)&operation, ImGuizmo::OPERATION::ROTATE);
+		ImGui::SameLine();
+		ImGui::RadioButton("S", (int*)&operation, ImGuizmo::OPERATION::SCALE);
+
+		static float snapDistance = 0.5f;
+		static float snapAngle = 45.0f;
+		float snap = snapDistance;
+		bool doSnap = ImGui::IsKeyDown(ImGuiKey_LeftCtrl);
+		if (doSnap && operation == ImGuizmo::OPERATION::ROTATE) {
+			snap = snapAngle;
+		}
+
+
+		if (m_selectedEntity && operation) {
 			comp::Transform* transform = m_selectedEntity.getComponent<comp::Transform>();
 
 			if (transform) {
@@ -180,18 +193,21 @@ void SceneView::onImGui() {
 				ImGuizmo::SetDrawlist();
 				ImVec2 windowPos = ImGui::GetWindowPos();
 				ImGuizmo::SetRect(windowPos.x, windowPos.y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
-				
+
 				sa::Matrix4x4 transformMat = transform->getMatrix();
 				sa::Matrix4x4 projMat = m_camera.getProjectionMatrix();
 				projMat[1][1] *= -1;
 
+				float snapAxis[]  = {snap, snap, snap};
 				if (ImGuizmo::Manipulate(&m_camera.getViewMatrix()[0][0], &projMat[0][0],
-					operation, (ImGuizmo::MODE)m_isWorldCoordinates, &transformMat[0][0])) 
+					operation, (ImGuizmo::MODE)m_isWorldCoordinates, &transformMat[0][0],
+					nullptr, (doSnap) ? snapAxis : nullptr))
 				{
 					glm::vec3 rotation;
 					ImGuizmo::DecomposeMatrixToComponents(&transformMat[0][0], (float*)&transform->position, (float*)&rotation, (float*)&transform->scale);
 					transform->rotation = glm::quat(glm::radians(rotation));
 				}
+
 			}
 		}
 		
