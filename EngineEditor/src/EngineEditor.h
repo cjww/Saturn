@@ -19,6 +19,14 @@ namespace sa {
 		std::vector<std::unique_ptr<EditorModule>> m_editorModules;
 		std::filesystem::path m_projectPath;
 		
+		std::vector<std::filesystem::path> m_recentProjectPaths;
+
+		bool openProject(const std::filesystem::path& path);
+		bool openProject();
+
+		bool createProject(const std::filesystem::path& path);
+		bool newProject();
+
 		void projectSelector();
 
 	public:

@@ -10,6 +10,8 @@
 #define IMGUI_BUFFER_SIZE_SMALL 64U
 #define IMGUI_BUFFER_SIZE_TINY 32U
 
+#define IMGUI_COLOR_ERROR_RED ImVec4(1.0f, 0.2f, 0.2f, 1.0f)
+
 namespace ImGui {
 	static struct PopupPayload {
 		sa::ComponentType type;
@@ -36,6 +38,7 @@ namespace ImGui {
 
 	bool MakeEnterNameModalPopup(const char* name, const char* hint, std::string& output);
 
+	bool ProjectButton(const char* name, const char* path);
 }
 
 template<typename T>

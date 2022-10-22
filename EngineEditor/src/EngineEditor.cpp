@@ -6,32 +6,102 @@
 
 #include "Tools\FileDialogs.h"
 
-namespace sa {
-	void EngineEditor::projectSelector() {
-		ImGui::BeginPopupModal("ProjectName");
+#include <simdjson.h>
 
-		if (ImGui::Begin("Select Project")) {
+namespace sa {
+	bool EngineEditor::openProject(const std::filesystem::path& path) {
+		using namespace simdjson;
+		ondemand::parser parser;
+		auto json = padded_string::load(path.string());
+		if (json.error()) {
+			return false;
+		}
+		ondemand::document doc = parser.iterate(json);
+
+		std::cout << "Opened Project: " << path << std::endl;
+		std::cout << doc["version"] << std::endl;
+
+		m_projectPath = path;
+
+		auto it = std::find(m_recentProjectPaths.begin(), m_recentProjectPaths.end(), m_projectPath);
+		if (it != m_recentProjectPaths.end()) {
+			m_recentProjectPaths.erase(it);
+		}
+		m_recentProjectPaths.push_back(m_projectPath);
+
+		return true;
+	}
+
+	bool EngineEditor::openProject() {
+		std::filesystem::path path;
+		if (FileDialogs::OpenFile("Saturn Project File (*.saproj)\0*.saproj\0", path, std::filesystem::current_path())) {
+			return openProject(path);
+		}
+		return false;
+	}
+
+	bool EngineEditor::createProject(const std::filesystem::path& path) {
+		if (!std::filesystem::create_directory(path))
+			return false;
+
+		if (!std::filesystem::create_directory(path / "Assets"))
+			return false;
+
+		std::filesystem::path projectName = path.filename();
+		projectName.replace_extension(".saproj");
+
+		std::ofstream projectFile(path / projectName);
+		if (!projectFile) {
+			return false;
+		}
+		
+		time_t t = time(NULL);
+		projectFile << "{\n\"version\" : \"1.0.0\",\n\"last_saved\" : \"";
+		projectFile << t;
+		projectFile << "\"\n}";
+
+		projectFile.close();
+
+		return true;
+	}
+
+	bool EngineEditor::newProject() {
+		std::filesystem::path path;
+		if (FileDialogs::SaveFile("Saturn Project\0\0", path, std::filesystem::current_path())) {
+			if (!createProject(path)) {
+				return false;
+			}
+		}
+		std::filesystem::path projectName = path.filename();
+		projectName.replace_extension(".saproj");
+		return openProject(path / projectName);
+	}
+
+	void EngineEditor::projectSelector() {
+		
+		ImGui::OpenPopup("Select Project");
+
+		if (ImGui::BeginPopupModal("Select Project", 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove)) {
+			ImGui::Text("Recent Projects");
+			if (ImGui::BeginChild("recent_projects", ImVec2(ImGui::GetWindowContentRegionWidth(), 400), true)) {
+				for (auto it = m_recentProjectPaths.rbegin(); it != m_recentProjectPaths.rend(); it++) {
+					if (ImGui::ProjectButton(it->filename().replace_extension().string().c_str(), it->string().c_str())) {
+						openProject(*it);
+						break;
+					}
+				}
+				ImGui::EndChild();
+			}
 			
 			if (ImGui::Button("Open Project...")) {
-				if (FileDialogs::OpenFile("Saturn Project File (*.saproj)\0*.saproj\0", m_projectPath, std::filesystem::current_path())) {
-					std::cout << "Opened Project: " << m_projectPath << std::endl;
-					// open Project file
-					
-				}
+				openProject();
 			}
 			ImGui::SameLine();
-			if (ImGui::Button("New Project +")) {
-				ImGui::OpenPopup("Project Name");
+			if (ImGui::Button("+ New Project...")) {
+				newProject();
 			}
-
-			static std::string name;
-			if (ImGui::MakeEnterNameModalPopup("Project Name", "New Project", name)) {
-				std::cout << "Created new Project: " << name << std::endl;
-				//TODO create project folder and project file
-			}
-
 		}
-		ImGui::End();
+		ImGui::EndPopup();
 	}
 
 
@@ -48,9 +118,24 @@ namespace sa {
 
 		Application::get()->pushLayer(new TestLayer);
 
+
+		std::ifstream recentProjectsFile("recent_projects.txt");
+		std::string line;
+		while (!recentProjectsFile.eof()) {
+			std::getline(recentProjectsFile, line);
+			if(!line.empty())
+				m_recentProjectPaths.push_back(line);
+		}
+		recentProjectsFile.close();
 	}
 
 	void EngineEditor::onDetach() {
+		std::ofstream recentProjectsFile("recent_projects.txt");
+		for (const auto& path : m_recentProjectPaths) {
+			recentProjectsFile << path.string() << "\n";
+		}
+		recentProjectsFile.close();
+
 		m_editorModules.clear();
 	}
 

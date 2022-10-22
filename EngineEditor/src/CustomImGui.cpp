@@ -283,12 +283,58 @@ namespace ImGui {
 				setFocus = true;
 			}
 			if (!erromsg.empty()) {
-				ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), erromsg.c_str());
+				ImGui::TextColored(IMGUI_COLOR_ERROR_RED, erromsg.c_str());
 			}
 			ImGui::EndPopup();
 			return pressedOK;
 		}
 		return false;
+	}
+
+	bool ProjectButton(const char* name, const char* path) {
+		ImVec2 size(GetWindowContentRegionWidth(), 50);
+		
+		ImVec2 sizeMin, sizeMax;
+		sizeMin = ImVec2(GetCursorPos().x + GetWindowPos().x, GetCursorPos().y + GetWindowPos().y);
+		sizeMax = ImVec2(sizeMin.x + size.x, sizeMin.y + size.y);
+
+		bool isHovered = IsMouseHoveringRect(sizeMin, sizeMax);
+		
+		PushStyleVar(ImGuiStyleVar_ChildRounding, ImGui::GetStyle().FrameRounding);
+		PushStyleVar(ImGuiStyleVar_ChildBorderSize, ImGui::GetStyle().FrameBorderSize);
+		PushStyleVar(ImGuiStyleVar_WindowPadding, ImGui::GetStyle().FramePadding);
+
+		if (isHovered && IsMouseDown(ImGuiMouseButton_Left)) {
+			PushStyleColor(ImGuiCol_ChildBg, GetColorU32(ImGuiCol_ButtonActive));
+		}
+		else if (isHovered) {
+			PushStyleColor(ImGuiCol_ChildBg, GetColorU32(ImGuiCol_ButtonHovered));
+		}
+		else {
+			PushStyleColor(ImGuiCol_ChildBg, GetColorU32(ImGuiCol_Button));
+		}
+
+		BeginChild(path, ImVec2(GetWindowContentRegionWidth(), 50));
+		
+		SetCursorPosX(GetCursorPosX() + GetStyle().FramePadding.x);
+		SetCursorPosY(GetCursorPosY() + GetStyle().FramePadding.y);
+
+		Text(name);
+
+		SetCursorPosX(GetCursorPosX() + GetStyle().FramePadding.x);
+		SetCursorPosY(GetCursorPosY() + GetStyle().FramePadding.y);
+
+		BeginDisabled();
+		Text(path);
+		EndDisabled();
+
+		EndChild();
+		
+		PopStyleVar(3);
+		PopStyleColor();
+		
+
+		return IsItemClicked();
 	}
 
 	
