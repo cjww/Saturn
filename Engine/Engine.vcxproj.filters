@@ -105,6 +105,12 @@
     <ClCompile Include="src\EntityHierarchy.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="deps\simdjson\src\simdjson.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\Serializable.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ECS\Entity.h">
@@ -228,6 +234,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\EntityHierarchy.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Serializable.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -176,8 +176,8 @@
     </ProjectReference>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="deps\simdjson\src\simdjson.cpp" />
     <ClCompile Include="deps\ImGuizmo\ImGuizmo.cpp" />
+    <ClCompile Include="deps\simdjson\src\simdjson.cpp" />
     <ClCompile Include="src\CustomImGui.cpp" />
     <ClCompile Include="src\LuaConsole.cpp" />
     <ClCompile Include="src\EditorModule.cpp" />

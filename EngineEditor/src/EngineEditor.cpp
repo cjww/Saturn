@@ -105,6 +105,63 @@ namespace sa {
 	}
 
 
+	void EngineEditor::fileMenu() {
+
+		bool ctrl = ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl);
+		bool s = ImGui::IsKeyPressed(ImGuiKey_S);
+		bool n = ImGui::IsKeyPressed(ImGuiKey_N);
+		bool r = ImGui::IsKeyPressed(ImGuiKey_R);
+
+
+
+		if (ImGui::MenuItem("New Project", "")) {
+
+		}
+
+		if (ImGui::MenuItem("Open Project", "")) {
+
+		}
+
+		if (ImGui::MenuItem("New Scene", "Ctrl+N")) {
+
+		}
+
+		if (ImGui::MenuItem("Save Scene", "Ctrl+S")) {
+			Serializer s;
+			m_pEngine->getCurrentScene()->serialize(s);
+
+			std::ofstream file("testScene.json");
+			file << s.dump();
+			file.close();
+		}
+
+		if (ImGui::MenuItem("Save Scene As", "Ctrl+Shift+S")) {
+
+		}
+
+		if (ImGui::MenuItem("Load Scene", "")) {
+
+		}
+
+		if (ImGui::MenuItem("Reload Scene", "Ctrl+R")) {
+
+
+			m_pEngine->getCurrentScene()->clearEntities();
+
+			simdjson::ondemand::parser parser;
+			auto json = simdjson::padded_string::load("testScene.json");
+			if (json.error()) {
+				std::cout << "JSON read error: " << simdjson::error_message(json.error()) << std::endl;
+			}
+			else {
+				simdjson::ondemand::document doc = parser.iterate(json);
+				m_pEngine->getCurrentScene()->deserialize(&doc);
+			}
+
+		}
+
+	}
+
 	void EngineEditor::onAttach(sa::Engine& engine, sa::RenderWindow& renderWindow) {
 		m_pEngine = &engine;
 
@@ -150,7 +207,11 @@ namespace sa {
 
 		if (ImGui::BeginMainMenuBar()) {
 			ImGui::Text("Saturn 3");
+			if (ImGui::BeginMenu("File")) {
+				fileMenu();
 
+				ImGui::EndMenu();
+			}
 
 			static bool enterSceneNamePopup = false;
 			if (ImGui::BeginMenu(m_pEngine->getCurrentScene()->getName().c_str())) {
@@ -166,7 +227,6 @@ namespace sa {
 				if (ImGui::MenuItem("New Scene + ")) {
 					enterSceneNamePopup = true;
 				}
-				
 
 				ImGui::EndMenu();
 			}

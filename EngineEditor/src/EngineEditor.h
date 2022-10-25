@@ -28,6 +28,7 @@ namespace sa {
 		bool newProject();
 
 		void projectSelector();
+		void fileMenu();
 
 	public:
 		EngineEditor() = default;

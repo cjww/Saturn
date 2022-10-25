@@ -140,7 +140,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)deps\include\;$(ProjectDir)src\;$(SolutionDir)\VulkanRenderer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)deps\include\;$(ProjectDir)src\;$(SolutionDir)\VulkanRenderer\include;$(ProjectDir)deps\simdjson\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -170,7 +170,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)deps\include\;$(ProjectDir)src\;$(SolutionDir)\VulkanRenderer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)deps\include\;$(ProjectDir)src\;$(SolutionDir)\VulkanRenderer\include;$(ProjectDir)deps\simdjson\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -195,11 +195,16 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="deps\simdjson\src\simdjson.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="src\ECS\Components.cpp" />
     <ClCompile Include="src\Graphics\IRenderLayer.cpp" />
     <ClCompile Include="src\Graphics\RenderLayers\BloomRenderLayer.cpp" />
     <ClCompile Include="src\Graphics\RenderLayers\ImGuiRenderLayer.cpp" />
     <ClCompile Include="src\Graphics\RenderPipeline.cpp" />
+    <ClCompile Include="src\Serializable.cpp" />
     <ClCompile Include="src\Tools\MemoryChecker.cpp" />
     <ClCompile Include="src\Application.cpp" />
     <ClCompile Include="src\ECS\ComponentBase.cpp" />
@@ -230,6 +235,7 @@
     <ClCompile Include="src\EntityHierarchy.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Serializable.h" />
     <ClInclude Include="src\Graphics\IRenderLayer.h" />
     <ClInclude Include="src\Graphics\RenderLayers\BloomRenderLayer.h" />
     <ClInclude Include="src\Graphics\RenderLayers\ImGuiRenderLayer.h" />

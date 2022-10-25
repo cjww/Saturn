@@ -7,6 +7,8 @@
 
 #include "Tools\MemoryChecker.h"
 
+#include <simdjson.h>
+
 namespace sa {
 	void Engine::loadXML(const std::filesystem::path& path, rapidxml::xml_document<>& xml, std::string& xmlStr) {
 		std::ifstream file(path);
@@ -274,6 +276,9 @@ namespace sa {
 		// set scene silently
 		m_currentScene = &getScene("MainScene");
 	
+
+
+
 		m_isSetup = true;
 	}
 

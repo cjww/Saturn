@@ -7,11 +7,13 @@
 
 #include "ScriptManager.h"
 
+#include "Serializable.h"
+
 namespace sa {
 	
 	class Scene;
 
-	class Entity {
+	class Entity : public Serializable {
 	private:
 		Scene* m_pScene;
 		entt::registry* m_pRegistry;
@@ -25,6 +27,10 @@ namespace sa {
 		Entity(const Entity& other) = default;
 		Entity();
 		virtual ~Entity() = default;
+
+		virtual void serialize(Serializer& s) override;
+		virtual void deserialize(void* pDoc) override;
+
 
 		template<typename T>
 		T* getComponent() const;

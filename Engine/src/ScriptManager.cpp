@@ -184,6 +184,12 @@ namespace sa {
 		return m_allScripts.at(entityScripts.at(name));
 	}
 
+	void ScriptManager::clearAll() {
+		m_allScripts.clear();
+		m_entityScriptIndices.clear();
+		m_scripts.clear();
+	}
+
 	std::vector<EntityScript> ScriptManager::getEntityScripts(const entt::entity& entity) const {
 		if (!m_entityScriptIndices.count(entity))
 			return {};

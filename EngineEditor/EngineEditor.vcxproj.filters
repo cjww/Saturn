@@ -45,10 +45,10 @@
     <ClCompile Include="src\Tools\FileDialogs.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="deps\simdjson\src\simdjson.cpp">
+    <ClCompile Include="deps\ImGuizmo\ImGuizmo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="deps\ImGuizmo\ImGuizmo.cpp">
+    <ClCompile Include="deps\simdjson\src\simdjson.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

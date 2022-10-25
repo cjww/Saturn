@@ -3,6 +3,8 @@
 
 #include "ECS\Components.h"
 
+#include <simdjson.h>
+
 namespace sa {
 
 	Scene::Scene(const std::string& name)
@@ -76,6 +78,34 @@ namespace sa {
 
 	}
 
+	void Scene::serialize(Serializer& s) {
+		s.beginObject();
+		s.value("name", m_name.c_str());
+		s.value("entityCount", getEntityCount());
+
+		s.beginArray("entities");
+		each([&](entt::entity e) {
+			Entity entity(this, e);
+			entity.serialize(s);
+		});
+		s.endArray();
+
+		s.endObject();
+	}
+
+	void Scene::deserialize(void* pDoc) {
+		using namespace simdjson;
+		ondemand::document& doc = *(ondemand::document*)pDoc;
+		m_name = doc["name"].get_string().value();
+		size_t entityCount = doc["entityCount"].get_uint64().value();
+		for (size_t i = 0; i < entityCount; i++) {
+			Entity entity = createEntity();
+			entity.deserialize(pDoc);
+		}
+
+	}
+
+
 	Camera* Scene::newCamera() {
 		m_cameras.push_back(new Camera());
 		return m_cameras.back();
@@ -143,6 +173,12 @@ namespace sa {
 
 		return scriptOpt;
 	}
+
+	void Scene::clearEntities() {
+		((entt::registry*)this)->clear();
+		m_scriptManager.clearAll();
+	}
+
 
 	void Scene::removeScript(const Entity& entity, const std::string& name) {
 		m_scriptManager.removeScript(entity, name);

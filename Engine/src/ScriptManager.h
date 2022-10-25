@@ -60,6 +60,7 @@ namespace sa {
 		void clearEntity(const entt::entity& entity);
 		std::optional<EntityScript> getScript(const entt::entity& entity, const std::string& name) const;
 
+		void clearAll();
 
 		std::vector<EntityScript> getEntityScripts(const entt::entity& entity) const;
 

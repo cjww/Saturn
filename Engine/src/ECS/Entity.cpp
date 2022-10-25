@@ -4,6 +4,8 @@
 #include "Components.h"
 #include "Scene.h"
 
+#include "simdjson.h"
+
 namespace sa {
     void Entity::reg() {
         auto type = getType();
@@ -76,6 +78,19 @@ namespace sa {
         , m_pRegistry(nullptr)
     {
     }
+
+    void Entity::serialize(Serializer& s) {
+        s.beginObject();
+        s.value("id", (uint32_t)m_entity);
+        s.value("name", getComponent<comp::Name>()->name.c_str());
+        s.endObject();
+    }
+
+    void Entity::deserialize(void* pDoc) {
+        simdjson::ondemand::document& doc = *(simdjson::ondemand::document*)pDoc;
+        //getComponent<comp::Name>()->name = doc["entities"][0]["name"].get_string().value();
+    }
+
 
     MetaComponent Entity::getComponent(ComponentType type) const {
         return type.invoke("get", *this);
