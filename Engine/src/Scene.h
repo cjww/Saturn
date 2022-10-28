@@ -119,6 +119,7 @@ namespace sa {
 
 	}
 
+
 	template<typename F>
 	inline void Scene::forEach(const std::vector<ComponentType>& components, F func) {
 		using namespace entt::literals;

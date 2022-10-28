@@ -4,6 +4,9 @@
 #include "ECS/Components/Light.h"
 #include "ECS/Components/Model.h"
 
+namespace sa {
+	void registerAllComponents();
+}
 
 namespace comp {
 	struct Script /*: public sa::LuaAccessable */ {

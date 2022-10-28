@@ -244,6 +244,8 @@ namespace sa {
 		m_pWindow = pWindow;
 		m_isImGuiRecording = false;
 
+		registerAllComponents();
+
 		reg();
 		Scene::reg();
 		Entity::reg();

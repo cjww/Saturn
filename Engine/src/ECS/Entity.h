@@ -24,6 +24,7 @@ namespace sa {
 		static sol::usertype<Entity>& getType();
 
 		Entity(Scene* pScene, entt::entity entity);
+		
 		Entity(const Entity& other) = default;
 		Entity();
 		virtual ~Entity() = default;
@@ -178,7 +179,7 @@ namespace sa {
 					self.removeComponent(name);
 				});
 
-			SA_DEBUG_LOG_INFO("Registered Lua functions for", getComponentName<Comp>());
+			SA_DEBUG_LOG_INFO("Registered Lua property for", getComponentName<Comp>());
 
 		}
 

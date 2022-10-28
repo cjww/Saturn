@@ -81,11 +81,13 @@ namespace sa {
 	void Scene::serialize(Serializer& s) {
 		s.beginObject();
 		s.value("name", m_name.c_str());
+
 		s.beginArray("entities");
-		each([&](entt::entity e) {
-			Entity entity(this, e);
+
+		forEach([&](Entity entity) {
 			entity.serialize(s);
 		});
+
 		s.endArray();
 
 		s.endObject();
@@ -97,14 +99,18 @@ namespace sa {
 		ondemand::document& doc = *(ondemand::document*)pDoc;
 		
 		m_name = doc["name"].get_string().value();
-		for (auto e : doc["entities"]) {
+		ondemand::array entities = doc["entities"];
+		
+		reserve(entities.count_elements());
+		for (auto e : entities) {
 			if (e.error()) {
 				SA_DEBUG_LOG_WARNING("Failed to get entity from file");
 				continue;
 			}
 			ondemand::object obj = e.value_unsafe().get_object();
+			uint32_t id = obj["id"].get_uint64();
 			
-			Entity entity = createEntity();
+			Entity entity(this, create((entt::entity)id));
 			entity.deserialize(&obj);
 		}
 

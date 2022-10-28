@@ -84,6 +84,10 @@ namespace sa {
     void Entity::serialize(Serializer& s) {
         s.beginObject();
         s.value("id", (uint32_t)m_entity);
+
+        Entity parent = getParent();
+        if(!parent.isNull())
+            s.value("parent", (uint32_t)parent);
         
         s.beginArray("components");
         auto& types = ComponentType::getRegisteredComponents();
@@ -103,25 +107,39 @@ namespace sa {
             s.endObject();
         }
         s.endArray();
+
+        s.beginArray("scripts");
+
+        auto scripts = m_pScene->getAssignedScripts(*this);
+        for (auto& script : scripts) {
+            script.serialize(s);
+        }
+
+        s.endArray();
+
         s.endObject();
     }
 
     void Entity::deserialize(void* pDoc) {
-        simdjson::ondemand::object& obj = *(simdjson::ondemand::object*)pDoc;
-       
-        for (auto comps : obj["components"]) {
-            if (comps.error()) {
-                continue;
-            }
-            simdjson::ondemand::object componentObj = comps.value().get_object();
-            MetaComponent mt = addComponent(std::string(componentObj["type"].get_string().value()));
-            ComponentBase** comp = (ComponentBase**)mt.data();
-            (*comp)->deserialize(&componentObj);
-
+        using namespace simdjson::ondemand;
+        object& obj = *(object*)pDoc;
+        auto parent = obj["parent"];
+        if (!parent.error()) {
+            Entity parentEntity(m_pScene, (entt::entity)parent.get_uint64().value());
+            setParent(parentEntity);
         }
-            /*
-            */
-        
+
+        for (simdjson::ondemand::object compObj : obj["components"]) {
+
+            std::string compName(compObj["type"].get_string().value());
+            MetaComponent mt = addComponent(compName);
+            ComponentBase** comp = (ComponentBase**)mt.data();
+            (*comp)->deserialize(&compObj);
+        }
+
+        for (object script : obj["scripts"]) {
+            addScript(script["path"].get_string().value());
+        }
     }
 
 

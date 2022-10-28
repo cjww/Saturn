@@ -57,7 +57,7 @@ namespace sa {
 
 		//createModelEntity(engine, "resources/models/Box.gltf");
 
-
+		/*
 		Entity groundEntity = engine.getCurrentScene()->createEntity("Ground");
 		groundEntity.addComponent<comp::Model>()->modelID = AssetManager::get().loadQuad();
 		comp::Transform* transform = groundEntity.addComponent<comp::Transform>();
@@ -66,12 +66,10 @@ namespace sa {
 		transform->position.y -= 1;
 
 		Entity adam = createModelEntity(engine, "resources/models/adamHead/adamHead.gltf");
-		/*
 		Entity entity = createModelEntity(engine, "resources/models/sponza/scene.gltf");
 		entity.removeComponent<comp::Script>();
 
 		createLight(engine, Vector3(2.f, 2.f, -3.f));
-		*/
 
 		for (int i = 0; i < 200; i++) {
 			Vector3 pos = Vector3(randomRange(0, 200), 0, randomRange(0, 200));
@@ -93,6 +91,7 @@ namespace sa {
 			createModelEntity(engine, "resources/models/lieutenantHead/lieutenantHead.gltf");
 			createModelEntity(engine, "resources/models/Suzanne.dae");
 		}
+		*/
 		/*
 
 		for (int i = 0; i < 30; i++) {
@@ -117,9 +116,9 @@ namespace sa {
 		engine.createSystemScript("test2.lua");
 		engine.getCurrentScene()->addScript(adam, "Movable.lua");
 		engine.getCurrentScene()->addScript(adam, "Inventory.lua");
-		*/
 		adam.addScript("Movable.lua");
 		adam.addScript("Inventory.lua");
+		*/
 
 
 	}

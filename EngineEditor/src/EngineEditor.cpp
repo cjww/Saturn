@@ -33,10 +33,8 @@ namespace sa {
 			}
 			simdjson::ondemand::value s = scenePath.value_unsafe();
 			std::filesystem::path p(s.get_string().value());
-			/*
 			Scene& scene = m_pEngine->loadSceneFromFile(m_projectPath.parent_path() / p);
 			m_savedScenes[&scene] = p;
-			*/
 		}
 
 
