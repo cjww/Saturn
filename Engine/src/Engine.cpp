@@ -344,6 +344,27 @@ namespace sa {
 		return it->second;
 	}
 
+	Scene& Engine::loadSceneFromFile(const std::filesystem::path& path) {
+		simdjson::ondemand::parser parser;
+		auto json = simdjson::padded_string::load(path.string());
+		if (json.error()) {
+			throw std::runtime_error("JSON load failed : " + std::string(simdjson::error_message(json.error())));
+		}
+		simdjson::ondemand::document doc = parser.iterate(json);
+		Scene& scene = getScene(std::string(doc["name"].get_string().value()));
+		scene.deserialize(&doc);
+		return scene;
+	}
+
+	void Engine::storeSceneToFile(Scene* pScene, const std::filesystem::path& path) {
+		Serializer s;
+		pScene->serialize(s);
+
+		std::ofstream file(path);
+		file << s.dump();
+		file.close();
+	}
+
 	Scene* Engine::getCurrentScene() const {
 		return m_currentScene;
 	}

@@ -214,7 +214,7 @@ namespace sa {
 
 	ProgressView<ResourceID>& AssetManager::loadModel(const std::filesystem::path& path) {
 		SA_PROFILE_FUNCTION();
-		auto absPath = std::filesystem::absolute(path).string();
+		auto absPath = std::filesystem::absolute(path).generic_string();
 		
 		m_mutex.lock();
 		if (m_loadingModels.count(absPath)) {
@@ -375,26 +375,25 @@ namespace sa {
 	}
 
 	ResourceID AssetManager::loadModel(const std::filesystem::path& path, ProgressView<ResourceID>& progress) {
-		SA_PROFILE_SCOPE("AssetManager::LoadModel(), path = " + path.string());
+		SA_PROFILE_SCOPE("AssetManager::LoadModel(), path = " + path.generic_string());
 
 		if (!std::filesystem::exists(path)) {
 			SA_DEBUG_LOG_ERROR("No such file:", path);
 			return NULL_RESOURCE;
 		}
-		std::filesystem::path absolutePath = std::filesystem::absolute(path);
+		std::filesystem::path absolutePath(std::filesystem::absolute(path), path.generic_format);
 
 		m_mutex.lock();
-		ResourceID id = ResourceManager::get().keyToID<ModelData>(absolutePath.string());
+		ResourceID id = ResourceManager::get().keyToID<ModelData>(absolutePath.generic_string());
 		if (id != NULL_RESOURCE) {
 			m_mutex.unlock();
 			return id;
 		}
-		id = ResourceManager::get().insert<ModelData>(absolutePath.string(), {});
+		id = ResourceManager::get().insert<ModelData>(absolutePath.generic_string(), {});
 		m_mutex.unlock();
 		ModelData* model = ResourceManager::get().get<ModelData>(id);
 
 		loadAssimpModel(path, model, progress);
-
 		return id;
 	}
 

@@ -81,8 +81,6 @@ namespace sa {
 	void Scene::serialize(Serializer& s) {
 		s.beginObject();
 		s.value("name", m_name.c_str());
-		s.value("entityCount", getEntityCount());
-
 		s.beginArray("entities");
 		each([&](entt::entity e) {
 			Entity entity(this, e);
@@ -94,13 +92,20 @@ namespace sa {
 	}
 
 	void Scene::deserialize(void* pDoc) {
+		clearEntities();
 		using namespace simdjson;
 		ondemand::document& doc = *(ondemand::document*)pDoc;
+		
 		m_name = doc["name"].get_string().value();
-		size_t entityCount = doc["entityCount"].get_uint64().value();
-		for (size_t i = 0; i < entityCount; i++) {
+		for (auto e : doc["entities"]) {
+			if (e.error()) {
+				SA_DEBUG_LOG_WARNING("Failed to get entity from file");
+				continue;
+			}
+			ondemand::object obj = e.value_unsafe().get_object();
+			
 			Entity entity = createEntity();
-			entity.deserialize(pDoc);
+			entity.deserialize(&obj);
 		}
 
 	}
@@ -154,7 +159,7 @@ namespace sa {
 	}
 
 	size_t Scene::getEntityCount() const {
-		return size();
+		return alive();
 	}
 
 	std::optional<EntityScript> Scene::addScript(const Entity& entity, const std::filesystem::path& path) {
@@ -177,6 +182,7 @@ namespace sa {
 	void Scene::clearEntities() {
 		((entt::registry*)this)->clear();
 		m_scriptManager.clearAll();
+		m_hierarchy.clear();
 	}
 
 

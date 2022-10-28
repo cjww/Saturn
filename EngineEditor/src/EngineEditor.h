@@ -20,15 +20,23 @@ namespace sa {
 		std::filesystem::path m_projectPath;
 		
 		std::vector<std::filesystem::path> m_recentProjectPaths;
+		std::unordered_map<Scene*, std::filesystem::path> m_savedScenes;
 
 		bool openProject(const std::filesystem::path& path);
 		bool openProject();
 
 		bool createProject(const std::filesystem::path& path);
-		bool newProject();
+		bool createProject();
+		bool saveProject(const std::filesystem::path& path);
 
 		void projectSelector();
 		void fileMenu();
+
+
+		
+		void saveScene(Scene* pScene);
+		void loadScene(Scene* pScene);
+
 
 	public:
 		EngineEditor() = default;

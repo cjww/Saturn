@@ -50,11 +50,19 @@ namespace sa {
 		return m_ss.str();
 	}
 
-	void* Serializable::parse(const std::filesystem::path& path) {
-		simdjson::ondemand::parser parser;
-		simdjson::padded_string json = simdjson::padded_string::load(path.string());
-		simdjson::ondemand::document* doc = new simdjson::ondemand::document;
-		*doc = parser.iterate(json);
-		return doc;
+	glm::vec3 Serializer::DeserializeVec3(void* pObj) {
+		simdjson::ondemand::object& obj = *(simdjson::ondemand::object*)pObj;
+		return { (float)obj["x"].get_double(), (float)obj["y"].get_double(), (float)obj["z"].get_double() };
 	}
+
+	glm::vec4 Serializer::DeserializeVec4(void* pObj) {
+		simdjson::ondemand::object& obj = *(simdjson::ondemand::object*)pObj;
+		return { (float)obj["x"].get_double(), (float)obj["y"].get_double(), (float)obj["z"].get_double(), (float)obj["w"].get_double() };
+	}
+
+	glm::quat Serializer::DeserializeQuat(void* pObj) {
+		simdjson::ondemand::object& obj = *(simdjson::ondemand::object*)pObj;
+		return { (float)obj["w"].get_double(), (float)obj["x"].get_double(), (float)obj["y"].get_double(), (float)obj["z"].get_double() };
+	}
+
 }

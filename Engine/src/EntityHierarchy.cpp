@@ -55,6 +55,11 @@ namespace sa {
 		m_children.erase(entity);
 	}
 
+	void EntityHierarchy::clear() {
+		m_children.clear();
+		m_parents.clear();
+	}
+
 	bool EntityHierarchy::hasChildren(const Entity& parent) const {
 		return m_children.count(parent) && !m_children.at(parent).empty();
 	}

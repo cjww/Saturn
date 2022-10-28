@@ -1,6 +1,10 @@
 #pragma once
 #include <string>
 #include <stack>
+#include <iomanip>
+
+#include <glm\vec3.hpp>
+#include <glm/gtc/quaternion.hpp>
 
 namespace sa {
 	
@@ -32,6 +36,11 @@ namespace sa {
 		void value(const std::string& key, T value);
 
 		std::string dump() const;
+
+		static glm::vec3 DeserializeVec3(void* pObj);
+		static glm::vec4 DeserializeVec4(void* pObj);
+		static glm::quat DeserializeQuat(void* pObj);
+
 	};
 	
 	template<>
@@ -70,6 +79,66 @@ namespace sa {
 		m_hasElements = true;
 	}
 
+	template<>
+	inline void Serializer::value(glm::vec3 v) {
+		beginObject();
+		value("x", v.x);
+		value("y", v.y);
+		value("z", v.z);
+		endObject();
+	}
+
+	template<>
+	inline void Serializer::value(const std::string& key, glm::vec3 v) {
+		beginObject(key);
+		value("x", v.x);
+		value("y", v.y);
+		value("z", v.z);
+		endObject();
+	}
+
+
+	template<>
+	inline void Serializer::value(glm::vec4 v) {
+		beginObject();
+		value("x", v.x);
+		value("y", v.y);
+		value("z", v.z);
+		value("w", v.w);
+		endObject();
+	}
+
+	template<>
+	inline void Serializer::value(const std::string& key, glm::vec4 v) {
+		beginObject(key);
+		value("x", v.x);
+		value("y", v.y);
+		value("z", v.z);
+		value("w", v.w);
+		endObject();
+	}
+
+	template<>
+	inline void Serializer::value(glm::quat q) {
+		beginObject();
+		value("w", q.w);
+		value("x", q.x);
+		value("y", q.y);
+		value("z", q.z);
+		endObject();
+	}
+
+	template<>
+	inline void Serializer::value(const std::string& key, glm::quat q) {
+		beginObject(key);
+		value("w", q.w);
+		value("x", q.x);
+		value("y", q.y);
+		value("z", q.z);
+		endObject();
+	}
+
+
 	template<typename T>
 	inline void Serializer::value(T value) {
 		if (m_hasElements) {
@@ -92,8 +161,6 @@ namespace sa {
 
 	class Serializable {
 	public:
-
-		static void* parse(const std::filesystem::path& path);
 
 		virtual void serialize(Serializer& s) = 0;
 		virtual void deserialize(void* pDoc) = 0;

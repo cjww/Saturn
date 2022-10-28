@@ -96,7 +96,7 @@ namespace ImGui {
 	void Component(comp::Model* model) {
 		ImGui::Text("ModelID: %d", model->modelID);
 		ImGui::SameLine();
-		ImGui::Text("Name: %s", sa::ResourceManager::get().idToKey(model->modelID).c_str());
+		ImGui::Text("Name: %s", sa::ResourceManager::get().idToKey<sa::ModelData>(model->modelID).c_str());
 		if (model->modelID != NULL_RESOURCE) {
 			/*
 			sa::ModelData* data = sa::AssetManager::get().getModel(model->modelID);
@@ -248,10 +248,14 @@ namespace ImGui {
 	}
 
 	bool MakeEnterNameModalPopup(const char* name, const char* hint, std::string& output) {
-		ImVec2 size = ImGui::GetContentRegionMax();
+		/*
+		ImVec2 size = ImGui::GetContentRegionAvail();
 		size.x /= 4;
 		size.y /= 4;
 		ImGui::SetNextWindowSize(size);
+		*/
+
+		ImGui::SetNextWindowContentSize(ImVec2(300, 100));
 
 		if (ImGui::BeginPopupModal(name, 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings)) {
 

@@ -135,6 +135,10 @@ namespace sa {
 			std::queue<Entity> entitiesDone;
 			std::set<ProgressView<ResourceID>*> progressSet;
 			for (const auto& [entity, progress] : m_completions) {
+				if (entity.isNull()) {
+					entitiesDone.push(entity);
+					continue;
+				}
 				size_t size = progressSet.size();
 				progressSet.insert(&progress);
 				if (size != progressSet.size()) {

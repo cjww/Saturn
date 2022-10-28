@@ -41,7 +41,7 @@ namespace sa {
 		bool hasComponent() const;
 
 		bool hasComponent(ComponentType type) const;
-		bool hasComponent(const std::string name) const;
+		bool hasComponent(const std::string& name) const;
 
 		template<typename T, typename ...Args>
 		T* addComponent(Args&& ...args);
@@ -151,6 +151,8 @@ namespace sa {
 				.func<&Entity::removeComponent<Comp>>("remove"_hs)
 				;
 		
+			SA_DEBUG_LOG_INFO("Registered Meta functions for", getComponentName<Comp>());
+
 			ComponentType::registerComponent<Comp>();
 		}
 		if constexpr (std::is_base_of_v<sa::LuaAccessable, std::decay_t<Comp>>) {
@@ -175,6 +177,9 @@ namespace sa {
 					}
 					self.removeComponent(name);
 				});
+
+			SA_DEBUG_LOG_INFO("Registered Lua functions for", getComponentName<Comp>());
+
 		}
 
 	}

@@ -199,7 +199,10 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
-    <ClCompile Include="src\ECS\Components.cpp" />
+    <ClCompile Include="src\ECS\Components\Light.cpp" />
+    <ClCompile Include="src\ECS\Components\Model.cpp" />
+    <ClCompile Include="src\ECS\Components\Name.cpp" />
+    <ClCompile Include="src\ECS\Components\Transform.cpp" />
     <ClCompile Include="src\Graphics\IRenderLayer.cpp" />
     <ClCompile Include="src\Graphics\RenderLayers\BloomRenderLayer.cpp" />
     <ClCompile Include="src\Graphics\RenderLayers\ImGuiRenderLayer.cpp" />
@@ -235,6 +238,10 @@
     <ClCompile Include="src\EntityHierarchy.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\ECS\Components\Light.h" />
+    <ClInclude Include="src\ECS\Components\Model.h" />
+    <ClInclude Include="src\ECS\Components\Name.h" />
+    <ClInclude Include="src\ECS\Components\Transform.h" />
     <ClInclude Include="src\Serializable.h" />
     <ClInclude Include="src\Graphics\IRenderLayer.h" />
     <ClInclude Include="src\Graphics\RenderLayers\BloomRenderLayer.h" />

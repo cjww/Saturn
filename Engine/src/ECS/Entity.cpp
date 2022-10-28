@@ -2,6 +2,7 @@
 #include "Entity.h"
 
 #include "Components.h"
+
 #include "Scene.h"
 
 #include "simdjson.h"
@@ -79,16 +80,48 @@ namespace sa {
     {
     }
 
+
     void Entity::serialize(Serializer& s) {
         s.beginObject();
         s.value("id", (uint32_t)m_entity);
-        s.value("name", getComponent<comp::Name>()->name.c_str());
+        
+        s.beginArray("components");
+        auto& types = ComponentType::getRegisteredComponents();
+        for (auto& type : types) {
+            if (!hasComponent(type))
+                continue;
+            
+            MetaComponent mt = getComponent(type);
+            if (!mt.isValid())
+                continue;
+
+            ComponentBase** comp = (ComponentBase**)mt.data();
+
+            s.beginObject();
+            s.value("type", mt.getTypeName().c_str());
+            (*comp)->serialize(s);
+            s.endObject();
+        }
+        s.endArray();
         s.endObject();
     }
 
     void Entity::deserialize(void* pDoc) {
-        simdjson::ondemand::document& doc = *(simdjson::ondemand::document*)pDoc;
-        //getComponent<comp::Name>()->name = doc["entities"][0]["name"].get_string().value();
+        simdjson::ondemand::object& obj = *(simdjson::ondemand::object*)pDoc;
+       
+        for (auto comps : obj["components"]) {
+            if (comps.error()) {
+                continue;
+            }
+            simdjson::ondemand::object componentObj = comps.value().get_object();
+            MetaComponent mt = addComponent(std::string(componentObj["type"].get_string().value()));
+            ComponentBase** comp = (ComponentBase**)mt.data();
+            (*comp)->deserialize(&componentObj);
+
+        }
+            /*
+            */
+        
     }
 
 
@@ -102,10 +135,10 @@ namespace sa {
     }
 
     bool Entity::hasComponent(ComponentType type) const {
-        return type.invoke("has", *this).cast<bool>();
+        return *(bool*)type.invoke("has", *this).data();
     }
 
-    bool Entity::hasComponent(const std::string name) const {
+    bool Entity::hasComponent(const std::string& name) const {
         ComponentType type = getComponentType(name);
         return hasComponent(type);
     }

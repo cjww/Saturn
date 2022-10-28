@@ -10,6 +10,7 @@
 
 namespace sa {
 	bool EngineEditor::openProject(const std::filesystem::path& path) {
+
 		using namespace simdjson;
 		ondemand::parser parser;
 		auto json = padded_string::load(path.string());
@@ -17,11 +18,27 @@ namespace sa {
 			return false;
 		}
 		ondemand::document doc = parser.iterate(json);
-
+		
 		std::cout << "Opened Project: " << path << std::endl;
-		std::cout << doc["version"] << std::endl;
-
+		std::cout << "Version: " << doc["version"] << std::endl;
+		
 		m_projectPath = path;
+
+		m_savedScenes.clear();
+		auto scenesArray = doc["scenes"];
+		for (const auto& scenePath : scenesArray) {
+			if (scenePath.error()) {
+				std::cout << "ERROR" << std::endl;
+				break;
+			}
+			simdjson::ondemand::value s = scenePath.value_unsafe();
+			std::filesystem::path p(s.get_string().value());
+			/*
+			Scene& scene = m_pEngine->loadSceneFromFile(m_projectPath.parent_path() / p);
+			m_savedScenes[&scene] = p;
+			*/
+		}
+
 
 		auto it = std::find(m_recentProjectPaths.begin(), m_recentProjectPaths.end(), m_projectPath);
 		if (it != m_recentProjectPaths.end()) {
@@ -50,22 +67,10 @@ namespace sa {
 		std::filesystem::path projectName = path.filename();
 		projectName.replace_extension(".saproj");
 
-		std::ofstream projectFile(path / projectName);
-		if (!projectFile) {
-			return false;
-		}
-		
-		time_t t = time(NULL);
-		projectFile << "{\n\"version\" : \"1.0.0\",\n\"last_saved\" : \"";
-		projectFile << t;
-		projectFile << "\"\n}";
-
-		projectFile.close();
-
-		return true;
+		return saveProject(path / projectName);
 	}
 
-	bool EngineEditor::newProject() {
+	bool EngineEditor::createProject() {
 		std::filesystem::path path;
 		if (FileDialogs::SaveFile("Saturn Project\0\0", path, std::filesystem::current_path())) {
 			if (!createProject(path)) {
@@ -77,8 +82,38 @@ namespace sa {
 		return openProject(path / projectName);
 	}
 
+	bool EngineEditor::saveProject(const std::filesystem::path& path) {
+		std::ofstream projectFile(path);
+		if (!projectFile) {
+			return false;
+		}
+
+		Serializer s;
+		s.beginObject();
+
+		s.value("version", "1.0.0");
+		time_t t = time(NULL);
+		s.value("last_saved", t);
+
+		s.beginArray("scenes");
+
+		for (const auto& [pScene, scenePath] : m_savedScenes) {
+			path.native();
+			s.value(std::filesystem::relative(scenePath, path.parent_path()).generic_string().c_str());
+		}
+
+		s.endArray();
+
+		s.endObject();
+
+		projectFile << s.dump();
+		projectFile.close();
+		return true;
+	}
+
+
 	void EngineEditor::projectSelector() {
-		
+
 		ImGui::OpenPopup("Select Project");
 
 		if (ImGui::BeginPopupModal("Select Project", 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove)) {
@@ -92,13 +127,13 @@ namespace sa {
 				}
 				ImGui::EndChild();
 			}
-			
+
 			if (ImGui::Button("Open Project...")) {
 				openProject();
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("+ New Project...")) {
-				newProject();
+				createProject();
 			}
 		}
 		ImGui::EndPopup();
@@ -107,59 +142,68 @@ namespace sa {
 
 	void EngineEditor::fileMenu() {
 
-		bool ctrl = ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl);
-		bool s = ImGui::IsKeyPressed(ImGuiKey_S);
-		bool n = ImGui::IsKeyPressed(ImGuiKey_N);
-		bool r = ImGui::IsKeyPressed(ImGuiKey_R);
-
-
-
-		if (ImGui::MenuItem("New Project", "")) {
-
+		if (ImGui::MenuItem("Save Project")) {
+			saveProject(m_projectPath);
 		}
 
-		if (ImGui::MenuItem("Open Project", "")) {
-
+		if (ImGui::MenuItem("Open Project")) {
+			openProject();
 		}
 
-		if (ImGui::MenuItem("New Scene", "Ctrl+N")) {
-
+		if (ImGui::MenuItem("New Project")) {
+			createProject();
 		}
 
-		if (ImGui::MenuItem("Save Scene", "Ctrl+S")) {
-			Serializer s;
-			m_pEngine->getCurrentScene()->serialize(s);
+		/*
 
-			std::ofstream file("testScene.json");
-			file << s.dump();
-			file.close();
-		}
-
-		if (ImGui::MenuItem("Save Scene As", "Ctrl+Shift+S")) {
+		if (ImGui::MenuItem("New Scene")) {
 
 		}
+		*/
 
-		if (ImGui::MenuItem("Load Scene", "")) {
-
+		if (ImGui::MenuItem("Save Scene")) {
+			saveScene(m_pEngine->getCurrentScene());
 		}
 
-		if (ImGui::MenuItem("Reload Scene", "Ctrl+R")) {
-
-
+		if (ImGui::MenuItem("Load Scene")) {
 			m_pEngine->getCurrentScene()->clearEntities();
-
-			simdjson::ondemand::parser parser;
-			auto json = simdjson::padded_string::load("testScene.json");
-			if (json.error()) {
-				std::cout << "JSON read error: " << simdjson::error_message(json.error()) << std::endl;
-			}
-			else {
-				simdjson::ondemand::document doc = parser.iterate(json);
-				m_pEngine->getCurrentScene()->deserialize(&doc);
-			}
-
+			loadScene(m_pEngine->getCurrentScene());
 		}
 
+	}
+
+	void EngineEditor::saveScene(Scene* pScene) {
+		auto it = m_savedScenes.find(pScene);
+		if (it == m_savedScenes.end()) {
+			std::filesystem::path path;
+			if (!FileDialogs::SaveFile("\0\0", path, m_projectPath)) {
+				return;
+			}
+			it = m_savedScenes.insert({ pScene, path}).first;
+		}
+
+		m_pEngine->storeSceneToFile(pScene, it->second);
+	}
+
+	void EngineEditor::loadScene(Scene* pScene) {
+		auto it = m_savedScenes.find(pScene);
+		if (it == m_savedScenes.end()) {
+			std::filesystem::path path;
+			if (!FileDialogs::OpenFile("\0\0", path, m_projectPath)) {
+				return;
+			}
+			it = m_savedScenes.insert({ pScene, path }).first;
+		}
+
+		simdjson::ondemand::parser parser;
+		auto json = simdjson::padded_string::load(it->second.string());
+		if (json.error()) {
+			std::cout << "JSON read error: " << simdjson::error_message(json.error()) << std::endl;
+		}
+		else {
+			simdjson::ondemand::document doc = parser.iterate(json);
+			pScene->deserialize(&doc);
+		}
 	}
 
 	void EngineEditor::onAttach(sa::Engine& engine, sa::RenderWindow& renderWindow) {

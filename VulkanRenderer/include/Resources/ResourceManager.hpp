@@ -136,8 +136,9 @@ namespace sa {
 		template<typename T>
 		ResourceID keyToID(const std::string& key) const;
 	
+		template<typename T>
 		std::string idToKey(ResourceID id) const;
-	
+
 	};
 
 	template<typename T>
@@ -240,6 +241,15 @@ namespace sa {
 			return NULL_RESOURCE;
 		return container->keyToID(key);
 	}
+
+	template<typename T>
+	inline std::string ResourceManager::idToKey(ResourceID id) const {
+		details::ResourceContainer<T>* container = tryGetContainer<T>();
+		if (!container)
+			return "";
+		return container->idToKey(id);
+	}
+
 
 	namespace details {
 		template<typename T>
