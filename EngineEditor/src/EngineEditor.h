@@ -32,10 +32,11 @@ namespace sa {
 		void projectSelector();
 		void fileMenu();
 
-
-		
 		void saveScene(Scene* pScene);
 		void loadScene(Scene* pScene);
+
+		std::filesystem::path makeProjectRelative(const std::filesystem::path& path);
+		std::filesystem::path makeEditorRelative(const std::filesystem::path& projectRelativePath);
 
 
 	public:

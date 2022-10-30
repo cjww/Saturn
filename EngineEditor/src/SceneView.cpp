@@ -22,10 +22,8 @@ SceneView::SceneView(sa::Engine* pEngine, sa::RenderWindow* pWindow)
 	m_statsUpdateTime = 0.1f;
 	m_statsTimer = m_statsUpdateTime;
 
-	//m_displayedSize = { (float)pWindow->getCurrentExtent().width, (float)pWindow->getCurrentExtent().height };
-
 	pEngine->on<sa::engine_event::SceneSet>([&](const sa::engine_event::SceneSet& sceneSetEvent, sa::Engine& engine) {
-
+		m_selectedEntity = {};
 		sceneSetEvent.newScene->addActiveCamera(&m_camera);
 
 		sceneSetEvent.newScene->on<sa::editor_event::EntitySelected>([&](const sa::editor_event::EntitySelected& e, sa::Scene&) {
@@ -89,13 +87,15 @@ void SceneView::update(float dt) {
 void SceneView::onImGui() {
 	SA_PROFILE_FUNCTION();
 
-	
+
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 
 	if (ImGui::Begin("Scene view", 0, ImGuiWindowFlags_MenuBar)) {
 
 		static ImGuizmo::OPERATION operation = ImGuizmo::TRANSLATE;
 		static float snapDistance = 0.5f;
 		static float snapAngle = 45.0f;
+		static int iconSize = 25;
 		if (ImGui::BeginMenuBar()) {
 
 			static bool showStats = false;
@@ -141,6 +141,9 @@ void SceneView::onImGui() {
 						forwardPlusTechnique->setShowHeatmap(showLightHeatmap);
 					}
 				}
+
+				ImGui::SliderInt("Icon Size", &iconSize, 1, 100);
+
 				ImGui::EndMenu();
 			}
 			
@@ -165,6 +168,7 @@ void SceneView::onImGui() {
 		
 		sa::Texture texture = m_pEngine->getRenderPipeline().getRenderTechnique()->getOutputTexture();
 		ImGui::Image(texture, imAvailSize);
+		
 		m_displayedSize = availSize;
 
 		
@@ -187,43 +191,56 @@ void SceneView::onImGui() {
 			snap = snapAngle;
 		}
 
-		if (m_selectedEntity && operation) {
-			comp::Transform* transform = m_selectedEntity.getComponent<comp::Transform>();
+		if (m_selectedEntity) {
+			ImGuizmo::SetOrthographic(false);
+			ImGuizmo::AllowAxisFlip(false);
+			ImGuizmo::SetDrawlist();
+			ImVec2 windowPos = ImGui::GetWindowPos();
+			ImGuizmo::SetRect(windowPos.x, windowPos.y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
 
-			if (transform) {
-				glm::vec3 pos = transform->position;
+			if(operation) {
+				comp::Transform* transform = m_selectedEntity.getComponent<comp::Transform>();
 
-				ImGuizmo::SetOrthographic(false);
-				ImGuizmo::AllowAxisFlip(false);
-				ImGuizmo::SetDrawlist();
-				ImVec2 windowPos = ImGui::GetWindowPos();
-				ImGuizmo::SetRect(windowPos.x, windowPos.y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
+				if (transform) {
+					glm::vec3 pos = transform->position;
 
-				sa::Matrix4x4 transformMat = transform->getMatrix();
-				sa::Matrix4x4 projMat = m_camera.getProjectionMatrix();
-				projMat[1][1] *= -1;
+					sa::Matrix4x4 transformMat = transform->getMatrix();
+					sa::Matrix4x4 projMat = m_camera.getProjectionMatrix();
+					projMat[1][1] *= -1;
 
-				float snapAxis[]  = {snap, snap, snap};
-				if (ImGuizmo::Manipulate(&m_camera.getViewMatrix()[0][0], &projMat[0][0],
-					operation, (ImGuizmo::MODE)m_isWorldCoordinates, &transformMat[0][0],
-					nullptr, (doSnap) ? snapAxis : nullptr))
-				{
-					glm::vec3 rotation;
-					glm::vec3 oldPosition = transform->position;
-					ImGuizmo::DecomposeMatrixToComponents(&transformMat[0][0], (float*)&transform->position, (float*)&rotation, (float*)&transform->scale);
-					transform->rotation = glm::quat(glm::radians(rotation));
-					if (transform->hasParent) {
-						transform->relativePosition += transform->position - oldPosition;
+					float snapAxis[]  = {snap, snap, snap};
+					if (ImGuizmo::Manipulate(&m_camera.getViewMatrix()[0][0], &projMat[0][0],
+						operation, (ImGuizmo::MODE)m_isWorldCoordinates, &transformMat[0][0],
+						nullptr, (doSnap) ? snapAxis : nullptr))
+					{
+						glm::vec3 rotation;
+						glm::vec3 oldPosition = transform->position;
+						ImGuizmo::DecomposeMatrixToComponents(&transformMat[0][0], (float*)&transform->position, (float*)&rotation, (float*)&transform->scale);
+						transform->rotation = glm::quat(glm::radians(rotation));
+						if (transform->hasParent) {
+							transform->relativePosition += transform->position - oldPosition;
+						}
 					}
+
 				}
-
 			}
-		}
-		
+			
+			comp::Light* light = m_selectedEntity.getComponent<comp::Light>();
+			if (light) {
+				glm::vec3 point = sa::math::worldToScreen(light->values.position, &m_camera, { windowPos.x, windowPos.y }, { ImGui::GetWindowWidth(), ImGui::GetWindowHeight() });
+				sa::Texture2D* tex = sa::AssetManager::get().loadTexture("resources/lightbulb-icon.png", true);	
+				ImGui::GetWindowDrawList()->AddImageQuad(
+					sa::Renderer::get().getImGuiTexture(tex),
+					ImVec2(point.x - iconSize, point.y - iconSize),
+					ImVec2(point.x + iconSize, point.y - iconSize),
+					ImVec2(point.x + iconSize, point.y + iconSize),
+					ImVec2(point.x - iconSize, point.y + iconSize));
+			}
 
+		}
 	}
 	ImGui::End();
-
+	ImGui::PopStyleVar();
 
 }
 

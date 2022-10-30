@@ -61,6 +61,8 @@ namespace sa {
 		void imGuiImage(sa::Texture texture, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& tint_col, const ImVec4& border_col);
 		bool imGuiImageButton(sa::Texture texture, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, int frame_padding, const ImVec4& bg_col, const ImVec4& tint_col);
 
+		ImTextureID getImGuiTexture(const sa::Texture* texture);
+
 #endif // !IMGUI_DISABLE
 
 		ResourceID createSwapchain(GLFWwindow* pWindow);

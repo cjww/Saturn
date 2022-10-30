@@ -276,10 +276,7 @@ namespace sa {
 			});
 		}
 		// set scene silently
-		m_currentScene = &getScene("MainScene");
-	
-
-
+		//m_currentScene = &getScene("MainScene");
 
 		m_isSetup = true;
 	}
@@ -288,22 +285,13 @@ namespace sa {
 	void Engine::init() {
 		SA_PROFILE_FUNCTION();
 
-		if (m_currentScene) {
-			// inform about scene set
-			publish<engine_event::SceneSet>(m_currentScene);
-			publish<engine_event::SceneLoad>(m_currentScene);
-			m_currentScene->load();
-		}
-
+		if (!m_currentScene) // no scene has been set
+			setScene("Default Scene");
 	}
 
 	void Engine::update(float dt) {
 		SA_PROFILE_FUNCTION();
-
-		if (m_currentScene) {
-			m_currentScene->update(dt);
-		}
-
+		m_currentScene->update(dt);
 	}
 
 	void Engine::cleanup() {
@@ -377,11 +365,11 @@ namespace sa {
 
 	void Engine::setScene(Scene& scene) {
 		SA_PROFILE_FUNCTION();
+		publish<engine_event::SceneSet>(&scene);
 		if (m_currentScene) {
 			m_currentScene->unload();
 		}
 		m_currentScene = &scene;
-		publish<engine_event::SceneSet>(m_currentScene);
 		if (m_isSetup) {
 			publish<engine_event::SceneLoad>(m_currentScene);
 			m_currentScene->load();

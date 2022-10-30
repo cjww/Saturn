@@ -32,9 +32,9 @@ namespace sa {
 				break;
 			}
 			simdjson::ondemand::value s = scenePath.value_unsafe();
-			std::filesystem::path p(s.get_string().value());
-			Scene& scene = m_pEngine->loadSceneFromFile(m_projectPath.parent_path() / p);
-			m_savedScenes[&scene] = p;
+			std::filesystem::path projectRealtiveScene(s.get_string().value());
+			Scene& scene = m_pEngine->loadSceneFromFile(makeEditorRelative(projectRealtiveScene));
+			m_savedScenes[&scene] = projectRealtiveScene;
 		}
 
 
@@ -96,8 +96,7 @@ namespace sa {
 		s.beginArray("scenes");
 
 		for (const auto& [pScene, scenePath] : m_savedScenes) {
-			path.native();
-			s.value(std::filesystem::relative(scenePath, path.parent_path()).generic_string().c_str());
+			s.value(makeProjectRelative(scenePath).generic_string().c_str());
 		}
 
 		s.endArray();
@@ -174,7 +173,7 @@ namespace sa {
 		auto it = m_savedScenes.find(pScene);
 		if (it == m_savedScenes.end()) {
 			std::filesystem::path path;
-			if (!FileDialogs::SaveFile("\0\0", path, m_projectPath)) {
+			if (!FileDialogs::SaveFile("Saturn Scene (*.json)\0*.json\0", path, m_projectPath.parent_path())) {
 				return;
 			}
 			it = m_savedScenes.insert({ pScene, path}).first;
@@ -187,21 +186,21 @@ namespace sa {
 		auto it = m_savedScenes.find(pScene);
 		if (it == m_savedScenes.end()) {
 			std::filesystem::path path;
-			if (!FileDialogs::OpenFile("\0\0", path, m_projectPath)) {
+			if (!FileDialogs::OpenFile("Saturn Scene (*.json)\0*.json\0", path, m_projectPath.parent_path())) {
 				return;
 			}
 			it = m_savedScenes.insert({ pScene, path }).first;
 		}
 
-		simdjson::ondemand::parser parser;
-		auto json = simdjson::padded_string::load(it->second.string());
-		if (json.error()) {
-			std::cout << "JSON read error: " << simdjson::error_message(json.error()) << std::endl;
-		}
-		else {
-			simdjson::ondemand::document doc = parser.iterate(json);
-			pScene->deserialize(&doc);
-		}
+		m_pEngine->loadSceneFromFile(makeEditorRelative(it->second));
+	}
+
+	std::filesystem::path EngineEditor::makeProjectRelative(const std::filesystem::path& editorRelativePath) {
+		return std::filesystem::proximate(editorRelativePath, m_projectPath.parent_path());
+	}
+
+	std::filesystem::path EngineEditor::makeEditorRelative(const std::filesystem::path& projectRelativePath) {
+		return m_projectPath.parent_path() / projectRelativePath;
 	}
 
 	void EngineEditor::onAttach(sa::Engine& engine, sa::RenderWindow& renderWindow) {
@@ -276,7 +275,6 @@ namespace sa {
 			static std::string name;
 			if (enterSceneNamePopup) {
 				ImGui::OpenPopup("Create New Scene");
-				name = "";
 			}
 
 			ImGui::SetNextWindowContentSize(ImVec2(300, 100));
