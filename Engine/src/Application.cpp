@@ -38,13 +38,11 @@ namespace sa {
 	}
 	
 	void Application::run() {
-		SA_PROFILE_FUNCTION();
 		
 		m_engine.init();
 
 		Clock clock;
 		while (m_pWindow->isOpen()) {
-			SA_PROFILE_SCOPE("MainLoop");
 			m_pWindow->pollEvents();
 			float dt = clock.restart();
 

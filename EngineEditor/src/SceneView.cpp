@@ -41,6 +41,7 @@ SceneView::SceneView(sa::Engine* pEngine, sa::RenderWindow* pWindow)
 	m_pWindow->addScrollCallback([&](double x, double y) {
 		m_zoom = y;
 	});
+
 }
 
 SceneView::~SceneView() {
@@ -246,6 +247,7 @@ void SceneView::onImGui() {
 		glm::vec2 screenPos = { imageMin.x, imageMin.y };
 		glm::vec2 screenSize = { imageSize.x, imageSize.y };
 
+
 		if (m_selectedEntity) {
 
 			if (operation) {
@@ -256,9 +258,10 @@ void SceneView::onImGui() {
 					sa::Matrix4x4 transformMat = transform->getMatrix();
 					sa::Matrix4x4 projMat = m_camera.getProjectionMatrix();
 					projMat[1][1] *= -1;
+					glm::mat4 viewMat = m_camera.getViewMatrix();
 
 					float snapAxis[] = { snap, snap, snap };
-					if (ImGuizmo::Manipulate(&m_camera.getViewMatrix()[0][0], &projMat[0][0],
+					if (ImGuizmo::Manipulate(&viewMat[0][0], &projMat[0][0],
 						operation, (ImGuizmo::MODE)m_isWorldCoordinates, &transformMat[0][0],
 						nullptr, (doSnap) ? snapAxis : nullptr))
 					{
@@ -290,8 +293,8 @@ void SceneView::onImGui() {
 		}
 		
 		if (showIcons) {
+			sa::Texture2D* tex = sa::AssetManager::get().loadTexture("resources/lightbulb-icon.png", true);
 			m_pEngine->getCurrentScene()->forEach<comp::Light>([&](const comp::Light& light) {
-				sa::Texture2D* tex = sa::AssetManager::get().loadTexture("resources/lightbulb-icon.png", true);
 				ImGui::GizmoIcon(tex, light.values.position, &m_camera, screenPos, screenSize, iconSize);
 			});
 		}
