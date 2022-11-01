@@ -88,16 +88,17 @@ void SceneView::onImGui() {
 	SA_PROFILE_FUNCTION();
 
 
-	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+	//ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 
-	if (ImGui::Begin("Scene view", 0, ImGuiWindowFlags_MenuBar)) {
+	if (ImGui::Begin("Scene view", 0, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove)) {
 
 		static ImGuizmo::OPERATION operation = ImGuizmo::TRANSLATE;
 		static float snapDistance = 0.5f;
 		static float snapAngle = 45.0f;
-		static int iconSize = 25;
-		if (ImGui::BeginMenuBar()) {
+		static int iconSize = 16;
+		static bool showIcons = true;
 
+		if (ImGui::BeginMenuBar()) {
 			static bool showStats = false;
 
 			if (showStats) {
@@ -142,17 +143,23 @@ void SceneView::onImGui() {
 					}
 				}
 
-				ImGui::SliderInt("Icon Size", &iconSize, 1, 100);
+ImGui::Checkbox("Show Icons", &showIcons);
+if (!showIcons) {
+	ImGui::BeginDisabled();
+}
+ImGui::SliderInt("Icon Size", &iconSize, 1, 100);
+if (!showIcons) {
+	ImGui::EndDisabled();
+}
 
-				ImGui::EndMenu();
+ImGui::EndMenu();
 			}
-			
+
 			ImGui::Checkbox("World Coordinates", &m_isWorldCoordinates);
-			
+
 			ImGui::RadioButton("T", (int*)&operation, ImGuizmo::OPERATION::TRANSLATE);
 			ImGui::RadioButton("R", (int*)&operation, ImGuizmo::OPERATION::ROTATE);
 			ImGui::RadioButton("S", (int*)&operation, ImGuizmo::OPERATION::SCALE);
-
 		}
 		ImGui::EndMenuBar();
 
@@ -165,13 +172,15 @@ void SceneView::onImGui() {
 		if (availSize != m_displayedSize) {
 			m_camera.setAspectRatio(availSize.x / availSize.y);
 		}
-		
+
 		sa::Texture texture = m_pEngine->getRenderPipeline().getRenderTechnique()->getOutputTexture();
 		ImGui::Image(texture, imAvailSize);
-		
+		ImVec2 imageMin = ImGui::GetItemRectMin();
+		ImVec2 imageSize = ImGui::GetItemRectSize();
+
 		m_displayedSize = availSize;
 
-		
+
 		if (!ImGui::IsMouseDown(ImGuiMouseButton_Right) && m_isFocused) {
 			if (ImGui::IsKeyPressed(ImGuiKey_W))
 				operation = ImGuizmo::OPERATION::TRANSLATE;
@@ -182,33 +191,31 @@ void SceneView::onImGui() {
 			else if (ImGui::IsKeyPressed(ImGuiKey_Q))
 				operation = (ImGuizmo::OPERATION)0;
 		}
-		
+
 		// Gizmos
-		
+
 		float snap = snapDistance;
 		bool doSnap = ImGui::IsKeyDown(ImGuiKey_LeftCtrl);
 		if (doSnap && operation == ImGuizmo::OPERATION::ROTATE) {
 			snap = snapAngle;
 		}
 
+		ImGuizmo::SetOrthographic(false);
+		ImGuizmo::AllowAxisFlip(false);
+		ImGuizmo::SetDrawlist();
+		ImGuizmo::SetRect(imageMin.x, imageMin.y, imageSize.x, imageSize.y);
 		if (m_selectedEntity) {
-			ImGuizmo::SetOrthographic(false);
-			ImGuizmo::AllowAxisFlip(false);
-			ImGuizmo::SetDrawlist();
-			ImVec2 windowPos = ImGui::GetWindowPos();
-			ImGuizmo::SetRect(windowPos.x, windowPos.y, ImGui::GetWindowWidth(), ImGui::GetWindowHeight());
 
-			if(operation) {
+			if (operation) {
 				comp::Transform* transform = m_selectedEntity.getComponent<comp::Transform>();
 
 				if (transform) {
-					glm::vec3 pos = transform->position;
 
 					sa::Matrix4x4 transformMat = transform->getMatrix();
 					sa::Matrix4x4 projMat = m_camera.getProjectionMatrix();
 					projMat[1][1] *= -1;
 
-					float snapAxis[]  = {snap, snap, snap};
+					float snapAxis[] = { snap, snap, snap };
 					if (ImGuizmo::Manipulate(&m_camera.getViewMatrix()[0][0], &projMat[0][0],
 						operation, (ImGuizmo::MODE)m_isWorldCoordinates, &transformMat[0][0],
 						nullptr, (doSnap) ? snapAxis : nullptr))
@@ -221,26 +228,75 @@ void SceneView::onImGui() {
 							transform->relativePosition += transform->position - oldPosition;
 						}
 					}
-
 				}
 			}
-			
+
 			comp::Light* light = m_selectedEntity.getComponent<comp::Light>();
 			if (light) {
-				glm::vec3 point = sa::math::worldToScreen(light->values.position, &m_camera, { windowPos.x, windowPos.y }, { ImGui::GetWindowWidth(), ImGui::GetWindowHeight() });
-				sa::Texture2D* tex = sa::AssetManager::get().loadTexture("resources/lightbulb-icon.png", true);	
-				ImGui::GetWindowDrawList()->AddImageQuad(
-					sa::Renderer::get().getImGuiTexture(tex),
-					ImVec2(point.x - iconSize, point.y - iconSize),
-					ImVec2(point.x + iconSize, point.y - iconSize),
-					ImVec2(point.x + iconSize, point.y + iconSize),
-					ImVec2(point.x - iconSize, point.y + iconSize));
+				
+				const ImColor lightSphereColor = ImColor(255, 255, 0);
+
+				glm::vec2 screenPos = { imageMin.x, imageMin.y };
+				glm::vec2 screenSize = { imageSize.x, imageSize.y };
+				
+				ImGui::GizmoCircleResizable(light->values.position, light->values.attenuationRadius, glm::quat(glm::vec3(0, 0, 0)), &m_camera, screenPos, screenSize, lightSphereColor);
+				ImGui::GizmoCircleResizable(light->values.position, light->values.attenuationRadius, glm::quat(glm::vec3(glm::radians(90.f), 0, 0)), &m_camera, screenPos, screenSize, lightSphereColor);
+				ImGui::GizmoCircleResizable(light->values.position, light->values.attenuationRadius, glm::quat(glm::vec3(0, glm::radians(90.f), 0)), &m_camera, screenPos, screenSize, lightSphereColor);
+
 			}
 
+
 		}
+		
+		if (showIcons) {
+			m_pEngine->getCurrentScene()->forEach<comp::Light>([&](const comp::Light& light) {
+				sa::Texture2D* tex = sa::AssetManager::get().loadTexture("resources/lightbulb-icon.png", true);
+				ImGui::GizmoIcon(tex, light.values.position, &m_camera, { imageMin.x, imageMin.y }, { imageSize.x, imageSize.y }, iconSize);
+			});
+		}
+
+		
+
+		/*
+		ImVec2 viewManipSize = ImVec2(100, 100);
+		ImVec2 viewManipPos = ImVec2(imageMin.y, imageMin.y + imageSize.y - ImGui::GetWindowWidth() - viewManipSize.x);
+		static glm::mat4 matrix = m_camera.getViewMatrix();
+		static int interpolationFrames = 0;
+		static bool isDragging = false;
+		ImGuizmo::ViewManipulate((float*)&matrix, 5,
+			imageMin, viewManipSize, ImColor(0, 0, 50, 150));
+		if (interpolationFrames)
+			interpolationFrames--;
+
+		if (ImGui::IsMouseHoveringRect(imageMin, { imageMin.x + viewManipSize.x, imageMin.y + viewManipSize.y })
+			&& ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseDragging(ImGuiMouseButton_Left) || interpolationFrames || isDragging)
+		{	
+			if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+				interpolationFrames = 40;
+			}
+			isDragging = ImGui::IsMouseDragging(ImGuiMouseButton_Left);
+
+			glm::vec3 translation;
+			glm::vec3 rotation;
+			glm::vec3 scale;
+			ImGuizmo::DecomposeMatrixToComponents((float*)&matrix, (float*)&translation, (float*)&rotation, (float*)&scale);
+			glm::vec3 forward = glm::vec3(0, 0, 1) * glm::quat(glm::radians(rotation));
+			m_camera.setPosition(translation);
+			m_camera.lookAt(translation + forward);
+
+		}
+		ImGui::SetCursorPosY(150);
+		ImGui::Text("%f %f %f %f\n%f %f %f %f\n%f %f %f %f\n%f %f %f %f",
+			matrix[0][0], matrix[1][0], matrix[2][0], matrix[3][0],
+			matrix[0][1], matrix[1][1], matrix[2][1], matrix[3][1],
+			matrix[0][2], matrix[1][2], matrix[2][2], matrix[3][2],
+			matrix[0][3], matrix[1][3], matrix[2][3], matrix[3][3]);
+
+		*/
+		
 	}
 	ImGui::End();
-	ImGui::PopStyleVar();
+	//ImGui::PopStyleVar();
 
 }
 

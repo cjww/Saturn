@@ -5,8 +5,11 @@
 #include "ECS/Components.h"
 
 #include <glm\gtc\matrix_transform.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
 
 #include <ImGuizmo.h>
+
+#include "CustomImGui.h"
 
 class SceneView : public EditorModule {
 private:

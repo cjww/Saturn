@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "CustomImGui.h"
+#include "Tools\Math.h"
 
 namespace ImGui {
 
@@ -341,5 +342,140 @@ namespace ImGui {
 		return IsItemClicked();
 	}
 
+	void GizmoIcon(const sa::Texture* pTex, const glm::vec3& worldPoint, const sa::Camera* pCamera, const glm::vec2& rectPos, const glm::vec2& rectSize, int iconSize) {
+		ImVec2 windowPos = ImGui::GetWindowPos();
+		glm::vec3 point = sa::math::worldToScreen(worldPoint, pCamera, rectPos, rectSize);
+		if (point.z < 1) {
+			ImGui::GetWindowDrawList()->AddImageQuad(
+				sa::Renderer::get().getImGuiTexture(pTex),
+				ImVec2(point.x - iconSize, point.y - iconSize),
+				ImVec2(point.x + iconSize, point.y - iconSize),
+				ImVec2(point.x + iconSize, point.y + iconSize),
+				ImVec2(point.x - iconSize, point.y + iconSize));
+		}
+	}
+
+	void GizmoCircle(const glm::vec3& worldPosition, float radius, const glm::quat& rotation, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, int numSegments, float thickness) {
+		if (numSegments == 0) 
+			numSegments = 32;
+		else if (numSegments > 128) 
+			numSegments = 128;
+
+		constexpr float twoPi = glm::radians(360.f);
+		ImVec2 points[128];
+		int pointCount = 0;
+		float step = twoPi / numSegments;
+		for (float angle = 0.f; angle < twoPi; angle += step) {
+			glm::vec3 worldPoint(cos(angle), sin(angle), 0.f);
+			worldPoint *= radius;
+			worldPoint = glm::rotate(rotation, worldPoint);
+			worldPoint += worldPosition;
+
+			glm::vec2 screenPoint = sa::math::worldToScreen(worldPoint, pCamera, screenPos, screenSize);
+			points[pointCount] = { screenPoint.x, screenPoint.y };
+			pointCount++;
+		}
+		ImGui::GetWindowDrawList()->AddPolyline(points, pointCount, color, ImDrawFlags_Closed, thickness);
+
+	}
+
+	void GizmoCircleResizable(const glm::vec3& worldPosition, float& radius, const glm::quat& rotation, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, int numSegments, float thickness) {
+		if (numSegments == 0)
+			numSegments = 32;
+		else if (numSegments > 128)
+			numSegments = 128;
+
+		constexpr float twoPi = glm::radians(360.f);
+		ImVec2 points[128];
+		int pointCount = 0;
+		float step = twoPi / numSegments;
+		for (float angle = 0.f; angle < twoPi; angle += step) {
+			glm::vec3 worldPoint(cos(angle), sin(angle), 0.f);
+			worldPoint *= radius;
+			worldPoint = glm::rotate(rotation, worldPoint);
+			worldPoint += worldPosition;
+
+			glm::vec3 screenPoint3D = sa::math::worldToScreen(worldPoint, pCamera, screenPos, screenSize);
+			if (screenPoint3D.z > 1.f) {
+				continue;
+			}
+			glm::vec2 screenPoint = screenPoint3D;
+
+			if (pointCount == 0) {
+				int handleRectHalfSize = 5;
+				ImVec2 rectMin(screenPoint.x - handleRectHalfSize, screenPoint.y - handleRectHalfSize);
+				ImVec2 rectMax(screenPoint.x + handleRectHalfSize, screenPoint.y + handleRectHalfSize);
+
+				ImGui::GetWindowDrawList()->AddRectFilled(rectMin, rectMax, color);
+				ImVec2 windowPos = ImGui::GetWindowPos();
+				ImVec2 oldCursorPos = ImGui::GetCursorPos();
+				ImGui::SetCursorPos(ImVec2(rectMin.x - windowPos.x, rectMin.y - windowPos.y));
+				static bool isDragging = false;
+
+				ImGui::InvisibleButton("circle_handle", ImVec2(rectMax.x - rectMin.x, rectMax.y - rectMin.y));
+				ImGui::SetCursorPos(oldCursorPos);
+				if (ImGui::IsItemHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Left))
+					isDragging = true;
+				else if (isDragging && !ImGui::IsMouseDown(ImGuiMouseButton_Left))
+					isDragging = false;
+
+				if (isDragging) {
+					glm::vec2 center = sa::math::worldToScreen(worldPosition, pCamera, screenPos, screenSize);
+					float screenRadius = glm::distance(center, screenPoint);
+					float ratio = radius / screenRadius;
+
+					ImVec2 imDelta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left, 0.0f);
+					screenPoint.x += imDelta.x;
+					
+					screenRadius = glm::distance(center, screenPoint);
+
+					ImGui::ResetMouseDragDelta(ImGuiMouseButton_Left);
+					radius = screenRadius * ratio;
+				}
+			}
+			points[pointCount] = { screenPoint.x, screenPoint.y };
+			pointCount++;
+		}
+		ImGui::GetWindowDrawList()->AddPolyline(points, pointCount, color, ImDrawFlags_Closed, thickness);
+	}
+
+	void GizmoCircle2D(const glm::vec3& worldPosition, float radius, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, int numSegments, float thickness) {
+		glm::vec2 point = sa::math::worldToScreen(worldPosition, pCamera, screenPos, screenSize);
+		glm::vec2 point2 = sa::math::worldToScreen(worldPosition + (pCamera->getRight() * radius), pCamera, screenPos, screenSize);
+		float radiusScreenSpace = glm::distance(point, point2);
+		ImGui::GetWindowDrawList()->AddCircle(ImVec2(point.x, point.y), radiusScreenSpace, color, numSegments, thickness);
+	}
+
+	void GizmoCircle2DResizable(const glm::vec3& worldPosition, float& radius, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, int numSegments, float thickness) {
+		glm::vec2 point = sa::math::worldToScreen(worldPosition, pCamera, screenPos, screenSize);
+		glm::vec2 point2 = sa::math::worldToScreen(worldPosition + (pCamera->getRight() * radius), pCamera, screenPos, screenSize);
+		float radiusScreenSpace = glm::distance(point, point2);
+		ImGui::GetWindowDrawList()->AddCircle(ImVec2(point.x, point.y), radiusScreenSpace, color, numSegments, thickness);
 	
+		const int handleRectHalfSize = 5;
+		ImVec2 rectMin(point2.x - handleRectHalfSize, point2.y - handleRectHalfSize);
+		ImVec2 rectMax(point2.x + handleRectHalfSize, point2.y + handleRectHalfSize);
+
+		ImGui::GetWindowDrawList()->AddRectFilled(rectMin, rectMax, color);
+		ImVec2 windowPos = ImGui::GetWindowPos();
+		ImVec2 oldCursorPos = ImGui::GetCursorPos();
+		ImGui::SetCursorPos(ImVec2(rectMin.x - windowPos.x, rectMin.y - windowPos.y));
+		static bool isDragging = false;
+		ImGui::InvisibleButton("circle_handle", ImVec2(rectMax.x - rectMin.x, rectMax.y - rectMin.y));
+		ImGui::SetCursorPos(oldCursorPos);
+		if (ImGui::IsItemHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Left))
+			isDragging = true;
+		else if (isDragging && !ImGui::IsMouseDown(ImGuiMouseButton_Left))
+			isDragging = false;
+
+		if (isDragging) {
+			point2.x += ImGui::GetMouseDragDelta(ImGuiMouseButton_Left, 0.0f).x;
+			ImGui::ResetMouseDragDelta(ImGuiMouseButton_Left);
+			float ratio = radius / radiusScreenSpace;
+			radiusScreenSpace = glm::distance(point, point2);
+			radius = radiusScreenSpace * ratio;
+		}
+
+	}
+
 }
