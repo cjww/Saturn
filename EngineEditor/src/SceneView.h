@@ -19,7 +19,10 @@ private:
 	bool m_isFocused;
 	sa::Vector2 m_lastMousePos;
 	float m_mouseSensitivity;
-	float m_moveSpeed;
+
+	glm::vec3 m_velocity;
+	float m_maxVelocityMagnitude;
+	float m_acceleration;
 
 	glm::vec2 m_displayedSize;
 	float m_deltaTime;
@@ -27,6 +30,8 @@ private:
 	sa::Entity m_selectedEntity;
 	bool m_isWorldCoordinates;
 	
+	float m_zoom;
+
 	struct Statistics {
 		float frameTime;
 		sa::DeviceMemoryStats gpuMemoryStats;

@@ -17,7 +17,10 @@ SceneView::SceneView(sa::Engine* pEngine, sa::RenderWindow* pWindow)
 	m_camera.lookAt(sa::Vector3(0, 0, 0));
 
 	m_mouseSensitivity = 30.0f;
-	m_moveSpeed = 8.0f;
+
+	m_velocity = glm::vec3(0.0f);
+	m_maxVelocityMagnitude = 30.0f;
+	m_acceleration = 0.5f;
 
 	m_statsUpdateTime = 0.1f;
 	m_statsTimer = m_statsUpdateTime;
@@ -33,6 +36,10 @@ SceneView::SceneView(sa::Engine* pEngine, sa::RenderWindow* pWindow)
 		sceneSetEvent.newScene->on<sa::editor_event::EntityDeselected>([&](const sa::editor_event::EntityDeselected&, sa::Scene&) {
 			m_selectedEntity = {};
 		});
+	});
+	m_zoom = 0.f;
+	m_pWindow->addScrollCallback([&](double x, double y) {
+		m_zoom = y;
 	});
 }
 
@@ -62,7 +69,7 @@ void SceneView::update(float dt) {
 	}
 
 	sa::Vector2 mousePos = m_pWindow->getCursorPosition();
-	if (m_pWindow->getMouseButton(sa::MouseButton::BUTTON_2)) {
+	if (m_pWindow->getMouseButton(sa::MouseButton::RIGHT)) {
 		// First-person controls
 		sa::Vector2 delta = m_lastMousePos - mousePos;
 		m_camera.rotate(glm::radians(delta.x) * dt * m_mouseSensitivity, { 0, 1, 0 });
@@ -72,13 +79,47 @@ void SceneView::update(float dt) {
 		int right = m_pWindow->getKey(sa::Key::D) - m_pWindow->getKey(sa::Key::A);
 		int up = m_pWindow->getKey(sa::Key::Q) - m_pWindow->getKey(sa::Key::E);
 
+		if ((forward | right | up) == 0) {
+			m_velocity = glm::vec3(0);
+		}
+		else {
+			m_velocity += (float)forward * dt * m_camera.getForward() * m_acceleration;
+			m_velocity += (float)right * dt * m_camera.getRight() * m_acceleration;
+			m_velocity += (float)up * dt * m_camera.getUp() * m_acceleration;
+
+			if (glm::length(m_velocity) > m_maxVelocityMagnitude) {
+				m_velocity = glm::normalize(m_velocity);
+				m_velocity *= m_maxVelocityMagnitude;
+			}
+		
+			glm::vec3 camPos = m_camera.getPosition();
+			camPos += m_velocity;
+			
+			m_camera.setPosition(camPos);
+		}
+		/*
 		glm::vec3 camPos = m_camera.getPosition();
 		camPos += (float)forward * dt * m_moveSpeed * m_camera.getForward();
 		camPos += (float)right * dt * m_moveSpeed * m_camera.getRight();
 		camPos += (float)up * dt * m_moveSpeed * m_camera.getUp();
-
+		*/
+	}
+	else if (m_pWindow->getMouseButton(sa::MouseButton::MIDDLE)) {
+		glm::vec2 delta = m_lastMousePos - mousePos;
+		glm::vec3 camPos = m_camera.getPosition();
+		camPos += m_camera.getRight() * delta.x * dt * m_mouseSensitivity;
+		camPos += m_camera.getUp() * delta.y * dt * m_mouseSensitivity;
 		m_camera.setPosition(camPos);
 	}
+	else {
+		m_velocity = glm::vec3(0);
+	}
+
+	if (m_zoom) {
+		m_camera.setPosition(m_camera.getPosition() + m_camera.getForward() * (m_zoom * 5));
+		m_zoom = 0;
+	}
+
 	m_lastMousePos = mousePos;
 		
 
@@ -86,9 +127,6 @@ void SceneView::update(float dt) {
 
 void SceneView::onImGui() {
 	SA_PROFILE_FUNCTION();
-
-
-	//ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 
 	if (ImGui::Begin("Scene view", 0, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove)) {
 
@@ -143,16 +181,16 @@ void SceneView::onImGui() {
 					}
 				}
 
-ImGui::Checkbox("Show Icons", &showIcons);
-if (!showIcons) {
-	ImGui::BeginDisabled();
-}
-ImGui::SliderInt("Icon Size", &iconSize, 1, 100);
-if (!showIcons) {
-	ImGui::EndDisabled();
-}
+				ImGui::Checkbox("Show Icons", &showIcons);
+				if (!showIcons) {
+					ImGui::BeginDisabled();
+				}
+				ImGui::SliderInt("Icon Size", &iconSize, 1, 100);
+				if (!showIcons) {
+					ImGui::EndDisabled();
+				}
 
-ImGui::EndMenu();
+				ImGui::EndMenu();
 			}
 
 			ImGui::Checkbox("World Coordinates", &m_isWorldCoordinates);
@@ -204,6 +242,10 @@ ImGui::EndMenu();
 		ImGuizmo::AllowAxisFlip(false);
 		ImGuizmo::SetDrawlist();
 		ImGuizmo::SetRect(imageMin.x, imageMin.y, imageSize.x, imageSize.y);
+
+		glm::vec2 screenPos = { imageMin.x, imageMin.y };
+		glm::vec2 screenSize = { imageSize.x, imageSize.y };
+
 		if (m_selectedEntity) {
 
 			if (operation) {
@@ -235,13 +277,12 @@ ImGui::EndMenu();
 			if (light) {
 				
 				const ImColor lightSphereColor = ImColor(255, 255, 0);
+				static bool dragFirstCircle = false;
+				static bool dragSecondCircle = false;
 
-				glm::vec2 screenPos = { imageMin.x, imageMin.y };
-				glm::vec2 screenSize = { imageSize.x, imageSize.y };
-				
-				ImGui::GizmoCircleResizable(light->values.position, light->values.attenuationRadius, glm::quat(glm::vec3(0, 0, 0)), &m_camera, screenPos, screenSize, lightSphereColor);
-				ImGui::GizmoCircleResizable(light->values.position, light->values.attenuationRadius, glm::quat(glm::vec3(glm::radians(90.f), 0, 0)), &m_camera, screenPos, screenSize, lightSphereColor);
-				ImGui::GizmoCircleResizable(light->values.position, light->values.attenuationRadius, glm::quat(glm::vec3(0, glm::radians(90.f), 0)), &m_camera, screenPos, screenSize, lightSphereColor);
+				ImGui::GizmoCircleResizable(light->values.position, light->values.attenuationRadius, glm::quat(glm::vec3(0, 0, 0)), &m_camera, screenPos, screenSize, lightSphereColor, dragFirstCircle, 64);
+				ImGui::GizmoCircle(light->values.position, light->values.attenuationRadius, glm::quat(glm::vec3(glm::radians(90.f), 0, 0)), &m_camera, screenPos, screenSize, lightSphereColor, 64);
+				ImGui::GizmoCircleResizable(light->values.position, light->values.attenuationRadius, glm::quat(glm::vec3(0, glm::radians(90.f), 0)), &m_camera, screenPos, screenSize, lightSphereColor, dragSecondCircle, 64);
 
 			}
 
@@ -251,7 +292,7 @@ ImGui::EndMenu();
 		if (showIcons) {
 			m_pEngine->getCurrentScene()->forEach<comp::Light>([&](const comp::Light& light) {
 				sa::Texture2D* tex = sa::AssetManager::get().loadTexture("resources/lightbulb-icon.png", true);
-				ImGui::GizmoIcon(tex, light.values.position, &m_camera, { imageMin.x, imageMin.y }, { imageSize.x, imageSize.y }, iconSize);
+				ImGui::GizmoIcon(tex, light.values.position, &m_camera, screenPos, screenSize, iconSize);
 			});
 		}
 
@@ -296,7 +337,6 @@ ImGui::EndMenu();
 		
 	}
 	ImGui::End();
-	//ImGui::PopStyleVar();
 
 }
 
