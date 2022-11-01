@@ -55,6 +55,7 @@ void SceneHierarchy::elementEvents(const sa::Entity& e) {
 }
 
 void SceneHierarchy::makeTree(sa::Entity e) {
+	SA_PROFILE_FUNCTION();
 	bool s = m_selectedEntity == e;
 	// Tree node
 	if (!e.hasParent()) {
@@ -88,8 +89,7 @@ void SceneHierarchy::makeTree(sa::Entity e) {
 	if (!e.hasChildren()) {
 		flags |= ImGuiTreeNodeFlags_Leaf;
 	}
-	bool hasChildren = m_pEngine->getCurrentScene()->getHierarchy().hasChildren(e);
-		
+
 	bool opened = ImGui::TreeNodeEx((e.getComponent<comp::Name>()->name + "##" + std::to_string((uint32_t)e)).c_str(), flags);
 	if (ImGui::IsItemClicked()) {
 		if (s) {
@@ -128,7 +128,7 @@ void SceneHierarchy::onImGui() {
 		if (!m_hoveredEntity.isNull()) {
 			if (ImGui::BeginPopup("SceneHierarchyMenu")) {
 				
-				if (ImGui::Button(("Delete " + m_hoveredEntity.getComponent<comp::Name>()->name).c_str())) {
+				if (ImGui::MenuItem(("Delete " + m_hoveredEntity.getComponent<comp::Name>()->name).c_str())) {
 					pScene->publish<sa::editor_event::EntityDeselected>(m_hoveredEntity);
 					m_hoveredEntity.destroy();
 					ImGui::CloseCurrentPopup();
@@ -144,7 +144,7 @@ void SceneHierarchy::onImGui() {
 		if (ImGui::BeginListBox("##Entities", ImGui::GetContentRegionAvail())) {
 			pScene->forEach([&](sa::Entity e) {
 				if (pScene->getHierarchy().hasParent(e))
-					return; 
+					return;
 				// only make trees from roots
 				makeTree(e);
 			});

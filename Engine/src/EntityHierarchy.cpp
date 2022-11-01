@@ -2,7 +2,6 @@
 #include "EntityHierarchy.h"
 
 namespace sa {
-	
 	bool EntityHierarchy::isParent(const Entity& target, const Entity& parent) {
 		if (m_parents.count(target)) {
 			if(m_parents.at(target) == parent) {
@@ -13,7 +12,7 @@ namespace sa {
 		return false;
 		
 	}
-
+	
 	void EntityHierarchy::setParent(const Entity& target, const Entity& parent) {
 		// if parent is child to target
 		bool isparent = isParent(parent, target);
@@ -53,6 +52,11 @@ namespace sa {
 		}
 		orphan(entity);
 		m_children.erase(entity);
+	}
+
+	void EntityHierarchy::clear() {
+		m_children.clear();
+		m_parents.clear();
 	}
 
 	bool EntityHierarchy::hasChildren(const Entity& parent) const {

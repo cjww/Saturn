@@ -7,6 +7,7 @@
 
 #include "Tools\MemoryChecker.h"
 
+#include <simdjson.h>
 
 namespace sa {
 	void Engine::loadXML(const std::filesystem::path& path, rapidxml::xml_document<>& xml, std::string& xmlStr) {
@@ -243,6 +244,8 @@ namespace sa {
 		m_pWindow = pWindow;
 		m_isImGuiRecording = false;
 
+		registerAllComponents();
+
 		reg();
 		Scene::reg();
 		Entity::reg();
@@ -274,8 +277,8 @@ namespace sa {
 		}
 		
 		// set scene silently
-		m_currentScene = &getScene("MainScene");
-	
+		//m_currentScene = &getScene("MainScene");
+
 		m_isSetup = true;
 	}
 
@@ -283,22 +286,13 @@ namespace sa {
 	void Engine::init() {
 		SA_PROFILE_FUNCTION();
 
-		if (m_currentScene) {
-			// inform about scene set
-			publish<engine_event::SceneSet>(m_currentScene);
-			publish<engine_event::SceneLoad>(m_currentScene);
-			m_currentScene->load();
-		}
-
+		if (!m_currentScene) // no scene has been set
+			setScene("Default Scene");
 	}
 
 	void Engine::update(float dt) {
 		SA_PROFILE_FUNCTION();
-
-		if (m_currentScene) {
-			m_currentScene->update(dt);
-		}
-
+		m_currentScene->update(dt);
 	}
 
 	void Engine::cleanup() {
@@ -349,6 +343,27 @@ namespace sa {
 		return it->second;
 	}
 
+	Scene& Engine::loadSceneFromFile(const std::filesystem::path& path) {
+		simdjson::ondemand::parser parser;
+		auto json = simdjson::padded_string::load(path.string());
+		if (json.error()) {
+			throw std::runtime_error("JSON load failed : " + std::string(simdjson::error_message(json.error())));
+		}
+		simdjson::ondemand::document doc = parser.iterate(json);
+		Scene& scene = getScene(std::string(doc["name"].get_string().value()));
+		scene.deserialize(&doc);
+		return scene;
+	}
+
+	void Engine::storeSceneToFile(Scene* pScene, const std::filesystem::path& path) {
+		Serializer s;
+		pScene->serialize(s);
+
+		std::ofstream file(path);
+		file << s.dump();
+		file.close();
+	}
+
 	Scene* Engine::getCurrentScene() const {
 		return m_currentScene;
 	}
@@ -359,11 +374,11 @@ namespace sa {
 
 	void Engine::setScene(Scene& scene) {
 		SA_PROFILE_FUNCTION();
+		publish<engine_event::SceneSet>(&scene);
 		if (m_currentScene) {
 			m_currentScene->unload();
 		}
 		m_currentScene = &scene;
-		publish<engine_event::SceneSet>(m_currentScene);
 		if (m_isSetup) {
 			publish<engine_event::SceneLoad>(m_currentScene);
 			m_currentScene->load();

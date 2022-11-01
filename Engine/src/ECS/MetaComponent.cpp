@@ -2,13 +2,15 @@
 #include "MetaComponent.h"
 namespace sa {
 	
-	MetaComponent::MetaComponent(entt::meta_any any, const std::string& typeName)
-		: m_data(any), m_typeName(typeName)
+	MetaComponent::MetaComponent(entt::meta_any handle, const std::string& typeName)
+		: m_handle(handle)
+		, m_typeName(typeName)
 	{
+		
 	}
 
 	void* MetaComponent::data() {
-		return m_data.data();
+		return m_handle.data();
 	}
 
 	const std::string& MetaComponent::getTypeName() const {
@@ -16,6 +18,8 @@ namespace sa {
 	}
 	
 	bool MetaComponent::isValid() const {
-		return (bool)m_data;
+		return (bool)m_handle;
 	}
+
+
 }

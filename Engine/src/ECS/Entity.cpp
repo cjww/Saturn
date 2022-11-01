@@ -2,7 +2,10 @@
 #include "Entity.h"
 
 #include "Components.h"
+
 #include "Scene.h"
+
+#include "simdjson.h"
 
 namespace sa {
     void Entity::reg() {
@@ -77,6 +80,69 @@ namespace sa {
     {
     }
 
+
+    void Entity::serialize(Serializer& s) {
+        s.beginObject();
+        s.value("id", (uint32_t)m_entity);
+
+        Entity parent = getParent();
+        if(!parent.isNull())
+            s.value("parent", (uint32_t)parent);
+        
+        s.beginArray("components");
+        auto& types = ComponentType::getRegisteredComponents();
+        for (auto& type : types) {
+            if (!hasComponent(type))
+                continue;
+            
+            MetaComponent mt = getComponent(type);
+            if (!mt.isValid())
+                continue;
+
+            ComponentBase** comp = (ComponentBase**)mt.data();
+
+            s.beginObject();
+            s.value("type", mt.getTypeName().c_str());
+            (*comp)->serialize(s);
+            s.endObject();
+        }
+        s.endArray();
+
+        s.beginArray("scripts");
+
+        auto scripts = m_pScene->getAssignedScripts(*this);
+        for (auto& script : scripts) {
+            script.serialize(s);
+        }
+
+        s.endArray();
+
+        s.endObject();
+    }
+
+    void Entity::deserialize(void* pDoc) {
+        using namespace simdjson::ondemand;
+        object& obj = *(object*)pDoc;
+        auto parent = obj["parent"];
+        if (!parent.error()) {
+            Entity parentEntity(m_pScene, (entt::entity)parent.get_uint64().value());
+            setParent(parentEntity);
+        }
+
+        for (simdjson::ondemand::object compObj : obj["components"]) {
+
+            std::string compName(compObj["type"].get_string().value());
+            MetaComponent mt = addComponent(compName);
+            ComponentBase** comp = (ComponentBase**)mt.data();
+            (*comp)->deserialize(&compObj);
+        }
+
+        for (object script : obj["scripts"]) {
+            addScript(script["path"].get_string().value());
+        }
+    }
+
+
     MetaComponent Entity::getComponent(ComponentType type) const {
         return type.invoke("get", *this);
     }
@@ -87,10 +153,10 @@ namespace sa {
     }
 
     bool Entity::hasComponent(ComponentType type) const {
-        return type.invoke("has", *this).cast<bool>();
+        return *(bool*)type.invoke("has", *this).data();
     }
 
-    bool Entity::hasComponent(const std::string name) const {
+    bool Entity::hasComponent(const std::string& name) const {
         ComponentType type = getComponentType(name);
         return hasComponent(type);
     }

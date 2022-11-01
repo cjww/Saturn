@@ -6,6 +6,7 @@
 #include "PhysicsSystem.h"
 #include <PxScene.h>
 #include <PxRigidBody.h>
+#include <simdjson.h>
 
 namespace sa {
 
@@ -136,6 +137,45 @@ namespace sa {
 
 	}
 
+	void Scene::serialize(Serializer& s) {
+		s.beginObject();
+		s.value("name", m_name.c_str());
+
+		s.beginArray("entities");
+
+		forEach([&](Entity entity) {
+			entity.serialize(s);
+		});
+
+		s.endArray();
+
+		s.endObject();
+	}
+
+	void Scene::deserialize(void* pDoc) {
+		clearEntities();
+		using namespace simdjson;
+		ondemand::document& doc = *(ondemand::document*)pDoc;
+		
+		m_name = doc["name"].get_string().value();
+		ondemand::array entities = doc["entities"];
+		
+		reserve(entities.count_elements());
+		for (auto e : entities) {
+			if (e.error()) {
+				SA_DEBUG_LOG_WARNING("Failed to get entity from file");
+				continue;
+			}
+			ondemand::object obj = e.value_unsafe().get_object();
+			uint32_t id = obj["id"].get_uint64();
+			
+			Entity entity(this, create((entt::entity)id));
+			entity.deserialize(&obj);
+		}
+
+	}
+
+
 	Camera* Scene::newCamera() {
 		m_cameras.push_back(new Camera());
 		return m_cameras.back();
@@ -184,7 +224,7 @@ namespace sa {
 	}
 
 	size_t Scene::getEntityCount() const {
-		return size();
+		return alive();
 	}
 
 	std::optional<EntityScript> Scene::addScript(const Entity& entity, const std::filesystem::path& path) {
@@ -203,6 +243,13 @@ namespace sa {
 
 		return scriptOpt;
 	}
+
+	void Scene::clearEntities() {
+		((entt::registry*)this)->clear();
+		m_scriptManager.clearAll();
+		m_hierarchy.clear();
+	}
+
 
 	void Scene::removeScript(const Entity& entity, const std::string& name) {
 		m_scriptManager.removeScript(entity, name);

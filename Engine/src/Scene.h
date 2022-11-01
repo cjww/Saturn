@@ -12,6 +12,8 @@
 #include "ScriptManager.h"
 #include "EntityHierarchy.h"
 
+#include "Serializable.h"
+
 namespace physx {
 	class PxScene;
 }
@@ -19,13 +21,16 @@ namespace physx {
 namespace sa {
 	typedef uint32_t SceneID;
 
-	class Scene : public entt::emitter<Scene>, public entt::registry {
+	class Scene : public entt::emitter<Scene>, entt::registry, public Serializable {
 	private:
 		std::vector<Camera*> m_cameras;
 		std::set<Camera*> m_activeCameras;
-
+		/*
+		
 		using entt::registry::destroy;
 		using entt::registry::create;
+		*/
+		
 
 		ScriptManager m_scriptManager;
 
@@ -54,6 +59,8 @@ namespace sa {
 
 
 	public:
+		using entt::registry::view;
+		
 		Scene(const std::string& name);
 
 		virtual ~Scene();
@@ -64,6 +71,10 @@ namespace sa {
 		virtual void unload();
 
 		virtual void update(float dt);
+
+		void serialize(Serializer& s) override;
+		void deserialize(void* pDoc) override;
+
 
 		// Camera
 		Camera* newCamera();
@@ -79,6 +90,7 @@ namespace sa {
 		// Entity
 		Entity createEntity(const std::string& name = "Entity");
 		size_t getEntityCount() const;
+		void clearEntities();
 
 		// Scripts
 		std::vector<EntityScript> getAssignedScripts(const Entity& entity) const;
@@ -125,6 +137,7 @@ namespace sa {
 		}
 
 	}
+
 
 	template<typename F>
 	inline void Scene::forEach(const std::vector<ComponentType>& components, F func) {

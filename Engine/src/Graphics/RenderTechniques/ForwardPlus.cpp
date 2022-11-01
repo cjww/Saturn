@@ -428,7 +428,7 @@ namespace sa {
 	}
 
 	void ForwardPlus::updateData(RenderContext& context) {
-		
+		SA_PROFILE_FUNCTION();
 		context.updateDescriptorSet(m_sceneDepthDescriptorSet, 0, m_objectBuffer.getCurrentBuffer());
 
 

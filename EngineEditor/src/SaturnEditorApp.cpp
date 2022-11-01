@@ -1,6 +1,6 @@
-
 #include <EntryPoint.h>
 #include "EngineEditor.h"
+
 
 namespace sa {
 	class EditorApp : public Application {

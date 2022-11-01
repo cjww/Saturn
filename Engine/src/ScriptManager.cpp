@@ -3,8 +3,29 @@
 #include "ECS/Components.h"
 #include "Scene.h"
 
+#include <simdjson.h>
+
 namespace sa {
 	
+	void EntityScript::serialize(Serializer& s) {
+		s.beginObject();
+		s.value("path", path.generic_string().c_str());
+
+		s.beginObject("env");
+		
+		s.endObject();
+		s.endObject();
+	}
+
+	void EntityScript::deserialize(void* pDoc) {
+		/*
+		using namespace simdjson::ondemand;
+		object& obj = *(object*)pDoc;
+		name = obj["name"].get_string().value();
+		*/
+
+	}
+
 	void ScriptManager::setComponents(const entt::entity& entity, sol::environment& env, std::vector<ComponentType>& components) {
 		for (auto& type : components) {
 			/*
@@ -134,8 +155,7 @@ namespace sa {
 			SA_DEBUG_LOG_ERROR(lua_tostring(lua, -1));
 		}
 
-		//env["entity"] = entity;
-		m_allScripts.emplace_back(scriptName, env, entity);
+		m_allScripts.emplace_back(scriptName, path, env, entity);
 		m_entityScriptIndices[entity][scriptName] = m_allScripts.size() - 1;
 
 		return m_allScripts.back();
@@ -182,6 +202,12 @@ namespace sa {
 			return {};
 
 		return m_allScripts.at(entityScripts.at(name));
+	}
+
+	void ScriptManager::clearAll() {
+		m_allScripts.clear();
+		m_entityScriptIndices.clear();
+		m_scripts.clear();
 	}
 
 	std::vector<EntityScript> ScriptManager::getEntityScripts(const entt::entity& entity) const {

@@ -123,8 +123,8 @@ namespace ImGui
     void MyFunction(const char* name, const MyMatrix44& v);
 }
 */
-
-#include "Resources/Texture.hpp"
+#include <stdint.h>
+#include "structs.hpp"
 
 #define IM_VEC2_CLASS_EXTRA                                                     \
         constexpr ImVec2(const sa::Extent& f) : x(f.width), y(f.height) {}                   \
@@ -133,5 +133,3 @@ namespace ImGui
 #define IM_VEC4_CLASS_EXTRA                                                     \
         constexpr ImVec4(const sa::Color& f) : x(f.r), y(f.g), z(f.b), w(f.a) {}   \
         operator sa::Color() const { return sa::Color{x,y,z,w}; }
-
-//typedef sa::Texture2D ImTextureID;

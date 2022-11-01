@@ -66,7 +66,7 @@ namespace sa {
 
 		//createModelEntity(engine, "resources/models/Box.gltf");
 
-
+		/*
 		Entity groundEntity = engine.getCurrentScene()->createEntity("Ground");
 		groundEntity.addComponent<comp::Model>()->modelID = AssetManager::get().loadQuad();
 		comp::Transform* transform = groundEntity.addComponent<comp::Transform>();
@@ -76,12 +76,10 @@ namespace sa {
 		groundEntity.addComponent<comp::BoxCollider>(Vector3(100, 100, 0.1f));
 
 		Entity adam = createModelEntity(engine, "resources/models/adamHead/adamHead.gltf");
-		/*
 		Entity entity = createModelEntity(engine, "resources/models/sponza/scene.gltf");
 		entity.removeComponent<comp::Script>();
 
 		createLight(engine, Vector3(2.f, 2.f, -3.f));
-		*/
 
 		Entity parent = engine.getCurrentScene()->createEntity("Lights");
 
@@ -134,29 +132,11 @@ namespace sa {
 		/*
 		engine.createSystemScript("test.lua");
 		engine.createSystemScript("test2.lua");
-		
-
-		Entity testEntity = engine.getCurrentScene()->createEntity("TestPhysics");
-		testEntity.addComponent<comp::Transform>()->position = { 0, 20, 0 };
-		auto& progress = AssetManager::get().loadModel("resources/models/Suzanne.dae");
-		progress.wait();
-		testEntity.addComponent<comp::Model>()->modelID = progress;
-		testEntity.addComponent<comp::RigidBody>(false);
-		testEntity.addComponent<comp::SphereCollider>(1.f);
-
-		Entity testEntity2 = engine.getCurrentScene()->createEntity("TestPhysics2");
-		testEntity2.addComponent<comp::Transform>()->position = { 0, 2, 0 };
-		
-		testEntity2.addComponent<comp::Model>()->modelID = progress;
-		testEntity2.addComponent<comp::RigidBody>();
-		testEntity2.addComponent<comp::SphereCollider>(1.f);
-
+		engine.getCurrentScene()->addScript(adam, "Movable.lua");
+		engine.getCurrentScene()->addScript(adam, "Inventory.lua");
+		adam.addScript("Movable.lua");
+		adam.addScript("Inventory.lua");
 		*/
-		Entity box = createDynamicBox({ 2, 10, 0 });
-
-		box.getComponent<comp::Transform>()->rotation = glm::quat({ glm::radians(50.f), 0, 0 });
-
-		Entity box2 = createDynamicBox({ 2.5f, 12, 0 });
 
 
 	}
@@ -172,6 +152,10 @@ namespace sa {
 			std::queue<Entity> entitiesDone;
 			std::set<ProgressView<ResourceID>*> progressSet;
 			for (const auto& [entity, progress] : m_completions) {
+				if (entity.isNull()) {
+					entitiesDone.push(entity);
+					continue;
+				}
 				size_t size = progressSet.size();
 				progressSet.insert(&progress);
 				if (size != progressSet.size()) {

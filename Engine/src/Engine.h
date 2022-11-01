@@ -66,6 +66,10 @@ namespace sa {
 		const RenderPipeline& getRenderPipeline() const;
 
 		Scene& getScene(const std::string& name);
+		Scene& loadSceneFromFile(const std::filesystem::path& sceneFile);
+		void storeSceneToFile(Scene* pScene, const std::filesystem::path& path);
+
+
 		Scene* getCurrentScene() const;
 		void setScene(const std::string& name);
 		void setScene(Scene& scene);

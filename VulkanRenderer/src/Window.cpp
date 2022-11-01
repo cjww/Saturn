@@ -3,6 +3,14 @@
 
 #include "GLFW/glfw3.h"
 
+#ifdef _WIN32
+#define GLFW_EXPOSE_NATIVE_WIN32
+#define NOMINMAX
+#include "GLFW/glfw3native.h"
+#endif // _WIN32
+
+
+
 namespace sa {
 
 	void Window::onResize(GLFWwindow* window, int width, int height) {
@@ -34,15 +42,22 @@ namespace sa {
 		}
 	#endif // _WIN32
 
-		if (thisWindow->m_onKeyFunction != nullptr) {
-			thisWindow->m_onKeyFunction((Key)key, (InputAction)action, (ModKeyFlags)mods, scancode);
+		for (auto& func : thisWindow->m_onKeyFunctions) {
+			func((Key)key, (InputAction)action, (ModKeyFlags)mods, scancode);
 		}
 	}
 
 	void Window::onMouseButton(GLFWwindow* window, int button, int action, int mods) {
-		Window* w = (Window*)glfwGetWindowUserPointer(window);
-		if (w->m_onMouseButtonFunction != nullptr) {
-			w->m_onMouseButtonFunction((MouseButton)button, (InputAction)action, (ModKeyFlags)mods);
+		Window* thisWindow = (Window*)glfwGetWindowUserPointer(window);
+		for (auto& func : thisWindow->m_onMouseButtonFunctions) {
+			func((MouseButton)button, (InputAction)action, (ModKeyFlags)mods);
+		}
+	}
+
+	void Window::onScroll(GLFWwindow* window, double x, double y) {
+		Window* thisWindow = (Window*)glfwGetWindowUserPointer(window);
+		for (auto& func : thisWindow->m_onScrollFunctions) {
+			func(x, y);
 		}
 	}
 
@@ -75,6 +90,7 @@ namespace sa {
 		glfwSetWindowIconifyCallback(m_window, &Window::onIconify);
 		glfwSetKeyCallback(m_window, &Window::onKey);
 		glfwSetMouseButtonCallback(m_window, &Window::onMouseButton);
+		glfwSetScrollCallback(m_window, &Window::onScroll);
 		glfwSetWindowCloseCallback(m_window, &Window::onClose);
 		
 		glfwSetJoystickCallback(&Window::onJoystickDetect);
@@ -87,8 +103,7 @@ namespace sa {
 		m_isIconified = false;
 		m_wasResized = false;
 
-		m_onKeyFunction = nullptr;
-		m_onMouseButtonFunction = nullptr;
+		
 	}
 
 	void Window::shutDown() {
@@ -293,6 +308,15 @@ namespace sa {
 		return m_window;
 	}
 
+	void* Window::getWin32WindowHandle() const {
+#ifdef _WIN32
+		return glfwGetWin32Window(m_window);
+#else
+		return 0;
+#endif // _WIN32
+	}
+
+
 	int Window::getKey(Key keyCode) const {
 		return glfwGetKey(m_window, (int)keyCode);
 	}
@@ -340,12 +364,16 @@ namespace sa {
 		glfwSetCursor(m_window, *pCursor);
 	}
 
-	void Window::setKeyCallback(KeyCallback func) {
-		m_onKeyFunction = func;
+	void Window::addKeyCallback(KeyCallback func) {
+		m_onKeyFunctions.push_back(func);
 	}
 
-	void Window::setMouseButtonCallback(MouseButtonCallback func) {
-		m_onMouseButtonFunction = func;
+	void Window::addScrollCallback(ScrollCallback func) {
+		m_onScrollFunctions.push_back(func);
+	}
+
+	void Window::addMouseButtonCallback(MouseButtonCallback func) {
+		m_onMouseButtonFunctions.push_back(func);
 	}
 
 	void Window::setWasResized(bool value) {

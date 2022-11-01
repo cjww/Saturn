@@ -26,6 +26,9 @@ namespace sa{
 
 		bool operator==(const ComponentType& other);
 		bool operator!=(const ComponentType& other);
+		operator entt::meta_type() {
+			return m_type;
+		}
 
 		template<typename T>
 		static void registerComponent();

@@ -7,12 +7,13 @@
 namespace sa {
 	Application::Application(bool enableImGui) {
 		SA_PROFILE_FUNCTION();
-
 		m_imGuiEnabled = enableImGui;
 		// TODO read application settings
 		m_pWindow = std::make_unique<RenderWindow>(1400, 800, "Application");
 
 		m_engine.setup(m_pWindow.get(), m_imGuiEnabled);
+
+		m_thisInstance = this;
 	}
 
 	Application::~Application() {
@@ -21,27 +22,27 @@ namespace sa {
 		}
 	}
 
+	Application* Application::get() {
+		return m_thisInstance;
+	}
+	
 	void Application::pushLayer(IApplicationLayer* layer) {
 		m_layers.insert(m_layers.begin() + m_lastLayerIndex, layer);
 		m_lastLayerIndex++;
-		layer->m_pAppInstance = this;
 		layer->onAttach(m_engine, *m_pWindow.get());
 	}
 	
 	void Application::pushOverlay(IApplicationLayer* overlay) {
 		m_layers.push_back(overlay);
-		overlay->m_pAppInstance = this;
 		overlay->onAttach(m_engine, *m_pWindow.get());
 	}
 	
 	void Application::run() {
-		SA_PROFILE_FUNCTION();
 		
 		m_engine.init();
 
 		Clock clock;
 		while (m_pWindow->isOpen()) {
-			SA_PROFILE_SCOPE("MainLoop");
 			m_pWindow->pollEvents();
 			float dt = clock.restart();
 
@@ -73,4 +74,13 @@ namespace sa {
 		m_engine.cleanup();
 
 	}
+
+	sa::RenderWindow* Application::getWindow() const {
+		return m_pWindow.get();
+	}
+
+	const sa::Engine& Application::getEngine() const {
+		return m_engine;
+	}
+
 }

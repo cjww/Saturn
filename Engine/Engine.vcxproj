@@ -140,7 +140,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)deps\PhysX\include;$(ProjectDir)deps\include\;$(ProjectDir)src\;$(SolutionDir)\VulkanRenderer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)deps\PhysX\include;$(ProjectDir)deps\include\;$(ProjectDir)src\;$(SolutionDir)\VulkanRenderer\include;$(ProjectDir)deps\simdjson\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -171,7 +171,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)deps\PhysX\include;$(ProjectDir)deps\include\;$(ProjectDir)src\;$(SolutionDir)\VulkanRenderer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)deps\PhysX\include;$(ProjectDir)deps\include\;$(ProjectDir)src\;$(SolutionDir)\VulkanRenderer\include;$(ProjectDir)deps\simdjson\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -196,12 +196,21 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="deps\simdjson\src\simdjson.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="src\ECS\Components.cpp" />
+    <ClCompile Include="src\ECS\Components\Light.cpp" />
+    <ClCompile Include="src\ECS\Components\Model.cpp" />
+    <ClCompile Include="src\ECS\Components\Name.cpp" />
+    <ClCompile Include="src\ECS\Components\Transform.cpp" />
     <ClCompile Include="src\Graphics\IRenderLayer.cpp" />
     <ClCompile Include="src\Graphics\RenderLayers\BloomRenderLayer.cpp" />
     <ClCompile Include="src\Graphics\RenderLayers\ImGuiRenderLayer.cpp" />
     <ClCompile Include="src\Graphics\RenderPipeline.cpp" />
     <ClCompile Include="src\PhysicsSystem.cpp" />
+    <ClCompile Include="src\Serializable.cpp" />
     <ClCompile Include="src\Tools\MemoryChecker.cpp" />
     <ClCompile Include="src\Application.cpp" />
     <ClCompile Include="src\ECS\ComponentBase.cpp" />
@@ -216,7 +225,6 @@
     </ClCompile>
     <ClCompile Include="src\Scene.cpp" />
     <ClCompile Include="src\Camera.cpp" />
-    <ClCompile Include="src\Tools\CustomImGui.cpp" />
     <ClCompile Include="src\ECS\Entity.cpp" />
     <ClCompile Include="src\Engine.cpp" />
     <ClCompile Include="src\Graphics\IRenderTechnique.cpp" />
@@ -233,6 +241,11 @@
     <ClCompile Include="src\EntityHierarchy.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\ECS\Components\Light.h" />
+    <ClInclude Include="src\ECS\Components\Model.h" />
+    <ClInclude Include="src\ECS\Components\Name.h" />
+    <ClInclude Include="src\ECS\Components\Transform.h" />
+    <ClInclude Include="src\Serializable.h" />
     <ClInclude Include="src\Graphics\IRenderLayer.h" />
     <ClInclude Include="src\Graphics\RenderLayers\BloomRenderLayer.h" />
     <ClInclude Include="src\Graphics\RenderLayers\ImGuiRenderLayer.h" />
@@ -257,7 +270,6 @@
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\Scene.h" />
     <ClInclude Include="src\ThreadManager.h" />
-    <ClInclude Include="src\Tools\CustomImGui.h" />
     <ClInclude Include="src\Camera.h" />
     <ClInclude Include="src\ECS\Components.h" />
     <ClInclude Include="src\Engine.h" />

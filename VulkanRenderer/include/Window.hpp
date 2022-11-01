@@ -10,7 +10,6 @@
 #include <array>
 #include "Resources/ResourceManager.hpp"
 
-
 struct GLFWwindow;
 struct GLFWmonitor;
 
@@ -41,6 +40,7 @@ namespace sa {
 
 	typedef std::function<void(Key, InputAction, ModKeyFlags, int)> KeyCallback;
 	typedef std::function<void(MouseButton, InputAction, ModKeyFlags)> MouseButtonCallback;
+	typedef std::function<void(double x, double y)> ScrollCallback;
 
 	typedef std::function<void(Joystick, ConnectionState)> JoystickConnectedCallback;
 
@@ -59,14 +59,16 @@ namespace sa {
 		bool m_isIconified;
 		bool m_wasResized;
 
-		KeyCallback m_onKeyFunction;
-		MouseButtonCallback m_onMouseButtonFunction;
+		std::vector<KeyCallback> m_onKeyFunctions;
+		std::vector<MouseButtonCallback> m_onMouseButtonFunctions;
+		std::vector<ScrollCallback> m_onScrollFunctions;
 		
 	protected:
 		static void onResize(GLFWwindow* window, int width, int height);
 		static void onIconify(GLFWwindow* window, int iconified);
 		static void onKey(GLFWwindow* window, int key, int scancode, int action, int mods);
 		static void onMouseButton(GLFWwindow* window, int button, int action, int mods);
+		static void onScroll(GLFWwindow* window, double x, double y);
 		static void onClose(GLFWwindow* window);
 		static void onJoystickDetect(int jid, int state);
 
@@ -109,6 +111,7 @@ namespace sa {
 		Extent getCurrentExtent() const;
 
 		GLFWwindow* getWindowHandle() const;
+		void* getWin32WindowHandle() const;
 
 		int getKey(Key keyCode) const;
 		int getMouseButton(MouseButton button) const;
@@ -124,9 +127,10 @@ namespace sa {
 
 		void setCursor(ResourceID cursor);
 
-		void setKeyCallback(KeyCallback func);
-		void setMouseButtonCallback(MouseButtonCallback func);
-		
+		void addKeyCallback(KeyCallback func);
+		void addMouseButtonCallback(MouseButtonCallback func);
+		void addScrollCallback(ScrollCallback func);
+
 		bool wasResized() const;
 		bool isIconified() const;
 

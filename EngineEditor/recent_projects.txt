@@ -1,0 +1,2 @@
+D:\repos\TestProject\TestProject.saproj
+D:\repos\TestProject2\TestProject2.saproj

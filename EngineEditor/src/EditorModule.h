@@ -1,6 +1,6 @@
 #pragma once
+#include <Core.h>
 #include <Engine.h>
-#include <Tools\Profiler.h>
 
 #include "Events.h"
 

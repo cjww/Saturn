@@ -2,14 +2,14 @@
 
 #include "sol/sol.hpp"
 #include "ComponentType.h"
+#include "Serializable.h"
 
 namespace sa {
 	class Entity;
 
-	class ComponentBase {
+	class ComponentBase : public Serializable {
 	public:
-		
-
+	
 	};
 
 	class LuaAccessable : public ComponentBase {

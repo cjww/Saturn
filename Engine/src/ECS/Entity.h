@@ -7,11 +7,13 @@
 
 #include "ScriptManager.h"
 
+#include "Serializable.h"
+
 namespace sa {
 	
 	class Scene;
 
-	class Entity {
+	class Entity : public Serializable {
 	private:
 		Scene* m_pScene;
 		entt::registry* m_pRegistry;
@@ -22,9 +24,14 @@ namespace sa {
 		static sol::usertype<Entity>& getType();
 
 		Entity(Scene* pScene, entt::entity entity);
+		
 		Entity(const Entity& other) = default;
 		Entity();
 		virtual ~Entity() = default;
+
+		virtual void serialize(Serializer& s) override;
+		virtual void deserialize(void* pDoc) override;
+
 
 		template<typename T>
 		T* getComponent() const;
@@ -35,7 +42,7 @@ namespace sa {
 		bool hasComponent() const;
 
 		bool hasComponent(ComponentType type) const;
-		bool hasComponent(const std::string name) const;
+		bool hasComponent(const std::string& name) const;
 
 		template<typename T, typename ...Args>
 		T* addComponent(Args&& ...args);
@@ -145,6 +152,8 @@ namespace sa {
 				.func<&Entity::removeComponent<Comp>>("remove"_hs)
 				;
 		
+			SA_DEBUG_LOG_INFO("Registered Meta functions for", getComponentName<Comp>());
+
 			ComponentType::registerComponent<Comp>();
 		}
 		if constexpr (std::is_base_of_v<sa::LuaAccessable, std::decay_t<Comp>>) {
@@ -169,6 +178,9 @@ namespace sa {
 					}
 					self.removeComponent(name);
 				});
+
+			SA_DEBUG_LOG_INFO("Registered Lua property for", getComponentName<Comp>());
+
 		}
 
 	}

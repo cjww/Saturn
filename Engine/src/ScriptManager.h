@@ -10,6 +10,8 @@
 #include <Tools/Logger.hpp>
 #include <filesystem>
 
+#include "Serializable.h"
+
 namespace sa {
 
 	class Scene;
@@ -20,15 +22,20 @@ namespace sa {
 		std::vector<ComponentType> components;
 	};
 
-	struct EntityScript {
+	struct EntityScript : public Serializable {
 		std::string name;
+		std::filesystem::path path;
 		sol::environment env;
 		entt::entity owner;
-		EntityScript(std::string name, sol::environment env, entt::entity owner)
+		EntityScript(std::string name, std::filesystem::path path, sol::environment env, entt::entity owner)
 			: name(name)
+			, path(path)
 			, env(env) 
 			, owner(owner)
 		{}
+
+		virtual void serialize(Serializer& s) override;
+		virtual void deserialize(void* pDoc) override;
 	};
 
 	class ScriptManager {
@@ -60,6 +67,7 @@ namespace sa {
 		void clearEntity(const entt::entity& entity);
 		std::optional<EntityScript> getScript(const entt::entity& entity, const std::string& name) const;
 
+		void clearAll();
 
 		std::vector<EntityScript> getEntityScripts(const entt::entity& entity) const;
 
