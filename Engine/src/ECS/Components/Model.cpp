@@ -1,8 +1,6 @@
 #include "pch.h"
 #include "Model.h"
 
-#include <simdjson.h>
-
 namespace comp {
 
 	Model::Model(const std::string& name) {

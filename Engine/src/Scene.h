@@ -4,6 +4,7 @@
 #include "ECS/Entity.h"
 #include "ECS/Events.h"
 #include "ECS/Components.h"
+#include "PhysicsSystem.h"
 
 #include <iostream>
 
@@ -14,9 +15,6 @@
 
 #include "Serializable.h"
 
-namespace physx {
-	class PxScene;
-}
 
 namespace sa {
 	typedef uint32_t SceneID;

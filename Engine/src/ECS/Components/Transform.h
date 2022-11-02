@@ -8,6 +8,8 @@
 #define GLM_ENABLE_EXPERIMENTAL
 #include "glm\gtx/quaternion.hpp"
 
+#include "PhysicsSystem.h"
+
 
 namespace comp {
 
@@ -18,9 +20,16 @@ namespace comp {
 
 		bool hasParent = false;
 		sa::Vector3 relativePosition;
+		
+
+		Transform() = default;
+		Transform(physx::PxTransform pxTransform);
+		comp::Transform& operator=(const physx::PxTransform pxTransform);
+		operator physx::PxTransform() const;
 
 		virtual void serialize(sa::Serializer& s) override;
 		virtual void deserialize(void* pDoc) override;
+
 
 		sa::Matrix4x4 getMatrix() const;
 

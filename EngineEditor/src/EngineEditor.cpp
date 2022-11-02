@@ -212,8 +212,6 @@ namespace sa {
 
 		m_editorModules.push_back(std::make_unique<SceneHierarchy>(&engine));
 
-		m_editorModules.push_back(std::make_unique<LuaConsole>(&engine));
-
 		Application::get()->pushLayer(new TestLayer);
 
 

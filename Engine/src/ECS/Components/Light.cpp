@@ -1,8 +1,6 @@
 #include "pch.h"
 #include "Light.h"
 
-#include <simdjson.h>
-
 namespace comp {
 
 	void Light::serialize(sa::Serializer& s) {

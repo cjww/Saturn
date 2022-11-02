@@ -55,7 +55,7 @@ namespace sa {
 		box.addComponent<comp::Transform>()->position = position;
 		box.addComponent<comp::RigidBody>(false);
 		box.addComponent<comp::BoxCollider>(Vector3(scale, scale, scale));
-		box.addComponent<comp::Model>(AssetManager::get().loadBox());
+		box.addComponent<comp::Model>()->modelID = AssetManager::get().loadBox();
 
 		return box;
 	}
@@ -66,6 +66,7 @@ namespace sa {
 
 		//createModelEntity(engine, "resources/models/Box.gltf");
 
+		
 		/*
 		Entity groundEntity = engine.getCurrentScene()->createEntity("Ground");
 		groundEntity.addComponent<comp::Model>()->modelID = AssetManager::get().loadQuad();
@@ -127,17 +128,21 @@ namespace sa {
 		}
 		*/
 
+		/*
 		adam.addScript("Movable.lua");
 		adam.addScript("Inventory.lua");
-		/*
 		engine.createSystemScript("test.lua");
 		engine.createSystemScript("test2.lua");
 		engine.getCurrentScene()->addScript(adam, "Movable.lua");
 		engine.getCurrentScene()->addScript(adam, "Inventory.lua");
 		adam.addScript("Movable.lua");
 		adam.addScript("Inventory.lua");
-		*/
 
+		Entity box = m_pEngine->getCurrentScene()->createEntity("Box");
+		box.addComponent<comp::Transform>()->position = glm::vec3(0, 10, 0);
+		box.addComponent<comp::RigidBody>(false);
+		box.addComponent<comp::BoxCollider>(glm::vec3(1, 1, 1));
+		*/
 
 	}
 

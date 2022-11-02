@@ -35,7 +35,10 @@ namespace comp {
 		RigidBody(bool isStatic) 
 			: isStatic(isStatic)
 		{
-		};
+		}
+
+		virtual void serialize(sa::Serializer& s) override {}
+		virtual void deserialize(void* pDoc) override {}
 
 	};
 
@@ -49,6 +52,9 @@ namespace comp {
 			: radius(radius)
 		{
 		}
+
+		virtual void serialize(sa::Serializer& s) override {}
+		virtual void deserialize(void* pDoc) override {}
 	};
 
 
@@ -62,6 +68,9 @@ namespace comp {
 			: halfLengths(halfLengths)
 		{
 		}
+
+		virtual void serialize(sa::Serializer& s) override {}
+		virtual void deserialize(void* pDoc) override {}
 	};
 
 };

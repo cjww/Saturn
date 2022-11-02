@@ -1,13 +1,6 @@
 #include "pch.h"
 #include "Scene.h"
 
-#include "ECS\Components.h"
-
-#include "PhysicsSystem.h"
-#include <PxScene.h>
-#include <PxRigidBody.h>
-#include <simdjson.h>
-
 namespace sa {
 
 	void Scene::onRigidBodyConstruct(entt::registry& reg, entt::entity e) {

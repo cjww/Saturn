@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Graphics/RenderPipeline.h"
+#include "Graphics\RenderTechniques\ForwardPlus.h"
+#include "Graphics\RenderLayers\ImGuiRenderLayer.h"
 
 #include "AssetManager.h"
 #include "Scene.h"
@@ -9,12 +11,8 @@
 
 #include "Tools\utils.h"
 #include "ScriptManager.h"
-#include "PhysicsSystem.h"
 
 #include <RenderWindow.hpp>
-
-#include <rapidxml\rapidxml.hpp>
-
 
 
 namespace sa {
@@ -38,9 +36,6 @@ namespace sa {
 		} m_frameTime;
 
 		bool m_isSetup = false;
-
-		void loadXML(const std::filesystem::path& path, rapidxml::xml_document<>& xml, std::string& xmlStr);
-		void loadFromFile(const std::filesystem::path& configPath);
 
 		void registerMath();
 

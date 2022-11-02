@@ -9,7 +9,6 @@
 #include "SceneHierarchy.h"
 #include "EntityInspector.h"
 
-
 namespace sa {
 
 	class EngineEditor : public IApplicationLayer {

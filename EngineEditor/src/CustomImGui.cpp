@@ -1,4 +1,3 @@
-#include "pch.h"
 #include "CustomImGui.h"
 #include "Tools\Math.h"
 

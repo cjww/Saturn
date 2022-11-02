@@ -2,10 +2,7 @@
 #include "Entity.h"
 
 #include "Components.h"
-
 #include "Scene.h"
-
-#include "simdjson.h"
 
 namespace sa {
     void Entity::reg() {

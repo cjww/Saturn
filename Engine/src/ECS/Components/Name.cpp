@@ -1,8 +1,6 @@
 #include "pch.h"
 #include "Name.h"
 
-#include "simdjson.h"
-
 namespace comp {
 	void Name::serialize(sa::Serializer& s) {
 		

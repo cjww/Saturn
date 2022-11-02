@@ -2,7 +2,6 @@
 
 #include "ComponentType.h"
 #include "MetaComponent.h"
-
 #include "ComponentBase.h"
 
 #include "ScriptManager.h"

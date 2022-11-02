@@ -1,6 +1,5 @@
 #pragma once
 
-#define DEBUG_LOG
 
 // Standard lib
 #include <vector>
@@ -27,13 +26,22 @@
 #include <mutex>
 
 // Dependencies
+// entt - ECS library
 #include <entt/entt.hpp>
-#include <rapidxml/rapidxml.hpp>
 
+// sol - Lua API
 #define SOL_ALL_SAFTIES_ON 1
 #include <sol/sol.hpp>
 #include <lua.hpp>
 
+// PhysX - Physics Engine
+#include <PxPhysicsAPI.h>
+#include <PxScene.h>
+#include <PxRigidBody.h>
+
+
+// simdjson - JSON parser
+#include <simdjson.h>
 
 // glm
 #include <glm/glm.hpp>
