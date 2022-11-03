@@ -154,21 +154,21 @@ namespace ImGui {
 	}
 
 	void Component(sa::Entity entity, comp::BoxCollider* bc) {
-		if (ImGui::DragFloat3("Scale##BoxCollider", (float*)&bc->scale)) {
+		if (ImGui::DragFloat3("Scale##BoxCollider", (float*)&bc->scale, 0.1f, 0.f)) {
 			if (bc->scale.x < 0.f) bc->scale.x = 0.f;
 			if (bc->scale.y < 0.f) bc->scale.y = 0.f;
 			if (bc->scale.z < 0.f) bc->scale.z = 0.f;
-			entity.update<comp::BoxCollider>();
+			bc->onUpdate(&entity);
 		}
-		if (ImGui::DragFloat3("Offset", (float*)&bc->offset)) {
-			entity.update<comp::BoxCollider>();
+		if (ImGui::DragFloat3("Offset##BoxCollider", (float*)&bc->offset)) {
+			bc->onUpdate(&entity);
 		}
 
 	}
 
 	void Component(sa::Entity entity, comp::SphereCollider* sc) {
-		if (ImGui::DragFloat("Radius", &sc->radius), 0.1f, 0.1f) {
-			entity.update<comp::SphereCollider>();
+		if (ImGui::DragFloat("Radius", &sc->radius, 0.1f, 0.1f)) {
+			sc->onUpdate(&entity);
 		}
 	}
 

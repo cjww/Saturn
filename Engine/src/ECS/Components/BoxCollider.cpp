@@ -17,6 +17,7 @@ namespace comp {
 
 	void BoxCollider::serialize(sa::Serializer& s) {
 
+
 	}
 
 	void BoxCollider::deserialize(void* pDoc) {
@@ -24,23 +25,34 @@ namespace comp {
 	}
 
 	void BoxCollider::onConstruct(sa::Entity* e) {
+		using namespace physx;
 		comp::RigidBody* rb = e->getComponent<comp::RigidBody>();
 		if (!rb)
 			rb = e->addComponent<comp::RigidBody>();
 
-		pShape = sa::PhysicsSystem::get().createBox(scale);
+		PxBoxGeometry box(sa::PhysicsSystem::toPxVec(scale));
+		pShape = sa::PhysicsSystem::get().createShape(&box);
+
 		rb->pActor->attachShape(*pShape);
 	}
 	
 	void BoxCollider::onUpdate(sa::Entity* e) {
-		pShape->getGeometry().box().halfExtents = sa::PhysicsSystem::toPxVec(scale);
+		using namespace physx;
+		comp::RigidBody* rb = e->getComponent<comp::RigidBody>();
+		if (!rb)
+			rb = e->addComponent<comp::RigidBody>();
+		rb->pActor->detachShape(*pShape);
+		
+		PxBoxGeometry box(sa::PhysicsSystem::toPxVec(scale));
+		pShape = sa::PhysicsSystem::get().createShape(&box);
+
+		rb->pActor->attachShape(*pShape);
 	}
 	
 	void BoxCollider::onDestroy(sa::Entity* e) {
 		comp::RigidBody* rb = e->getComponent<comp::RigidBody>();
 		if (rb)
 			rb->pActor->detachShape(*pShape);
-		pShape->release();
 	}
 
 }

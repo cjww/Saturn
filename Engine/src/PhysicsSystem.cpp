@@ -106,6 +106,36 @@ namespace sa {
 		return m_pPhysics->createShape(physx::PxBoxGeometry(toPxVec(halfLengths)), *pMaterial);
 	}
 
+	physx::PxShape* PhysicsSystem::createShape(const physx::PxGeometry* pGeometry, physx::PxMaterial* pMaterial) {
+		if (!pMaterial)
+			pMaterial = m_pDefaultMaterial;
+		size_t hashedValue;
+		switch (pGeometry->getType()) {
+		case physx::PxGeometryType::eBOX: {
+			physx::PxBoxGeometry* pBox = (physx::PxBoxGeometry*)pGeometry;
+			std::string str(32, 0);
+			sprintf_s(str.data(), str.size(), "Box%.3f%.3f%.3f", pBox->halfExtents.x, pBox->halfExtents.y, pBox->halfExtents.z);
+			hashedValue = std::hash<std::string>()(str);
+			break;
+		}
+		case physx::PxGeometryType::eSPHERE: {
+			physx::PxSphereGeometry* pSphere = (physx::PxSphereGeometry*)pGeometry;
+			std::string str(17, 0);
+			sprintf_s(str.data(), str.size(), "Sphere%.3f", pSphere->radius);
+			hashedValue = std::hash<std::string>()(str);
+			break;
+		}
+		default:
+			break;
+		}
+		if (m_shapes.count(hashedValue)) {
+			return m_shapes.at(hashedValue);
+		}
+		m_shapes[hashedValue] = m_pPhysics->createShape(*pGeometry, *pMaterial);
+
+		return m_shapes[hashedValue];
+	}
+
 	Vector3 PhysicsSystem::toVector(physx::PxVec3 vec) {
 		return Vector3(vec.x, vec.y, vec.z);
 	}

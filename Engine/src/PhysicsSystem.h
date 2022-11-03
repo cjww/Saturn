@@ -14,6 +14,7 @@ namespace physx {
 	class PxRigidActor;
 	class PxMaterial;
 	class PxShape;
+	class PxGeometry;
 	class PxTransform;
 	class PxVec3;
 
@@ -33,6 +34,8 @@ namespace sa {
 
 		physx::PxMaterial* m_pDefaultMaterial;
 
+		std::unordered_map<size_t, physx::PxShape*> m_shapes;
+
 		PhysicsSystem();
 	public:
 
@@ -47,6 +50,7 @@ namespace sa {
 
 		physx::PxShape* createSphere(float radius, physx::PxMaterial* pMaterial = nullptr);
 		physx::PxShape* createBox(Vector3 halfLengths, physx::PxMaterial* pMaterial = nullptr);
+		physx::PxShape* createShape(const physx::PxGeometry* pGeometry, physx::PxMaterial* pMaterial = nullptr);
 
 		static Vector3 toVector(physx::PxVec3 vec);
 		static physx::PxVec3 toPxVec(Vector3 vec);

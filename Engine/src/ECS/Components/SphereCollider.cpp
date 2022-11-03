@@ -20,24 +20,35 @@ namespace comp {
 
 
 	void SphereCollider::onConstruct(sa::Entity* e) {
+		using namespace physx;
 		comp::RigidBody* rb = e->getComponent<comp::RigidBody>();
 		if (!rb)
 			rb = e->addComponent<comp::RigidBody>();
 
-		pShape = sa::PhysicsSystem::get().createSphere(radius);
+		PxSphereGeometry sphere(radius);
+		pShape = sa::PhysicsSystem::get().createShape(&sphere);
 
 		rb->pActor->attachShape(*pShape);
 	}
 	
 	void SphereCollider::onUpdate(sa::Entity* e) {
-		pShape->getGeometry().sphere().radius = radius;
+		using namespace physx;
+		comp::RigidBody* rb = e->getComponent<comp::RigidBody>();
+		if (!rb)
+			rb = e->addComponent<comp::RigidBody>();
+		rb->pActor->detachShape(*pShape);
+		if (radius < 0.01f) radius = 0.01f;
+
+		PxSphereGeometry sphere(radius);
+		pShape = sa::PhysicsSystem::get().createShape(&sphere);
+		rb->pActor->attachShape(*pShape);
 	}
 	
 	void SphereCollider::onDestroy(sa::Entity* e) {
+		using namespace physx;
 		comp::RigidBody* rb = e->getComponent<comp::RigidBody>();
-		if (rb)
+		if (rb) 
 			rb->pActor->detachShape(*pShape);
-		pShape->release();
 	}
 
 
