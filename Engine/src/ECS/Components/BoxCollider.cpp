@@ -43,6 +43,8 @@ namespace comp {
 			rb = e->addComponent<comp::RigidBody>();
 		rb->pActor->detachShape(*pShape);
 		
+		scale = glm::max(scale, 0.01f);
+
 		PxBoxGeometry box(sa::PhysicsSystem::toPxVec(scale));
 		pShape = sa::PhysicsSystem::get().createShape(&box);
 

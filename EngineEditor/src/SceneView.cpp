@@ -293,25 +293,29 @@ void SceneView::onImGui() {
 			comp::BoxCollider* bc = m_selectedEntity.getComponent<comp::BoxCollider>();
 			if (bc) {
 				comp::Transform* transform = m_selectedEntity.getComponent<comp::Transform>();
-				glm::mat4 mat(1.f);
-				if (transform) {
-					/*
-					mat = glm::translate(mat, transform->position);
-					mat = mat * glm::mat4(transform->rotation);
-					mat = glm::scale(mat, bc->halfLengths);
-					mat = transform->getMatrix();
-					*/
-					glm::vec3 size = (bc->scale * transform->scale) * 0.5f;
-					ImGui::GizmoBox(transform->position + bc->offset, size, transform->rotation, &m_camera, { imageMin.x, imageMin.y }, { imageSize.x, imageSize.y }, ImColor(0, 255, 0));
+				if (transform) {	
+					if (ImGui::GizmoBoxResizable(transform->position + bc->offset, bc->scale, transform->rotation, &m_camera, screenPos, screenSize, ImColor(0, 255, 0))) {
+						bc->onUpdate(&m_selectedEntity);
+					}
 				}
-				/*
-				if (ImGuizmo::Manipulate((float*)&viewMat, (float*)&projMat, ImGuizmo::OPERATION::BOUNDS, ImGuizmo::WORLD, (float*)&mat)) {
-					//ImGuizmo::DecomposeMatrixToComponents(mat);
-
-				}
-				*/
-
 			}
+			comp::SphereCollider* sc = m_selectedEntity.getComponent<comp::SphereCollider>();
+			if (sc) {
+				comp::Transform* transform = m_selectedEntity.getComponent<comp::Transform>();
+				if (transform) {
+					const ImColor colliderColor = ImColor(0, 255, 0);
+					static bool dragFirstCircle1 = false;
+					static bool dragSecondCircle2 = false;
+
+					bool released = ImGui::GizmoCircleResizable(transform->position, sc->radius, transform->rotation, &m_camera, screenPos, screenSize, colliderColor, dragFirstCircle1);
+					ImGui::GizmoCircle(transform->position, sc->radius, transform->rotation * glm::quat(glm::vec3(glm::radians(90.f), 0, 0)), &m_camera, screenPos, screenSize, colliderColor);
+					released = released || ImGui::GizmoCircleResizable(transform->position, sc->radius, transform->rotation * glm::quat(glm::vec3(0, glm::radians(90.f), 0)), &m_camera, screenPos, screenSize, colliderColor, dragSecondCircle2);
+					if (released) {
+						sc->onUpdate(&m_selectedEntity);
+					}
+				}
+			}
+
 
 
 		}
