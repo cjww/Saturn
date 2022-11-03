@@ -15,6 +15,12 @@ void SceneHierarchy::makePopups() {
 				entity.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadQuad();
 			}
 			
+			if (ImGui::MenuItem("Box")) {
+				sa::Entity entity = m_pEngine->getCurrentScene()->createEntity("Box");
+				entity.addComponent<comp::Transform>();
+				entity.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadBox();
+			}
+
 			ImGui::EndMenu();
 		}
 

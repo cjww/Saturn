@@ -35,6 +35,8 @@ namespace sa {
 		inline static Application* m_thisInstance = nullptr;
 
 	public:
+		bool simulate;
+
 		Application(bool enableImGui);
 		virtual ~Application();
 

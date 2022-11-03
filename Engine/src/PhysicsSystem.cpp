@@ -22,13 +22,30 @@ namespace sa {
 	PhysicsSystem::PhysicsSystem() {
 		static AllocatorCallback s_defaultAllocator;
 		static ErrorCallback s_defaultErrorCallback;
+		using namespace physx;
+
 
 		m_pFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, s_defaultAllocator, s_defaultErrorCallback);
 		if (!m_pFoundation) {
 			throw std::runtime_error("PxCreateFoundation failed!");
 		}
 
-		m_pPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *m_pFoundation, physx::PxTolerancesScale());
+
+#ifdef _DEBUG
+		constexpr bool trackAllocations = true;
+
+		m_pPvd = PxCreatePvd(*m_pFoundation);
+		m_pPvdTransport = PxDefaultPvdSocketTransportCreate("127.0.0.1", 5425, 10);
+		if (!m_pPvd->connect(*m_pPvdTransport, PxPvdInstrumentationFlag::eALL)) {
+			SA_DEBUG_LOG_WARNING("Physx PVD failed to connect");
+		}
+#else
+		constexpr bool trackAllocations = false;
+		m_pPvd = nullptr;
+		m_pPvdTransport = nullptr;
+#endif // _DEBUG
+
+		m_pPhysics = PxCreatePhysics(PX_PHYSICS_VERSION, *m_pFoundation, physx::PxTolerancesScale(), trackAllocations, m_pPvd);
 		if (!m_pPhysics) {
 			throw std::runtime_error("PxCreatePhysics failed!");
 		}
@@ -43,6 +60,14 @@ namespace sa {
 		m_pDefaultMaterial->release();
 		m_pCpuDispatcher->release();
 		m_pPhysics->release();
+
+#ifdef _DEBUG
+		if (m_pPvd)
+			m_pPvd->release();
+		if (m_pPvdTransport)
+			m_pPvdTransport->release();
+#endif // _DEBUG
+
 		m_pFoundation->release();
 	}
 
@@ -56,6 +81,7 @@ namespace sa {
 		desc.gravity = physx::PxVec3(0.0f, -9.82f, 0.0f);
 		desc.cpuDispatcher = m_pCpuDispatcher;
 		desc.filterShader = physx::PxDefaultSimulationFilterShader;
+		desc.flags = physx::PxSceneFlag::eENABLE_ACTIVE_ACTORS;
 		return m_pPhysics->createScene(desc);
 	}
 	physx::PxRigidActor* PhysicsSystem::createRigidBody(bool isSatic, physx::PxTransform transform) {

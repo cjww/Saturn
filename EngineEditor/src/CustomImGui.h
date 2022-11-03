@@ -4,6 +4,9 @@
 #include "ECS/Entity.h"
 #include "Camera.h"
 
+#include <glm\gtx\matrix_decompose.hpp>
+#include <glm\gtc\quaternion.hpp>
+
 #include <filesystem>
 
 #define IMGUI_BUFFER_SIZE_BIG 256U
@@ -22,10 +25,15 @@ namespace ImGui {
 
 	void displayLuaTable(std::string name, sol::table table);
 
-	void Component(comp::Transform* transform);
-	void Component(comp::Model* model);
-	void Component(comp::Script* script);
-	void Component(comp::Light* light);
+	void Component(sa::Entity entity, comp::Transform* transform);
+	void Component(sa::Entity entity, comp::Model* model);
+	void Component(sa::Entity entity, comp::Script* script);
+	void Component(sa::Entity entity, comp::Light* light);
+	void Component(sa::Entity entity, comp::RigidBody* rb);
+	void Component(sa::Entity entity, comp::BoxCollider* bc);
+	void Component(sa::Entity entity, comp::SphereCollider* sc);
+
+
 
 
 	template<typename T>
@@ -50,6 +58,13 @@ namespace ImGui {
 	void GizmoCircle2D(const glm::vec3& worldPosition, float radius, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, int numSegments = 0, float thickness = 1.f);
 	void GizmoCircle2DResizable(const glm::vec3& worldPosition, float& radius, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, bool& isDragging, int numSegments = 0, float thickness = 1.f);
 
+	//void GizmoQuad(const glm::mat4& transformation, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, float thickness = 1.f);
+	void GizmoQuad(const glm::vec3& worldPosition, const glm::vec2& size, const glm::quat& rotation, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, float thickness = 1.f);
+
+	void GizmoBox(const glm::vec3& worldPosition, const glm::vec3& halfLengths, const glm::quat& rotation, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, float thickness = 1.f);
+	void GizmoBoxResizable(const glm::vec3& worldPosition, glm::vec3& halfLengths, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, bool& isDragging, float thickness = 1.f);
+
+
 	}
 
 template<typename T>
@@ -62,7 +77,7 @@ void ImGui::Component(const sa::Entity& entity) {
 	static bool visable = true;
 	
 	if (ImGui::CollapsingHeader(sa::getComponentName<T>().c_str(), &visable)) {
-		ImGui::Component(comp);
+		ImGui::Component(entity, comp);
 	}
 	if (!visable) {
 		ImGui::OpenPopup("Remove?");

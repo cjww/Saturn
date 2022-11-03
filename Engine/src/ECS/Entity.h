@@ -31,6 +31,7 @@ namespace sa {
 		virtual void serialize(Serializer& s) override;
 		virtual void deserialize(void* pDoc) override;
 
+		Scene* getScene();
 
 		template<typename T>
 		T* getComponent() const;
@@ -54,6 +55,9 @@ namespace sa {
 
 		void removeComponent(ComponentType type);
 		void removeComponent(const std::string& name);
+
+		template<typename ...Components>
+		void update();
 
 		void addScript(const std::filesystem::path& path);
 		void removeScript(const std::string& name);
@@ -131,7 +135,11 @@ namespace sa {
 		m_pRegistry->remove<T>(m_entity);
 	}
 
-
+	template<typename ...Components>
+	inline void Entity::update() {
+		if(m_pRegistry->all_of<Components...>(m_entity))
+			m_pRegistry->patch<Components...>(m_entity);
+	}
 
 	template<typename Comp>
 	inline void registerComponentType() {

@@ -13,7 +13,8 @@
 
 namespace comp {
 
-	struct Transform : public sa::LuaAccessable {
+	class Transform : public sa::LuaAccessable {
+	public:
 		sa::Vector3 position = sa::Vector3(0);
 		glm::quat rotation = glm::quat_identity<float, glm::packed_highp>();
 		sa::Vector3 scale = sa::Vector3(1);

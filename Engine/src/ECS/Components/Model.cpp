@@ -21,6 +21,10 @@ namespace comp {
 				modelID = sa::AssetManager::get().loadQuad();
 				return;
 			}
+			if (pathView == "Box") {
+				modelID = sa::AssetManager::get().loadBox();
+				return;
+			}
 			modelID = sa::AssetManager::get().loadModel(pathView);
 		}
 	}

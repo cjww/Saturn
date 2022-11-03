@@ -10,6 +10,9 @@ namespace sa {
 	class ComponentBase : public Serializable {
 	public:
 	
+		virtual void onConstruct(sa::Entity* e) {};
+		virtual void onUpdate(sa::Entity* e) {};
+		virtual void onDestroy(sa::Entity* e) {};
 	};
 
 	class LuaAccessable : public ComponentBase {

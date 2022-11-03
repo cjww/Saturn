@@ -14,6 +14,7 @@ namespace sa {
 		m_engine.setup(m_pWindow.get(), m_imGuiEnabled);
 
 		m_thisInstance = this;
+		simulate = true;
 	}
 
 	Application::~Application() {
@@ -47,7 +48,8 @@ namespace sa {
 			float dt = clock.restart();
 
 			// Update engine 
-			m_engine.update(dt);
+			if(simulate)
+				m_engine.update(dt);
 			for (const auto layer : m_layers) {
 				layer->onUpdate(dt);
 			}

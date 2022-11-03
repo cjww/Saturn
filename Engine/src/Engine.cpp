@@ -2,6 +2,14 @@
 #include "Engine.h"
 
 namespace sa {
+	void Engine::registerComponentCallBacks(Scene& scene) {
+		registerComponentCallBack<comp::RigidBody>(scene);
+		registerComponentCallBack<comp::BoxCollider>(scene);
+		registerComponentCallBack<comp::SphereCollider>(scene);
+		registerComponentCallBack<comp::Transform>(scene);
+		registerComponentCallBack<comp::Model>(scene);
+	}
+
 	void Engine::registerMath() {
 		{
 
@@ -283,12 +291,7 @@ namespace sa {
 				setScene(e.sceneName);
 			});
 			
-			it->second.on_construct<comp::RigidBody>().connect<&Scene::onRigidBodyConstruct>(it->second);
-			it->second.on_destroy<comp::RigidBody>().connect<&Scene::onRigidBodyDestroy>(it->second);
-			it->second.on_construct<comp::SphereCollider>().connect<&Scene::onSphereColliderConstruct>(it->second);
-			it->second.on_destroy<comp::SphereCollider>().connect<&Scene::onSphereColliderDestroy>(it->second);
-			it->second.on_construct<comp::BoxCollider>().connect<&Scene::onBoxColliderConstruct>(it->second);
-			it->second.on_destroy<comp::BoxCollider>().connect<&Scene::onBoxColliderDestroy>(it->second);
+			registerComponentCallBacks(it->second);
 
 		}
 		return it->second;
@@ -311,6 +314,10 @@ namespace sa {
 		pScene->serialize(s);
 
 		std::ofstream file(path);
+		if (!file) {
+			SA_DEBUG_LOG_ERROR("Failed to open file", path);
+			return;
+		}
 		file << s.dump();
 		file.close();
 	}

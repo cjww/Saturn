@@ -84,6 +84,10 @@ void EntityInspector::onImGui() {
 			ImGui::Component<comp::Model>(m_selectedEntity);
 			ImGui::Component<comp::Script>(m_selectedEntity);
 			ImGui::Component<comp::Light>(m_selectedEntity);
+			ImGui::Component<comp::RigidBody>(m_selectedEntity);
+			ImGui::Component<comp::BoxCollider>(m_selectedEntity);
+			ImGui::Component<comp::SphereCollider>(m_selectedEntity);
+
 
 			// Display entity scripts
 			for (auto& script : m_pEngine->getCurrentScene()->getAssignedScripts(m_selectedEntity)) {

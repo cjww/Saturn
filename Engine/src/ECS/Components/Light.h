@@ -23,7 +23,8 @@ namespace sa {
 }
 
 namespace comp {
-	struct Light : public sa::LuaAccessable {
+	class Light : public sa::LuaAccessable {
+	public:
 		unsigned int index;
 		sa::LightData values;
 

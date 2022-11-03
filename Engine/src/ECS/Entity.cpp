@@ -132,11 +132,16 @@ namespace sa {
             MetaComponent mt = addComponent(compName);
             ComponentBase** comp = (ComponentBase**)mt.data();
             (*comp)->deserialize(&compObj);
+            (*comp)->onUpdate(this);
         }
 
         for (object script : obj["scripts"]) {
             addScript(script["path"].get_string().value());
         }
+    }
+
+    Scene* Entity::getScene() {
+        return m_pScene;
     }
 
 

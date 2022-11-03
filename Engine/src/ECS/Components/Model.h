@@ -5,7 +5,8 @@
 #include "ECS/ComponentBase.h"
 
 namespace comp {
-	struct Model : public sa::LuaAccessable {
+	class Model : public sa::LuaAccessable {
+	public:
 		ResourceID modelID = NULL_RESOURCE;
 
 		Model() = default;

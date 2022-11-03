@@ -3,7 +3,8 @@
 #include "ECS/ComponentBase.h"
 
 namespace comp {
-	struct Name : public sa::ComponentBase {
+	class Name : public sa::ComponentBase {
+	public:
 		std::string name;
 
 		Name() {}

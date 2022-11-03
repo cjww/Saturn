@@ -79,7 +79,7 @@ namespace ImGui {
 		
 	}
 
-	void Component(comp::Transform* transform) {
+	void Component(sa::Entity entity, comp::Transform* transform) {
 		if (!transform->hasParent) {
 			ImGui::DragFloat3("Position##Transform", (float*)&transform->position, 0.1f, 0.0f, 0.0f, "%.2f", ImGuiSliderFlags_NoRoundToFormat);
 		}
@@ -91,9 +91,10 @@ namespace ImGui {
 			transform->rotation = glm::quat(glm::radians(rotation));
 		}
 		ImGui::DragFloat3("Scale", (float*)&transform->scale, 0.1f, 0.0f, 0.0f, "%.2f", ImGuiSliderFlags_NoRoundToFormat);
+		
 	}
 
-	void Component(comp::Model* model) {
+	void Component(sa::Entity entity, comp::Model* model) {
 		ImGui::Text("ModelID: %d", model->modelID);
 		ImGui::SameLine();
 		ImGui::Text("Name: %s", sa::ResourceManager::get().idToKey<sa::ModelData>(model->modelID).c_str());
@@ -111,7 +112,7 @@ namespace ImGui {
 
 	}
 
-	void Component(comp::Script* script) {
+	void Component(sa::Entity entity, comp::Script* script) {
 		if (!script->env.valid())
 			return;
 
@@ -119,7 +120,7 @@ namespace ImGui {
 
 	}
 
-	void Component(comp::Light* light) {
+	void Component(sa::Entity entity, comp::Light* light) {
 
 		ImGui::DragFloat3("Position##Light", (float*)&light->values.position, 0.1f);
 
@@ -130,11 +131,11 @@ namespace ImGui {
 
 		static std::string preview = "-";
 		if (ImGui::BeginCombo("Type", preview.data())) {
-			if (ImGui::Selectable("Point")) {
+			if (ImGui::Selectable("Point", light->values.type == sa::LightType::POINT)) {
 				light->values.type = sa::LightType::POINT;
 				preview = "Point";
 			}
-			if (ImGui::Selectable("Directional")) {
+			if (ImGui::Selectable("Directional", light->values.type == sa::LightType::DIRECTIONAL)) {
 				light->values.type = sa::LightType::DIRECTIONAL;
 				preview = "Directional";
 			}
@@ -142,6 +143,33 @@ namespace ImGui {
 			ImGui::EndCombo();
 		}
 
+	}
+
+	void Component(sa::Entity entity, comp::RigidBody* rb) {
+		if (ImGui::Checkbox("Static", &rb->isStatic)) {
+			entity.update<comp::RigidBody>();
+		}
+
+
+	}
+
+	void Component(sa::Entity entity, comp::BoxCollider* bc) {
+		if (ImGui::DragFloat3("Scale##BoxCollider", (float*)&bc->scale)) {
+			if (bc->scale.x < 0.f) bc->scale.x = 0.f;
+			if (bc->scale.y < 0.f) bc->scale.y = 0.f;
+			if (bc->scale.z < 0.f) bc->scale.z = 0.f;
+			entity.update<comp::BoxCollider>();
+		}
+		if (ImGui::DragFloat3("Offset", (float*)&bc->offset)) {
+			entity.update<comp::BoxCollider>();
+		}
+
+	}
+
+	void Component(sa::Entity entity, comp::SphereCollider* sc) {
+		if (ImGui::DragFloat("Radius", &sc->radius), 0.1f, 0.1f) {
+			entity.update<comp::SphereCollider>();
+		}
 	}
 
 	void viewFile(std::filesystem::path filePath) {
@@ -478,6 +506,113 @@ namespace ImGui {
 			radiusScreenSpace = glm::distance(point, point2);
 			radius = radiusScreenSpace * ratio;
 		}
+
+	}
+
+	void GizmoQuad(const glm::vec3& worldPosition, const glm::vec2& size, const glm::quat& rotation, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, float thickness) {
+		
+		glm::vec3 point1 = worldPosition + glm::vec3(size.x, size.y, 0) * rotation;
+		glm::vec3 point2 = worldPosition + glm::vec3(size.x, -size.y, 0) * rotation;
+		glm::vec3 point3 = worldPosition + glm::vec3(-size.x, -size.y, 0) * rotation;
+		glm::vec3 point4 = worldPosition + glm::vec3(-size.x, size.y, 0) * rotation;
+
+
+		glm::vec3 screenPoint1 = sa::math::worldToScreen(point1, pCamera, screenPos, screenSize);
+		glm::vec3 screenPoint2 = sa::math::worldToScreen(point2, pCamera, screenPos, screenSize);
+		glm::vec3 screenPoint3 = sa::math::worldToScreen(point3, pCamera, screenPos, screenSize);
+		glm::vec3 screenPoint4 = sa::math::worldToScreen(point4, pCamera, screenPos, screenSize);
+
+		if ((int)screenPoint1.z + (int)screenPoint2.z + (int)screenPoint3.z + (int)screenPoint4.z > 1.f) {
+			return;
+		}
+		glm::vec2 screenMax = screenPos + screenSize;
+		if (screenPoint1.z > 1.0f) {
+			if (screenPoint1.x < screenMax.x) {
+				screenPoint1.x = screenMax.x;
+			}
+			if (screenPoint1.x > screenMax.x) {
+				screenPoint1.x = 0;
+			}
+			if (screenPoint1.y < screenMax.y) {
+				screenPoint1.y = screenMax.y;
+			}
+			if (screenPoint1.y > screenMax.y) {
+				screenPoint1.y = 0;
+			}
+		}
+
+		if (screenPoint2.z > 1.0f) {
+			if (screenPoint2.x < screenMax.x) {
+				screenPoint2.x = screenMax.x;
+			}
+			if (screenPoint2.x > screenMax.x) {
+				screenPoint2.x = 0;
+			}
+			if (screenPoint2.y < screenMax.y) {
+				screenPoint2.y = screenMax.y;
+			}
+			if (screenPoint2.y > screenMax.y) {
+				screenPoint2.y = 0;
+			}
+		}
+
+		if (screenPoint3.z > 1.0f) {
+			if (screenPoint3.x < screenMax.x) {
+				screenPoint3.x = screenMax.x;
+			}
+			if (screenPoint3.x > screenMax.x) {
+				screenPoint3.x = 0;
+			}
+			if (screenPoint3.y < screenMax.y) {
+				screenPoint3.y = screenMax.y;
+			}
+			if (screenPoint3.y > screenMax.y) {
+				screenPoint3.y = 0;
+			}
+		}
+
+		if (screenPoint4.z > 1.0f) {
+			if (screenPoint4.x < screenMax.x) {
+				screenPoint4.x = screenMax.x;
+			}
+			if (screenPoint4.x > screenMax.x) {
+				screenPoint4.x = 0;
+			}
+			if (screenPoint4.y < screenMax.y) {
+				screenPoint4.y = screenMax.y;
+			}
+			if (screenPoint4.y > screenMax.y) {
+				screenPoint4.y = 0;
+			}
+		}
+
+
+		ImGui::GetWindowDrawList()->AddQuad(
+			{ screenPoint1.x, screenPoint1.y },
+			{ screenPoint2.x, screenPoint2.y },
+			{ screenPoint3.x, screenPoint3.y },
+			{ screenPoint4.x, screenPoint4.y },
+			color, thickness);
+
+	}
+
+	void GizmoBox(const glm::vec3& worldPosition, const glm::vec3& halfLengths, const glm::quat& rotation, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, float thickness) {
+		
+		GizmoQuad(worldPosition + glm::vec3(0, 0, halfLengths.z), glm::vec2(halfLengths.x, halfLengths.y), glm::quat({0, 0, 0}) * rotation, pCamera, screenPos, screenSize, color, thickness);
+		GizmoQuad(worldPosition + glm::vec3(0, 0, -halfLengths.z), glm::vec2(halfLengths.x, halfLengths.y), glm::quat({ 0, 0, 0 }) * rotation, pCamera, screenPos, screenSize, color, thickness);
+		GizmoQuad(worldPosition + glm::vec3(0, halfLengths.y, 0), glm::vec2(halfLengths.x, halfLengths.z), glm::quat({ glm::radians(90.f), 0, 0}) * rotation, pCamera, screenPos, screenSize, color, thickness);
+		GizmoQuad(worldPosition + glm::vec3(0, -halfLengths.y, 0), glm::vec2(halfLengths.x, halfLengths.z), glm::quat({ glm::radians(90.f), 0, 0 }) * rotation, pCamera, screenPos, screenSize, color, thickness);
+
+		/*
+		glm::vec3 point1 = sa::math::worldToScreen(worldPosition + halfLengths, pCamera, screenPos, screenSize);
+		glm::vec3 point2 = sa::math::worldToScreen(worldPosition - halfLengths, pCamera, screenPos, screenSize);
+		
+		ImGui::GetWindowDrawList()->AddCircleFilled({ point1.x, point1.y }, 5, color);
+		ImGui::GetWindowDrawList()->AddCircleFilled({ point2.x, point2.y }, 5, color);
+		*/
+	}
+
+	void GizmoBoxResizable(const glm::vec3& worldPosition, glm::vec3& halfLengths, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, bool& isDragging, float thickness) {
 
 	}
 

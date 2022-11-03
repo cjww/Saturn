@@ -16,6 +16,9 @@ namespace physx {
 	class PxShape;
 	class PxTransform;
 	class PxVec3;
+
+	class PxPvd;
+	class PxPvdTransport;
 }
 
 namespace sa {
@@ -24,6 +27,9 @@ namespace sa {
 		physx::PxFoundation* m_pFoundation;
 		physx::PxPhysics* m_pPhysics;
 		physx::PxDefaultCpuDispatcher* m_pCpuDispatcher;
+
+		physx::PxPvd* m_pPvd;
+		physx::PxPvdTransport* m_pPvdTransport;
 
 		physx::PxMaterial* m_pDefaultMaterial;
 

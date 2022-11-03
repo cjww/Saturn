@@ -3,52 +3,6 @@
 
 namespace sa {
 
-	void Scene::onRigidBodyConstruct(entt::registry& reg, entt::entity e) {
-		comp::RigidBody& rb = reg.get<comp::RigidBody>(e);
-		comp::Transform& transform = reg.get_or_emplace<comp::Transform>(e);
-		rb.pActor = PhysicsSystem::get().createRigidBody(rb.isStatic, transform);
-		m_pPhysicsScene->addActor(*rb.pActor);
-	}
-
-	void Scene::onRigidBodyDestroy(entt::registry& reg, entt::entity e) {
-		if (reg.any_of<comp::SphereCollider>(e)) {
-			reg.erase<comp::SphereCollider>(e);
-		}
-		comp::RigidBody& rb = reg.get<comp::RigidBody>(e);
-		m_pPhysicsScene->removeActor(*rb.pActor);
-		rb.pActor->release();
-	}
-
-	void Scene::onSphereColliderConstruct(entt::registry& reg, entt::entity e) {
-		comp::SphereCollider& sc = reg.get<comp::SphereCollider>(e);
-		comp::RigidBody& rb = reg.get_or_emplace<comp::RigidBody>(e);
-		sc.pShape = PhysicsSystem::get().createSphere(sc.radius);
-		rb.pActor->attachShape(*sc.pShape);
-		
-	}
-
-	void Scene::onSphereColliderDestroy(entt::registry& reg, entt::entity e) {
-		comp::SphereCollider& sc = reg.get<comp::SphereCollider>(e);
-		comp::RigidBody& rb = reg.get<comp::RigidBody>(e);
-		rb.pActor->detachShape(*sc.pShape);
-		sc.pShape->release();
-	}
-
-	void Scene::onBoxColliderConstruct(entt::registry& reg, entt::entity e) {
-		comp::BoxCollider& bc = reg.get<comp::BoxCollider>(e);
-		comp::RigidBody& rb = reg.get_or_emplace<comp::RigidBody>(e);
-		bc.pShape = PhysicsSystem::get().createBox(bc.halfLengths);
-		rb.pActor->attachShape(*bc.pShape);
-
-	}
-
-	void Scene::onBoxColliderDestroy(entt::registry& reg, entt::entity e) {
-		comp::BoxCollider& bc = reg.get<comp::BoxCollider>(e);
-		comp::RigidBody& rb = reg.get<comp::RigidBody>(e);
-		rb.pActor->detachShape(*bc.pShape);
-		bc.pShape->release();
-	}
-
 	Scene::Scene(const std::string& name)
 		: m_isLoaded(false)
 		, m_name(name)
@@ -61,7 +15,8 @@ namespace sa {
 
 
 	Scene::~Scene() {
-
+		clearEntities();
+		m_pPhysicsScene->release();
 		for (auto& cam : m_cameras) {
 			delete cam;
 		}
@@ -102,9 +57,15 @@ namespace sa {
 		m_pPhysicsScene->simulate(dt);
 		m_pPhysicsScene->fetchResults(true);
 
-		view<comp::RigidBody, comp::Transform>().each([&](const comp::RigidBody& rb, comp::Transform& transform) {
-			transform = rb.pActor->getGlobalPose();
-		});
+		uint32_t actorCount = -1;
+		physx::PxActor** ppActors = m_pPhysicsScene->getActiveActors(actorCount);
+		for (uint32_t i = 0U; i < actorCount; i++) {
+			physx::PxActor* pActor = ppActors[i];
+			if (physx::PxRigidActor* rigidActor = pActor->is<physx::PxRigidActor>()) {
+				comp::Transform* transform = ((Entity*)pActor->userData)->getComponent<comp::Transform>();
+				*transform = rigidActor->getGlobalPose();
+			}
+		}
 
 		publish<scene_event::UpdatedScene>(dt);
 		m_scriptManager.update(dt, this);
@@ -165,7 +126,6 @@ namespace sa {
 			Entity entity(this, create((entt::entity)id));
 			entity.deserialize(&obj);
 		}
-
 	}
 
 

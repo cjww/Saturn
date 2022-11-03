@@ -20,7 +20,7 @@ SceneView::SceneView(sa::Engine* pEngine, sa::RenderWindow* pWindow)
 
 	m_velocity = glm::vec3(0.0f);
 	m_maxVelocityMagnitude = 30.0f;
-	m_acceleration = 0.5f;
+	m_acceleration = 0.3f;
 
 	m_statsUpdateTime = 0.1f;
 	m_statsTimer = m_statsUpdateTime;
@@ -105,7 +105,7 @@ void SceneView::update(float dt) {
 		camPos += (float)up * dt * m_moveSpeed * m_camera.getUp();
 		*/
 	}
-	else if (m_pWindow->getMouseButton(sa::MouseButton::MIDDLE)) {
+	else if (m_pWindow->getMouseButton(sa::MouseButton::MIDDLE) && m_isFocused) {
 		glm::vec2 delta = m_lastMousePos - mousePos;
 		glm::vec3 camPos = m_camera.getPosition();
 		camPos += m_camera.getRight() * delta.x * dt * m_mouseSensitivity;
@@ -117,7 +117,8 @@ void SceneView::update(float dt) {
 	}
 
 	if (m_zoom) {
-		m_camera.setPosition(m_camera.getPosition() + m_camera.getForward() * (m_zoom * 5));
+		if(m_isFocused)
+			m_camera.setPosition(m_camera.getPosition() + m_camera.getForward() * (m_zoom * 5));
 		m_zoom = 0;
 	}
 
@@ -249,6 +250,10 @@ void SceneView::onImGui() {
 
 
 		if (m_selectedEntity) {
+			sa::Matrix4x4 projMat = m_camera.getProjectionMatrix();
+			projMat[1][1] *= -1;
+			glm::mat4 viewMat = m_camera.getViewMatrix();
+
 
 			if (operation) {
 				comp::Transform* transform = m_selectedEntity.getComponent<comp::Transform>();
@@ -256,10 +261,6 @@ void SceneView::onImGui() {
 				if (transform) {
 
 					sa::Matrix4x4 transformMat = transform->getMatrix();
-					sa::Matrix4x4 projMat = m_camera.getProjectionMatrix();
-					projMat[1][1] *= -1;
-					glm::mat4 viewMat = m_camera.getViewMatrix();
-
 					float snapAxis[] = { snap, snap, snap };
 					if (ImGuizmo::Manipulate(&viewMat[0][0], &projMat[0][0],
 						operation, (ImGuizmo::MODE)m_isWorldCoordinates, &transformMat[0][0],
@@ -286,6 +287,29 @@ void SceneView::onImGui() {
 				ImGui::GizmoCircleResizable(light->values.position, light->values.attenuationRadius, glm::quat(glm::vec3(0, 0, 0)), &m_camera, screenPos, screenSize, lightSphereColor, dragFirstCircle, 64);
 				ImGui::GizmoCircle(light->values.position, light->values.attenuationRadius, glm::quat(glm::vec3(glm::radians(90.f), 0, 0)), &m_camera, screenPos, screenSize, lightSphereColor, 64);
 				ImGui::GizmoCircleResizable(light->values.position, light->values.attenuationRadius, glm::quat(glm::vec3(0, glm::radians(90.f), 0)), &m_camera, screenPos, screenSize, lightSphereColor, dragSecondCircle, 64);
+
+			}
+
+			comp::BoxCollider* bc = m_selectedEntity.getComponent<comp::BoxCollider>();
+			if (bc) {
+				comp::Transform* transform = m_selectedEntity.getComponent<comp::Transform>();
+				glm::mat4 mat(1.f);
+				if (transform) {
+					/*
+					mat = glm::translate(mat, transform->position);
+					mat = mat * glm::mat4(transform->rotation);
+					mat = glm::scale(mat, bc->halfLengths);
+					mat = transform->getMatrix();
+					*/
+					glm::vec3 size = (bc->scale * transform->scale) * 0.5f;
+					ImGui::GizmoBox(transform->position + bc->offset, size, transform->rotation, &m_camera, { imageMin.x, imageMin.y }, { imageSize.x, imageSize.y }, ImColor(0, 255, 0));
+				}
+				/*
+				if (ImGuizmo::Manipulate((float*)&viewMat, (float*)&projMat, ImGuizmo::OPERATION::BOUNDS, ImGuizmo::WORLD, (float*)&mat)) {
+					//ImGuizmo::DecomposeMatrixToComponents(mat);
+
+				}
+				*/
 
 			}
 

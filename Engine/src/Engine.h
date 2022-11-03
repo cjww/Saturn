@@ -37,6 +37,10 @@ namespace sa {
 
 		bool m_isSetup = false;
 
+		template<typename T>
+		void registerComponentCallBack(Scene& scene);
+		void registerComponentCallBacks(Scene& scene);
+
 		void registerMath();
 
 		void reg();
@@ -72,4 +76,10 @@ namespace sa {
 		std::unordered_map<std::string, Scene>& getScenes();
 
 	};
+	template<typename T>
+	inline void Engine::registerComponentCallBack(Scene& scene) {
+		scene.on_construct<T>().connect<&Scene::onComponentConstruct<T>>(scene);
+		scene.on_update<T>().connect<&Scene::onComponentUpdate<T>>(scene);
+		scene.on_destroy<T>().connect<&Scene::onComponentDestroy<T>>(scene);
+	}
 }

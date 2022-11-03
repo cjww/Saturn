@@ -37,9 +37,10 @@ namespace sa {
 		bool m_isLoaded;
 
 		std::string m_name;
-
+		
+		friend class comp::RigidBody;
 		physx::PxScene* m_pPhysicsScene;
-
+	
 		friend class Entity;
 		void destroyEntity(const Entity& entity);
 		std::optional<EntityScript> addScript(const Entity& entity, const std::filesystem::path& path);
@@ -47,13 +48,12 @@ namespace sa {
 		std::optional<EntityScript> getScript(const Entity& entity, const std::string& name) const;
 
 		friend class Engine;
-		void onRigidBodyConstruct(entt::registry& reg, entt::entity e);
-		void onRigidBodyDestroy(entt::registry& reg, entt::entity e);
-
-		void onSphereColliderConstruct(entt::registry& reg, entt::entity e);
-		void onSphereColliderDestroy(entt::registry& reg, entt::entity e);
-		void onBoxColliderConstruct(entt::registry& reg, entt::entity e);
-		void onBoxColliderDestroy(entt::registry& reg, entt::entity e);
+		template<typename T>
+		void onComponentConstruct(entt::registry& reg, entt::entity e);
+		template<typename T>
+		void onComponentUpdate(entt::registry& reg, entt::entity e);
+		template<typename T>
+		void onComponentDestroy(entt::registry& reg, entt::entity e);
 
 
 	public:
@@ -110,6 +110,24 @@ namespace sa {
 	};
 	
 	
+
+	template<typename T>
+	inline void Scene::onComponentConstruct(entt::registry& reg, entt::entity e) {
+		Entity entity(this, e);
+		reg.get<T>(e).onConstruct(&entity);
+	}
+
+	template<typename T>
+	inline void Scene::onComponentUpdate(entt::registry& reg, entt::entity e) {
+		Entity entity(this, e);
+		reg.get<T>(e).onUpdate(&entity);
+	}
+
+	template<typename T>
+	inline void Scene::onComponentDestroy(entt::registry& reg, entt::entity e) {
+		Entity entity(this, e);
+		reg.get<T>(e).onDestroy(&entity);
+	}
 
 	template<typename ...T, typename F>
 	inline void Scene::forEach(F func) {

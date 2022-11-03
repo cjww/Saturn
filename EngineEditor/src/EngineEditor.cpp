@@ -167,6 +167,10 @@ namespace sa {
 			loadScene(m_pEngine->getCurrentScene());
 		}
 
+		if (ImGui::Checkbox("Simulate", &Application::get()->simulate)) {
+
+		}
+
 	}
 
 	void EngineEditor::saveScene(Scene* pScene) {
@@ -179,7 +183,7 @@ namespace sa {
 			it = m_savedScenes.insert({ pScene, path}).first;
 		}
 
-		m_pEngine->storeSceneToFile(pScene, it->second);
+		m_pEngine->storeSceneToFile(pScene, makeEditorRelative(it->second));
 	}
 
 	void EngineEditor::loadScene(Scene* pScene) {
