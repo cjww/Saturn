@@ -197,9 +197,9 @@ void SceneView::onImGui() {
 
 			ImGui::Checkbox("World Coordinates", &m_isWorldCoordinates);
 
-			ImGui::RadioButton("T", (int*)&operation, ImGuizmo::OPERATION::TRANSLATE);
-			ImGui::RadioButton("R", (int*)&operation, ImGuizmo::OPERATION::ROTATE);
-			ImGui::RadioButton("S", (int*)&operation, ImGuizmo::OPERATION::SCALE);
+ImGui::RadioButton("T", (int*)&operation, ImGuizmo::OPERATION::TRANSLATE);
+ImGui::RadioButton("R", (int*)&operation, ImGuizmo::OPERATION::ROTATE);
+ImGui::RadioButton("S", (int*)&operation, ImGuizmo::OPERATION::SCALE);
 		}
 		ImGui::EndMenuBar();
 
@@ -227,9 +227,9 @@ void SceneView::onImGui() {
 			else if (ImGui::IsKeyPressed(ImGuiKey_E))
 				operation = ImGuizmo::OPERATION::ROTATE;
 			else if (ImGui::IsKeyPressed(ImGuiKey_R))
-				operation = ImGuizmo::OPERATION::SCALE;
+			operation = ImGuizmo::OPERATION::SCALE;
 			else if (ImGui::IsKeyPressed(ImGuiKey_Q))
-				operation = (ImGuizmo::OPERATION)0;
+			operation = (ImGuizmo::OPERATION)0;
 		}
 
 		// Gizmos
@@ -255,6 +255,8 @@ void SceneView::onImGui() {
 			glm::mat4 viewMat = m_camera.getViewMatrix();
 
 
+			bool isOperating = false;
+
 			if (operation) {
 				comp::Transform* transform = m_selectedEntity.getComponent<comp::Transform>();
 
@@ -262,6 +264,8 @@ void SceneView::onImGui() {
 
 					sa::Matrix4x4 transformMat = transform->getMatrix();
 					float snapAxis[] = { snap, snap, snap };
+
+
 					if (ImGuizmo::Manipulate(&viewMat[0][0], &projMat[0][0],
 						operation, (ImGuizmo::MODE)m_isWorldCoordinates, &transformMat[0][0],
 						nullptr, (doSnap) ? snapAxis : nullptr))
@@ -274,27 +278,33 @@ void SceneView::onImGui() {
 							transform->relativePosition += transform->position - oldPosition;
 						}
 					}
+					if (ImGuizmo::IsOver() && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+						isOperating = true;
+					}
 				}
 			}
 
 			comp::Light* light = m_selectedEntity.getComponent<comp::Light>();
 			if (light) {
-				
+
 				const ImColor lightSphereColor = ImColor(255, 255, 0);
+				/*
 				static bool dragFirstCircle = false;
 				static bool dragSecondCircle = false;
 
 				ImGui::GizmoCircleResizable(light->values.position, light->values.attenuationRadius, glm::quat(glm::vec3(0, 0, 0)), &m_camera, screenPos, screenSize, lightSphereColor, dragFirstCircle, 64);
 				ImGui::GizmoCircle(light->values.position, light->values.attenuationRadius, glm::quat(glm::vec3(glm::radians(90.f), 0, 0)), &m_camera, screenPos, screenSize, lightSphereColor, 64);
 				ImGui::GizmoCircleResizable(light->values.position, light->values.attenuationRadius, glm::quat(glm::vec3(0, glm::radians(90.f), 0)), &m_camera, screenPos, screenSize, lightSphereColor, dragSecondCircle, 64);
+				*/
+				ImGui::GizmoSphereResizable(light->values.position, light->values.attenuationRadius, glm::quat(1, 0, 0, 0), &m_camera, screenPos, screenSize, lightSphereColor, isOperating);
 
 			}
 
 			comp::BoxCollider* bc = m_selectedEntity.getComponent<comp::BoxCollider>();
 			if (bc) {
 				comp::Transform* transform = m_selectedEntity.getComponent<comp::Transform>();
-				if (transform) {	
-					if (ImGui::GizmoBoxResizable(transform->position + bc->offset, bc->scale, transform->rotation, &m_camera, screenPos, screenSize, ImColor(0, 255, 0))) {
+				if (transform) {
+					if (ImGui::GizmoBoxResizable(transform->position + bc->offset, bc->halfLengths, transform->rotation, &m_camera, screenPos, screenSize, ImColor(0, 255, 0), isOperating)) {
 						bc->onUpdate(&m_selectedEntity);
 					}
 				}
@@ -304,6 +314,7 @@ void SceneView::onImGui() {
 				comp::Transform* transform = m_selectedEntity.getComponent<comp::Transform>();
 				if (transform) {
 					const ImColor colliderColor = ImColor(0, 255, 0);
+					/*
 					static bool dragFirstCircle1 = false;
 					static bool dragSecondCircle2 = false;
 
@@ -311,6 +322,11 @@ void SceneView::onImGui() {
 					ImGui::GizmoCircle(transform->position, sc->radius, transform->rotation * glm::quat(glm::vec3(glm::radians(90.f), 0, 0)), &m_camera, screenPos, screenSize, colliderColor);
 					released = released || ImGui::GizmoCircleResizable(transform->position, sc->radius, transform->rotation * glm::quat(glm::vec3(0, glm::radians(90.f), 0)), &m_camera, screenPos, screenSize, colliderColor, dragSecondCircle2);
 					if (released) {
+						sc->onUpdate(&m_selectedEntity);
+					}
+					*/
+
+					if(ImGui::GizmoSphereResizable(transform->position, sc->radius, transform->rotation, &m_camera, screenPos, screenSize, colliderColor, isOperating)) {
 						sc->onUpdate(&m_selectedEntity);
 					}
 				}

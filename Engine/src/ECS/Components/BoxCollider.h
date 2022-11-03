@@ -8,15 +8,15 @@ namespace comp {
 
 	class BoxCollider : public sa::ComponentBase {
 	public:
-		sa::Vector3 scale = sa::Vector3(1.0f);
+		sa::Vector3 halfLengths = sa::Vector3(1.0f);
 		sa::Vector3 offset = sa::Vector3(0.0f);
 
 		physx::PxMaterial* pMaterial = nullptr;
 		physx::PxShape* pShape = nullptr;
 
 		BoxCollider() = default;
-		BoxCollider(const sa::Vector3& scale);
-		BoxCollider(const sa::Vector3& scale, const sa::Vector3& offset);
+		BoxCollider(const sa::Vector3& halfLengths);
+		BoxCollider(const sa::Vector3& halfLengths, const sa::Vector3& offset);
 
 		virtual void serialize(sa::Serializer& s) override;
 		virtual void deserialize(void* pDoc) override;

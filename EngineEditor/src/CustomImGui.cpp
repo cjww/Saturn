@@ -154,7 +154,7 @@ namespace ImGui {
 	}
 
 	void Component(sa::Entity entity, comp::BoxCollider* bc) {
-		if (ImGui::DragFloat3("Scale##BoxCollider", (float*)&bc->scale, 0.1f, 0.01f)) {
+		if (ImGui::DragFloat3("Half Length##BoxCollider", (float*)&bc->halfLengths, 0.1f, 0.01f)) {
 			bc->onUpdate(&entity);
 		}
 		if (ImGui::DragFloat3("Offset##BoxCollider", (float*)&bc->offset)) {
@@ -408,7 +408,7 @@ namespace ImGui {
 
 	bool GizmoCircleResizable(const glm::vec3& worldPosition, float& radius, const glm::quat& rotation, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, bool& isDragging, int numSegments, float thickness) {
 		if (numSegments == 0)
-			numSegments = 32;
+			numSegments = 64;
 		else if (numSegments > 128)
 			numSegments = 128;
 
@@ -416,7 +416,6 @@ namespace ImGui {
 		ImVec2 points[128];
 		int pointCount = 0;
 		float step = twoPi / numSegments;
-		bool released = false;
 		for (float angle = 0.f; angle < twoPi; angle += step) {
 			glm::vec3 worldPoint(cos(angle), sin(angle), 0.f);
 			worldPoint *= radius;
@@ -434,18 +433,20 @@ namespace ImGui {
 				ImVec2 rectMin(screenPoint.x - handleRectHalfSize, screenPoint.y - handleRectHalfSize);
 				ImVec2 rectMax(screenPoint.x + handleRectHalfSize, screenPoint.y + handleRectHalfSize);
 
-				ImGui::GetWindowDrawList()->AddCircleFilled({ screenPoint.x, screenPoint.y }, 5.0f, color);
+				ImGui::GetWindowDrawList()->AddCircleFilled({ screenPoint.x, screenPoint.y }, handleRectHalfSize, color);
 
 				ImVec2 windowPos = ImGui::GetWindowPos();
 				ImGui::SetCursorPos(ImVec2(rectMin.x - windowPos.x, rectMin.y - windowPos.y));
 				ImGui::InvisibleButton("circle_handle", ImVec2(rectMax.x - rectMin.x, rectMax.y - rectMin.y));
-				if (ImGui::IsItemHovered() && ImGui::IsMouseDown(ImGuiMouseButton_Left))
+				bool isOver = ImGui::IsItemHovered();
+				if (isOver) 
+					ImGui::GetWindowDrawList()->AddCircleFilled({ screenPoint.x, screenPoint.y }, handleRectHalfSize, ImColor(1.f, 1.f, 1.f));
+
+				if (isOver && ImGui::IsMouseDown(ImGuiMouseButton_Left))
 					isDragging = true;
-				else if (!ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-					if (isDragging) {
-						released = true;
-					}
+				else if (isDragging && !ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
 					isDragging = false;
+					return true;
 				}
 
 				if (isDragging) {
@@ -455,13 +456,15 @@ namespace ImGui {
 					float ratio = radius / screenRadius;
 
 					ImVec2 imDelta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left, 0.0f);
+					ImGui::ResetMouseDragDelta(ImGuiMouseButton_Left);
 					glm::vec2 delta = { imDelta.x, imDelta.y };
 					screenPoint += delta;
 
 					screenRadius = glm::distance(center, screenPoint);
-
-					ImGui::ResetMouseDragDelta(ImGuiMouseButton_Left);
 					radius = screenRadius * ratio;
+
+
+					ImGui::GetWindowDrawList()->AddCircleFilled({ screenPoint.x, screenPoint.y }, handleRectHalfSize * 1.5f, color);
 				}
 			}
 			points[pointCount] = { screenPoint.x, screenPoint.y };
@@ -469,6 +472,24 @@ namespace ImGui {
 		}
 		ImGui::GetWindowDrawList()->AddPolyline(points, pointCount, color, ImDrawFlags_Closed, thickness);
 		
+		return false;
+	}
+
+	bool GizmoSphereResizable(const glm::vec3& worldPosition, float& radius, const glm::quat& rotation, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, bool disabled, int numSegments, float thickness) {
+		static bool dragFirstCircle = false;
+		static bool dragSecondCircle = false;
+
+		if (disabled) {
+			ImGui::GizmoCircle(worldPosition, radius, rotation, pCamera, screenPos, screenSize, color, numSegments, thickness);
+			ImGui::GizmoCircle(worldPosition, radius, rotation * glm::quat(glm::vec3(glm::radians(90.f), 0, 0)), pCamera, screenPos, screenSize, color, numSegments, thickness);
+			ImGui::GizmoCircle(worldPosition, radius, rotation * glm::quat(glm::vec3(0, glm::radians(90.f), 0)), pCamera, screenPos, screenSize, color, numSegments, thickness);
+			return false;
+		}
+
+		bool released = ImGui::GizmoCircleResizable(worldPosition, radius, rotation, pCamera, screenPos, screenSize, color, dragFirstCircle, numSegments, thickness);
+		ImGui::GizmoCircle(worldPosition, radius, rotation * glm::quat(glm::vec3(glm::radians(90.f), 0, 0)), pCamera, screenPos, screenSize, color, numSegments, thickness);
+		released = released || ImGui::GizmoCircleResizable(worldPosition, radius, rotation * glm::quat(glm::vec3(0, glm::radians(90.f), 0)), pCamera, screenPos, screenSize, color, dragSecondCircle, numSegments, thickness);
+
 		return released;
 	}
 
@@ -551,7 +572,7 @@ namespace ImGui {
 
 	}
 
-	bool GizmoBoxResizable(const glm::vec3& worldPosition, glm::vec3& halfLengths, const glm::quat& rotation, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, float thickness) {
+	bool GizmoBoxResizable(const glm::vec3& worldPosition, glm::vec3& halfLengths, const glm::quat& rotation, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, bool disabled, float thickness) {
 		glm::vec3 dirZ = rotation * glm::vec3(0, 0, halfLengths.z);
 		glm::vec3 dirX = rotation * glm::vec3(halfLengths.x, 0, 0);
 
@@ -559,6 +580,9 @@ namespace ImGui {
 		GizmoQuad(worldPosition - dirZ, halfLengths, rotation, pCamera, screenPos, screenSize, color, thickness);
 		GizmoQuad(worldPosition + dirX, glm::vec2(halfLengths.z, halfLengths.y), rotation * glm::quat({ 0, glm::radians(90.f), 0 }), pCamera, screenPos, screenSize, color, thickness);
 		GizmoQuad(worldPosition - dirX, glm::vec2(halfLengths.z, halfLengths.y), rotation * glm::quat({ 0, glm::radians(90.f), 0 }), pCamera, screenPos, screenSize, color, thickness);
+
+		if (disabled)
+			return false;
 
 		glm::vec3 dirY = rotation * glm::vec3(0, halfLengths.y, 0);
 
@@ -597,7 +621,11 @@ namespace ImGui {
 		glm::vec3 center = sa::math::worldToScreen(worldPosition, pCamera, screenPos, screenSize);
 		for (int i = 0; i < 6; i++) {
 			float distance = glm::distance(mousePos, points[i]);
-			if (distance <= handleSize && mouseDown) {
+			bool isOver = distance <= handleSize;
+			if(isOver)
+				ImGui::GetWindowDrawList()->AddCircleFilled({ points[i].x, points[i].y }, handleSize, ImColor(1.f, 1.f, 1.f));
+
+			if (isOver && mouseDown) {
 				isDragging[i] = true;
 			}
 			else if (isDragging[i] && !mouseDown) {

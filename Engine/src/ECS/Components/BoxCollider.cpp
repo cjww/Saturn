@@ -5,12 +5,12 @@
 #include "ECS/Components/RigidBody.h"
 
 namespace comp {
-	BoxCollider::BoxCollider(const sa::Vector3& scale)
-		: scale(scale)
+	BoxCollider::BoxCollider(const sa::Vector3& halfLengths)
+		: halfLengths(halfLengths)
 	{
 	}
-	BoxCollider::BoxCollider(const sa::Vector3& scale, const sa::Vector3& offset)
-		: scale(scale)
+	BoxCollider::BoxCollider(const sa::Vector3& halfLengths, const sa::Vector3& offset)
+		: halfLengths(halfLengths)
 		, offset(offset)
 	{
 	}
@@ -30,7 +30,7 @@ namespace comp {
 		if (!rb)
 			rb = e->addComponent<comp::RigidBody>();
 
-		PxBoxGeometry box(sa::PhysicsSystem::toPxVec(scale));
+		PxBoxGeometry box(sa::PhysicsSystem::toPxVec(halfLengths));
 		pShape = sa::PhysicsSystem::get().createShape(&box);
 
 		rb->pActor->attachShape(*pShape);
@@ -43,9 +43,9 @@ namespace comp {
 			rb = e->addComponent<comp::RigidBody>();
 		rb->pActor->detachShape(*pShape);
 		
-		scale = glm::max(scale, 0.01f);
+		halfLengths = glm::max(halfLengths, 0.01f);
 
-		PxBoxGeometry box(sa::PhysicsSystem::toPxVec(scale));
+		PxBoxGeometry box(sa::PhysicsSystem::toPxVec(halfLengths));
 		pShape = sa::PhysicsSystem::get().createShape(&box);
 
 		rb->pActor->attachShape(*pShape);
