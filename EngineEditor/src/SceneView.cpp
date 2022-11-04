@@ -39,7 +39,7 @@ SceneView::SceneView(sa::Engine* pEngine, sa::RenderWindow* pWindow)
 	});
 	m_zoom = 0.f;
 	m_pWindow->addScrollCallback([&](double x, double y) {
-		m_zoom = y;
+		if(m_isFocused) m_zoom = y;
 	});
 
 }
@@ -117,8 +117,7 @@ void SceneView::update(float dt) {
 	}
 
 	if (m_zoom) {
-		if(m_isFocused)
-			m_camera.setPosition(m_camera.getPosition() + m_camera.getForward() * (m_zoom * 5));
+		m_camera.setPosition(m_camera.getPosition() + m_camera.getForward() * (m_zoom * 5));
 		m_zoom = 0;
 	}
 
@@ -197,13 +196,14 @@ void SceneView::onImGui() {
 
 			ImGui::Checkbox("World Coordinates", &m_isWorldCoordinates);
 
-ImGui::RadioButton("T", (int*)&operation, ImGuizmo::OPERATION::TRANSLATE);
-ImGui::RadioButton("R", (int*)&operation, ImGuizmo::OPERATION::ROTATE);
-ImGui::RadioButton("S", (int*)&operation, ImGuizmo::OPERATION::SCALE);
+			ImGui::RadioButton("T", (int*)&operation, ImGuizmo::OPERATION::TRANSLATE);
+			ImGui::RadioButton("R", (int*)&operation, ImGuizmo::OPERATION::ROTATE);
+			ImGui::RadioButton("S", (int*)&operation, ImGuizmo::OPERATION::SCALE);
 		}
 		ImGui::EndMenuBar();
 
-		m_isFocused = ImGui::IsWindowFocused() || ImGui::IsWindowHovered();
+		bool windowHovered = ImGui::IsWindowHovered();
+		m_isFocused = windowHovered;
 
 		// render outputTexture with constant aspect ratio
 		ImVec2 imAvailSize = ImGui::GetContentRegionAvail();
