@@ -6,6 +6,7 @@ namespace comp {
 	class SphereCollider : public sa::ComponentBase {
 	public:
 		float radius = 1.f;
+		glm::vec3 offset = glm::vec3(0);
 		physx::PxMaterial* pMaterial = nullptr;
 		physx::PxShape* pShape = nullptr;
 

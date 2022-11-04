@@ -48,9 +48,8 @@ namespace sa {
 		physx::PxRigidActor* createRigidBody(bool isStatic, physx::PxTransform transform);
 		physx::PxMaterial* createMaterial(float staticFriction, float dynamicFriction, float restitution);
 
-		physx::PxShape* createSphere(float radius, physx::PxMaterial* pMaterial = nullptr);
-		physx::PxShape* createBox(Vector3 halfLengths, physx::PxMaterial* pMaterial = nullptr);
 		physx::PxShape* createShape(const physx::PxGeometry* pGeometry, physx::PxMaterial* pMaterial = nullptr);
+		physx::PxShape* createExclusiveShape(const physx::PxGeometry* pGeometry, physx::PxMaterial* pMaterial = nullptr);
 
 		static Vector3 toVector(physx::PxVec3 vec);
 		static physx::PxVec3 toPxVec(Vector3 vec);

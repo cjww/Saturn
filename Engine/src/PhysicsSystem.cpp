@@ -94,18 +94,6 @@ namespace sa {
 		return m_pPhysics->createMaterial(staticFriction, dynamicFriction, restitution);
 	}
 
-	physx::PxShape* PhysicsSystem::createSphere(float radius, physx::PxMaterial* pMaterial) {
-		if (!pMaterial)
-			pMaterial = m_pDefaultMaterial;
-		return m_pPhysics->createShape(physx::PxSphereGeometry(radius), *pMaterial);
-	}
-
-	physx::PxShape* PhysicsSystem::createBox(Vector3 halfLengths, physx::PxMaterial* pMaterial) {
-		if (!pMaterial)
-			pMaterial = m_pDefaultMaterial;
-		return m_pPhysics->createShape(physx::PxBoxGeometry(toPxVec(halfLengths)), *pMaterial);
-	}
-
 	physx::PxShape* PhysicsSystem::createShape(const physx::PxGeometry* pGeometry, physx::PxMaterial* pMaterial) {
 		if (!pMaterial)
 			pMaterial = m_pDefaultMaterial;
@@ -134,6 +122,12 @@ namespace sa {
 		m_shapes[hashedValue] = m_pPhysics->createShape(*pGeometry, *pMaterial);
 
 		return m_shapes[hashedValue];
+	}
+
+	physx::PxShape* PhysicsSystem::createExclusiveShape(const physx::PxGeometry* pGeometry, physx::PxMaterial* pMaterial) {
+		if (!pMaterial)
+			pMaterial = m_pDefaultMaterial;
+		return m_pPhysics->createShape(*pGeometry, *pMaterial, true);
 	}
 
 	Vector3 PhysicsSystem::toVector(physx::PxVec3 vec) {

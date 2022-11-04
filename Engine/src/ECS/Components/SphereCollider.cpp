@@ -26,7 +26,14 @@ namespace comp {
 			rb = e->addComponent<comp::RigidBody>();
 
 		PxSphereGeometry sphere(radius);
-		pShape = sa::PhysicsSystem::get().createShape(&sphere);
+		if (offset.x + offset.y + offset.z > 0.01f) {
+			pShape = sa::PhysicsSystem::get().createExclusiveShape(&sphere);
+			PxTransform transform(sa::PhysicsSystem::toPxVec(offset));
+			pShape->setLocalPose(transform);
+		}
+		else {
+			pShape = sa::PhysicsSystem::get().createShape(&sphere);
+		}
 
 		rb->pActor->attachShape(*pShape);
 	}
@@ -40,7 +47,15 @@ namespace comp {
 		if (radius < 0.01f) radius = 0.01f;
 
 		PxSphereGeometry sphere(radius);
-		pShape = sa::PhysicsSystem::get().createShape(&sphere);
+		if (offset.x + offset.y + offset.z > 0.01f) {
+			pShape = sa::PhysicsSystem::get().createExclusiveShape(&sphere);
+			PxTransform transform(sa::PhysicsSystem::toPxVec(offset));
+			pShape->setLocalPose(transform);
+		}
+		else {
+			pShape = sa::PhysicsSystem::get().createShape(&sphere);
+		}
+
 		rb->pActor->attachShape(*pShape);
 	}
 	

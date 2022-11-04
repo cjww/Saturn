@@ -164,7 +164,10 @@ namespace ImGui {
 	}
 
 	void Component(sa::Entity entity, comp::SphereCollider* sc) {
-		if (ImGui::DragFloat("Radius", &sc->radius, 0.1f, 0.1f)) {
+		if (ImGui::DragFloat("Radius##SphereCollider", &sc->radius, 0.1f, 0.1f)) {
+			sc->onUpdate(&entity);
+		}
+		if (ImGui::DragFloat3("Offset##SphereCollider", (float*)&sc->offset)) {
 			sc->onUpdate(&entity);
 		}
 	}
@@ -429,18 +432,17 @@ namespace ImGui {
 
 			glm::vec2 screenPoint = screenPoint3D;
 			if (pointCount == 0) {
-				const int handleRectHalfSize = 5;
-				ImVec2 rectMin(screenPoint.x - handleRectHalfSize, screenPoint.y - handleRectHalfSize);
-				ImVec2 rectMax(screenPoint.x + handleRectHalfSize, screenPoint.y + handleRectHalfSize);
+				ImVec2 rectMin(screenPoint.x - HandleSize, screenPoint.y - HandleSize);
+				ImVec2 rectMax(screenPoint.x + HandleSize, screenPoint.y + HandleSize);
 
-				ImGui::GetWindowDrawList()->AddCircleFilled({ screenPoint.x, screenPoint.y }, handleRectHalfSize, color);
+				ImGui::GetWindowDrawList()->AddCircleFilled({ screenPoint.x, screenPoint.y }, HandleSize, color);
 
 				ImVec2 windowPos = ImGui::GetWindowPos();
 				ImGui::SetCursorPos(ImVec2(rectMin.x - windowPos.x, rectMin.y - windowPos.y));
 				ImGui::InvisibleButton("circle_handle", ImVec2(rectMax.x - rectMin.x, rectMax.y - rectMin.y));
 				bool isOver = ImGui::IsItemHovered();
 				if (isOver) 
-					ImGui::GetWindowDrawList()->AddCircleFilled({ screenPoint.x, screenPoint.y }, handleRectHalfSize, ImColor(1.f, 1.f, 1.f));
+					ImGui::GetWindowDrawList()->AddCircleFilled({ screenPoint.x, screenPoint.y }, HandleSize, ImColor(1.f, 1.f, 1.f));
 
 				if (isOver && ImGui::IsMouseDown(ImGuiMouseButton_Left))
 					isDragging = true;
@@ -464,7 +466,7 @@ namespace ImGui {
 					radius = screenRadius * ratio;
 
 
-					ImGui::GetWindowDrawList()->AddCircleFilled({ screenPoint.x, screenPoint.y }, handleRectHalfSize * 1.5f, color);
+					ImGui::GetWindowDrawList()->AddCircleFilled({ screenPoint.x, screenPoint.y }, HandleSize * 1.5f, color);
 				}
 			}
 			points[pointCount] = { screenPoint.x, screenPoint.y };
@@ -510,9 +512,8 @@ namespace ImGui {
 		float radiusScreenSpace = glm::distance(glm::vec2(point), glm::vec2(point2));
 		ImGui::GetWindowDrawList()->AddCircle(ImVec2(point.x, point.y), radiusScreenSpace, color, numSegments, thickness);
 	
-		const int handleRectHalfSize = 5;
-		ImVec2 rectMin(point2.x - handleRectHalfSize, point2.y - handleRectHalfSize);
-		ImVec2 rectMax(point2.x + handleRectHalfSize, point2.y + handleRectHalfSize);
+		ImVec2 rectMin(point2.x - HandleSize, point2.y - HandleSize);
+		ImVec2 rectMax(point2.x + HandleSize, point2.y + HandleSize);
 
 		ImGui::GetWindowDrawList()->AddCircleFilled({ point2.x, point2.y }, 5, color);
 		ImVec2 windowPos = ImGui::GetWindowPos();
@@ -595,20 +596,19 @@ namespace ImGui {
 		glm::vec3 pointZ1 = sa::math::worldToScreen(worldPosition + dirZ, pCamera, screenPos, screenSize);
 		glm::vec3 pointZ2 = sa::math::worldToScreen(worldPosition - dirZ, pCamera, screenPos, screenSize);
 
-		const int handleSize = 5;
 		ImColor darkerColor(color.Value.x - 0.5f, color.Value.y - 0.5f, color.Value.z - 0.5f, color.Value.w - 0.5f);
 		glm::vec2 pointX;
 		glm::vec2 pointY;
 		glm::vec2 pointZ;
 
-		ImGui::GetWindowDrawList()->AddCircleFilled({ pointX1.x, pointX1.y }, handleSize, (pointX1.z <= pointX2.z) ? (pointX = pointX1), color : darkerColor);
-		ImGui::GetWindowDrawList()->AddCircleFilled({ pointX2.x, pointX2.y }, handleSize, (pointX1.z > pointX2.z) ? (pointX = pointX2), color : darkerColor);
+		ImGui::GetWindowDrawList()->AddCircleFilled({ pointX1.x, pointX1.y }, HandleSize, (pointX1.z <= pointX2.z) ? (pointX = pointX1), color : darkerColor);
+		ImGui::GetWindowDrawList()->AddCircleFilled({ pointX2.x, pointX2.y }, HandleSize, (pointX1.z > pointX2.z) ? (pointX = pointX2), color : darkerColor);
 
-		ImGui::GetWindowDrawList()->AddCircleFilled({ pointY1.x, pointY1.y }, handleSize, (pointY1.z <= pointY2.z) ? (pointY = pointY1), color : darkerColor);
-		ImGui::GetWindowDrawList()->AddCircleFilled({ pointY2.x, pointY2.y }, handleSize, (pointY1.z > pointY2.z) ? (pointY = pointY2), color : darkerColor);
+		ImGui::GetWindowDrawList()->AddCircleFilled({ pointY1.x, pointY1.y }, HandleSize, (pointY1.z <= pointY2.z) ? (pointY = pointY1), color : darkerColor);
+		ImGui::GetWindowDrawList()->AddCircleFilled({ pointY2.x, pointY2.y }, HandleSize, (pointY1.z > pointY2.z) ? (pointY = pointY2), color : darkerColor);
 
-		ImGui::GetWindowDrawList()->AddCircleFilled({ pointZ1.x, pointZ1.y }, handleSize, (pointZ1.z <= pointZ2.z) ? (pointZ = pointZ1), color : darkerColor);
-		ImGui::GetWindowDrawList()->AddCircleFilled({ pointZ2.x, pointZ2.y }, handleSize, (pointZ1.z > pointZ2.z) ? (pointZ = pointZ2), color : darkerColor);
+		ImGui::GetWindowDrawList()->AddCircleFilled({ pointZ1.x, pointZ1.y }, HandleSize, (pointZ1.z <= pointZ2.z) ? (pointZ = pointZ1), color : darkerColor);
+		ImGui::GetWindowDrawList()->AddCircleFilled({ pointZ2.x, pointZ2.y }, HandleSize, (pointZ1.z > pointZ2.z) ? (pointZ = pointZ2), color : darkerColor);
 
 		bool mouseDown = ImGui::IsMouseDown(ImGuiMouseButton_Left);
 
@@ -621,9 +621,9 @@ namespace ImGui {
 		glm::vec3 center = sa::math::worldToScreen(worldPosition, pCamera, screenPos, screenSize);
 		for (int i = 0; i < 6; i++) {
 			float distance = glm::distance(mousePos, points[i]);
-			bool isOver = distance <= handleSize;
+			bool isOver = distance <= HandleSize;
 			if(isOver)
-				ImGui::GetWindowDrawList()->AddCircleFilled({ points[i].x, points[i].y }, handleSize, ImColor(1.f, 1.f, 1.f));
+				ImGui::GetWindowDrawList()->AddCircleFilled({ points[i].x, points[i].y }, HandleSize, ImColor(1.f, 1.f, 1.f));
 
 			if (isOver && mouseDown) {
 				isDragging[i] = true;
@@ -645,7 +645,7 @@ namespace ImGui {
 				halfLengthScreenSpace -= (delta * glm::abs(toCenter));
 				*halfs[i] = glm::length(halfLengthScreenSpace * ratio);
 
-				ImGui::GetWindowDrawList()->AddCircleFilled({ points[i].x, points[i].y}, handleSize * 1.5f, color);
+				ImGui::GetWindowDrawList()->AddCircleFilled({ points[i].x, points[i].y}, HandleSize * 1.5f, color);
 
 				return false;
 			}

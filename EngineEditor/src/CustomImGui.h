@@ -23,6 +23,9 @@ namespace ImGui {
 		std::string name;
 	} payload;
 
+	const int HandleSize = 5;
+
+
 	void displayLuaTable(std::string name, sol::table table);
 
 	void Component(sa::Entity entity, comp::Transform* transform);

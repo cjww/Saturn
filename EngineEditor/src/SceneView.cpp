@@ -284,27 +284,19 @@ ImGui::RadioButton("S", (int*)&operation, ImGuizmo::OPERATION::SCALE);
 				}
 			}
 
+			const ImColor colliderColor = ImColor(0, 255, 0);
+			const ImColor lightSphereColor = ImColor(255, 255, 0);
+
 			comp::Light* light = m_selectedEntity.getComponent<comp::Light>();
 			if (light) {
-
-				const ImColor lightSphereColor = ImColor(255, 255, 0);
-				/*
-				static bool dragFirstCircle = false;
-				static bool dragSecondCircle = false;
-
-				ImGui::GizmoCircleResizable(light->values.position, light->values.attenuationRadius, glm::quat(glm::vec3(0, 0, 0)), &m_camera, screenPos, screenSize, lightSphereColor, dragFirstCircle, 64);
-				ImGui::GizmoCircle(light->values.position, light->values.attenuationRadius, glm::quat(glm::vec3(glm::radians(90.f), 0, 0)), &m_camera, screenPos, screenSize, lightSphereColor, 64);
-				ImGui::GizmoCircleResizable(light->values.position, light->values.attenuationRadius, glm::quat(glm::vec3(0, glm::radians(90.f), 0)), &m_camera, screenPos, screenSize, lightSphereColor, dragSecondCircle, 64);
-				*/
 				ImGui::GizmoSphereResizable(light->values.position, light->values.attenuationRadius, glm::quat(1, 0, 0, 0), &m_camera, screenPos, screenSize, lightSphereColor, isOperating);
-
 			}
 
 			comp::BoxCollider* bc = m_selectedEntity.getComponent<comp::BoxCollider>();
 			if (bc) {
 				comp::Transform* transform = m_selectedEntity.getComponent<comp::Transform>();
 				if (transform) {
-					if (ImGui::GizmoBoxResizable(transform->position + bc->offset, bc->halfLengths, transform->rotation, &m_camera, screenPos, screenSize, ImColor(0, 255, 0), isOperating)) {
+					if (ImGui::GizmoBoxResizable(transform->position + bc->offset, bc->halfLengths, transform->rotation, &m_camera, screenPos, screenSize, colliderColor, isOperating)) {
 						bc->onUpdate(&m_selectedEntity);
 					}
 				}
@@ -313,20 +305,7 @@ ImGui::RadioButton("S", (int*)&operation, ImGuizmo::OPERATION::SCALE);
 			if (sc) {
 				comp::Transform* transform = m_selectedEntity.getComponent<comp::Transform>();
 				if (transform) {
-					const ImColor colliderColor = ImColor(0, 255, 0);
-					/*
-					static bool dragFirstCircle1 = false;
-					static bool dragSecondCircle2 = false;
-
-					bool released = ImGui::GizmoCircleResizable(transform->position, sc->radius, transform->rotation, &m_camera, screenPos, screenSize, colliderColor, dragFirstCircle1);
-					ImGui::GizmoCircle(transform->position, sc->radius, transform->rotation * glm::quat(glm::vec3(glm::radians(90.f), 0, 0)), &m_camera, screenPos, screenSize, colliderColor);
-					released = released || ImGui::GizmoCircleResizable(transform->position, sc->radius, transform->rotation * glm::quat(glm::vec3(0, glm::radians(90.f), 0)), &m_camera, screenPos, screenSize, colliderColor, dragSecondCircle2);
-					if (released) {
-						sc->onUpdate(&m_selectedEntity);
-					}
-					*/
-
-					if(ImGui::GizmoSphereResizable(transform->position, sc->radius, transform->rotation, &m_camera, screenPos, screenSize, colliderColor, isOperating)) {
+					if(ImGui::GizmoSphereResizable(transform->position + sc->offset, sc->radius, transform->rotation, &m_camera, screenPos, screenSize, colliderColor, isOperating)) {
 						sc->onUpdate(&m_selectedEntity);
 					}
 				}
