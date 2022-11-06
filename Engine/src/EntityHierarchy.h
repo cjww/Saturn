@@ -32,6 +32,8 @@ namespace sa {
 		void forEachChild(const Entity& rootParent, std::function<void(const Entity&, const Entity&)> func);
 		void forEachDirectChild(const Entity& rootParent, std::function<void(const Entity&)> func);
 
+		void forEachParent(std::function<void(const Entity&)> func);
+
 	};
 
 }

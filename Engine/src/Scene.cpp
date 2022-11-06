@@ -50,10 +50,11 @@ namespace sa {
 	void Scene::update(float dt) {
 		SA_PROFILE_FUNCTION();
 
+		// Physics
 		view<comp::RigidBody, comp::Transform>().each([&](const comp::RigidBody& rb, const comp::Transform& transform) {
 			rb.pActor->setGlobalPose(transform, false);
 		});
-
+		
 		m_pPhysicsScene->simulate(dt);
 		m_pPhysicsScene->fetchResults(true);
 
@@ -67,15 +68,15 @@ namespace sa {
 			}
 		}
 
+		// Event
 		publish<scene_event::UpdatedScene>(dt);
-		m_scriptManager.update(dt, this);
 
-		view<comp::Transform>().each([&](const entt::entity& e, comp::Transform& transform) {
-			Entity entity(this, e);
-			if (!m_hierarchy.hasChildren(entity)) { 
-				return;
-			}
-			m_hierarchy.forEachChild(entity, [](const Entity& child, const Entity& parent) {
+		// Scripts
+		m_scriptManager.update(dt, this);
+		
+		// child positions
+		m_hierarchy.forEachParent([&](const sa::Entity& parent) {
+			m_hierarchy.forEachChild(parent, [](const Entity& child, const Entity& parent) {
 				comp::Transform* transform = child.getComponent<comp::Transform>();
 				comp::Transform* parentTransform = parent.getComponent<comp::Transform>();
 				if (!transform || !parentTransform)
@@ -83,11 +84,7 @@ namespace sa {
 
 				transform->position = parentTransform->position + transform->relativePosition;
 			});
-			
 		});
-
-
-
 
 	}
 

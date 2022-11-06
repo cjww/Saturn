@@ -72,15 +72,22 @@ namespace sa {
 	}
 	
 	void EntityHierarchy::forEachChild(const Entity& parent, std::function<void(const Entity&, const Entity&)> func) {
-		for (auto& node : m_children[parent]) {
+		for (const auto& node : m_children[parent]) {
 			func(node, parent);
 			forEachChild(node, func);
 		}
 	}
 
 	void EntityHierarchy::forEachDirectChild(const Entity& rootParent, std::function<void(const Entity&)> func) {
-		for (auto& node : m_children[rootParent]) {
+		for (const auto& node : m_children[rootParent]) {
 			func(node);
+		}
+	}
+
+	void EntityHierarchy::forEachParent(std::function<void(const Entity&)> func) {
+		for (const auto& [parent, children] : m_children) {
+			if(!children.empty())
+				func(parent);
 		}
 	}
 }

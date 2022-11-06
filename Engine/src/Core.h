@@ -6,3 +6,5 @@
 #define SA_PROFILER_ENABLE
 #include "Tools\Profiler.h"
 
+
+#define SA_VERSION "1.0.0"

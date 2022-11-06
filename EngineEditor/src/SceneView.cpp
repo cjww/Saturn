@@ -129,7 +129,8 @@ void SceneView::update(float dt) {
 void SceneView::onImGui() {
 	SA_PROFILE_FUNCTION();
 
-	if (ImGui::Begin("Scene view", 0, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove)) {
+	bool isOpen = ImGui::Begin("Scene view", 0, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
+	if (isOpen) {
 
 		static ImGuizmo::OPERATION operation = ImGuizmo::TRANSLATE;
 		static float snapDistance = 0.5f;
@@ -138,8 +139,8 @@ void SceneView::onImGui() {
 		static bool showIcons = true;
 
 		if (ImGui::BeginMenuBar()) {
-			static bool showStats = false;
 
+			static bool showStats = false;
 			if (showStats) {
 				ImGui::SetNextWindowBgAlpha(0.3f);
 				if (ImGui::Begin("Statistics", 0, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing)) {
@@ -167,7 +168,7 @@ void SceneView::onImGui() {
 			}
 			
 			
-			
+
 			if (ImGui::BeginMenu("View Settings")) {
 				ImGui::Checkbox("Statistics", &showStats);
 
@@ -199,6 +200,7 @@ void SceneView::onImGui() {
 			ImGui::RadioButton("T", (int*)&operation, ImGuizmo::OPERATION::TRANSLATE);
 			ImGui::RadioButton("R", (int*)&operation, ImGuizmo::OPERATION::ROTATE);
 			ImGui::RadioButton("S", (int*)&operation, ImGuizmo::OPERATION::SCALE);
+			
 		}
 		ImGui::EndMenuBar();
 
@@ -318,7 +320,8 @@ void SceneView::onImGui() {
 		if (showIcons) {
 			sa::Texture2D* tex = sa::AssetManager::get().loadTexture("resources/lightbulb-icon.png", true);
 			m_pEngine->getCurrentScene()->forEach<comp::Light>([&](const comp::Light& light) {
-				ImGui::GizmoIcon(tex, light.values.position, &m_camera, screenPos, screenSize, iconSize);
+				ImColor color(light.values.color);
+				ImGui::GizmoIcon(tex, light.values.position, &m_camera, screenPos, screenSize, iconSize, color);
 			});
 		}
 
@@ -363,6 +366,7 @@ void SceneView::onImGui() {
 		
 	}
 	ImGui::End();
+
 
 }
 

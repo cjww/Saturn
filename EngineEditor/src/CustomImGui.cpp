@@ -369,7 +369,38 @@ namespace ImGui {
 		return IsItemClicked();
 	}
 
-	void GizmoIcon(const sa::Texture* pTex, const glm::vec3& worldPoint, const sa::Camera* pCamera, const glm::vec2& rectPos, const glm::vec2& rectSize, int iconSize) {
+	bool ImageButtonTinted(const sa::Texture& tex, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1) {
+		ImColor tintColor(1.f, 1.f, 1.f);
+		ImColor hoveredColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonHovered);
+		ImColor activeColor = ImGui::GetStyleColorVec4(ImGuiCol_ButtonActive);
+		ImGui::PushStyleColor(ImGuiCol_Button, ImVec4(0, 0, 0, 0));
+		ImGui::PushStyleColor(ImGuiCol_ButtonActive, ImVec4(0, 0, 0, 0));
+		ImGui::PushStyleColor(ImGuiCol_ButtonHovered, ImVec4(0, 0, 0, 0));
+		ImVec2 rectMin = ImGui::GetCursorPos();
+		ImVec2 windowPos = ImGui::GetWindowPos();
+		rectMin.x += windowPos.x;
+		rectMin.y += windowPos.y;
+		ImVec2 rectMax(rectMin.x + size.x, rectMin.y + size.y);
+		
+		bool pressed = false;
+
+		if (ImGui::IsMouseHoveringRect(rectMin, rectMax)) {
+			tintColor = hoveredColor;
+			if (ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
+				pressed = true;
+			}
+			else if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+				tintColor = activeColor;
+			}
+		}
+		
+		ImGui::ImageButton(tex, size, uv0, uv1, 0, ImVec4(0, 0, 0, 0), tintColor);
+
+		ImGui::PopStyleColor(3);
+		return pressed;
+	}
+
+	void GizmoIcon(const sa::Texture* pTex, const glm::vec3& worldPoint, const sa::Camera* pCamera, const glm::vec2& rectPos, const glm::vec2& rectSize, int iconSize, ImColor tintColor) {
 		ImVec2 windowPos = ImGui::GetWindowPos();
 		glm::vec3 point = sa::math::worldToScreen(worldPoint, pCamera, rectPos, rectSize);
 		if (point.z < 1) {
@@ -378,7 +409,10 @@ namespace ImGui {
 				ImVec2(point.x - iconSize, point.y - iconSize),
 				ImVec2(point.x + iconSize, point.y - iconSize),
 				ImVec2(point.x + iconSize, point.y + iconSize),
-				ImVec2(point.x - iconSize, point.y + iconSize));
+				ImVec2(point.x - iconSize, point.y + iconSize),
+				ImVec2(0, 0), ImVec2(1, 0),
+				ImVec2(1, 1), ImVec2(0, 1),
+				tintColor);
 		}
 	}
 

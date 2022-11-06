@@ -151,52 +151,61 @@ namespace sa {
 			createProject();
 		}
 
-		/*
-
-		if (ImGui::MenuItem("New Scene")) {
-
-		}
-		*/
-
 		if (ImGui::MenuItem("Save Scene")) {
 			saveScene(m_pEngine->getCurrentScene());
 		}
 
-		if (ImGui::MenuItem("Load Scene")) {
-			m_pEngine->getCurrentScene()->clearEntities();
+		if (ImGui::MenuItem("Reload Scene")) {
 			loadScene(m_pEngine->getCurrentScene());
 		}
 
-		if (ImGui::Checkbox("Simulate", &Application::get()->simulate)) {
-
+		if (ImGui::MenuItem("Open Scene")) {
+			openScene();
 		}
+
 
 	}
 
-	void EngineEditor::saveScene(Scene* pScene) {
+	bool EngineEditor::saveScene(Scene* pScene) {
 		auto it = m_savedScenes.find(pScene);
-		if (it == m_savedScenes.end()) {
-			std::filesystem::path path;
-			if (!FileDialogs::SaveFile("Saturn Scene (*.json)\0*.json\0", path, m_projectPath.parent_path())) {
-				return;
-			}
-			it = m_savedScenes.insert({ pScene, path}).first;
-		}
+if (it == m_savedScenes.end()) {
+	std::filesystem::path path;
+	if (!FileDialogs::SaveFile("Saturn Scene (*.json)\0*.json\0", path, m_projectPath.parent_path())) {
+		return false;
+	}
+	it = m_savedScenes.insert({ pScene, path }).first;
+}
 
-		m_pEngine->storeSceneToFile(pScene, makeEditorRelative(it->second));
+m_pEngine->storeSceneToFile(pScene, makeEditorRelative(it->second));
+return true;
 	}
 
-	void EngineEditor::loadScene(Scene* pScene) {
+	bool EngineEditor::loadScene(Scene* pScene) {
 		auto it = m_savedScenes.find(pScene);
 		if (it == m_savedScenes.end()) {
 			std::filesystem::path path;
 			if (!FileDialogs::OpenFile("Saturn Scene (*.json)\0*.json\0", path, m_projectPath.parent_path())) {
-				return;
+				return false;
 			}
 			it = m_savedScenes.insert({ pScene, path }).first;
 		}
 
 		m_pEngine->loadSceneFromFile(makeEditorRelative(it->second));
+		return true;
+	}
+
+	bool EngineEditor::openScene() {
+		std::filesystem::path path;
+		if (!FileDialogs::OpenFile("Saturn Scene (*.json)\0*.json\0", path, m_projectPath.parent_path())) {
+			return false;
+		}
+		openScene(path);
+		return true;
+	}
+
+	void EngineEditor::openScene(const std::filesystem::path& path) {
+		Scene& scene = m_pEngine->loadSceneFromFile(makeEditorRelative(path));
+		m_pEngine->setScene(scene);
 	}
 
 	std::filesystem::path EngineEditor::makeProjectRelative(const std::filesystem::path& editorRelativePath) {
@@ -216,14 +225,14 @@ namespace sa {
 
 		m_editorModules.push_back(std::make_unique<SceneHierarchy>(&engine));
 
-		Application::get()->pushLayer(new TestLayer);
+		//Application::get()->pushLayer(new TestLayer);
 
-
+		// read recent projects
 		std::ifstream recentProjectsFile("recent_projects.txt");
 		std::string line;
 		while (!recentProjectsFile.eof()) {
 			std::getline(recentProjectsFile, line);
-			if(!line.empty())
+			if (!line.empty())
 				m_recentProjectPaths.push_back(line);
 		}
 		recentProjectsFile.close();
@@ -248,17 +257,33 @@ namespace sa {
 
 		ImGuiID viewPortDockSpaceID = ImGui::DockSpaceOverViewport();
 
+		static bool enterSceneNamePopup = false;
+		static std::string name;
+
+		const bool isPlaying = m_state == State::PLAYING;
+		const bool isPaused = m_state == State::PAUSED;
+
+		const int buttonSize = 28;
+		const int framePaddingY = 12;
+
+
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, framePaddingY));
+		if(isPlaying || isPaused)
+			ImGui::PushStyleColor(ImGuiCol_MenuBarBg, ImVec4(0.3f, 0.6f, 0.3f, 1.f));
 		if (ImGui::BeginMainMenuBar()) {
-			ImGui::Text("Saturn 3");
+			sa::Texture2D* logoTex = sa::AssetManager::get().loadTexture("resources/Logo-white.png", true);
+			if (ImGui::ImageButtonTinted(*logoTex, ImVec2(buttonSize + 10, buttonSize + 10))) {
+				ImGui::OpenPopup("About");
+			}
+
+			ImGui::BeginDisabled(isPlaying || isPaused);
 			if (ImGui::BeginMenu("File")) {
 				fileMenu();
 
 				ImGui::EndMenu();
 			}
 
-			static bool enterSceneNamePopup = false;
 			if (ImGui::BeginMenu(m_pEngine->getCurrentScene()->getName().c_str())) {
-				
 				auto& scenes = m_pEngine->getScenes();
 				for (auto& [name, scene] : scenes) {
 					if (ImGui::MenuItem(name.c_str())) {
@@ -270,55 +295,94 @@ namespace sa {
 				if (ImGui::MenuItem("New Scene + ")) {
 					enterSceneNamePopup = true;
 				}
-
 				ImGui::EndMenu();
 			}
+			ImGui::EndDisabled();
 
-			static std::string name;
 			if (enterSceneNamePopup) {
 				ImGui::OpenPopup("Create New Scene");
 			}
 
-			ImGui::SetNextWindowContentSize(ImVec2(300, 100));
-			if (ImGui::BeginPopupModal("Create New Scene", 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings)) {
+			sa::Texture2D* tex = sa::AssetManager::get().loadTexture("resources/play-pause-buttons.png", true);
 
-				ImGui::Text("Enter name: ");
-				static bool setFocus = true;
-				if (setFocus) {
-					ImGui::SetKeyboardFocusHere();
-					setFocus = false;
-				}
-				bool pressedEnter = ImGui::InputTextWithHint("Name", "New Scene", &name, ImGuiInputTextFlags_EnterReturnsTrue);
-				static std::string erromsg;
-				ImGui::Spacing();
-				if (ImGui::Button("Create") || pressedEnter)  {
-					if (!name.empty()) {
-						m_pEngine->setScene(name);
-						ImGui::CloseCurrentPopup();
-						enterSceneNamePopup = false;
-						erromsg = "";
-						setFocus = true;
-					}
-					else {
-						erromsg = "Please enter a name";
+			ImGui::SetCursorPosY(framePaddingY - (buttonSize * 0.25f));
+			ImGui::SetCursorPosX(ImGui::GetWindowWidth() * 0.5f - buttonSize * 0.5f);
+
+			float oneThird = 1 / 3.f;
+			int imageIndex = 0;
+			if (m_state == State::PLAYING) imageIndex = 1;
+			
+			// Play / pause Button
+			if(ImGui::ImageButtonTinted(*tex, ImVec2(buttonSize, buttonSize), ImVec2(imageIndex * oneThird, 0), ImVec2((1 + imageIndex) * oneThird, 1))) {
+				if (isPlaying) m_state = State::PAUSED;
+				else if (isPaused) m_state = State::PLAYING;
+				else if (m_state == State::EDIT) {
+					if (saveScene(m_pEngine->getCurrentScene())) {
+						m_state = State::PLAYING;
 					}
 				}
-				ImGui::SameLine();
-				if (ImGui::Button("Cancel")) {
+
+			}
+			if (isPlaying || isPaused) {
+				// Stop button
+				ImGui::SetCursorPosY(framePaddingY - (buttonSize * 0.25f));
+				if (ImGui::ImageButtonTinted(*tex, ImVec2(buttonSize, buttonSize), ImVec2(2 * oneThird, 0), ImVec2(1, 1))) {
+					loadScene(m_pEngine->getCurrentScene());
+					m_state = State::EDIT;
+				}
+			}
+
+		}
+		ImGui::PopStyleVar();
+		if(isPlaying || isPaused)
+			ImGui::PopStyleColor();
+
+		ImGui::SetNextWindowContentSize(ImVec2(300, 100));
+		if (ImGui::BeginPopupModal("Create New Scene", 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings)) {
+
+			ImGui::Text("Enter name: ");
+			static bool setFocus = true;
+			if (setFocus) {
+				ImGui::SetKeyboardFocusHere();
+				setFocus = false;
+			}
+			bool pressedEnter = ImGui::InputTextWithHint("Name", "New Scene", &name, ImGuiInputTextFlags_EnterReturnsTrue);
+			static std::string erromsg;
+			ImGui::Spacing();
+			if (ImGui::Button("Create") || pressedEnter) {
+				if (!name.empty()) {
+					m_pEngine->setScene(name);
 					ImGui::CloseCurrentPopup();
 					enterSceneNamePopup = false;
 					erromsg = "";
 					setFocus = true;
 				}
-				if (!erromsg.empty()) {
-					ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), erromsg.c_str());
+				else {
+					erromsg = "Please enter a name";
 				}
-				ImGui::EndPopup();
 			}
+			ImGui::SameLine();
+			if (ImGui::Button("Cancel")) {
+				ImGui::CloseCurrentPopup();
+				enterSceneNamePopup = false;
+				erromsg = "";
+				setFocus = true;
+			}
+			if (!erromsg.empty()) {
+				ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), erromsg.c_str());
+			}
+			ImGui::EndPopup();
 		}
+
+		if (ImGui::BeginPopupModal("About")) {
+			ImGui::Text("Version: %s", SA_VERSION);
+			if (ImGui::Button("Close")) {
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
+
 		ImGui::EndMainMenuBar();
-
-
 
 		for (auto& module : m_editorModules) {
 			module->onImGui();
@@ -326,6 +390,10 @@ namespace sa {
 	}
 
 	void EngineEditor::onUpdate(float dt) {
+		if (m_state == State::PLAYING) {
+			m_pEngine->update(dt);
+		}
+
 		for (auto& module : m_editorModules) {
 			module->update(dt);
 		}

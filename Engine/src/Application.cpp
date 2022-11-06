@@ -14,7 +14,6 @@ namespace sa {
 		m_engine.setup(m_pWindow.get(), m_imGuiEnabled);
 
 		m_thisInstance = this;
-		simulate = true;
 	}
 
 	Application::~Application() {
@@ -47,9 +46,7 @@ namespace sa {
 			m_pWindow->pollEvents();
 			float dt = clock.restart();
 
-			// Update engine 
-			if(simulate)
-				m_engine.update(dt);
+			// Update layers 
 			for (const auto layer : m_layers) {
 				layer->onUpdate(dt);
 			}
