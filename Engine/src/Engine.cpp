@@ -227,12 +227,12 @@ namespace sa {
 						
 						viewport.extent.width = e.newExtent.width * viewport.extent.width / (float)m_windowExtent.width;
 						viewport.extent.height = e.newExtent.height * viewport.extent.height / (float)m_windowExtent.height;
-						m_windowExtent = e.newExtent;
 						
 						cam->setViewport(viewport);
 					}
 				}
 
+				m_windowExtent = e.newExtent;
 
 			});
 		}
@@ -247,8 +247,6 @@ namespace sa {
 	void Engine::init() {
 		SA_PROFILE_FUNCTION();
 
-		if (!m_currentScene) // no scene has been set
-			setScene("Default Scene");
 	}
 
 	void Engine::update(float dt) {
@@ -328,6 +326,13 @@ namespace sa {
 		return m_currentScene;
 	}
 
+	Scene* Engine::getCurrentScene() {
+		if (!m_currentScene) {
+			setScene("Default Scene");
+		}
+		return m_currentScene;
+	}
+
 	void Engine::setScene(const std::string& name) {
 		setScene(getScene(name));
 	}
@@ -347,6 +352,18 @@ namespace sa {
 
 	std::unordered_map<std::string, Scene>& Engine::getScenes() {
 		return m_scenes;
+	}
+
+	void Engine::destroyScene(const std::string& name) {
+		if (m_currentScene->getName() == name) {
+			m_currentScene = nullptr;
+		}
+		m_scenes.erase(name);
+	}
+
+	void Engine::destroyScenes() {
+		m_scenes.clear();
+		m_currentScene = nullptr;
 	}
 }
 

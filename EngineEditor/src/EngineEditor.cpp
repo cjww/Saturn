@@ -10,6 +10,9 @@
 
 namespace sa {
 	bool EngineEditor::openProject(const std::filesystem::path& path) {
+		//unload project
+		m_savedScenes.clear();
+		m_pEngine->destroyScenes();
 
 		using namespace simdjson;
 		ondemand::parser parser;
@@ -20,11 +23,13 @@ namespace sa {
 		ondemand::document doc = parser.iterate(json);
 		
 		std::cout << "Opened Project: " << path << std::endl;
-		std::cout << "Version: " << doc["version"] << std::endl;
+		const char* version = doc["version"].get_string().value().data();
+		if (strcmp(version, SA_VERSION) != 0) {
+			SA_DEBUG_LOG_ERROR("Project version missmatch:\n\tProject:", verison, "\n\tEngine:", SA_VERSION);
+		}
 		
 		m_projectPath = path;
 
-		m_savedScenes.clear();
 		auto scenesArray = doc["scenes"];
 		for (const auto& scenePath : scenesArray) {
 			if (scenePath.error()) {
@@ -89,7 +94,7 @@ namespace sa {
 		Serializer s;
 		s.beginObject();
 
-		s.value("version", "1.0.0");
+		s.value("version", SA_VERSION);
 		time_t t = time(NULL);
 		s.value("last_saved", t);
 
@@ -113,9 +118,20 @@ namespace sa {
 
 		ImGui::OpenPopup("Select Project");
 
-		if (ImGui::BeginPopupModal("Select Project", 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove)) {
+		ImVec2 windowPos = ImGui::GetMainViewport()->Pos;
+		ImVec2 windowSize = ImGui::GetMainViewport()->Size;
+
+		ImVec2 popupSize = ImVec2(windowSize.x * 0.5f, windowSize.y * 0.5f);
+		ImGui::SetNextWindowSize(popupSize, ImGuiCond_Always);
+		ImGui::SetNextWindowPos(ImVec2(
+			windowPos.x + (windowSize.x * 0.5f - popupSize.x * 0.5f),
+			windowPos.y + (windowSize.y * 0.5f - popupSize.y * 0.5f)), ImGuiCond_Always);
+
+		
+		if (ImGui::BeginPopupModal("Select Project", 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings)) {
 			ImGui::Text("Recent Projects");
-			if (ImGui::BeginChild("recent_projects", ImVec2(ImGui::GetWindowContentRegionWidth(), 400), true)) {
+
+			if (ImGui::BeginChild("recent_projects", ImVec2(ImGui::GetWindowContentRegionWidth(), popupSize.y * 0.8f), true)) {
 				for (auto it = m_recentProjectPaths.rbegin(); it != m_recentProjectPaths.rend(); it++) {
 					if (ImGui::ProjectButton(it->filename().replace_extension().string().c_str(), it->string().c_str())) {
 						openProject(*it);
@@ -168,16 +184,16 @@ namespace sa {
 
 	bool EngineEditor::saveScene(Scene* pScene) {
 		auto it = m_savedScenes.find(pScene);
-if (it == m_savedScenes.end()) {
-	std::filesystem::path path;
-	if (!FileDialogs::SaveFile("Saturn Scene (*.json)\0*.json\0", path, m_projectPath.parent_path())) {
-		return false;
-	}
-	it = m_savedScenes.insert({ pScene, path }).first;
-}
+		if (it == m_savedScenes.end()) {
+			std::filesystem::path path;
+			if (!FileDialogs::SaveFile("Saturn Scene (*.json)\0*.json\0", path, m_projectPath.parent_path())) {
+				return false;
+			}
+			it = m_savedScenes.insert({ pScene, path }).first;
+		}
 
-m_pEngine->storeSceneToFile(pScene, makeEditorRelative(it->second));
-return true;
+		m_pEngine->storeSceneToFile(pScene, makeEditorRelative(it->second));
+		return true;
 	}
 
 	bool EngineEditor::loadScene(Scene* pScene) {
@@ -218,6 +234,10 @@ return true;
 
 	void EngineEditor::onAttach(sa::Engine& engine, sa::RenderWindow& renderWindow) {
 		m_pEngine = &engine;
+		ImGui::SetupImGuiStyle();
+		engine.on<engine_event::WindowResized>([](const engine_event::WindowResized& e, Engine& engine) {
+			ImGui::SetupImGuiStyle();
+		});
 
 		m_editorModules.push_back(std::make_unique<SceneView>(&engine, &renderWindow));
 
@@ -267,11 +287,11 @@ return true;
 		const int framePaddingY = 12;
 
 
+		sa::Texture2D* logoTex = sa::AssetManager::get().loadTexture("resources/Logo-white.png", true);
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, framePaddingY));
 		if(isPlaying || isPaused)
 			ImGui::PushStyleColor(ImGuiCol_MenuBarBg, ImVec4(0.3f, 0.6f, 0.3f, 1.f));
 		if (ImGui::BeginMainMenuBar()) {
-			sa::Texture2D* logoTex = sa::AssetManager::get().loadTexture("resources/Logo-white.png", true);
 			if (ImGui::ImageButtonTinted(*logoTex, ImVec2(buttonSize + 10, buttonSize + 10))) {
 				ImGui::OpenPopup("About");
 			}
@@ -284,10 +304,9 @@ return true;
 			}
 
 			if (ImGui::BeginMenu(m_pEngine->getCurrentScene()->getName().c_str())) {
-				auto& scenes = m_pEngine->getScenes();
-				for (auto& [name, scene] : scenes) {
-					if (ImGui::MenuItem(name.c_str())) {
-						m_pEngine->setScene(scene);
+				for (auto& [pScene, path] : m_savedScenes) {
+					if (ImGui::MenuItem(pScene->getName().c_str())) {
+						openScene(path);
 					}
 				}
 
@@ -375,7 +394,24 @@ return true;
 		}
 
 		if (ImGui::BeginPopupModal("About")) {
+			ImVec2 windowSize = ImGui::GetContentRegionAvail();
+			ImVec2 imageSize = ImVec2(windowSize.x * 0.5f, windowSize.y * 0.5f);
+			ImVec2 cursorStartPos = ImGui::GetCursorStartPos();
+			ImGui::SetCursorPos(ImVec2(cursorStartPos.x + imageSize.x * 0.5f, cursorStartPos.y + imageSize.y * 0.5f));
+			ImGui::Image(*logoTex, imageSize, ImVec2(0, 0), ImVec2(1, 1), ImVec4(1.f, 1.f, 1.f, 0.2f));
+
+			ImGui::SetCursorPos(cursorStartPos);
+			ImVec2 textSize = ImGui::CalcTextSize("Saturn");
+			ImGui::SetCursorPosX(windowSize.x * 0.5f - textSize.x * 0.5f);
+			ImGui::Text("Saturn");
+
+			ImGui::Spacing();
+			
 			ImGui::Text("Version: %s", SA_VERSION);
+			ImGui::Text("Backend Graphics API: Vulkan 1.3");
+			ImGui::Text("Physics engine: NVIDIA PhysX");
+
+			ImGui::Spacing();
 			if (ImGui::Button("Close")) {
 				ImGui::CloseCurrentPopup();
 			}

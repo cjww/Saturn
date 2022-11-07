@@ -25,6 +25,7 @@ namespace ImGui {
 
 	const int HandleSize = 5;
 
+	void SetupImGuiStyle();
 
 	void displayLuaTable(std::string name, sol::table table);
 

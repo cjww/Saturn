@@ -45,7 +45,6 @@ namespace sa {
 		std::filesystem::path makeProjectRelative(const std::filesystem::path& path);
 		std::filesystem::path makeEditorRelative(const std::filesystem::path& projectRelativePath);
 
-
 	public:
 		EngineEditor() = default;
 		

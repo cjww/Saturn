@@ -68,12 +68,15 @@ namespace sa {
 		Scene& loadSceneFromFile(const std::filesystem::path& sceneFile);
 		void storeSceneToFile(Scene* pScene, const std::filesystem::path& path);
 
-
 		Scene* getCurrentScene() const;
+		Scene* getCurrentScene();
+
 		void setScene(const std::string& name);
 		void setScene(Scene& scene);
 
 		std::unordered_map<std::string, Scene>& getScenes();
+		void destroyScene(const std::string& name);
+		void destroyScenes();
 
 	};
 	template<typename T>
