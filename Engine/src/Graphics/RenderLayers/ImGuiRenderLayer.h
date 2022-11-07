@@ -4,8 +4,8 @@ namespace sa {
 
 	class ImGuiRenderLayer : public IRenderLayer {
 	private:
-		ResourceID m_imGuiRenderProgram;
-		ResourceID m_imGuiFramebuffer;
+		ResourceID m_imGuiRenderProgram = NULL_RESOURCE;
+		ResourceID m_imGuiFramebuffer = NULL_RESOURCE;
 		RenderWindow* m_pWindow;
 	public:
 		virtual void init(RenderWindow* pWindow, IRenderLayer*) override;

@@ -103,6 +103,13 @@ namespace sa {
 		void setRefreshRate(int rate);
 		void setMonitor(int monitorIndex);
 		void toggleFullscreen();
+		bool isFullscreen() const;
+		void setBorderless(bool isBorderless);
+		void toggleBorderless();
+		bool isBorderless() const;
+		void setBorderlessFullscreen(bool value);
+		void toggleBorderlessFullscreen();
+
 
 		void setWindowTitle(const char* title);
 		void setWindowTitle(const std::string& title);

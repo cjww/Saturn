@@ -39,7 +39,7 @@ namespace sa {
 
 	bool RenderPipeline::render(Scene* pScene) {
 		SA_PROFILE_FUNCTION();
-		
+
 		m_pRenderTechnique->updateLights(pScene);
 		// collect meshes
 		m_pRenderTechnique->collectMeshes(pScene);

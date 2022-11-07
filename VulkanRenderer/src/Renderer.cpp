@@ -149,6 +149,11 @@ namespace sa {
 		return RenderProgramFactory(m_pCore.get());
 	}
 
+	void Renderer::destroyRenderProgram(ResourceID renderProgram) {
+		ResourceManager::get().remove<RenderProgram>(renderProgram);
+	}
+
+
 	void Renderer::setClearColor(ResourceID renderProgram, Color color, uint32_t attachmentIndex) {
 		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
 		pRenderProgram->setClearColor(attachmentIndex, color);

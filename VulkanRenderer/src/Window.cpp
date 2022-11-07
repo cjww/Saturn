@@ -40,6 +40,10 @@ namespace sa {
 		if (key == GLFW_KEY_F11 && action == GLFW_PRESS) {
 			thisWindow->toggleFullscreen();
 		}
+		if (key == GLFW_KEY_F10 && action == GLFW_PRESS) {
+			thisWindow->toggleBorderless();
+			//thisWindow->toggleBorderlessFullscreen();
+		}
 	#endif // _WIN32
 
 		for (auto& func : thisWindow->m_onKeyFunctions) {
@@ -191,6 +195,7 @@ namespace sa {
 			if (!glfwInit()) {
 				throw std::runtime_error("Failed to initialize GLFW!");
 			}
+			ResourceManager::get().setCleanupFunction<GLFWcursor*>([](GLFWcursor** p) { glfwDestroyCursor(*p); });
 		}
 		s_windowCount++;
 
@@ -284,6 +289,41 @@ namespace sa {
 		else {
 			setMonitor(-1);
 		}
+	}
+
+	bool Window::isFullscreen() const {
+		return m_monitor != nullptr;
+	}
+
+	void Window::setBorderless(bool isBorderless) {
+		glfwSetWindowAttrib(m_window, GLFW_DECORATED, !isBorderless);
+	}
+
+	void Window::toggleBorderless() {
+		setBorderless(!isBorderless());
+	}
+
+	bool Window::isBorderless() const {
+		return !(bool)glfwGetWindowAttrib(m_window, GLFW_DECORATED);
+	}
+
+	void Window::setBorderlessFullscreen(bool value) {
+		setBorderless(value);
+		if (value) {
+			int count;
+			GLFWmonitor** monitors = glfwGetMonitors(&count);
+			int xpos = 100, ypos = 100, width, height;
+		
+			glfwGetMonitorWorkarea(monitors[0], &xpos, &ypos, &width, &height);
+			glfwSetWindowMonitor(m_window, nullptr, xpos, ypos, width, height, GLFW_DONT_CARE);
+		}
+		else {
+			glfwSetWindowMonitor(m_window, nullptr, 0, 0, m_windowedExtent.width, m_windowedExtent.height, GLFW_DONT_CARE);
+		}
+	}
+
+	void Window::toggleBorderlessFullscreen() {
+		setBorderlessFullscreen(!isBorderless());
 	}
 
 	void Window::setWindowTitle(const char* title) {

@@ -18,11 +18,12 @@ namespace sa {
 		}
 
 		if (m_depthPreRenderProgram != NULL_RESOURCE) {
-			//
+			m_renderer.destroyRenderProgram(m_depthPreRenderProgram);
 			m_depthPreRenderProgram = NULL_RESOURCE;
 		}
 
-		if (m_depthTexture.isValid()) m_depthTexture.destroy();
+		if (m_depthTexture.isValid()) 
+			m_depthTexture.destroy();
 		
 		m_depthTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::DEPTH_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, extent);
 		
@@ -80,11 +81,12 @@ namespace sa {
 		}
 
 		if (m_colorRenderProgram != NULL_RESOURCE) {
-			//m_renderer.(m_colorRenderProgram);
+			m_renderer.destroyRenderProgram(m_colorRenderProgram);
 			m_colorRenderProgram = NULL_RESOURCE;
 		}
 
-		if (m_colorTexture.isValid()) m_colorTexture.destroy();
+		if (m_colorTexture.isValid()) 
+			m_colorTexture.destroy();
 		
 
 		m_colorTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, extent);
@@ -130,11 +132,12 @@ namespace sa {
 		}
 		
 		if (m_composeRenderProgram != NULL_RESOURCE) {
-			//m_renderer.(m_composeRenderProgram);
+			m_renderer.destroyRenderProgram(m_composeRenderProgram);
 			m_composeRenderProgram = NULL_RESOURCE;
 		}
 
-		if (m_outputTexture.isValid()) m_outputTexture.destroy();
+		if (m_outputTexture.isValid()) 
+			m_outputTexture.destroy();
 		
 		
 		m_outputTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, extent);
@@ -338,7 +341,10 @@ namespace sa {
 		updateDescriptorSets();
 
 		//DEBUG
+		if (m_debugLightHeatmap.isValid()) 
+			m_debugLightHeatmap.destroy();
 		m_debugLightHeatmap = m_renderer.createTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, { m_tileCount.x, m_tileCount.y });
+		
 		m_debugLightHeatmapRenderProgram = m_renderer.createRenderProgram()
 			.addColorAttachment(true, m_debugLightHeatmap)
 			.beginSubpass()

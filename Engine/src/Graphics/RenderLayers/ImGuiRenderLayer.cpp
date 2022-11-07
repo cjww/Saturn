@@ -4,20 +4,27 @@ namespace sa {
 
 	void ImGuiRenderLayer::init(RenderWindow* pWindow, IRenderLayer*) {
 		m_pWindow = pWindow;
-		Renderer& renderer = Renderer::get();
-		m_imGuiRenderProgram = renderer.createRenderProgram()
+		
+		m_imGuiRenderProgram = m_renderer.createRenderProgram()
 			.addSwapchainAttachment(pWindow->getSwapchainID())
 			.beginSubpass()
 			.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
 			.endSubpass()
 			.end();
 
-		m_imGuiFramebuffer = renderer.createSwapchainFramebuffer(m_imGuiRenderProgram, pWindow->getSwapchainID(), {});
-		renderer.initImGui(*pWindow, m_imGuiRenderProgram, 0);
+		m_imGuiFramebuffer = m_renderer.createSwapchainFramebuffer(m_imGuiRenderProgram, pWindow->getSwapchainID(), {});
+		m_renderer.initImGui(*pWindow, m_imGuiRenderProgram, 0);
 	}
 
 	void ImGuiRenderLayer::cleanup() {
-
+		if (m_imGuiRenderProgram != NULL_RESOURCE) {
+			m_renderer.destroyRenderProgram(m_imGuiRenderProgram);
+			m_imGuiRenderProgram = NULL_RESOURCE;
+		}
+		if (m_imGuiFramebuffer != NULL_RESOURCE) {
+			m_renderer.destroyFramebuffer(m_imGuiFramebuffer);
+			m_imGuiFramebuffer = NULL_RESOURCE;
+		}
 	}
 
 	void ImGuiRenderLayer::postRender(RenderContext& context) {
@@ -28,6 +35,7 @@ namespace sa {
 
 	void ImGuiRenderLayer::onWindowResize(Extent newExtent) {
 		Renderer::get().cleanupImGui();
+		cleanup();
 		init(m_pWindow, nullptr);
 	}
 }
