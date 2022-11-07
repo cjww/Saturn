@@ -224,9 +224,11 @@ namespace sa {
 					for (auto& cam : scene.getActiveCameras()) {
 						Rect viewport = cam->getViewport();
 						// resize viewport but keep relative size to window size
-						viewport.extent.width = e.newExtent.width * viewport.extent.width / m_windowExtent.width;
-						viewport.extent.height = e.newExtent.height * viewport.extent.height / m_windowExtent.height;
-
+						
+						viewport.extent.width = e.newExtent.width * viewport.extent.width / (float)m_windowExtent.width;
+						viewport.extent.height = e.newExtent.height * viewport.extent.height / (float)m_windowExtent.height;
+						m_windowExtent = e.newExtent;
+						
 						cam->setViewport(viewport);
 					}
 				}
