@@ -34,10 +34,6 @@ namespace sa {
 
 		auto scenesArray = doc["scenes"];
 		for (const auto& scenePath : scenesArray) {
-			if (scenePath.error()) {
-				std::cout << "ERROR" << std::endl;
-				break;
-			}
 			simdjson::ondemand::value s = scenePath.value_unsafe();
 			std::filesystem::path projectRealtiveScene(s.get_string().value());
 			Scene& scene = m_pEngine->loadSceneFromFile(makeEditorRelative(projectRealtiveScene));
@@ -223,6 +219,7 @@ namespace sa {
 
 	void EngineEditor::openScene(const std::filesystem::path& path) {
 		Scene& scene = m_pEngine->loadSceneFromFile(makeEditorRelative(path));
+		m_pEngine->publish<editor_event::EntityDeselected>();
 		m_pEngine->setScene(scene);
 	}
 

@@ -2,6 +2,18 @@
 
 void SceneHierarchy::makePopups() {
 	if (ImGui::BeginPopup("SceneHierarchyMenu")) {
+		if (!m_isPopupMenuOpen)
+			ImGui::CloseCurrentPopup();
+
+		if (!m_hoveredEntity.isNull()) {	
+			if (ImGui::MenuItem(("Delete " + m_hoveredEntity.getComponent<comp::Name>()->name).c_str())) {
+				m_pEngine->publish<sa::editor_event::EntityDeselected>(m_hoveredEntity);
+				m_hoveredEntity.destroy();
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::Separator();
+		}
+
 		if (ImGui::BeginMenu("Add Entity")) {
 			
 			if (ImGui::MenuItem("Empty")) {
@@ -33,13 +45,18 @@ SceneHierarchy::SceneHierarchy(sa::Engine* pEngine) : EditorModule(pEngine) {
 	pEngine->on<sa::engine_event::SceneSet>([&](sa::engine_event::SceneSet& e, sa::Engine& engine) {
 		m_hoveredEntity = {};
 		m_selectedEntity = {};
+		m_isPopupMenuOpen = false;
 	});
+
+	m_hoveredEntity = {};
+	m_selectedEntity = {};
+	m_isPopupMenuOpen = false;
 }
 
 void SceneHierarchy::elementEvents(const sa::Entity& e) {
 	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup)) {
-		if (ImGui::IsPopupOpen("SceneHierarchyMenu") && m_hoveredEntity != e) {
-			ImGui::CloseCurrentPopup();
+		if (m_isPopupMenuOpen && m_hoveredEntity != e) {
+			m_isPopupMenuOpen = false;
 		}
 		m_hoveredEntity = e;
 	}
@@ -98,14 +115,15 @@ void SceneHierarchy::makeTree(sa::Entity e) {
 	bool opened = ImGui::TreeNodeEx((e.getComponent<comp::Name>()->name + "##" + std::to_string((uint32_t)e)).c_str(), flags);
 	if (ImGui::IsItemClicked()) {
 		if (s) {
-			m_pEngine->getCurrentScene()->publish<sa::editor_event::EntityDeselected>(m_selectedEntity);
+			m_pEngine->publish<sa::editor_event::EntityDeselected>(m_selectedEntity);
 			m_selectedEntity = {};
 		}
 		else {
 			m_selectedEntity = e;
-			m_pEngine->getCurrentScene()->publish<sa::editor_event::EntitySelected>(m_selectedEntity);
+			m_pEngine->publish<sa::editor_event::EntitySelected>(m_selectedEntity);
 		}
 	}
+	
 	elementEvents(e);
 		
 	if (opened) {
@@ -124,27 +142,23 @@ SceneHierarchy::~SceneHierarchy() {
 void SceneHierarchy::onImGui() {
 	SA_PROFILE_FUNCTION();
 
-	ImGui::ShowStyleEditor();
+	//ImGui::ShowStyleEditor();
+
 
 	if (ImGui::Begin("Scene Hierarchy")) {
 
-		sa::Scene* pScene = m_pEngine->getCurrentScene();
+		//m_isPopupMenuOpen = ImGui::IsPopupOpen("SceneHierarchyMenu");
 
-		if (!m_hoveredEntity.isNull()) {
-			if (ImGui::BeginPopup("SceneHierarchyMenu")) {
-				
-				if (ImGui::MenuItem(("Delete " + m_hoveredEntity.getComponent<comp::Name>()->name).c_str())) {
-					pScene->publish<sa::editor_event::EntityDeselected>(m_hoveredEntity);
-					m_hoveredEntity.destroy();
-					ImGui::CloseCurrentPopup();
-				}
-				ImGui::Separator();
+		if(!m_isPopupMenuOpen)
+			m_hoveredEntity = {};
 
-				ImGui::EndPopup();
-			}
-		}
+
 		makePopups();
 
+		m_isPopupMenuOpen = ImGui::IsPopupOpen("SceneHierarchyMenu");
+
+
+		sa::Scene* pScene = m_pEngine->getCurrentScene();
 
 		if (ImGui::BeginListBox("##Entities", ImGui::GetContentRegionAvail())) {
 			pScene->forEach([&](sa::Entity e) {
@@ -153,7 +167,7 @@ void SceneHierarchy::onImGui() {
 				// only make trees from roots
 				makeTree(e);
 			});
-
+			
 			while (!m_parentChanges.empty()) {
 				auto& pair = m_parentChanges.front();
 				if (!pair.second.isNull())
@@ -163,14 +177,19 @@ void SceneHierarchy::onImGui() {
 				m_parentChanges.pop();
 			}
 	
+			
+			
 			ImGui::EndListBox();
 		}
 		
+
 		if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows) 
 			&& ImGui::IsMouseClicked(ImGuiMouseButton_Right)) 
 		{		
 			ImGui::OpenPopup("SceneHierarchyMenu");
+			m_isPopupMenuOpen = true;
 		}
+		
 		
 	}
 	ImGui::End();

@@ -45,14 +45,12 @@ void EntityInspector::makePopups() {
 EntityInspector::EntityInspector(sa::Engine* pEngine) : EditorModule(pEngine) {
 	m_selectedEntity = {};
 
-	pEngine->on<sa::engine_event::SceneSet>([&](const sa::engine_event::SceneSet& sceneSetEvent, sa::Engine& engine) {
-		sceneSetEvent.newScene->on<sa::editor_event::EntitySelected>([&](const sa::editor_event::EntitySelected& e, sa::Scene&) {
-			m_selectedEntity = e.entity;
-		});
+	pEngine->on<sa::editor_event::EntitySelected>([&](const sa::editor_event::EntitySelected& e, sa::Engine&) {
+		m_selectedEntity = e.entity;
+	});
 
-		sceneSetEvent.newScene->on<sa::editor_event::EntityDeselected>([&](const sa::editor_event::EntityDeselected&, sa::Scene&) {
-			m_selectedEntity = {};
-		});
+	pEngine->on<sa::editor_event::EntityDeselected>([&](const sa::editor_event::EntityDeselected&, sa::Engine&) {
+		m_selectedEntity = {};
 	});
 }
 
@@ -125,12 +123,4 @@ void EntityInspector::onImGui() {
 
 void EntityInspector::update(float dt) {
 
-}
-
-sa::Entity EntityInspector::getEntity() const {
-	return m_selectedEntity;
-}
-
-void EntityInspector::setEntity(const sa::Entity& entity) {
-	m_selectedEntity = entity;
 }

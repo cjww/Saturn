@@ -8,6 +8,8 @@ private:
 	sa::Entity m_selectedEntity;
 	sa::Entity m_hoveredEntity;
 
+	bool m_isPopupMenuOpen;
+
 	std::queue<std::pair<sa::Entity, sa::Entity>> m_parentChanges;
 
 	void makePopups();

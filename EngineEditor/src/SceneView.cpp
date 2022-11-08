@@ -28,15 +28,16 @@ SceneView::SceneView(sa::Engine* pEngine, sa::RenderWindow* pWindow)
 	pEngine->on<sa::engine_event::SceneSet>([&](const sa::engine_event::SceneSet& sceneSetEvent, sa::Engine& engine) {
 		m_selectedEntity = {};
 		sceneSetEvent.newScene->addActiveCamera(&m_camera);
-
-		sceneSetEvent.newScene->on<sa::editor_event::EntitySelected>([&](const sa::editor_event::EntitySelected& e, sa::Scene&) {
-			m_selectedEntity = e.entity;
-		});
-
-		sceneSetEvent.newScene->on<sa::editor_event::EntityDeselected>([&](const sa::editor_event::EntityDeselected&, sa::Scene&) {
-			m_selectedEntity = {};
-		});
 	});
+
+	pEngine->on<sa::editor_event::EntitySelected>([&](const sa::editor_event::EntitySelected& e, sa::Engine&) {
+		m_selectedEntity = e.entity;
+	});
+
+	pEngine->on<sa::editor_event::EntityDeselected>([&](const sa::editor_event::EntityDeselected&, sa::Engine&) {
+		m_selectedEntity = {};
+	});
+	
 	m_zoom = 0.f;
 	m_pWindow->addScrollCallback([&](double x, double y) {
 		if(m_isFocused) m_zoom = y;

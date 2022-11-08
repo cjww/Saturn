@@ -229,6 +229,7 @@ namespace sa {
 
     void Entity::destroy() {
         m_pScene->destroyEntity(*this);
+        m_entity = entt::null;
     }
 
     bool Entity::isNull() const {

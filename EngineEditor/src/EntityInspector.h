@@ -16,8 +16,4 @@ public:
 	virtual void onImGui() override;
 	virtual void update(float dt) override;
 
-	sa::Entity getEntity() const;
-	void setEntity(const sa::Entity& entity);
-
-
 };
