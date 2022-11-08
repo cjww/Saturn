@@ -11,11 +11,16 @@ namespace comp {
 
 
 	void SphereCollider::serialize(sa::Serializer& s) {
-	
+		s.value("radius", radius);
+		s.value("offset", (glm::vec3)offset);
 	}
 	
 	void SphereCollider::deserialize(void* pDoc) {
-
+		using namespace simdjson::ondemand;
+		object& obj = *(object*)pDoc;
+		radius = (float)obj["radius"].get_double();
+		object member = obj["offset"];
+		offset = sa::Serializer::DeserializeVec3(&member);
 	}
 
 

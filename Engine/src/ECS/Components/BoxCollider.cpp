@@ -16,12 +16,17 @@ namespace comp {
 	}
 
 	void BoxCollider::serialize(sa::Serializer& s) {
-
-
+		s.value("halfLengths", (glm::vec3)halfLengths);
+		s.value("offset", (glm::vec3)offset);
 	}
 
 	void BoxCollider::deserialize(void* pDoc) {
-	
+		using namespace simdjson::ondemand;
+		object& obj = *(object*)pDoc;
+		object member = obj["halfLengths"];
+		halfLengths = sa::Serializer::DeserializeVec3(&member);
+		member = obj["offset"];
+		offset = sa::Serializer::DeserializeVec3(&member);
 	}
 
 	void BoxCollider::onConstruct(sa::Entity* e) {

@@ -306,6 +306,7 @@ namespace sa {
 		simdjson::ondemand::document doc = parser.iterate(json);
 		Scene& scene = getScene(std::string(doc["name"].get_string().value()));
 		scene.deserialize(&doc);
+		SA_DEBUG_LOG_INFO("Scene ", scene.getName(), " loaded from file ", path);
 		return scene;
 	}
 
@@ -320,6 +321,7 @@ namespace sa {
 		}
 		file << s.dump();
 		file.close();
+		SA_DEBUG_LOG_INFO("Scene ", pScene->getName(), " stored to file ", path);
 	}
 
 	Scene* Engine::getCurrentScene() const {
