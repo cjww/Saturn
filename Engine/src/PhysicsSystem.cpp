@@ -3,7 +3,7 @@
 
 class ErrorCallback : public physx::PxErrorCallback {
 	virtual void reportError(physx::PxErrorCode::Enum code, const char* message, const char* file, int line) override {
-		SA_DEBUG_LOG_ERROR(message, "[Code", (uint32_t)code, "]", file, line);
+		SA_DEBUG_LOG_ERROR(message, "[Code ", (uint32_t)code, "] ", file, ":", line);
 	}
 
 };

@@ -128,13 +128,13 @@ namespace sa {
 			}
 			std::filesystem::path finalPath;
 			if (!searchForFile(directory, filename, finalPath)) {
-				SA_DEBUG_LOG_ERROR("File not found:", filename);
+				SA_DEBUG_LOG_ERROR("File not found: ", filename);
 				continue;
 			}
 
 			Texture2D* tex = AssetManager::get().loadTexture(finalPath, true);
 			if (!tex) {
-				SA_DEBUG_LOG_ERROR("Failed to create texture,", finalPath.string());
+				SA_DEBUG_LOG_ERROR("Failed to create texture, ", finalPath.string());
 				continue;
 			}
 
@@ -161,8 +161,27 @@ namespace sa {
 		static AssetManager instance;
 		return instance;
 	}
+
+	void AssetManager::clear() {
+		for (auto& [id, pTexture] : m_textures) {
+			sa::ResourceManager::get().remove<Texture2D>(id);
+		}
+		for (auto& [id, pModel] : m_models) {
+			sa::ResourceManager::get().remove<ModelData>(id);
+		}
+		for (auto& [id, pMaterial] : m_materials) {
+			sa::ResourceManager::get().remove<Material>(id);
+		}
+		
+		m_loadingModels.clear();
+		m_textures.clear();
+		m_models.clear();
+		m_materials.clear();
+	}
 	
 	Texture2D* AssetManager::loadDefaultTexture() {
+		SA_PROFILE_FUNCTION();
+
 		Texture2D* tex = ResourceManager::get().get<Texture2D>("default_white");
 		if (tex)
 			return tex;
@@ -173,6 +192,8 @@ namespace sa {
 	}
 
 	Texture2D* AssetManager::loadDefaultBlackTexture() {
+		SA_PROFILE_FUNCTION();
+
 		Texture2D* tex = ResourceManager::get().get<Texture2D>("default_black");
 		if (tex)
 			return tex;
@@ -184,34 +205,44 @@ namespace sa {
 
 	Texture2D* AssetManager::loadTexture(const std::filesystem::path& path, bool generateMipMaps) {
 		SA_PROFILE_FUNCTION();
-		Texture2D* tex = ResourceManager::get().get<Texture2D>(path.string());
-		
+		ResourceID id = ResourceManager::get().keyToID<Texture2D>(path.string());
+		if (m_textures.count(id)) {
+			return m_textures.at(id);
+		}
+
+		Texture2D* tex = ResourceManager::get().get<Texture2D>(id);
+
 		if (!tex) {
 			try {
 				Image img(path.string());
-				ResourceManager::get().insert<Texture2D>(path.string(), Renderer::get().createTexture2D(img, generateMipMaps));
+				id = ResourceManager::get().insert<Texture2D>(path.string(), Renderer::get().createTexture2D(img, generateMipMaps));
 				//SA_DEBUG_LOG_INFO("Loaded texture", path.string());
 			}
 			catch (const std::exception& e) {
 				return nullptr;
 			}
 
-			return ResourceManager::get().get<Texture2D>(path.string());
+			Texture2D* tex = ResourceManager::get().get<Texture2D>(id);
+			m_textures[id] = tex;
+			return tex;
 		}
 		return tex;
 	}
 
 	std::tuple<ResourceID, ModelData*> AssetManager::newModel(const std::string& name) {
+		SA_PROFILE_FUNCTION();
+
 		ResourceID id;
 		if(!name.empty())
 			id = ResourceManager::get().insert<ModelData>(name, {});
 		else
 			id = ResourceManager::get().insert<ModelData>();
+		
+		m_models[id] = ResourceManager::get().get<ModelData>(id);
+
 		return { id, ResourceManager::get().get<ModelData>(id) };
 	}
 	
-	
-
 	ProgressView<ResourceID>& AssetManager::loadModel(const std::filesystem::path& path) {
 		SA_PROFILE_FUNCTION();
 		auto absPath = std::filesystem::absolute(path).generic_string();
@@ -233,6 +264,8 @@ namespace sa {
 	}
 
 	ResourceID AssetManager::loadDefaultMaterial() {
+		SA_PROFILE_FUNCTION();
+
 		ResourceID id = ResourceManager::get().keyToID<Material>("default_material");
 		if (id != NULL_RESOURCE)
 			return id;
@@ -249,6 +282,8 @@ namespace sa {
 	}
 
 	ResourceID AssetManager::loadQuad() {
+		SA_PROFILE_FUNCTION();
+
 		ResourceManager& resManager = ResourceManager::get();
 
 		ResourceID id = resManager.keyToID<ModelData>("Quad");
@@ -282,6 +317,8 @@ namespace sa {
 	}
 
 	ResourceID AssetManager::loadBox() {
+		SA_PROFILE_FUNCTION();
+
 		ResourceManager& resManager = ResourceManager::get();
 		
 		ResourceID id = resManager.keyToID<ModelData>("Box");
@@ -357,10 +394,16 @@ namespace sa {
 	}
 
 	ModelData* AssetManager::getModel(ResourceID id) const {
+		if (m_models.count(id)) {
+			return m_models.at(id);
+		}
 		return ResourceManager::get().get<ModelData>(id);
 	}
 
 	Material* AssetManager::getMaterial(ResourceID id) const {
+		if (m_materials.count(id)) {
+			return m_materials.at(id);
+		}
 		return ResourceManager::get().get<Material>(id);
 	}
 
@@ -369,6 +412,9 @@ namespace sa {
 		: m_nextID(0)
 	{
 		loadDefaultTexture();
+		sa::ResourceManager::get().setCleanupFunction<Texture2D>([](Texture2D* pTexture) {
+			pTexture->destroy();
+		});
 	}
 
 	void AssetManager::loadAssimpModel(const std::filesystem::path& path, ModelData* pModel, ProgressView<ResourceID>& progress) {
@@ -435,7 +481,7 @@ namespace sa {
 					loadMaterialTexture(material, path.parent_path(), (aiTextureType)j, scene->mTextures, aMaterial);
 				}
 				material.update();
-				ResourceID matId = sa::ResourceManager::get().insert<Material>(material);
+				ResourceID matId = ResourceManager::get().insert<Material>(material);
 				materials[i] = matId;
 				progress.increment();
 			});
@@ -445,6 +491,7 @@ namespace sa {
 
 		for (auto& mesh : pModel->meshes) {
 			mesh.materialID = materials[mesh.materialID]; // swap index to material ID
+			m_materials[mesh.materialID] = ResourceManager::get().get<Material>(mesh.materialID);
 		}
 	}
 
@@ -452,7 +499,7 @@ namespace sa {
 		SA_PROFILE_SCOPE("AssetManager::LoadModel(), path = " + path.generic_string());
 
 		if (!std::filesystem::exists(path)) {
-			SA_DEBUG_LOG_ERROR("No such file:", path);
+			SA_DEBUG_LOG_ERROR("No such file: ", path);
 			return NULL_RESOURCE;
 		}
 		std::filesystem::path absolutePath(std::filesystem::absolute(path), path.generic_format);
@@ -466,12 +513,14 @@ namespace sa {
 		id = ResourceManager::get().insert<ModelData>(absolutePath.generic_string(), {});
 		m_mutex.unlock();
 		ModelData* model = ResourceManager::get().get<ModelData>(id);
-
+		m_models[id] = model;
 		loadAssimpModel(path, model, progress);
 		return id;
 	}
 
 	AssetManager::~AssetManager() {
-
+		ResourceManager::get().clearContainer<Texture2D>();
+		ResourceManager::get().clearContainer<ModelData>();
+		ResourceManager::get().clearContainer<Material>();
 	}
 }

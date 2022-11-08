@@ -13,6 +13,8 @@ namespace sa {
 		//unload project
 		m_savedScenes.clear();
 		m_pEngine->destroyScenes();
+		AssetManager::get().clear();
+		m_pEngine->publish<editor_event::EntityDeselected>();
 
 		using namespace simdjson;
 		ondemand::parser parser;
@@ -22,10 +24,10 @@ namespace sa {
 		}
 		ondemand::document doc = parser.iterate(json);
 		
-		std::cout << "Opened Project: " << path << std::endl;
+		SA_DEBUG_LOG_INFO("Opened Project: ", path);
 		const char* version = doc["version"].get_string().value().data();
 		if (strcmp(version, SA_VERSION) != 0) {
-			SA_DEBUG_LOG_ERROR("Project version missmatch:\n\tProject:", verison, "\n\tEngine:", SA_VERSION);
+			SA_DEBUG_LOG_ERROR("Project version missmatch:\n\tProject: ", verison, "\n\tEngine: ", SA_VERSION);
 		}
 		
 		m_projectPath = path;
@@ -247,6 +249,12 @@ namespace sa {
 
 		//Application::get()->pushLayer(new TestLayer);
 
+		Image logo("resources/Logo-white.png");
+		m_logoTex = Renderer::get().createTexture2D(logo, true);
+
+		Image playPauseButtons("resources/play-pause-buttons.png");
+		m_playPauseTex = Renderer::get().createTexture2D(playPauseButtons, true);
+
 		// read recent projects
 		std::ifstream recentProjectsFile("recent_projects.txt");
 		std::string line;
@@ -287,12 +295,12 @@ namespace sa {
 		const int framePaddingY = 12;
 
 
-		sa::Texture2D* logoTex = sa::AssetManager::get().loadTexture("resources/Logo-white.png", true);
+		
 		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(4, framePaddingY));
 		if(isPlaying || isPaused)
 			ImGui::PushStyleColor(ImGuiCol_MenuBarBg, ImVec4(0.3f, 0.6f, 0.3f, 1.f));
 		if (ImGui::BeginMainMenuBar()) {
-			if (ImGui::ImageButtonTinted(*logoTex, ImVec2(buttonSize + 10, buttonSize + 10))) {
+			if (ImGui::ImageButtonTinted(m_logoTex, ImVec2(buttonSize + 10, buttonSize + 10))) {
 				ImGui::OpenPopup("About");
 			}
 
@@ -322,8 +330,6 @@ namespace sa {
 				ImGui::OpenPopup("Create New Scene");
 			}
 
-			sa::Texture2D* tex = sa::AssetManager::get().loadTexture("resources/play-pause-buttons.png", true);
-
 			ImGui::SetCursorPosY(framePaddingY - (buttonSize * 0.25f));
 			ImGui::SetCursorPosX(ImGui::GetWindowWidth() * 0.5f - buttonSize * 0.5f);
 
@@ -332,7 +338,7 @@ namespace sa {
 			if (m_state == State::PLAYING) imageIndex = 1;
 			
 			// Play / pause Button
-			if(ImGui::ImageButtonTinted(*tex, ImVec2(buttonSize, buttonSize), ImVec2(imageIndex * oneThird, 0), ImVec2((1 + imageIndex) * oneThird, 1))) {
+			if(ImGui::ImageButtonTinted(m_playPauseTex, ImVec2(buttonSize, buttonSize), ImVec2(imageIndex * oneThird, 0), ImVec2((1 + imageIndex) * oneThird, 1))) {
 				if (isPlaying) m_state = State::PAUSED;
 				else if (isPaused) m_state = State::PLAYING;
 				else if (m_state == State::EDIT) {
@@ -345,7 +351,7 @@ namespace sa {
 			if (isPlaying || isPaused) {
 				// Stop button
 				ImGui::SetCursorPosY(framePaddingY - (buttonSize * 0.25f));
-				if (ImGui::ImageButtonTinted(*tex, ImVec2(buttonSize, buttonSize), ImVec2(2 * oneThird, 0), ImVec2(1, 1))) {
+				if (ImGui::ImageButtonTinted(m_playPauseTex, ImVec2(buttonSize, buttonSize), ImVec2(2 * oneThird, 0), ImVec2(1, 1))) {
 					loadScene(m_pEngine->getCurrentScene());
 					m_state = State::EDIT;
 				}
@@ -398,7 +404,7 @@ namespace sa {
 			ImVec2 imageSize = ImVec2(windowSize.x * 0.5f, windowSize.y * 0.5f);
 			ImVec2 cursorStartPos = ImGui::GetCursorStartPos();
 			ImGui::SetCursorPos(ImVec2(cursorStartPos.x + imageSize.x * 0.5f, cursorStartPos.y + imageSize.y * 0.5f));
-			ImGui::Image(*logoTex, imageSize, ImVec2(0, 0), ImVec2(1, 1), ImVec4(1.f, 1.f, 1.f, 0.2f));
+			ImGui::Image(m_logoTex, imageSize, ImVec2(0, 0), ImVec2(1, 1), ImVec4(1.f, 1.f, 1.f, 0.2f));
 
 			ImGui::SetCursorPos(cursorStartPos);
 			ImVec2 textSize = ImGui::CalcTextSize("Saturn");

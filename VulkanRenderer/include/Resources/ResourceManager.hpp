@@ -317,6 +317,10 @@ namespace sa {
 			}
 			m_containerMutex.lock();
 			m_resources.erase(id);
+			auto key = idToKey(id);
+			if (!key.empty()) {
+				m_keys.erase(key);
+			}
 			m_freeIDs.push(id);
 			m_containerMutex.unlock();
 		}
@@ -331,6 +335,8 @@ namespace sa {
 			m_containerMutex.lock();
 			m_resources.clear();
 			m_keys.clear();
+			m_nextID = 0;
+			while (!m_freeIDs.empty()) m_freeIDs.pop();
 			m_containerMutex.unlock();
 		}
 

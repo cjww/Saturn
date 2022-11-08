@@ -127,7 +127,7 @@ namespace sa {
 
 	std::optional<EntityScript> ScriptManager::addScript(const entt::entity& entity, const std::filesystem::path& path) {
 		if (!std::filesystem::exists(path)) {
-			SA_DEBUG_LOG_ERROR("File does not exist:", path);
+			SA_DEBUG_LOG_ERROR("File does not exist: ", path);
 			return {};
 		}
 

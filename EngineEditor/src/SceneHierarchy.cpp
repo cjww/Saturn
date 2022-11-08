@@ -61,7 +61,6 @@ void SceneHierarchy::elementEvents(const sa::Entity& e) {
 }
 
 void SceneHierarchy::makeTree(sa::Entity e) {
-	SA_PROFILE_FUNCTION();
 	bool s = m_selectedEntity == e;
 	// Tree node
 	if (!e.hasParent()) {

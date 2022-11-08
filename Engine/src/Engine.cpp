@@ -315,7 +315,7 @@ namespace sa {
 
 		std::ofstream file(path);
 		if (!file) {
-			SA_DEBUG_LOG_ERROR("Failed to open file", path);
+			SA_DEBUG_LOG_ERROR("Failed to open file ", path);
 			return;
 		}
 		file << s.dump();

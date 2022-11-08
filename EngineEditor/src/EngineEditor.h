@@ -26,6 +26,9 @@ namespace sa {
 		std::vector<std::filesystem::path> m_recentProjectPaths;
 		std::unordered_map<Scene*, std::filesystem::path> m_savedScenes;
 
+		Texture2D m_logoTex;
+		Texture2D m_playPauseTex;
+
 		bool openProject(const std::filesystem::path& path);
 		bool openProject();
 
