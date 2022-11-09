@@ -165,11 +165,11 @@ namespace sa {
 			createProject();
 		}
 
-		if (ImGui::MenuItem("Save Scene")) {
+		if (ImGui::MenuItem("Save Scene", "Ctrl + S")) {
 			saveScene(m_pEngine->getCurrentScene());
 		}
 
-		if (ImGui::MenuItem("Reload Scene")) {
+		if (ImGui::MenuItem("Reload Scene", "Ctrl + R")) {
 			loadScene(m_pEngine->getCurrentScene());
 		}
 
@@ -301,6 +301,18 @@ namespace sa {
 				ImGui::OpenPopup("About");
 			}
 
+			//Key bindings
+			if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl)) {
+				if (ImGui::IsKeyPressed(ImGuiKey_S, false)) {
+					saveScene(m_pEngine->getCurrentScene());
+				}
+				
+				if (ImGui::IsKeyPressed(ImGuiKey_R, false)) {
+					loadScene(m_pEngine->getCurrentScene());
+				}
+
+			}
+
 			ImGui::BeginDisabled(isPlaying || isPaused);
 			if (ImGui::BeginMenu("File")) {
 				fileMenu();
@@ -339,9 +351,8 @@ namespace sa {
 				if (isPlaying) m_state = State::PAUSED;
 				else if (isPaused) m_state = State::PLAYING;
 				else if (m_state == State::EDIT) {
-					if (saveScene(m_pEngine->getCurrentScene())) {
-						m_state = State::PLAYING;
-					}
+					m_pEngine->storeSceneToFile(m_pEngine->getCurrentScene(), "sceneCache.json");
+					m_state = State::PLAYING;
 				}
 
 			}
@@ -349,7 +360,7 @@ namespace sa {
 				// Stop button
 				ImGui::SetCursorPosY(framePaddingY - (buttonSize * 0.25f));
 				if (ImGui::ImageButtonTinted(m_playPauseTex, ImVec2(buttonSize, buttonSize), ImVec2(2 * oneThird, 0), ImVec2(1, 1))) {
-					loadScene(m_pEngine->getCurrentScene());
+					m_pEngine->loadSceneFromFile("sceneCache.json");
 					m_state = State::EDIT;
 				}
 			}

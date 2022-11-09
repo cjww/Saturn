@@ -71,18 +71,13 @@ SceneHierarchy::SceneHierarchy(sa::Engine* pEngine) : EditorModule(pEngine) {
 }
 
 void SceneHierarchy::elementEvents(const sa::Entity& e) {
-	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup)) {
-		if (m_isPopupMenuOpen && m_hoveredEntity != e) {
-			m_isPopupMenuOpen = false;
-		}
-		m_hoveredEntity = e;
-	}
+	static sa::Entity payload;
 	if (ImGui::BeginDragDropSource()) {
-		ImGui::SetDragDropPayload("Entity", &m_hoveredEntity, sizeof(sa::Entity));
-		ImGui::SetTooltip(m_hoveredEntity.getComponent<comp::Name>()->name.c_str());
+		ImGui::SetDragDropPayload("Entity", &payload, sizeof(sa::Entity));
+		ImGui::SetTooltip(payload.getComponent<comp::Name>()->name.c_str());
 		ImGui::EndDragDropSource();
 	}
-	if (ImGui::BeginDragDropTarget()) {
+	else if (ImGui::BeginDragDropTarget()) {
 		const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Entity");
 		if (payload && payload->IsDelivery()) {
 			sa::Entity* entityPayload = (sa::Entity*)payload->Data;
@@ -90,6 +85,13 @@ void SceneHierarchy::elementEvents(const sa::Entity& e) {
 		}
 
 		ImGui::EndDragDropTarget();
+	}
+	else if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup)) {
+		if (m_isPopupMenuOpen && m_hoveredEntity != e) {
+			m_isPopupMenuOpen = false;
+		}
+		m_hoveredEntity = e;
+		payload = m_hoveredEntity;
 	}
 	
 }
