@@ -64,5 +64,39 @@ namespace comp {
 		pActor->release();
 	}
 
+	RigidBody& RigidBody::operator=(const RigidBody& other) {
+		
+		// copy actor
+		sa::Entity* userData = nullptr;
+		if (other.isStatic != isStatic) {
+			pActor->getScene()->removeActor(*pActor);
+			userData = (sa::Entity*)pActor->userData;
+			pActor->release();
+			pActor = nullptr;
+			
+			
+			pActor = sa::PhysicsSystem::get().createRigidBody(other.isStatic, other.pActor->getGlobalPose());
+			
+			pActor->userData = userData;
+			other.pActor->getScene()->addActor(*pActor);
+		}
+		else {
+			pActor->setGlobalPose(other.pActor->getGlobalPose());
+		}
 
+		std::vector<physx::PxShape*> oldShapes(pActor->getNbShapes());
+		pActor->getShapes(oldShapes.data(), oldShapes.size());
+		for (const auto& pShape : oldShapes) {
+			pActor->detachShape(*pShape);
+		}
+		std::vector<physx::PxShape*> shapes(other.pActor->getNbShapes());
+		other.pActor->getShapes(shapes.data(), shapes.size());
+		for (const auto& pShape : shapes) {
+			pActor->attachShape(*pShape);
+		}
+
+		isStatic = other.isStatic;
+
+		return *this;
+	}
 }

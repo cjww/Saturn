@@ -232,6 +232,24 @@ namespace sa {
         m_entity = entt::null;
     }
 
+    MetaComponent Entity::copyComponent(ComponentType type, Entity src) {
+        return type.invoke("copy", *this, src);
+    }
+
+    Entity Entity::clone() {
+        std::string name = getComponent<comp::Name>()->name;
+        Entity e = m_pScene->createEntity(name + " Copy");
+        m_pScene->forEachComponentType([&](ComponentType type) {
+            if (type == getComponentType<comp::Name>())
+                return;
+
+            if (hasComponent(type)) {
+                e.copyComponent(type, *this);
+            }
+        });
+        return e;
+    }
+
     bool Entity::isNull() const {
         return m_pScene == nullptr
             || !m_pScene->valid(m_entity);

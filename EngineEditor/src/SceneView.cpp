@@ -20,7 +20,7 @@ SceneView::SceneView(sa::Engine* pEngine, sa::RenderWindow* pWindow)
 
 	m_velocity = glm::vec3(0.0f);
 	m_maxVelocityMagnitude = 30.0f;
-	m_acceleration = 0.3f;
+	m_acceleration = 0.5f;
 
 	m_statsUpdateTime = 0.1f;
 	m_statsTimer = m_statsUpdateTime;
@@ -289,25 +289,29 @@ void SceneView::onImGui() {
 
 			const ImColor colliderColor = ImColor(0, 255, 0);
 			const ImColor lightSphereColor = ImColor(255, 255, 0);
-
+			// Light icons
 			comp::Light* light = m_selectedEntity.getComponent<comp::Light>();
 			if (light) {
 				ImGui::GizmoSphereResizable(light->values.position, light->values.attenuationRadius, glm::quat(1, 0, 0, 0), &m_camera, screenPos, screenSize, lightSphereColor, isOperating);
 			}
 
+			// Box colliders
 			comp::BoxCollider* bc = m_selectedEntity.getComponent<comp::BoxCollider>();
 			if (bc) {
 				comp::Transform* transform = m_selectedEntity.getComponent<comp::Transform>();
 				if (transform) {
-					if (ImGui::GizmoBoxResizable(transform->position + bc->offset, bc->halfLengths, transform->rotation, &m_camera, screenPos, screenSize, colliderColor, isOperating)) {
+					glm::vec3 offset = transform->rotation * bc->offset;
+					if (ImGui::GizmoBoxResizable(transform->position + offset, bc->halfLengths, transform->rotation, &m_camera, screenPos, screenSize, colliderColor, isOperating)) {
 						bc->onUpdate(&m_selectedEntity);
 					}
 				}
 			}
+			// SphereColliders
 			comp::SphereCollider* sc = m_selectedEntity.getComponent<comp::SphereCollider>();
 			if (sc) {
 				comp::Transform* transform = m_selectedEntity.getComponent<comp::Transform>();
 				if (transform) {
+					//glm::vec3 offset = transform->rotation * sc->offset;
 					if(ImGui::GizmoSphereResizable(transform->position + sc->offset, sc->radius, transform->rotation, &m_camera, screenPos, screenSize, colliderColor, isOperating)) {
 						sc->onUpdate(&m_selectedEntity);
 					}

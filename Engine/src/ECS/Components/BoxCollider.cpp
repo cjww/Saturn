@@ -58,17 +58,15 @@ namespace comp {
 		halfLengths = glm::max(halfLengths, 0.01f);
 
 		PxBoxGeometry box(sa::PhysicsSystem::toPxVec(halfLengths));
-		if (offset.x + offset.y + offset.z > 0.01f) {
+		if (abs(offset.x) + abs(offset.y) + abs(offset.z) > 0.01f) {
 			pShape = sa::PhysicsSystem::get().createExclusiveShape(&box);
-			rb->pActor->attachShape(*pShape);
-
 			PxTransform transform(sa::PhysicsSystem::toPxVec(offset));
 			pShape->setLocalPose(transform);
 		}
 		else {
 			pShape = sa::PhysicsSystem::get().createShape(&box);
-			rb->pActor->attachShape(*pShape);
 		}
+		rb->pActor->attachShape(*pShape);
 
 	}
 	

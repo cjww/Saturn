@@ -222,4 +222,16 @@ namespace sa {
 		return m_name;
 	}
 
+	void Scene::forEachComponentType(std::function<void(ComponentType)> function) {
+		visit([&](const entt::type_info& info) {
+			std::string_view name = info.name();
+			entt::meta_type any = entt::resolve(info);
+			
+			function(any);
+			
+		});
+
+
+	}
+
 }

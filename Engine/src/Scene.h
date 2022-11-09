@@ -104,8 +104,7 @@ namespace sa {
 		template<typename F>
 		void forEach(const std::vector<ComponentType>& components, F func);
 
-		template<typename T, typename F>
-		void onConstruct(F func);
+		void forEachComponentType(std::function<void(ComponentType)> function);
 
 	};
 	
@@ -170,13 +169,4 @@ namespace sa {
 		});
 	}
 
-	template<typename T, typename F>
-	inline void Scene::onConstruct(F func) {
-		static_assert(
-			std::is_assignable_v<std::function<void(Scene*, Entity)>, F> &&
-			"Not a valid function signature");
-		on_construct<T>().connect<[](entt::registry& reg, entt::entity e) {
-			
-		}>();
-	}
 }

@@ -71,6 +71,12 @@ namespace sa {
 
 		void destroy();
 
+		template<typename Comp>
+		Comp* copyComponent(Entity src);
+		MetaComponent copyComponent(ComponentType type, Entity src);
+
+		Entity clone();
+
 		bool isNull() const;
 
 		operator bool() const {
@@ -142,6 +148,15 @@ namespace sa {
 	}
 
 	template<typename Comp>
+	inline Comp* Entity::copyComponent(Entity src) {
+		Comp& orig = m_pRegistry->get<Comp>(src.m_entity);
+		Comp& c = m_pRegistry->get_or_emplace<Comp>(m_entity, orig);
+		
+		c = orig;
+		return &c;
+	}
+
+	template<typename Comp>
 	inline void registerComponentType() {
 		static bool registered = false;
 		if (registered)
@@ -157,6 +172,7 @@ namespace sa {
 				.func<&Entity::getComponent<Comp>, entt::as_ref_t>("get"_hs)
 				.func<&Entity::addComponent<Comp>, entt::as_ref_t>("add"_hs)
 				.func<&Entity::removeComponent<Comp>>("remove"_hs)
+				.func<&Entity::copyComponent<Comp>>("copy"_hs)
 				;
 		
 			SA_DEBUG_LOG_INFO("Registered Meta functions for", getComponentName<Comp>());

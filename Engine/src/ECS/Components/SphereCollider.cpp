@@ -49,7 +49,8 @@ namespace comp {
 		if (!rb)
 			rb = e->addComponent<comp::RigidBody>();
 		rb->pActor->detachShape(*pShape);
-		if (radius < 0.01f) radius = 0.01f;
+
+		radius = std::max(radius, 0.01f);
 
 		PxSphereGeometry sphere(radius);
 		if (offset.x + offset.y + offset.z > 0.01f) {
