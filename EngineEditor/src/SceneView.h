@@ -43,7 +43,7 @@ private:
 
 
 public:
-	SceneView(sa::Engine* pEngine, sa::RenderWindow* pWindow);
+	SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWindow* pWindow);
 	virtual ~SceneView() override;
 
 	// moves camera around scene according to input

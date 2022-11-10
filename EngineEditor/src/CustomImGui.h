@@ -18,7 +18,7 @@
 
 
 namespace ImGui {
-	static struct PopupPayload {
+	inline struct PopupPayload {
 		sa::ComponentType type;
 		std::string name;
 	} payload;

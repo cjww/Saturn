@@ -11,7 +11,7 @@ class EntityInspector : public EditorModule {
 	void makePopups();
 
 public:
-	EntityInspector(sa::Engine* pEngine);
+	EntityInspector(sa::Engine* pEngine, sa::EngineEditor* pEditor);
 	virtual ~EntityInspector();
 	virtual void onImGui() override;
 	virtual void update(float dt) override;

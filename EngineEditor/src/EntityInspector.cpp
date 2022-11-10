@@ -1,4 +1,5 @@
 #include "EntityInspector.h"
+#include "EngineEditor.h"
 
 void EntityInspector::makePopups() {
 	if (ImGui::BeginPopup("Remove?")) {
@@ -11,7 +12,7 @@ void EntityInspector::makePopups() {
 	}
 
 	if (ImGui::BeginPopup("Remove script?")) {
-		ImGui::Text("Remove %s?", ImGui::payload.name);
+		ImGui::Text("Remove %s?", ImGui::payload.name.c_str());
 		if (ImGui::Button("Yes")) {
 			ImGui::CloseCurrentPopup();
 			m_selectedEntity.removeScript(ImGui::payload.name);
@@ -29,20 +30,53 @@ void EntityInspector::makePopups() {
 		}
 		ImGui::EndPopup();
 	}
-
+	static bool fetchedScripts = false;
+	static std::string filter;
 	if (ImGui::BeginPopup("Select Script")) {
-		std::string buffer;
-		if(ImGui::InputText("Script Name", &buffer, ImGuiInputTextFlags_EnterReturnsTrue)) {
-			m_selectedEntity.addScript(buffer);
-			ImGui::CloseCurrentPopup();
+		static auto paths = m_pEditor->fetchAllScriptsInProject();
+		if (!fetchedScripts) {
+			paths = m_pEditor->fetchAllScriptsInProject();
+			fetchedScripts = true;
 		}
 
+		if (ImGui::BeginListBox("##ScriptFileList")) {
+
+			for (auto& path : paths) {
+				std::string scriptName = sa::utils::toLower(path.filename().string());
+				if (scriptName.find(sa::utils::toLower(filter)) == std::string::npos) {
+					continue;
+				}
+				if (ImGui::Selectable(scriptName.c_str())) {
+					m_selectedEntity.addScript(path);
+					ImGui::CloseCurrentPopup();
+				}
+
+			}
+
+			ImGui::EndListBox();
+		}
+		
+		ImGui::InputText("##ScriptFilter", &filter);
+		int height = ImGui::GetItemRectSize().y;
+		
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(0, 0));
+		ImGui::SameLine();
+		ImGui::PopStyleVar();
+
+		if (ImGui::Button("X", ImVec2(height, height))) {
+			filter = "";
+		}
+		
 		ImGui::EndPopup();
+	}
+	else {
+		fetchedScripts = false;
+		filter = "";
 	}
 
 }
 
-EntityInspector::EntityInspector(sa::Engine* pEngine) : EditorModule(pEngine) {
+EntityInspector::EntityInspector(sa::Engine* pEngine, sa::EngineEditor* pEditor) : EditorModule(pEngine, pEditor) {
 	m_selectedEntity = {};
 
 	pEngine->on<sa::editor_event::EntitySelected>([&](const sa::editor_event::EntitySelected& e, sa::Engine&) {

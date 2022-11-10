@@ -2,8 +2,8 @@
 
 #include "Graphics\RenderTechniques\ForwardPlus.h"
 
-SceneView::SceneView(sa::Engine* pEngine, sa::RenderWindow* pWindow)
-	: EditorModule(pEngine)
+SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWindow* pWindow)
+	: EditorModule(pEngine, pEditor)
 {
 	m_pWindow = pWindow;
 	m_isFocused = false;

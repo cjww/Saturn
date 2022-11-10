@@ -231,6 +231,8 @@ namespace sa {
 		return m_projectPath.parent_path() / projectRelativePath;
 	}
 
+	
+
 	void EngineEditor::onAttach(sa::Engine& engine, sa::RenderWindow& renderWindow) {
 		m_pEngine = &engine;
 		ImGui::SetupImGuiStyle();
@@ -238,11 +240,11 @@ namespace sa {
 			ImGui::SetupImGuiStyle();
 		});
 
-		m_editorModules.push_back(std::make_unique<SceneView>(&engine, &renderWindow));
+		m_editorModules.push_back(std::make_unique<SceneView>(&engine, this, &renderWindow));
 
-		m_editorModules.push_back(std::make_unique<EntityInspector>(&engine));
+		m_editorModules.push_back(std::make_unique<EntityInspector>(&engine, this));
 
-		m_editorModules.push_back(std::make_unique<SceneHierarchy>(&engine));
+		m_editorModules.push_back(std::make_unique<SceneHierarchy>(&engine, this));
 
 		//Application::get()->pushLayer(new TestLayer);
 
@@ -302,15 +304,17 @@ namespace sa {
 			}
 
 			//Key bindings
-			if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl)) {
-				if (ImGui::IsKeyPressed(ImGuiKey_S, false)) {
-					saveScene(m_pEngine->getCurrentScene());
-				}
+			if (m_state == State::EDIT) {
+				if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl)) {
+					if (ImGui::IsKeyPressed(ImGuiKey_S, false)) {
+						saveScene(m_pEngine->getCurrentScene());
+					}
 				
-				if (ImGui::IsKeyPressed(ImGuiKey_R, false)) {
-					loadScene(m_pEngine->getCurrentScene());
-				}
+					if (ImGui::IsKeyPressed(ImGuiKey_R, false)) {
+						loadScene(m_pEngine->getCurrentScene());
+					}
 
+				}
 			}
 
 			ImGui::BeginDisabled(isPlaying || isPaused);
@@ -447,5 +451,18 @@ namespace sa {
 		for (auto& module : m_editorModules) {
 			module->update(dt);
 		}
+	}
+
+	std::vector<std::filesystem::path> EngineEditor::fetchAllScriptsInProject() {
+		std::vector<std::filesystem::path> paths;
+		for (const auto& entry : std::filesystem::recursive_directory_iterator(makeEditorRelative("Assets"))) {
+			if (entry.is_regular_file()) {
+				std::filesystem::path path = entry;
+				if (path.extension() == ".lua") {
+					paths.push_back(path);
+				}
+			}
+		}
+		return std::move(paths);
 	}
 }

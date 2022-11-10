@@ -50,7 +50,7 @@ void SceneHierarchy::makePopups() {
 	}
 }
 
-SceneHierarchy::SceneHierarchy(sa::Engine* pEngine) : EditorModule(pEngine) {
+SceneHierarchy::SceneHierarchy(sa::Engine* pEngine, sa::EngineEditor* pEditor) : EditorModule(pEngine, pEditor) {
 	pEngine->on<sa::engine_event::SceneSet>([&](sa::engine_event::SceneSet& e, sa::Engine& engine) {
 		m_hoveredEntity = {};
 		m_selectedEntity = {};

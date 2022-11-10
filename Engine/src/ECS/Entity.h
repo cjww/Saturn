@@ -175,7 +175,7 @@ namespace sa {
 				.func<&Entity::copyComponent<Comp>>("copy"_hs)
 				;
 		
-			SA_DEBUG_LOG_INFO("Registered Meta functions for", getComponentName<Comp>());
+			SA_DEBUG_LOG_INFO("Registered Meta functions for ", getComponentName<Comp>());
 
 			ComponentType::registerComponent<Comp>();
 		}
@@ -202,7 +202,7 @@ namespace sa {
 					self.removeComponent(name);
 				});
 
-			SA_DEBUG_LOG_INFO("Registered Lua property for", getComponentName<Comp>());
+			SA_DEBUG_LOG_INFO("Registered Lua property for ", getComponentName<Comp>());
 
 		}
 

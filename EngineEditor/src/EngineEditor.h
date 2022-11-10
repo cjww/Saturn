@@ -48,6 +48,7 @@ namespace sa {
 		std::filesystem::path makeProjectRelative(const std::filesystem::path& path);
 		std::filesystem::path makeEditorRelative(const std::filesystem::path& projectRelativePath);
 
+
 	public:
 		EngineEditor() = default;
 		
@@ -55,5 +56,8 @@ namespace sa {
 		void onDetach() override;
 		void onImGuiRender() override;
 		void onUpdate(float dt) override;
+		
+		std::vector<std::filesystem::path> fetchAllScriptsInProject();
+
 	};
 }
