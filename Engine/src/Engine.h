@@ -21,7 +21,6 @@ namespace sa {
 	private:
 		
 		RenderPipeline m_renderPipeline;
-		bool m_isImGuiRecording;
 
 		Extent m_windowExtent;
 		RenderWindow* m_pWindow;
@@ -35,8 +34,6 @@ namespace sa {
 			std::chrono::duration<double, std::milli> gpu;
 		} m_frameTime;
 
-		bool m_isSetup = false;
-
 		template<typename T>
 		void registerComponentCallBack(Scene& scene);
 		void registerComponentCallBacks(Scene& scene);
@@ -49,11 +46,6 @@ namespace sa {
 	public:
 		// Call this to set up engine
 		void setup(sa::RenderWindow* pWindow = nullptr, bool enableImgui = false);
-
-		// Call this reight before the main loop
-		void init();
-
-		void update(float dt);
 
 		void cleanup();
 

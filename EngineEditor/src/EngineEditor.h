@@ -29,6 +29,8 @@ namespace sa {
 		Texture2D m_logoTex;
 		Texture2D m_playPauseTex;
 
+		void makePopups();
+
 		bool openProject(const std::filesystem::path& path);
 		bool openProject();
 
@@ -43,6 +45,9 @@ namespace sa {
 		bool loadScene(Scene* pScene);
 		bool openScene();
 		void openScene(const std::filesystem::path& path);
+
+		void startSimulation();
+		void stopSimulation();
 
 
 		std::filesystem::path makeProjectRelative(const std::filesystem::path& path);

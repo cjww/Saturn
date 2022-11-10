@@ -39,8 +39,6 @@ namespace sa {
 	
 	void Application::run() {
 		
-		m_engine.init();
-
 		Clock clock;
 		while (m_pWindow->isOpen()) {
 			m_pWindow->pollEvents();

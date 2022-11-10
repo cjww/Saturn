@@ -23,18 +23,10 @@ namespace sa {
 	private:
 		std::vector<Camera*> m_cameras;
 		std::set<Camera*> m_activeCameras;
-		/*
-		
-		using entt::registry::destroy;
-		using entt::registry::create;
-		*/
-		
 
 		ScriptManager m_scriptManager;
 
 		EntityHierarchy m_hierarchy;
-
-		bool m_isLoaded;
 
 		std::string m_name;
 		
@@ -55,6 +47,8 @@ namespace sa {
 		template<typename T>
 		void onComponentDestroy(entt::registry& reg, entt::entity e);
 
+		void updatePhysics(float dt);
+		void updateChildPositions();
 
 	public:
 		using entt::registry::view;
@@ -65,10 +59,11 @@ namespace sa {
 
 		static void reg();
 
-		virtual void load();
-		virtual void unload();
+		virtual void onRuntimeStart();
+		virtual void onRuntimeStop();
 
-		virtual void update(float dt);
+		virtual void runtimeUpdate(float dt);
+		virtual void inEditorUpdate(float dt);
 
 		void serialize(Serializer& s) override;
 		void deserialize(void* pDoc) override;

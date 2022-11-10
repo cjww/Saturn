@@ -201,8 +201,7 @@ namespace sa {
 
 		m_currentScene = nullptr;
 		m_pWindow = pWindow;
-		m_isImGuiRecording = false;
-
+		
 		registerAllComponents();
 
 		reg();
@@ -237,33 +236,22 @@ namespace sa {
 			});
 		}
 		
-		// set scene silently
-		//m_currentScene = &getScene("MainScene");
-
-		m_isSetup = true;
-	}
-
-	
-	void Engine::init() {
-		SA_PROFILE_FUNCTION();
-
-	}
-
-	void Engine::update(float dt) {
-		SA_PROFILE_FUNCTION();
-		m_currentScene->update(dt);
+		on<engine_event::SceneSet>([](engine_event::SceneSet& e, Engine&) {
+			if (e.oldScene) {
+				e.oldScene->onRuntimeStop();
+			}
+			e.newScene->onRuntimeStart();
+		});
 	}
 
 	void Engine::cleanup() {
 		SA_PROFILE_FUNCTION();
-		
 		m_scenes.clear();
 	}
 
 	void Engine::recordImGui() {
 		SA_PROFILE_FUNCTION();
 		m_renderPipeline.beginFrameImGUI();
-		m_isImGuiRecording = true;
 	}
 
 	void Engine::draw() {
@@ -273,7 +261,6 @@ namespace sa {
 			return;
 
 		m_renderPipeline.render(getCurrentScene());
-		m_isImGuiRecording = false;
 	}
 
 	std::chrono::duration<double, std::milli> Engine::getCPUFrameTime() const {
@@ -292,7 +279,6 @@ namespace sa {
 			});
 			
 			registerComponentCallBacks(it->second);
-
 		}
 		return it->second;
 	}
@@ -341,15 +327,8 @@ namespace sa {
 
 	void Engine::setScene(Scene& scene) {
 		SA_PROFILE_FUNCTION();
-		publish<engine_event::SceneSet>(&scene);
-		if (m_currentScene) {
-			m_currentScene->unload();
-		}
-		m_currentScene = &scene;
-		if (m_isSetup) {
-			publish<engine_event::SceneLoad>(m_currentScene);
-			m_currentScene->load();
-		}
+		publish<engine_event::SceneSet>(m_currentScene, &scene);
+		m_currentScene = &scene;	
 	}
 
 	std::unordered_map<std::string, Scene>& Engine::getScenes() {

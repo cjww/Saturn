@@ -53,6 +53,11 @@
                         }
                   ],
                   "scripts" : [
+                        {
+                              "path" : "D:/repos/TestProject2/Assets/foo.lua",
+                              "env" : {
+                              }
+                        }
                   ]
             },
             {
@@ -207,8 +212,8 @@
                                     "w" : 1.000000
                               },
                               "lightType" : 0,
-                              "attenuationRadius" : 40.396206,
-                              "intensity" : 0.525000
+                              "attenuationRadius" : 33.706001,
+                              "intensity" : 0.529000
                         }
                   ],
                   "scripts" : [
@@ -491,6 +496,7 @@
             },
             {
                   "id" : 6,
+                  "parent" : 1,
                   "components" : [
                         {
                               "type" : "Name",
@@ -514,11 +520,11 @@
                                     "y" : 2.805588,
                                     "z" : 53.100300
                               },
-                              "hasParent" : false,
+                              "hasParent" : true,
                               "relativePosition" : {
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
+                                    "x" : -10.420185,
+                                    "y" : 3.910901,
+                                    "z" : 9.071935
                               }
                         },
                         {
@@ -614,15 +620,15 @@
                                     "z" : 16.290716
                               },
                               "rotation" : {
-                                    "w" : 0.697139,
-                                    "x" : 0.138114,
-                                    "y" : -0.690095,
-                                    "z" : 0.136718
+                                    "w" : 0.704856,
+                                    "x" : 0.263296,
+                                    "y" : -0.579042,
+                                    "z" : 0.313949
                               },
                               "scale" : {
                                     "x" : 2.235380,
-                                    "y" : 1.157452,
-                                    "z" : 14.368917
+                                    "y" : 1.157451,
+                                    "z" : 14.368933
                               },
                               "hasParent" : false,
                               "relativePosition" : {
@@ -715,6 +721,7 @@
             },
             {
                   "id" : 2,
+                  "parent" : 1,
                   "components" : [
                         {
                               "type" : "Name",
@@ -725,7 +732,7 @@
                               "position" : {
                                     "x" : 18.610458,
                                     "y" : -2.724821,
-                                    "z" : 6.501448
+                                    "z" : 6.501449
                               },
                               "rotation" : {
                                     "w" : 0.845776,
@@ -738,11 +745,11 @@
                                     "y" : 26.330120,
                                     "z" : 10.537630
                               },
-                              "hasParent" : false,
+                              "hasParent" : true,
                               "relativePosition" : {
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
+                                    "x" : 18.876755,
+                                    "y" : 6.502984,
+                                    "z" : -8.988226
                               }
                         },
                         {
@@ -873,8 +880,8 @@
                                     "w" : 1.000000
                               },
                               "lightType" : 0,
-                              "attenuationRadius" : 45.007999,
-                              "intensity" : 0.909000
+                              "attenuationRadius" : 38.318001,
+                              "intensity" : 0.781000
                         },
                         {
                               "type" : "Model",

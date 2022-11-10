@@ -71,11 +71,12 @@ namespace sa {
 
 		std::vector<EntityScript> getEntityScripts(const entt::entity& entity) const;
 
-		void init(Scene* pScene);
-		void update(float dt, Scene* pScene);
-
 		template<typename ...Args>
 		static void tryCall(const sol::environment& env, const std::string& functionName, Args&& ...args);
+		
+		template<typename ...Args>
+		void broadcast(const std::string& functionName, Args&& ...args);
+
 	};
 
 	template<typename ...Args>
@@ -88,6 +89,14 @@ namespace sa {
 		auto r = func(args...);
 		if (!r.valid()) {
 			SA_DEBUG_LOG_ERROR(lua_tostring(LuaAccessable::getState(), -1));
+		}
+	}
+
+	template<typename ...Args>
+	inline void ScriptManager::broadcast(const std::string& functionName, Args&& ...args) {
+		// Scripts
+		for (const auto& script : m_allScripts) {
+			tryCall<Args...>(script.env, functionName, args...);
 		}
 	}
 

@@ -9,6 +9,70 @@
 #include <simdjson.h>
 
 namespace sa {
+	void EngineEditor::makePopups() {
+		static std::string name;
+
+		ImGui::SetNextWindowContentSize(ImVec2(300, 100));
+		if (ImGui::BeginPopupModal("Create New Scene", 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings)) {
+
+			ImGui::Text("Enter name: ");
+			static bool setFocus = true;
+			if (setFocus) {
+				ImGui::SetKeyboardFocusHere();
+				setFocus = false;
+			}
+			bool pressedEnter = ImGui::InputTextWithHint("Name", "New Scene", &name, ImGuiInputTextFlags_EnterReturnsTrue);
+			static std::string erromsg;
+			ImGui::Spacing();
+			if (ImGui::Button("Create") || pressedEnter) {
+				if (!name.empty()) {
+					m_pEngine->setScene(name);
+					ImGui::CloseCurrentPopup();
+					erromsg = "";
+					setFocus = true;
+				}
+				else {
+					erromsg = "Please enter a name";
+				}
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Cancel")) {
+				ImGui::CloseCurrentPopup();
+				erromsg = "";
+				setFocus = true;
+			}
+			if (!erromsg.empty()) {
+				ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), erromsg.c_str());
+			}
+			ImGui::EndPopup();
+		}
+
+		if (ImGui::BeginPopupModal("About")) {
+			ImVec2 windowSize = ImGui::GetContentRegionAvail();
+			ImVec2 imageSize = ImVec2(windowSize.x * 0.5f, windowSize.y * 0.5f);
+			ImVec2 cursorStartPos = ImGui::GetCursorStartPos();
+			ImGui::SetCursorPos(ImVec2(cursorStartPos.x + imageSize.x * 0.5f, cursorStartPos.y + imageSize.y * 0.5f));
+			ImGui::Image(m_logoTex, imageSize, ImVec2(0, 0), ImVec2(1, 1), ImVec4(1.f, 1.f, 1.f, 0.2f));
+
+			ImGui::SetCursorPos(cursorStartPos);
+			ImVec2 textSize = ImGui::CalcTextSize("Saturn");
+			ImGui::SetCursorPosX(windowSize.x * 0.5f - textSize.x * 0.5f);
+			ImGui::Text("Saturn");
+
+			ImGui::Spacing();
+
+			ImGui::Text("Version: %s", SA_VERSION);
+			ImGui::Text("Backend Graphics API: Vulkan 1.3");
+			ImGui::Text("Physics engine: NVIDIA PhysX");
+
+			ImGui::Spacing();
+			if (ImGui::Button("Close")) {
+				ImGui::CloseCurrentPopup();
+			}
+			ImGui::EndPopup();
+		}
+	}
+
 	bool EngineEditor::openProject(const std::filesystem::path& path) {
 		//unload project
 		m_savedScenes.clear();
@@ -223,6 +287,18 @@ namespace sa {
 		m_pEngine->setScene(scene);
 	}
 
+	void EngineEditor::startSimulation() {
+		m_state = State::PLAYING;
+		m_pEngine->storeSceneToFile(m_pEngine->getCurrentScene(), "sceneCache.json");
+		m_pEngine->getCurrentScene()->onRuntimeStart();
+	}
+
+	void EngineEditor::stopSimulation() {
+		m_pEngine->getCurrentScene()->onRuntimeStop();
+		m_pEngine->loadSceneFromFile("sceneCache.json");
+		m_state = State::EDIT;
+	}
+
 	std::filesystem::path EngineEditor::makeProjectRelative(const std::filesystem::path& editorRelativePath) {
 		return std::filesystem::proximate(editorRelativePath, m_projectPath.parent_path());
 	}
@@ -235,10 +311,23 @@ namespace sa {
 
 	void EngineEditor::onAttach(sa::Engine& engine, sa::RenderWindow& renderWindow) {
 		m_pEngine = &engine;
+		
 		ImGui::SetupImGuiStyle();
 		engine.on<engine_event::WindowResized>([](const engine_event::WindowResized& e, Engine& engine) {
 			ImGui::SetupImGuiStyle();
 		});
+
+		//hijack sceneSet event
+		engine.clear<engine_event::SceneSet>();
+		engine.on<engine_event::SceneSet>([&](engine_event::SceneSet& e, Engine&) {
+			if (m_state == State::EDIT)
+				return;
+			if (e.oldScene) {
+				e.oldScene->onRuntimeStop();
+			}
+			e.newScene->onRuntimeStart();
+		});
+
 
 		m_editorModules.push_back(std::make_unique<SceneView>(&engine, this, &renderWindow));
 
@@ -263,6 +352,8 @@ namespace sa {
 				m_recentProjectPaths.push_back(line);
 		}
 		recentProjectsFile.close();
+
+
 	}
 
 	void EngineEditor::onDetach() {
@@ -284,8 +375,7 @@ namespace sa {
 
 		ImGuiID viewPortDockSpaceID = ImGui::DockSpaceOverViewport();
 
-		static bool enterSceneNamePopup = false;
-		static std::string name;
+		bool enterSceneNamePopup = false;
 
 		const bool isPlaying = m_state == State::PLAYING;
 		const bool isPaused = m_state == State::PAUSED;
@@ -355,8 +445,7 @@ namespace sa {
 				if (isPlaying) m_state = State::PAUSED;
 				else if (isPaused) m_state = State::PLAYING;
 				else if (m_state == State::EDIT) {
-					m_pEngine->storeSceneToFile(m_pEngine->getCurrentScene(), "sceneCache.json");
-					m_state = State::PLAYING;
+					startSimulation();
 				}
 
 			}
@@ -364,8 +453,7 @@ namespace sa {
 				// Stop button
 				ImGui::SetCursorPosY(framePaddingY - (buttonSize * 0.25f));
 				if (ImGui::ImageButtonTinted(m_playPauseTex, ImVec2(buttonSize, buttonSize), ImVec2(2 * oneThird, 0), ImVec2(1, 1))) {
-					m_pEngine->loadSceneFromFile("sceneCache.json");
-					m_state = State::EDIT;
+					stopSimulation();
 				}
 			}
 
@@ -374,67 +462,7 @@ namespace sa {
 		if(isPlaying || isPaused)
 			ImGui::PopStyleColor();
 
-		ImGui::SetNextWindowContentSize(ImVec2(300, 100));
-		if (ImGui::BeginPopupModal("Create New Scene", 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings)) {
-
-			ImGui::Text("Enter name: ");
-			static bool setFocus = true;
-			if (setFocus) {
-				ImGui::SetKeyboardFocusHere();
-				setFocus = false;
-			}
-			bool pressedEnter = ImGui::InputTextWithHint("Name", "New Scene", &name, ImGuiInputTextFlags_EnterReturnsTrue);
-			static std::string erromsg;
-			ImGui::Spacing();
-			if (ImGui::Button("Create") || pressedEnter) {
-				if (!name.empty()) {
-					m_pEngine->setScene(name);
-					ImGui::CloseCurrentPopup();
-					enterSceneNamePopup = false;
-					erromsg = "";
-					setFocus = true;
-				}
-				else {
-					erromsg = "Please enter a name";
-				}
-			}
-			ImGui::SameLine();
-			if (ImGui::Button("Cancel")) {
-				ImGui::CloseCurrentPopup();
-				enterSceneNamePopup = false;
-				erromsg = "";
-				setFocus = true;
-			}
-			if (!erromsg.empty()) {
-				ImGui::TextColored(ImVec4(1.0f, 0.2f, 0.2f, 1.0f), erromsg.c_str());
-			}
-			ImGui::EndPopup();
-		}
-
-		if (ImGui::BeginPopupModal("About")) {
-			ImVec2 windowSize = ImGui::GetContentRegionAvail();
-			ImVec2 imageSize = ImVec2(windowSize.x * 0.5f, windowSize.y * 0.5f);
-			ImVec2 cursorStartPos = ImGui::GetCursorStartPos();
-			ImGui::SetCursorPos(ImVec2(cursorStartPos.x + imageSize.x * 0.5f, cursorStartPos.y + imageSize.y * 0.5f));
-			ImGui::Image(m_logoTex, imageSize, ImVec2(0, 0), ImVec2(1, 1), ImVec4(1.f, 1.f, 1.f, 0.2f));
-
-			ImGui::SetCursorPos(cursorStartPos);
-			ImVec2 textSize = ImGui::CalcTextSize("Saturn");
-			ImGui::SetCursorPosX(windowSize.x * 0.5f - textSize.x * 0.5f);
-			ImGui::Text("Saturn");
-
-			ImGui::Spacing();
-			
-			ImGui::Text("Version: %s", SA_VERSION);
-			ImGui::Text("Backend Graphics API: Vulkan 1.3");
-			ImGui::Text("Physics engine: NVIDIA PhysX");
-
-			ImGui::Spacing();
-			if (ImGui::Button("Close")) {
-				ImGui::CloseCurrentPopup();
-			}
-			ImGui::EndPopup();
-		}
+		makePopups();
 
 		ImGui::EndMainMenuBar();
 
@@ -445,8 +473,12 @@ namespace sa {
 
 	void EngineEditor::onUpdate(float dt) {
 		if (m_state == State::PLAYING) {
-			m_pEngine->update(dt);
+			m_pEngine->getCurrentScene()->runtimeUpdate(dt);
 		}
+		else {
+			m_pEngine->getCurrentScene()->inEditorUpdate(dt);
+		}
+
 
 		for (auto& module : m_editorModules) {
 			module->update(dt);

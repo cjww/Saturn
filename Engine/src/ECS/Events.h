@@ -8,11 +8,8 @@ namespace sa {
 	namespace engine_event {
 
 		struct SceneSet {
+			Scene* oldScene;
 			Scene* newScene;
-		};
-
-		struct SceneLoad {
-			Scene* scene;
 		};
 
 		struct WindowResized {
@@ -40,10 +37,6 @@ namespace sa {
 
 		struct EntityCreated {
 			Entity entity;
-		};
-
-		struct UpdatedScene {
-			float dt;
 		};
 
 		template<typename T>

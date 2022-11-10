@@ -2,10 +2,41 @@
 #include "Scene.h"
 
 namespace sa {
+	void Scene::updatePhysics(float dt) {
+		// Physics
+		view<comp::RigidBody, comp::Transform>().each([&](const comp::RigidBody& rb, const comp::Transform& transform) {
+			rb.pActor->setGlobalPose(transform, false);
+			});
+
+		m_pPhysicsScene->simulate(dt);
+		m_pPhysicsScene->fetchResults(true);
+
+		uint32_t actorCount = -1;
+		physx::PxActor** ppActors = m_pPhysicsScene->getActiveActors(actorCount);
+		for (uint32_t i = 0U; i < actorCount; i++) {
+			physx::PxActor* pActor = ppActors[i];
+			if (physx::PxRigidActor* rigidActor = pActor->is<physx::PxRigidActor>()) {
+				comp::Transform* transform = ((Entity*)pActor->userData)->getComponent<comp::Transform>();
+				*transform = rigidActor->getGlobalPose();
+			}
+		}
+	}
+
+	void Scene::updateChildPositions() {
+		m_hierarchy.forEachParent([&](const sa::Entity& parent) {
+			m_hierarchy.forEachChild(parent, [](const Entity& child, const Entity& parent) {
+				comp::Transform* transform = child.getComponent<comp::Transform>();
+				comp::Transform* parentTransform = parent.getComponent<comp::Transform>();
+				if (!transform || !parentTransform)
+					return;
+
+				transform->position = parentTransform->position + transform->relativePosition;
+			});
+		});
+	}
 
 	Scene::Scene(const std::string& name)
-		: m_isLoaded(false)
-		, m_name(name)
+		: m_name(name)
 		, m_pPhysicsScene(PhysicsSystem::get().createScene())
 	{
 
@@ -38,54 +69,29 @@ namespace sa {
 
 	}
 
-	void Scene::load() {
-		m_scriptManager.init(this);
-		m_isLoaded = true;
+	void Scene::onRuntimeStart() {
+		m_scriptManager.broadcast("onStart");
 	}
 
-	void Scene::unload() {
-		m_isLoaded = false;
+	void Scene::onRuntimeStop()	{
+		m_scriptManager.broadcast("onStop");
 	}
 
-	void Scene::update(float dt) {
+
+	void Scene::runtimeUpdate(float dt) {
 		SA_PROFILE_FUNCTION();
 
-		// Physics
-		view<comp::RigidBody, comp::Transform>().each([&](const comp::RigidBody& rb, const comp::Transform& transform) {
-			rb.pActor->setGlobalPose(transform, false);
-		});
+		updatePhysics(dt);
 		
-		m_pPhysicsScene->simulate(dt);
-		m_pPhysicsScene->fetchResults(true);
-
-		uint32_t actorCount = -1;
-		physx::PxActor** ppActors = m_pPhysicsScene->getActiveActors(actorCount);
-		for (uint32_t i = 0U; i < actorCount; i++) {
-			physx::PxActor* pActor = ppActors[i];
-			if (physx::PxRigidActor* rigidActor = pActor->is<physx::PxRigidActor>()) {
-				comp::Transform* transform = ((Entity*)pActor->userData)->getComponent<comp::Transform>();
-				*transform = rigidActor->getGlobalPose();
-			}
-		}
-
-		// Event
-		publish<scene_event::UpdatedScene>(dt);
-
 		// Scripts
-		m_scriptManager.update(dt, this);
+		m_scriptManager.broadcast("onUpdate", dt);
 		
-		// child positions
-		m_hierarchy.forEachParent([&](const sa::Entity& parent) {
-			m_hierarchy.forEachChild(parent, [](const Entity& child, const Entity& parent) {
-				comp::Transform* transform = child.getComponent<comp::Transform>();
-				comp::Transform* parentTransform = parent.getComponent<comp::Transform>();
-				if (!transform || !parentTransform)
-					return;
+		updateChildPositions();
 
-				transform->position = parentTransform->position + transform->relativePosition;
-			});
-		});
+	}
 
+	void Scene::inEditorUpdate(float dt) {
+		updateChildPositions();
 	}
 
 	void Scene::serialize(Serializer& s) {
@@ -186,11 +192,6 @@ namespace sa {
 		script.env["scene"] = this;
 		script.env["entity"] = entity;
 		
-		if (!m_isLoaded)
-			return scriptOpt;
-
-		m_scriptManager.tryCall(script.env, "init");
-
 		return scriptOpt;
 	}
 
@@ -224,14 +225,8 @@ namespace sa {
 
 	void Scene::forEachComponentType(std::function<void(ComponentType)> function) {
 		visit([&](const entt::type_info& info) {
-			std::string_view name = info.name();
-			entt::meta_type any = entt::resolve(info);
-			
-			function(any);
-			
+			function(entt::resolve(info));
 		});
-
-
 	}
 
 }
