@@ -544,7 +544,11 @@ namespace sa {
 		SA_PROFILE_FUNCTION();
 		
 		m_lights.clear();
-		pScene->forEach<comp::Light>([&](const comp::Light& light) {
+		pScene->view<comp::Transform, comp::Light>().each([](const comp::Transform& transform, comp::Light& light) {
+			light.values.position = transform.position;
+		});
+		
+		pScene->view<comp::Light>().each([&](comp::Light& light) {
 			m_lights.push_back(light.values);
 		});
 		
