@@ -3,6 +3,7 @@
 #include "Graphics/RenderPipeline.h"
 #include "Graphics\RenderTechniques\ForwardPlus.h"
 #include "Graphics\RenderLayers\ImGuiRenderLayer.h"
+#include "Graphics\RenderLayers\MainRenderLayer.h"
 
 #include "AssetManager.h"
 #include "Scene.h"
@@ -17,10 +18,12 @@
 
 namespace sa {
 
+
 	class Engine : public entt::emitter<Engine> {
 	private:
 		
 		RenderPipeline m_renderPipeline;
+		Texture2D m_colorTexture;
 
 		Extent m_windowExtent;
 		RenderWindow* m_pWindow;
@@ -55,6 +58,8 @@ namespace sa {
 		std::chrono::duration<double, std::milli> getCPUFrameTime() const;
 
 		const RenderPipeline& getRenderPipeline() const;
+
+		const Texture2D& getColorTexture() const;
 
 		Scene& getScene(const std::string& name);
 		Scene& loadSceneFromFile(const std::filesystem::path& sceneFile);

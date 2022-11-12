@@ -193,6 +193,20 @@ namespace sa {
 
 	void Engine::onWindowResize(Extent newExtent) {
 		publish<sa::engine_event::WindowResized>(newExtent);
+		m_renderPipeline.onWindowResize(newExtent);
+
+		for (const auto& [id, scene] : m_scenes) {
+			for (auto& cam : scene.getActiveCameras()) {
+				Rect viewport = cam->getViewport();
+				// resize viewport but keep relative size to window size
+
+				viewport.extent.width = newExtent.width * viewport.extent.width / (float)m_windowExtent.width;
+				viewport.extent.height = newExtent.height * viewport.extent.height / (float)m_windowExtent.height;
+
+				cam->setViewport(viewport);
+			}
+		}
+
 		m_windowExtent = newExtent;
 	}
 
@@ -209,31 +223,20 @@ namespace sa {
 		Entity::reg();
 		
 		if (pWindow) {
-			m_renderPipeline.create(pWindow, new ForwardPlus(!enableImgui));
-			if (enableImgui)
-				m_renderPipeline.pushLayer(new ImGuiRenderLayer);
+			m_renderPipeline.create(pWindow, new ForwardPlus);
+			
+			m_colorTexture = Renderer::get().createTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, pWindow->getCurrentExtent());
+			m_renderPipeline.getRenderTechnique()->drawData.colorTexture = m_colorTexture;
+			m_renderPipeline.pushLayer(new MainRenderLayer(m_colorTexture));
+
+			if (enableImgui) {
+				m_renderPipeline.pushOverlay(new ImGuiRenderLayer);
+			}
+			
 
 			pWindow->setResizeCallback(std::bind(&Engine::onWindowResize, this, std::placeholders::_1));
 			m_windowExtent = pWindow->getCurrentExtent();
 
-			on<engine_event::WindowResized>([&](engine_event::WindowResized& e, Engine& emitter) {
-				m_renderPipeline.onWindowResize(e.newExtent);
-
-				for (const auto& [id, scene] : m_scenes) {
-					for (auto& cam : scene.getActiveCameras()) {
-						Rect viewport = cam->getViewport();
-						// resize viewport but keep relative size to window size
-						
-						viewport.extent.width = e.newExtent.width * viewport.extent.width / (float)m_windowExtent.width;
-						viewport.extent.height = e.newExtent.height * viewport.extent.height / (float)m_windowExtent.height;
-						
-						cam->setViewport(viewport);
-					}
-				}
-
-				m_windowExtent = e.newExtent;
-
-			});
 		}
 		
 		on<engine_event::SceneSet>([](engine_event::SceneSet& e, Engine&) {
@@ -269,6 +272,10 @@ namespace sa {
 	
 	const RenderPipeline& Engine::getRenderPipeline() const {
 		return m_renderPipeline;
+	}
+
+	const Texture2D& Engine::getColorTexture() const {
+		return m_colorTexture;
 	}
 
 	Scene& Engine::getScene(const std::string& name) {

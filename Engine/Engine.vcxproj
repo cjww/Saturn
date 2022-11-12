@@ -215,6 +215,7 @@
     <ClCompile Include="src\Graphics\IRenderLayer.cpp" />
     <ClCompile Include="src\Graphics\RenderLayers\BloomRenderLayer.cpp" />
     <ClCompile Include="src\Graphics\RenderLayers\ImGuiRenderLayer.cpp" />
+    <ClCompile Include="src\Graphics\RenderLayers\MainRenderLayer.cpp" />
     <ClCompile Include="src\Graphics\RenderPipeline.cpp" />
     <ClCompile Include="src\PhysicsSystem.cpp" />
     <ClCompile Include="src\Serializable.cpp" />
@@ -255,6 +256,7 @@
     <ClInclude Include="src\ECS\Components\RigidBody.h" />
     <ClInclude Include="src\ECS\Components\SphereCollider.h" />
     <ClInclude Include="src\ECS\Components\Transform.h" />
+    <ClInclude Include="src\Graphics\RenderLayers\MainRenderLayer.h" />
     <ClInclude Include="src\Serializable.h" />
     <ClInclude Include="src\Graphics\IRenderLayer.h" />
     <ClInclude Include="src\Graphics\RenderLayers\BloomRenderLayer.h" />

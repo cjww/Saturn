@@ -22,12 +22,6 @@ namespace sa {
 		ResourceID m_colorFramebuffer = NULL_RESOURCE;
 		ResourceID m_colorPipeline = NULL_RESOURCE;
 
-		ResourceID m_composeRenderProgram = NULL_RESOURCE;
-		ResourceID m_composeFramebuffer = NULL_RESOURCE;
-		ResourceID m_composePipeline = NULL_RESOURCE;
-
-		ResourceID m_composeDescriptorSet = NULL_RESOURCE;
-		
 		ResourceID m_sceneDescriptorSet = NULL_RESOURCE;
 		
 		ResourceID m_linearSampler = NULL_RESOURCE;
@@ -52,6 +46,7 @@ namespace sa {
 		Texture2D m_debugLightHeatmap;
 		ResourceID m_debugLightHeatmapDescriptorSet = NULL_RESOURCE;
 		
+		// DrawData
 		// used for collecting meshes every frame
 		std::vector<ModelData*> m_models;
 		std::vector<std::vector<ObjectData>> m_objects;
@@ -75,7 +70,6 @@ namespace sa {
 		void createPreDepthPass(Extent extent);
 		void createLightCullingShader();
 		void createColorPass(Extent extent);
-		void createComposePass(Extent extent);
 
 		void resizeLightIndexBuffer(Extent extent);
 		
@@ -88,13 +82,14 @@ namespace sa {
 
 		virtual void onWindowResize(Extent extent) override;
 
-		virtual void init(sa::RenderWindow* pWindow, IRenderLayer* = nullptr) override;
+		virtual void init(Extent extent);
 		virtual void cleanup() override;
 
 		virtual void updateData(RenderContext& context) override;
-		virtual void preRender(RenderContext& context, Camera* pCamera) override;
-		virtual void render(RenderContext& context, Camera* pCamera) override;
-		virtual void postRender(RenderContext& context) override;
+		virtual bool prepareRender(RenderContext& context, Camera* pCamera) override;
+		virtual void render(RenderContext& context, Camera* pCamera, ResourceID framebuffer) override;
+
+		virtual ResourceID createColorFramebuffer(const Texture2D& outputTexture) override;
 
 		virtual void updateLights(Scene* pScene) override;
 		virtual void collectMeshes(Scene* pScene) override;

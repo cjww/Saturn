@@ -216,7 +216,7 @@ void SceneView::onImGui() {
 			m_camera.setAspectRatio(availSize.x / availSize.y);
 		}
 
-		sa::Texture texture = m_pEngine->getRenderPipeline().getRenderTechnique()->getOutputTexture();
+		const sa::Texture2D& texture = m_pEngine->getColorTexture();
 		ImGui::Image(texture, imAvailSize);
 		ImVec2 imageMin = ImGui::GetItemRectMin();
 		ImVec2 imageSize = ImGui::GetItemRectSize();

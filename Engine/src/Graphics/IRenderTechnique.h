@@ -4,39 +4,40 @@
 #include "Scene.h"
 
 
-#include "IRenderLayer.h"
-
-
 namespace sa {
-	class IRenderTechnique : public IRenderLayer {
-	protected:
-		bool m_isRenderingToSwapchain;
 
-		sa::RenderWindow* m_pWindow;
+	struct DrawData {
+		Texture2D colorTexture;
+		Texture2D finalTexture;
+	};
+
+	class IRenderTechnique {
+	protected:
+		Renderer& m_renderer;
 
 
 	public:
-		IRenderTechnique(bool renderToSwapchain = true);
+		DrawData drawData;
+
+
+		IRenderTechnique();
 		virtual ~IRenderTechnique() = default;
 
-		//virtual void onWindowResize(Extent extent) = 0;
-
-		//virtual void init(sa::RenderWindow* pWindow) = 0;
+		virtual void init(Extent extent) = 0;
 		virtual void cleanup() = 0;
 
-		virtual void updateData(RenderContext& context) = 0;
-		/*
-		virtual void preRender(RenderContext& context, Camera* pCamera) = 0;
-		virtual void render(RenderContext& context, Camera* pCamera) = 0;
-		virtual void postRender(RenderContext& context) = 0;
-		*/
+		virtual void onWindowResize(Extent extent) = 0;
 
+		virtual void updateData(RenderContext& context) = 0;
+		
+		virtual bool prepareRender(RenderContext& context, Camera* pCamera) { return true; };
+		virtual void render(RenderContext& context, Camera* pCamera, ResourceID framebuffer) = 0;
+		virtual void compose(RenderContext& context, ResourceID framebuffer) {};
+
+		virtual ResourceID createColorFramebuffer(const Texture2D& outputTexture) = 0;
 
 		virtual void updateLights(Scene* pScene) = 0;
 		virtual void collectMeshes(Scene* pScene) = 0;
 
-
-		sa::Extent getCurrentExtent() const;
-		
 	};
 }

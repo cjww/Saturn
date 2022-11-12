@@ -2,18 +2,24 @@
 #include "ImGuiRenderLayer.h"
 namespace sa {
 
-	void ImGuiRenderLayer::init(RenderWindow* pWindow, IRenderLayer*) {
+	void ImGuiRenderLayer::init(RenderWindow* pWindow, IRenderTechnique* pRenderTechnique) {
 		m_pWindow = pWindow;
 		
+		m_outputTexture = m_renderer.createTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, pWindow->getCurrentExtent());
+
+		pRenderTechnique->drawData.finalTexture = m_outputTexture;
+
 		m_imGuiRenderProgram = m_renderer.createRenderProgram()
-			.addSwapchainAttachment(pWindow->getSwapchainID())
+			.addColorAttachment(true, m_outputTexture)
 			.beginSubpass()
 			.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
 			.endSubpass()
 			.end();
 
-		m_imGuiFramebuffer = m_renderer.createSwapchainFramebuffer(m_imGuiRenderProgram, pWindow->getSwapchainID(), {});
+		m_imGuiFramebuffer = m_renderer.createFramebuffer(m_imGuiRenderProgram, { m_outputTexture });
 		m_renderer.initImGui(*pWindow, m_imGuiRenderProgram, 0);
+
+
 	}
 
 	void ImGuiRenderLayer::cleanup() {
@@ -37,5 +43,9 @@ namespace sa {
 		Renderer::get().cleanupImGui();
 		cleanup();
 		init(m_pWindow, nullptr);
+	}
+	
+	const Texture2D& ImGuiRenderLayer::getOutputTexture() const {
+		return m_outputTexture;
 	}
 }

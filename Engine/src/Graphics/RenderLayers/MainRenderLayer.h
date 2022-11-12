@@ -1,19 +1,26 @@
 #pragma once
 #include "Graphics/IRenderLayer.h"
+
 namespace sa {
 
-	class ImGuiRenderLayer : public IRenderLayer {
+	class MainRenderLayer : public IRenderLayer {
 	private:
-		ResourceID m_imGuiRenderProgram = NULL_RESOURCE;
-		ResourceID m_imGuiFramebuffer = NULL_RESOURCE;
 		RenderWindow* m_pWindow;
+		IRenderTechnique* m_pRenderTechnique;
 
-		Texture2D m_outputTexture;
+
+		ResourceID m_sceneFramebuffer;
+		Texture2D m_texture;
 
 	public:
-		virtual void init(RenderWindow* pWindow, IRenderTechnique* pRenderTechnique) override;
-		virtual void cleanup();
+		MainRenderLayer();
+		MainRenderLayer(Texture2D texture);
 
+		virtual void init(RenderWindow* pWindow, IRenderTechnique* pRenderTechnique) override;
+		virtual void cleanup() override;
+
+		virtual void preRender(RenderContext& context, Camera* pCamera) override;
+		virtual void render(RenderContext& context, Camera* pCamera) override;
 		virtual void postRender(RenderContext& context) override;
 
 		virtual void onWindowResize(Extent newExtent) override;

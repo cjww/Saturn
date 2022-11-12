@@ -90,7 +90,8 @@ namespace sa {
 		
 
 		m_colorTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, extent);
-	
+		drawData.colorTexture = m_colorTexture;
+
 		m_colorRenderProgram = m_renderer.createRenderProgram()
 			.addColorAttachment(true, m_colorTexture)
 			.addDepthAttachment(m_depthTexture)
@@ -112,64 +113,6 @@ namespace sa {
 		
 		m_sceneDescriptorSet = m_renderer.allocateDescriptorSet(m_colorPipeline, SET_PER_FRAME);
 
-
-	}
-	
-	void ForwardPlus::createComposePass(Extent extent) {
-		if (m_composeDescriptorSet != NULL_RESOURCE) {
-			m_renderer.freeDescriptorSet(m_composeDescriptorSet);
-			m_composeDescriptorSet = NULL_RESOURCE;
-		}
-
-		if (m_composePipeline != NULL_RESOURCE) {
-			m_renderer.destroyPipeline(m_composePipeline);
-			m_composePipeline = NULL_RESOURCE;
-		}
-		
-		if (m_composeFramebuffer != NULL_RESOURCE) {
-			m_renderer.destroyFramebuffer(m_composeFramebuffer);
-			m_composeFramebuffer = NULL_RESOURCE;
-		}
-		
-		if (m_composeRenderProgram != NULL_RESOURCE) {
-			m_renderer.destroyRenderProgram(m_composeRenderProgram);
-			m_composeRenderProgram = NULL_RESOURCE;
-		}
-
-		if (m_outputTexture.isValid()) 
-			m_outputTexture.destroy();
-		
-		
-		m_outputTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, extent);
-	
-		auto composeProgramFactory = m_renderer.createRenderProgram();
-		if (m_isRenderingToSwapchain) {
-			composeProgramFactory.addSwapchainAttachment(m_pWindow->getSwapchainID());
-		}
-		else {
-			composeProgramFactory.addColorAttachment(true, m_outputTexture);
-		}
-
-		m_composeRenderProgram = composeProgramFactory.beginSubpass()
-			.addAttachmentReference(0, SubpassAttachmentUsage::ColorTarget)
-			.endSubpass()
-			.addSubpassDependency()
-			.end();
-		
-
-		if (m_isRenderingToSwapchain) {
-			m_composeFramebuffer = m_renderer.createSwapchainFramebuffer(m_composeRenderProgram, m_pWindow->getSwapchainID(), {});
-		}
-		else {
-			m_composeFramebuffer = m_renderer.createFramebuffer(m_composeRenderProgram, { m_outputTexture });
-		}
-
-
-		m_composePipeline = m_renderer.createGraphicsPipeline(m_composeRenderProgram, 0, extent,
-			"../Engine/shaders/Compose.vert.spv", "../Engine/shaders/Compose.frag.spv");
-
-		
-		m_composeDescriptorSet = m_renderer.allocateDescriptorSet(m_composePipeline, 0);
 
 	}
 
@@ -200,9 +143,6 @@ namespace sa {
 		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 4, m_lightIndexBuffer);
 		m_renderer.updateDescriptorSet(m_sceneDescriptorSet, 5, m_linearSampler);
 		
-		m_renderer.updateDescriptorSet(m_composeDescriptorSet, 0, m_colorTexture, m_linearSampler);
-		m_renderer.updateDescriptorSet(m_composeDescriptorSet, 1, *AssetManager::get().loadDefaultBlackTexture(), m_nearestSampler);
-
 	}
 	
 	void ForwardPlus::collectMeshes(Scene* pScene) {
@@ -334,7 +274,6 @@ namespace sa {
 	void ForwardPlus::onWindowResize(Extent extent) {
 		createPreDepthPass(extent);
 		createColorPass(extent);
-		createComposePass(extent);
 
 		resizeLightIndexBuffer(extent);
 
@@ -365,15 +304,11 @@ namespace sa {
 
 	}
 
-	void ForwardPlus::init(sa::RenderWindow* pWindow, IRenderLayer*) {
+	void ForwardPlus::init(Extent extent) {
 		
-		m_pWindow = pWindow;
-		sa::Extent extent = m_pWindow->getCurrentExtent();
-
 		createPreDepthPass(extent);
 		createLightCullingShader();
 		createColorPass(extent);
-		createComposePass(extent);
 
 		// Samplers
 		m_linearSampler = m_renderer.createSampler(FilterMode::LINEAR);
@@ -450,9 +385,9 @@ namespace sa {
 
 	}
 
-	void ForwardPlus::preRender(RenderContext& context, Camera* pCamera) {
+	bool ForwardPlus::prepareRender(RenderContext& context, Camera* pCamera) {
 		if (!pCamera)
-			return;
+			return false;
 		
 
 		context.bindVertexBuffers(0, { m_vertexBuffer });
@@ -487,12 +422,15 @@ namespace sa {
 
 		context.dispatch(m_tileCount.x, m_tileCount.y, 1);
 
+		// TODO generate shadowMaps
+
+
+		return true;
 	}
 
-	void ForwardPlus::render(RenderContext& context, Camera* pCamera) {
+	void ForwardPlus::render(RenderContext& context, Camera* pCamera, ResourceID framebuffer) {
 		if (!pCamera)
 			return;
-			
 
 		Matrix4x4 projViewMat = pCamera->getProjectionMatrix() * pCamera->getViewMatrix();
 
@@ -501,12 +439,12 @@ namespace sa {
 		perFrame.viewPos = pCamera->getPosition();
 
 		// Main color pass
-		context.beginRenderProgram(m_colorRenderProgram, m_colorFramebuffer, SubpassContents::DIRECT);
+		context.beginRenderProgram(m_colorRenderProgram, framebuffer, SubpassContents::DIRECT);
 		context.bindPipeline(m_colorPipeline);
 		context.bindDescriptorSet(m_sceneDescriptorSet, m_colorPipeline);
 
 		context.setViewport(pCamera->getViewport());
-					
+
 		if (m_indirectIndexedBuffer.getElementCount<DrawIndexedIndirectCommand>() > 0) {
 			context.pushConstant(m_colorPipeline, ShaderStageFlagBits::VERTEX | ShaderStageFlagBits::FRAGMENT, perFrame);
 			context.pushConstant(m_colorPipeline, ShaderStageFlagBits::FRAGMENT, m_tileCount.x, sizeof(perFrame));
@@ -516,13 +454,8 @@ namespace sa {
 
 		context.endRenderProgram(m_colorRenderProgram);
 
-		
-	}
-
-	void ForwardPlus::postRender(RenderContext& context) {
-		
 		m_indirectIndexedBuffer.manualIncrement();
-
+		
 		context.beginRenderProgram(m_debugLightHeatmapRenderProgram, m_debugLightHeatmapFramebuffer, SubpassContents::DIRECT);
 		context.bindPipeline(m_debugLightHeatmapPipeline);
 		context.bindDescriptorSet(m_debugLightHeatmapDescriptorSet, m_debugLightHeatmapPipeline);
@@ -530,14 +463,10 @@ namespace sa {
 		context.draw(6, 1);
 		context.endRenderProgram(m_debugLightHeatmapRenderProgram);
 
-		
-		context.beginRenderProgram(m_composeRenderProgram, m_composeFramebuffer, SubpassContents::DIRECT);
-			
-		context.bindPipeline(m_composePipeline);
-		context.bindDescriptorSet(m_composeDescriptorSet, m_composePipeline);
-		context.draw(6, 1);
+	}
 
-		context.endRenderProgram(m_composeRenderProgram);
+	ResourceID ForwardPlus::createColorFramebuffer(const Texture2D& outputTexture) {
+		return m_renderer.createFramebuffer(m_colorRenderProgram, { outputTexture, m_depthTexture });
 	}
 
 	void ForwardPlus::updateLights(Scene* pScene) {
@@ -561,12 +490,7 @@ namespace sa {
 	}
 
 	void ForwardPlus::setShowHeatmap(bool value) {
-		if (value) {
-			m_renderer.updateDescriptorSet(m_composeDescriptorSet, 1, m_debugLightHeatmap, m_nearestSampler);
-		}
-		else {
-			m_renderer.updateDescriptorSet(m_composeDescriptorSet, 1, *AssetManager::get().loadDefaultBlackTexture(), m_nearestSampler);
-		}
+		
 	}
 
 

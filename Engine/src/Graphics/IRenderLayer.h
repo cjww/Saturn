@@ -4,18 +4,19 @@
 #include "RenderWindow.hpp"
 #include "Camera.h"
 
+#include "IRenderTechnique.h"
+
 namespace sa {
 
 	class IRenderLayer {
 	protected:
 		Renderer& m_renderer;
-		sa::Texture2D m_outputTexture;
-
+		
 	public:
 		IRenderLayer();
 		virtual ~IRenderLayer() = default;
 
-		virtual void init(RenderWindow* pWindow, IRenderLayer* pPreviousLayer = nullptr) = 0;
+		virtual void init(RenderWindow* pWindow, IRenderTechnique* pRenderTechnique = nullptr) = 0;
 		virtual void cleanup() = 0;
 
 		virtual void preRender(RenderContext& context, Camera* pCamera) {};
@@ -24,7 +25,7 @@ namespace sa {
 
 		virtual void onWindowResize(Extent newExtent) = 0;
 
-		virtual const Texture2D& getOutputTexture() const;
+		virtual const Texture2D& getOutputTexture() const = 0;
 
 	};
 }
