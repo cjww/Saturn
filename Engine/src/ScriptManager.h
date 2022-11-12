@@ -10,6 +10,8 @@
 #include <Tools/Logger.hpp>
 #include <filesystem>
 
+#include "Serializable.h"
+
 namespace sa {
 
 	class Scene;
@@ -20,15 +22,20 @@ namespace sa {
 		std::vector<ComponentType> components;
 	};
 
-	struct EntityScript {
+	struct EntityScript : public Serializable {
 		std::string name;
+		std::filesystem::path path;
 		sol::environment env;
 		entt::entity owner;
-		EntityScript(std::string name, sol::environment env, entt::entity owner)
+		EntityScript(std::string name, std::filesystem::path path, sol::environment env, entt::entity owner)
 			: name(name)
+			, path(path)
 			, env(env) 
 			, owner(owner)
 		{}
+
+		virtual void serialize(Serializer& s) override;
+		virtual void deserialize(void* pDoc) override;
 	};
 
 	class ScriptManager {
@@ -60,14 +67,16 @@ namespace sa {
 		void clearEntity(const entt::entity& entity);
 		std::optional<EntityScript> getScript(const entt::entity& entity, const std::string& name) const;
 
+		void clearAll();
 
 		std::vector<EntityScript> getEntityScripts(const entt::entity& entity) const;
 
-		void init(Scene* pScene);
-		void update(float dt, Scene* pScene);
-
 		template<typename ...Args>
 		static void tryCall(const sol::environment& env, const std::string& functionName, Args&& ...args);
+		
+		template<typename ...Args>
+		void broadcast(const std::string& functionName, Args&& ...args);
+
 	};
 
 	template<typename ...Args>
@@ -80,6 +89,14 @@ namespace sa {
 		auto r = func(args...);
 		if (!r.valid()) {
 			SA_DEBUG_LOG_ERROR(lua_tostring(LuaAccessable::getState(), -1));
+		}
+	}
+
+	template<typename ...Args>
+	inline void ScriptManager::broadcast(const std::string& functionName, Args&& ...args) {
+		// Scripts
+		for (const auto& script : m_allScripts) {
+			tryCall<Args...>(script.env, functionName, args...);
 		}
 	}
 

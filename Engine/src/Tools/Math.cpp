@@ -3,7 +3,7 @@
 
 namespace sa::math {
 
-    glm::vec3 worldToScreen(glm::vec3 point, const Camera* camera, glm::vec2 targetScreenPos, glm::vec2 targetScreenSize) {
+    glm::vec3 worldToScreen(const glm::vec3& point, const Camera* camera, glm::vec2 targetScreenPos, glm::vec2 targetScreenSize) {
 		glm::mat4 viewMat = camera->getViewMatrix();
 		glm::mat4 projMat = camera->getProjectionMatrix();
 
@@ -12,7 +12,7 @@ namespace sa::math {
 		point4 = viewMat * point4;
 		point4 = projMat * point4;
 		
-		point4 /= point4.z;
+		point4 /= point4.w;
 
 		point4.x *= targetScreenSize.x / 2;
 		point4.y *= targetScreenSize.y / 2;

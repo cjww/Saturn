@@ -2,7 +2,6 @@
 #include "EntityHierarchy.h"
 
 namespace sa {
-	
 	bool EntityHierarchy::isParent(const Entity& target, const Entity& parent) {
 		if (m_parents.count(target)) {
 			if(m_parents.at(target) == parent) {
@@ -13,7 +12,7 @@ namespace sa {
 		return false;
 		
 	}
-
+	
 	void EntityHierarchy::setParent(const Entity& target, const Entity& parent) {
 		// if parent is child to target
 		bool isparent = isParent(parent, target);
@@ -55,6 +54,11 @@ namespace sa {
 		m_children.erase(entity);
 	}
 
+	void EntityHierarchy::clear() {
+		m_children.clear();
+		m_parents.clear();
+	}
+
 	bool EntityHierarchy::hasChildren(const Entity& parent) const {
 		return m_children.count(parent) && !m_children.at(parent).empty();
 	}
@@ -68,15 +72,22 @@ namespace sa {
 	}
 	
 	void EntityHierarchy::forEachChild(const Entity& parent, std::function<void(const Entity&, const Entity&)> func) {
-		for (auto& node : m_children[parent]) {
+		for (const auto& node : m_children[parent]) {
 			func(node, parent);
 			forEachChild(node, func);
 		}
 	}
 
 	void EntityHierarchy::forEachDirectChild(const Entity& rootParent, std::function<void(const Entity&)> func) {
-		for (auto& node : m_children[rootParent]) {
+		for (const auto& node : m_children[rootParent]) {
 			func(node);
+		}
+	}
+
+	void EntityHierarchy::forEachParent(std::function<void(const Entity&)> func) {
+		for (const auto& [parent, children] : m_children) {
+			if(!children.empty())
+				func(parent);
 		}
 	}
 }

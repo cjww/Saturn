@@ -5,11 +5,11 @@ namespace sa {
 
 	class MetaComponent {
 	private:
-		entt::meta_any m_data;
+		entt::meta_any m_handle;
 		std::string m_typeName;
 
 		friend class ComponentType;
-		MetaComponent(entt::meta_any any = {}, const std::string& typeName = "");
+		MetaComponent(entt::meta_any handle = {}, const std::string& typeName = "");
 	public:
 
 		template<typename T>
@@ -22,13 +22,17 @@ namespace sa {
 		const std::string& getTypeName() const;
 
 		bool isValid() const;
+
+		template<typename ...Args>
+		entt::meta_any invoke(const std::string& name, Args&& ...args);
+
 	};
 
 	template<typename T>
 	T* MetaComponent::cast() {
 		if (!isValid())
 			return nullptr;
-		T** ptr = m_data.try_cast<T*>();
+		T** ptr = m_handle.try_cast<T*>();
 		if (!ptr)
 			return nullptr;
 		return *ptr;
@@ -36,7 +40,13 @@ namespace sa {
 
 	template<typename ...Args>
 	inline void MetaComponent::emplace(Args && ...args) {
-		m_data.emplace(args...);
+		m_handle.emplace(args...);
+	}
+
+
+	template<typename ...Args>
+	inline entt::meta_any MetaComponent::invoke(const std::string& name, Args&& ...args) {
+		return m_handle.invoke(entt::hashed_string(name.c_str()), args...);
 	}
 
 }

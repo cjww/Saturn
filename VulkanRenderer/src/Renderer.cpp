@@ -120,6 +120,10 @@ namespace sa {
 		return ImGui::ImageButton(descSet, size, uv0, uv1, frame_padding, bg_col, tint_col);
 	}
 
+	ImTextureID Renderer::getImGuiTexture(const sa::Texture* texture) {
+		return m_pCore->getImGuiImageDescriptoSet(texture->getView(), vk::ImageLayout::eShaderReadOnlyOptimal);
+	}
+
 #endif
 
 	ResourceID Renderer::createSwapchain(GLFWwindow* pWindow) {
@@ -144,6 +148,11 @@ namespace sa {
 	RenderProgramFactory Renderer::createRenderProgram() {
 		return RenderProgramFactory(m_pCore.get());
 	}
+
+	void Renderer::destroyRenderProgram(ResourceID renderProgram) {
+		ResourceManager::get().remove<RenderProgram>(renderProgram);
+	}
+
 
 	void Renderer::setClearColor(ResourceID renderProgram, Color color, uint32_t attachmentIndex) {
 		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);

@@ -57,10 +57,9 @@ namespace sa {
 				0
 			));
 		}
-
-
+		
 		m_commandBufferSet = pCore->allocateCommandBufferSet(vk::CommandBufferLevel::ePrimary);
-
+		
 		createSyncronisationObjects();
 
 		SA_DEBUG_LOG_INFO("Created Swapchain\n\tImage count: ", m_images.size(), "\n\tFormat: ", vk::to_string(m_format));
@@ -73,21 +72,28 @@ namespace sa {
 
 	void Swapchain::destroy() {
 
+		m_commandBufferSet.destroy();
+
 		for (auto fence : m_inFlightFences) {
 			m_device.destroyFence(fence);
 		}
+		m_inFlightFences.clear();
+		m_imageFences.clear();
 
 		for (auto semaphore : m_imageAvailableSemaphore) {
 			m_device.destroySemaphore(semaphore);
 		}
+		m_imageAvailableSemaphore.clear();
 
 		for (auto semaphore : m_renderFinishedSemaphore) {
 			m_device.destroySemaphore(semaphore);
 		}
+		m_renderFinishedSemaphore.clear();
 
 		for (auto imageView : m_imageViews) {
 			m_device.destroyImageView(imageView);
 		}
+		m_imageViews.clear();
 
 		m_device.destroySwapchainKHR(m_swapchain);
 		m_instance.destroySurfaceKHR(m_surface);

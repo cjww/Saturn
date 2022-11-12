@@ -2,6 +2,27 @@
 
 void SceneHierarchy::makePopups() {
 	if (ImGui::BeginPopup("SceneHierarchyMenu")) {
+		if (!m_isPopupMenuOpen)
+			ImGui::CloseCurrentPopup();
+
+		if (!m_hoveredEntity.isNull()) {	
+			//ImGui::Text(m_hoveredEntity.getComponent<comp::Name>()->name.c_str());
+			if (ImGui::MenuItem("Delete")) {
+				m_pEngine->publish<sa::editor_event::EntityDeselected>(m_hoveredEntity);
+				m_hoveredEntity.destroy();
+				ImGui::CloseCurrentPopup();
+			}
+			if (ImGui::MenuItem("Duplicate")) {
+				sa::Entity clone = m_hoveredEntity.clone();
+				m_pEngine->publish<sa::editor_event::EntitySelected>(clone);
+
+				ImGui::CloseCurrentPopup();
+			}
+			
+
+			ImGui::Separator();
+		}
+
 		if (ImGui::BeginMenu("Add Entity")) {
 			
 			if (ImGui::MenuItem("Empty")) {
@@ -15,6 +36,12 @@ void SceneHierarchy::makePopups() {
 				entity.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadQuad();
 			}
 			
+			if (ImGui::MenuItem("Box")) {
+				sa::Entity entity = m_pEngine->getCurrentScene()->createEntity("Box");
+				entity.addComponent<comp::Transform>();
+				entity.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadBox();
+			}
+
 			ImGui::EndMenu();
 		}
 
@@ -23,26 +50,34 @@ void SceneHierarchy::makePopups() {
 	}
 }
 
-SceneHierarchy::SceneHierarchy(sa::Engine* pEngine) : EditorModule(pEngine) {
+SceneHierarchy::SceneHierarchy(sa::Engine* pEngine, sa::EngineEditor* pEditor) : EditorModule(pEngine, pEditor) {
 	pEngine->on<sa::engine_event::SceneSet>([&](sa::engine_event::SceneSet& e, sa::Engine& engine) {
 		m_hoveredEntity = {};
 		m_selectedEntity = {};
+		m_isPopupMenuOpen = false;
 	});
+
+	pEngine->on<sa::editor_event::EntitySelected>([&](const sa::editor_event::EntitySelected& e, sa::Engine&) {
+		m_selectedEntity = e.entity;
+	});
+
+	pEngine->on<sa::editor_event::EntityDeselected>([&](const sa::editor_event::EntityDeselected&, sa::Engine&) {
+		m_selectedEntity = {};
+	});
+
+	m_hoveredEntity = {};
+	m_selectedEntity = {};
+	m_isPopupMenuOpen = false;
 }
 
 void SceneHierarchy::elementEvents(const sa::Entity& e) {
-	if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup)) {
-		if (ImGui::IsPopupOpen("SceneHierarchyMenu") && m_hoveredEntity != e) {
-			ImGui::CloseCurrentPopup();
-		}
-		m_hoveredEntity = e;
-	}
+	static sa::Entity payload;
 	if (ImGui::BeginDragDropSource()) {
-		ImGui::SetDragDropPayload("Entity", &m_hoveredEntity, sizeof(sa::Entity));
-		ImGui::SetTooltip(m_hoveredEntity.getComponent<comp::Name>()->name.c_str());
+		ImGui::SetDragDropPayload("Entity", &payload, sizeof(sa::Entity));
+		ImGui::SetTooltip(payload.getComponent<comp::Name>()->name.c_str());
 		ImGui::EndDragDropSource();
 	}
-	if (ImGui::BeginDragDropTarget()) {
+	else if (ImGui::BeginDragDropTarget()) {
 		const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Entity");
 		if (payload && payload->IsDelivery()) {
 			sa::Entity* entityPayload = (sa::Entity*)payload->Data;
@@ -50,6 +85,13 @@ void SceneHierarchy::elementEvents(const sa::Entity& e) {
 		}
 
 		ImGui::EndDragDropTarget();
+	}
+	else if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenBlockedByPopup)) {
+		if (m_isPopupMenuOpen && m_hoveredEntity != e) {
+			m_isPopupMenuOpen = false;
+		}
+		m_hoveredEntity = e;
+		payload = m_hoveredEntity;
 	}
 	
 }
@@ -82,25 +124,23 @@ void SceneHierarchy::makeTree(sa::Entity e) {
 	}
 	ImGuiTreeNodeFlags flags = ImGuiTreeNodeFlags_OpenOnArrow | ImGuiTreeNodeFlags_OpenOnDoubleClick;
 	if (s) flags |= ImGuiTreeNodeFlags_Selected;
-	if (e == m_hoveredEntity && ImGui::IsPopupOpen("SceneHierarchyMenu")) {
+	if (e == m_hoveredEntity && m_isPopupMenuOpen) {
 		flags |= ImGuiTreeNodeFlags_Selected;
 	}
 	if (!e.hasChildren()) {
 		flags |= ImGuiTreeNodeFlags_Leaf;
 	}
-	bool hasChildren = m_pEngine->getCurrentScene()->getHierarchy().hasChildren(e);
-		
+
 	bool opened = ImGui::TreeNodeEx((e.getComponent<comp::Name>()->name + "##" + std::to_string((uint32_t)e)).c_str(), flags);
 	if (ImGui::IsItemClicked()) {
 		if (s) {
-			m_pEngine->getCurrentScene()->publish<sa::editor_event::EntityDeselected>(m_selectedEntity);
-			m_selectedEntity = {};
+			m_pEngine->publish<sa::editor_event::EntityDeselected>(e);
 		}
 		else {
-			m_selectedEntity = e;
-			m_pEngine->getCurrentScene()->publish<sa::editor_event::EntitySelected>(m_selectedEntity);
+			m_pEngine->publish<sa::editor_event::EntitySelected>(e);
 		}
 	}
+	
 	elementEvents(e);
 		
 	if (opened) {
@@ -119,36 +159,30 @@ SceneHierarchy::~SceneHierarchy() {
 void SceneHierarchy::onImGui() {
 	SA_PROFILE_FUNCTION();
 
-	ImGui::ShowStyleEditor();
+	//ImGui::ShowStyleEditor();
+
 
 	if (ImGui::Begin("Scene Hierarchy")) {
 
-		sa::Scene* pScene = m_pEngine->getCurrentScene();
+		if(!m_isPopupMenuOpen)
+			m_hoveredEntity = {};
 
-		if (!m_hoveredEntity.isNull()) {
-			if (ImGui::BeginPopup("SceneHierarchyMenu")) {
-				
-				if (ImGui::Button(("Delete " + m_hoveredEntity.getComponent<comp::Name>()->name).c_str())) {
-					pScene->publish<sa::editor_event::EntityDeselected>(m_hoveredEntity);
-					m_hoveredEntity.destroy();
-					ImGui::CloseCurrentPopup();
-				}
-				ImGui::Separator();
 
-				ImGui::EndPopup();
-			}
-		}
 		makePopups();
 
+		m_isPopupMenuOpen = ImGui::IsPopupOpen("SceneHierarchyMenu");
+
+
+		sa::Scene* pScene = m_pEngine->getCurrentScene();
 
 		if (ImGui::BeginListBox("##Entities", ImGui::GetContentRegionAvail())) {
 			pScene->forEach([&](sa::Entity e) {
 				if (pScene->getHierarchy().hasParent(e))
-					return; 
+					return;
 				// only make trees from roots
 				makeTree(e);
 			});
-
+			
 			while (!m_parentChanges.empty()) {
 				auto& pair = m_parentChanges.front();
 				if (!pair.second.isNull())
@@ -158,14 +192,19 @@ void SceneHierarchy::onImGui() {
 				m_parentChanges.pop();
 			}
 	
+			
+			
 			ImGui::EndListBox();
 		}
 		
+
 		if (ImGui::IsWindowHovered(ImGuiHoveredFlags_RootAndChildWindows) 
 			&& ImGui::IsMouseClicked(ImGuiMouseButton_Right)) 
 		{		
 			ImGui::OpenPopup("SceneHierarchyMenu");
+			m_isPopupMenuOpen = true;
 		}
+		
 		
 	}
 	ImGui::End();

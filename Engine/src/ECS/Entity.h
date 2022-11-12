@@ -2,16 +2,17 @@
 
 #include "ComponentType.h"
 #include "MetaComponent.h"
-
 #include "ComponentBase.h"
 
 #include "ScriptManager.h"
+
+#include "Serializable.h"
 
 namespace sa {
 	
 	class Scene;
 
-	class Entity {
+	class Entity : public Serializable {
 	private:
 		Scene* m_pScene;
 		entt::registry* m_pRegistry;
@@ -22,9 +23,15 @@ namespace sa {
 		static sol::usertype<Entity>& getType();
 
 		Entity(Scene* pScene, entt::entity entity);
+		
 		Entity(const Entity& other) = default;
 		Entity();
 		virtual ~Entity() = default;
+
+		virtual void serialize(Serializer& s) override;
+		virtual void deserialize(void* pDoc) override;
+
+		Scene* getScene();
 
 		template<typename T>
 		T* getComponent() const;
@@ -35,7 +42,7 @@ namespace sa {
 		bool hasComponent() const;
 
 		bool hasComponent(ComponentType type) const;
-		bool hasComponent(const std::string name) const;
+		bool hasComponent(const std::string& name) const;
 
 		template<typename T, typename ...Args>
 		T* addComponent(Args&& ...args);
@@ -49,6 +56,9 @@ namespace sa {
 		void removeComponent(ComponentType type);
 		void removeComponent(const std::string& name);
 
+		template<typename ...Components>
+		void update();
+
 		void addScript(const std::filesystem::path& path);
 		void removeScript(const std::string& name);
 		std::optional<EntityScript> getScript(const std::string& name) const;
@@ -60,6 +70,12 @@ namespace sa {
 		bool hasChildren() const;
 
 		void destroy();
+
+		template<typename Comp>
+		Comp* copyComponent(Entity src);
+		MetaComponent copyComponent(ComponentType type, Entity src);
+
+		Entity clone();
 
 		bool isNull() const;
 
@@ -125,7 +141,20 @@ namespace sa {
 		m_pRegistry->remove<T>(m_entity);
 	}
 
+	template<typename ...Components>
+	inline void Entity::update() {
+		if(m_pRegistry->all_of<Components...>(m_entity))
+			m_pRegistry->patch<Components...>(m_entity);
+	}
 
+	template<typename Comp>
+	inline Comp* Entity::copyComponent(Entity src) {
+		Comp& orig = m_pRegistry->get<Comp>(src.m_entity);
+		Comp& c = m_pRegistry->get_or_emplace<Comp>(m_entity, orig);
+		
+		c = orig;
+		return &c;
+	}
 
 	template<typename Comp>
 	inline void registerComponentType() {
@@ -143,8 +172,11 @@ namespace sa {
 				.func<&Entity::getComponent<Comp>, entt::as_ref_t>("get"_hs)
 				.func<&Entity::addComponent<Comp>, entt::as_ref_t>("add"_hs)
 				.func<&Entity::removeComponent<Comp>>("remove"_hs)
+				.func<&Entity::copyComponent<Comp>>("copy"_hs)
 				;
 		
+			SA_DEBUG_LOG_INFO("Registered Meta functions for ", getComponentName<Comp>());
+
 			ComponentType::registerComponent<Comp>();
 		}
 		if constexpr (std::is_base_of_v<sa::LuaAccessable, std::decay_t<Comp>>) {
@@ -169,6 +201,9 @@ namespace sa {
 					}
 					self.removeComponent(name);
 				});
+
+			SA_DEBUG_LOG_INFO("Registered Lua property for ", getComponentName<Comp>());
+
 		}
 
 	}

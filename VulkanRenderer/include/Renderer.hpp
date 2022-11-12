@@ -61,6 +61,8 @@ namespace sa {
 		void imGuiImage(sa::Texture texture, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& tint_col, const ImVec4& border_col);
 		bool imGuiImageButton(sa::Texture texture, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, int frame_padding, const ImVec4& bg_col, const ImVec4& tint_col);
 
+		ImTextureID getImGuiTexture(const sa::Texture* texture);
+
 #endif // !IMGUI_DISABLE
 
 		ResourceID createSwapchain(GLFWwindow* pWindow);
@@ -70,6 +72,7 @@ namespace sa {
 		uint32_t getSwapchainImageCount(ResourceID swapchain);
 
 		RenderProgramFactory createRenderProgram();
+		void destroyRenderProgram(ResourceID renderProgram);
 		void setClearColor(ResourceID renderProgram, Color color, uint32_t attachmentIndex);
 		void setClearColor(ResourceID renderProgram, Color color);
 
@@ -119,21 +122,6 @@ namespace sa {
 		DirectContext createDirectContext(ResourceID contextPool = NULL_RESOURCE);
 		SubContext createSubContext(ResourceID framebuffer, ResourceID renderProgram, uint32_t subpassIndex, ResourceID contextPool = NULL_RESOURCE);
 		SubContext createSubContext(ResourceID contextPool = NULL_RESOURCE);
-
-		/*
-		
-		//Resource creation
-		
-		Texture* createTexture3D(VkExtent3D extent, VkFormat format);
-
-		void updateTexture(Texture* dst, uint32_t framebuffer, uint32_t renderpass, uint32_t subpass, void* data, size_t size);
-
-		
-		// Draw commands
-		void bindViewports(const std::vector<VkViewport>& viewports, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
-		void bindViewport(const VkViewport& viewport, const CommandBufferPtr& commandBuffer = nullptr, uint32_t frameIndex = -1);
-		*/
-
 	};
 
 

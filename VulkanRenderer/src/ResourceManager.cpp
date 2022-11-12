@@ -16,17 +16,6 @@ namespace sa {
 		m_containers.clear();
 	}
 
-	std::string ResourceManager::idToKey(ResourceID id) const {
-		for (auto& container : m_containers) {
-			std::string key = container.second->idToKey(id);
-			if (!key.empty()) {
-				return key;
-			}
-		}
-		return "-";
-	}
-
-
 	namespace details {
 
 		ResourceID BasicResourceContainer::getUniqueID() {

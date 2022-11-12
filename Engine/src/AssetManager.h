@@ -49,6 +49,11 @@ namespace sa {
 
 		std::unordered_map<std::string, ProgressView<ResourceID>> m_loadingModels;
 
+		std::unordered_map<ResourceID, ModelData*> m_models;
+		std::unordered_map<ResourceID, Texture2D*> m_textures;
+		std::unordered_map<ResourceID, Material*> m_materials;
+
+
 		AssetManager();
 
 		void loadAssimpModel(const std::filesystem::path& path, ModelData* pModel, ProgressView<ResourceID>& progress);
@@ -57,6 +62,8 @@ namespace sa {
 		~AssetManager();
 	
 		static AssetManager& get();
+
+		void clear();
 
 		Texture2D* loadDefaultTexture();
 		Texture2D* loadDefaultBlackTexture();
@@ -70,6 +77,7 @@ namespace sa {
 		ResourceID loadDefaultMaterial();
 
 		ResourceID loadQuad();
+		ResourceID loadBox();
 
 		ModelData* getModel(ResourceID id) const;
 		Material* getMaterial(ResourceID id) const;

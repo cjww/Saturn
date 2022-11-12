@@ -94,7 +94,7 @@ public:
 
 template<typename Arg>
 inline void Logger::PrintOneArgument(Arg arg) {
-	DEBUG_LOG_OSTREAM << arg << ' ';
+	DEBUG_LOG_OSTREAM << arg;
 }
 
 template<typename ...Args>

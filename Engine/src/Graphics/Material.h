@@ -198,15 +198,10 @@ namespace sa {
 
 	class Material {
 	private:
-		ResourceID m_pipeline;
-		ResourceID m_sampler;
-
+		
 		std::unordered_map<MaterialTextureType, std::vector<Texture>> m_textures;
 		std::unordered_map<MaterialTextureType, std::vector<std::pair<TextureBlendOp, float>>> m_blending;
 		std::vector<Texture> m_allTextures;
-
-		Buffer m_valueBuffer;
-		ResourceID m_descriptorSet;
 
 		void setTextures(const std::vector<BlendedTexture>& textures, MaterialTextureType type, uint32_t& count);
 
@@ -241,12 +236,7 @@ namespace sa {
 
 		Material();
 
-		void init(ResourceID pipeline, ResourceID sampler);
-
-		bool isInitialized() const;
-
 		void update();
-		void bind(RenderContext& context, ResourceID pipeline, ResourceID sampler);
 	
 		void setTextures(const std::vector<BlendedTexture>& textures, MaterialTextureType type);
 		const std::vector<Texture>& getTextures() const;

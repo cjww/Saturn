@@ -25,7 +25,7 @@ namespace sa {
 		float randomRange(float min, float max);
 
 		Entity createModelEntity(Engine& engine, const std::filesystem::path& modelPath, float scale = 1.0f);
-
+		Entity createDynamicBox(const Vector3& position, float scale = 1.0f);
 	public:
 
 		void onAttach(Engine& engine, RenderWindow& window) override;

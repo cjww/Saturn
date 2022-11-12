@@ -1,19 +1,53 @@
 #include "pch.h"
 #include "Scene.h"
 
-#include "ECS\Components.h"
-
 namespace sa {
+	void Scene::updatePhysics(float dt) {
+		// Physics
+		view<comp::RigidBody, comp::Transform>().each([&](const comp::RigidBody& rb, const comp::Transform& transform) {
+			rb.pActor->setGlobalPose(transform, false);
+			});
+
+		m_pPhysicsScene->simulate(dt);
+		m_pPhysicsScene->fetchResults(true);
+
+		uint32_t actorCount = -1;
+		physx::PxActor** ppActors = m_pPhysicsScene->getActiveActors(actorCount);
+		for (uint32_t i = 0U; i < actorCount; i++) {
+			physx::PxActor* pActor = ppActors[i];
+			if (physx::PxRigidActor* rigidActor = pActor->is<physx::PxRigidActor>()) {
+				comp::Transform* transform = ((Entity*)pActor->userData)->getComponent<comp::Transform>();
+				*transform = rigidActor->getGlobalPose();
+			}
+		}
+	}
+
+	void Scene::updateChildPositions() {
+		m_hierarchy.forEachParent([&](const sa::Entity& parent) {
+			m_hierarchy.forEachChild(parent, [](const Entity& child, const Entity& parent) {
+				comp::Transform* transform = child.getComponent<comp::Transform>();
+				comp::Transform* parentTransform = parent.getComponent<comp::Transform>();
+				if (!transform || !parentTransform)
+					return;
+
+				transform->position = parentTransform->position + transform->relativePosition;
+			});
+		});
+	}
 
 	Scene::Scene(const std::string& name)
-		: m_isLoaded(false)
-		, m_name(name)
-
+		: m_name(name)
+		, m_pPhysicsScene(PhysicsSystem::get().createScene())
 	{
+
+
+	
 	}
 
 
 	Scene::~Scene() {
+		clearEntities();
+		m_pPhysicsScene->release();
 		for (auto& cam : m_cameras) {
 			delete cam;
 		}
@@ -35,46 +69,68 @@ namespace sa {
 
 	}
 
-	void Scene::load() {
-		m_scriptManager.init(this);
-		m_isLoaded = true;
+	void Scene::onRuntimeStart() {
+		m_scriptManager.broadcast("onStart");
 	}
 
-	void Scene::unload() {
-		m_isLoaded = false;
+	void Scene::onRuntimeStop()	{
+		m_scriptManager.broadcast("onStop");
 	}
 
-	void Scene::update(float dt) {
+
+	void Scene::runtimeUpdate(float dt) {
 		SA_PROFILE_FUNCTION();
-		publish<scene_event::UpdatedScene>(dt);
-		m_scriptManager.update(dt, this);
+
+		updatePhysics(dt);
 		
-		/*
-		view<comp::Light, comp::Transform>().each([](comp::Light& light, const comp::Transform& transform) {
-			light.values.position
-		});
-
-		*/
-		view<comp::Transform>().each([&](const entt::entity& e, comp::Transform& transform) {
-			Entity entity(this, e);
-			if (!m_hierarchy.hasChildren(entity)) { 
-				return;
-			}
-			m_hierarchy.forEachChild(entity, [](const Entity& child, const Entity& parent) {
-				comp::Transform* transform = child.getComponent<comp::Transform>();
-				comp::Transform* parentTransform = parent.getComponent<comp::Transform>();
-				if (!transform || !parentTransform)
-					return;
-
-				transform->position = parentTransform->position + transform->relativePosition;
-			});
-			
-		});
-
-
-
+		// Scripts
+		m_scriptManager.broadcast("onUpdate", dt);
+		
+		updateChildPositions();
 
 	}
+
+	void Scene::inEditorUpdate(float dt) {
+		updateChildPositions();
+	}
+
+	void Scene::serialize(Serializer& s) {
+		s.beginObject();
+		s.value("name", m_name.c_str());
+
+		s.beginArray("entities");
+
+		forEach([&](Entity entity) {
+			entity.serialize(s);
+		});
+
+		s.endArray();
+
+		s.endObject();
+	}
+
+	void Scene::deserialize(void* pDoc) {
+		clearEntities();
+		using namespace simdjson;
+		ondemand::document& doc = *(ondemand::document*)pDoc;
+		
+		m_name = doc["name"].get_string().value();
+		ondemand::array entities = doc["entities"];
+		
+		reserve(entities.count_elements());
+		for (auto e : entities) {
+			if (e.error()) {
+				SA_DEBUG_LOG_WARNING("Failed to get entity from file");
+				continue;
+			}
+			ondemand::object obj = e.value_unsafe().get_object();
+			uint32_t id = obj["id"].get_uint64();
+			
+			Entity entity(this, create((entt::entity)id));
+			entity.deserialize(&obj);
+		}
+	}
+
 
 	Camera* Scene::newCamera() {
 		m_cameras.push_back(new Camera());
@@ -124,7 +180,7 @@ namespace sa {
 	}
 
 	size_t Scene::getEntityCount() const {
-		return size();
+		return alive();
 	}
 
 	std::optional<EntityScript> Scene::addScript(const Entity& entity, const std::filesystem::path& path) {
@@ -136,13 +192,15 @@ namespace sa {
 		script.env["scene"] = this;
 		script.env["entity"] = entity;
 		
-		if (!m_isLoaded)
-			return scriptOpt;
-
-		m_scriptManager.tryCall(script.env, "init");
-
 		return scriptOpt;
 	}
+
+	void Scene::clearEntities() {
+		((entt::registry*)this)->clear();
+		m_scriptManager.clearAll();
+		m_hierarchy.clear();
+	}
+
 
 	void Scene::removeScript(const Entity& entity, const std::string& name) {
 		m_scriptManager.removeScript(entity, name);
@@ -151,6 +209,7 @@ namespace sa {
 	std::optional<EntityScript> Scene::getScript(const Entity& entity, const std::string& name) const {
 		return m_scriptManager.getScript(entity, name);
 	}
+
 
 	std::vector<EntityScript> Scene::getAssignedScripts(const Entity& entity) const {
 		return m_scriptManager.getEntityScripts(entity);
@@ -162,6 +221,12 @@ namespace sa {
 
 	const std::string& Scene::getName() const {
 		return m_name;
+	}
+
+	void Scene::forEachComponentType(std::function<void(ComponentType)> function) {
+		visit([&](const entt::type_info& info) {
+			function(entt::resolve(info));
+		});
 	}
 
 }

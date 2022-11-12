@@ -5,6 +5,11 @@
 #include "ECS/Components.h"
 
 #include <glm\gtc\matrix_transform.hpp>
+#include <glm/gtx/matrix_decompose.hpp>
+
+#include <ImGuizmo.h>
+
+#include "CustomImGui.h"
 
 class SceneView : public EditorModule {
 private:
@@ -14,15 +19,18 @@ private:
 	bool m_isFocused;
 	sa::Vector2 m_lastMousePos;
 	float m_mouseSensitivity;
-	float m_moveSpeed;
+
+	glm::vec3 m_velocity;
+	float m_maxVelocityMagnitude;
+	float m_acceleration;
 
 	glm::vec2 m_displayedSize;
 	float m_deltaTime;
-	bool m_isDraging;
-	sa::Vector3 m_dragDirection;
-
+	
 	sa::Entity m_selectedEntity;
 	bool m_isWorldCoordinates;
+	
+	float m_zoom;
 
 	struct Statistics {
 		float frameTime;
@@ -40,7 +48,7 @@ private:
 
 
 public:
-	SceneView(sa::Engine* pEngine, sa::RenderWindow* pWindow);
+	SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWindow* pWindow);
 	virtual ~SceneView() override;
 
 	// moves camera around scene according to input

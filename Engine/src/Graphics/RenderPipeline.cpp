@@ -38,16 +38,13 @@ namespace sa {
 	}
 
 	bool RenderPipeline::render(Scene* pScene) {
-		
-		//m_executor.wait_for_all();
-		// collect meshes
-		//m_taskflow.clear();
-		
+		SA_PROFILE_FUNCTION();
+
 		m_pRenderTechnique->updateLights(pScene);
+		// collect meshes
 		m_pRenderTechnique->collectMeshes(pScene);
 		m_cameras = pScene->getActiveCameras();
 
-		//m_executor.async([&]() {
 		m_context = m_pWindow->beginFrame();
 		if (!m_context)
 			return false;
@@ -71,8 +68,7 @@ namespace sa {
 		}
 
 		m_pWindow->display();
-		//});
-
+		
 		return true;
 	}
 

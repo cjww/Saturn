@@ -2,8 +2,8 @@
 
 #include "Graphics\RenderTechniques\ForwardPlus.h"
 
-SceneView::SceneView(sa::Engine* pEngine, sa::RenderWindow* pWindow)
-	: EditorModule(pEngine)
+SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWindow* pWindow)
+	: EditorModule(pEngine, pEditor)
 {
 	m_pWindow = pWindow;
 	m_isFocused = false;
@@ -17,23 +17,32 @@ SceneView::SceneView(sa::Engine* pEngine, sa::RenderWindow* pWindow)
 	m_camera.lookAt(sa::Vector3(0, 0, 0));
 
 	m_mouseSensitivity = 30.0f;
-	m_moveSpeed = 8.0f;
+
+	m_velocity = glm::vec3(0.0f);
+	m_maxVelocityMagnitude = 30.0f;
+	m_acceleration = 0.5f;
 
 	m_statsUpdateTime = 0.1f;
 	m_statsTimer = m_statsUpdateTime;
 
 	pEngine->on<sa::engine_event::SceneSet>([&](const sa::engine_event::SceneSet& sceneSetEvent, sa::Engine& engine) {
-
+		m_selectedEntity = {};
 		sceneSetEvent.newScene->addActiveCamera(&m_camera);
-
-		sceneSetEvent.newScene->on<sa::editor_event::EntitySelected>([&](const sa::editor_event::EntitySelected& e, sa::Scene&) {
-			m_selectedEntity = e.entity;
-		});
-
-		sceneSetEvent.newScene->on<sa::editor_event::EntityDeselected>([&](const sa::editor_event::EntityDeselected&, sa::Scene&) {
-			m_selectedEntity = {};
-		});
 	});
+
+	pEngine->on<sa::editor_event::EntitySelected>([&](const sa::editor_event::EntitySelected& e, sa::Engine&) {
+		m_selectedEntity = e.entity;
+	});
+
+	pEngine->on<sa::editor_event::EntityDeselected>([&](const sa::editor_event::EntityDeselected&, sa::Engine&) {
+		m_selectedEntity = {};
+	});
+	
+	m_zoom = 0.f;
+	m_pWindow->addScrollCallback([&](double x, double y) {
+		if(m_isFocused) m_zoom = y;
+	});
+
 }
 
 SceneView::~SceneView() {
@@ -71,40 +80,80 @@ void SceneView::update(float dt) {
 	}
 
 	sa::Vector2 mousePos = m_pWindow->getCursorPosition();
-	if (m_pWindow->getMouseButton(sa::MouseButton::BUTTON_2)) {
+	if (m_pWindow->getMouseButton(sa::MouseButton::RIGHT)) {
+		// First-person controls
 		sa::Vector2 delta = m_lastMousePos - mousePos;
 		m_camera.rotate(glm::radians(delta.x) * dt * m_mouseSensitivity, { 0, 1, 0 });
 		m_camera.rotate(glm::radians(delta.y) * dt * m_mouseSensitivity, m_camera.getRight());
+		
+		int forward = m_pWindow->getKey(sa::Key::W) - m_pWindow->getKey(sa::Key::S);
+		int right = m_pWindow->getKey(sa::Key::D) - m_pWindow->getKey(sa::Key::A);
+		int up = m_pWindow->getKey(sa::Key::Q) - m_pWindow->getKey(sa::Key::E);
+
+		if ((forward | right | up) == 0) {
+			m_velocity = glm::vec3(0);
+		}
+		else {
+			m_velocity += (float)forward * dt * m_camera.getForward() * m_acceleration;
+			m_velocity += (float)right * dt * m_camera.getRight() * m_acceleration;
+			m_velocity += (float)up * dt * m_camera.getUp() * m_acceleration;
+
+			if (glm::length(m_velocity) > m_maxVelocityMagnitude) {
+				m_velocity = glm::normalize(m_velocity);
+				m_velocity *= m_maxVelocityMagnitude;
+			}
+		
+			glm::vec3 camPos = m_camera.getPosition();
+			camPos += m_velocity;
+			
+			m_camera.setPosition(camPos);
+		}
+		/*
+		glm::vec3 camPos = m_camera.getPosition();
+		camPos += (float)forward * dt * m_moveSpeed * m_camera.getForward();
+		camPos += (float)right * dt * m_moveSpeed * m_camera.getRight();
+		camPos += (float)up * dt * m_moveSpeed * m_camera.getUp();
+		*/
 	}
+	else if (m_pWindow->getMouseButton(sa::MouseButton::MIDDLE) && m_isFocused) {
+		glm::vec2 delta = m_lastMousePos - mousePos;
+		glm::vec3 camPos = m_camera.getPosition();
+		camPos += m_camera.getRight() * delta.x * dt * m_mouseSensitivity;
+		camPos += m_camera.getUp() * delta.y * dt * m_mouseSensitivity;
+		m_camera.setPosition(camPos);
+	}
+	else {
+		m_velocity = glm::vec3(0);
+	}
+
+	if (m_zoom) {
+		m_camera.setPosition(m_camera.getPosition() + m_camera.getForward() * (m_zoom * 5));
+		m_zoom = 0;
+	}
+
 	m_lastMousePos = mousePos;
 		
-	int forward = m_pWindow->getKey(sa::Key::W) - m_pWindow->getKey(sa::Key::S);
-	int right = m_pWindow->getKey(sa::Key::D) - m_pWindow->getKey(sa::Key::A);
-	int up = m_pWindow->getKey(sa::Key::Q) - m_pWindow->getKey(sa::Key::E);
-
-	glm::vec3 camPos = m_camera.getPosition();
-	camPos += (float)forward * dt * m_moveSpeed * m_camera.getForward();
-	camPos += (float)right * dt * m_moveSpeed * m_camera.getRight();
-	camPos += (float)up * dt * m_moveSpeed * m_camera.getUp();
-
-	m_camera.setPosition(camPos);
 
 }
 
 void SceneView::onImGui() {
 	SA_PROFILE_FUNCTION();
 
-	
+	bool isOpen = ImGui::Begin("Scene view", 0, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
+	if (isOpen) {
 
-	if (ImGui::Begin("Scene view", 0, ImGuiWindowFlags_MenuBar)) {
+		static ImGuizmo::OPERATION operation = ImGuizmo::TRANSLATE;
+		static float snapDistance = 0.5f;
+		static float snapAngle = 45.0f;
+		static int iconSize = 16;
+		static bool showIcons = true;
+
 		if (ImGui::BeginMenuBar()) {
 
 			static bool showStats = false;
-			//ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() - ImGui::GetFontSize() * 8);
-			ImGui::Checkbox("Statistics", &showStats);
 			if (showStats) {
 				ImGui::SetNextWindowBgAlpha(0.3f);
-				if (ImGui::Begin("Statistics", 0, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize)) {
+				if (ImGui::Begin("Statistics", 0, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing)) {
 
 					ImGui::Text("Entity Count: %llu", m_pEngine->getCurrentScene()->getEntityCount());
 					
@@ -129,22 +178,44 @@ void SceneView::onImGui() {
 			}
 			
 			
-			
-			static bool showLightHeatmap = false;
-			sa::ForwardPlus* forwardPlusTechnique = dynamic_cast<sa::ForwardPlus*>(m_pEngine->getRenderPipeline().getRenderTechnique());
-			if (forwardPlusTechnique) {
-				if (ImGui::Checkbox("Show Light Heatmap", &showLightHeatmap)) {
-					forwardPlusTechnique->setShowHeatmap(showLightHeatmap);
+
+			if (ImGui::BeginMenu("View Settings")) {
+				ImGui::Checkbox("Statistics", &showStats);
+
+				ImGui::DragFloat("Snap Distance", &snapDistance, 0.5f, 0.0f, 100.f, "%.1f m");
+				ImGui::DragFloat("Snap Angle", &snapAngle, 1.f, 1.f, 180.f, "%.0f degrees");
+
+				static bool showLightHeatmap = false;
+				sa::ForwardPlus* forwardPlusTechnique = dynamic_cast<sa::ForwardPlus*>(m_pEngine->getRenderPipeline().getRenderTechnique());
+				if (forwardPlusTechnique) {
+					if (ImGui::Checkbox("Show Light Heatmap", &showLightHeatmap)) {
+						forwardPlusTechnique->setShowHeatmap(showLightHeatmap);
+					}
 				}
+
+				ImGui::Checkbox("Show Icons", &showIcons);
+				if (!showIcons) {
+					ImGui::BeginDisabled();
+				}
+				ImGui::SliderInt("Icon Size", &iconSize, 1, 100);
+				if (!showIcons) {
+					ImGui::EndDisabled();
+				}
+
+				ImGui::EndMenu();
 			}
-			
+
 			ImGui::Checkbox("World Coordinates", &m_isWorldCoordinates);
 
+			ImGui::RadioButton("T", (int*)&operation, ImGuizmo::OPERATION::TRANSLATE);
+			ImGui::RadioButton("R", (int*)&operation, ImGuizmo::OPERATION::ROTATE);
+			ImGui::RadioButton("S", (int*)&operation, ImGuizmo::OPERATION::SCALE);
+			
 		}
 		ImGui::EndMenuBar();
 
-
-		m_isFocused = ImGui::IsWindowFocused();
+		bool windowHovered = ImGui::IsWindowHovered();
+		m_isFocused = windowHovered;
 
 		// render outputTexture with constant aspect ratio
 		ImVec2 imAvailSize = ImGui::GetContentRegionAvail();
@@ -153,95 +224,160 @@ void SceneView::onImGui() {
 		if (availSize != m_displayedSize) {
 			m_camera.setAspectRatio(availSize.x / availSize.y);
 		}
-		
+
 		sa::Texture texture = m_pEngine->getRenderPipeline().getRenderTechnique()->getOutputTexture();
 		ImGui::Image(texture, imAvailSize);
+		ImVec2 imageMin = ImGui::GetItemRectMin();
+		ImVec2 imageSize = ImGui::GetItemRectSize();
+
 		m_displayedSize = availSize;
 
-		const ImU32 red = ImColor(ImVec4(1, 0, 0, 1));
-		const ImU32 green = ImColor(ImVec4(0, 1, 0, 1));
-		const ImU32 blue = ImColor(ImVec4(0, 0, 1, 1));
-		
+
+		if (!ImGui::IsMouseDown(ImGuiMouseButton_Right) && m_isFocused) {
+			if (ImGui::IsKeyPressed(ImGuiKey_W))
+				operation = ImGuizmo::OPERATION::TRANSLATE;
+			else if (ImGui::IsKeyPressed(ImGuiKey_E))
+				operation = ImGuizmo::OPERATION::ROTATE;
+			else if (ImGui::IsKeyPressed(ImGuiKey_R))
+			operation = ImGuizmo::OPERATION::SCALE;
+			else if (ImGui::IsKeyPressed(ImGuiKey_Q))
+			operation = (ImGuizmo::OPERATION)0;
+		}
+
+		// Gizmos
+
+		float snap = snapDistance;
+		bool doSnap = ImGui::IsKeyDown(ImGuiKey_LeftCtrl);
+		if (doSnap && operation == ImGuizmo::OPERATION::ROTATE) {
+			snap = snapAngle;
+		}
+
+		ImGuizmo::SetOrthographic(false);
+		ImGuizmo::AllowAxisFlip(false);
+		ImGuizmo::SetDrawlist();
+		ImGuizmo::SetRect(imageMin.x, imageMin.y, imageSize.x, imageSize.y);
+
+		glm::vec2 screenPos = { imageMin.x, imageMin.y };
+		glm::vec2 screenSize = { imageSize.x, imageSize.y };
+
+
 		if (m_selectedEntity) {
-			comp::Transform* transform = m_selectedEntity.getComponent<comp::Transform>();
+			sa::Matrix4x4 projMat = m_camera.getProjectionMatrix();
+			projMat[1][1] *= -1;
+			glm::mat4 viewMat = m_camera.getViewMatrix();
 
-			if (transform) {
-				glm::vec3 pos = transform->position;
 
-				glm::vec3 x = { 1, 0, 0 };
-				glm::vec3 y = { 0, 1, 0 };
-				glm::vec3 z = { 0, 0, 1 };
+			bool isOperating = false;
 
-				if (!m_isWorldCoordinates) {
-					glm::mat4 mat = glm::toMat4(transform->rotation);
-					x = glm::normalize(mat[0]);
-					y = glm::normalize(mat[1]);
-					z = glm::normalize(mat[2]);
-				}
+			if (operation) {
+				comp::Transform* transform = m_selectedEntity.getComponent<comp::Transform>();
 
-				bool mouseDown = ImGui::IsMouseDown(ImGuiMouseButton_Left);
-				if (m_isDraging && !mouseDown) {
-					m_isDraging = false;
-				}
+				if (transform) {
 
-				if (m_isDraging) {
+					sa::Matrix4x4 transformMat = transform->getMatrix();
+					float snapAxis[] = { snap, snap, snap };
 
-					ImVec2 imWindowPos = ImGui::GetWindowPos();
-					ImVec2 contentMin = ImGui::GetWindowContentRegionMin();
-				
-					glm::vec2 windowPos = { imWindowPos.x, imWindowPos.y };
-					glm::vec2 min = { contentMin.x, contentMin.y };
-					windowPos += min;
-				
-					glm::vec2 screenSize = { m_displayedSize.x, m_displayedSize.y };
-				
-					
-					ImVec2 imDragDelta = ImGui::GetMouseDragDelta(ImGuiMouseButton_Left, 0.0f);
-					ImGui::ResetMouseDragDelta();
 
-					ImVec2 imMousePos = ImGui::GetMousePos();
-					glm::vec2 mousePos = { imMousePos.x, imMousePos.y };
-					glm::vec2 lastMousePos = { imMousePos.x - imDragDelta.x, imMousePos.y - imDragDelta.y };
-					
-					glm::vec3 mousePosWorld = sa::math::screenToWorld(mousePos, &m_camera, windowPos, screenSize);
-					mousePosWorld = m_camera.getPosition() + mousePosWorld * glm::length(pos - m_camera.getPosition());
-
-					glm::vec3 lastMousePosWorld = sa::math::screenToWorld(lastMousePos, &m_camera, windowPos, screenSize);
-					lastMousePosWorld = m_camera.getPosition() + lastMousePosWorld * glm::length(pos - m_camera.getPosition());
-
-					glm::vec3 dragDeltaWorld = mousePosWorld - lastMousePosWorld;
-					
-					float angle = glm::dot(dragDeltaWorld, m_dragDirection);
-
-					transform->position += m_dragDirection * angle * 90.f;
-					
-				}
-				
-				if (imGuiDrawVector(pos, x, red, 1)) {
-					if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-						m_isDraging = true;
-						m_dragDirection = x;
+					if (ImGuizmo::Manipulate(&viewMat[0][0], &projMat[0][0],
+						operation, (ImGuizmo::MODE)m_isWorldCoordinates, &transformMat[0][0],
+						nullptr, (doSnap) ? snapAxis : nullptr))
+					{
+						glm::vec3 rotation;
+						glm::vec3 oldPosition = transform->position;
+						ImGuizmo::DecomposeMatrixToComponents(&transformMat[0][0], (float*)&transform->position, (float*)&rotation, (float*)&transform->scale);
+						transform->rotation = glm::quat(glm::radians(rotation));
+						if (transform->hasParent) {
+							transform->relativePosition += transform->position - oldPosition;
+						}
+					}
+					if (ImGuizmo::IsOver() && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+						isOperating = true;
 					}
 				}
-				
-				if(imGuiDrawVector(pos, y, green, 1)) {
-					if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-						m_isDraging = true;
-						m_dragDirection = y;
-					}
-				}
-
-				if (imGuiDrawVector(pos, z, blue, 1)) {
-					if (ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-						m_isDraging = true;
-						m_dragDirection = z;
-					}
-				}
-
 			}
+
+			const ImColor colliderColor = ImColor(0, 255, 0);
+			const ImColor lightSphereColor = ImColor(255, 255, 0);
+			// Light icons
+			comp::Light* light = m_selectedEntity.getComponent<comp::Light>();
+			if (light) {
+				ImGui::GizmoSphereResizable(light->values.position, light->values.attenuationRadius, glm::quat(1, 0, 0, 0), &m_camera, screenPos, screenSize, lightSphereColor, isOperating);
+			}
+
+			// Box colliders
+			comp::BoxCollider* bc = m_selectedEntity.getComponent<comp::BoxCollider>();
+			if (bc) {
+				comp::Transform* transform = m_selectedEntity.getComponent<comp::Transform>();
+				if (transform) {
+					glm::vec3 offset = transform->rotation * bc->offset;
+					if (ImGui::GizmoBoxResizable(transform->position + offset, bc->halfLengths, transform->rotation, &m_camera, screenPos, screenSize, colliderColor, isOperating)) {
+						bc->onUpdate(&m_selectedEntity);
+					}
+				}
+			}
+			// SphereColliders
+			comp::SphereCollider* sc = m_selectedEntity.getComponent<comp::SphereCollider>();
+			if (sc) {
+				comp::Transform* transform = m_selectedEntity.getComponent<comp::Transform>();
+				if (transform) {
+					//glm::vec3 offset = transform->rotation * sc->offset;
+					if(ImGui::GizmoSphereResizable(transform->position + sc->offset, sc->radius, transform->rotation, &m_camera, screenPos, screenSize, colliderColor, isOperating)) {
+						sc->onUpdate(&m_selectedEntity);
+					}
+				}
+			}
+
+
+
 		}
 		
+		if (showIcons) {
+			sa::Texture2D* tex = sa::AssetManager::get().loadTexture("resources/lightbulb-icon.png", true);
+			m_pEngine->getCurrentScene()->forEach<comp::Light>([&](const comp::Light& light) {
+				ImColor color(light.values.color);
+				ImGui::GizmoIcon(tex, light.values.position, &m_camera, screenPos, screenSize, iconSize, color);
+			});
+		}
 
+		
+
+		/*
+		ImVec2 viewManipSize = ImVec2(100, 100);
+		ImVec2 viewManipPos = ImVec2(imageMin.y, imageMin.y + imageSize.y - ImGui::GetWindowWidth() - viewManipSize.x);
+		static glm::mat4 matrix = m_camera.getViewMatrix();
+		static int interpolationFrames = 0;
+		static bool isDragging = false;
+		ImGuizmo::ViewManipulate((float*)&matrix, 5,
+			imageMin, viewManipSize, ImColor(0, 0, 50, 150));
+		if (interpolationFrames)
+			interpolationFrames--;
+
+		if (ImGui::IsMouseHoveringRect(imageMin, { imageMin.x + viewManipSize.x, imageMin.y + viewManipSize.y })
+			&& ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseDragging(ImGuiMouseButton_Left) || interpolationFrames || isDragging)
+		{	
+			if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+				interpolationFrames = 40;
+			}
+			isDragging = ImGui::IsMouseDragging(ImGuiMouseButton_Left);
+
+			glm::vec3 translation;
+			glm::vec3 rotation;
+			glm::vec3 scale;
+			ImGuizmo::DecomposeMatrixToComponents((float*)&matrix, (float*)&translation, (float*)&rotation, (float*)&scale);
+			glm::vec3 forward = glm::vec3(0, 0, 1) * glm::quat(glm::radians(rotation));
+			m_camera.setPosition(translation);
+			m_camera.lookAt(translation + forward);
+
+		}
+		ImGui::SetCursorPosY(150);
+		ImGui::Text("%f %f %f %f\n%f %f %f %f\n%f %f %f %f\n%f %f %f %f",
+			matrix[0][0], matrix[1][0], matrix[2][0], matrix[3][0],
+			matrix[0][1], matrix[1][1], matrix[2][1], matrix[3][1],
+			matrix[0][2], matrix[1][2], matrix[2][2], matrix[3][2],
+			matrix[0][3], matrix[1][3], matrix[2][3], matrix[3][3]);
+
+		*/
+		
 	}
 	ImGui::End();
 

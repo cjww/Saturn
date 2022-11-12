@@ -1,4 +1,3 @@
-
 #include <EntryPoint.h>
 #include "EngineEditor.h"
 

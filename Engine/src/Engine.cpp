@@ -1,57 +1,18 @@
 #include "pch.h"
 #include "Engine.h"
 
-#include "Graphics\RenderTechniques\ForwardPlus.h"
-#include "Graphics\RenderLayers\ImGuiRenderLayer.h"
-
-
-#include "Tools\MemoryChecker.h"
-
 namespace sa {
-	void Engine::loadXML(const std::filesystem::path& path, rapidxml::xml_document<>& xml, std::string& xmlStr) {
-		std::ifstream file(path);
-		if (!file.is_open()) {
-			throw std::runtime_error("Failed to open file " + path.string());
-		}
-		xmlStr.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
-		xmlStr.push_back('\0');
-		file.close();
-		xml.parse<0>(xmlStr.data());
-	}
-
-	void Engine::loadFromFile(const std::filesystem::path& configPath) {
-		using namespace rapidxml;
-		xml_document<> doc;
-		std::string docStr;
-		loadXML(configPath, doc, docStr);
-		xml_node<>* root = doc.first_node();
-		xml_node<>* rendererNode = root->first_node("Renderer");
-		if (rendererNode) {
-			xml_attribute<>* api = rendererNode->first_attribute("API", 0, false);
-
-			xml_attribute<>* renderTechnique = rendererNode->first_attribute("RenderTechnique", 0, false);
-			if (strcmp(renderTechnique->value(), "Forward") == 0) {
-				if (strcmp(api->value(), "Vulkan") == 0) {
-					//m_pRenderTechnique = std::make_unique<ForwardRenderer>();
-				}
-				else {
-					throw std::runtime_error("API not supported : " + std::string(api->value()));
-				}
-			}
-			else if (renderTechnique->value() == "Deferred") {
-				throw std::runtime_error("RenderTechnique not implemented : " + std::string(renderTechnique->value()));
-			}
-			else if (renderTechnique->value() == "Raytracing") {
-				throw std::runtime_error("RenderTechnique not implemented : " + std::string(renderTechnique->value()));
-			}
-			else {
-				throw std::runtime_error("RenderTechnique not supported : " + std::string(renderTechnique->value()));
-			}
-		}
+	void Engine::registerComponentCallBacks(Scene& scene) {
+		registerComponentCallBack<comp::RigidBody>(scene);
+		registerComponentCallBack<comp::BoxCollider>(scene);
+		registerComponentCallBack<comp::SphereCollider>(scene);
+		registerComponentCallBack<comp::Transform>(scene);
+		registerComponentCallBack<comp::Model>(scene);
 	}
 
 	void Engine::registerMath() {
 		{
+
 			auto type = LuaAccessable::registerType<Vector3>("Vec3",
 				sol::constructors<Vector3(float, float, float), Vector3(float), Vector3()>(),
 				sol::meta_function::addition, &Vector3::operator+=,
@@ -240,7 +201,8 @@ namespace sa {
 
 		m_currentScene = nullptr;
 		m_pWindow = pWindow;
-		m_isImGuiRecording = false;
+		
+		registerAllComponents();
 
 		reg();
 		Scene::reg();
@@ -261,54 +223,35 @@ namespace sa {
 					for (auto& cam : scene.getActiveCameras()) {
 						Rect viewport = cam->getViewport();
 						// resize viewport but keep relative size to window size
-						viewport.extent.width = e.newExtent.width * viewport.extent.width / m_windowExtent.width;
-						viewport.extent.height = e.newExtent.height * viewport.extent.height / m_windowExtent.height;
-
+						
+						viewport.extent.width = e.newExtent.width * viewport.extent.width / (float)m_windowExtent.width;
+						viewport.extent.height = e.newExtent.height * viewport.extent.height / (float)m_windowExtent.height;
+						
 						cam->setViewport(viewport);
 					}
 				}
 
+				m_windowExtent = e.newExtent;
 
 			});
 		}
-		// set scene silently
-		m_currentScene = &getScene("MainScene");
-	
-		m_isSetup = true;
-	}
-
-	
-	void Engine::init() {
-		SA_PROFILE_FUNCTION();
-
-		if (m_currentScene) {
-			// inform about scene set
-			publish<engine_event::SceneSet>(m_currentScene);
-			publish<engine_event::SceneLoad>(m_currentScene);
-			m_currentScene->load();
-		}
-
-	}
-
-	void Engine::update(float dt) {
-		SA_PROFILE_FUNCTION();
-
-		if (m_currentScene) {
-			m_currentScene->update(dt);
-		}
-
+		
+		on<engine_event::SceneSet>([](engine_event::SceneSet& e, Engine&) {
+			if (e.oldScene) {
+				e.oldScene->onRuntimeStop();
+			}
+			e.newScene->onRuntimeStart();
+		});
 	}
 
 	void Engine::cleanup() {
 		SA_PROFILE_FUNCTION();
-		
 		m_scenes.clear();
 	}
 
 	void Engine::recordImGui() {
 		SA_PROFILE_FUNCTION();
 		m_renderPipeline.beginFrameImGUI();
-		m_isImGuiRecording = true;
 	}
 
 	void Engine::draw() {
@@ -318,7 +261,6 @@ namespace sa {
 			return;
 
 		m_renderPipeline.render(getCurrentScene());
-		m_isImGuiRecording = false;
 	}
 
 	std::chrono::duration<double, std::milli> Engine::getCPUFrameTime() const {
@@ -335,11 +277,47 @@ namespace sa {
 			it->second.on<scene_event::SceneRequest>([&](const sa::scene_event::SceneRequest e, Scene&){
 				setScene(e.sceneName);
 			});
+			
+			registerComponentCallBacks(it->second);
 		}
 		return it->second;
 	}
 
+	Scene& Engine::loadSceneFromFile(const std::filesystem::path& path) {
+		simdjson::ondemand::parser parser;
+		auto json = simdjson::padded_string::load(path.string());
+		if (json.error()) {
+			throw std::runtime_error("JSON load failed : " + std::string(simdjson::error_message(json.error())));
+		}
+		simdjson::ondemand::document doc = parser.iterate(json);
+		Scene& scene = getScene(std::string(doc["name"].get_string().value()));
+		scene.deserialize(&doc);
+		SA_DEBUG_LOG_INFO("Scene ", scene.getName(), " loaded from file ", path);
+		return scene;
+	}
+
+	void Engine::storeSceneToFile(Scene* pScene, const std::filesystem::path& path) {
+		Serializer s;
+		pScene->serialize(s);
+
+		std::ofstream file(path);
+		if (!file) {
+			SA_DEBUG_LOG_ERROR("Failed to open file ", path);
+			return;
+		}
+		file << s.dump();
+		file.close();
+		SA_DEBUG_LOG_INFO("Scene ", pScene->getName(), " stored to file ", path);
+	}
+
 	Scene* Engine::getCurrentScene() const {
+		return m_currentScene;
+	}
+
+	Scene* Engine::getCurrentScene() {
+		if (!m_currentScene) {
+			setScene("Default Scene");
+		}
 		return m_currentScene;
 	}
 
@@ -349,20 +327,24 @@ namespace sa {
 
 	void Engine::setScene(Scene& scene) {
 		SA_PROFILE_FUNCTION();
-		if (m_currentScene) {
-			m_currentScene->unload();
-		}
-		m_currentScene = &scene;
-		publish<engine_event::SceneSet>(m_currentScene);
-		if (m_isSetup) {
-			publish<engine_event::SceneLoad>(m_currentScene);
-			m_currentScene->load();
-		}
+		publish<engine_event::SceneSet>(m_currentScene, &scene);
+		m_currentScene = &scene;	
 	}
 
 	std::unordered_map<std::string, Scene>& Engine::getScenes() {
 		return m_scenes;
 	}
 
+	void Engine::destroyScene(const std::string& name) {
+		if (m_currentScene->getName() == name) {
+			m_currentScene = nullptr;
+		}
+		m_scenes.erase(name);
+	}
+
+	void Engine::destroyScenes() {
+		m_scenes.clear();
+		m_currentScene = nullptr;
+	}
 }
 
