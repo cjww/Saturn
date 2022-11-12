@@ -22,8 +22,6 @@ SceneView::SceneView(sa::Engine* pEngine, sa::RenderWindow* pWindow)
 	m_statsUpdateTime = 0.1f;
 	m_statsTimer = m_statsUpdateTime;
 
-	//m_displayedSize = { (float)pWindow->getCurrentExtent().width, (float)pWindow->getCurrentExtent().height };
-
 	pEngine->on<sa::engine_event::SceneSet>([&](const sa::engine_event::SceneSet& sceneSetEvent, sa::Engine& engine) {
 
 		sceneSetEvent.newScene->addActiveCamera(&m_camera);
@@ -55,7 +53,16 @@ void SceneView::update(float dt) {
 		
 		std::copy(m_frameTimeGraph.begin() + 1, m_frameTimeGraph.end(), m_frameTimeGraph.begin());
 		m_frameTimeGraph[m_frameTimeGraph.size() - 1] = dt * 1000;
-		
+
+		m_statistics.totalGPUMemoryUsage = 0;
+		m_statistics.totalGPUMemoryBudget = 0;
+		for (auto& heap : m_statistics.gpuMemoryStats.heaps) {
+			m_statistics.totalGPUMemoryUsage += heap.usage;
+			m_statistics.totalGPUMemoryBudget += heap.budget;
+		}
+
+		std::copy(m_gpuMemoryData.begin() + 1, m_gpuMemoryData.end(), m_gpuMemoryData.begin());
+		m_gpuMemoryData[m_gpuMemoryData.size() - 1] = m_statistics.totalGPUMemoryUsage / 1000000;
 	}
 
 	if (!m_isFocused) {
@@ -105,7 +112,7 @@ void SceneView::onImGui() {
 					ImGui::Text("Frame time: %f ms", m_statistics.frameTime * 1000);
 					ImGui::PlotLines("Frame time", m_frameTimeGraph.data(), m_frameTimeGraph.size(), 0, 0, 0.0f, 100.f, ImVec2{0, 50});
 				
-					ImGui::Text("GPU Memory usage");
+					ImGui::PlotLines("GPU Memory usage", m_gpuMemoryData.data(), m_gpuMemoryData.size(), 0, 0, 0.0f, 100.f, ImVec2{ 0, 50 });
 					size_t totalUsage = 0;
 					size_t totalBudget = 0;
 
