@@ -6,13 +6,6 @@
 
 namespace sa {
 
-
-	struct RenderTarget {
-		Camera* pCamera;
-		ResourceID framebuffer;
-		Texture2D colorTexture;
-	};
-
 	class RenderPipeline {
 	private:
 		RenderWindow* m_pWindow;
@@ -24,10 +17,8 @@ namespace sa {
 
 		tf::Executor m_executor;
 
-		ResourceID m_swapchainRenderProgram;
-		ResourceID m_swapchainPipeline;
-		ResourceID m_swapchainDescriptorSet;
 		RenderTarget m_swapchainRenderTarget;
+		ResourceID m_swapchainDescriptorSet;
 		ResourceID m_sampler;
 
 		
@@ -46,8 +37,8 @@ namespace sa {
 
 		bool render(Scene* pScene);
 
-		bool beginScene(Scene* pScene);
-		void render(Camera* pCamera);
+		RenderContext beginScene(Scene* pScene);
+		void render(Camera* pCamera, RenderTarget* rendertarget = nullptr);
 		void endScene();
 
 		IRenderTechnique* getRenderTechnique() const;

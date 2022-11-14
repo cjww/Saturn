@@ -6,6 +6,12 @@
 
 namespace sa {
 
+	struct RenderTarget {
+		ResourceID framebuffer;
+		ResourceID renderProgram;
+		ResourceID pipeline;
+	};
+
 	struct DrawData {
 		Texture2D colorTexture;
 		Texture2D finalTexture;
@@ -32,7 +38,7 @@ namespace sa {
 		
 		virtual bool prepareRender(RenderContext& context, Camera* pCamera) { return true; };
 		virtual void render(RenderContext& context, Camera* pCamera, ResourceID framebuffer) = 0;
-		virtual void compose(RenderContext& context, ResourceID framebuffer) {};
+		virtual void endRender(RenderContext& context) {};
 
 		virtual ResourceID createColorFramebuffer(const Texture2D& outputTexture) = 0;
 

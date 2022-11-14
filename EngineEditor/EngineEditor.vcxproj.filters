@@ -36,9 +36,6 @@
     <ClCompile Include="src\SceneView.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\LuaConsole.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\CustomImGui.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -49,6 +46,9 @@
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="deps\simdjson\src\simdjson.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\GameView.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -74,13 +74,13 @@
     <ClInclude Include="src\SceneView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\LuaConsole.h">
-      <Filter>Header Files</Filter>
-    </ClInclude>
     <ClInclude Include="src\CustomImGui.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Tools\FileDialogs.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\GameView.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

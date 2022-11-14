@@ -5,7 +5,15 @@ namespace sa {
 	class Scene;
 	class Camera;
 	
+	class RenderPipeline;
+	class RenderContext;
+
 	namespace engine_event {
+
+		struct OnRender {
+			RenderContext* pContext;
+			RenderPipeline* pRenderPipeline;
+		};
 
 		struct SceneSet {
 			Scene* oldScene;

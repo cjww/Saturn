@@ -4,7 +4,8 @@ namespace sa {
 
 	void ImGuiRenderLayer::init(RenderWindow* pWindow, IRenderTechnique* pRenderTechnique) {
 		m_pWindow = pWindow;
-		
+		m_pRenderTechnique = pRenderTechnique;
+
 		m_outputTexture = m_renderer.createTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, pWindow->getCurrentExtent());
 
 		pRenderTechnique->drawData.finalTexture = m_outputTexture;
@@ -42,7 +43,7 @@ namespace sa {
 	void ImGuiRenderLayer::onWindowResize(Extent newExtent) {
 		Renderer::get().cleanupImGui();
 		cleanup();
-		init(m_pWindow, nullptr);
+		init(m_pWindow, m_pRenderTechnique);
 	}
 	
 	const Texture2D& ImGuiRenderLayer::getOutputTexture() const {

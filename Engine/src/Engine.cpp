@@ -192,8 +192,8 @@ namespace sa {
 	}
 
 	void Engine::onWindowResize(Extent newExtent) {
-		publish<sa::engine_event::WindowResized>(newExtent);
 		m_renderPipeline.onWindowResize(newExtent);
+		publish<sa::engine_event::WindowResized>(newExtent);
 
 		for (const auto& [id, scene] : m_scenes) {
 			for (auto& cam : scene.getActiveCameras()) {
@@ -225,9 +225,7 @@ namespace sa {
 		if (pWindow) {
 			m_renderPipeline.create(pWindow, new ForwardPlus);
 			
-			m_colorTexture = Renderer::get().createTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, pWindow->getCurrentExtent());
-			m_renderPipeline.getRenderTechnique()->drawData.colorTexture = m_colorTexture;
-			m_renderPipeline.pushLayer(new MainRenderLayer(m_colorTexture));
+			m_renderPipeline.pushLayer(new MainRenderLayer);
 
 			if (enableImgui) {
 				m_renderPipeline.pushOverlay(new ImGuiRenderLayer);
@@ -245,6 +243,7 @@ namespace sa {
 			}
 			e.newScene->onRuntimeStart();
 		});
+		
 	}
 
 	void Engine::cleanup() {
@@ -263,7 +262,21 @@ namespace sa {
 		if (!m_pWindow)
 			return;
 
-		m_renderPipeline.render(getCurrentScene());
+		RenderContext context = m_renderPipeline.beginScene(getCurrentScene());
+		if (context) {
+			publish<engine_event::OnRender>(&context, &m_renderPipeline);
+			m_renderPipeline.endScene();
+		}
+		/*
+		else {
+			ImGui::EndFrame();
+			// Update and Render additional Platform Windows
+			if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
+				ImGui::UpdatePlatformWindows();
+				ImGui::RenderPlatformWindowsDefault();
+			}
+		}
+		*/
 	}
 
 	std::chrono::duration<double, std::milli> Engine::getCPUFrameTime() const {
@@ -272,10 +285,6 @@ namespace sa {
 	
 	const RenderPipeline& Engine::getRenderPipeline() const {
 		return m_renderPipeline;
-	}
-
-	const Texture2D& Engine::getColorTexture() const {
-		return m_colorTexture;
 	}
 
 	Scene& Engine::getScene(const std::string& name) {

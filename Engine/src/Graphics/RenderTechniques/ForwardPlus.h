@@ -88,6 +88,7 @@ namespace sa {
 		virtual void updateData(RenderContext& context) override;
 		virtual bool prepareRender(RenderContext& context, Camera* pCamera) override;
 		virtual void render(RenderContext& context, Camera* pCamera, ResourceID framebuffer) override;
+		virtual void endRender(RenderContext& context) override;
 
 		virtual ResourceID createColorFramebuffer(const Texture2D& outputTexture) override;
 

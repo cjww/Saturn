@@ -390,8 +390,8 @@ namespace sa {
 			return false;
 		
 
-		context.bindVertexBuffers(0, { m_vertexBuffer });
-		context.bindIndexBuffer(m_indexBuffer);
+		context.bindVertexBuffers(0, { m_vertexBuffer.getCurrentBuffer()});
+		context.bindIndexBuffer(m_indexBuffer.getCurrentBuffer());
 
 		Matrix4x4 projViewMat = pCamera->getProjectionMatrix() * pCamera->getViewMatrix();
 
@@ -454,7 +454,6 @@ namespace sa {
 
 		context.endRenderProgram(m_colorRenderProgram);
 
-		m_indirectIndexedBuffer.manualIncrement();
 		
 		context.beginRenderProgram(m_debugLightHeatmapRenderProgram, m_debugLightHeatmapFramebuffer, SubpassContents::DIRECT);
 		context.bindPipeline(m_debugLightHeatmapPipeline);
@@ -463,6 +462,12 @@ namespace sa {
 		context.draw(6, 1);
 		context.endRenderProgram(m_debugLightHeatmapRenderProgram);
 
+	}
+
+	void ForwardPlus::endRender(RenderContext& context) {
+		m_vertexBuffer.manualIncrement();
+		m_indexBuffer.manualIncrement();
+		m_indirectIndexedBuffer.manualIncrement();
 	}
 
 	ResourceID ForwardPlus::createColorFramebuffer(const Texture2D& outputTexture) {

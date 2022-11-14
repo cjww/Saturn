@@ -6,20 +6,9 @@ namespace sa {
 
 	}
 
-	MainRenderLayer::MainRenderLayer(Texture2D texture)
-		: m_texture(texture)
-	{
-
-	}
-
 	void MainRenderLayer::init(RenderWindow* pWindow, IRenderTechnique* pRenderTechnique) {
 		m_pWindow = pWindow;
 		m_pRenderTechnique = pRenderTechnique;
-		if(!m_texture.isValid())
-			m_texture = m_pRenderTechnique->drawData.colorTexture;
-
-		m_sceneFramebuffer = m_pRenderTechnique->createColorFramebuffer(m_texture);
-
 	}
 
 	void MainRenderLayer::cleanup() {
@@ -30,13 +19,12 @@ namespace sa {
 		m_pRenderTechnique->prepareRender(context, pCamera);
 	}
 
-	void MainRenderLayer::render(RenderContext& context, Camera* pCamera) {
-		m_pRenderTechnique->render(context, pCamera, m_sceneFramebuffer);
-		m_pRenderTechnique->drawData.colorTexture = m_texture;
+	void MainRenderLayer::render(RenderContext& context, Camera* pCamera, RenderTarget* pRenderTarget) {
+		m_pRenderTechnique->render(context, pCamera, pRenderTarget->framebuffer);
 	}
 
 	void MainRenderLayer::postRender(RenderContext& context) {
-
+		m_pRenderTechnique->endRender(context);
 	}
 
 	void MainRenderLayer::onWindowResize(Extent newExtent) {

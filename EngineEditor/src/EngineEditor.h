@@ -8,6 +8,7 @@
 #include "SceneView.h"
 #include "SceneHierarchy.h"
 #include "EntityInspector.h"
+#include "GameView.h"
 
 namespace sa {
 

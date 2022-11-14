@@ -183,6 +183,7 @@
     <ClCompile Include="src\EditorModule.cpp" />
     <ClCompile Include="src\EngineEditor.cpp" />
     <ClCompile Include="src\EntityInspector.cpp" />
+    <ClCompile Include="src\GameView.cpp" />
     <ClCompile Include="src\SaturnEditorApp.cpp" />
     <ClCompile Include="src\SceneHierarchy.cpp" />
     <ClCompile Include="src\SceneView.cpp" />
@@ -195,6 +196,7 @@
     <ClInclude Include="src\EngineEditor.h" />
     <ClInclude Include="src\EntityInspector.h" />
     <ClInclude Include="src\Events.h" />
+    <ClInclude Include="src\GameView.h" />
     <ClInclude Include="src\SceneHierarchy.h" />
     <ClInclude Include="src\SceneView.h" />
     <ClInclude Include="src\TestLayer.h" />

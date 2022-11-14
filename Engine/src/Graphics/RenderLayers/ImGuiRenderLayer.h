@@ -6,7 +6,9 @@ namespace sa {
 	private:
 		ResourceID m_imGuiRenderProgram = NULL_RESOURCE;
 		ResourceID m_imGuiFramebuffer = NULL_RESOURCE;
+		
 		RenderWindow* m_pWindow;
+		IRenderTechnique* m_pRenderTechnique;
 
 		Texture2D m_outputTexture;
 

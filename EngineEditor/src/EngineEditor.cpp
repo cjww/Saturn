@@ -335,6 +335,8 @@ namespace sa {
 
 		m_editorModules.push_back(std::make_unique<SceneHierarchy>(&engine, this));
 
+		m_editorModules.push_back(std::make_unique<GameView>(&engine, this, &renderWindow));
+
 		//Application::get()->pushLayer(new TestLayer);
 
 		Image logo("resources/Logo-white.png");
