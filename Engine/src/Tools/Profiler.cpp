@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Profiler.h"
 
-#include "Logger.hpp"
+#include "Tools/Logger.hpp"
 
 namespace sa {
 

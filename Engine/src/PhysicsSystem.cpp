@@ -24,7 +24,7 @@ namespace sa {
 		static ErrorCallback s_defaultErrorCallback;
 		using namespace physx;
 
-
+		SA_DEBUG_LOG_INFO("Initializing PhysX ", PX_PHYSICS_VERSION_MAJOR, ".", PX_PHYSICS_VERSION_MINOR, ".", PX_PHYSICS_VERSION_BUGFIX);
 		m_pFoundation = PxCreateFoundation(PX_PHYSICS_VERSION, s_defaultAllocator, s_defaultErrorCallback);
 		if (!m_pFoundation) {
 			throw std::runtime_error("PxCreateFoundation failed!");

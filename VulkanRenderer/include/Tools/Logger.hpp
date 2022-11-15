@@ -8,7 +8,7 @@
 #define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 #endif
 
-#define SA_DEBUG_LOG_OSTREAM std::cout
+#define DEBUG_LOG_OSTREAM std::cout
 
 enum class FGColor {
 	Black           = 30,
@@ -67,24 +67,24 @@ public:
 
 };
 
-#ifdef SA_DEBUG_LOG
+#ifdef DEBUG_LOG
 #define SA_DEBUG_LOG_INFO(...) \
 	Logger::SetColor(FGColor::BrightGreen); \
-	SA_DEBUG_LOG_OSTREAM << "[INFO: " << __FILENAME__ << ":" << __LINE__ << "] "; \
+	DEBUG_LOG_OSTREAM << "[INFO: " << __FILENAME__ << ":" << __LINE__ << "] "; \
 	Logger::SetColor(FGColor::BrightWhite); \
-	Logger::Print(__VA_ARGS__); SA_DEBUG_LOG_OSTREAM
+	Logger::Print(__VA_ARGS__); DEBUG_LOG_OSTREAM
 
 #define SA_DEBUG_LOG_WARNING(...) \
 	Logger::SetColor(FGColor::BrightYellow); \
-	SA_DEBUG_LOG_OSTREAM << "[WARNING: " << __FILENAME__ << ":" << __LINE__ << "] "; \
+	DEBUG_LOG_OSTREAM << "[WARNING: " << __FILENAME__ << ":" << __LINE__ << "] "; \
 	Logger::SetColor(FGColor::BrightWhite); \
-	Logger::Print(__VA_ARGS__); SA_DEBUG_LOG_OSTREAM
+	Logger::Print(__VA_ARGS__); DEBUG_LOG_OSTREAM
 
 #define SA_DEBUG_LOG_ERROR(...) \
 	Logger::SetColor(FGColor::BrightRed); \
-	SA_DEBUG_LOG_OSTREAM << "[ERROR: " << __FILENAME__ << ":" << __LINE__ << "] "; \
+	DEBUG_LOG_OSTREAM << "[ERROR: " << __FILENAME__ << ":" << __LINE__ << "] "; \
 	Logger::SetColor(FGColor::BrightWhite); \
-	Logger::Print(__VA_ARGS__); SA_DEBUG_LOG_OSTREAM
+	Logger::Print(__VA_ARGS__); DEBUG_LOG_OSTREAM
 
 #else
 #define SA_DEBUG_LOG_INFO(...)
@@ -94,13 +94,13 @@ public:
 
 template<typename Arg>
 inline void Logger::PrintOneArgument(Arg arg) {
-	SA_DEBUG_LOG_OSTREAM << arg << ' ';
+	DEBUG_LOG_OSTREAM << arg;
 }
 
 template<typename ...Args>
 inline void Logger::Print(Args&& ...args) {
 	int dummy[] = { 0, ( (void)PrintOneArgument(std::forward<Args>(args)), 0) ... };
-	SA_DEBUG_LOG_OSTREAM << std::endl;
+	DEBUG_LOG_OSTREAM << std::endl;
 }
 
 template<typename ...Args>

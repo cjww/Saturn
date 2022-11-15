@@ -239,7 +239,6 @@
     <ClCompile Include="src\Graphics\IRenderTechnique.cpp" />
     <ClCompile Include="src\AssetManager.cpp" />
     <ClCompile Include="src\Tools\Clock.cpp" />
-    <ClCompile Include="src\Tools\Logger.cpp" />
     <ClCompile Include="src\Tools\Math.cpp" />
     <ClCompile Include="src\Tools\Matrix.cpp" />
     <ClCompile Include="src\Tools\Profiler.cpp" />
@@ -289,7 +288,6 @@
     <ClInclude Include="src\Graphics\IRenderTechnique.h" />
     <ClInclude Include="src\structs.h" />
     <ClInclude Include="src\Tools\Clock.h" />
-    <ClInclude Include="src\Tools\Logger.hpp" />
     <ClInclude Include="src\Tools\Math.h" />
     <ClInclude Include="src\Tools\Matrix.h" />
     <ClInclude Include="src\Tools\Profiler.h" />

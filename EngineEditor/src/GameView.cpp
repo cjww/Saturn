@@ -1,5 +1,7 @@
 #include "GameView.h"
 
+#include "Tools\ScopeTimer.h"
+
 GameView::GameView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWindow* pWindow)
 	: EditorModule(pEngine, pEditor)
 {
@@ -13,7 +15,15 @@ GameView::GameView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWin
 	m_Resolutions[0] = m_colorTexture.getExtent();
 
 	pEngine->on<sa::engine_event::OnRender>([&](sa::engine_event::OnRender& e, sa::Engine& engine) {
+		SA_PROFILE_SCOPE("GameView: OnRender");
 		m_renderedCamera = false;
+		
+		engine.getCurrentScene()->forEach<comp::Camera, comp::Transform>([&](comp::Camera& camera, comp::Transform& transform) {
+			camera.camera.setPosition(transform.position);
+			glm::vec3 forward = transform.rotation * glm::vec3(0, 0, 1);
+			camera.camera.lookAt(transform.position + forward);
+		});
+
 		engine.getCurrentScene()->forEach<comp::Camera>([&](comp::Camera& camera) {
 			if (camera.isPrimary) {
 				e.pRenderPipeline->render(&camera.camera, &m_renderTarget);

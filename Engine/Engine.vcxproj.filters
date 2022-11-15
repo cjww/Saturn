@@ -60,9 +60,6 @@
     <ClCompile Include="src\Tools\utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Tools\Logger.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\ECS\ComponentType.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
@@ -201,9 +198,6 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Graphics\RenderWindow.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="src\Tools\Logger.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\ECS\ComponentType.h">
