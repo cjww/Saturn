@@ -2,6 +2,9 @@
 
 #include "Graphics\RenderTechniques\ForwardPlus.h"
 
+#include <limits>
+
+
 SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWindow* pWindow)
 	: EditorModule(pEngine, pEditor)
 {
@@ -81,12 +84,12 @@ void SceneView::update(float dt) {
 		m_statistics.totalGPUMemoryUsage = 0;
 		m_statistics.totalGPUMemoryBudget = 0;
 		for (auto& heap : m_statistics.gpuMemoryStats.heaps) {
-			m_statistics.totalGPUMemoryUsage += heap.usage;
-			m_statistics.totalGPUMemoryBudget += heap.budget;
+			m_statistics.totalGPUMemoryUsage += heap.usage / 1000000;
+			m_statistics.totalGPUMemoryBudget += heap.budget / 1000000;
 		}
 
 		std::copy(m_gpuMemoryData.begin() + 1, m_gpuMemoryData.end(), m_gpuMemoryData.begin());
-		m_gpuMemoryData[m_gpuMemoryData.size() - 1] = m_statistics.totalGPUMemoryUsage / 1000000;
+		m_gpuMemoryData[m_gpuMemoryData.size() - 1] = m_statistics.totalGPUMemoryUsage;
 	}
 
 	if (!m_isFocused) {
@@ -160,42 +163,18 @@ void SceneView::onImGui() {
 		static ImGuizmo::OPERATION operation = ImGuizmo::TRANSLATE;
 		static float snapDistance = 0.5f;
 		static float snapAngle = 45.0f;
-		static int iconSize = 1000;
+		static int iconSize = 700;
 		static bool showIcons = true;
 
-		if (ImGui::BeginMenuBar()) {
-
-			static bool showStats = false;
-			if (showStats) {
-				ImGui::SetNextWindowBgAlpha(0.3f);
-				if (ImGui::Begin("Statistics", 0, ImGuiWindowFlags_NoCollapse | ImGuiWindowFlags_NoDecoration | ImGuiWindowFlags_AlwaysAutoResize | ImGuiWindowFlags_NoFocusOnAppearing)) {
-
-					ImGui::Text("Entity Count: %llu", m_pEngine->getCurrentScene()->getEntityCount());
-					
-					ImGui::Text("FPS: %f", 1 / m_statistics.frameTime);
-					ImGui::Text("Frame time: %f ms", m_statistics.frameTime * 1000);
-					ImGui::PlotLines("Frame time", m_frameTimeGraph.data(), m_frameTimeGraph.size(), 0, 0, 0.0f, 100.f, ImVec2{0, 50});
-				
-					ImGui::PlotLines("GPU Memory usage", m_gpuMemoryData.data(), m_gpuMemoryData.size(), 0, 0, 0.0f, 100.f, ImVec2{ 0, 50 });
-					size_t totalUsage = 0;
-					size_t totalBudget = 0;
-
-					ImGui::Indent();
-					for (auto& heap : m_statistics.gpuMemoryStats.heaps) {
-						ImGui::Text("%llu MB / %llu MB, flags: %u", heap.usage / 1000000, heap.budget / 1000000, heap.flags);
-						totalUsage += heap.usage;
-						totalBudget += heap.budget;
-					}
-					ImGui::Text("Total usage: %llu MB / %llu MB", totalUsage / 1000000, totalBudget / 1000000);
-					ImGui::Unindent();
-				}
-				ImGui::End();
-			}
+		static bool showStats = false;
 			
+		if (ImGui::BeginMenuBar()) {
 			
 
 			if (ImGui::BeginMenu("View Settings")) {
-				ImGui::Checkbox("Statistics", &showStats);
+				if (ImGui::Checkbox("Statistics", &showStats)) {
+					ImGui::CloseCurrentPopup();
+				}
 
 				ImGui::DragFloat("Snap Distance", &snapDistance, 0.5f, 0.0f, 100.f, "%.1f m");
 				ImGui::DragFloat("Snap Angle", &snapAngle, 1.f, 1.f, 180.f, "%.0f degrees");
@@ -396,6 +375,55 @@ void SceneView::onImGui() {
 
 		*/
 		
+		if (showStats) {
+			ImGui::SetCursorPosY(ImGui::GetCursorStartPos().y);
+			ImGui::Indent(ImGui::GetWindowWidth() - 400);
+			ImGui::Text("Entity Count: %llu", m_pEngine->getCurrentScene()->getEntityCount());
+
+			ImGui::Text("FPS: %f", 1 / m_statistics.frameTime);
+			ImVec4 bgColor = ImGui::GetStyleColorVec4(ImGuiCol_FrameBg);
+			bgColor.w = 0.5f;
+
+			ImGui::PushStyleColor(ImGuiCol_FrameBg, bgColor);
+
+			bgColor = ImGui::GetStyleColorVec4(ImGuiCol_Header);
+			bgColor.w = 0.5f;
+			ImGui::PushStyleColor(ImGuiCol_Header, bgColor);
+
+			bgColor = ImGui::GetStyleColorVec4(ImGuiCol_HeaderHovered);
+			bgColor.w = 0.5f;
+			ImGui::PushStyleColor(ImGuiCol_HeaderHovered, bgColor);
+
+			bgColor = ImGui::GetStyleColorVec4(ImGuiCol_HeaderActive);
+			bgColor.w = 0.5f;
+			ImGui::PushStyleColor(ImGuiCol_HeaderActive, bgColor);
+
+
+			if (ImGui::CollapsingHeader("Performance")) {
+				ImGui::PushStyleColor(ImGuiCol_PlotLines, ImVec4(1.f, 1.f, 1.f, 1.f));
+				ImGui::PlotLines("", m_frameTimeGraph.data(), m_frameTimeGraph.size(), 0, "Frame Time", 0.f, 100.f, ImVec2(300, 50));
+				ImGui::PopStyleColor();
+				ImGui::Text("Frame time: %f ms", m_statistics.frameTime * 1000);
+
+			}
+			if (ImGui::CollapsingHeader("Memory")) {
+				ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(1.f, 1.f, 1.f, 1.f));
+				ImGui::PlotHistogram("", m_gpuMemoryData.data(), m_gpuMemoryData.size(), 0, "GPU Memory usage", 0.f, m_statistics.totalGPUMemoryBudget, ImVec2(300, 50));
+				ImGui::PopStyleColor();
+			
+				ImGui::Text("GPU Memory Heaps");
+				ImGui::Indent();
+				for (auto& heap : m_statistics.gpuMemoryStats.heaps) {
+					ImGui::Text("%llu MB / %llu MB, flags: %u", heap.usage / 1000000, heap.budget / 1000000, heap.flags);
+				}
+				ImGui::Text("Total: %llu MB / %llu MB", m_statistics.totalGPUMemoryUsage, m_statistics.totalGPUMemoryBudget);
+				ImGui::Unindent();
+			}
+			ImGui::PopStyleColor(4);
+			ImGui::Unindent();
+			
+		}
+
 	}
 	ImGui::End();
 

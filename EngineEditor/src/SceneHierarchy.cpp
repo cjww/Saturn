@@ -28,18 +28,28 @@ void SceneHierarchy::makePopups() {
 			if (ImGui::MenuItem("Empty")) {
 				sa::Entity entity = m_pEngine->getCurrentScene()->createEntity("Empty");
 				entity.addComponent<comp::Transform>();
+				m_pEngine->publish<sa::editor_event::EntitySelected>(entity);
 			}
 			
 			if (ImGui::MenuItem("Quad")) {
 				sa::Entity entity = m_pEngine->getCurrentScene()->createEntity("Quad");
 				entity.addComponent<comp::Transform>();
 				entity.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadQuad();
+				m_pEngine->publish<sa::editor_event::EntitySelected>(entity);
 			}
 			
 			if (ImGui::MenuItem("Box")) {
 				sa::Entity entity = m_pEngine->getCurrentScene()->createEntity("Box");
 				entity.addComponent<comp::Transform>();
 				entity.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadBox();
+				m_pEngine->publish<sa::editor_event::EntitySelected>(entity);
+			}
+
+			if (ImGui::MenuItem("Camera")) {
+				sa::Entity entity = m_pEngine->getCurrentScene()->createEntity("Camera");
+				entity.addComponent<comp::Transform>();
+				entity.addComponent<comp::Camera>();
+				m_pEngine->publish<sa::editor_event::EntitySelected>(entity);
 			}
 
 			ImGui::EndMenu();
