@@ -45,6 +45,11 @@ void GameView::onImGui() {
 			if (ImGui::BeginMenu("Format")) {
 				ImGui::RadioButton("Window Size", &m_resolutionIndex, 0);
 				ImGui::RadioButton("1920x1080", &m_resolutionIndex, 1);
+				ImGui::RadioButton("1366x768", &m_resolutionIndex, 2);
+				ImGui::RadioButton("1600x900", &m_resolutionIndex, 3);
+				ImGui::RadioButton("1920x1200", &m_resolutionIndex, 4);
+				ImGui::RadioButton("2560x1440", &m_resolutionIndex, 5);
+				ImGui::RadioButton("3440x1440", &m_resolutionIndex, 6);
 				
 				ImGui::EndMenu();
 			}
@@ -57,7 +62,7 @@ void GameView::onImGui() {
 
 			sa::Extent extent = m_Resolutions[m_resolutionIndex];
 			float aspect = (float)extent.height / extent.width;
-			
+
 			ImVec2 imAvailSize = ImGui::GetContentRegionAvail();
 			glm::vec2 imageSize(imAvailSize.x, imAvailSize.y);
 			glm::vec2 pos = glm::vec2(ImGui::GetCursorPos().x, ImGui::GetCursorPos().y) + imageSize * 0.5f;
