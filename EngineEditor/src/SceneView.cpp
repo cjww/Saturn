@@ -151,7 +151,7 @@ void SceneView::onImGui() {
 		static ImGuizmo::OPERATION operation = ImGuizmo::TRANSLATE;
 		static float snapDistance = 0.5f;
 		static float snapAngle = 45.0f;
-		static int iconSize = 16;
+		static int iconSize = 1000;
 		static bool showIcons = true;
 
 		if (ImGui::BeginMenuBar()) {
@@ -203,7 +203,7 @@ void SceneView::onImGui() {
 				if (!showIcons) {
 					ImGui::BeginDisabled();
 				}
-				ImGui::SliderInt("Icon Size", &iconSize, 1, 100);
+				ImGui::SliderInt("Icon Size", &iconSize, 1, 5000);
 				if (!showIcons) {
 					ImGui::EndDisabled();
 				}
@@ -265,8 +265,22 @@ void SceneView::onImGui() {
 		glm::vec2 screenPos = { imageMin.x, imageMin.y };
 		glm::vec2 screenSize = { imageSize.x, imageSize.y };
 
+		if (showIcons) {
+			sa::Texture2D* tex = sa::AssetManager::get().loadTexture("resources/lightbulb-icon.png", true);
+			m_pEngine->getCurrentScene()->forEach<comp::Light>([&](const comp::Light& light) {
+				ImColor color(light.values.color);
+				ImGui::GizmoIcon(tex, light.values.position, &m_camera, screenPos, screenSize, iconSize, color);
+			});
+
+			tex = sa::AssetManager::get().loadTexture("resources/camera-transparent.png", true);
+			m_pEngine->getCurrentScene()->forEach<comp::Camera>([&](const comp::Camera& camera) {
+				ImGui::GizmoIcon(tex, camera.camera.getPosition(), &m_camera, screenPos, screenSize, iconSize, ImColor(1.f, 1.f, 1.f, 1.f));
+			});
+		}
 
 		if (m_selectedEntity) {
+
+
 			sa::Matrix4x4 projMat = m_camera.getProjectionMatrix();
 			projMat[1][1] *= -1;
 			glm::mat4 viewMat = m_camera.getViewMatrix();
@@ -336,16 +350,6 @@ void SceneView::onImGui() {
 
 		}
 		
-		if (showIcons) {
-			sa::Texture2D* tex = sa::AssetManager::get().loadTexture("resources/lightbulb-icon.png", true);
-			m_pEngine->getCurrentScene()->forEach<comp::Light>([&](const comp::Light& light) {
-				ImColor color(light.values.color);
-				ImGui::GizmoIcon(tex, light.values.position, &m_camera, screenPos, screenSize, iconSize, color);
-			});
-		}
-
-		
-
 		/*
 		ImVec2 viewManipSize = ImVec2(100, 100);
 		ImVec2 viewManipPos = ImVec2(imageMin.y, imageMin.y + imageSize.y - ImGui::GetWindowWidth() - viewManipSize.x);

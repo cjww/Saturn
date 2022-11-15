@@ -96,11 +96,11 @@ namespace sa {
         return m_viewport;
     }
 
-    float SceneCamera::getNear() const {
+    float SceneCamera::getNear() {
         return m_near;
     }
     
-    float SceneCamera::getFar() const {
+    float SceneCamera::getFar() {
         return m_far;
     }
 }

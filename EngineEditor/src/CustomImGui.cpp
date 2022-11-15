@@ -521,6 +521,8 @@ namespace ImGui {
 		ImVec2 windowPos = ImGui::GetWindowPos();
 		glm::vec3 point = sa::math::worldToScreen(worldPoint, pCamera, rectPos, rectSize);
 		if (point.z < 1) {
+			
+			iconSize /= glm::distance(worldPoint, pCamera->getPosition());
 			ImGui::GetWindowDrawList()->AddImageQuad(
 				sa::Renderer::get().getImGuiTexture(pTex),
 				ImVec2(point.x - iconSize, point.y - iconSize),

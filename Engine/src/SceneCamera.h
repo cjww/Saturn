@@ -52,8 +52,8 @@ namespace sa {
 
 		Rect getViewport() const;
 
-		float getNear() const;
-		float getFar() const;
+		static float getNear();
+		static float getFar();
 
 
 	};
