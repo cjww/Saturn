@@ -8,6 +8,7 @@ namespace sa {
 		registerComponentCallBack<comp::SphereCollider>(scene);
 		registerComponentCallBack<comp::Transform>(scene);
 		registerComponentCallBack<comp::Model>(scene);
+		registerComponentCallBack<comp::Camera>(scene);
 	}
 
 	void Engine::registerMath() {
@@ -35,10 +36,10 @@ namespace sa {
 					}
 					throw std::runtime_error("Vec3 __div: Unmatched type");
 				},
-
-					sol::meta_function::length, &Vector3::length,
-					sol::meta_function::to_string, &Vector3::toString
-					);
+				sol::meta_function::length, &Vector3::length,
+				sol::meta_function::to_string, &Vector3::toString
+			);
+			
 			type["x"] = &Vector3::x;
 			type["y"] = &Vector3::y;
 			type["z"] = &Vector3::z;
@@ -193,20 +194,19 @@ namespace sa {
 
 	void Engine::onWindowResize(Extent newExtent) {
 		m_renderPipeline.onWindowResize(newExtent);
-		publish<sa::engine_event::WindowResized>(newExtent);
-
-		for (const auto& [id, scene] : m_scenes) {
-			for (auto& cam : scene.getActiveCameras()) {
-				Rect viewport = cam->getViewport();
+		publish<sa::engine_event::WindowResized>(m_windowExtent, newExtent);
+		
+		for (auto& [name, scene] : m_scenes) {
+			scene.view<comp::Camera>().each([&](comp::Camera& camera) {
+				sa::Rect viewport = camera.camera.getViewport();
 				// resize viewport but keep relative size to window size
-
 				viewport.extent.width = newExtent.width * viewport.extent.width / (float)m_windowExtent.width;
 				viewport.extent.height = newExtent.height * viewport.extent.height / (float)m_windowExtent.height;
-
-				cam->setViewport(viewport);
-			}
+				camera.camera.setViewport(viewport);
+			});
 		}
 
+		
 		m_windowExtent = newExtent;
 	}
 
@@ -267,16 +267,6 @@ namespace sa {
 			publish<engine_event::OnRender>(&context, &m_renderPipeline);
 			m_renderPipeline.endScene();
 		}
-		/*
-		else {
-			ImGui::EndFrame();
-			// Update and Render additional Platform Windows
-			if (ImGui::GetIO().ConfigFlags & ImGuiConfigFlags_ViewportsEnable) {
-				ImGui::UpdatePlatformWindows();
-				ImGui::RenderPlatformWindowsDefault();
-			}
-		}
-		*/
 	}
 
 	std::chrono::duration<double, std::milli> Engine::getCPUFrameTime() const {

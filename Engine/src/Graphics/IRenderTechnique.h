@@ -1,8 +1,9 @@
 #pragma once
 
-#include "Camera.h"
+#include "SceneCamera.h"
 #include "Scene.h"
-
+#include "Renderer.hpp"
+#include "Resources\Texture.hpp"
 
 namespace sa {
 
@@ -36,8 +37,8 @@ namespace sa {
 
 		virtual void updateData(RenderContext& context) = 0;
 		
-		virtual bool prepareRender(RenderContext& context, Camera* pCamera) { return true; };
-		virtual void render(RenderContext& context, Camera* pCamera, ResourceID framebuffer) = 0;
+		virtual bool prepareRender(RenderContext& context, SceneCamera* pCamera) { return true; };
+		virtual void render(RenderContext& context, SceneCamera* pCamera, ResourceID framebuffer) = 0;
 		virtual void endRender(RenderContext& context) {};
 
 		virtual ResourceID createColorFramebuffer(const Texture2D& outputTexture) = 0;

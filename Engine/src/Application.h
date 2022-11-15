@@ -49,6 +49,7 @@ namespace sa {
 
 		sa::RenderWindow* getWindow() const;
 		const sa::Engine& getEngine() const;
+		sa::Engine& getEngine();
 
 
 	};

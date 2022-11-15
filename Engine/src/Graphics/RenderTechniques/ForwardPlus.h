@@ -1,6 +1,8 @@
 #pragma once
 #include "Graphics/IRenderTechnique.h"
 
+#include "AssetManager.h"
+
 #define TILE_SIZE 16U
 #define MAX_LIGHTS_PER_TILE 1024
 
@@ -86,8 +88,8 @@ namespace sa {
 		virtual void cleanup() override;
 
 		virtual void updateData(RenderContext& context) override;
-		virtual bool prepareRender(RenderContext& context, Camera* pCamera) override;
-		virtual void render(RenderContext& context, Camera* pCamera, ResourceID framebuffer) override;
+		virtual bool prepareRender(RenderContext& context, SceneCamera* pCamera) override;
+		virtual void render(RenderContext& context, SceneCamera* pCamera, ResourceID framebuffer) override;
 		virtual void endRender(RenderContext& context) override;
 
 		virtual ResourceID createColorFramebuffer(const Texture2D& outputTexture) override;

@@ -4,7 +4,7 @@
 #include "Tools/Vector.h"
 
 namespace sa {
-	class Camera {
+	class SceneCamera {
 	private:
 		Rect m_viewport;
 		Matrix4x4 m_projMat;
@@ -16,18 +16,18 @@ namespace sa {
 
 		float m_fov;
 		float m_apectRatio;
-		const float m_near = 0.01f;
-		const float m_far = 1000.0f;
+		inline static const float m_near = 0.01f;
+		inline static const float m_far = 1000.0f;
 
 		void updateProjection();
 
 	public:
-		Camera();
-		Camera(const Window* pWindow);
-		Camera(Extent windowExtent);
+		SceneCamera();
+		SceneCamera(const Window* pWindow);
+		SceneCamera(Extent windowExtent);
 		
-		Camera(const Camera&) = default;
-		Camera& operator=(const Camera&) = default;
+		SceneCamera(const SceneCamera&) = default;
+		SceneCamera& operator=(const SceneCamera&) = default;
 		
 		void setFOVRadians(float fovRadians);
 		void setFOVDegrees(float fovDegrees);

@@ -119,6 +119,7 @@ void EntityInspector::onImGui() {
 			ImGui::Component<comp::RigidBody>(m_selectedEntity);
 			ImGui::Component<comp::BoxCollider>(m_selectedEntity);
 			ImGui::Component<comp::SphereCollider>(m_selectedEntity);
+			ImGui::Component<comp::Camera>(m_selectedEntity);
 
 
 			// Display entity scripts

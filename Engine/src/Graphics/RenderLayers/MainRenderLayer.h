@@ -14,8 +14,8 @@ namespace sa {
 		virtual void init(RenderWindow* pWindow, IRenderTechnique* pRenderTechnique) override;
 		virtual void cleanup() override;
 
-		virtual void preRender(RenderContext& context, Camera* pCamera) override;
-		virtual void render(RenderContext& context, Camera* pCamera, RenderTarget* pRenderTarget = nullptr) override;
+		virtual void preRender(RenderContext& context, SceneCamera* pCamera) override;
+		virtual void render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget = nullptr) override;
 		virtual void postRender(RenderContext& context) override;
 
 		virtual void onWindowResize(Extent newExtent) override;

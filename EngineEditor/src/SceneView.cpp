@@ -24,7 +24,6 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 
 	pEngine->on<sa::engine_event::SceneSet>([&](const sa::engine_event::SceneSet& sceneSetEvent, sa::Engine& engine) {
 		m_selectedEntity = {};
-		sceneSetEvent.newScene->addActiveCamera(&m_camera);
 	});
 
 	pEngine->on<sa::editor_event::EntitySelected>([&](const sa::editor_event::EntitySelected& e, sa::Engine&) {
@@ -245,9 +244,9 @@ void SceneView::onImGui() {
 			else if (ImGui::IsKeyPressed(ImGuiKey_E))
 				operation = ImGuizmo::OPERATION::ROTATE;
 			else if (ImGui::IsKeyPressed(ImGuiKey_R))
-			operation = ImGuizmo::OPERATION::SCALE;
+				operation = ImGuizmo::OPERATION::SCALE;
 			else if (ImGui::IsKeyPressed(ImGuiKey_Q))
-			operation = (ImGuizmo::OPERATION)0;
+				operation = (ImGuizmo::OPERATION)0;
 		}
 
 		// Gizmos
@@ -480,7 +479,7 @@ bool SceneView::imGuiDrawVector(glm::vec3 v, const ImColor& color, float thickne
 }
 
 
-sa::Camera* SceneView::getCamera() {
+sa::SceneCamera* SceneView::getCamera() {
 	return &m_camera;
 }
 

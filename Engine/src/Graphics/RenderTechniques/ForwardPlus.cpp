@@ -385,7 +385,7 @@ namespace sa {
 
 	}
 
-	bool ForwardPlus::prepareRender(RenderContext& context, Camera* pCamera) {
+	bool ForwardPlus::prepareRender(RenderContext& context, SceneCamera* pCamera) {
 		if (!pCamera)
 			return false;
 		
@@ -428,7 +428,7 @@ namespace sa {
 		return true;
 	}
 
-	void ForwardPlus::render(RenderContext& context, Camera* pCamera, ResourceID framebuffer) {
+	void ForwardPlus::render(RenderContext& context, SceneCamera* pCamera, ResourceID framebuffer) {
 		if (!pCamera)
 			return;
 

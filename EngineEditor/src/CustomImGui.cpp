@@ -260,6 +260,32 @@ namespace ImGui {
 		}
 	}
 
+	void Component(sa::Entity entity, comp::Camera* camera) {
+		ImGui::Checkbox("Is Primary", &camera->isPrimary);
+
+		glm::vec3 position = camera->camera.getPosition();
+		if (ImGui::DragFloat3("Position##Camera", (float*)&position)) {
+			camera->camera.setPosition(position);
+		}
+		sa::Rect rect = camera->camera.getViewport();
+		ImGui::Text("Viewport");
+		ImGui::Indent();
+		if (ImGui::DragInt2("Offset##Camera", (int32_t*)&rect.offset)) {
+			camera->camera.setViewport(rect);
+		}
+
+		glm::ivec2 extent(rect.extent.width, rect.extent.height);
+		if (ImGui::DragInt2("Extent##Camera", (int32_t*)&extent)) {
+			rect.extent = { (uint32_t)extent.x, (uint32_t)extent.y };
+			camera->camera.setViewport(rect);
+		}
+		ImGui::Unindent();
+
+
+
+
+	}
+
 	void viewFile(std::filesystem::path filePath) {
 		ImGui::Selectable(filePath.filename().string().c_str());
 	}
@@ -491,7 +517,7 @@ namespace ImGui {
 		return pressed;
 	}
 
-	void GizmoIcon(const sa::Texture* pTex, const glm::vec3& worldPoint, const sa::Camera* pCamera, const glm::vec2& rectPos, const glm::vec2& rectSize, int iconSize, ImColor tintColor) {
+	void GizmoIcon(const sa::Texture* pTex, const glm::vec3& worldPoint, const sa::SceneCamera* pCamera, const glm::vec2& rectPos, const glm::vec2& rectSize, int iconSize, ImColor tintColor) {
 		ImVec2 windowPos = ImGui::GetWindowPos();
 		glm::vec3 point = sa::math::worldToScreen(worldPoint, pCamera, rectPos, rectSize);
 		if (point.z < 1) {
@@ -507,7 +533,7 @@ namespace ImGui {
 		}
 	}
 
-	void GizmoCircle(const glm::vec3& worldPosition, float radius, const glm::quat& rotation, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, int numSegments, float thickness) {
+	void GizmoCircle(const glm::vec3& worldPosition, float radius, const glm::quat& rotation, const sa::SceneCamera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, int numSegments, float thickness) {
 		if (numSegments == 0) 
 			numSegments = 64;
 		else if (numSegments > 128) 
@@ -534,7 +560,7 @@ namespace ImGui {
 
 	}
 
-	bool GizmoCircleResizable(const glm::vec3& worldPosition, float& radius, const glm::quat& rotation, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, bool& isDragging, int numSegments, float thickness) {
+	bool GizmoCircleResizable(const glm::vec3& worldPosition, float& radius, const glm::quat& rotation, const sa::SceneCamera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, bool& isDragging, int numSegments, float thickness) {
 		if (numSegments == 0)
 			numSegments = 64;
 		else if (numSegments > 128)
@@ -602,7 +628,7 @@ namespace ImGui {
 		return false;
 	}
 
-	bool GizmoSphereResizable(const glm::vec3& worldPosition, float& radius, const glm::quat& rotation, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, bool disabled, int numSegments, float thickness) {
+	bool GizmoSphereResizable(const glm::vec3& worldPosition, float& radius, const glm::quat& rotation, const sa::SceneCamera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, bool disabled, int numSegments, float thickness) {
 		static bool dragFirstCircle = false;
 		static bool dragSecondCircle = false;
 
@@ -620,7 +646,7 @@ namespace ImGui {
 		return released;
 	}
 
-	void GizmoCircle2D(const glm::vec3& worldPosition, float radius, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, int numSegments, float thickness) {
+	void GizmoCircle2D(const glm::vec3& worldPosition, float radius, const sa::SceneCamera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, int numSegments, float thickness) {
 		glm::vec3 point = sa::math::worldToScreen(worldPosition, pCamera, screenPos, screenSize);
 		glm::vec3 point2 = sa::math::worldToScreen(worldPosition + (pCamera->getRight() * radius), pCamera, screenPos, screenSize);
 		if (point.z < 1.f || point2.z < 1.f)
@@ -629,7 +655,7 @@ namespace ImGui {
 		ImGui::GetWindowDrawList()->AddCircle(ImVec2(point.x, point.y), radiusScreenSpace, color, numSegments, thickness);
 	}
 
-	void GizmoCircle2DResizable(const glm::vec3& worldPosition, float& radius, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, bool& isDragging, int numSegments, float thickness) {
+	void GizmoCircle2DResizable(const glm::vec3& worldPosition, float& radius, const sa::SceneCamera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, bool& isDragging, int numSegments, float thickness) {
 		glm::vec3 point = sa::math::worldToScreen(worldPosition, pCamera, screenPos, screenSize);
 		glm::vec3 point2 = sa::math::worldToScreen(worldPosition + (pCamera->getRight() * radius), pCamera, screenPos, screenSize);
 		if (point.z < 1.f || point2.z < 1.f)
@@ -660,7 +686,7 @@ namespace ImGui {
 
 	}
 
-	void GizmoQuad(const glm::vec3& worldPosition, const glm::vec2& size, const glm::quat& rotation, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, float thickness) {
+	void GizmoQuad(const glm::vec3& worldPosition, const glm::vec2& size, const glm::quat& rotation, const sa::SceneCamera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, float thickness) {
 		
 		glm::vec3 point1 = worldPosition + rotation * glm::vec3(size.x, size.y, 0);
 		glm::vec3 point2 = worldPosition + rotation * glm::vec3(size.x, -size.y, 0);
@@ -686,7 +712,7 @@ namespace ImGui {
 
 	}
 
-	void GizmoBox(const glm::vec3& worldPosition, const glm::vec3& halfLengths, const glm::quat& rotation, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, float thickness) {
+	void GizmoBox(const glm::vec3& worldPosition, const glm::vec3& halfLengths, const glm::quat& rotation, const sa::SceneCamera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, float thickness) {
 		
 		glm::vec3 dirZ = rotation * glm::vec3(0, 0, halfLengths.z);
 		glm::vec3 dirX = rotation * glm::vec3(halfLengths.x, 0, 0);
@@ -698,7 +724,7 @@ namespace ImGui {
 
 	}
 
-	bool GizmoBoxResizable(const glm::vec3& worldPosition, glm::vec3& halfLengths, const glm::quat& rotation, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, bool disabled, float thickness) {
+	bool GizmoBoxResizable(const glm::vec3& worldPosition, glm::vec3& halfLengths, const glm::quat& rotation, const sa::SceneCamera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, bool disabled, float thickness) {
 		glm::vec3 dirZ = rotation * glm::vec3(0, 0, halfLengths.z);
 		glm::vec3 dirX = rotation * glm::vec3(halfLengths.x, 0, 0);
 

@@ -206,6 +206,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\ECS\Components.cpp" />
+    <ClCompile Include="src\ECS\Components\Camera.cpp" />
     <ClCompile Include="src\ECS\Components\Light.cpp" />
     <ClCompile Include="src\ECS\Components\Model.cpp" />
     <ClCompile Include="src\ECS\Components\Name.cpp" />
@@ -232,7 +233,7 @@
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\Scene.cpp" />
-    <ClCompile Include="src\Camera.cpp" />
+    <ClCompile Include="src\SceneCamera.cpp" />
     <ClCompile Include="src\ECS\Entity.cpp" />
     <ClCompile Include="src\Engine.cpp" />
     <ClCompile Include="src\Graphics\IRenderTechnique.cpp" />
@@ -250,6 +251,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ECS\Components\BoxCollider.h" />
+    <ClInclude Include="src\ECS\Components\Camera.h" />
     <ClInclude Include="src\ECS\Components\Light.h" />
     <ClInclude Include="src\ECS\Components\Model.h" />
     <ClInclude Include="src\ECS\Components\Name.h" />
@@ -269,7 +271,6 @@
     <ClInclude Include="src\Core.h" />
     <ClInclude Include="src\ECS\ComponentBase.h" />
     <ClInclude Include="src\ECS\ComponentType.h" />
-    <ClInclude Include="src\CameraController.h" />
     <ClInclude Include="src\EntryPoint.h" />
     <ClInclude Include="src\Graphics\ForwardPlus.h" />
     <ClInclude Include="src\Graphics\Material.h" />
@@ -282,7 +283,7 @@
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\Scene.h" />
     <ClInclude Include="src\ThreadManager.h" />
-    <ClInclude Include="src\Camera.h" />
+    <ClInclude Include="src\SceneCamera.h" />
     <ClInclude Include="src\ECS\Components.h" />
     <ClInclude Include="src\Engine.h" />
     <ClInclude Include="src\Graphics\IRenderTechnique.h" />

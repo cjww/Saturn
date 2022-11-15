@@ -6,6 +6,7 @@
 #include "ECS/Components/RigidBody.h"
 #include "ECS/Components/BoxCollider.h"
 #include "ECS/Components/SphereCollider.h"
+#include "ECS/Components/Camera.h"
 
 namespace sa {
 	void registerAllComponents();

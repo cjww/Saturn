@@ -9,6 +9,10 @@ namespace sa {
 		registerComponentType<comp::Transform>();
 		registerComponentType<comp::Light>();
 		registerComponentType<comp::Model>();
+		registerComponentType<comp::RigidBody>();
+		registerComponentType<comp::BoxCollider>();
+		registerComponentType<comp::SphereCollider>();
+		registerComponentType<comp::Camera>();
 	}
 
 }

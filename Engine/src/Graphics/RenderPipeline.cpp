@@ -104,7 +104,7 @@ namespace sa {
 		return m_context;
 	}
 
-	void RenderPipeline::render(Camera* pCamera, RenderTarget* rendertarget) {
+	void RenderPipeline::render(SceneCamera* pCamera, RenderTarget* rendertarget) {
 		SA_PROFILE_FUNCTION();
 
 		for (auto& layer : m_layers) {

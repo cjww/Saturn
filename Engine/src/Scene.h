@@ -1,9 +1,11 @@
 #pragma once
 
-#include "Camera.h"
+#include "SceneCamera.h"
 #include "ECS/Entity.h"
 #include "ECS/Events.h"
-#include "ECS/Components.h"
+
+#include "ECS\Components.h"
+
 #include "PhysicsSystem.h"
 
 #include <iostream>
@@ -21,9 +23,6 @@ namespace sa {
 
 	class Scene : public entt::emitter<Scene>, entt::registry, public Serializable {
 	private:
-		std::vector<Camera*> m_cameras;
-		std::set<Camera*> m_activeCameras;
-
 		ScriptManager m_scriptManager;
 
 		EntityHierarchy m_hierarchy;
@@ -67,15 +66,6 @@ namespace sa {
 
 		void serialize(Serializer& s) override;
 		void deserialize(void* pDoc) override;
-
-
-		// Camera
-		Camera* newCamera();
-		Camera* newCamera(const Window* pWindow);
-
-		void addActiveCamera(Camera* camera);
-		void removeActiveCamera(Camera* camera);
-		std::set<Camera*> getActiveCameras() const;
 
 		// Event emitter
 		void setScene(const std::string& name);

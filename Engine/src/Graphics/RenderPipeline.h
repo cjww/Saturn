@@ -38,7 +38,7 @@ namespace sa {
 		bool render(Scene* pScene);
 
 		RenderContext beginScene(Scene* pScene);
-		void render(Camera* pCamera, RenderTarget* rendertarget = nullptr);
+		void render(SceneCamera* pCamera, RenderTarget* rendertarget = nullptr);
 		void endScene();
 
 		IRenderTechnique* getRenderTechnique() const;

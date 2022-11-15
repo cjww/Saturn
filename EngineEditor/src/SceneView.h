@@ -1,5 +1,5 @@
 #pragma once
-#include <Camera.h>
+#include <SceneCamera.h>
 #include "EditorModule.h"
 #include <Tools\Math.h>
 #include "ECS/Components.h"
@@ -13,7 +13,7 @@
 
 class SceneView : public EditorModule {
 private:
-	sa::Camera m_camera;
+	sa::SceneCamera m_camera;
 	sa::RenderWindow* m_pWindow;
 
 	sa::Texture2D m_colorTexture;
@@ -59,7 +59,7 @@ public:
 	bool imGuiDrawVector(glm::vec3 v, const ImColor& color, float thickness = 1.0f);
 
 
-	sa::Camera* getCamera();
+	sa::SceneCamera* getCamera();
 
 	sa::Entity getEntity() const;
 	void setEntity(sa::Entity entity);

@@ -15,11 +15,11 @@ namespace sa {
 
 	}
 
-	void MainRenderLayer::preRender(RenderContext& context, Camera* pCamera) {
+	void MainRenderLayer::preRender(RenderContext& context, SceneCamera* pCamera) {
 		m_pRenderTechnique->prepareRender(context, pCamera);
 	}
 
-	void MainRenderLayer::render(RenderContext& context, Camera* pCamera, RenderTarget* pRenderTarget) {
+	void MainRenderLayer::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget) {
 		m_pRenderTechnique->render(context, pCamera, pRenderTarget->framebuffer);
 	}
 

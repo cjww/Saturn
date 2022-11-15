@@ -11,7 +11,7 @@ namespace sa {
 
 	class TestLayer : public IApplicationLayer {
 	private:
-		Camera m_camera;
+		SceneCamera m_camera;
 		std::unique_ptr<CameraController> m_pCameraController;
 
 		Clock m_infoClock;
