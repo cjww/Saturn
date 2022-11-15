@@ -55,7 +55,7 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 		m_colorTexture.destroy();
 		m_colorTexture = sa::Renderer::get().createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, e.newExtent);
 
-		m_camera.setViewport(sa::Rect{ { 0, 0 }, m_colorTexture.getExtent() });
+		m_camera.setViewport(sa::Rect{ { 0, 0 }, e.newExtent });
 
 		sa::Renderer::get().destroyFramebuffer(m_renderTarget.framebuffer);
 		m_renderTarget.framebuffer = engine.getRenderPipeline().getRenderTechnique()->createColorFramebuffer(m_colorTexture);
@@ -327,14 +327,11 @@ void SceneView::onImGui() {
 			if (sc) {
 				comp::Transform* transform = m_selectedEntity.getComponent<comp::Transform>();
 				if (transform) {
-					//glm::vec3 offset = transform->rotation * sc->offset;
-					if(ImGui::GizmoSphereResizable(transform->position + sc->offset, sc->radius, transform->rotation, &m_camera, screenPos, screenSize, colliderColor, isOperating)) {
+					if (ImGui::GizmoSphereResizable(transform->position + sc->offset, sc->radius, transform->rotation, &m_camera, screenPos, screenSize, colliderColor, isOperating)) {
 						sc->onUpdate(&m_selectedEntity);
 					}
 				}
 			}
-
-
 
 		}
 		

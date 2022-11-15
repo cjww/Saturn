@@ -402,7 +402,9 @@ namespace sa {
 		// Depth prepass
 		context.beginRenderProgram(m_depthPreRenderProgram, m_depthPreFramebuffer, SubpassContents::DIRECT);
 		context.bindPipeline(m_depthPrePipeline);
+		
 		context.setViewport(pCamera->getViewport());
+
 		context.bindDescriptorSet(m_sceneDepthDescriptorSet, m_depthPrePipeline);
 
 
