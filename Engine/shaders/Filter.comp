@@ -45,7 +45,8 @@ vec4 downsample(vec2 uv, vec2 texelSize) {
 void main() {
     ivec2 pos = ivec2(gl_GlobalInvocationID.xy); // coordinates on input image
 	vec2 texSize = textureSize(inputImage, 0);
-	vec2 uv = pos / texSize;
+	ivec2 inputPos = pos * 2;
+	vec2 uv = inputPos / texSize;
 
 	vec3 color = downsample(uv, 1 / texSize).xyz;
 
@@ -54,6 +55,5 @@ void main() {
 	contribution /= max(brightness, 0.00001);
 	color = color * contribution;
 	
-	//pos *= 2;
 	imageStore(resultImage, pos, vec4(color, 1.0));
 }

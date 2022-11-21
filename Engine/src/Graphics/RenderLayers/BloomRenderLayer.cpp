@@ -30,8 +30,8 @@ namespace sa {
 
 
 		auto tex = m_renderer.getFramebufferTexture(pRenderTarget->framebuffer, 0);
-		//Extent extent = { std::ceil(tex.getExtent().width * 0.5f), std::ceil(tex.getExtent().height * 0.5f) };
-		Extent extent = tex.getExtent();
+		Extent extent = { std::ceil(tex.getExtent().width * 0.5f), std::ceil(tex.getExtent().height * 0.5f) };
+		//Extent extent = tex.getExtent();
 
 		if (!bd.isInitialized) {
 			bd.isInitialized = true;
