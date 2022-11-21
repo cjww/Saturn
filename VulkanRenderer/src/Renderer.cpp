@@ -194,6 +194,14 @@ namespace sa {
 		ResourceManager::get().remove<FramebufferSet>(framebuffer);
 	}
 
+	Texture Renderer::getFramebufferTexture(ResourceID framebuffer, uint32_t index) const {
+		return RenderContext::getFramebufferSet(framebuffer)->getTexture(index);
+	}
+
+	size_t Renderer::getFramebufferTextureCount(ResourceID framebuffer) const {
+		return RenderContext::getFramebufferSet(framebuffer)->getTextureCount();
+	}
+
 	ResourceID Renderer::createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, PipelineSettings settings) {
 		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
 		Shader vShader(m_pCore->getDevice(), vertexShader.c_str(), vk::ShaderStageFlagBits::eVertex);
@@ -301,35 +309,6 @@ namespace sa {
 
 	DynamicBuffer Renderer::createDynamicBuffer(BufferType type, size_t size, void* initialData) {
 		return DynamicBuffer(m_pCore.get(), type, m_pCore->getQueueCount(), size, initialData);
-	}
-
-	Texture2D Renderer::createTexture2D(TextureTypeFlags type, Extent extent, uint32_t sampleCount) {
-		return Texture2D(m_pCore.get(), type, extent, sampleCount);
-	}
-
-	Texture2D Renderer::createTexture2D(TextureTypeFlags type, Extent extent, FormatPrecisionFlags formatPrecision, FormatDimensionFlags formatDimensions, FormatTypeFlags formatType, uint32_t sampleCount) {
-		return Texture2D(m_pCore.get(), type, extent, formatPrecision, formatDimensions, formatType, sampleCount);
-	}
-
-	Texture2D Renderer::createTexture2D(TextureTypeFlags type, Extent extent, ResourceID swapchain, uint32_t sampleCount) {
-		Swapchain* pSwapchain = RenderContext::getSwapchain(swapchain);
-		return Texture2D(m_pCore.get(), type, extent, pSwapchain, sampleCount);
-	}
-
-	Texture2D Renderer::createTexture2D(const Image& image, bool generateMipMaps) {
-		return Texture2D(m_pCore.get(), image, generateMipMaps);
-	}
-
-	TextureCube Renderer::createTextureCube(const Image& image, bool generateMipMaps) {
-		return TextureCube(m_pCore.get(), image, generateMipMaps);
-	}
-
-	TextureCube Renderer::createTextureCube(const std::vector<Image>& images, bool generateMipMaps) {
-		return TextureCube(m_pCore.get(), images, generateMipMaps);
-	}
-
-	Texture3D Renderer::createTexture3D(TextureTypeFlags type, Extent3D extent, FormatPrecisionFlags formatPrecision, FormatDimensionFlags formatDimensions, FormatTypeFlags formatType, uint32_t sampleCount) {
-		return Texture3D(m_pCore.get(), type, extent, sampleCount, 1, formatPrecision, formatDimensions, formatType);
 	}
 
 	DeviceMemoryStats Renderer::getGPUMemoryUsage() const {

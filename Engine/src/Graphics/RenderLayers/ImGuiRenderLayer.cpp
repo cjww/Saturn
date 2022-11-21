@@ -6,7 +6,7 @@ namespace sa {
 		m_pWindow = pWindow;
 		m_pRenderTechnique = pRenderTechnique;
 
-		m_outputTexture = m_renderer.createTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, pWindow->getCurrentExtent());
+		m_outputTexture = Texture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, pWindow->getCurrentExtent());
 
 		pRenderTechnique->drawData.finalTexture = m_outputTexture;
 

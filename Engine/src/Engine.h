@@ -4,6 +4,7 @@
 #include "Graphics/RenderTechniques/ForwardPlus.h"
 #include "Graphics/RenderLayers/ImGuiRenderLayer.h"
 #include "Graphics/RenderLayers/MainRenderLayer.h"
+#include "Graphics/RenderLayers/BloomRenderLayer.h"
 
 #include "AssetManager.h"
 #include "Scene.h"
@@ -23,7 +24,8 @@ namespace sa {
 	private:
 		
 		RenderPipeline m_renderPipeline;
-		
+
+
 		Extent m_windowExtent;
 		RenderWindow* m_pWindow;
 

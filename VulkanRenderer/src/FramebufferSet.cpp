@@ -14,9 +14,7 @@ namespace sa{
 		m_device = pCore->getDevice();
 		m_extent = extent;
 		
-		for (const Texture& image : images) {
-			m_images.push_back((DeviceImage*)image);
-		}
+		m_images = images;
 
 		create(pCore, renderPass, images, extent, layers);
 	}
@@ -26,9 +24,7 @@ namespace sa{
 		m_device = pCore->getDevice();
 		m_extent = pSwapchain->getExtent();
 
-		for (const Texture& image : images) {
-			m_images.push_back((DeviceImage*)image);
-		}
+		m_images = images;
 
 		create(pCore, renderPass, pSwapchain, images, layers);
 	}
@@ -97,6 +93,14 @@ namespace sa{
 
 	Extent FramebufferSet::getExtent() const {
 		return m_extent;
+	}
+
+	const Texture& FramebufferSet::getTexture(uint32_t index) const {
+		return m_images.at(index);
+	}
+
+	size_t FramebufferSet::getTextureCount() const {
+		return m_images.size();
 	}
 
 }

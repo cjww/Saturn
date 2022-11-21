@@ -187,8 +187,8 @@ namespace sa {
 			return tex;
 
 		sa::Image img(2, 2, sa::Color{ 1, 1, 1, 1 });
-		ResourceID id = sa::ResourceManager::get().insert<Texture2D>("default_white", sa::Renderer::get().createTexture2D(img, false));
-		return sa::ResourceManager::get().get<Texture2D>(id);
+		ResourceID id = ResourceManager::get().insert<Texture2D>("default_white", Texture2D(img, false));
+		return ResourceManager::get().get<Texture2D>(id);
 	}
 
 	Texture2D* AssetManager::loadDefaultBlackTexture() {
@@ -199,8 +199,8 @@ namespace sa {
 			return tex;
 
 		sa::Image img(2, 2, sa::Color{ 0, 0, 0, 0 });
-		ResourceID id = sa::ResourceManager::get().insert<Texture2D>("default_black", sa::Renderer::get().createTexture2D(img, false));
-		return sa::ResourceManager::get().get<Texture2D>(id);
+		ResourceID id = ResourceManager::get().insert<Texture2D>("default_black", Texture2D(img, false));
+		return ResourceManager::get().get<Texture2D>(id);
 	}
 
 	Texture2D* AssetManager::loadTexture(const std::filesystem::path& path, bool generateMipMaps) {
@@ -215,7 +215,7 @@ namespace sa {
 		if (!tex) {
 			try {
 				Image img(path.string());
-				id = ResourceManager::get().insert<Texture2D>(path.string(), Renderer::get().createTexture2D(img, generateMipMaps));
+				id = ResourceManager::get().insert<Texture2D>(path.string(), Texture2D(img, generateMipMaps));
 				//SA_DEBUG_LOG_INFO("Loaded texture", path.string());
 			}
 			catch (const std::exception& e) {

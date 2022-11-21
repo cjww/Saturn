@@ -226,7 +226,7 @@ namespace sa {
 			m_renderPipeline.create(pWindow, new ForwardPlus);
 			
 			m_renderPipeline.pushLayer(new MainRenderLayer);
-
+			m_renderPipeline.pushLayer(new BloomRenderLayer);
 			if (enableImgui) {
 				m_renderPipeline.pushOverlay(new ImGuiRenderLayer);
 			}

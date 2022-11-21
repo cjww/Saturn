@@ -42,7 +42,7 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 		if(m_isFocused) m_zoom = y;
 	});
 
-	m_colorTexture = sa::Renderer::get().createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, pWindow->getCurrentExtent());
+	m_colorTexture = sa::Texture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, pWindow->getCurrentExtent());
 	m_renderTarget.framebuffer = pEngine->getRenderPipeline().getRenderTechnique()->createColorFramebuffer(m_colorTexture);
 
 	m_camera.setViewport(sa::Rect{ { 0, 0 }, m_colorTexture.getExtent() });
@@ -53,9 +53,9 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 
 	pEngine->on<sa::engine_event::WindowResized>([&](sa::engine_event::WindowResized& e, sa::Engine& engine) {
 		m_colorTexture.destroy();
-		m_colorTexture = sa::Renderer::get().createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, e.newExtent);
+		m_colorTexture = sa::Texture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, e.newExtent);
 
-		m_camera.setViewport(sa::Rect{ { 0, 0 }, e.newExtent });
+		m_camera.setViewport(sa::Rect{ { 0, 0 }, m_colorTexture.getExtent() });
 
 		sa::Renderer::get().destroyFramebuffer(m_renderTarget.framebuffer);
 		m_renderTarget.framebuffer = engine.getRenderPipeline().getRenderTechnique()->createColorFramebuffer(m_colorTexture);
@@ -219,7 +219,7 @@ void SceneView::onImGui() {
 			m_camera.setAspectRatio(availSize.x / availSize.y);
 		}
 
-		ImGui::Image(m_colorTexture, imAvailSize);
+		ImGui::Image(m_renderTarget.bloomData.outputTexture, imAvailSize);
 		ImVec2 imageMin = ImGui::GetItemRectMin();
 		ImVec2 imageSize = ImGui::GetItemRectSize();
 

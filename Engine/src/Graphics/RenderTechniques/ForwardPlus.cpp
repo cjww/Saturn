@@ -25,7 +25,7 @@ namespace sa {
 		if (m_depthTexture.isValid()) 
 			m_depthTexture.destroy();
 		
-		m_depthTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::DEPTH_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, extent);
+		m_depthTexture = Texture2D(sa::TextureTypeFlagBits::DEPTH_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, extent);
 		
 		m_depthPreRenderProgram = m_renderer.createRenderProgram()
 			.addDepthAttachment(m_depthTexture, true)
@@ -58,7 +58,7 @@ namespace sa {
 			m_lightCullingPipeline = NULL_RESOURCE;
 		}
 
-		m_lightCullingPipeline = m_renderer.createComputePipeline("../Engine/shaders/LightCulling2.comp.spv");
+		m_lightCullingPipeline = m_renderer.createComputePipeline("../Engine/shaders/LightCulling.comp.spv");
 		m_lightCullingDescriptorSet = m_renderer.allocateDescriptorSet(m_lightCullingPipeline, 0);
 
 
@@ -89,7 +89,7 @@ namespace sa {
 			m_colorTexture.destroy();
 		
 
-		m_colorTexture = m_renderer.createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, extent);
+		m_colorTexture = Texture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, extent);
 		drawData.colorTexture = m_colorTexture;
 
 		m_colorRenderProgram = m_renderer.createRenderProgram()
@@ -282,7 +282,7 @@ namespace sa {
 		//DEBUG
 		if (m_debugLightHeatmap.isValid()) 
 			m_debugLightHeatmap.destroy();
-		m_debugLightHeatmap = m_renderer.createTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, { m_tileCount.x, m_tileCount.y });
+		m_debugLightHeatmap = Texture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, { m_tileCount.x, m_tileCount.y });
 		
 		m_debugLightHeatmapRenderProgram = m_renderer.createRenderProgram()
 			.addColorAttachment(true, m_debugLightHeatmap)
@@ -332,7 +332,7 @@ namespace sa {
 
 
 		//DEBUG
-		m_debugLightHeatmap = m_renderer.createTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, { m_tileCount.x, m_tileCount.y });
+		m_debugLightHeatmap = Texture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, { m_tileCount.x, m_tileCount.y });
 		m_debugLightHeatmapRenderProgram = m_renderer.createRenderProgram()
 			.addColorAttachment(true, m_debugLightHeatmap)
 			.beginSubpass()

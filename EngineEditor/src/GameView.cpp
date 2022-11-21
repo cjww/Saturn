@@ -5,7 +5,7 @@
 GameView::GameView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWindow* pWindow)
 	: EditorModule(pEngine, pEditor)
 {
-	m_colorTexture = sa::Renderer::get().createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, pWindow->getCurrentExtent());
+	m_colorTexture = sa::Texture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, pWindow->getCurrentExtent());
 	m_renderTarget.framebuffer = pEngine->getRenderPipeline().getRenderTechnique()->createColorFramebuffer(m_colorTexture);
 
 	m_renderedCamera = false;
@@ -14,9 +14,15 @@ GameView::GameView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWin
 
 	m_Resolutions[0] = m_colorTexture.getExtent();
 
+	m_isWindowOpen = false;
+
+	m_mipLevel = 0;
+
 	pEngine->on<sa::engine_event::OnRender>([&](sa::engine_event::OnRender& e, sa::Engine& engine) {
 		SA_PROFILE_SCOPE("GameView: OnRender");
 		m_renderedCamera = false;
+		if (!m_isWindowOpen)
+			return;
 		
 		engine.getCurrentScene()->forEach<comp::Camera, comp::Transform>([&](comp::Camera& camera, comp::Transform& transform) {
 			camera.camera.setPosition(transform.position);
@@ -30,16 +36,34 @@ GameView::GameView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWin
 				m_renderedCamera = true;
 			}
 		});
+		if (m_bloomMipTextures.empty() && m_renderedCamera) {
+			m_bloomMipTextures = m_renderTarget.bloomData.bloomTexture.createMipLevelTextures();
+			m_bufferMipTextures = m_renderTarget.bloomData.bufferTexture.createMipLevelTextures();
+		}
+
 	});
 
 	pEngine->on<sa::engine_event::WindowResized>([&](sa::engine_event::WindowResized& e, sa::Engine& engine) {
 		m_colorTexture.destroy();
-		m_colorTexture = sa::Renderer::get().createTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, e.newExtent);
+		m_colorTexture = sa::Texture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, e.newExtent);
 		
 		m_Resolutions[0] = m_colorTexture.getExtent();
 
 		sa::Renderer::get().destroyFramebuffer(m_renderTarget.framebuffer);
 		m_renderTarget.framebuffer = engine.getRenderPipeline().getRenderTechnique()->createColorFramebuffer(m_colorTexture);
+
+
+		for (auto& tex : m_bloomMipTextures) {
+			tex.destroy();
+		}
+		m_bloomMipTextures.clear();
+		for (auto& tex : m_bufferMipTextures) {
+			tex.destroy();
+		}
+		m_bufferMipTextures.clear();
+
+
+		m_mipLevel = 0;
 	});
 }
 
@@ -49,7 +73,7 @@ void GameView::update(float dt) {
 
 void GameView::onImGui() {
 
-	if (ImGui::Begin("Game View", 0, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_MenuBar)) {
+	if (m_isWindowOpen = ImGui::Begin("Game View", 0, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_MenuBar)) {
 		if (ImGui::BeginMenuBar()) {
 
 			if (ImGui::BeginMenu("Format")) {
@@ -87,9 +111,28 @@ void GameView::onImGui() {
 			pos -= imageSize * 0.5f;
 			
 			ImGui::SetCursorPos({ pos.x, pos.y });
-			ImGui::Image(m_colorTexture, { imageSize.x, imageSize.y });
-			
+			//ImGui::Image(m_colorTexture, { imageSize.x, imageSize.y });
+			ImGui::Image(m_renderTarget.bloomData.outputTexture, { imageSize.x, imageSize.y });
+
 		}
+	}
+	ImGui::End();
+
+	if (ImGui::Begin("Bloom")) {
+		
+		if (m_renderedCamera && !m_bloomMipTextures.empty()) {
+
+			ImGui::SliderInt("Mip Level", &m_mipLevel, 0, m_bloomMipTextures.size() - 1);
+			sa::Extent extent = m_renderTarget.bloomData.bloomTexture.getExtent();
+			float ratio = extent.width / (float)extent.height;
+
+			ImGui::Image(m_bloomMipTextures[m_mipLevel], ImVec2(200 * ratio, 200));
+			if (m_mipLevel != m_bloomMipTextures.size() - 1) {
+				ImGui::Image(m_bufferMipTextures[m_mipLevel], ImVec2(200 * ratio, 200));
+			}
+
+		}
+
 	}
 	ImGui::End();
 }

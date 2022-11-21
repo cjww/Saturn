@@ -103,6 +103,9 @@ namespace sa {
 			framebufferTexture.getTypeFlags() & TextureTypeFlagBits::SAMPLED) {
 			finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 		}
+		if (framebufferTexture.getTypeFlags() & TextureTypeFlagBits::STORAGE) {
+			finalLayout = vk::ImageLayout::eGeneral;
+		}
 		m_pProgram->addAttachment(
 			vk::ImageLayout::eUndefined,
 			finalLayout,

@@ -8,14 +8,33 @@
 namespace sa {
 
 	struct RenderTarget {
-		ResourceID framebuffer;
-		ResourceID renderProgram;
-		ResourceID pipeline;
+		ResourceID framebuffer = NULL_RESOURCE;
+		ResourceID renderProgram = NULL_RESOURCE;
+		ResourceID pipeline = NULL_RESOURCE;
+		
+		struct BloomData {
+			bool isInitialized = false;
+
+			ResourceID filterDescriptorSet = NULL_RESOURCE;
+			std::vector<ResourceID> blurDescriptorSets;
+			std::vector<ResourceID> upsampleDescriptorSets;
+			ResourceID compositeDescriptorSet = NULL_RESOURCE;
+
+			Texture2D bloomTexture;
+			std::vector<Texture2D> bloomMipTextures;
+
+			Texture2D bufferTexture;
+			std::vector<Texture2D> bufferMipTextures;
+
+			Texture2D outputTexture;
+
+		} bloomData;
 	};
 
+
 	struct DrawData {
-		Texture2D colorTexture;
-		Texture2D finalTexture;
+		Texture colorTexture;
+		Texture finalTexture;
 	};
 
 	class IRenderTechnique {

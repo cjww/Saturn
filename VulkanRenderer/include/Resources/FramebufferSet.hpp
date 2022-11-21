@@ -11,7 +11,7 @@ namespace sa {
 	class FramebufferSet {
 	private:
 		std::vector<vk::Framebuffer> m_buffers;
-		std::vector<DeviceImage*> m_images;
+		std::vector<Texture> m_images;
 		Extent m_extent;
 		vk::Device m_device;
 
@@ -30,6 +30,9 @@ namespace sa {
 		uint32_t getBufferCount() const;
 
 		Extent getExtent() const;
+
+		const Texture& getTexture(uint32_t index) const;
+		size_t getTextureCount() const;
 
 	};
 }

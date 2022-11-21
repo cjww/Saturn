@@ -43,12 +43,13 @@ namespace sa {
 	};
 
 	class Renderer {
-	protected:
+	private:
+		friend class Texture;
 		
 		std::unique_ptr<VulkanCore> m_pCore;
+		
 		std::queue<DataTransfer> m_transferQueue;
 		std::mutex m_transferMutex;
-
 		Renderer();
 	public:
 		static Renderer& get();
@@ -80,6 +81,9 @@ namespace sa {
 		ResourceID createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<Texture>& additionalAttachmentTextures, uint32_t layers = 1ui32);
 		void destroyFramebuffer(ResourceID framebuffer);
 
+		Texture getFramebufferTexture(ResourceID framebuffer, uint32_t index) const;
+		size_t getFramebufferTextureCount(ResourceID framebuffer) const;
+
 		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, PipelineSettings settings = {});
 		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& fragmentShader, PipelineSettings settings = {});
 		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& geometryShader, const std::string& fragmentShader, PipelineSettings settings = {});
@@ -99,14 +103,6 @@ namespace sa {
 
 		Buffer createBuffer(BufferType type, size_t size = 0ui64, void* initialData = nullptr);
 		DynamicBuffer createDynamicBuffer(BufferType type, size_t size = 0ui64, void* initialData = nullptr);
-
-		Texture2D createTexture2D(TextureTypeFlags type, Extent extent, uint32_t sampleCount = 1);
-		Texture2D createTexture2D(TextureTypeFlags type, Extent extent, FormatPrecisionFlags formatPrecision, FormatDimensionFlags formatDimensions, FormatTypeFlags formatType, uint32_t sampleCount = 1);
-		Texture2D createTexture2D(TextureTypeFlags type, Extent extent, ResourceID swapchain, uint32_t sampleCount);
-		Texture2D createTexture2D(const Image& image, bool generateMipMaps);
-		TextureCube createTextureCube(const Image& image, bool generateMipMaps);
-		TextureCube createTextureCube(const std::vector<Image>& image, bool generateMipMaps);
-		Texture3D createTexture3D(TextureTypeFlags type, Extent3D extent, FormatPrecisionFlags formatPrecision = FormatPrecisionFlagBits::ANY_PRECISION, FormatDimensionFlags formatDimensions = FormatDimensionFlagBits::e1, FormatTypeFlags formatType = FormatTypeFlagBits::ANY_TYPE, uint32_t sampleCount = 1);
 
 		DeviceMemoryStats getGPUMemoryUsage() const;
 

@@ -116,6 +116,10 @@ namespace sa {
 	void VulkanCore::createInstance() {
 		uint32_t count = 0;
 		const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&count);
+		if (count == 0) {
+			glfwInit();
+			glfwExtensions = glfwGetRequiredInstanceExtensions(&count);
+		}
 		for (uint32_t i = 0; i < count; i++) {
 			m_instanceExtensions.push_back(glfwExtensions[i]);
 		}
