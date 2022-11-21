@@ -82,12 +82,12 @@ void main() {
 	ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
 	ivec2 posInputImage = pos * 2;
 
- 	vec4 color = downsample(posInputImage);
-	imageStore(resultImage, pos, vec4(color.xyz, 1.0));
+	imageStore(resultImage, pos, vec4(finalColor.xyz, 1.0));
 	*/
     ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
-    vec3 final_colour = gaussian(pos);
-	imageStore(resultImage, pos, vec4(final_colour, 1.0));
+ 	//vec4 finalColor = downsample(pos * 2);
+    vec3 finalColor = gaussian(pos);
+	imageStore(resultImage, pos, vec4(finalColor, 1.0));
 	/*
 
 	

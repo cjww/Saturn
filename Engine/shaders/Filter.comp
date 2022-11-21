@@ -43,7 +43,7 @@ vec4 downsample(vec2 uv, vec2 texelSize) {
 }
 
 void main() {
-    ivec2 pos = ivec2(gl_GlobalInvocationID.xy); // coordinates on input image
+    ivec2 pos = ivec2(gl_GlobalInvocationID.xy); // coordinates on result image
 	vec2 texSize = textureSize(inputImage, 0);
 	ivec2 inputPos = pos * 2;
 	vec2 uv = inputPos / texSize;

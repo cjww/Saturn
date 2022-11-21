@@ -68,7 +68,7 @@ namespace sa {
 
 			// Initialize
 			//Textures
-			bd.bloomTexture = Texture2D(TextureTypeFlagBits::STORAGE | TextureTypeFlagBits::SAMPLED, extent, 1U, 7U);
+			bd.bloomTexture = Texture2D(TextureTypeFlagBits::STORAGE | TextureTypeFlagBits::SAMPLED, extent, 1U, 6U);
 			bd.bloomMipTextures = bd.bloomTexture.createMipLevelTextures();
 
 			bd.bufferTexture = Texture2D(TextureTypeFlagBits::STORAGE | TextureTypeFlagBits::SAMPLED, extent, 1U, bd.bloomMipTextures.size() - 1);
@@ -96,8 +96,8 @@ namespace sa {
 		}
 		
 
-		uint32_t threadX = std::ceil(tex.getExtent().width / 32.f);
-		uint32_t threadY = std::ceil(tex.getExtent().height / 32.f);
+		uint32_t threadX = std::ceil(extent.width / 32.f);
+		uint32_t threadY = std::ceil(extent.height / 32.f);
 
 		// Filter
 		context.updateDescriptorSet(bd.filterDescriptorSet, 0, tex, m_sampler);
@@ -146,6 +146,9 @@ namespace sa {
 			}
 
 		}
+
+		threadX = threadX << 1;
+		threadY = threadY << 1;
 
 		// Composite + Tonemap
 		context.bindPipeline(m_compositePipeline);
