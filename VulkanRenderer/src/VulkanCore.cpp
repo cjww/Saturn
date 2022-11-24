@@ -234,7 +234,7 @@ namespace sa {
 		m_device = m_physicalDevice.createDevice(deviceInfo);
 		m_queues.resize(m_queueInfo.queueCount);
 		for (uint32_t i = 0; i < m_queueInfo.queueCount; i++) {
-			m_queues[i] = m_device.getQueue(m_queueInfo.family, 0);
+			m_queues[i] = m_device.getQueue(m_queueInfo.family, i);
 		}
 	}
 

@@ -99,9 +99,9 @@ namespace sa {
 	private:
 		void create(TextureTypeFlags type, Extent extent, uint32_t sampleCount, uint32_t mipLevels);
 		
+	public:
 		TextureCube(const Image& image, bool generateMipmaps);
 		TextureCube(const std::vector<Image>& images, bool generateMipmaps);
-	public:
 		TextureCube();
 
 		TextureCube(const TextureCube&) = default;
@@ -110,15 +110,17 @@ namespace sa {
 
 	class Texture3D : public Texture {
 	private:
-		void create(TextureTypeFlags type, Extent3D extent, uint32_t sampleCount, uint32_t mipLevels, FormatPrecisionFlags formatPercisions, FormatDimensionFlags formatDimensions, FormatTypeFlags formatTypes);
+		void create(TextureTypeFlags type, Extent3D extent, uint32_t sampleCount, uint32_t mipLevels, FormatPrecisionFlags formatPrecisions, FormatDimensionFlags formatDimensions, FormatTypeFlags formatTypes);
 		
-		Texture3D(TextureTypeFlags type, Extent3D extent, uint32_t sampleCount, uint32_t mipLevels, FormatPrecisionFlags formatPercisions, FormatDimensionFlags formatDimensions, FormatTypeFlags formatTypes);
 
 	public:
+		Texture3D(TextureTypeFlags type, Extent3D extent, uint32_t sampleCount, uint32_t mipLevels, FormatPrecisionFlags formatPrecisions, FormatDimensionFlags formatDimensions, FormatTypeFlags formatTypes);
 		Texture3D();
 
 		Texture3D(const Texture3D&) = default;
 		Texture3D& operator=(const Texture3D&) = default;
 
 	};
+
+
 }

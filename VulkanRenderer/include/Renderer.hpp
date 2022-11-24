@@ -45,7 +45,8 @@ namespace sa {
 	class Renderer {
 	private:
 		friend class Texture;
-		
+		friend class DynamicTexture;
+
 		std::unique_ptr<VulkanCore> m_pCore;
 		
 		std::queue<DataTransfer> m_transferQueue;

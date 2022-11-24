@@ -1,4 +1,4 @@
-<?xml version="1.0" encoding="utf-8"?>
+﻿<?xml version="1.0" encoding="utf-8"?>
 <Project DefaultTargets="Build" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
   <ItemGroup Label="ProjectConfigurations">
     <ProjectConfiguration Include="Debug|Win32">
@@ -185,6 +185,7 @@
     <ClInclude Include="include\Resources\Buffer.hpp" />
     <ClInclude Include="include\Resources\DescriptorSet.hpp" />
     <ClInclude Include="include\Resources\DynamicBuffer.h" />
+    <ClInclude Include="include\Resources\DynamicTexture.h" />
     <ClInclude Include="include\Resources\FramebufferSet.hpp" />
     <ClInclude Include="include\RenderProgramFactory.hpp" />
     <ClInclude Include="include\Resources\Pipeline.hpp" />
@@ -208,7 +209,8 @@
     <ClInclude Include="include\Window.hpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="include\Resources\DynamicBuffer.cpp" />
+    <ClCompile Include="src\DynamicBuffer.cpp" />
+    <ClCompile Include="src\DynamicTexture.cpp" />
     <ClCompile Include="src\imgui_stdlib.cpp" />
     <ClCompile Include="src\utils.cpp" />
     <ClCompile Include="src\imgui.cpp" />

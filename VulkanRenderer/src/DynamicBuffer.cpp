@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "DynamicBuffer.h"
+#include "Resources/DynamicBuffer.hpp"
 
 namespace sa{
 
