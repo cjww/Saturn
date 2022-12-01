@@ -103,11 +103,52 @@ namespace ImGui {
 				switch (value.get_type()) {
 					case sol::type::userdata:
 					{
-						std::string valueAsStr = sa::LuaAccessable::getState()["tostring"](value);
-						std::string str = key.as<std::string>() + " = " + valueAsStr;
-						ImGui::Text(str.c_str());
-						if(ImGui::IsItemHovered()) {
-							ImGui::SetTooltip("userdata");
+						if (value.is<sa::Vector2>()) {
+							sa::Vector2& vec2 = value.as<sa::Vector2>();
+							if (ImGui::DragFloat2(key.as<std::string>().c_str(), (float*)&vec2, 0.5f)) {
+								table[key] = vec2;
+							}
+							if (ImGui::IsItemHovered()) {
+								ImGui::SetTooltip("Vec2");
+							}
+						}
+						else if (value.is<sa::Vector3>()) {
+							sa::Vector3& vec3 = value.as<sa::Vector3>();
+							if (ImGui::DragFloat3(key.as<std::string>().c_str(), (float*)&vec3, 0.5f)) {
+								table[key] = vec3;
+							}
+							if (ImGui::IsItemHovered()) {
+								ImGui::SetTooltip("Vec3");
+							}
+						}
+						else if (value.is<sa::Vector4>()) {
+							sa::Vector4& vec4 = value.as<sa::Vector4>();
+							if (ImGui::DragFloat4(key.as<std::string>().c_str(), (float*)&vec4, 0.5f)) {
+								table[key] = vec4;
+							}
+							ImGui::SameLine();
+							
+							ImVec4 col = { vec4.x, vec4.y, vec4.z, vec4.w };
+							if (ImGui::ColorButton("as_color", col)) {
+								ImGui::OpenPopup("##ColorPicker");
+							}
+							
+							if (ImGui::BeginPopup("##ColorPicker")) {
+								ImGui::ColorPicker3("##Vec4AsColor", (float*)&vec4);
+								ImGui::EndPopup();
+							}
+							
+							if (ImGui::IsItemHovered()) {
+								ImGui::SetTooltip("Vec4");
+							}
+						}
+						else {
+							std::string valueAsStr = sa::LuaAccessable::getState()["tostring"](value);
+							std::string str = key.as<std::string>() + " = " + valueAsStr;
+							ImGui::Text(str.c_str());
+							if(ImGui::IsItemHovered()) {
+								ImGui::SetTooltip("userdata");
+							}
 						}
 						break;
 					}
@@ -132,8 +173,9 @@ namespace ImGui {
 						break;
 					case sol::type::string: {
 						std::string v = value.as<std::string>();
-						ImGui::InputText(key.as<std::string>().c_str(), &v);
-						table[key] = v;
+						if (ImGui::InputText(key.as<std::string>().c_str(), &v, ImGuiInputTextFlags_EnterReturnsTrue)) {
+							table[key] = v;
+						}
 						if (ImGui::IsItemHovered()) {
 							ImGui::SetTooltip("string");
 						}
