@@ -1,5 +1,6 @@
 #pragma once
 #include "Graphics/IRenderLayer.h"
+#include "Resources/DynamicTexture.hpp"
 namespace sa {
 
 	class ImGuiRenderLayer : public IRenderLayer {
@@ -10,7 +11,8 @@ namespace sa {
 		RenderWindow* m_pWindow;
 		IRenderTechnique* m_pRenderTechnique;
 
-		Texture2D m_outputTexture;
+		//Texture2D m_outputTexture;
+		DynamicTexture2D m_outputTexture;
 
 	public:
 		virtual void init(RenderWindow* pWindow, IRenderTechnique* pRenderTechnique) override;

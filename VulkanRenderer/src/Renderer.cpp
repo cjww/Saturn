@@ -164,7 +164,7 @@ namespace sa {
 		pRenderProgram->setClearColor(color);
 	}
 
-	ResourceID Renderer::createFramebuffer(ResourceID renderProgram, const std::vector<Texture>& attachmentTextures, uint32_t layers) {
+	ResourceID Renderer::createFramebuffer(ResourceID renderProgram, const std::vector<DynamicTexture>& attachmentTextures, uint32_t layers) {
 		if (attachmentTextures.empty())
 			throw std::runtime_error("At least one attachmnet is required to create a framebuffer");
 
@@ -178,7 +178,7 @@ namespace sa {
 			layers);
 	}
 
-	ResourceID Renderer::createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<Texture>& additionalAttachmentTextures, uint32_t layers) {
+	ResourceID Renderer::createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<DynamicTexture>& additionalAttachmentTextures, uint32_t layers) {
 		Swapchain* pSwapchain = RenderContext::getSwapchain(swapchain);
 		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
 

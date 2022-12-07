@@ -58,5 +58,7 @@ namespace sa {
 		const CommandBufferSet* getCommandBufferSet() const;
 	
 		uint32_t getFrameIndex() const;
+		uint32_t getImageIndex() const;
+
 	};
 }

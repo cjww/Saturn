@@ -25,9 +25,13 @@ namespace sa {
 	TextureTypeFlags DynamicTexture::getTypeFlags() const {
 		return getTexture().getTypeFlags();
 	}
-
+	
 	const Texture& DynamicTexture::getTexture() const {
 		return m_textures[m_currentTextureIndex].texture;
+	}
+
+	const Texture& DynamicTexture::getTexture(uint32_t index) const {
+		return m_textures[index].texture;
 	}
 
 	DynamicTexture::operator const Texture() const {
@@ -56,7 +60,6 @@ namespace sa {
 		}
 		m_currentTextureIndex = 0;
 	}
-
 	void DynamicTexture::swap() {
 		m_currentTextureIndex = (m_currentTextureIndex + 1) % m_textures.size();
 	}
@@ -81,6 +84,7 @@ namespace sa {
 		m_textures.resize(textures.size());
 		for (size_t i = 0; i < textures.size(); i++) {
 			m_textures[i].texture2D = textures[i];
+			m_textures[i].activeBit = 2;
 		}
 	}
 
@@ -94,6 +98,8 @@ namespace sa {
 		m_textures.resize(m_pCore->getQueueCount());
 		for (int i = 0; i < m_pCore->getQueueCount(); i++) {
 			m_textures[i].texture2D = Texture2D(type, extent, sampleCount, mipLevels);
+			m_textures[i].activeBit = 2;
+
 		}
 	}
 
@@ -101,7 +107,12 @@ namespace sa {
 		m_textures.resize(m_pCore->getQueueCount());
 		for (int i = 0; i < m_pCore->getQueueCount(); i++) {
 			m_textures[i].texture2D = Texture2D(type, extent, precisions, dimensions, type, sampleCount, mipLevels);
+			m_textures[i].activeBit = 2;
 		}
+	}
+
+	DynamicTexture2D::operator const Texture2D() const {
+		return m_textures[m_currentTextureIndex].texture2D;
 	}
 
 	std::vector<DynamicTexture2D> DynamicTexture2D::createMipLevelTextures() {	
@@ -123,4 +134,5 @@ namespace sa {
 
 		return dynamicTextures;
 	}
+
 }

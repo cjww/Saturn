@@ -5,14 +5,14 @@ namespace sa {
 
 	void Swapchain::createSyncronisationObjects() {
 
-		size_t count = m_images.size();
-
+		m_imageFences.resize(m_images.size());
+		
+		uint32_t count = m_commandBufferSet.getBufferCount();
 		m_inFlightFences.resize(count);
 		for (size_t i = 0; i < count; i++) {
 			m_inFlightFences[i] = m_device.createFence({ .flags = vk::FenceCreateFlagBits::eSignaled });
 		}
 
-		m_imageFences.resize(count);
 
 		m_imageAvailableSemaphore.resize(count);
 		for (size_t i = 0; i < count; i++) {
@@ -110,14 +110,15 @@ namespace sa {
 		
 		vk::ResultValue<uint32_t> res = m_device.acquireNextImageKHR(m_swapchain, UINT64_MAX, m_imageAvailableSemaphore[m_frameIndex]);
 		checkError(res.result, "Failed to aquire next swapchain image", false);
-
 		m_imageIndex = res.value;
+		/*
 		if (m_imageFences[m_imageIndex]) {
 			checkError(
 				m_device.waitForFences(m_imageFences[m_imageIndex], VK_FALSE, UINT64_MAX),
 				"Failed to wait for image fence");
 		}
 		m_imageFences[m_imageIndex] = m_inFlightFences[m_frameIndex];
+		*/
 	
 		m_commandBufferSet.begin(vk::CommandBufferUsageFlagBits::eOneTimeSubmit);
 
@@ -137,7 +138,7 @@ namespace sa {
 		// Present
 		m_commandBufferSet.present(m_renderFinishedSemaphore[m_frameIndex], m_swapchain, m_imageIndex);
 
-		m_frameIndex = (m_frameIndex + 1) % static_cast<uint32_t>(m_images.size());
+		m_frameIndex = (m_frameIndex + 1) % m_commandBufferSet.getBufferCount();
 
 	}
 
@@ -163,6 +164,10 @@ namespace sa {
 
 	uint32_t Swapchain::getFrameIndex() const {
 		return m_frameIndex;
+	}
+
+	uint32_t Swapchain::getImageIndex() const {
+		return m_imageIndex;
 	}
 
 }

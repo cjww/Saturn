@@ -21,6 +21,7 @@ namespace sa {
 
 	void MainRenderLayer::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget) {
 		m_pRenderTechnique->drawData.colorTexture = Renderer::get().getFramebufferTexture(pRenderTarget->framebuffer, 0); // We know the first texture has to be the color texture
+		m_pRenderTechnique->drawData.finalTexture = m_pRenderTechnique->drawData.colorTexture;
 		m_pRenderTechnique->render(context, pCamera, pRenderTarget->framebuffer);
 	}
 

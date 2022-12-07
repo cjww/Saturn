@@ -7,15 +7,53 @@ namespace sa {
 
 	class DynamicTexture {
 	protected:
-		union TextureContainer {
-			Texture texture;
-			Texture2D texture2D;
-			Texture3D texture3D;
-			TextureCube textureCube;
+		
+		struct TextureContainer {
+			uint8_t activeBit;
+			union {
+				Texture texture;		// 1
+				Texture2D texture2D;	// 2
+				Texture3D texture3D;	// 4
+				TextureCube textureCube;// 8
+			};
+			
+			TextureContainer() : activeBit(0) {}
+			TextureContainer(const Texture& texture) : texture(texture), activeBit(1) {}
+			TextureContainer(const Texture2D& texture) : texture2D(texture), activeBit(2) {}
+			TextureContainer(const Texture3D& texture) : texture3D(texture), activeBit(4) {}
+			TextureContainer(const TextureCube& texture) : textureCube(texture), activeBit(8) {}
+
+			TextureContainer(const TextureContainer& other) {
+				*this = other;
+			}
+
+			TextureContainer& operator=(const TextureContainer& other) {
+				switch (other.activeBit) {
+				case 1:
+					texture = other.texture;
+					break;
+				case 2:
+					texture2D = other.texture2D;
+					break;
+				case 4:
+					texture3D = other.texture3D;
+					break;
+				case 8:
+					textureCube = other.textureCube;
+					break;
+				default:
+					break;
+				}
+				activeBit = other.activeBit;
+				return *this;
+			}
 		};
+
 		std::vector<TextureContainer> m_textures;
 		uint32_t m_currentTextureIndex;
 		VulkanCore* m_pCore;
+
+
 	public:
 		DynamicTexture();
 		DynamicTexture(const DynamicTexture& other) = default;
@@ -27,6 +65,7 @@ namespace sa {
 		TextureTypeFlags getTypeFlags() const;
 
 		const Texture& getTexture() const;
+		const Texture& getTexture(uint32_t index) const;
 
 		operator const Texture() const;
 		operator Texture() const;
@@ -38,7 +77,7 @@ namespace sa {
 		void destroy();
 
 		void swap();
-
+		
 		bool operator==(const DynamicTexture& other);
 		bool operator!=(const DynamicTexture& other);
 
@@ -57,8 +96,13 @@ namespace sa {
 		DynamicTexture2D(TextureTypeFlags type, Extent extent,
 			FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, uint32_t sampleCount = 1, uint32_t mipLevels = 1);
 
+		operator const Texture2D() const;
+
+		using DynamicTexture::operator Texture;
+
 
 		std::vector<DynamicTexture2D> createMipLevelTextures();
+
 	};
 
 

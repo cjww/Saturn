@@ -3,8 +3,9 @@
 
 #include "structs.hpp"
 #include "Resources/Buffer.hpp"
-#include "Resources\Texture.hpp"
-#include "Resources/DynamicBuffer.h"
+#include "Resources/Texture.hpp"
+#include "Resources/DynamicBuffer.hpp"
+
 namespace vk {
 	class Sampler;
 	class Queue;

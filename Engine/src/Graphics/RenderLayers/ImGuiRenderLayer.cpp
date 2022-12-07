@@ -6,10 +6,9 @@ namespace sa {
 		m_pWindow = pWindow;
 		m_pRenderTechnique = pRenderTechnique;
 
-		m_outputTexture = Texture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, pWindow->getCurrentExtent());
+		m_outputTexture = DynamicTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, pWindow->getCurrentExtent());
 
-		pRenderTechnique->drawData.finalTexture = m_outputTexture;
-
+		
 		m_imGuiRenderProgram = m_renderer.createRenderProgram()
 			.addColorAttachment(true, m_outputTexture)
 			.beginSubpass()
@@ -35,6 +34,7 @@ namespace sa {
 	}
 
 	void ImGuiRenderLayer::postRender(RenderContext& context) {
+		m_pRenderTechnique->drawData.finalTexture = m_outputTexture;
 		context.beginRenderProgram(m_imGuiRenderProgram, m_imGuiFramebuffer, sa::SubpassContents::DIRECT);
 		context.renderImGuiFrame();
 		context.endRenderProgram(m_imGuiRenderProgram);
@@ -47,6 +47,6 @@ namespace sa {
 	}
 	
 	const Texture2D& ImGuiRenderLayer::getOutputTexture() const {
-		return m_outputTexture;
+		return {};
 	}
 }

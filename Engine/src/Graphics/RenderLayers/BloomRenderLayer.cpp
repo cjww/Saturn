@@ -161,7 +161,7 @@ namespace sa {
 		context.bindDescriptorSet(bd.compositeDescriptorSet, m_compositePipeline);
 		context.dispatch(threadX, threadY, 1);
 
-
+		m_pRenderTechnique->drawData.finalTexture = bd.outputTexture;
 
 	}
 

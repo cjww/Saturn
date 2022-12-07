@@ -25,7 +25,7 @@ namespace sa {
 		if (m_depthTexture.isValid()) 
 			m_depthTexture.destroy();
 		
-		m_depthTexture = Texture2D(sa::TextureTypeFlagBits::DEPTH_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, extent);
+		m_depthTexture = DynamicTexture2D(sa::TextureTypeFlagBits::DEPTH_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, extent);
 		
 		m_depthPreRenderProgram = m_renderer.createRenderProgram()
 			.addDepthAttachment(m_depthTexture, true)
@@ -89,7 +89,7 @@ namespace sa {
 			m_colorTexture.destroy();
 		
 
-		m_colorTexture = Texture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, extent);
+		m_colorTexture = DynamicTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, extent);
 		drawData.colorTexture = m_colorTexture;
 
 		m_colorRenderProgram = m_renderer.createRenderProgram()
@@ -132,7 +132,7 @@ namespace sa {
 
 		m_renderer.updateDescriptorSet(m_sceneDepthDescriptorSet, 0, m_objectBuffer);
 
-		m_renderer.updateDescriptorSet(m_lightCullingDescriptorSet, 0, m_depthTexture, m_linearSampler);
+		m_renderer.updateDescriptorSet(m_lightCullingDescriptorSet, 0, m_depthTexture.getTexture(), m_linearSampler);
 		m_renderer.updateDescriptorSet(m_lightCullingDescriptorSet, 1, m_lightIndexBuffer);
 		m_renderer.updateDescriptorSet(m_lightCullingDescriptorSet, 2, m_lightBuffer);
 		
@@ -282,7 +282,7 @@ namespace sa {
 		//DEBUG
 		if (m_debugLightHeatmap.isValid()) 
 			m_debugLightHeatmap.destroy();
-		m_debugLightHeatmap = Texture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, { m_tileCount.x, m_tileCount.y });
+		m_debugLightHeatmap = DynamicTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, { m_tileCount.x, m_tileCount.y });
 		
 		m_debugLightHeatmapRenderProgram = m_renderer.createRenderProgram()
 			.addColorAttachment(true, m_debugLightHeatmap)
@@ -332,7 +332,7 @@ namespace sa {
 
 
 		//DEBUG
-		m_debugLightHeatmap = Texture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, { m_tileCount.x, m_tileCount.y });
+		m_debugLightHeatmap = DynamicTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, { m_tileCount.x, m_tileCount.y });
 		m_debugLightHeatmapRenderProgram = m_renderer.createRenderProgram()
 			.addColorAttachment(true, m_debugLightHeatmap)
 			.beginSubpass()
@@ -472,7 +472,7 @@ namespace sa {
 		m_indirectIndexedBuffer.manualIncrement();
 	}
 
-	ResourceID ForwardPlus::createColorFramebuffer(const Texture2D& outputTexture) {
+	ResourceID ForwardPlus::createColorFramebuffer(const DynamicTexture2D& outputTexture) {
 		return m_renderer.createFramebuffer(m_colorRenderProgram, { outputTexture, m_depthTexture });
 	}
 

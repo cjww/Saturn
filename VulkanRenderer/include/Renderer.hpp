@@ -5,6 +5,7 @@
 #include "RenderContext.hpp"
 #include "Resources/Buffer.hpp"
 #include "Resources/Texture.hpp"
+#include "Resources/DynamicTexture.hpp"
 #include "Image.hpp"
 #include "FormatFlags.hpp"
 #include "PipelineSettings.hpp"
@@ -78,8 +79,8 @@ namespace sa {
 		void setClearColor(ResourceID renderProgram, Color color, uint32_t attachmentIndex);
 		void setClearColor(ResourceID renderProgram, Color color);
 
-		ResourceID createFramebuffer(ResourceID renderProgram, const std::vector<Texture>& attachmentTextures, uint32_t layers = 1ui32);
-		ResourceID createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<Texture>& additionalAttachmentTextures, uint32_t layers = 1ui32);
+		ResourceID createFramebuffer(ResourceID renderProgram, const std::vector<DynamicTexture>& attachmentTextures, uint32_t layers = 1ui32);
+		ResourceID createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<DynamicTexture>& additionalAttachmentTextures, uint32_t layers = 1ui32);
 		void destroyFramebuffer(ResourceID framebuffer);
 
 		Texture getFramebufferTexture(ResourceID framebuffer, uint32_t index) const;

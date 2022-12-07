@@ -7,10 +7,13 @@
 namespace sa{
 	FramebufferSet::FramebufferSet() 
 		: m_extent({0, 0})
+		, m_pSwapchain(nullptr)
 	{
 	}
 
-	FramebufferSet::FramebufferSet(VulkanCore* pCore, vk::RenderPass renderPass, const std::vector<Texture>& images, Extent extent, uint32_t layers) {
+	FramebufferSet::FramebufferSet(VulkanCore* pCore, vk::RenderPass renderPass, const std::vector<DynamicTexture>& images, Extent extent, uint32_t layers) 
+		: FramebufferSet()
+	{
 		m_device = pCore->getDevice();
 		m_extent = extent;
 		
@@ -20,27 +23,31 @@ namespace sa{
 	}
 
 
-	FramebufferSet::FramebufferSet(VulkanCore* pCore, vk::RenderPass renderPass, Swapchain* pSwapchain, const std::vector<Texture>& images, uint32_t layers) {
+	FramebufferSet::FramebufferSet(VulkanCore* pCore, vk::RenderPass renderPass, Swapchain* pSwapchain, const std::vector<DynamicTexture>& images, uint32_t layers)
+		: FramebufferSet()
+	{
 		m_device = pCore->getDevice();
 		m_extent = pSwapchain->getExtent();
 
 		m_images = images;
 
+		m_pSwapchain = pSwapchain;
 		create(pCore, renderPass, pSwapchain, images, layers);
 	}
 
 
-	void FramebufferSet::create(VulkanCore* pCore, vk::RenderPass renderPass, const std::vector<Texture>& images, Extent extent, uint32_t layers) {
+	void FramebufferSet::create(VulkanCore* pCore, vk::RenderPass renderPass, const std::vector<DynamicTexture>& images, Extent extent, uint32_t layers) {
 		if (m_buffers.size() > 0)
 			destroy();
 		
 		std::vector<std::vector<vk::ImageView>> framebufferViews(pCore->getQueueCount());
 		for (uint32_t i = 0; i < (uint32_t)framebufferViews.size(); i++) {
-			for (auto& texture : images) {
+			for (auto texture : images) {
 				framebufferViews[i].push_back(*texture.getView());
 				if (extent.width != texture.getExtent().width || extent.height != texture.getExtent().height) {
 					throw std::runtime_error("All attachments must be of the same size");
 				}
+				texture.swap();
 			}
 		}
 
@@ -50,7 +57,7 @@ namespace sa{
 		}
 	}
 
-	void FramebufferSet::create(VulkanCore* pCore, vk::RenderPass renderPass, Swapchain* pSwapchain, const std::vector<Texture>& images, uint32_t layers) {
+	void FramebufferSet::create(VulkanCore* pCore, vk::RenderPass renderPass, Swapchain* pSwapchain, const std::vector<DynamicTexture>& images, uint32_t layers) {
 		if (m_buffers.size() > 0)
 			destroy();
 
@@ -63,8 +70,9 @@ namespace sa{
 			framebufferViews[i].resize(images.size() + 1);
 			framebufferViews[i][0] = swapchainViews[i];
 			for (uint32_t j = 1; j < (uint32_t)framebufferViews[i].size(); j++) {
-				framebufferViews[i][j] = *images[j - 1].getView();
-				if (extent.width != images[j - 1].getExtent().width || extent.height != images[j - 1].getExtent().height) {
+				Texture texture = images[j - 1].getTexture(i);
+				framebufferViews[i][j] = *texture.getView();
+				if (extent.width != texture.getExtent().width || extent.height != texture.getExtent().height) {
 					throw std::runtime_error("All attachments must be of the same size");
 				}
 			}
@@ -96,11 +104,15 @@ namespace sa{
 	}
 
 	const Texture& FramebufferSet::getTexture(uint32_t index) const {
-		return m_images.at(index);
+		return m_images.at(index).getTexture();
 	}
 
 	size_t FramebufferSet::getTextureCount() const {
 		return m_images.size();
+	}
+
+	Swapchain* FramebufferSet::getSwapchain() const {
+		return m_pSwapchain;
 	}
 
 }

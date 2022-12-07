@@ -3,6 +3,9 @@
 
 #include "AssetManager.h"
 
+#include "Resources/DynamicTexture.hpp"
+#include "Resources/DynamicBuffer.hpp"
+
 #define TILE_SIZE 16U
 #define MAX_LIGHTS_PER_TILE 1024
 
@@ -17,8 +20,8 @@ namespace sa {
 	private:
 
 		// Color pass
-		Texture2D m_colorTexture;
-		Texture2D m_depthTexture;
+		DynamicTexture2D m_colorTexture;
+		DynamicTexture2D m_depthTexture;
 
 		ResourceID m_colorRenderProgram = NULL_RESOURCE;
 		ResourceID m_colorFramebuffer = NULL_RESOURCE;
@@ -45,7 +48,7 @@ namespace sa {
 		ResourceID m_debugLightHeatmapRenderProgram = NULL_RESOURCE;
 		ResourceID m_debugLightHeatmapPipeline = NULL_RESOURCE;
 		ResourceID m_debugLightHeatmapFramebuffer = NULL_RESOURCE;
-		Texture2D m_debugLightHeatmap;
+		DynamicTexture2D m_debugLightHeatmap;
 		ResourceID m_debugLightHeatmapDescriptorSet = NULL_RESOURCE;
 		
 		// DrawData
@@ -92,7 +95,7 @@ namespace sa {
 		virtual void render(RenderContext& context, SceneCamera* pCamera, ResourceID framebuffer) override;
 		virtual void endRender(RenderContext& context) override;
 
-		virtual ResourceID createColorFramebuffer(const Texture2D& outputTexture) override;
+		virtual ResourceID createColorFramebuffer(const DynamicTexture2D& outputTexture) override;
 
 		virtual void updateLights(Scene* pScene) override;
 		virtual void collectMeshes(Scene* pScene) override;
