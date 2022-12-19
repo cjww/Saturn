@@ -35,8 +35,6 @@ namespace sa {
 
 		void beginFrameImGUI();
 
-		bool render(Scene* pScene);
-
 		RenderContext beginScene(Scene* pScene);
 		void render(SceneCamera* pCamera, RenderTarget* rendertarget = nullptr);
 		void endScene();

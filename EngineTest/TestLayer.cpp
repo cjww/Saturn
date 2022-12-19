@@ -49,7 +49,7 @@ namespace sa {
 		m_camera.setPosition({ 0, 0, -6 });
 		m_camera.lookAt({ 0, 0, 0 });
 		
-		m_colorTexture = DynamicTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, window.getCurrentExtent());
+		m_colorTexture = Texture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, window.getCurrentExtent());
 		
 		m_renderTarget.framebuffer = m_pEngine->getRenderPipeline().getRenderTechnique()->createColorFramebuffer(m_colorTexture);
 
@@ -57,22 +57,27 @@ namespace sa {
 			e.pRenderPipeline->render(&m_camera, &m_renderTarget);
 		});
 
-		Entity box = m_pEngine->getCurrentScene()->createEntity();
-
-		box.addComponent<comp::Transform>();
-		box.addComponent<comp::Model>()->modelID = AssetManager::get().loadBox();
-
 		Entity light = m_pEngine->getCurrentScene()->createEntity();
 		LightData& values = light.addComponent<comp::Light>()->values;
 		values.position = { 0, 0, -2 };
 		values.intensity = 2.0f;
 		values.color = Color{ 0.5, 1.0f, 0.5f, 1.0f };
 
-
+		
 	}
 
 	void TestLayer::onUpdate(float dt) {
+		static float timer = 0.0f;
+		static bool spawned = false;
+		timer += dt;
+		if (timer > 2 && !spawned) {
+			spawned = true;
+			Entity box = m_pEngine->getCurrentScene()->createEntity();
 
+			box.addComponent<comp::Transform>();
+			box.addComponent<comp::Model>()->modelID = AssetManager::get().loadBox();
+
+		}
 		std::queue<Entity> entitiesDone;
 
 		for (const auto& [entity, progress] : m_completions) {
@@ -96,7 +101,9 @@ namespace sa {
 	void TestLayer::onImGuiRender() {
 		
 		if (ImGui::Begin("w")) {
-
+			if (m_renderTarget.bloomData.isInitialized) {
+				ImGui::Image(m_renderTarget.bloomData.outputTexture, ImVec2(200, 200));
+			}
 
 			ImGui::End();
 		}

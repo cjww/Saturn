@@ -30,14 +30,7 @@ namespace sa{
 		m_currentBufferIndex = 0;
 	}
 
-	Buffer& DynamicBuffer::getBuffer(uint32_t index) {
-		if (index == -1) {
-			index = m_currentBufferIndex;
-			m_currentBufferIndex = (m_currentBufferIndex + 1) % m_buffers.size();
-		}
-		return m_buffers.at(index);
-	}
-
+	
 	const Buffer& DynamicBuffer::getBuffer(uint32_t index) const {
 		if (index == -1) {
 			index = m_currentBufferIndex;
@@ -45,12 +38,8 @@ namespace sa{
 		return m_buffers.at(index);
 	}
 
-	const Buffer& DynamicBuffer::getCurrentBuffer() const {
-		return getBuffer(m_currentBufferIndex);
-	}
-
-	void DynamicBuffer::manualIncrement() {
-		m_currentBufferIndex = (m_currentBufferIndex + 1) % m_buffers.size();
+	void DynamicBuffer::swap() {
+		m_currentBufferIndex = (m_currentBufferIndex + 1) % static_cast<uint32_t>(m_buffers.size());
 	}
 
 	uint32_t DynamicBuffer::getBufferCount() const {
@@ -62,19 +51,19 @@ namespace sa{
 	}
 
 	void DynamicBuffer::write(void* data, size_t size, int offset) {
-		getBuffer(m_currentBufferIndex).write(data, size, offset);
+		m_buffers[m_currentBufferIndex].write(data, size, offset);
 	}
 
 	void DynamicBuffer::append(void* data, size_t size, int alignment) {
-		getBuffer(m_currentBufferIndex).append(data, size, alignment);
+		m_buffers[m_currentBufferIndex].append(data, size, alignment);
 	}
 
 	void DynamicBuffer::resize(size_t newSize, BufferResizeFlags resizeFlags) {
-		getBuffer(m_currentBufferIndex).resize(newSize, resizeFlags);
+		m_buffers[m_currentBufferIndex].resize(newSize, resizeFlags);
 	}
 
 	void DynamicBuffer::reserve(size_t capacity, BufferResizeFlags resizeFlags) {
-		getBuffer(m_currentBufferIndex).reserve(capacity, resizeFlags);
+		m_buffers[m_currentBufferIndex].reserve(capacity, resizeFlags);
 	}
 
 	void* DynamicBuffer::data() {
@@ -82,7 +71,7 @@ namespace sa{
 	}
 
 	void DynamicBuffer::clear() {
-		getBuffer(m_currentBufferIndex).clear();
+		m_buffers[m_currentBufferIndex].clear();
 	}
 
 	bool DynamicBuffer::isValid() const {

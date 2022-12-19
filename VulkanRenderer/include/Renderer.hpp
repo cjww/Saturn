@@ -1,5 +1,7 @@
 #pragma once
 
+#define SA_RENDER_VALIDATION_ENABLE 1
+
 #include "RenderProgramFactory.hpp"
 
 #include "RenderContext.hpp"
@@ -52,6 +54,15 @@ namespace sa {
 		
 		std::queue<DataTransfer> m_transferQueue;
 		std::mutex m_transferMutex;
+
+
+#if SA_RENDER_VALIDATION_ENABLE
+		const bool c_useVaildationLayers = true;
+#else
+		const bool c_useVaildationLayers = false;
+#endif
+
+
 		Renderer();
 	public:
 		static Renderer& get();
@@ -74,6 +85,8 @@ namespace sa {
 
 		uint32_t getSwapchainImageCount(ResourceID swapchain);
 
+		void waitForFrame(ResourceID swapchains);
+
 		RenderProgramFactory createRenderProgram();
 		void destroyRenderProgram(ResourceID renderProgram);
 		void setClearColor(ResourceID renderProgram, Color color, uint32_t attachmentIndex);
@@ -81,6 +94,10 @@ namespace sa {
 
 		ResourceID createFramebuffer(ResourceID renderProgram, const std::vector<DynamicTexture>& attachmentTextures, uint32_t layers = 1ui32);
 		ResourceID createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<DynamicTexture>& additionalAttachmentTextures, uint32_t layers = 1ui32);
+
+		ResourceID createFramebuffer(ResourceID renderProgram, const std::vector<Texture>& attachmentTextures, uint32_t layers = 1ui32);
+		ResourceID createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<Texture>& additionalAttachmentTextures, uint32_t layers = 1ui32);
+
 		void destroyFramebuffer(ResourceID framebuffer);
 
 		Texture getFramebufferTexture(ResourceID framebuffer, uint32_t index) const;

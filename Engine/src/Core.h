@@ -1,9 +1,9 @@
 #pragma once
 
-#define DEBUG_LOG
+#define SA_DEBUG_LOG_ENABLE 1
 #include "Tools\Logger.hpp"
 
-#define SA_PROFILER_ENABLE
+#define SA_PROFILER_ENABLE 1
 #include "Tools\Profiler.h"
 
 

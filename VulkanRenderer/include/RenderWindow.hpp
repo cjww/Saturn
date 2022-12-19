@@ -15,6 +15,8 @@ namespace sa {
 		RenderWindow(uint32_t monitorIndex);
 
 
+		void waitForFrame();
+
 		RenderContext beginFrame();
 
 		void display();

@@ -138,7 +138,7 @@ namespace sa {
 
 		void dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
 
-		void barrier(const Texture& texture);
+		void barrierColorAttachment(const Texture& texture);
 
 		void transitionTexture(const Texture& texture, Transition src, Transition dst);
 

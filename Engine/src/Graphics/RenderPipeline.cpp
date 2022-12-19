@@ -44,7 +44,8 @@ namespace sa {
 		m_swapchainRenderTarget.pipeline = renderer.createGraphicsPipeline(m_swapchainRenderTarget.renderProgram, 0, newExtent,
 			"../Engine/shaders/TransferToSwapchain.vert.spv", "../Engine/shaders/TransferToSwapchain.frag.spv");
 
-		m_swapchainRenderTarget.framebuffer = renderer.createSwapchainFramebuffer(m_swapchainRenderTarget.renderProgram, m_pWindow->getSwapchainID(), {});
+		std::vector<Texture> textures;
+		m_swapchainRenderTarget.framebuffer = renderer.createSwapchainFramebuffer(m_swapchainRenderTarget.renderProgram, m_pWindow->getSwapchainID(), textures);
 		m_swapchainDescriptorSet = renderer.allocateDescriptorSet(m_swapchainRenderTarget.pipeline, 0);
 
 	}
@@ -62,12 +63,14 @@ namespace sa {
 			.beginSubpass()
 			.addAttachmentReference(0, SubpassAttachmentUsage::ColorTarget)
 			.endSubpass()
+			.addColorDependency(SA_SUBPASS_EXTERNAL, 0)
 			.end();
 
 		m_swapchainRenderTarget.pipeline = renderer.createGraphicsPipeline(m_swapchainRenderTarget.renderProgram, 0, pWindow->getCurrentExtent(),
 			"../Engine/shaders/TransferToSwapchain.vert.spv", "../Engine/shaders/TransferToSwapchain.frag.spv");
 
-		m_swapchainRenderTarget.framebuffer = renderer.createSwapchainFramebuffer(m_swapchainRenderTarget.renderProgram, pWindow->getSwapchainID(), {});
+		std::vector<Texture> textures;
+		m_swapchainRenderTarget.framebuffer = renderer.createSwapchainFramebuffer(m_swapchainRenderTarget.renderProgram, pWindow->getSwapchainID(), textures);
 		m_swapchainDescriptorSet = renderer.allocateDescriptorSet(m_swapchainRenderTarget.pipeline, 0);
 
 		m_sampler = renderer.createSampler(FilterMode::LINEAR);
@@ -90,6 +93,8 @@ namespace sa {
 
 	RenderContext RenderPipeline::beginScene(Scene* pScene) {
 		SA_PROFILE_FUNCTION();
+
+		m_pWindow->waitForFrame();
 
 		m_pRenderTechnique->updateLights(pScene);
 		// collect meshes

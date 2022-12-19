@@ -42,8 +42,8 @@ namespace sa {
 
 			m_pCore = std::make_unique<VulkanCore>();
 			
-			m_pCore->init(info);
-
+			m_pCore->init(info, c_useVaildationLayers);
+			
 			ResourceManager::get().setCleanupFunction<Swapchain>([](Swapchain* p) { p->destroy(); });
 			ResourceManager::get().setCleanupFunction<FramebufferSet>([](FramebufferSet* p) { p->destroy(); });
 			ResourceManager::get().setCleanupFunction<RenderProgram>([](RenderProgram* p) { p->destroy(); });
@@ -190,12 +190,43 @@ namespace sa {
 			layers);
 	}
 
+
+	ResourceID Renderer::createFramebuffer(ResourceID renderProgram, const std::vector<Texture>& attachmentTextures, uint32_t layers) {
+		if (attachmentTextures.empty())
+			throw std::runtime_error("At least one attachmnet is required to create a framebuffer");
+
+		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
+
+		return ResourceManager::get().insert<FramebufferSet>(
+			m_pCore.get(),
+			pRenderProgram->getRenderPass(),
+			attachmentTextures,
+			attachmentTextures[0].getExtent(),
+			layers);
+	}
+
+	ResourceID Renderer::createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<Texture>& additionalAttachmentTextures, uint32_t layers) {
+		Swapchain* pSwapchain = RenderContext::getSwapchain(swapchain);
+		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
+
+		return ResourceManager::get().insert<FramebufferSet>(
+			m_pCore.get(),
+			pRenderProgram->getRenderPass(),
+			pSwapchain,
+			additionalAttachmentTextures,
+			layers);
+	}
+
 	void Renderer::destroyFramebuffer(ResourceID framebuffer) {
 		ResourceManager::get().remove<FramebufferSet>(framebuffer);
 	}
 
 	Texture Renderer::getFramebufferTexture(ResourceID framebuffer, uint32_t index) const {
 		return RenderContext::getFramebufferSet(framebuffer)->getTexture(index);
+	}
+
+	void Renderer::waitForFrame(ResourceID swapchains) {
+		RenderContext::getSwapchain(swapchains)->waitForFrame();
 	}
 
 	size_t Renderer::getFramebufferTextureCount(ResourceID framebuffer) const {

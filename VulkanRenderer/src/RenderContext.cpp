@@ -248,7 +248,7 @@ namespace sa {
 		m_pCommandBufferSet->getBuffer().dispatch(groupCountX, groupCountY, groupCountZ);
 	}
 
-	void RenderContext::barrier(const Texture& texture) {
+	void RenderContext::barrierColorAttachment(const Texture& texture) {
 
 		DeviceImage* pImage = (DeviceImage*)texture;
 		vk::ImageLayout newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
@@ -263,9 +263,11 @@ namespace sa {
 			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 			.image = pImage->image,
 			.subresourceRange{
-				.aspectMask = vk::ImageAspectFlagBits::eDepth,
-				.levelCount = 1,
-				.layerCount = 1,
+				.aspectMask = vk::ImageAspectFlagBits::eColor,
+				.baseMipLevel = 0,
+				.levelCount = pImage->mipLevels,
+				.baseArrayLayer = 0,
+				.layerCount = pImage->arrayLayers,
 			},
 		};
 
@@ -273,11 +275,11 @@ namespace sa {
 
 		m_pCommandBufferSet->getBuffer().pipelineBarrier(
 			vk::PipelineStageFlagBits::eColorAttachmentOutput,
-			vk::PipelineStageFlagBits::eComputeShader,
+			vk::PipelineStageFlagBits::eFragmentShader,
 			(vk::DependencyFlags)0,
 			nullptr,
 			nullptr,
-			nullptr);
+			imageBarrier);
 	}
 
 	void RenderContext::transitionTexture(const Texture& texture, Transition src, Transition dst) {

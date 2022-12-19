@@ -218,7 +218,7 @@ void SceneView::onImGui() {
 		if (availSize != m_displayedSize) {
 			m_camera.setAspectRatio(availSize.x / availSize.y);
 		}
-
+		
 		ImGui::Image(m_renderTarget.bloomData.outputTexture, imAvailSize);
 		ImVec2 imageMin = ImGui::GetItemRectMin();
 		ImVec2 imageSize = ImGui::GetItemRectSize();

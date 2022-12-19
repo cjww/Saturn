@@ -104,13 +104,9 @@ namespace sa {
 		if (!m_swapchain) {
 			return nullptr;
 		}
-		checkError(
-			m_device.waitForFences(m_inFlightFences[m_frameIndex], VK_FALSE, UINT64_MAX),
-			"Failed to wait for in flight fence");
-		
-		vk::ResultValue<uint32_t> res = m_device.acquireNextImageKHR(m_swapchain, UINT64_MAX, m_imageAvailableSemaphore[m_frameIndex]);
-		checkError(res.result, "Failed to aquire next swapchain image", false);
-		m_imageIndex = res.value;
+		m_device.waitForFences(m_inFlightFences[m_frameIndex], VK_FALSE, UINT64_MAX);
+
+		m_imageIndex = m_device.acquireNextImageKHR(m_swapchain, UINT64_MAX, m_imageAvailableSemaphore[m_frameIndex]).value;
 		/*
 		if (m_imageFences[m_imageIndex]) {
 			checkError(
@@ -140,6 +136,10 @@ namespace sa {
 
 		m_frameIndex = (m_frameIndex + 1) % m_commandBufferSet.getBufferCount();
 
+	}
+
+	void Swapchain::waitForFrame() {
+		m_device.waitForFences(m_inFlightFences[m_frameIndex], VK_FALSE, UINT64_MAX);
 	}
 
 	std::vector<vk::ImageView> Swapchain::getImageViews() const {

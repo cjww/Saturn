@@ -14,7 +14,8 @@
 #include "glm\gtc\matrix_transform.hpp"
 #include "glm/gtx/transform.hpp"
 
-#define SA_DEBUG_LOG
+#define SA_DEBUG_LOG_ENABLE 1
+
 #include <Renderer.hpp>
 #include <RenderWindow.hpp>
 #include <Tools\Logger.hpp>
@@ -52,30 +53,49 @@ int main() {
         .addAttachmentReference(0, SubpassAttachmentUsage::ColorTarget)
         .addAttachmentReference(1, SubpassAttachmentUsage::DepthTarget)
         .endSubpass()
+        .beginSubpass()
+        .addAttachmentReference(0, SubpassAttachmentUsage::ColorTarget)
+        .endSubpass()
         .end();
 
 
-    ResourceID renderProgram2 = renderer.createRenderProgram()
-        .addSwapchainAttachment(window.getSwapchainID())
+
+
+    ResourceID imguiRenderProgram = renderer.createRenderProgram()
+        .addColorAttachment(true, colorTexture)
         .beginSubpass()
         .addAttachmentReference(0, SubpassAttachmentUsage::ColorTarget)
         .endSubpass()
         .end();
 
     
+    ResourceID swapchainRenderProgram = renderer.createRenderProgram()
+        .addSwapchainAttachment(window.getSwapchainID())
+        .beginSubpass()
+        .addAttachmentReference(0, SubpassAttachmentUsage::ColorTarget)
+        .endSubpass()
+        .addColorDependency(SA_SUBPASS_EXTERNAL, 0) // wait for color attachment write of previous renderprogram before starting this subpass 0
+        .end();
+
+    renderer.initImGui(window, imguiRenderProgram, 0);
+    ResourceID imGuiFramebuffer = renderer.createFramebuffer(imguiRenderProgram, { colorTexture });
+
+
     ResourceID framebuffer = renderer.createFramebuffer(renderProgram, { colorTexture, depthTexture });
-    ResourceID framebuffer2 = renderer.createSwapchainFramebuffer(renderProgram2, window.getSwapchainID(), { });
+    std::vector<sa::Texture> textures;
+    ResourceID framebuffer2 = renderer.createSwapchainFramebuffer(swapchainRenderProgram, window.getSwapchainID(), textures);
 
 
     ResourceID pipeline = renderer.createGraphicsPipeline(renderProgram, 0, window.getCurrentExtent(), 
         "BareBones.vert.spv", "BareBones.frag.spv");
     //ResourceID pipeline = renderer.createGraphicsPipeline(renderProgram, 0, window.getCurrentExtent(), "BareBones.vert.spv", "BareBones.frag.spv");
-    ResourceID pipeline2 = renderer.createGraphicsPipeline(renderProgram2, 0, window.getCurrentExtent(), 
+    ResourceID pipeline2 = renderer.createGraphicsPipeline(swapchainRenderProgram, 0, window.getCurrentExtent(), 
         "PostProcess.vert.spv", "PostProcess.frag.spv");
 
     ResourceID descriptorSet2 = renderer.allocateDescriptorSet(pipeline2, 0);
     ResourceID sampler = renderer.createSampler(FilterMode::LINEAR);
     renderer.updateDescriptorSet(descriptorSet2, 0, colorTexture, sampler);
+    
 
     Buffer vertexBuffer = renderer.createBuffer(BufferType::VERTEX);
     std::vector<Vertex> vertices = {
@@ -99,27 +119,36 @@ int main() {
         objects[i] = glm::translate(glm::mat4(1), glm::vec3((rand() % 10) - 5, (rand() % 10) - 5, -i));
     }
 
-
+    auto now = std::chrono::high_resolution_clock::now();
+    
     while (window.isOpen()) {
         window.pollEvents();
+      
+        renderer.newImGuiFrame();
+
+        float dt = std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - now).count();
+        now = std::chrono::high_resolution_clock::now();
+        
+        //window.setWindowTitle("FPS:" + std::to_string(1.f / dt));
         /*
-        scene.view = glm::translate(scene.view, glm::vec3(0, 0, 1));
-        if (scene.view[3].z > 1000) {
+        scene.view = glm::translate(scene.view, glm::vec3(0, 0, 1) * dt);
+        if (scene.view[3].z > 10) {
             scene.view[3].z = 0;
         }
         uniformbuffer.write(scene);
         */
-
-
+        
 
         RenderContext context = window.beginFrame();
         if (context) {
 
+            //context.updateDescriptorSet(descriptorSet2, 0, colorTexture, sampler);
             //context.updateDescriptorSet(descriptorSet, 0, uniformbuffer);
-
-            context.beginRenderProgram(renderProgram, framebuffer, SubpassContents::DIRECT);
-
+            
+            context.beginRenderProgram(imguiRenderProgram, imGuiFramebuffer, SubpassContents::DIRECT);
+            /*
             context.bindVertexBuffers(0, { vertexBuffer });
+            
             context.bindPipeline(pipeline);
             context.bindDescriptorSet(descriptorSet, pipeline);
             for (auto& mat : objects) {
@@ -128,18 +157,28 @@ int main() {
                 context.draw(100000000, 1);
             }
 
-            context.endRenderProgram(renderProgram);
+            context.nextSubpass(SubpassContents::DIRECT);
+            */
+            context.renderImGuiFrame();
 
-            context.beginRenderProgram(renderProgram2, framebuffer2, SubpassContents::DIRECT);
+            context.endRenderProgram(imguiRenderProgram);
+            /*
+            */
+            
+            /*
+            */
+            //context.barrierColorAttachment(colorTexture);
+            context.beginRenderProgram(swapchainRenderProgram, framebuffer2, SubpassContents::DIRECT);
 
             context.bindPipeline(pipeline2);
             context.bindDescriptorSet(descriptorSet2, pipeline2);
             context.draw(6, 1);
 
-            context.endRenderProgram(renderProgram2);
+            context.endRenderProgram(swapchainRenderProgram);
 
 
             window.display();
+        
         }
 
     }

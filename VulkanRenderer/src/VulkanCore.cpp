@@ -86,7 +86,7 @@ namespace sa {
 
 		return queueInfo;
 	}
-	void VulkanCore::setupDebug() {
+	void VulkanCore::setupValidationLayers() {
 
 		m_validationLayers = {
 			"VK_LAYER_KHRONOS_validation",
@@ -254,11 +254,12 @@ namespace sa {
 		return !isDepthFormat(format);
 	}
 
-	void VulkanCore::init(vk::ApplicationInfo appInfo) {
+	void VulkanCore::init(vk::ApplicationInfo appInfo, bool useVaildationLayers) {
 		m_appInfo = appInfo;
-#ifdef _DEBUG
-			setupDebug();
-#endif // _DEBUG
+		
+		if(useVaildationLayers)
+			setupValidationLayers();
+
 		createInstance();
 		findPhysicalDevice();
 		createDevice();
@@ -430,6 +431,7 @@ namespace sa {
 
 		// find Mailbox present mode
 		vk::PresentModeKHR presentMode = vk::PresentModeKHR::eFifo; // Assumes this present mode is always present
+
 		std::vector<vk::PresentModeKHR> allPresentModes = m_physicalDevice.getSurfacePresentModesKHR(surface);
 		for (auto mode : allPresentModes) {
 			if (mode == vk::PresentModeKHR::eMailbox) {
@@ -599,9 +601,7 @@ namespace sa {
 		};
 		info.setStages(shaderStages);
 
-		auto result = m_device.createGraphicsPipeline(cache, info);
-		checkError(result.result, "Failed to create Graphics pipeline", true);
-		return result.value;
+		return m_device.createGraphicsPipeline(cache, info).value;
 	}
 
 	CommandBufferSet VulkanCore::allocateCommandBufferSet(vk::CommandBufferLevel level) {

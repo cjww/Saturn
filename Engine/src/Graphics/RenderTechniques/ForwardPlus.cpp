@@ -132,7 +132,7 @@ namespace sa {
 
 		m_renderer.updateDescriptorSet(m_sceneDepthDescriptorSet, 0, m_objectBuffer);
 
-		m_renderer.updateDescriptorSet(m_lightCullingDescriptorSet, 0, m_depthTexture.getTexture(), m_linearSampler);
+		m_renderer.updateDescriptorSet(m_lightCullingDescriptorSet, 0, m_depthTexture, m_linearSampler);
 		m_renderer.updateDescriptorSet(m_lightCullingDescriptorSet, 1, m_lightIndexBuffer);
 		m_renderer.updateDescriptorSet(m_lightCullingDescriptorSet, 2, m_lightBuffer);
 		
@@ -370,11 +370,11 @@ namespace sa {
 
 	void ForwardPlus::updateData(RenderContext& context) {
 		SA_PROFILE_FUNCTION();
-		context.updateDescriptorSet(m_sceneDepthDescriptorSet, 0, m_objectBuffer.getCurrentBuffer());
+		context.updateDescriptorSet(m_sceneDepthDescriptorSet, 0, m_objectBuffer);
 
 
 		context.updateDescriptorSet(m_sceneDescriptorSet, 0, m_objectBuffer);
-		context.updateDescriptorSet(m_sceneDescriptorSet, 1, m_lightBuffer.getCurrentBuffer());
+		context.updateDescriptorSet(m_sceneDescriptorSet, 1, m_lightBuffer);
 		context.updateDescriptorSet(m_sceneDescriptorSet, 2, m_materialBuffer);
 		context.updateDescriptorSet(m_sceneDescriptorSet, 3, m_materialIndicesBuffer);
 		context.updateDescriptorSet(m_sceneDescriptorSet, 4, m_lightIndexBuffer);
@@ -390,8 +390,8 @@ namespace sa {
 			return false;
 		
 
-		context.bindVertexBuffers(0, { m_vertexBuffer.getCurrentBuffer()});
-		context.bindIndexBuffer(m_indexBuffer.getCurrentBuffer());
+		context.bindVertexBuffers(0, { m_vertexBuffer });
+		context.bindIndexBuffer(m_indexBuffer);
 
 		Matrix4x4 projViewMat = pCamera->getProjectionMatrix() * pCamera->getViewMatrix();
 
@@ -410,7 +410,7 @@ namespace sa {
 
 		if (m_indirectIndexedBuffer.getElementCount<DrawIndexedIndirectCommand>() > 0) {
 			context.pushConstant(m_depthPrePipeline, ShaderStageFlagBits::VERTEX, perFrame);
-			context.drawIndexedIndirect(m_indirectIndexedBuffer.getCurrentBuffer(), 0, m_indirectIndexedBuffer.getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
+			context.drawIndexedIndirect(m_indirectIndexedBuffer, 0, m_indirectIndexedBuffer.getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
 		}
 
 		context.endRenderProgram(m_depthPreRenderProgram);
@@ -451,7 +451,7 @@ namespace sa {
 			context.pushConstant(m_colorPipeline, ShaderStageFlagBits::VERTEX | ShaderStageFlagBits::FRAGMENT, perFrame);
 			context.pushConstant(m_colorPipeline, ShaderStageFlagBits::FRAGMENT, m_tileCount.x, sizeof(perFrame));
 
-			context.drawIndexedIndirect(m_indirectIndexedBuffer.getCurrentBuffer(), 0, m_indirectIndexedBuffer.getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
+			context.drawIndexedIndirect(m_indirectIndexedBuffer, 0, m_indirectIndexedBuffer.getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
 		}
 
 		context.endRenderProgram(m_colorRenderProgram);
@@ -467,12 +467,17 @@ namespace sa {
 	}
 
 	void ForwardPlus::endRender(RenderContext& context) {
-		m_vertexBuffer.manualIncrement();
-		m_indexBuffer.manualIncrement();
-		m_indirectIndexedBuffer.manualIncrement();
+		
+		m_lightBuffer.swap();
+		m_vertexBuffer.swap();
+		m_indexBuffer.swap();
+		m_indirectIndexedBuffer.swap();
+		m_objectBuffer.swap();
+		m_materialBuffer.swap();
+		m_materialIndicesBuffer.swap();
 	}
 
-	ResourceID ForwardPlus::createColorFramebuffer(const DynamicTexture2D& outputTexture) {
+	ResourceID ForwardPlus::createColorFramebuffer(const Texture2D& outputTexture) {
 		return m_renderer.createFramebuffer(m_colorRenderProgram, { outputTexture, m_depthTexture });
 	}
 

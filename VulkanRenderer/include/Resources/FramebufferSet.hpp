@@ -12,7 +12,10 @@ namespace sa {
 	class FramebufferSet {
 	private:
 		std::vector<vk::Framebuffer> m_buffers;
-		std::vector<DynamicTexture> m_images;
+		std::vector<Texture> m_images;
+		std::vector<DynamicTexture> m_dynamicImages;
+		bool m_isDynamic;
+
 		Extent m_extent;
 		vk::Device m_device;
 
@@ -23,9 +26,16 @@ namespace sa {
 		FramebufferSet(VulkanCore* pCore, vk::RenderPass renderPass, const std::vector<DynamicTexture>& images, Extent extent, uint32_t layers);
 		FramebufferSet(VulkanCore* pCore, vk::RenderPass renderPass, Swapchain* pSwapchain, const std::vector<DynamicTexture>& images, uint32_t layers);
 
+		FramebufferSet(VulkanCore* pCore, vk::RenderPass renderPass, const std::vector<Texture>& images, Extent extent, uint32_t layers);
+		FramebufferSet(VulkanCore* pCore, vk::RenderPass renderPass, Swapchain* pSwapchain, const std::vector<Texture>& images, uint32_t layers);
+
+
 		void create(VulkanCore* pCore, vk::RenderPass renderPass, const std::vector<DynamicTexture>& images, Extent extent, uint32_t layers);
 		void create(VulkanCore* pCore, vk::RenderPass renderPass, Swapchain* pSwapchain, const std::vector<DynamicTexture>& images, uint32_t layers);
 		
+		void create(VulkanCore* pCore, vk::RenderPass renderPass, const std::vector<Texture>& images, Extent extent, uint32_t layers);
+		void create(VulkanCore* pCore, vk::RenderPass renderPass, Swapchain* pSwapchain, const std::vector<Texture>& images, uint32_t layers);
+
 		void destroy();
 
 
