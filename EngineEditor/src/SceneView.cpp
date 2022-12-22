@@ -398,7 +398,12 @@ void SceneView::onImGui() {
 
 			if (ImGui::CollapsingHeader("Performance")) {
 				ImGui::PushStyleColor(ImGuiCol_PlotLines, ImVec4(1.f, 1.f, 1.f, 1.f));
-				ImGui::PlotLines("", m_frameTimeGraph.data(), m_frameTimeGraph.size(), 0, "Frame Time", 0.f, 100.f, ImVec2(300, 50));
+				
+				static float scale = 70.f;
+				ImGui::PlotLines("", m_frameTimeGraph.data(), m_frameTimeGraph.size(), 0, "Frame Time", 0.f, scale, ImVec2(300, 50));
+				ImGui::SameLine();
+				ImGui::VSliderFloat("", ImVec2(15, 50), &scale, 1.f, 100.f, "%.0f");
+
 				ImGui::PopStyleColor();
 				ImGui::Text("Frame time: %f ms", m_statistics.frameTime * 1000);
 

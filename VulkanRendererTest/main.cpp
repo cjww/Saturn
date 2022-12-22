@@ -77,7 +77,7 @@ int main() {
         .addColorDependency(SA_SUBPASS_EXTERNAL, 0) // wait for color attachment write of previous renderprogram before starting this subpass 0
         .end();
 
-    renderer.initImGui(window, imguiRenderProgram, 0);
+    renderer.initImGui(window, renderProgram, 1);
     ResourceID imGuiFramebuffer = renderer.createFramebuffer(imguiRenderProgram, { colorTexture });
 
 
@@ -130,12 +130,12 @@ int main() {
         now = std::chrono::high_resolution_clock::now();
         
         //window.setWindowTitle("FPS:" + std::to_string(1.f / dt));
-        /*
         scene.view = glm::translate(scene.view, glm::vec3(0, 0, 1) * dt);
         if (scene.view[3].z > 10) {
             scene.view[3].z = 0;
         }
         uniformbuffer.write(scene);
+        /*
         */
         
 
@@ -143,30 +143,25 @@ int main() {
         if (context) {
 
             //context.updateDescriptorSet(descriptorSet2, 0, colorTexture, sampler);
-            //context.updateDescriptorSet(descriptorSet, 0, uniformbuffer);
+            context.updateDescriptorSet(descriptorSet, 0, uniformbuffer);
             
-            context.beginRenderProgram(imguiRenderProgram, imGuiFramebuffer, SubpassContents::DIRECT);
-            /*
+            context.beginRenderProgram(renderProgram, framebuffer, SubpassContents::DIRECT);
+            
             context.bindVertexBuffers(0, { vertexBuffer });
-            
             context.bindPipeline(pipeline);
             context.bindDescriptorSet(descriptorSet, pipeline);
             for (auto& mat : objects) {
                 context.pushConstant(pipeline, ShaderStageFlagBits::VERTEX, mat);
 
-                context.draw(100000000, 1);
+                context.draw(10000000, 1);
             }
-
+            
             context.nextSubpass(SubpassContents::DIRECT);
-            */
+            
             context.renderImGuiFrame();
 
-            context.endRenderProgram(imguiRenderProgram);
-            /*
-            */
+            context.endRenderProgram(renderProgram);
             
-            /*
-            */
             //context.barrierColorAttachment(colorTexture);
             context.beginRenderProgram(swapchainRenderProgram, framebuffer2, SubpassContents::DIRECT);
 

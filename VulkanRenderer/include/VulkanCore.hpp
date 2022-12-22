@@ -104,14 +104,14 @@ namespace sa {
 
 		void setupValidationLayers();
 
-		void createInstance();
+		void createInstance(bool useDebugCallback);
 		void findPhysicalDevice();
 		void createDevice();
 
 		void createCommandPool();
 
 	public:
-		static const unsigned int FRAMES_IN_FLIGHT = 2;
+		static const unsigned int FRAMES_IN_FLIGHT = 3;
 
 		static bool isDepthFormat(vk::Format format);
 		static bool isColorFormat(vk::Format format);

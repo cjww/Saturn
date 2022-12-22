@@ -113,7 +113,7 @@ namespace sa {
 		}
 	}
 
-	void VulkanCore::createInstance() {
+	void VulkanCore::createInstance(bool useDebugCallback) {
 		uint32_t count = 0;
 		const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&count);
 		if (count == 0) {
@@ -127,6 +127,7 @@ namespace sa {
 		m_instanceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
 		vk::InstanceCreateInfo instanceInfo{
+			.pNext = nullptr,
 			.pApplicationInfo = &m_appInfo,
 			.enabledExtensionCount = static_cast<uint32_t>(m_instanceExtensions.size()),
 			.ppEnabledExtensionNames = m_instanceExtensions.data()
@@ -137,6 +138,12 @@ namespace sa {
 			std::cout << extension << std::endl;
 		}
 
+		vk::DebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo{
+			.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo,
+			.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance,
+			.pfnUserCallback = sa::debugCallback
+		};
+
 		if (!m_validationLayers.empty()) {
 			instanceInfo.setPEnabledLayerNames(m_validationLayers);
 			std::cout << "---Layers---" << std::endl;
@@ -144,15 +151,10 @@ namespace sa {
 				std::cout << m_validationLayers[i] << std::endl;
 			}
 
+			if (useDebugCallback) {
+				instanceInfo.pNext = &debugMessengerCreateInfo;
+			}
 
-			vk::DebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo{
-				.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo,
-				.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance,
-				.pfnUserCallback = sa::debugCallback
-			};
-
-
-			instanceInfo.pNext = &debugMessengerCreateInfo;
 		}
 		sa::checkError(
 			vk::createInstance(&instanceInfo, nullptr, &m_instance),
@@ -260,7 +262,7 @@ namespace sa {
 		if(useVaildationLayers)
 			setupValidationLayers();
 
-		createInstance();
+		createInstance(useVaildationLayers);
 		findPhysicalDevice();
 		createDevice();
 		
