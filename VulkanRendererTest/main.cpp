@@ -43,8 +43,8 @@ int main() {
 
     auto& renderer = Renderer::get();
 
-    Texture2D depthTexture = Texture2D(TextureTypeFlagBits::DEPTH_ATTACHMENT, window.getCurrentExtent());
-    Texture2D colorTexture = Texture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, window.getCurrentExtent());
+    DynamicTexture2D depthTexture = DynamicTexture2D(TextureTypeFlagBits::DEPTH_ATTACHMENT, window.getCurrentExtent());
+    DynamicTexture2D colorTexture = DynamicTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, window.getCurrentExtent());
 
     ResourceID renderProgram = renderer.createRenderProgram()
         .addColorAttachment(true, colorTexture)
@@ -82,7 +82,7 @@ int main() {
 
 
     ResourceID framebuffer = renderer.createFramebuffer(renderProgram, { colorTexture, depthTexture });
-    std::vector<sa::Texture> textures;
+    std::vector<sa::Texture> textures = {};
     ResourceID framebuffer2 = renderer.createSwapchainFramebuffer(swapchainRenderProgram, window.getSwapchainID(), textures);
 
 
@@ -94,7 +94,7 @@ int main() {
 
     ResourceID descriptorSet2 = renderer.allocateDescriptorSet(pipeline2, 0);
     ResourceID sampler = renderer.createSampler(FilterMode::LINEAR);
-    renderer.updateDescriptorSet(descriptorSet2, 0, colorTexture, sampler);
+    //renderer.updateDescriptorSet(descriptorSet2, 0, colorTexture, sampler);
     
 
     Buffer vertexBuffer = renderer.createBuffer(BufferType::VERTEX);
@@ -114,7 +114,7 @@ int main() {
     ResourceID descriptorSet = renderer.allocateDescriptorSet(pipeline, 0);
     renderer.updateDescriptorSet(descriptorSet, 0, uniformbuffer);
 
-    std::vector<glm::mat4> objects(10, glm::mat4(1));
+    std::vector<glm::mat4> objects(100, glm::mat4(1));
     for (int i = 0; i < objects.size(); i++) {
         objects[i] = glm::translate(glm::mat4(1), glm::vec3((rand() % 10) - 5, (rand() % 10) - 5, -i));
     }
@@ -129,6 +129,13 @@ int main() {
         float dt = std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - now).count();
         now = std::chrono::high_resolution_clock::now();
         
+        static float timer = 0.0f;
+        timer += dt;
+        if (timer > 0.5f) {
+            SA_DEBUG_LOG_INFO("FPS: ", 1.f / dt, ", Frame Time: ", dt * 1000);
+            timer = 0.f;
+        }
+
         //window.setWindowTitle("FPS:" + std::to_string(1.f / dt));
         scene.view = glm::translate(scene.view, glm::vec3(0, 0, 1) * dt);
         if (scene.view[3].z > 10) {
@@ -140,9 +147,29 @@ int main() {
         
 
         RenderContext context = window.beginFrame();
+        
+
+        /*
+        context = renderer.createContext()
+
+        context.begin() // starts commandbuffer recording
+
+        ... commands
+
+        context.end(); // end commandbuffer recording
+
+        //context.copyImage(colorTexture, target)
+        //context.copyImage(colorTexture, window.getSwapchainID());
+        
+        //context.submit(); // submit recorded comandbuffer , increments buffer index
+
+        window.display(context) // get next swapchain image, calls submit, present and synchronize 
+
+        */
+        
         if (context) {
 
-            //context.updateDescriptorSet(descriptorSet2, 0, colorTexture, sampler);
+            context.updateDescriptorSet(descriptorSet2, 0, colorTexture.getTexture(), sampler);
             context.updateDescriptorSet(descriptorSet, 0, uniformbuffer);
             
             context.beginRenderProgram(renderProgram, framebuffer, SubpassContents::DIRECT);
@@ -153,7 +180,9 @@ int main() {
             for (auto& mat : objects) {
                 context.pushConstant(pipeline, ShaderStageFlagBits::VERTEX, mat);
 
+                //context.draw(10000000, 1);
                 context.draw(10000000, 1);
+
             }
             
             context.nextSubpass(SubpassContents::DIRECT);
@@ -171,8 +200,10 @@ int main() {
 
             context.endRenderProgram(swapchainRenderProgram);
 
-
             window.display();
+
+            depthTexture.swap();
+            colorTexture.swap();
         
         }
 
