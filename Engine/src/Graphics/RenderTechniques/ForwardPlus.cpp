@@ -456,13 +456,14 @@ namespace sa {
 
 		context.endRenderProgram(m_colorRenderProgram);
 
-		
+		/*
 		context.beginRenderProgram(m_debugLightHeatmapRenderProgram, m_debugLightHeatmapFramebuffer, SubpassContents::DIRECT);
 		context.bindPipeline(m_debugLightHeatmapPipeline);
 		context.bindDescriptorSet(m_debugLightHeatmapDescriptorSet, m_debugLightHeatmapPipeline);
 		context.pushConstant(m_debugLightHeatmapPipeline, ShaderStageFlagBits::FRAGMENT, m_tileCount.x);
 		context.draw(6, 1);
 		context.endRenderProgram(m_debugLightHeatmapRenderProgram);
+		*/
 
 	}
 
@@ -477,7 +478,7 @@ namespace sa {
 		m_materialIndicesBuffer.swap();
 	}
 
-	ResourceID ForwardPlus::createColorFramebuffer(const Texture2D& outputTexture) {
+	ResourceID ForwardPlus::createColorFramebuffer(const DynamicTexture2D& outputTexture) {
 		return m_renderer.createFramebuffer(m_colorRenderProgram, { outputTexture, m_depthTexture });
 	}
 

@@ -34,6 +34,10 @@ namespace sa {
 		return m_textures[index].texture;
 	}
 
+	uint32_t DynamicTexture::getTextureCount() const {
+		return m_textures.size();
+	}
+
 	DynamicTexture::operator const Texture() const {
 		return getTexture();
 	}
@@ -80,12 +84,13 @@ namespace sa {
 		return !(*this == other);
 	}
 	
-	DynamicTexture2D::DynamicTexture2D(const std::vector<Texture2D>& textures) {
+	DynamicTexture2D::DynamicTexture2D(const std::vector<Texture2D>& textures, uint32_t currentIndex) {
 		m_textures.resize(textures.size());
 		for (size_t i = 0; i < textures.size(); i++) {
 			m_textures[i].texture2D = textures[i];
 			m_textures[i].activeBit = 2;
 		}
+		m_currentTextureIndex = currentIndex;
 	}
 
 
@@ -129,7 +134,7 @@ namespace sa {
 		}
 
 		for (auto& texArray : textures) {
-			dynamicTextures.push_back(DynamicTexture2D(texArray));
+			dynamicTextures.push_back(DynamicTexture2D(texArray, m_currentTextureIndex));
 		}
 
 		return dynamicTextures;

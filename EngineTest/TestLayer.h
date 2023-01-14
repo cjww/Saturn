@@ -22,7 +22,7 @@ namespace sa {
 		RenderWindow* m_pWindow;
 
 		RenderTarget m_renderTarget;
-		Texture2D m_colorTexture;
+		DynamicTexture2D m_colorTexture;
 
 
 		int randomRange(int min, int max);

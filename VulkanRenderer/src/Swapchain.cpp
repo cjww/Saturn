@@ -146,6 +146,10 @@ namespace sa {
 		return m_imageViews;
 	}
 
+	vk::Image Swapchain::getImage(uint32_t imageIndex) const {
+		return m_images[imageIndex];
+	}
+
 	Extent Swapchain::getExtent() const {
 		return m_extent;
 	}

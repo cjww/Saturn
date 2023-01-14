@@ -111,6 +111,7 @@ namespace sa {
 		
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture, ResourceID sampler);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture);
+
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement = 0);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, ResourceID sampler);
 
@@ -139,8 +140,12 @@ namespace sa {
 		void dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
 
 		void barrierColorAttachment(const Texture& texture);
+		void barrierColorCompute(const Texture& texture);
 
 		void transitionTexture(const Texture& texture, Transition src, Transition dst);
+
+		void copyImageToImageColor(const Texture& src, const Texture& dst);
+		void copyImageToSwapchain(const Texture& src, ResourceID swapchain);
 
 
 		operator bool() {

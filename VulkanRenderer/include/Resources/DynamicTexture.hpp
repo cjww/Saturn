@@ -67,6 +67,8 @@ namespace sa {
 		const Texture& getTexture() const;
 		const Texture& getTexture(uint32_t index) const;
 
+		uint32_t getTextureCount() const;
+
 		operator const Texture() const;
 		operator Texture() const;
 
@@ -87,7 +89,7 @@ namespace sa {
 	class DynamicTexture2D : public DynamicTexture {
 	private:
 
-		DynamicTexture2D(const std::vector<Texture2D>& textures);
+		DynamicTexture2D(const std::vector<Texture2D>& textures, uint32_t currentIndex);
 
 	public:
 		DynamicTexture2D();

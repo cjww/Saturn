@@ -6,7 +6,7 @@ namespace sa {
 		m_pWindow = pWindow;
 		m_pRenderTechnique = pRenderTechnique;
 
-		m_outputTexture = Texture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, pWindow->getCurrentExtent());
+		m_outputTexture = DynamicTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, pWindow->getCurrentExtent());
 
 		
 		m_imGuiRenderProgram = m_renderer.createRenderProgram()
@@ -38,6 +38,8 @@ namespace sa {
 		context.beginRenderProgram(m_imGuiRenderProgram, m_imGuiFramebuffer, sa::SubpassContents::DIRECT);
 		context.renderImGuiFrame();
 		context.endRenderProgram(m_imGuiRenderProgram);
+
+		m_outputTexture.swap();
 	}
 
 	void ImGuiRenderLayer::onWindowResize(Extent newExtent) {

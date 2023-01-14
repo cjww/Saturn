@@ -11,7 +11,7 @@ namespace sa {
 		RenderWindow* m_pWindow;
 		IRenderTechnique* m_pRenderTechnique;
 
-		Texture2D m_outputTexture;
+		DynamicTexture2D m_outputTexture;
 
 	public:
 		virtual void init(RenderWindow* pWindow, IRenderTechnique* pRenderTechnique) override;

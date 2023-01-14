@@ -11,8 +11,8 @@ namespace sa {
 	{
 	}
 
-	void Profiler::beginSession(const std::string& filepath)
-	{
+	void Profiler::beginSession(const std::string& filepath) {
+		SA_DEBUG_LOG_INFO("PROFILER: Starting session..., File: ", filepath);
 		if (m_outputStream.is_open())
 			return;
 
@@ -32,6 +32,8 @@ namespace sa {
 
 	void Profiler::endSession()
 	{
+		SA_DEBUG_LOG_INFO("PROFILER: Ending session...");
+
 		if (!m_outputStream.is_open())
 			return;
 

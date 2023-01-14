@@ -1,6 +1,8 @@
 #pragma once
 #include "Graphics/IRenderLayer.h"
 
+#include "Tools/Profiler.h"
+
 namespace sa {
 	class BloomRenderLayer : public IRenderLayer {
 	private:
@@ -22,7 +24,7 @@ namespace sa {
 		virtual void onWindowResize(Extent newExtent) override;
 
 		virtual void render(RenderContext& context, SceneCamera* pCamera, RenderTarget* rendertarget) override;
-
+		
 		virtual const Texture2D& getOutputTexture() const override;
 
 	};

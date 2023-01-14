@@ -1,9 +1,9 @@
 
 {
-      "name" : "SimpleScene",
+      "name" : "MainScene",
       "entities" : [
             {
-                  "id" : 17,
+                  "id" : 2,
                   "components" : [
                         {
                               "type" : "Name",
@@ -12,20 +12,20 @@
                         {
                               "type" : "Transform",
                               "position" : {
-                                    "x" : 34.394878,
-                                    "y" : 26.425676,
-                                    "z" : 54.688629
+                                    "x" : 0.000000,
+                                    "y" : -0.000000,
+                                    "z" : 2.389974
                               },
                               "rotation" : {
-                                    "w" : 0.304844,
-                                    "x" : 0.078495,
-                                    "y" : -0.919179,
-                                    "z" : 0.236684
+                                    "w" : -0.009010,
+                                    "x" : -0.000001,
+                                    "y" : 0.999959,
+                                    "z" : -0.000001
                               },
                               "scale" : {
-                                    "x" : 0.999465,
+                                    "x" : 0.999990,
                                     "y" : 1.000000,
-                                    "z" : 0.999425
+                                    "z" : 0.999990
                               },
                               "hasParent" : false,
                               "relativePosition" : {
@@ -43,224 +43,7 @@
                   ]
             },
             {
-                  "id" : 16,
-                  "components" : [
-                        {
-                              "type" : "Name",
-                              "name" : "Light Copy"
-                        },
-                        {
-                              "type" : "Transform",
-                              "position" : {
-                                    "x" : 2.889230,
-                                    "y" : 14.076761,
-                                    "z" : 26.254887
-                              },
-                              "rotation" : {
-                                    "w" : 1.000000,
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              },
-                              "scale" : {
-                                    "x" : 1.000000,
-                                    "y" : 1.000000,
-                                    "z" : 1.000000
-                              },
-                              "hasParent" : false,
-                              "relativePosition" : {
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              }
-                        },
-                        {
-                              "type" : "Light",
-                              "position" : {
-                                    "x" : 2.889230,
-                                    "y" : 14.076761,
-                                    "z" : 26.254887
-                              },
-                              "color" : {
-                                    "x" : 0.072592,
-                                    "y" : 0.301269,
-                                    "z" : 0.779412,
-                                    "w" : 1.000000
-                              },
-                              "lightType" : 0,
-                              "attenuationRadius" : 33.706001,
-                              "intensity" : 0.300000
-                        }
-                  ],
-                  "scripts" : [
-                  ]
-            },
-            {
-                  "id" : 1048591,
-                  "components" : [
-                        {
-                              "type" : "Name",
-                              "name" : "Big Ball"
-                        },
-                        {
-                              "type" : "Transform",
-                              "position" : {
-                                    "x" : 7.888685,
-                                    "y" : 11.935806,
-                                    "z" : 41.551556
-                              },
-                              "rotation" : {
-                                    "w" : 1.000000,
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              },
-                              "scale" : {
-                                    "x" : 5.461200,
-                                    "y" : 5.461200,
-                                    "z" : 5.461200
-                              },
-                              "hasParent" : false,
-                              "relativePosition" : {
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              }
-                        },
-                        {
-                              "type" : "Model",
-                              "path" : "Box"
-                        },
-                        {
-                              "type" : "RigidBody",
-                              "isStatic" : false
-                        },
-                        {
-                              "type" : "SphereCollider",
-                              "radius" : 4.206678,
-                              "offset" : {
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              }
-                        }
-                  ],
-                  "scripts" : [
-                        {
-                              "path" : "D:/repos/TestProject2/Assets/foo.lua",
-                              "env" : {
-                              }
-                        }
-                  ]
-            },
-            {
-                  "id" : 14,
-                  "components" : [
-                        {
-                              "type" : "Name",
-                              "name" : "Ball"
-                        },
-                        {
-                              "type" : "Transform",
-                              "position" : {
-                                    "x" : 30.958614,
-                                    "y" : 15.739286,
-                                    "z" : 28.871387
-                              },
-                              "rotation" : {
-                                    "w" : 1.000000,
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              },
-                              "scale" : {
-                                    "x" : 1.000000,
-                                    "y" : 1.000000,
-                                    "z" : 1.000000
-                              },
-                              "hasParent" : false,
-                              "relativePosition" : {
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              }
-                        },
-                        {
-                              "type" : "Model",
-                              "path" : "Box"
-                        },
-                        {
-                              "type" : "RigidBody",
-                              "isStatic" : false
-                        },
-                        {
-                              "type" : "SphereCollider",
-                              "radius" : 1.000000,
-                              "offset" : {
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              }
-                        }
-                  ],
-                  "scripts" : [
-                  ]
-            },
-            {
-                  "id" : 13,
-                  "components" : [
-                        {
-                              "type" : "Name",
-                              "name" : "Ball"
-                        },
-                        {
-                              "type" : "Transform",
-                              "position" : {
-                                    "x" : -1.458263,
-                                    "y" : 15.739317,
-                                    "z" : 45.048576
-                              },
-                              "rotation" : {
-                                    "w" : 1.000000,
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              },
-                              "scale" : {
-                                    "x" : 1.000000,
-                                    "y" : 1.000000,
-                                    "z" : 1.000000
-                              },
-                              "hasParent" : false,
-                              "relativePosition" : {
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              }
-                        },
-                        {
-                              "type" : "Model",
-                              "path" : "Box"
-                        },
-                        {
-                              "type" : "RigidBody",
-                              "isStatic" : false
-                        },
-                        {
-                              "type" : "SphereCollider",
-                              "radius" : 1.000000,
-                              "offset" : {
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              }
-                        }
-                  ],
-                  "scripts" : [
-                  ]
-            },
-            {
-                  "id" : 12,
+                  "id" : 1,
                   "components" : [
                         {
                               "type" : "Name",
@@ -270,8 +53,8 @@
                               "type" : "Transform",
                               "position" : {
                                     "x" : 0.000000,
-                                    "y" : 18.592985,
-                                    "z" : 18.715704
+                                    "y" : 0.000000,
+                                    "z" : 0.877602
                               },
                               "rotation" : {
                                     "w" : 1.000000,
@@ -295,633 +78,18 @@
                               "type" : "Light",
                               "position" : {
                                     "x" : 0.000000,
-                                    "y" : 18.592985,
-                                    "z" : 18.715704
+                                    "y" : 0.000000,
+                                    "z" : 0.877602
                               },
                               "color" : {
-                                    "x" : 0.818339,
-                                    "y" : 0.080882,
-                                    "z" : 0.916667,
+                                    "x" : 0.303922,
+                                    "y" : 0.426760,
+                                    "z" : 1.000000,
                                     "w" : 1.000000
                               },
                               "lightType" : 0,
-                              "attenuationRadius" : 33.706001,
-                              "intensity" : 1.000000
-                        }
-                  ],
-                  "scripts" : [
-                  ]
-            },
-            {
-                  "id" : 11,
-                  "components" : [
-                        {
-                              "type" : "Name",
-                              "name" : "Ball"
-                        },
-                        {
-                              "type" : "Transform",
-                              "position" : {
-                                    "x" : -17.406639,
-                                    "y" : 18.881006,
-                                    "z" : 9.670530
-                              },
-                              "rotation" : {
-                                    "w" : 1.000000,
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              },
-                              "scale" : {
-                                    "x" : 1.000000,
-                                    "y" : 1.000000,
-                                    "z" : 1.000000
-                              },
-                              "hasParent" : false,
-                              "relativePosition" : {
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              }
-                        },
-                        {
-                              "type" : "Model",
-                              "path" : "Box"
-                        },
-                        {
-                              "type" : "RigidBody",
-                              "isStatic" : false
-                        },
-                        {
-                              "type" : "SphereCollider",
-                              "radius" : 1.000000,
-                              "offset" : {
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              }
-                        }
-                  ],
-                  "scripts" : [
-                  ]
-            },
-            {
-                  "id" : 10,
-                  "components" : [
-                        {
-                              "type" : "Name",
-                              "name" : "Ball"
-                        },
-                        {
-                              "type" : "Transform",
-                              "position" : {
-                                    "x" : -17.406639,
-                                    "y" : 15.739316,
-                                    "z" : 12.631263
-                              },
-                              "rotation" : {
-                                    "w" : 1.000000,
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              },
-                              "scale" : {
-                                    "x" : 1.000000,
-                                    "y" : 1.000000,
-                                    "z" : 1.000000
-                              },
-                              "hasParent" : false,
-                              "relativePosition" : {
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              }
-                        },
-                        {
-                              "type" : "Model",
-                              "path" : "Box"
-                        },
-                        {
-                              "type" : "RigidBody",
-                              "isStatic" : false
-                        },
-                        {
-                              "type" : "SphereCollider",
-                              "radius" : 1.000000,
-                              "offset" : {
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              }
-                        }
-                  ],
-                  "scripts" : [
-                  ]
-            },
-            {
-                  "id" : 9,
-                  "components" : [
-                        {
-                              "type" : "Name",
-                              "name" : "Ball"
-                        },
-                        {
-                              "type" : "Transform",
-                              "position" : {
-                                    "x" : -17.406639,
-                                    "y" : 15.739316,
-                                    "z" : 2.976949
-                              },
-                              "rotation" : {
-                                    "w" : 1.000000,
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              },
-                              "scale" : {
-                                    "x" : 1.000000,
-                                    "y" : 1.000000,
-                                    "z" : 1.000000
-                              },
-                              "hasParent" : false,
-                              "relativePosition" : {
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              }
-                        },
-                        {
-                              "type" : "Model",
-                              "path" : "Box"
-                        },
-                        {
-                              "type" : "RigidBody",
-                              "isStatic" : false
-                        },
-                        {
-                              "type" : "SphereCollider",
-                              "radius" : 1.000000,
-                              "offset" : {
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              }
-                        }
-                  ],
-                  "scripts" : [
-                  ]
-            },
-            {
-                  "id" : 1048584,
-                  "parent" : 1,
-                  "components" : [
-                        {
-                              "type" : "Name",
-                              "name" : "Floor"
-                        },
-                        {
-                              "type" : "Transform",
-                              "position" : {
-                                    "x" : 28.251955,
-                                    "y" : -2.027281,
-                                    "z" : 26.775427
-                              },
-                              "rotation" : {
-                                    "w" : -0.307250,
-                                    "x" : 0.585072,
-                                    "y" : -0.424488,
-                                    "z" : -0.618950
-                              },
-                              "scale" : {
-                                    "x" : 41.653843,
-                                    "y" : 41.655117,
-                                    "z" : 41.654266
-                              },
-                              "hasParent" : true,
-                              "relativePosition" : {
-                                    "x" : 28.518251,
-                                    "y" : 7.200524,
-                                    "z" : 11.285752
-                              }
-                        },
-                        {
-                              "type" : "Model",
-                              "path" : "Quad"
-                        },
-                        {
-                              "type" : "RigidBody",
-                              "isStatic" : true
-                        },
-                        {
-                              "type" : "BoxCollider",
-                              "halfLengths" : {
-                                    "x" : 21.176535,
-                                    "y" : 20.851257,
-                                    "z" : 0.255063
-                              },
-                              "offset" : {
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              }
-                        }
-                  ],
-                  "scripts" : [
-                  ]
-            },
-            {
-                  "id" : 7,
-                  "parent" : 1,
-                  "components" : [
-                        {
-                              "type" : "Name",
-                              "name" : "Floor"
-                        },
-                        {
-                              "type" : "Transform",
-                              "position" : {
-                                    "x" : 1.018701,
-                                    "y" : -0.406671,
-                                    "z" : 42.279442
-                              },
-                              "rotation" : {
-                                    "w" : 0.524980,
-                                    "x" : -0.844408,
-                                    "y" : 0.090524,
-                                    "z" : -0.056359
-                              },
-                              "scale" : {
-                                    "x" : 41.653957,
-                                    "y" : 41.655285,
-                                    "z" : 41.654400
-                              },
-                              "hasParent" : true,
-                              "relativePosition" : {
-                                    "x" : 1.284997,
-                                    "y" : 8.821135,
-                                    "z" : 26.789768
-                              }
-                        },
-                        {
-                              "type" : "Model",
-                              "path" : "Quad"
-                        },
-                        {
-                              "type" : "RigidBody",
-                              "isStatic" : true
-                        },
-                        {
-                              "type" : "BoxCollider",
-                              "halfLengths" : {
-                                    "x" : 21.176535,
-                                    "y" : 20.851257,
-                                    "z" : 0.255063
-                              },
-                              "offset" : {
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              }
-                        }
-                  ],
-                  "scripts" : [
-                  ]
-            },
-            {
-                  "id" : 6,
-                  "parent" : 1,
-                  "components" : [
-                        {
-                              "type" : "Name",
-                              "name" : "Box"
-                        },
-                        {
-                              "type" : "Transform",
-                              "position" : {
-                                    "x" : -10.686481,
-                                    "y" : -5.316904,
-                                    "z" : 24.561609
-                              },
-                              "rotation" : {
-                                    "w" : 0.941493,
-                                    "x" : 0.000000,
-                                    "y" : -0.000000,
-                                    "z" : -0.337033
-                              },
-                              "scale" : {
-                                    "x" : 26.317591,
-                                    "y" : 2.805588,
-                                    "z" : 53.100300
-                              },
-                              "hasParent" : true,
-                              "relativePosition" : {
-                                    "x" : -10.420185,
-                                    "y" : 3.910901,
-                                    "z" : 9.071935
-                              }
-                        },
-                        {
-                              "type" : "Model",
-                              "path" : "Box"
-                        },
-                        {
-                              "type" : "RigidBody",
-                              "isStatic" : true
-                        },
-                        {
-                              "type" : "BoxCollider",
-                              "halfLengths" : {
-                                    "x" : 13.254108,
-                                    "y" : 1.282625,
-                                    "z" : 27.889286
-                              },
-                              "offset" : {
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              }
-                        }
-                  ],
-                  "scripts" : [
-                  ]
-            },
-            {
-                  "id" : 5,
-                  "components" : [
-                        {
-                              "type" : "Name",
-                              "name" : "Ball"
-                        },
-                        {
-                              "type" : "Transform",
-                              "position" : {
-                                    "x" : 6.500092,
-                                    "y" : 15.739316,
-                                    "z" : 10.743514
-                              },
-                              "rotation" : {
-                                    "w" : 1.000000,
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              },
-                              "scale" : {
-                                    "x" : 1.000000,
-                                    "y" : 1.000000,
-                                    "z" : 1.000000
-                              },
-                              "hasParent" : false,
-                              "relativePosition" : {
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              }
-                        },
-                        {
-                              "type" : "Model",
-                              "path" : "Box"
-                        },
-                        {
-                              "type" : "RigidBody",
-                              "isStatic" : false
-                        },
-                        {
-                              "type" : "SphereCollider",
-                              "radius" : 1.000000,
-                              "offset" : {
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              }
-                        }
-                  ],
-                  "scripts" : [
-                  ]
-            },
-            {
-                  "id" : 4,
-                  "components" : [
-                        {
-                              "type" : "Name",
-                              "name" : "Box"
-                        },
-                        {
-                              "type" : "Transform",
-                              "position" : {
-                                    "x" : 6.525582,
-                                    "y" : -7.673102,
-                                    "z" : 16.290716
-                              },
-                              "rotation" : {
-                                    "w" : 0.660629,
-                                    "x" : 0.131390,
-                                    "y" : -0.723574,
-                                    "z" : 0.150818
-                              },
-                              "scale" : {
-                                    "x" : 2.235374,
-                                    "y" : 1.157450,
-                                    "z" : 14.368933
-                              },
-                              "hasParent" : false,
-                              "relativePosition" : {
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              }
-                        },
-                        {
-                              "type" : "Model",
-                              "path" : "Box"
-                        },
-                        {
-                              "type" : "RigidBody",
-                              "isStatic" : true
-                        },
-                        {
-                              "type" : "BoxCollider",
-                              "halfLengths" : {
-                                    "x" : 1.164883,
-                                    "y" : 0.660550,
-                                    "z" : 7.202000
-                              },
-                              "offset" : {
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              }
-                        }
-                  ],
-                  "scripts" : [
-                  ]
-            },
-            {
-                  "id" : 3,
-                  "components" : [
-                        {
-                              "type" : "Name",
-                              "name" : "Box"
-                        },
-                        {
-                              "type" : "Transform",
-                              "position" : {
-                                    "x" : 5.809769,
-                                    "y" : 28.612391,
-                                    "z" : 9.976506
-                              },
-                              "rotation" : {
-                                    "w" : 0.999996,
-                                    "x" : 0.000000,
-                                    "y" : -0.002700,
-                                    "z" : 0.000000
-                              },
-                              "scale" : {
-                                    "x" : 1.999684,
-                                    "y" : 2.000000,
-                                    "z" : 1.999684
-                              },
-                              "hasParent" : false,
-                              "relativePosition" : {
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              }
-                        },
-                        {
-                              "type" : "Model",
-                              "path" : "Box"
-                        },
-                        {
-                              "type" : "RigidBody",
-                              "isStatic" : false
-                        },
-                        {
-                              "type" : "BoxCollider",
-                              "halfLengths" : {
-                                    "x" : 1.000000,
-                                    "y" : 1.000000,
-                                    "z" : 1.000000
-                              },
-                              "offset" : {
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              }
-                        }
-                  ],
-                  "scripts" : [
-                  ]
-            },
-            {
-                  "id" : 2,
-                  "parent" : 1,
-                  "components" : [
-                        {
-                              "type" : "Name",
-                              "name" : "Quad"
-                        },
-                        {
-                              "type" : "Transform",
-                              "position" : {
-                                    "x" : 18.610458,
-                                    "y" : -2.724821,
-                                    "z" : 6.501449
-                              },
-                              "rotation" : {
-                                    "w" : 0.845776,
-                                    "x" : -0.487265,
-                                    "y" : -0.214197,
-                                    "z" : 0.036822
-                              },
-                              "scale" : {
-                                    "x" : 52.292709,
-                                    "y" : 26.330120,
-                                    "z" : 10.537630
-                              },
-                              "hasParent" : true,
-                              "relativePosition" : {
-                                    "x" : 18.876755,
-                                    "y" : 6.502984,
-                                    "z" : -8.988226
-                              }
-                        },
-                        {
-                              "type" : "Model",
-                              "path" : "Quad"
-                        },
-                        {
-                              "type" : "RigidBody",
-                              "isStatic" : true
-                        },
-                        {
-                              "type" : "BoxCollider",
-                              "halfLengths" : {
-                                    "x" : 26.031507,
-                                    "y" : 13.303115,
-                                    "z" : 0.325084
-                              },
-                              "offset" : {
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              }
-                        }
-                  ],
-                  "scripts" : [
-                  ]
-            },
-            {
-                  "id" : 1,
-                  "components" : [
-                        {
-                              "type" : "Name",
-                              "name" : "Floor"
-                        },
-                        {
-                              "type" : "Transform",
-                              "position" : {
-                                    "x" : -0.266296,
-                                    "y" : -9.227805,
-                                    "z" : 15.489675
-                              },
-                              "rotation" : {
-                                    "w" : 0.706985,
-                                    "x" : -0.707229,
-                                    "y" : -0.000000,
-                                    "z" : 0.000000
-                              },
-                              "scale" : {
-                                    "x" : 41.654045,
-                                    "y" : 41.654072,
-                                    "z" : 41.654072
-                              },
-                              "hasParent" : false,
-                              "relativePosition" : {
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              }
-                        },
-                        {
-                              "type" : "Model",
-                              "path" : "Quad"
-                        },
-                        {
-                              "type" : "RigidBody",
-                              "isStatic" : true
-                        },
-                        {
-                              "type" : "BoxCollider",
-                              "halfLengths" : {
-                                    "x" : 22.405973,
-                                    "y" : 22.791241,
-                                    "z" : 0.255063
-                              },
-                              "offset" : {
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : 0.000000
-                              }
+                              "attenuationRadius" : 7.000000,
+                              "intensity" : 2.000000
                         }
                   ],
                   "scripts" : [
@@ -932,25 +100,25 @@
                   "components" : [
                         {
                               "type" : "Name",
-                              "name" : "Back wall"
+                              "name" : "Quad"
                         },
                         {
                               "type" : "Transform",
                               "position" : {
                                     "x" : 0.000000,
-                                    "y" : 6.595312,
+                                    "y" : 0.000000,
                                     "z" : 0.000000
                               },
                               "rotation" : {
-                                    "w" : 0.997043,
-                                    "x" : -0.076846,
-                                    "y" : -0.000000,
+                                    "w" : 1.000000,
+                                    "x" : 0.000000,
+                                    "y" : 0.000000,
                                     "z" : 0.000000
                               },
                               "scale" : {
-                                    "x" : 44.917202,
-                                    "y" : 32.657307,
-                                    "z" : 30.619003
+                                    "x" : 1.000000,
+                                    "y" : 1.000000,
+                                    "z" : 1.000000
                               },
                               "hasParent" : false,
                               "relativePosition" : {
@@ -962,23 +130,6 @@
                         {
                               "type" : "Model",
                               "path" : "Quad"
-                        },
-                        {
-                              "type" : "RigidBody",
-                              "isStatic" : true
-                        },
-                        {
-                              "type" : "BoxCollider",
-                              "halfLengths" : {
-                                    "x" : 22.851933,
-                                    "y" : 16.505205,
-                                    "z" : 1.682927
-                              },
-                              "offset" : {
-                                    "x" : 0.000000,
-                                    "y" : 0.000000,
-                                    "z" : -1.700000
-                              }
                         }
                   ],
                   "scripts" : [

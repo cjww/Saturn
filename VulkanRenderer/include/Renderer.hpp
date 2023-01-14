@@ -1,7 +1,5 @@
 #pragma once
 
-#define SA_RENDER_VALIDATION_ENABLE 1
-
 #include "RenderProgramFactory.hpp"
 
 #include "RenderContext.hpp"
@@ -55,11 +53,11 @@ namespace sa {
 		std::queue<DataTransfer> m_transferQueue;
 		std::mutex m_transferMutex;
 
-
+		const bool c_useVaildationLayers =
 #if SA_RENDER_VALIDATION_ENABLE
-		const bool c_useVaildationLayers = true;
+		true;
 #else
-		const bool c_useVaildationLayers = false;
+		false;
 #endif
 
 
@@ -115,6 +113,8 @@ namespace sa {
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, DynamicBuffer& buffer);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture, ResourceID sampler);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture);
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const DynamicTexture& texture, ResourceID sampler);
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const DynamicTexture& texture);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement = 0);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, ResourceID sampler);
 

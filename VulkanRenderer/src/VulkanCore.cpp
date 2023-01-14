@@ -331,7 +331,7 @@ namespace sa {
 		};
 		m_imGuiDescriptorPool = m_device.createDescriptorPool(poolInfo);
 		
-
+		
 		ImGui_ImplVulkan_InitInfo info = {
 			.Instance = m_instance,
 			.PhysicalDevice = m_physicalDevice,
@@ -342,7 +342,7 @@ namespace sa {
 			.DescriptorPool = m_imGuiDescriptorPool,
 			.Subpass = subpass,
 			.MinImageCount = 2,
-			.ImageCount = (uint32_t)m_queues.size(),
+			.ImageCount = (uint32_t)std::max((int)m_queues.size(), 2),
 			.MSAASamples = VK_SAMPLE_COUNT_1_BIT,
 			.Allocator = nullptr,
 			.CheckVkResultFn = [](VkResult result) { checkError((vk::Result)result, "Failed to initialize ImGui with vulkan", false); },

@@ -57,7 +57,7 @@ namespace sa {
 }
 
 
-#ifdef SA_PROFILER_ENABLE
+#if SA_PROFILER_ENABLE
 #define SA_PROFILER_BEGIN_SESSION_PATH(filepath) sa::Profiler::get().beginSession(filepath)
 #define SA_PROFILER_BEGIN_SESSION() sa::Profiler::get().beginSession()
 #define SA_PROFILER_END_SESSION() sa::Profiler::get().endSession()

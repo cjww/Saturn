@@ -19,11 +19,13 @@
 
 #include "ECS\Entity.h"
 #include "ECS/Components.h"
+
+#include "Tools/Profiler.h"
+
+
 //--------------------------------------------------------------------------------------
 // AssetManager is the class that will hold all assets. 
 //--------------------------------------------------------------------------------------
-
-
 namespace sa {
 
 	struct Mesh {

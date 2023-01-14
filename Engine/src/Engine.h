@@ -14,8 +14,9 @@
 #include "Tools\utils.h"
 #include "ScriptManager.h"
 
-#include <RenderWindow.hpp>
+#include "Tools/Profiler.h"
 
+#include <RenderWindow.hpp>
 
 namespace sa {
 

@@ -4,11 +4,8 @@
 
 class GameView : public EditorModule {
 private:
-	sa::Texture2D m_colorTexture;
+	sa::DynamicTexture2D m_colorTexture;
 	sa::RenderTarget m_renderTarget;
-
-	std::vector<sa::Texture2D> m_bloomMipTextures;
-	std::vector<sa::Texture2D> m_bufferMipTextures;
 
 	int m_mipLevel;
 

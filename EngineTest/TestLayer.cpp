@@ -1,6 +1,5 @@
 
 #include "TestLayer.h"
-#define SA_PROFILER_ENABLE
 #include "Tools\Profiler.h"
 
 namespace sa {
@@ -49,12 +48,13 @@ namespace sa {
 		m_camera.setPosition({ 0, 0, -6 });
 		m_camera.lookAt({ 0, 0, 0 });
 		
-		m_colorTexture = Texture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, window.getCurrentExtent());
+		m_colorTexture = DynamicTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, window.getCurrentExtent());
 		
 		m_renderTarget.framebuffer = m_pEngine->getRenderPipeline().getRenderTechnique()->createColorFramebuffer(m_colorTexture);
 
 		m_pEngine->on<engine_event::OnRender>([&](engine_event::OnRender& e, Engine& engine) {
 			e.pRenderPipeline->render(&m_camera, &m_renderTarget);
+			m_colorTexture.swap();
 		});
 
 		Entity light = m_pEngine->getCurrentScene()->createEntity();
@@ -70,16 +70,20 @@ namespace sa {
 		static float timer = 0.0f;
 		static bool spawned = false;
 		timer += dt;
+		static Entity box;
 		if (timer > 2 && !spawned) {
 			spawned = true;
-			Entity box = m_pEngine->getCurrentScene()->createEntity();
+			box = m_pEngine->getCurrentScene()->createEntity();
 
 			box.addComponent<comp::Transform>();
 			box.addComponent<comp::Model>()->modelID = AssetManager::get().loadBox();
 
 		}
-		std::queue<Entity> entitiesDone;
 
+		if(spawned)
+			box.getComponent<comp::Transform>()->position = glm::vec3(1, 0, 0) * sin(timer * 4) * 2.f;
+
+		std::queue<Entity> entitiesDone;
 		for (const auto& [entity, progress] : m_completions) {
 			if (m_infoClock.getElapsedTime() > 0.5f) {
 				m_infoClock.restart();
@@ -102,7 +106,7 @@ namespace sa {
 		
 		if (ImGui::Begin("w")) {
 			if (m_renderTarget.bloomData.isInitialized) {
-				ImGui::Image(m_renderTarget.bloomData.outputTexture, ImVec2(200, 200));
+				ImGui::Image(m_renderTarget.outputTexture, ImVec2(200, 200));
 			}
 
 			ImGui::End();

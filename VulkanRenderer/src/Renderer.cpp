@@ -293,8 +293,15 @@ namespace sa {
 	}
 	
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, DynamicBuffer& buffer) {
+		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		for (uint32_t i = 0; i < buffer.getBufferCount(); i++) {
-			updateDescriptorSet(descriptorSet, binding, buffer.getBuffer(i));
+			auto& b = buffer.getBuffer(i);
+			const DeviceBuffer* pDeviceBuffer = (const DeviceBuffer*)b;
+			vk::BufferView* pView = nullptr;
+			if (buffer.getType() == BufferType::UNIFORM_TEXEL || buffer.getType() == BufferType::STORAGE_TEXEL) {
+				pView = b.getView();
+			}
+			pDescriptorSet->update(binding, pDeviceBuffer->buffer, pDeviceBuffer->size, 0, pView, i);
 		}
 	}
 
@@ -317,6 +324,33 @@ namespace sa {
 		}
 
 		pDescriptorSet->update(binding, *texture.getView(), layout, nullptr, UINT32_MAX);
+	}
+
+	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const DynamicTexture& texture, ResourceID sampler) {
+		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
+
+		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		if ((texture.getTypeFlags() & sa::TextureTypeFlagBits::STORAGE) == sa::TextureTypeFlagBits::STORAGE) {
+			layout = vk::ImageLayout::eGeneral;
+		}
+
+		for (uint32_t i = 0; i < texture.getTextureCount(); i++) {
+			pDescriptorSet->update(binding, *texture.getView(), layout, pSampler, i);
+		}
+	}
+
+	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const DynamicTexture& texture) {
+		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+
+		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		if ((texture.getTypeFlags() & sa::TextureTypeFlagBits::STORAGE) == sa::TextureTypeFlagBits::STORAGE) {
+			layout = vk::ImageLayout::eGeneral;
+		}
+
+		for (uint32_t i = 0; i < texture.getTextureCount(); i++) {
+			pDescriptorSet->update(binding, *texture.getView(), layout, nullptr, i);
+		}
 	}
 
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement) {

@@ -68,14 +68,15 @@ namespace sa {
 
 			// Initialize
 			//Textures
-			bd.bloomTexture = Texture2D(TextureTypeFlagBits::STORAGE | TextureTypeFlagBits::SAMPLED, extent, 1U, 6U);
+			bd.bloomTexture = DynamicTexture2D(TextureTypeFlagBits::STORAGE | TextureTypeFlagBits::SAMPLED, extent, 1U, 6U);
 			bd.bloomMipTextures = bd.bloomTexture.createMipLevelTextures();
 
-			bd.bufferTexture = Texture2D(TextureTypeFlagBits::STORAGE | TextureTypeFlagBits::SAMPLED, extent, 1U, bd.bloomMipTextures.size() - 1);
+			bd.bufferTexture = DynamicTexture2D(TextureTypeFlagBits::STORAGE | TextureTypeFlagBits::SAMPLED, extent, 1U, bd.bloomMipTextures.size() - 1);
 			bd.bufferMipTextures = bd.bufferTexture.createMipLevelTextures();
 
-			bd.outputTexture = Texture2D(TextureTypeFlagBits::STORAGE | TextureTypeFlagBits::SAMPLED, tex.getExtent());
-			
+			//bd.outputTexture = DynamicTexture2D(TextureTypeFlagBits::STORAGE | TextureTypeFlagBits::SAMPLED, tex.getExtent(), sa::FormatPrecisionFlagBits::e8Bit, sa::FormatDimensionFlagBits::e4, sa::FormatTypeFlagBits::UNORM);
+			bd.outputTexture = DynamicTexture2D(TextureTypeFlagBits::STORAGE | TextureTypeFlagBits::SAMPLED, tex.getExtent());
+
 			// DescriptorSets
 			bd.filterDescriptorSet = m_renderer.allocateDescriptorSet(m_filterPipeline, 0);
 			
@@ -89,10 +90,12 @@ namespace sa {
 				bd.upsampleDescriptorSets[i] = m_renderer.allocateDescriptorSet(m_upsamplePipeline, 0);
 			}
 			bd.compositeDescriptorSet = m_renderer.allocateDescriptorSet(m_compositePipeline, 0);
-
-			context.transitionTexture(bd.bloomTexture, sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_WRITE);
-			context.transitionTexture(bd.bufferTexture, sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_WRITE);
-			context.transitionTexture(bd.outputTexture, sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_WRITE);
+			
+			for (int i = 0; i < bd.bloomTexture.getTextureCount(); i++) {
+				context.transitionTexture(bd.bloomTexture.getTexture(i), sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_WRITE);
+				context.transitionTexture(bd.bufferTexture.getTexture(i), sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_WRITE);
+				context.transitionTexture(bd.outputTexture.getTexture(i), sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_WRITE);
+			}
 		}
 		
 
@@ -101,7 +104,7 @@ namespace sa {
 
 		// Filter
 		context.updateDescriptorSet(bd.filterDescriptorSet, 0, tex, m_sampler);
-		context.updateDescriptorSet(bd.filterDescriptorSet, 1, bd.bloomMipTextures[0]);
+		context.updateDescriptorSet(bd.filterDescriptorSet, 1, (Texture)bd.bloomMipTextures[0]);
 		
 		context.bindPipeline(m_filterPipeline);
 		context.bindDescriptorSet(bd.filterDescriptorSet, m_filterPipeline);
@@ -117,8 +120,8 @@ namespace sa {
 			threadY += 1 * threadY % 2;
 			threadY = threadY >> 1;
 	
-			context.updateDescriptorSet(bd.blurDescriptorSets[i], 0, bd.bloomMipTextures[i]);
-			context.updateDescriptorSet(bd.blurDescriptorSets[i], 1, bd.bloomMipTextures[i + 1]);
+			context.updateDescriptorSet(bd.blurDescriptorSets[i], 0, (Texture)bd.bloomMipTextures[i]);
+			context.updateDescriptorSet(bd.blurDescriptorSets[i], 1, (Texture)bd.bloomMipTextures[i + 1]);
 
 			context.bindDescriptorSet(bd.blurDescriptorSets[i], m_blurComputePipeline);
 			context.dispatch(threadX, threadY, 1);
@@ -135,7 +138,7 @@ namespace sa {
 			
 			context.updateDescriptorSet(bd.upsampleDescriptorSets[i], 0, smallImage);
 			context.updateDescriptorSet(bd.upsampleDescriptorSets[i], 1, bigImage);
-			context.updateDescriptorSet(bd.upsampleDescriptorSets[i], 2, bd.bufferMipTextures[i]);
+			context.updateDescriptorSet(bd.upsampleDescriptorSets[i], 2, (Texture)bd.bufferMipTextures[i]);
 
 			context.bindDescriptorSet(bd.upsampleDescriptorSets[i], m_upsamplePipeline);
 			context.dispatch(threadX, threadY, 1);
@@ -153,15 +156,26 @@ namespace sa {
 		// Composite + Tonemap
 		context.bindPipeline(m_compositePipeline);
 		context.updateDescriptorSet(bd.compositeDescriptorSet, 0, tex, m_sampler);
-		context.updateDescriptorSet(bd.compositeDescriptorSet, 1, bd.bufferMipTextures[0]);
-		context.updateDescriptorSet(bd.compositeDescriptorSet, 2, bd.bufferMipTextures[0]);
+		context.updateDescriptorSet(bd.compositeDescriptorSet, 1, (Texture)bd.bufferMipTextures[0]);
+		context.updateDescriptorSet(bd.compositeDescriptorSet, 2, (Texture)bd.bufferMipTextures[0]);
 
-		context.updateDescriptorSet(bd.compositeDescriptorSet, 3, bd.outputTexture);
+		context.updateDescriptorSet(bd.compositeDescriptorSet, 3, (Texture)bd.outputTexture);
 
 		context.bindDescriptorSet(bd.compositeDescriptorSet, m_compositePipeline);
 		context.dispatch(threadX, threadY, 1);
 
 		m_pRenderTechnique->drawData.finalTexture = bd.outputTexture;
+		pRenderTarget->outputTexture = bd.outputTexture;
+
+		for (auto& image : bd.bloomMipTextures) {
+			image.swap();
+		}
+		for (auto& image : bd.bufferMipTextures) {
+			image.swap();
+		}
+		bd.bloomTexture.swap();
+		bd.bufferTexture.swap();
+		bd.outputTexture.swap();
 
 	}
 

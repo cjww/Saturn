@@ -14,8 +14,6 @@
 #include "glm\gtc\matrix_transform.hpp"
 #include "glm/gtx/transform.hpp"
 
-#define SA_DEBUG_LOG_ENABLE 1
-
 #include <Renderer.hpp>
 #include <RenderWindow.hpp>
 #include <Tools\Logger.hpp>

@@ -52,6 +52,8 @@ namespace sa {
 		void waitForFrame();
 
 		std::vector<vk::ImageView> getImageViews() const;
+		vk::Image getImage(uint32_t imageIndex) const;
+
 		Extent getExtent() const;
 		vk::Format getFormat() const;
 

@@ -3,6 +3,7 @@
 #include "IRenderTechnique.h"
 #include "RenderWindow.hpp"
 #include "IRenderLayer.h"
+#include "Tools/Profiler.h"
 
 namespace sa {
 
