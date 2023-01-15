@@ -127,10 +127,10 @@ namespace sa {
 		
 
 		m_device.resetFences(m_inFlightFences[m_frameIndex]);
-
+		
 		// Submit
 		m_commandBufferSet.submit(m_inFlightFences[m_frameIndex], m_renderFinishedSemaphore[m_frameIndex], m_imageAvailableSemaphore[m_frameIndex]);
-
+		
 		// Present
 		m_commandBufferSet.present(m_renderFinishedSemaphore[m_frameIndex], m_swapchain, m_imageIndex);
 

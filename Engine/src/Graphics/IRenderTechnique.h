@@ -30,7 +30,7 @@ namespace sa {
 
 		} bloomData;
 
-		Texture2D outputTexture;
+		Texture outputTexture;
 	};
 
 

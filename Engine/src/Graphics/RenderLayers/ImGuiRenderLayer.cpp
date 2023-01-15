@@ -34,6 +34,7 @@ namespace sa {
 	}
 
 	void ImGuiRenderLayer::postRender(RenderContext& context) {
+		SA_PROFILE_FUNCTION();
 		m_pRenderTechnique->drawData.finalTexture = m_outputTexture;
 		context.beginRenderProgram(m_imGuiRenderProgram, m_imGuiFramebuffer, sa::SubpassContents::DIRECT);
 		context.renderImGuiFrame();

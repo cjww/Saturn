@@ -218,7 +218,7 @@ void SceneView::onImGui() {
 		if (availSize != m_displayedSize) {
 			m_camera.setAspectRatio(availSize.x / availSize.y);
 		}
-		
+
 		ImGui::Image((sa::Texture)m_renderTarget.outputTexture, imAvailSize);
 		ImVec2 imageMin = ImGui::GetItemRectMin();
 		ImVec2 imageSize = ImGui::GetItemRectSize();
@@ -400,9 +400,9 @@ void SceneView::onImGui() {
 				ImGui::PushStyleColor(ImGuiCol_PlotLines, ImVec4(1.f, 1.f, 1.f, 1.f));
 				
 				static float scale = 70.f;
-				ImGui::PlotLines("", m_frameTimeGraph.data(), m_frameTimeGraph.size(), 0, "Frame Time", 0.f, scale, ImVec2(300, 50));
+				ImGui::PlotLines("##FrameTimePlot", m_frameTimeGraph.data(), m_frameTimeGraph.size(), 0, "Frame Time", 0.f, scale, ImVec2(300, 50));
 				ImGui::SameLine();
-				ImGui::VSliderFloat("", ImVec2(15, 50), &scale, 1.f, 100.f, "%.0f");
+				ImGui::VSliderFloat("Scale", ImVec2(15, 50), &scale, 1.f, 100.f, "%.0f");
 
 				ImGui::PopStyleColor();
 				ImGui::Text("Frame time: %f ms", m_statistics.frameTime * 1000);
@@ -410,7 +410,7 @@ void SceneView::onImGui() {
 			}
 			if (ImGui::CollapsingHeader("Memory")) {
 				ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(1.f, 1.f, 1.f, 1.f));
-				ImGui::PlotHistogram("", m_gpuMemoryData.data(), m_gpuMemoryData.size(), 0, "GPU Memory usage", 0.f, m_statistics.totalGPUMemoryBudget, ImVec2(300, 50));
+				ImGui::PlotHistogram("##VRAMPlot", m_gpuMemoryData.data(), m_gpuMemoryData.size(), 0, "GPU Memory usage", 0.f, m_statistics.totalGPUMemoryBudget, ImVec2(300, 50));
 				ImGui::PopStyleColor();
 			
 				ImGui::Text("GPU Memory Heaps");

@@ -94,15 +94,13 @@ namespace sa {
 	RenderContext RenderPipeline::beginScene(Scene* pScene) {
 		SA_PROFILE_FUNCTION();
 
-		m_pWindow->waitForFrame();
+		m_context = m_pWindow->beginFrame();
+		if (!m_context)
+			return {};
 
 		m_pRenderTechnique->updateLights(pScene);
 		// collect meshes
 		m_pRenderTechnique->collectMeshes(pScene);
-
-		m_context = m_pWindow->beginFrame();
-		if (!m_context)
-			return {};
 	
 		m_pRenderTechnique->updateData(m_context);
 	
@@ -132,18 +130,22 @@ namespace sa {
 			layer->postRender(m_context);
 		}
 
-		// render finalTextuer to swapchain
-		//m_context.copyImageToSwapchain(m_pRenderTechnique->drawData.finalTexture, m_pWindow->getSwapchainID());
-		m_context.updateDescriptorSet(m_swapchainDescriptorSet, 0, m_pRenderTechnique->drawData.finalTexture, m_sampler);
-		m_context.beginRenderProgram(m_swapchainRenderTarget.renderProgram, m_swapchainRenderTarget.framebuffer, SubpassContents::DIRECT);
-		m_context.bindPipeline(m_swapchainRenderTarget.pipeline);
-		m_context.bindDescriptorSet(m_swapchainDescriptorSet, m_swapchainRenderTarget.pipeline);
-		m_context.draw(6, 1);
-		m_context.endRenderProgram(m_swapchainRenderTarget.renderProgram);
-		/*
-		*/
-
-		m_pWindow->display();
+		{
+			SA_PROFILE_SCOPE("Render To Swapchain");
+			// render finalTextuer to swapchain
+			//m_context.copyImageToSwapchain(m_pRenderTechnique->drawData.finalTexture, m_pWindow->getSwapchainID());
+			m_context.updateDescriptorSet(m_swapchainDescriptorSet, 0, m_pRenderTechnique->drawData.finalTexture, m_sampler);
+			m_context.beginRenderProgram(m_swapchainRenderTarget.renderProgram, m_swapchainRenderTarget.framebuffer, SubpassContents::DIRECT);
+			m_context.bindPipeline(m_swapchainRenderTarget.pipeline);
+			m_context.bindDescriptorSet(m_swapchainDescriptorSet, m_swapchainRenderTarget.pipeline);
+			m_context.draw(6, 1);
+			m_context.endRenderProgram(m_swapchainRenderTarget.renderProgram);
+		}
+		
+		{
+			SA_PROFILE_SCOPE("Display");
+			m_pWindow->display();
+		}
 	}
 
 	IRenderTechnique* RenderPipeline::getRenderTechnique() const {
