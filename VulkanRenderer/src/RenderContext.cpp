@@ -319,6 +319,29 @@ namespace sa {
 			imageBarrier);
 	}
 
+	void RenderContext::barrierColorCompute(const Buffer& buffer) {
+
+		const DeviceBuffer* pBuffer = (const DeviceBuffer*)buffer;
+		
+		vk::BufferMemoryBarrier bufferBarrier {
+			.srcAccessMask = vk::AccessFlagBits::eShaderWrite,
+			.dstAccessMask = vk::AccessFlagBits::eShaderRead,
+			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.buffer = pBuffer->buffer,
+			.offset = 0,
+			.size = pBuffer->size,
+		};
+
+		m_pCommandBufferSet->getBuffer().pipelineBarrier(
+			vk::PipelineStageFlagBits::eComputeShader,
+			vk::PipelineStageFlagBits::eFragmentShader,
+			(vk::DependencyFlags)0,
+			nullptr,
+			bufferBarrier,
+			nullptr);
+	}
+
 	void RenderContext::transitionTexture(const Texture& texture, Transition src, Transition dst) {
 
 		vk::AccessFlags srcAccess;

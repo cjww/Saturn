@@ -38,6 +38,18 @@ namespace sa{
 		return m_buffers.at(index);
 	}
 
+	uint32_t DynamicBuffer::getBufferIndex() const {
+		return m_currentBufferIndex;
+	}
+
+	uint32_t DynamicBuffer::getPreviousBufferIndex() const {
+		return (m_currentBufferIndex + m_buffers.size() - 1) % m_buffers.size();
+	}
+
+	uint32_t DynamicBuffer::getNextBufferIndex() const {
+		return (m_currentBufferIndex + 1U) % (uint32_t)m_buffers.size();
+	}
+
 	void DynamicBuffer::swap() {
 		m_currentBufferIndex = (m_currentBufferIndex + 1) % static_cast<uint32_t>(m_buffers.size());
 	}

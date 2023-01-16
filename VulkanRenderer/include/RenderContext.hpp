@@ -140,7 +140,10 @@ namespace sa {
 		void dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
 
 		void barrierColorAttachment(const Texture& texture);
+
 		void barrierColorCompute(const Texture& texture);
+		void barrierColorCompute(const Buffer& buffer);
+		
 
 		void transitionTexture(const Texture& texture, Transition src, Transition dst);
 

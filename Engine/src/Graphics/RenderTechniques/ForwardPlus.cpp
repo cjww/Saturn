@@ -124,7 +124,7 @@ namespace sa {
 		size_t totalTileCount = m_tileCount.x * m_tileCount.y;
 
 		if (m_lightIndexBuffer.isValid()) m_lightIndexBuffer.destroy();
-		m_lightIndexBuffer = m_renderer.createBuffer(BufferType::STORAGE, sizeof(uint32_t) * MAX_LIGHTS_PER_TILE * totalTileCount);
+		m_lightIndexBuffer = m_renderer.createDynamicBuffer(BufferType::STORAGE, sizeof(uint32_t) * MAX_LIGHTS_PER_TILE * totalTileCount);
 	}
 
 
@@ -381,6 +381,10 @@ namespace sa {
 
 		context.updateDescriptorSet(m_sceneDescriptorSet, 6, m_textures);
 
+		
+		//context.updateDescriptorSet(m_lightCullingDescriptorSet, 0, m_depthTexture.getTexture(m_depthTexture.getTextureIndex()), m_linearSampler);
+
+		context.updateDescriptorSet(m_lightCullingDescriptorSet, 1, m_lightIndexBuffer);
 		context.updateDescriptorSet(m_lightCullingDescriptorSet, 2, m_lightBuffer);
 
 	}
@@ -415,6 +419,7 @@ namespace sa {
 
 		context.endRenderProgram(m_depthPreRenderProgram);
 
+
 		// Light culling
 		context.bindPipeline(m_lightCullingPipeline);
 		context.bindDescriptorSet(m_lightCullingDescriptorSet, m_lightCullingPipeline);
@@ -424,6 +429,7 @@ namespace sa {
 
 		context.dispatch(m_tileCount.x, m_tileCount.y, 1);
 
+		//context.barrierColorCompute(m_lightBuffer);
 		// TODO generate shadowMaps
 
 
@@ -456,6 +462,7 @@ namespace sa {
 
 		context.endRenderProgram(m_colorRenderProgram);
 
+		
 		/*
 		context.beginRenderProgram(m_debugLightHeatmapRenderProgram, m_debugLightHeatmapFramebuffer, SubpassContents::DIRECT);
 		context.bindPipeline(m_debugLightHeatmapPipeline);
@@ -470,12 +477,15 @@ namespace sa {
 	void ForwardPlus::endRender(RenderContext& context) {
 		
 		m_lightBuffer.swap();
+		m_lightIndexBuffer.swap();
 		m_vertexBuffer.swap();
 		m_indexBuffer.swap();
 		m_indirectIndexedBuffer.swap();
 		m_objectBuffer.swap();
 		m_materialBuffer.swap();
 		m_materialIndicesBuffer.swap();
+		
+		m_depthTexture.swap();
 	}
 
 	ResourceID ForwardPlus::createColorFramebuffer(const DynamicTexture2D& outputTexture) {

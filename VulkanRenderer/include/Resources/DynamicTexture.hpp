@@ -67,6 +67,11 @@ namespace sa {
 		const Texture& getTexture() const;
 		const Texture& getTexture(uint32_t index) const;
 
+		uint32_t getTextureIndex() const;
+		uint32_t getPreviousTextureIndex() const;
+		uint32_t getNextTextureIndex() const;
+
+
 		uint32_t getTextureCount() const;
 
 		operator const Texture() const;

@@ -34,6 +34,18 @@ namespace sa {
 		return m_textures[index].texture;
 	}
 
+	uint32_t DynamicTexture::getTextureIndex() const {
+		return m_currentTextureIndex;
+	}
+
+	uint32_t DynamicTexture::getPreviousTextureIndex() const {
+		return (m_currentTextureIndex + m_textures.size() - 1) % m_textures.size();
+	}
+
+	uint32_t DynamicTexture::getNextTextureIndex() const {
+		return (m_currentTextureIndex + 1) % (uint32_t)m_textures.size();
+	}
+
 	uint32_t DynamicTexture::getTextureCount() const {
 		return m_textures.size();
 	}

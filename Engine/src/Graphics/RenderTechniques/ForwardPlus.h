@@ -45,7 +45,7 @@ namespace sa {
 		
 		
 		Vector2u m_tileCount;
-		Buffer m_lightIndexBuffer;
+		DynamicBuffer m_lightIndexBuffer;
 
 		ResourceID m_debugLightHeatmapRenderProgram = NULL_RESOURCE;
 		ResourceID m_debugLightHeatmapPipeline = NULL_RESOURCE;
