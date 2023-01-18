@@ -13,6 +13,7 @@ namespace sa {
 		
 		m_sampler = m_renderer.createSampler(sa::FilterMode::LINEAR);
 
+		m_stackSize = 0;
 	}
 
 	void BloomRenderLayer::cleanup() {
@@ -110,6 +111,10 @@ namespace sa {
 				m_renderer.updateDescriptorSet(bd.upsampleDescriptorSets[i], 0, smallImage);
 				m_renderer.updateDescriptorSet(bd.upsampleDescriptorSets[i], 1, bigImage);
 				m_renderer.updateDescriptorSet(bd.upsampleDescriptorSets[i], 2, bd.bufferMipTextures[i]);
+				if (i > 0) {
+					smallImage = bd.bufferMipTextures[i];
+					bigImage = bd.bloomMipTextures[i - 1];
+				}
 			}
 
 			m_renderer.updateDescriptorSet(bd.compositeDescriptorSet, 0, *tex, m_sampler);
@@ -122,11 +127,10 @@ namespace sa {
 
 		uint32_t threadX = std::ceil(extent.width / 32.f);
 		uint32_t threadY = std::ceil(extent.height / 32.f);
+		m_threadCountStack[m_stackSize++] = { threadX << 1, threadY << 1 };
+		m_threadCountStack[m_stackSize++] = { threadX, threadY };
 
 		// Filter
-		//context.updateDescriptorSet(bd.filterDescriptorSet, 0, (Texture)*tex, m_sampler);
-		//context.updateDescriptorSet(bd.filterDescriptorSet, 1, (Texture)bd.bloomMipTextures[0]);
-
 		context.bindPipeline(m_filterPipeline);
 		context.bindDescriptorSet(bd.filterDescriptorSet, m_filterPipeline);
 		context.dispatch(threadX, threadY, 1);
@@ -140,9 +144,7 @@ namespace sa {
 
 			threadY += 1 * threadY % 2;
 			threadY = threadY >> 1;
-	
-			//context.updateDescriptorSet(bd.blurDescriptorSets[i], 0, (Texture)bd.bloomMipTextures[i]);
-			//context.updateDescriptorSet(bd.blurDescriptorSets[i], 1, (Texture)bd.bloomMipTextures[i + 1]);
+			m_threadCountStack[m_stackSize++] = { threadX, threadY };
 
 			context.bindDescriptorSet(bd.blurDescriptorSets[i], m_blurComputePipeline);
 			context.dispatch(threadX, threadY, 1);
@@ -150,53 +152,30 @@ namespace sa {
 
 		// Upsample + combine
 
-		Texture2D smallImage = bd.bloomMipTextures[bd.bloomMipTextures.size() - 1];
-		Texture2D bigImage = bd.bloomMipTextures[bd.bloomMipTextures.size() - 2];
 		context.bindPipeline(m_upsamplePipeline);
+		m_stackSize--;
 		for (int i = (int)bd.bufferMipTextures.size() - 1; i >= 0; i--) {
-			threadX = threadX << 1;
-			threadY = threadY << 1;
-			
-			//context.updateDescriptorSet(bd.upsampleDescriptorSets[i], 0, smallImage);
-			//context.updateDescriptorSet(bd.upsampleDescriptorSets[i], 1, bigImage);
-			//context.updateDescriptorSet(bd.upsampleDescriptorSets[i], 2, (Texture)bd.bufferMipTextures[i]);
+			m_stackSize--;
+			threadX = m_threadCountStack[m_stackSize].width;
+			threadY = m_threadCountStack[m_stackSize].height;
 
 			context.bindDescriptorSet(bd.upsampleDescriptorSets[i], m_upsamplePipeline);
 			context.dispatch(threadX, threadY, 1);
 			
-			if (i > 0) {
-				smallImage = bd.bufferMipTextures[i];
-				bigImage = bd.bloomMipTextures[i - 1];
-			}
-
 		}
 
-		threadX = threadX << 1;
-		threadY = threadY << 1;
+		threadX = m_threadCountStack[--m_stackSize].width;
+		threadY = m_threadCountStack[m_stackSize].height;
 
 		// Composite + Tonemap
 		context.bindPipeline(m_compositePipeline);
-		//context.updateDescriptorSet(bd.compositeDescriptorSet, 0, (Texture)*tex, m_sampler);
-		//context.updateDescriptorSet(bd.compositeDescriptorSet, 1, (Texture)bd.bufferMipTextures[0]);
-		//context.updateDescriptorSet(bd.compositeDescriptorSet, 2, (Texture)bd.bufferMipTextures[0]);
-
-		//context.updateDescriptorSet(bd.compositeDescriptorSet, 3, (Texture)bd.outputTexture);
-
+		
 		context.bindDescriptorSet(bd.compositeDescriptorSet, m_compositePipeline);
 		context.dispatch(threadX, threadY, 1);
 
 		m_pRenderTechnique->drawData.finalTexture = bd.outputTexture;
 		pRenderTarget->outputTexture = &bd.outputTexture;
-		/*
-		for (auto& image : bd.bloomMipTextures) {
-			image.swap();
-		}
-		for (auto& image : bd.bufferMipTextures) {
-			image.swap();
-		}
-		bd.bloomTexture.swap();
-		bd.bufferTexture.swap();
-		*/
+		
 		bd.outputTexture.swap();
 
 	}

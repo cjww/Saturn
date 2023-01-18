@@ -15,6 +15,9 @@ namespace sa {
 		
 		ResourceID m_sampler;
 
+		Extent m_threadCountStack[7];
+		uint8_t m_stackSize;
+
 		bool m_wasResized;
 
 	public:
