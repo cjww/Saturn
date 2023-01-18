@@ -428,7 +428,7 @@ namespace sa {
 	
 	}
 	
-	void Texture3D::create(TextureTypeFlags type, Extent3D extent, uint32_t sampleCount, uint32_t mipLevels, FormatPrecisionFlags formatPercisions, FormatDimensionFlags formatDimensions, FormatTypeFlags formatTypes) {
+	void Texture3D::create(TextureTypeFlags type, Extent3D extent, uint32_t sampleCount, uint32_t mipLevels, FormatPrecisionFlags formatPrecisions, FormatDimensionFlags formatDimensions, FormatTypeFlags formatTypes) {
 
 		vk::Format format = vk::Format::eUndefined;
 		vk::FormatFeatureFlags features;
@@ -449,7 +449,7 @@ namespace sa {
 		}
 
 		format = m_pCore->getFormat(
-			formatPercisions, formatDimensions, formatTypes, 
+			formatPrecisions, formatDimensions, formatTypes, 
 			features, 
 			vk::ImageTiling::eOptimal);
 		if (format == vk::Format::eUndefined) {
@@ -479,9 +479,9 @@ namespace sa {
 		//SA_DEBUG_LOG_INFO("Created 3D texture\nExtent: { w:", extent.width, " h:", extent.height, " d:", extent.depth, " }\nFormat:", vk::to_string(format), "\nSampleCount:", sampleCount);
 	}
 
-	Texture3D::Texture3D(TextureTypeFlags type, Extent3D extent, uint32_t sampleCount, uint32_t mipLevels, FormatPrecisionFlags formatPercisions, FormatDimensionFlags formatDimensions, FormatTypeFlags formatTypes) : Texture() {
+	Texture3D::Texture3D(TextureTypeFlags type, Extent3D extent, uint32_t sampleCount, uint32_t mipLevels, FormatPrecisionFlags formatPrecisions, FormatDimensionFlags formatDimensions, FormatTypeFlags formatTypes) : Texture() {
 		m_type = type;
-		create(type, extent, sampleCount, mipLevels, formatPercisions, formatDimensions, formatTypes);
+		create(type, extent, sampleCount, mipLevels, formatPrecisions, formatDimensions, formatTypes);
 	}
 
 	Texture3D::Texture3D() : Texture() {

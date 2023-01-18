@@ -96,10 +96,13 @@
     <ClInclude Include="include\Tools\utils.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Resources\DynamicBuffer.h">
+    <ClInclude Include="include\Resources\DynamicBuffer.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\DeviceMemoryStats.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\Resources\DynamicTexture.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -191,10 +194,13 @@
     <ClCompile Include="src\utils.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="include\Resources\DynamicBuffer.cpp">
+    <ClCompile Include="src\imgui_stdlib.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\imgui_stdlib.cpp">
+    <ClCompile Include="src\DynamicBuffer.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="src\DynamicTexture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>

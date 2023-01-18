@@ -53,5 +53,8 @@
 #include <glm/common.hpp>
 
 // My code
-#include "Core.h"
+//#include "Tools/Profiler.h"
+//#include <Tools/Logger.hpp>
+
+
 

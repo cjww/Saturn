@@ -4,6 +4,7 @@
 
 #include "Resources\Pipeline.hpp"
 #include "Resources\FramebufferSet.hpp"
+#include "Resources/Swapchain.hpp"
 
 #include "structs.hpp"
 

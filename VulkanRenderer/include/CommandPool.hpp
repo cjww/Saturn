@@ -27,6 +27,7 @@ namespace sa {
 		void submit(vk::Fence fence = {}, vk::Semaphore signalSemaphore = {}, vk::Semaphore waitSemaphore = {});
 
 		void present(vk::Semaphore waitSempahore, vk::SwapchainKHR swapchain, uint32_t imageIndex);
+		void present(const std::vector<vk::Semaphore>& waitSempahores, vk::SwapchainKHR swapchain, uint32_t imageIndex);
 
 		vk::CommandBuffer getBuffer(uint32_t index = -1) const;
 		uint32_t getBufferIndex() const;

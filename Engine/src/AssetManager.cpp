@@ -9,7 +9,6 @@
 
 #include "assimp/ProgressHandler.hpp"
 
-#include "Tools/Logger.hpp"
 #include "Tools/Vector.h"
 
 

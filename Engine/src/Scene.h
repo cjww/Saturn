@@ -11,6 +11,8 @@
 #include <iostream>
 
 #include "Tools\utils.h"
+#include "Tools/Profiler.h"
+
 
 #include "ScriptManager.h"
 #include "EntityHierarchy.h"

@@ -88,11 +88,11 @@ namespace sa {
 		}
 		ondemand::document doc = parser.iterate(json);
 		
-		SA_DEBUG_LOG_INFO("Opened Project: ", path);
-		const char* version = doc["version"].get_string().value().data();
-		if (strcmp(version, SA_VERSION) != 0) {
-			SA_DEBUG_LOG_ERROR("Project version missmatch:\n\tProject: ", verison, "\n\tEngine: ", SA_VERSION);
+		auto version = doc["version"];
+		if (version != SA_VERSION) {
+			SA_DEBUG_LOG_ERROR("Project version missmatch:\n\tProject: ", version, "\n\tEngine: ", SA_VERSION);
 		}
+		SA_DEBUG_LOG_INFO("Opened Project: ", path);
 		
 		m_projectPath = path;
 

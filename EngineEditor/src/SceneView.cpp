@@ -42,23 +42,24 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 		if(m_isFocused) m_zoom = y;
 	});
 
-	m_colorTexture = sa::Texture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, pWindow->getCurrentExtent());
-	m_renderTarget.framebuffer = pEngine->getRenderPipeline().getRenderTechnique()->createColorFramebuffer(m_colorTexture);
+	m_renderTarget.colorTexture = sa::DynamicTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, pWindow->getCurrentExtent());
+	m_renderTarget.framebuffer = pEngine->getRenderPipeline().getRenderTechnique()->createColorFramebuffer(m_renderTarget.colorTexture);
 
-	m_camera.setViewport(sa::Rect{ { 0, 0 }, m_colorTexture.getExtent() });
+	m_camera.setViewport(sa::Rect{ { 0, 0 }, sa::Renderer::get().getFramebufferExtent(m_renderTarget.framebuffer) });
 
 	pEngine->on<sa::engine_event::OnRender>([&](sa::engine_event::OnRender& e, sa::Engine& engine) {
 		e.pRenderPipeline->render(&m_camera, &m_renderTarget);
+		sa::Renderer::get().swapFramebuffer(m_renderTarget.framebuffer);
 	});
 
 	pEngine->on<sa::engine_event::WindowResized>([&](sa::engine_event::WindowResized& e, sa::Engine& engine) {
-		m_colorTexture.destroy();
-		m_colorTexture = sa::Texture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, e.newExtent);
-
-		m_camera.setViewport(sa::Rect{ { 0, 0 }, m_colorTexture.getExtent() });
+		m_camera.setViewport(sa::Rect{ { 0, 0 }, e.newExtent });
 
 		sa::Renderer::get().destroyFramebuffer(m_renderTarget.framebuffer);
-		m_renderTarget.framebuffer = engine.getRenderPipeline().getRenderTechnique()->createColorFramebuffer(m_colorTexture);
+		m_renderTarget.colorTexture.destroy();
+		m_renderTarget.colorTexture = sa::DynamicTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, e.newExtent);
+		m_renderTarget.framebuffer = pEngine->getRenderPipeline().getRenderTechnique()->createColorFramebuffer(m_renderTarget.colorTexture);
+		
 	});
 
 }
@@ -218,8 +219,9 @@ void SceneView::onImGui() {
 		if (availSize != m_displayedSize) {
 			m_camera.setAspectRatio(availSize.x / availSize.y);
 		}
-
-		ImGui::Image(m_renderTarget.bloomData.outputTexture, imAvailSize);
+		if (m_renderTarget.outputTexture) {
+			ImGui::Image((sa::Texture)*m_renderTarget.outputTexture, imAvailSize);
+		}
 		ImVec2 imageMin = ImGui::GetItemRectMin();
 		ImVec2 imageSize = ImGui::GetItemRectSize();
 
@@ -398,14 +400,19 @@ void SceneView::onImGui() {
 
 			if (ImGui::CollapsingHeader("Performance")) {
 				ImGui::PushStyleColor(ImGuiCol_PlotLines, ImVec4(1.f, 1.f, 1.f, 1.f));
-				ImGui::PlotLines("", m_frameTimeGraph.data(), m_frameTimeGraph.size(), 0, "Frame Time", 0.f, 100.f, ImVec2(300, 50));
+				
+				static float scale = 70.f;
+				ImGui::PlotLines("##FrameTimePlot", m_frameTimeGraph.data(), m_frameTimeGraph.size(), 0, "Frame Time", 0.f, scale, ImVec2(300, 50));
+				ImGui::SameLine();
+				ImGui::VSliderFloat("Scale", ImVec2(15, 50), &scale, 1.f, 100.f, "%.0f");
+
 				ImGui::PopStyleColor();
 				ImGui::Text("Frame time: %f ms", m_statistics.frameTime * 1000);
 
 			}
 			if (ImGui::CollapsingHeader("Memory")) {
 				ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(1.f, 1.f, 1.f, 1.f));
-				ImGui::PlotHistogram("", m_gpuMemoryData.data(), m_gpuMemoryData.size(), 0, "GPU Memory usage", 0.f, m_statistics.totalGPUMemoryBudget, ImVec2(300, 50));
+				ImGui::PlotHistogram("##VRAMPlot", m_gpuMemoryData.data(), m_gpuMemoryData.size(), 0, "GPU Memory usage", 0.f, m_statistics.totalGPUMemoryBudget, ImVec2(300, 50));
 				ImGui::PopStyleColor();
 			
 				ImGui::Text("GPU Memory Heaps");

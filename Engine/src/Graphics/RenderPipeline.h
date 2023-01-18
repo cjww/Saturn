@@ -3,6 +3,7 @@
 #include "IRenderTechnique.h"
 #include "RenderWindow.hpp"
 #include "IRenderLayer.h"
+#include "Tools/Profiler.h"
 
 namespace sa {
 
@@ -34,8 +35,6 @@ namespace sa {
 		void pushOverlay(IRenderLayer* pLayer);
 
 		void beginFrameImGUI();
-
-		bool render(Scene* pScene);
 
 		RenderContext beginScene(Scene* pScene);
 		void render(SceneCamera* pCamera, RenderTarget* rendertarget = nullptr);

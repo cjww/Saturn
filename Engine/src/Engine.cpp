@@ -158,7 +158,6 @@ namespace sa {
 	}
 
 	void Engine::reg() {
-		
 		registerMath();
 
 		auto& lua = LuaAccessable::getState();

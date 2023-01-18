@@ -86,7 +86,7 @@ namespace sa {
 
 		return queueInfo;
 	}
-	void VulkanCore::setupDebug() {
+	void VulkanCore::setupValidationLayers() {
 
 		m_validationLayers = {
 			"VK_LAYER_KHRONOS_validation",
@@ -113,7 +113,7 @@ namespace sa {
 		}
 	}
 
-	void VulkanCore::createInstance() {
+	void VulkanCore::createInstance(bool useDebugCallback) {
 		uint32_t count = 0;
 		const char** glfwExtensions = glfwGetRequiredInstanceExtensions(&count);
 		if (count == 0) {
@@ -127,6 +127,7 @@ namespace sa {
 		m_instanceExtensions.push_back(VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
 
 		vk::InstanceCreateInfo instanceInfo{
+			.pNext = nullptr,
 			.pApplicationInfo = &m_appInfo,
 			.enabledExtensionCount = static_cast<uint32_t>(m_instanceExtensions.size()),
 			.ppEnabledExtensionNames = m_instanceExtensions.data()
@@ -137,6 +138,12 @@ namespace sa {
 			std::cout << extension << std::endl;
 		}
 
+		vk::DebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo{
+			.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo,
+			.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance,
+			.pfnUserCallback = sa::debugCallback
+		};
+
 		if (!m_validationLayers.empty()) {
 			instanceInfo.setPEnabledLayerNames(m_validationLayers);
 			std::cout << "---Layers---" << std::endl;
@@ -144,15 +151,10 @@ namespace sa {
 				std::cout << m_validationLayers[i] << std::endl;
 			}
 
+			if (useDebugCallback) {
+				instanceInfo.pNext = &debugMessengerCreateInfo;
+			}
 
-			vk::DebugUtilsMessengerCreateInfoEXT debugMessengerCreateInfo{
-				.messageSeverity = vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose | vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning | vk::DebugUtilsMessageSeverityFlagBitsEXT::eError | vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo,
-				.messageType = vk::DebugUtilsMessageTypeFlagBitsEXT::eGeneral | vk::DebugUtilsMessageTypeFlagBitsEXT::eValidation | vk::DebugUtilsMessageTypeFlagBitsEXT::ePerformance,
-				.pfnUserCallback = sa::debugCallback
-			};
-
-
-			instanceInfo.pNext = &debugMessengerCreateInfo;
 		}
 		sa::checkError(
 			vk::createInstance(&instanceInfo, nullptr, &m_instance),
@@ -196,7 +198,8 @@ namespace sa {
 		m_deviceExtensions.push_back(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
 		m_deviceExtensions.push_back(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME);
 
-		m_queueInfo = getQueueInfo(vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute, FRAMES_IN_FLIGHT);
+		m_queueInfo = getQueueInfo(vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute, FRAMES_IN_FLIGHT + 1);
+		
 		std::vector<QueueInfo> queueInfos = { m_queueInfo };
 	
 		vk::PhysicalDeviceFeatures features = m_physicalDevice.getFeatures();
@@ -231,10 +234,12 @@ namespace sa {
 		}
 
 
+		uint32_t dedicatedRenderQueueCount = std::min(FRAMES_IN_FLIGHT, m_queueInfo.queueCount);
+
 		m_device = m_physicalDevice.createDevice(deviceInfo);
-		m_queues.resize(m_queueInfo.queueCount);
-		for (uint32_t i = 0; i < m_queueInfo.queueCount; i++) {
-			m_queues[i] = m_device.getQueue(m_queueInfo.family, 0);
+		m_queues.resize(dedicatedRenderQueueCount);
+		for (uint32_t i = 0; i < dedicatedRenderQueueCount; i++) {
+			m_queues[i] = m_device.getQueue(m_queueInfo.family, i);
 		}
 	}
 
@@ -254,12 +259,13 @@ namespace sa {
 		return !isDepthFormat(format);
 	}
 
-	void VulkanCore::init(vk::ApplicationInfo appInfo) {
+	void VulkanCore::init(vk::ApplicationInfo appInfo, bool useVaildationLayers) {
 		m_appInfo = appInfo;
-#ifdef _DEBUG
-			setupDebug();
-#endif // _DEBUG
-		createInstance();
+		
+		if(useVaildationLayers)
+			setupValidationLayers();
+
+		createInstance(useVaildationLayers);
 		findPhysicalDevice();
 		createDevice();
 		
@@ -328,18 +334,19 @@ namespace sa {
 		};
 		m_imGuiDescriptorPool = m_device.createDescriptorPool(poolInfo);
 		
-
+		vk::Queue imguiQueue = m_device.getQueue(m_queueInfo.family, m_queueInfo.queueCount - 1);
+		
 		ImGui_ImplVulkan_InitInfo info = {
 			.Instance = m_instance,
 			.PhysicalDevice = m_physicalDevice,
 			.Device = m_device,
 			.QueueFamily = m_queueInfo.family,
-			.Queue = m_queues[0],
+			.Queue = imguiQueue,
 			.PipelineCache = VK_NULL_HANDLE,
 			.DescriptorPool = m_imGuiDescriptorPool,
 			.Subpass = subpass,
 			.MinImageCount = 2,
-			.ImageCount = (uint32_t)m_queues.size(),
+			.ImageCount = (uint32_t)std::max((int)m_queues.size(), 2),
 			.MSAASamples = VK_SAMPLE_COUNT_1_BIT,
 			.Allocator = nullptr,
 			.CheckVkResultFn = [](VkResult result) { checkError((vk::Result)result, "Failed to initialize ImGui with vulkan", false); },
@@ -430,6 +437,7 @@ namespace sa {
 
 		// find Mailbox present mode
 		vk::PresentModeKHR presentMode = vk::PresentModeKHR::eFifo; // Assumes this present mode is always present
+
 		std::vector<vk::PresentModeKHR> allPresentModes = m_physicalDevice.getSurfacePresentModesKHR(surface);
 		for (auto mode : allPresentModes) {
 			if (mode == vk::PresentModeKHR::eMailbox) {
@@ -599,9 +607,7 @@ namespace sa {
 		};
 		info.setStages(shaderStages);
 
-		auto result = m_device.createGraphicsPipeline(cache, info);
-		checkError(result.result, "Failed to create Graphics pipeline", true);
-		return result.value;
+		return m_device.createGraphicsPipeline(cache, info).value;
 	}
 
 	CommandBufferSet VulkanCore::allocateCommandBufferSet(vk::CommandBufferLevel level) {

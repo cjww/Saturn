@@ -1,4 +1,6 @@
 #pragma once
+
+
 #ifndef IMGUI_DISABLE
 #include "imgui_impl_vulkan.h"
 #include "imgui_impl_glfw.h"
@@ -12,7 +14,6 @@
 #include "Resources/DeviceMemoryManager.hpp"
 
 #include "FormatFlags.hpp"
-
 
 namespace sa {
 
@@ -81,6 +82,7 @@ namespace sa {
 
 
 		QueueInfo m_queueInfo;
+		
 		std::vector<vk::Queue> m_queues;
 		
 		CommandPool m_mainCommandPool;
@@ -101,21 +103,21 @@ namespace sa {
 		uint32_t getQueueFamilyIndex(vk::QueueFlags capabilities, vk::QueueFamilyProperties* prop);
 		QueueInfo getQueueInfo(vk::QueueFlags capabilities, uint32_t maxCount);
 
-		void setupDebug();
+		void setupValidationLayers();
 
-		void createInstance();
+		void createInstance(bool useDebugCallback);
 		void findPhysicalDevice();
 		void createDevice();
 
 		void createCommandPool();
 
 	public:
-		static const unsigned int FRAMES_IN_FLIGHT = 6;
+		static const unsigned int FRAMES_IN_FLIGHT = 2;
 
 		static bool isDepthFormat(vk::Format format);
 		static bool isColorFormat(vk::Format format);
 
-		void init(vk::ApplicationInfo appInfo);
+		void init(vk::ApplicationInfo appInfo, bool useVaildationLayers);
 		void cleanup();
 
 #ifndef IMGUI_DISABLE

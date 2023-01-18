@@ -1,6 +1,5 @@
 
 #include "TestLayer.h"
-#define SA_PROFILER_ENABLE
 #include "Tools\Profiler.h"
 
 namespace sa {
@@ -46,53 +45,45 @@ namespace sa {
 		m_pWindow = &window;
 
 		m_camera.setViewport(Rect{ { 0, 0 }, window.getCurrentExtent() });
-		m_camera.setPosition({ 0, 0, -10 });
+		m_camera.setPosition({ 0, 0, -6 });
 		m_camera.lookAt({ 0, 0, 0 });
-		m_pCameraController = std::make_unique<CameraController>(window, m_camera);
-
-		engine.getCurrentScene()->addActiveCamera(&m_camera);
-
-
-		//createModelEntity(engine, "models/Box.gltf");
-
-		/*
-		for (int i = 0; i < 30; i++) {
-			createModelEntity(engine, "models/adamHead/adamHead.gltf");
-			createModelEntity(engine, "models/lieutenantHead/lieutenantHead.gltf");
-			createModelEntity(engine, "models/Suzanne.dae");
-		}
-		*/
-
-		for (int i = 0; i < 30; i++) {
-			createModelEntity(engine, "models/adamHead/adamHead.gltf");
-			createModelEntity(engine, "models/lieutenantHead/lieutenantHead.gltf");
-		}
-		for (int i = 0; i < 30; i++) {
-			createModelEntity(engine, "models/adamHead/adamHead.gltf");
-		}
-		for (int i = 0; i < 30; i++) {
-			createModelEntity(engine, "models/steampunk_underwater_explorer/scene.gltf", 0.3f);
-		}
-		for (int i = 0; i < 30; i++) {
-			createModelEntity(engine, "models/viking_room/scene.gltf", 0.2f);
-			createModelEntity(engine, "models/steampunk_glasses__goggles/scene.gltf");
-		}
 		
-		//createModelEntity(engine, "models/viking_room/scene.gltf", 0.2f);
+		m_colorTexture = DynamicTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, window.getCurrentExtent());
 		
-		//engine.createSystemScript("test.lua");
+		m_renderTarget.framebuffer = m_pEngine->getRenderPipeline().getRenderTechnique()->createColorFramebuffer(m_colorTexture);
 
+		m_pEngine->on<engine_event::OnRender>([&](engine_event::OnRender& e, Engine& engine) {
+			e.pRenderPipeline->render(&m_camera, &m_renderTarget);
+			m_colorTexture.swap();
+		});
 
+		Entity light = m_pEngine->getCurrentScene()->createEntity();
+		LightData& values = light.addComponent<comp::Light>()->values;
+		values.position = { 0, 0, -2 };
+		values.intensity = 2.0f;
+		values.color = Color{ 0.5, 1.0f, 0.5f, 1.0f };
 
+		
 	}
 
 	void TestLayer::onUpdate(float dt) {
-		SA_PROFILE_FUNCTION();
+		static float timer = 0.0f;
+		static bool spawned = false;
+		timer += dt;
+		static Entity box;
+		if (timer > 2 && !spawned) {
+			spawned = true;
+			box = m_pEngine->getCurrentScene()->createEntity();
 
-		m_pCameraController->update(dt);
+			box.addComponent<comp::Transform>();
+			box.addComponent<comp::Model>()->modelID = AssetManager::get().loadBox();
+
+		}
+
+		if(spawned)
+			box.getComponent<comp::Transform>()->position = glm::vec3(1, 0, 0) * sin(timer * 4) * 2.f;
 
 		std::queue<Entity> entitiesDone;
-
 		for (const auto& [entity, progress] : m_completions) {
 			if (m_infoClock.getElapsedTime() > 0.5f) {
 				m_infoClock.restart();
@@ -112,15 +103,13 @@ namespace sa {
 	}
 
 	void TestLayer::onImGuiRender() {
-		/*
-		Texture outputTexture = m_pEngine->getRenderTechnique()->getOutputTexture();
 		
-		ImGui::Image(outputTexture, outputTexture.getExtent());
+		if (ImGui::Begin("w")) {
+			if (m_renderTarget.bloomData.isInitialized) {
+				ImGui::Image(m_renderTarget.outputTexture, ImVec2(200, 200));
+			}
 
-
-		ImGui::ShowDemoWindow();
-		*/
-		
-
+			ImGui::End();
+		}
 	}
 }

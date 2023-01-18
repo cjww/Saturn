@@ -42,8 +42,8 @@ namespace sa {
 
 			m_pCore = std::make_unique<VulkanCore>();
 			
-			m_pCore->init(info);
-
+			m_pCore->init(info, c_useVaildationLayers);
+			
 			ResourceManager::get().setCleanupFunction<Swapchain>([](Swapchain* p) { p->destroy(); });
 			ResourceManager::get().setCleanupFunction<FramebufferSet>([](FramebufferSet* p) { p->destroy(); });
 			ResourceManager::get().setCleanupFunction<RenderProgram>([](RenderProgram* p) { p->destroy(); });
@@ -164,12 +164,39 @@ namespace sa {
 		pRenderProgram->setClearColor(color);
 	}
 
-	ResourceID Renderer::createFramebuffer(ResourceID renderProgram, const std::vector<Texture>& attachmentTextures, uint32_t layers) {
+	ResourceID Renderer::createFramebuffer(ResourceID renderProgram, const std::vector<DynamicTexture>& attachmentTextures, uint32_t layers) {
 		if (attachmentTextures.empty())
 			throw std::runtime_error("At least one attachmnet is required to create a framebuffer");
 
 		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
 		
+		return ResourceManager::get().insert<FramebufferSet>(
+			m_pCore.get(),
+			pRenderProgram->getRenderPass(),
+			attachmentTextures,
+			attachmentTextures[0].getExtent(),
+			layers);
+	}
+
+	ResourceID Renderer::createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<DynamicTexture>& additionalAttachmentTextures, uint32_t layers) {
+		Swapchain* pSwapchain = RenderContext::getSwapchain(swapchain);
+		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
+
+		return ResourceManager::get().insert<FramebufferSet>(
+			m_pCore.get(),
+			pRenderProgram->getRenderPass(),
+			pSwapchain,
+			additionalAttachmentTextures,
+			layers);
+	}
+
+
+	ResourceID Renderer::createFramebuffer(ResourceID renderProgram, const std::vector<Texture>& attachmentTextures, uint32_t layers) {
+		if (attachmentTextures.empty())
+			throw std::runtime_error("At least one attachmnet is required to create a framebuffer");
+
+		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
+
 		return ResourceManager::get().insert<FramebufferSet>(
 			m_pCore.get(),
 			pRenderProgram->getRenderPass(),
@@ -194,12 +221,33 @@ namespace sa {
 		ResourceManager::get().remove<FramebufferSet>(framebuffer);
 	}
 
-	Texture Renderer::getFramebufferTexture(ResourceID framebuffer, uint32_t index) const {
-		return RenderContext::getFramebufferSet(framebuffer)->getTexture(index);
+	Texture Renderer::getFramebufferTexture(ResourceID framebuffer, uint32_t attachmentIndex) const {
+		return RenderContext::getFramebufferSet(framebuffer)->getTexture(attachmentIndex);
+	}
+	
+	DynamicTexture Renderer::getFramebufferDynamicTexture(ResourceID framebuffer, uint32_t attachmentIndex) const {
+		return RenderContext::getFramebufferSet(framebuffer)->getDynamicTexture(attachmentIndex);
+	}
+
+	DynamicTexture* Renderer::getFramebufferDynamicTexturePtr(ResourceID framebuffer, uint32_t attachmentIndex) const {
+		return RenderContext::getFramebufferSet(framebuffer)->getDynamicTexturePtr(attachmentIndex);
+	}
+	
+	void Renderer::waitForFrame(ResourceID swapchains) {
+		RenderContext::getSwapchain(swapchains)->waitForFrame();
 	}
 
 	size_t Renderer::getFramebufferTextureCount(ResourceID framebuffer) const {
 		return RenderContext::getFramebufferSet(framebuffer)->getTextureCount();
+	}
+
+	Extent Renderer::getFramebufferExtent(ResourceID framebuffer) const {
+		return RenderContext::getFramebufferSet(framebuffer)->getExtent();
+	}
+
+	void Renderer::swapFramebuffer(ResourceID framebuffer) {
+		FramebufferSet* pFramebufferSet = RenderContext::getFramebufferSet(framebuffer);
+		pFramebufferSet->swap();
 	}
 
 	ResourceID Renderer::createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, PipelineSettings settings) {
@@ -262,8 +310,15 @@ namespace sa {
 	}
 	
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, DynamicBuffer& buffer) {
+		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		for (uint32_t i = 0; i < buffer.getBufferCount(); i++) {
-			updateDescriptorSet(descriptorSet, binding, buffer.getBuffer(i));
+			auto& b = buffer.getBuffer(i);
+			const DeviceBuffer* pDeviceBuffer = (const DeviceBuffer*)b;
+			vk::BufferView* pView = nullptr;
+			if (buffer.getType() == BufferType::UNIFORM_TEXEL || buffer.getType() == BufferType::STORAGE_TEXEL) {
+				pView = b.getView();
+			}
+			pDescriptorSet->update(binding, pDeviceBuffer->buffer, pDeviceBuffer->size, 0, pView, i);
 		}
 	}
 
@@ -286,6 +341,33 @@ namespace sa {
 		}
 
 		pDescriptorSet->update(binding, *texture.getView(), layout, nullptr, UINT32_MAX);
+	}
+
+	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const DynamicTexture& texture, ResourceID sampler) {
+		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
+
+		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		if ((texture.getTypeFlags() & sa::TextureTypeFlagBits::STORAGE) == sa::TextureTypeFlagBits::STORAGE) {
+			layout = vk::ImageLayout::eGeneral;
+		}
+
+		for (uint32_t i = 0; i < texture.getTextureCount(); i++) {
+			pDescriptorSet->update(binding, *texture.getTexture(i).getView(), layout, pSampler, i);
+		}
+	}
+
+	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const DynamicTexture& texture) {
+		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+
+		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		if ((texture.getTypeFlags() & sa::TextureTypeFlagBits::STORAGE) == sa::TextureTypeFlagBits::STORAGE) {
+			layout = vk::ImageLayout::eGeneral;
+		}
+
+		for (uint32_t i = 0; i < texture.getTextureCount(); i++) {
+			pDescriptorSet->update(binding, *texture.getTexture(i).getView(), layout, nullptr, i);
+		}
 	}
 
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement) {

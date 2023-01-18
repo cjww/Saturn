@@ -1,6 +1,6 @@
 
 #include "TestLayer.h"
-#define SA_PROFILER_ENABLE
+
 #include "Tools\Profiler.h"
 
 namespace sa {

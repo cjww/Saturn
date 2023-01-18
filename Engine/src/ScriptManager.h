@@ -7,6 +7,8 @@
 
 #include <sol/sol.hpp>
 
+#include "Tools/Profiler.h"
+
 #include <Tools/Logger.hpp>
 #include <filesystem>
 

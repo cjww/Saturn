@@ -107,8 +107,17 @@ namespace sa {
 		info.setSwapchains(swapchain);
 		info.setImageIndices(imageIndex);
 		info.setWaitSemaphores(waitSempahore);
-		checkError(m_queues[m_lastBufferIndex].presentKHR(info), "Failed to present image" + std::to_string(imageIndex));
+		m_queues[m_lastBufferIndex].presentKHR(info), "Failed to present image" + std::to_string(imageIndex);
 
+	}
+
+	void CommandBufferSet::present(const std::vector<vk::Semaphore>& waitSempahores, vk::SwapchainKHR swapchain, uint32_t imageIndex) {
+		vk::PresentInfoKHR info;
+		info.setSwapchains(swapchain);
+		info.setImageIndices(imageIndex);
+		info.setWaitSemaphores(waitSempahores);
+
+		m_queues[m_lastBufferIndex].presentKHR(info), "Failed to present image" + std::to_string(imageIndex);
 	}
 
 	vk::CommandBuffer CommandBufferSet::getBuffer(uint32_t index) const {

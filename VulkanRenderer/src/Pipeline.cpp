@@ -54,9 +54,8 @@ namespace sa {
 			.stage = shaderSet.getShaderInfos()[0],
 			.layout = m_layout,
 		};
-		auto result = m_pCore->getDevice().createComputePipeline(nullptr, info);
-		checkError(result.result, "Failed to create pipeline", true);
-		m_pipeline = result.value;
+	
+		m_pipeline = m_pCore->getDevice().createComputePipeline(nullptr, info).value;
 	}
 
 	void Pipeline::destroy() {

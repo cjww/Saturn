@@ -1,9 +1,5 @@
 #pragma once
 
-#define RENDERER_VALIDATION
-#define SA_DEBUG_LOG
-
-
 #include <vector>
 #include <unordered_map>
 #include <queue>
@@ -23,5 +19,5 @@
 
 
 #include "Resources\ResourceManager.hpp"
-#include "Tools\Logger.hpp"
 #include "structs.hpp"
+#include "Tools/Logger.hpp"

@@ -4,6 +4,8 @@
 
 #include "Resources\Texture.hpp"
 
+#define SA_SUBPASS_EXTERNAL (~0U)
+
 namespace sa {
 	class RenderProgram;
 	class Subpass;
@@ -64,7 +66,7 @@ namespace sa {
 
 
 		SubpassFactory beginSubpass();
-		RenderProgramFactory& addSubpassDependency();
+		RenderProgramFactory& addColorDependency(uint32_t srcSubpass = SA_SUBPASS_EXTERNAL, uint32_t dstSubpass = SA_SUBPASS_EXTERNAL);
 		
 
 		ResourceID end();

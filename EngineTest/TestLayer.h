@@ -1,8 +1,6 @@
 #pragma once
 
 #include "Application.h"
-#include "Camera.h"
-#include "CameraController.h"
 #include "Tools/Clock.h"
 
 
@@ -12,7 +10,6 @@ namespace sa {
 	class TestLayer : public IApplicationLayer {
 	private:
 		SceneCamera m_camera;
-		std::unique_ptr<CameraController> m_pCameraController;
 
 		Clock m_infoClock;
 
@@ -23,6 +20,10 @@ namespace sa {
 
 		Engine* m_pEngine;
 		RenderWindow* m_pWindow;
+
+		RenderTarget m_renderTarget;
+		DynamicTexture2D m_colorTexture;
+
 
 		int randomRange(int min, int max);
 		Entity createModelEntity(Engine& engine, const std::filesystem::path& modelPath, float scale = 1.0f);

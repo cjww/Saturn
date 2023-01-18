@@ -5,6 +5,7 @@
 #include "RenderContext.hpp"
 #include "Resources/Buffer.hpp"
 #include "Resources/Texture.hpp"
+#include "Resources/DynamicTexture.hpp"
 #include "Image.hpp"
 #include "FormatFlags.hpp"
 #include "PipelineSettings.hpp"
@@ -45,11 +46,21 @@ namespace sa {
 	class Renderer {
 	private:
 		friend class Texture;
-		
+		friend class DynamicTexture;
+
 		std::unique_ptr<VulkanCore> m_pCore;
 		
 		std::queue<DataTransfer> m_transferQueue;
 		std::mutex m_transferMutex;
+
+		const bool c_useVaildationLayers =
+#if SA_RENDER_VALIDATION_ENABLE
+		true;
+#else
+		false;
+#endif
+
+
 		Renderer();
 	public:
 		static Renderer& get();
@@ -72,17 +83,28 @@ namespace sa {
 
 		uint32_t getSwapchainImageCount(ResourceID swapchain);
 
+		void waitForFrame(ResourceID swapchains);
+
 		RenderProgramFactory createRenderProgram();
 		void destroyRenderProgram(ResourceID renderProgram);
 		void setClearColor(ResourceID renderProgram, Color color, uint32_t attachmentIndex);
 		void setClearColor(ResourceID renderProgram, Color color);
 
+		ResourceID createFramebuffer(ResourceID renderProgram, const std::vector<DynamicTexture>& attachmentTextures, uint32_t layers = 1ui32);
+		ResourceID createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<DynamicTexture>& additionalAttachmentTextures, uint32_t layers = 1ui32);
+
 		ResourceID createFramebuffer(ResourceID renderProgram, const std::vector<Texture>& attachmentTextures, uint32_t layers = 1ui32);
 		ResourceID createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<Texture>& additionalAttachmentTextures, uint32_t layers = 1ui32);
+
 		void destroyFramebuffer(ResourceID framebuffer);
 
-		Texture getFramebufferTexture(ResourceID framebuffer, uint32_t index) const;
+		Texture getFramebufferTexture(ResourceID framebuffer, uint32_t attachmentIndex) const;
+		DynamicTexture getFramebufferDynamicTexture(ResourceID framebuffer, uint32_t attachmentIndex) const;
+		DynamicTexture* getFramebufferDynamicTexturePtr(ResourceID framebuffer, uint32_t attachmentIndex) const;
+
 		size_t getFramebufferTextureCount(ResourceID framebuffer) const;
+		Extent getFramebufferExtent(ResourceID framebuffer) const;
+		void swapFramebuffer(ResourceID framebuffer);
 
 		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, PipelineSettings settings = {});
 		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& fragmentShader, PipelineSettings settings = {});
@@ -96,6 +118,8 @@ namespace sa {
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, DynamicBuffer& buffer);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture, ResourceID sampler);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture);
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const DynamicTexture& texture, ResourceID sampler);
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const DynamicTexture& texture);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement = 0);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, ResourceID sampler);
 

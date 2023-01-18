@@ -3,8 +3,9 @@
 
 #include "structs.hpp"
 #include "Resources/Buffer.hpp"
-#include "Resources\Texture.hpp"
-#include "Resources/DynamicBuffer.h"
+#include "Resources/Texture.hpp"
+#include "Resources/DynamicBuffer.hpp"
+
 namespace vk {
 	class Sampler;
 	class Queue;
@@ -110,6 +111,7 @@ namespace sa {
 		
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture, ResourceID sampler);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture);
+
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement = 0);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, ResourceID sampler);
 
@@ -137,10 +139,19 @@ namespace sa {
 
 		void dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
 
-		void barrier(const Texture& texture);
+		void barrierColorAttachment(const Texture& texture);
+
+		void barrierColorCompute(const Texture& texture);
+		void barrierColorCompute(const Buffer& buffer);
+		
 
 		void transitionTexture(const Texture& texture, Transition src, Transition dst);
 
+		void copyImageToImageColor(const Texture& src, const Texture& dst);
+		void copyImageToSwapchain(const Texture& src, ResourceID swapchain);
+
+
+		uint32_t getFrameIndex() const;
 
 		operator bool() {
 			return m_pCommandBufferSet != nullptr;

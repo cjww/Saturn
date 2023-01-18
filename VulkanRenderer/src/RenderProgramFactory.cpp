@@ -172,10 +172,10 @@ namespace sa {
 		return SubpassFactory(this, &m_pProgram->newSubpass());
 	}
 
-	RenderProgramFactory& RenderProgramFactory::addSubpassDependency() {
+	RenderProgramFactory& RenderProgramFactory::addColorDependency(uint32_t srcSubpass, uint32_t dstSubpass) {
 		vk::SubpassDependency dep{
-			.srcSubpass = VK_SUBPASS_EXTERNAL,
-			.dstSubpass = 0,
+			.srcSubpass = srcSubpass,
+			.dstSubpass = dstSubpass,
 			.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput,
 			.dstStageMask = vk::PipelineStageFlagBits::eFragmentShader,
 			.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite,
