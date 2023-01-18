@@ -221,8 +221,8 @@ namespace sa {
 		ResourceManager::get().remove<FramebufferSet>(framebuffer);
 	}
 
-	Texture Renderer::getFramebufferTexture(ResourceID framebuffer, uint32_t index) const {
-		return RenderContext::getFramebufferSet(framebuffer)->getTexture(index);
+	Texture Renderer::getFramebufferTexture(ResourceID framebuffer, uint32_t attachmentIndex, uint32_t index) const {
+		return RenderContext::getFramebufferSet(framebuffer)->getTexture(attachmentIndex, index);
 	}
 
 	void Renderer::waitForFrame(ResourceID swapchains) {
@@ -336,7 +336,7 @@ namespace sa {
 		}
 
 		for (uint32_t i = 0; i < texture.getTextureCount(); i++) {
-			pDescriptorSet->update(binding, *texture.getView(), layout, pSampler, i);
+			pDescriptorSet->update(binding, *texture.getTexture(i).getView(), layout, pSampler, i);
 		}
 	}
 
@@ -349,7 +349,7 @@ namespace sa {
 		}
 
 		for (uint32_t i = 0; i < texture.getTextureCount(); i++) {
-			pDescriptorSet->update(binding, *texture.getView(), layout, nullptr, i);
+			pDescriptorSet->update(binding, *texture.getTexture(i).getView(), layout, nullptr, i);
 		}
 	}
 

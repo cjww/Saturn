@@ -82,6 +82,7 @@ namespace sa {
 
 
 		QueueInfo m_queueInfo;
+		
 		std::vector<vk::Queue> m_queues;
 		
 		CommandPool m_mainCommandPool;

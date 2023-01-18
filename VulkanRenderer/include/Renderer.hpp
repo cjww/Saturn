@@ -98,7 +98,7 @@ namespace sa {
 
 		void destroyFramebuffer(ResourceID framebuffer);
 
-		Texture getFramebufferTexture(ResourceID framebuffer, uint32_t index) const;
+		Texture getFramebufferTexture(ResourceID framebuffer, uint32_t attachmentIndex, uint32_t index = -1) const;
 		size_t getFramebufferTextureCount(ResourceID framebuffer) const;
 
 		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, PipelineSettings settings = {});

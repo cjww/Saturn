@@ -198,7 +198,8 @@ namespace sa {
 		m_deviceExtensions.push_back(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
 		m_deviceExtensions.push_back(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME);
 
-		m_queueInfo = getQueueInfo(vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute, FRAMES_IN_FLIGHT);
+		m_queueInfo = getQueueInfo(vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute, FRAMES_IN_FLIGHT + 1);
+		
 		std::vector<QueueInfo> queueInfos = { m_queueInfo };
 	
 		vk::PhysicalDeviceFeatures features = m_physicalDevice.getFeatures();
@@ -233,9 +234,11 @@ namespace sa {
 		}
 
 
+		uint32_t dedicatedRenderQueueCount = std::min(FRAMES_IN_FLIGHT, m_queueInfo.queueCount);
+
 		m_device = m_physicalDevice.createDevice(deviceInfo);
-		m_queues.resize(m_queueInfo.queueCount);
-		for (uint32_t i = 0; i < m_queueInfo.queueCount; i++) {
+		m_queues.resize(dedicatedRenderQueueCount);
+		for (uint32_t i = 0; i < dedicatedRenderQueueCount; i++) {
 			m_queues[i] = m_device.getQueue(m_queueInfo.family, i);
 		}
 	}
@@ -331,13 +334,14 @@ namespace sa {
 		};
 		m_imGuiDescriptorPool = m_device.createDescriptorPool(poolInfo);
 		
+		vk::Queue imguiQueue = m_device.getQueue(m_queueInfo.family, m_queueInfo.queueCount - 1);
 		
 		ImGui_ImplVulkan_InitInfo info = {
 			.Instance = m_instance,
 			.PhysicalDevice = m_physicalDevice,
 			.Device = m_device,
 			.QueueFamily = m_queueInfo.family,
-			.Queue = m_queues[0],
+			.Queue = imguiQueue,
 			.PipelineCache = VK_NULL_HANDLE,
 			.DescriptorPool = m_imGuiDescriptorPool,
 			.Subpass = subpass,

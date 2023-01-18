@@ -182,10 +182,10 @@ namespace sa{
 		return m_extent;
 	}
 
-	const Texture& FramebufferSet::getTexture(uint32_t index) const {
+	const Texture& FramebufferSet::getTexture(uint32_t attachmentIndex, uint32_t index) const {
 		return m_isDynamic ?
-			m_dynamicImages.at(index).getTexture() :
-			m_images.at(index);
+			m_dynamicImages.at(attachmentIndex).getTexture(index) :
+			m_images.at(attachmentIndex);
 	}
 
 	size_t FramebufferSet::getTextureCount() const {

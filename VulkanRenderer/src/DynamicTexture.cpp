@@ -26,12 +26,8 @@ namespace sa {
 		return getTexture().getTypeFlags();
 	}
 	
-	const Texture& DynamicTexture::getTexture() const {
-		return m_textures[m_currentTextureIndex].texture;
-	}
-
 	const Texture& DynamicTexture::getTexture(uint32_t index) const {
-		return m_textures[index].texture;
+		return m_textures[(index == -1) ? m_currentTextureIndex : index].texture;
 	}
 
 	uint32_t DynamicTexture::getTextureIndex() const {

@@ -44,7 +44,7 @@ namespace sa {
 
 		Extent getExtent() const;
 
-		const Texture& getTexture(uint32_t index) const;
+		const Texture& getTexture(uint32_t attachmentIndex, uint32_t index = -1) const;
 		size_t getTextureCount() const;
 
 		Swapchain* getSwapchain() const;

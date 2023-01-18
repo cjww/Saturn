@@ -151,6 +151,8 @@ namespace sa {
 		void copyImageToSwapchain(const Texture& src, ResourceID swapchain);
 
 
+		uint32_t getFrameIndex() const;
+
 		operator bool() {
 			return m_pCommandBufferSet != nullptr;
 		}

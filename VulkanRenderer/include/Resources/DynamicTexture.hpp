@@ -64,8 +64,7 @@ namespace sa {
 		vk::ImageView* getView() const;
 		TextureTypeFlags getTypeFlags() const;
 
-		const Texture& getTexture() const;
-		const Texture& getTexture(uint32_t index) const;
+		const Texture& getTexture(uint32_t index = -1) const;
 
 		uint32_t getTextureIndex() const;
 		uint32_t getPreviousTextureIndex() const;

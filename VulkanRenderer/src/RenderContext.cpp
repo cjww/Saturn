@@ -511,6 +511,10 @@ namespace sa {
 		m_pCommandBufferSet->getBuffer().copyImage(pSrc->image, pSrc->layout, swapchainImage, vk::ImageLayout::ePresentSrcKHR, region);
 	}
 
+	uint32_t RenderContext::getFrameIndex() const {
+		return m_pCommandBufferSet->getBufferIndex();
+	}
+
 
 	SubContext::SubContext()
 		: RenderContext()
