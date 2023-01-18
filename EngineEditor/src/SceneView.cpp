@@ -42,23 +42,24 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 		if(m_isFocused) m_zoom = y;
 	});
 
-	m_colorTexture = sa::DynamicTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, pWindow->getCurrentExtent());
-	m_renderTarget.framebuffer = pEngine->getRenderPipeline().getRenderTechnique()->createColorFramebuffer(m_colorTexture);
+	m_renderTarget.colorTexture = sa::DynamicTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, pWindow->getCurrentExtent());
+	m_renderTarget.framebuffer = pEngine->getRenderPipeline().getRenderTechnique()->createColorFramebuffer(m_renderTarget.colorTexture);
 
-	m_camera.setViewport(sa::Rect{ { 0, 0 }, m_colorTexture.getExtent() });
+	m_camera.setViewport(sa::Rect{ { 0, 0 }, sa::Renderer::get().getFramebufferExtent(m_renderTarget.framebuffer) });
 
 	pEngine->on<sa::engine_event::OnRender>([&](sa::engine_event::OnRender& e, sa::Engine& engine) {
 		e.pRenderPipeline->render(&m_camera, &m_renderTarget);
+		sa::Renderer::get().swapFramebuffer(m_renderTarget.framebuffer);
 	});
 
 	pEngine->on<sa::engine_event::WindowResized>([&](sa::engine_event::WindowResized& e, sa::Engine& engine) {
-		m_colorTexture.destroy();
-		m_colorTexture = sa::DynamicTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, e.newExtent);
-
-		m_camera.setViewport(sa::Rect{ { 0, 0 }, m_colorTexture.getExtent() });
+		m_camera.setViewport(sa::Rect{ { 0, 0 }, e.newExtent });
 
 		sa::Renderer::get().destroyFramebuffer(m_renderTarget.framebuffer);
-		m_renderTarget.framebuffer = engine.getRenderPipeline().getRenderTechnique()->createColorFramebuffer(m_colorTexture);
+		m_renderTarget.colorTexture.destroy();
+		m_renderTarget.colorTexture = sa::DynamicTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, e.newExtent);
+		m_renderTarget.framebuffer = pEngine->getRenderPipeline().getRenderTechnique()->createColorFramebuffer(m_renderTarget.colorTexture);
+		
 	});
 
 }
@@ -218,8 +219,9 @@ void SceneView::onImGui() {
 		if (availSize != m_displayedSize) {
 			m_camera.setAspectRatio(availSize.x / availSize.y);
 		}
-
-		ImGui::Image((sa::Texture)m_renderTarget.outputTexture, imAvailSize);
+		if (m_renderTarget.outputTexture) {
+			ImGui::Image((sa::Texture)*m_renderTarget.outputTexture, imAvailSize);
+		}
 		ImVec2 imageMin = ImGui::GetItemRectMin();
 		ImVec2 imageSize = ImGui::GetItemRectSize();
 

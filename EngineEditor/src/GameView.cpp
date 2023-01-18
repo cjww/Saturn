@@ -5,14 +5,14 @@
 GameView::GameView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWindow* pWindow)
 	: EditorModule(pEngine, pEditor)
 {
-	m_colorTexture = sa::DynamicTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, pWindow->getCurrentExtent());
-	m_renderTarget.framebuffer = pEngine->getRenderPipeline().getRenderTechnique()->createColorFramebuffer(m_colorTexture);
+	m_renderTarget.colorTexture = sa::DynamicTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, pWindow->getCurrentExtent());
+	m_renderTarget.framebuffer = pEngine->getRenderPipeline().getRenderTechnique()->createColorFramebuffer(m_renderTarget.colorTexture);
 
 	m_renderedCamera = false;
 	
 	m_resolutionIndex = 0;
 
-	m_Resolutions[0] = m_colorTexture.getExtent();
+	m_Resolutions[0] = sa::Renderer::get().getFramebufferExtent(m_renderTarget.framebuffer);
 
 	m_isWindowOpen = false;
 
@@ -33,23 +33,22 @@ GameView::GameView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWin
 		engine.getCurrentScene()->forEach<comp::Camera>([&](comp::Camera& camera) {
 			if (camera.isPrimary) {
 				e.pRenderPipeline->render(&camera.camera, &m_renderTarget);
+				sa::Renderer::get().swapFramebuffer(m_renderTarget.framebuffer);
 				m_renderedCamera = true;
 			}
 		});
-		if (m_renderedCamera) {
-			m_colorTexture.swap();
-		}
+		
 	});
 
 	pEngine->on<sa::engine_event::WindowResized>([&](sa::engine_event::WindowResized& e, sa::Engine& engine) {
-		m_colorTexture.destroy();
-		m_colorTexture = sa::DynamicTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, e.newExtent);
 		
-		m_Resolutions[0] = m_colorTexture.getExtent();
-
 		sa::Renderer::get().destroyFramebuffer(m_renderTarget.framebuffer);
-		m_renderTarget.framebuffer = engine.getRenderPipeline().getRenderTechnique()->createColorFramebuffer(m_colorTexture);
+		m_renderTarget.colorTexture.destroy();
 
+		m_renderTarget.colorTexture = sa::DynamicTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, e.newExtent);
+		m_renderTarget.framebuffer = pEngine->getRenderPipeline().getRenderTechnique()->createColorFramebuffer(m_renderTarget.colorTexture);
+
+		m_Resolutions[0] = sa::Renderer::get().getFramebufferExtent(m_renderTarget.framebuffer);
 
 		m_mipLevel = 0;
 	});
@@ -79,9 +78,8 @@ void GameView::onImGui() {
 			ImGui::EndMenuBar();
 		}
 
-		if (m_renderedCamera) {
+		if (m_renderedCamera && m_renderTarget.outputTexture) {
 			// render outputTexture with constant aspect ratio
-
 			sa::Extent extent = m_Resolutions[m_resolutionIndex];
 			float aspect = (float)extent.height / extent.width;
 
@@ -99,9 +97,8 @@ void GameView::onImGui() {
 			pos -= imageSize * 0.5f;
 			
 			ImGui::SetCursorPos({ pos.x, pos.y });
-			//ImGui::Image(m_colorTexture, { imageSize.x, imageSize.y });
-			ImGui::Image((sa::Texture)m_renderTarget.outputTexture, { imageSize.x, imageSize.y });
-
+			ImGui::Image((sa::Texture)*m_renderTarget.outputTexture, { imageSize.x, imageSize.y });
+			
 		}
 	}
 	ImGui::End();

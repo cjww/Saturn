@@ -165,7 +165,7 @@ namespace sa {
 		context.dispatch(threadX, threadY, 1);
 
 		m_pRenderTechnique->drawData.finalTexture = bd.outputTexture;
-		pRenderTarget->outputTexture = bd.outputTexture;
+		pRenderTarget->outputTexture = &bd.outputTexture;
 
 		for (auto& image : bd.bloomMipTextures) {
 			image.swap();

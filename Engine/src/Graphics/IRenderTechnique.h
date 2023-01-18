@@ -8,6 +8,7 @@
 namespace sa {
 
 	struct RenderTarget {
+		DynamicTexture colorTexture;
 		ResourceID framebuffer = NULL_RESOURCE;
 		ResourceID renderProgram = NULL_RESOURCE;
 		ResourceID pipeline = NULL_RESOURCE;
@@ -30,7 +31,7 @@ namespace sa {
 
 		} bloomData;
 
-		Texture outputTexture;
+		DynamicTexture* outputTexture = nullptr;
 	};
 
 
@@ -62,7 +63,7 @@ namespace sa {
 		virtual void render(RenderContext& context, SceneCamera* pCamera, ResourceID framebuffer) = 0;
 		virtual void endRender(RenderContext& context) {};
 
-		virtual ResourceID createColorFramebuffer(const DynamicTexture2D& outputTexture) = 0;
+		virtual ResourceID createColorFramebuffer(const DynamicTexture& colorTexture) = 0;
 
 		virtual void updateLights(Scene* pScene) = 0;
 		virtual void collectMeshes(Scene* pScene) = 0;

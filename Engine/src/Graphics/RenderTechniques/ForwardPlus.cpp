@@ -488,8 +488,11 @@ namespace sa {
 		m_depthTexture.swap();
 	}
 
-	ResourceID ForwardPlus::createColorFramebuffer(const DynamicTexture2D& outputTexture) {
-		return m_renderer.createFramebuffer(m_colorRenderProgram, { outputTexture, m_depthTexture });
+	ResourceID ForwardPlus::createColorFramebuffer(const DynamicTexture& colorTexture) {
+		return m_renderer.createFramebuffer(m_colorRenderProgram, {
+			colorTexture,
+			m_depthTexture
+		});
 	}
 
 	void ForwardPlus::updateLights(Scene* pScene) {

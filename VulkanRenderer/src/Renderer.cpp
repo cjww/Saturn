@@ -221,16 +221,33 @@ namespace sa {
 		ResourceManager::get().remove<FramebufferSet>(framebuffer);
 	}
 
-	Texture Renderer::getFramebufferTexture(ResourceID framebuffer, uint32_t attachmentIndex, uint32_t index) const {
-		return RenderContext::getFramebufferSet(framebuffer)->getTexture(attachmentIndex, index);
+	Texture Renderer::getFramebufferTexture(ResourceID framebuffer, uint32_t attachmentIndex) const {
+		return RenderContext::getFramebufferSet(framebuffer)->getTexture(attachmentIndex);
+	}
+	
+	DynamicTexture Renderer::getFramebufferDynamicTexture(ResourceID framebuffer, uint32_t attachmentIndex) const {
+		return RenderContext::getFramebufferSet(framebuffer)->getDynamicTexture(attachmentIndex);
 	}
 
+	DynamicTexture* Renderer::getFramebufferDynamicTexturePtr(ResourceID framebuffer, uint32_t attachmentIndex) const {
+		return RenderContext::getFramebufferSet(framebuffer)->getDynamicTexturePtr(attachmentIndex);
+	}
+	
 	void Renderer::waitForFrame(ResourceID swapchains) {
 		RenderContext::getSwapchain(swapchains)->waitForFrame();
 	}
 
 	size_t Renderer::getFramebufferTextureCount(ResourceID framebuffer) const {
 		return RenderContext::getFramebufferSet(framebuffer)->getTextureCount();
+	}
+
+	Extent Renderer::getFramebufferExtent(ResourceID framebuffer) const {
+		return RenderContext::getFramebufferSet(framebuffer)->getExtent();
+	}
+
+	void Renderer::swapFramebuffer(ResourceID framebuffer) {
+		FramebufferSet* pFramebufferSet = RenderContext::getFramebufferSet(framebuffer);
+		pFramebufferSet->swap();
 	}
 
 	ResourceID Renderer::createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, PipelineSettings settings) {

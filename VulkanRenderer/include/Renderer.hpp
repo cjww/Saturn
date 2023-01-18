@@ -98,8 +98,13 @@ namespace sa {
 
 		void destroyFramebuffer(ResourceID framebuffer);
 
-		Texture getFramebufferTexture(ResourceID framebuffer, uint32_t attachmentIndex, uint32_t index = -1) const;
+		Texture getFramebufferTexture(ResourceID framebuffer, uint32_t attachmentIndex) const;
+		DynamicTexture getFramebufferDynamicTexture(ResourceID framebuffer, uint32_t attachmentIndex) const;
+		DynamicTexture* getFramebufferDynamicTexturePtr(ResourceID framebuffer, uint32_t attachmentIndex) const;
+
 		size_t getFramebufferTextureCount(ResourceID framebuffer) const;
+		Extent getFramebufferExtent(ResourceID framebuffer) const;
+		void swapFramebuffer(ResourceID framebuffer);
 
 		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, PipelineSettings settings = {});
 		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& fragmentShader, PipelineSettings settings = {});

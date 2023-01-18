@@ -15,8 +15,7 @@ class SceneView : public EditorModule {
 private:
 	sa::SceneCamera m_camera;
 	sa::RenderWindow* m_pWindow;
-
-	sa::DynamicTexture2D m_colorTexture;
+	
 	sa::RenderTarget m_renderTarget;
 
 	bool m_isFocused;

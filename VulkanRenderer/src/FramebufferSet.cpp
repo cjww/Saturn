@@ -169,6 +169,12 @@ namespace sa{
 		}
 	}
 
+	void FramebufferSet::swap() {
+		for (auto& image : m_dynamicImages) {
+			image.swap();
+		}
+	}
+
 	vk::Framebuffer FramebufferSet::getBuffer(uint32_t index) const {
 		return m_buffers.at(index);
 	}
@@ -182,10 +188,18 @@ namespace sa{
 		return m_extent;
 	}
 
-	const Texture& FramebufferSet::getTexture(uint32_t attachmentIndex, uint32_t index) const {
+	const Texture& FramebufferSet::getTexture(uint32_t attachmentIndex) const {
 		return m_isDynamic ?
-			m_dynamicImages.at(attachmentIndex).getTexture(index) :
+			m_dynamicImages.at(attachmentIndex).getTexture() :
 			m_images.at(attachmentIndex);
+	}
+
+	const DynamicTexture& FramebufferSet::getDynamicTexture(uint32_t attachmentIndex) const {
+		return m_dynamicImages.at(attachmentIndex);
+	}
+
+	DynamicTexture* FramebufferSet::getDynamicTexturePtr(uint32_t attachmentIndex) {
+		return &m_dynamicImages.at(attachmentIndex);
 	}
 
 	size_t FramebufferSet::getTextureCount() const {

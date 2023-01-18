@@ -38,13 +38,17 @@ namespace sa {
 
 		void destroy();
 
+		void swap();
 
 		vk::Framebuffer getBuffer(uint32_t index) const;
 		uint32_t getBufferCount() const;
 
 		Extent getExtent() const;
 
-		const Texture& getTexture(uint32_t attachmentIndex, uint32_t index = -1) const;
+		const Texture& getTexture(uint32_t attachmentIndex) const;
+		const DynamicTexture& getDynamicTexture(uint32_t attachmentIndex) const;
+		DynamicTexture* getDynamicTexturePtr(uint32_t attachmentIndex);
+
 		size_t getTextureCount() const;
 
 		Swapchain* getSwapchain() const;

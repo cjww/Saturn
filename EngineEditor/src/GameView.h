@@ -4,7 +4,6 @@
 
 class GameView : public EditorModule {
 private:
-	sa::DynamicTexture2D m_colorTexture;
 	sa::RenderTarget m_renderTarget;
 
 	int m_mipLevel;

@@ -97,7 +97,7 @@ namespace sa {
 		virtual void render(RenderContext& context, SceneCamera* pCamera, ResourceID framebuffer) override;
 		virtual void endRender(RenderContext& context) override;
 
-		virtual ResourceID createColorFramebuffer(const DynamicTexture2D& outputTexture) override;
+		virtual ResourceID createColorFramebuffer(const DynamicTexture& colorTexture) override;
 
 		virtual void updateLights(Scene* pScene) override;
 		virtual void collectMeshes(Scene* pScene) override;
