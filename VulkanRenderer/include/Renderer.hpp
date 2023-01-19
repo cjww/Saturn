@@ -30,6 +30,63 @@ namespace sa {
 		CUBIC = 1000015000
 	};
 
+	enum class SamplerAddressMode {
+		REPEAT = 0,
+		MIRRORED_REPEAT = 1,
+		CLAMP_TO_EDGE = 2,
+		CLAMP_TO_BORDER = 3,
+		MIRROR_CLAMP_TO_EDGE = 4,
+		MAX_ENUM = 0x7FFFFFFF
+	};
+
+	enum class SamplerMipmapMode {
+		NEAREST = 0,
+		LINEAR = 1,
+		MAX_ENUM = 0x7FFFFFFF
+	};
+
+	enum class CompareOp {
+		NEVER = 0,
+		LESS = 1,
+		EQUAL = 2,
+		LESS_OR_EQUAL = 3,
+		GREATER = 4,
+		NOT_EQUAL = 5,
+		GREATER_OR_EQUAL = 6,
+		ALWAYS = 7,
+		MAX_ENUM = 0x7FFFFFFF
+	};
+
+	enum class BorderColor {
+		FLOAT_TRANSPARENT_BLACK = 0,
+		INT_TRANSPARENT_BLACK = 1,
+		FLOAT_OPAQUE_BLACK = 2,
+		INT_OPAQUE_BLACK = 3,
+		FLOAT_OPAQUE_WHITE = 4,
+		INT_OPAQUE_WHITE = 5,
+		FLOAT_CUSTOM_EXT = 1000287003,
+		INT_CUSTOM_EXT = 1000287004,
+		MAX_ENUM = 0x7FFFFFFF
+	};
+
+	struct SamplerInfo {
+		FilterMode				magFilter = FilterMode::LINEAR;
+		FilterMode				minFilter = FilterMode::LINEAR;
+		SamplerMipmapMode		mipmapMode = SamplerMipmapMode::NEAREST;
+		SamplerAddressMode		addressModeU = SamplerAddressMode::REPEAT;
+		SamplerAddressMode		addressModeV = SamplerAddressMode::REPEAT;
+		SamplerAddressMode		addressModeW = SamplerAddressMode::REPEAT;
+		float                   mipLodBias = 0.f;
+		bool					anisotropyEnable = false;
+		float                   maxAnisotropy = 0.f;
+		bool					compareEnable = false;
+		CompareOp				compareOp = CompareOp::NEVER;
+		float                   minLod = 0.f;
+		float                   maxLod = 9.f;
+		BorderColor				borderColor = BorderColor::FLOAT_TRANSPARENT_BLACK;
+		bool					unnormalizedCoordinates = false;
+	};
+
 	struct DataTransfer {
 		enum Type {
 			BUFFER_TO_IMAGE,
@@ -133,7 +190,8 @@ namespace sa {
 		void queueTransfer(const DataTransfer& transfer);
 
 		ResourceID createSampler(FilterMode filterMode = FilterMode::NEAREST);
-
+		ResourceID createSampler(const SamplerInfo& samplerInfo);
+		
 		RenderContext beginFrame(ResourceID swapchain);
 		void endFrame(ResourceID swapchain);
 

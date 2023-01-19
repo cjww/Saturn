@@ -195,8 +195,8 @@ namespace sa {
 
 	void VulkanCore::createDevice() {
 		m_deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
-		m_deviceExtensions.push_back(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
 		m_deviceExtensions.push_back(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME);
+		m_deviceExtensions.push_back(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
 
 		m_queueInfo = getQueueInfo(vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute, FRAMES_IN_FLIGHT + 1);
 		

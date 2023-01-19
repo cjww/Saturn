@@ -58,8 +58,8 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 		sa::Renderer::get().destroyFramebuffer(m_renderTarget.framebuffer);
 		m_renderTarget.colorTexture.destroy();
 		m_renderTarget.colorTexture = sa::DynamicTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, e.newExtent);
-		m_renderTarget.framebuffer = pEngine->getRenderPipeline().getRenderTechnique()->createColorFramebuffer(m_renderTarget.colorTexture);
-		
+		m_renderTarget.framebuffer = engine.getRenderPipeline().getRenderTechnique()->createColorFramebuffer(m_renderTarget.colorTexture);
+		m_renderTarget.bloomData.isInitialized = false;
 	});
 
 }

@@ -2,6 +2,96 @@
 #include "BloomRenderLayer.h"
 
 namespace sa {
+
+	void BloomRenderLayer::cleanupBloomData(RenderTarget::BloomData& bd) {
+
+		if (bd.bloomTexture.isValid()) {
+			for (auto& tex : bd.bloomMipTextures) {
+				tex.destroy();
+			}
+			bd.bloomTexture.destroy();
+		}
+		if (bd.bufferTexture.isValid()) {
+			for (auto& tex : bd.bufferMipTextures) {
+				tex.destroy();
+			}
+			bd.bufferTexture.destroy();
+		}
+		if (bd.outputTexture.isValid())
+			bd.outputTexture.destroy();
+
+		// DescriptorSets
+		if (bd.filterDescriptorSet != NULL_RESOURCE)
+			m_renderer.freeDescriptorSet(bd.filterDescriptorSet);
+
+		for (size_t i = 0; i < bd.blurDescriptorSets.size(); i++) {
+			m_renderer.freeDescriptorSet(bd.blurDescriptorSets[i]);
+		}
+		for (size_t i = 0; i < bd.upsampleDescriptorSets.size(); i++) {
+			m_renderer.freeDescriptorSet(bd.upsampleDescriptorSets[i]);
+		}
+
+		if (bd.compositeDescriptorSet != NULL_RESOURCE)
+			m_renderer.freeDescriptorSet(bd.compositeDescriptorSet);
+	}
+
+	void BloomRenderLayer::initializeBloomData(RenderContext& context, Extent extent, DynamicTexture* colorTexture, RenderTarget::BloomData& bd) {
+
+		//Textures
+		bd.bloomTexture = DynamicTexture2D(TextureTypeFlagBits::STORAGE | TextureTypeFlagBits::SAMPLED, extent, 1U, 6U);
+		bd.bloomMipTextures = bd.bloomTexture.createMipLevelTextures();
+
+		bd.bufferTexture = DynamicTexture2D(TextureTypeFlagBits::STORAGE | TextureTypeFlagBits::SAMPLED, extent, 1U, bd.bloomMipTextures.size() - 1);
+		bd.bufferMipTextures = bd.bufferTexture.createMipLevelTextures();
+
+		//bd.outputTexture = DynamicTexture2D(TextureTypeFlagBits::STORAGE | TextureTypeFlagBits::SAMPLED, tex.getExtent(), sa::FormatPrecisionFlagBits::e8Bit, sa::FormatDimensionFlagBits::e4, sa::FormatTypeFlagBits::UNORM);
+		bd.outputTexture = DynamicTexture2D(TextureTypeFlagBits::STORAGE | TextureTypeFlagBits::SAMPLED, colorTexture->getExtent());
+
+		// DescriptorSets
+		bd.filterDescriptorSet = m_renderer.allocateDescriptorSet(m_filterPipeline, 0);
+
+		bd.blurDescriptorSets.resize(bd.bloomMipTextures.size() - 1);
+		for (size_t i = 0; i < bd.blurDescriptorSets.size(); i++) {
+			bd.blurDescriptorSets[i] = m_renderer.allocateDescriptorSet(m_blurComputePipeline, 0);
+		}
+
+		bd.upsampleDescriptorSets.resize(bd.bloomMipTextures.size() - 1);
+		for (size_t i = 0; i < bd.upsampleDescriptorSets.size(); i++) {
+			bd.upsampleDescriptorSets[i] = m_renderer.allocateDescriptorSet(m_upsamplePipeline, 0);
+		}
+		bd.compositeDescriptorSet = m_renderer.allocateDescriptorSet(m_compositePipeline, 0);
+
+		for (int i = 0; i < bd.bloomTexture.getTextureCount(); i++) {
+			context.transitionTexture(bd.bloomTexture.getTexture(i), sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_WRITE);
+			context.transitionTexture(bd.bufferTexture.getTexture(i), sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_WRITE);
+			context.transitionTexture(bd.outputTexture.getTexture(i), sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_WRITE);
+		}
+
+		m_renderer.updateDescriptorSet(bd.filterDescriptorSet, 0, *colorTexture, m_sampler);
+		m_renderer.updateDescriptorSet(bd.filterDescriptorSet, 1, bd.bloomMipTextures[0]);
+		for (size_t i = 0; i < bd.bloomMipTextures.size() - 1; i++) {
+			m_renderer.updateDescriptorSet(bd.blurDescriptorSets[i], 0, bd.bloomMipTextures[i]);
+			m_renderer.updateDescriptorSet(bd.blurDescriptorSets[i], 1, bd.bloomMipTextures[i + 1]);
+		}
+
+		DynamicTexture2D smallImage = bd.bloomMipTextures[bd.bloomMipTextures.size() - 1];
+		DynamicTexture2D bigImage = bd.bloomMipTextures[bd.bloomMipTextures.size() - 2];
+		for (int i = (int)bd.bufferMipTextures.size() - 1; i >= 0; i--) {
+			m_renderer.updateDescriptorSet(bd.upsampleDescriptorSets[i], 0, smallImage);
+			m_renderer.updateDescriptorSet(bd.upsampleDescriptorSets[i], 1, bigImage);
+			m_renderer.updateDescriptorSet(bd.upsampleDescriptorSets[i], 2, bd.bufferMipTextures[i]);
+			if (i > 0) {
+				smallImage = bd.bufferMipTextures[i];
+				bigImage = bd.bloomMipTextures[i - 1];
+			}
+		}
+
+		m_renderer.updateDescriptorSet(bd.compositeDescriptorSet, 0, *colorTexture, m_sampler);
+		m_renderer.updateDescriptorSet(bd.compositeDescriptorSet, 1, bd.bufferMipTextures[0]);
+		m_renderer.updateDescriptorSet(bd.compositeDescriptorSet, 2, bd.bufferMipTextures[0]);
+		m_renderer.updateDescriptorSet(bd.compositeDescriptorSet, 3, bd.outputTexture);
+	}
+
 	void BloomRenderLayer::init(RenderWindow* pWindow, IRenderTechnique* pRenderTechnique) {
 
 		m_pRenderTechnique = pRenderTechnique;
@@ -11,7 +101,15 @@ namespace sa {
 		m_upsamplePipeline = m_renderer.createComputePipeline("../Engine/shaders/Upsample.comp.spv");
 		m_compositePipeline = m_renderer.createComputePipeline("../Engine/shaders/CompositeBloom.comp.spv");
 		
-		m_sampler = m_renderer.createSampler(sa::FilterMode::LINEAR);
+		SamplerInfo samplerInfo = {};
+		samplerInfo.minFilter = FilterMode::LINEAR;
+		samplerInfo.magFilter = FilterMode::LINEAR;
+		
+		samplerInfo.addressModeU = SamplerAddressMode::CLAMP_TO_EDGE;
+		samplerInfo.addressModeV = SamplerAddressMode::CLAMP_TO_EDGE;
+		samplerInfo.addressModeW = SamplerAddressMode::CLAMP_TO_EDGE;
+
+		m_sampler = m_renderer.createSampler(samplerInfo);
 
 		m_stackSize = 0;
 	}
@@ -21,7 +119,7 @@ namespace sa {
 	}
 
 	void BloomRenderLayer::onWindowResize(Extent newExtent) {
-
+		
 	}
 
 	void BloomRenderLayer::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget) {
@@ -29,99 +127,16 @@ namespace sa {
 
 		RenderTarget::BloomData& bd = pRenderTarget->bloomData;
 
-
 		DynamicTexture* tex = m_renderer.getFramebufferDynamicTexturePtr(pRenderTarget->framebuffer, 0);
 		Extent extent = { std::ceil(tex->getExtent().width * 0.5f), std::ceil(tex->getExtent().height * 0.5f) };
-		//Extent extent = tex.getExtent();
-
+		
 		if (!bd.isInitialized) {
 			bd.isInitialized = true;
 			// Free old data
-			//Textures
-			if (bd.bloomTexture.isValid()) {
-				for (auto& tex : bd.bloomMipTextures) {
-					tex.destroy();
-				}
-				bd.bloomTexture.destroy();
-			}
-			if (bd.bufferTexture.isValid()) {
-				for (auto& tex : bd.bufferMipTextures) {
-					tex.destroy();
-				}
-				bd.bufferTexture.destroy();
-			}
-			if(bd.outputTexture.isValid())
-				bd.outputTexture.destroy();
-
-			// DescriptorSets
-			if(bd.filterDescriptorSet != NULL_RESOURCE)
-				m_renderer.freeDescriptorSet(bd.filterDescriptorSet);
-				
-			for (size_t i = 0; i < bd.blurDescriptorSets.size(); i++) {
-				m_renderer.freeDescriptorSet(bd.blurDescriptorSets[i]);
-			}
-			for (size_t i = 0; i < bd.upsampleDescriptorSets.size(); i++) {
-				m_renderer.freeDescriptorSet(bd.upsampleDescriptorSets[i]);
-			}
-			if(bd.compositeDescriptorSet != NULL_RESOURCE)
-				m_renderer.freeDescriptorSet(bd.compositeDescriptorSet);
+			cleanupBloomData(bd);
 			
-
 			// Initialize
-			//Textures
-			bd.bloomTexture = DynamicTexture2D(TextureTypeFlagBits::STORAGE | TextureTypeFlagBits::SAMPLED, extent, 1U, 6U);
-			bd.bloomMipTextures = bd.bloomTexture.createMipLevelTextures();
-
-			bd.bufferTexture = DynamicTexture2D(TextureTypeFlagBits::STORAGE | TextureTypeFlagBits::SAMPLED, extent, 1U, bd.bloomMipTextures.size() - 1);
-			bd.bufferMipTextures = bd.bufferTexture.createMipLevelTextures();
-
-			//bd.outputTexture = DynamicTexture2D(TextureTypeFlagBits::STORAGE | TextureTypeFlagBits::SAMPLED, tex.getExtent(), sa::FormatPrecisionFlagBits::e8Bit, sa::FormatDimensionFlagBits::e4, sa::FormatTypeFlagBits::UNORM);
-			bd.outputTexture = DynamicTexture2D(TextureTypeFlagBits::STORAGE | TextureTypeFlagBits::SAMPLED, tex->getExtent());
-
-			// DescriptorSets
-			bd.filterDescriptorSet = m_renderer.allocateDescriptorSet(m_filterPipeline, 0);
-			
-			bd.blurDescriptorSets.resize(bd.bloomMipTextures.size() - 1);
-			for (size_t i = 0; i < bd.blurDescriptorSets.size(); i++) {
-				bd.blurDescriptorSets[i] = m_renderer.allocateDescriptorSet(m_blurComputePipeline, 0);
-			}
-
-			bd.upsampleDescriptorSets.resize(bd.bloomMipTextures.size() - 1);
-			for (size_t i = 0; i < bd.upsampleDescriptorSets.size(); i++) {
-				bd.upsampleDescriptorSets[i] = m_renderer.allocateDescriptorSet(m_upsamplePipeline, 0);
-			}
-			bd.compositeDescriptorSet = m_renderer.allocateDescriptorSet(m_compositePipeline, 0);
-			
-			for (int i = 0; i < bd.bloomTexture.getTextureCount(); i++) {
-				context.transitionTexture(bd.bloomTexture.getTexture(i), sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_WRITE);
-				context.transitionTexture(bd.bufferTexture.getTexture(i), sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_WRITE);
-				context.transitionTexture(bd.outputTexture.getTexture(i), sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_WRITE);
-			}
-
-			m_renderer.updateDescriptorSet(bd.filterDescriptorSet, 0, *tex, m_sampler);
-			m_renderer.updateDescriptorSet(bd.filterDescriptorSet, 1, bd.bloomMipTextures[0]);
-			for (size_t i = 0; i < bd.bloomMipTextures.size() - 1; i++) {
-				m_renderer.updateDescriptorSet(bd.blurDescriptorSets[i], 0, bd.bloomMipTextures[i]);
-				m_renderer.updateDescriptorSet(bd.blurDescriptorSets[i], 1, bd.bloomMipTextures[i + 1]);
-			}
-
-			DynamicTexture2D smallImage = bd.bloomMipTextures[bd.bloomMipTextures.size() - 1];
-			DynamicTexture2D bigImage = bd.bloomMipTextures[bd.bloomMipTextures.size() - 2];
-			for (int i = (int)bd.bufferMipTextures.size() - 1; i >= 0; i--) {
-				m_renderer.updateDescriptorSet(bd.upsampleDescriptorSets[i], 0, smallImage);
-				m_renderer.updateDescriptorSet(bd.upsampleDescriptorSets[i], 1, bigImage);
-				m_renderer.updateDescriptorSet(bd.upsampleDescriptorSets[i], 2, bd.bufferMipTextures[i]);
-				if (i > 0) {
-					smallImage = bd.bufferMipTextures[i];
-					bigImage = bd.bloomMipTextures[i - 1];
-				}
-			}
-
-			m_renderer.updateDescriptorSet(bd.compositeDescriptorSet, 0, *tex, m_sampler);
-			m_renderer.updateDescriptorSet(bd.compositeDescriptorSet, 1, bd.bufferMipTextures[0]);
-			m_renderer.updateDescriptorSet(bd.compositeDescriptorSet, 2, bd.bufferMipTextures[0]);
-			m_renderer.updateDescriptorSet(bd.compositeDescriptorSet, 3, bd.outputTexture);
-
+			initializeBloomData(context, extent, tex, bd);
 		}
 		
 

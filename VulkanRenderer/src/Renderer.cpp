@@ -415,6 +415,12 @@ namespace sa {
 		return ResourceManager::get().insert(m_pCore->createSampler(info));
 	}
 
+	ResourceID Renderer::createSampler(const SamplerInfo& samplerInfo) {
+		vk::SamplerCreateInfo info = {};
+		memcpy(&info + offsetof(vk::SamplerCreateInfo, vk::SamplerCreateInfo::magFilter), &samplerInfo, sizeof(SamplerInfo));
+		return ResourceManager::get().insert(m_pCore->createSampler(info));
+	}
+
 	RenderContext Renderer::beginFrame(ResourceID swapchain) {
 		Swapchain* pSwapchain = RenderContext::getSwapchain(swapchain);
 

@@ -20,6 +20,9 @@ namespace sa {
 
 		bool m_wasResized;
 
+		void cleanupBloomData(RenderTarget::BloomData& bd);
+		void initializeBloomData(RenderContext& context, Extent extent, DynamicTexture* colorTexture, RenderTarget::BloomData& bd);
+
 	public:
 		virtual void init(RenderWindow* pWindow, IRenderTechnique* pRenderTechnique = nullptr) override;
 	
