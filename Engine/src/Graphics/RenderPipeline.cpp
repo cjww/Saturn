@@ -92,18 +92,19 @@ namespace sa {
 	}
 
 	RenderContext RenderPipeline::beginScene(Scene* pScene) {
-		SA_PROFILE_FUNCTION();
-
-		m_context = m_pWindow->beginFrame();
-		if (!m_context)
-			return {};
+		{
+			SA_PROFILE_SCOPE("Begin frame i.e. wait for fence");
+			m_context = m_pWindow->beginFrame();
+			if (!m_context)
+				return {};
+		}
 
 		m_pRenderTechnique->updateLights(pScene);
 		// collect meshes
 		m_pRenderTechnique->collectMeshes(pScene);
 	
 		m_pRenderTechnique->updateData(m_context);
-	
+		
 		return m_context;
 	}
 

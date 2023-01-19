@@ -50,10 +50,10 @@ namespace sa {
 		void startSimulation();
 		void stopSimulation();
 
-
 		std::filesystem::path makeProjectRelative(const std::filesystem::path& path);
 		std::filesystem::path makeEditorRelative(const std::filesystem::path& projectRelativePath);
 
+		void imGuiProfiler();
 
 	public:
 		EngineEditor() = default;

@@ -382,8 +382,6 @@ namespace sa {
 		context.updateDescriptorSet(m_sceneDescriptorSet, 6, m_textures);
 
 		
-		//context.updateDescriptorSet(m_lightCullingDescriptorSet, 0, m_depthTexture.getTexture(m_depthTexture.getTextureIndex()), m_linearSampler);
-
 		context.updateDescriptorSet(m_lightCullingDescriptorSet, 1, m_lightIndexBuffer);
 		context.updateDescriptorSet(m_lightCullingDescriptorSet, 2, m_lightBuffer);
 

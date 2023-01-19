@@ -307,7 +307,30 @@ namespace sa {
 		return m_projectPath.parent_path() / projectRelativePath;
 	}
 
-	
+	void EngineEditor::imGuiProfiler() {
+		if (ImGui::Begin("Profiler")) {
+			
+			static bool isRecording = false;
+			static std::string filePath = "profile_editor_result.json";
+			if (isRecording) {
+				if (ImGui::Button("Stop recording")) {
+					SA_PROFILER_END_SESSION();
+					isRecording = false;
+				}
+			}
+			else {
+				ImGui::InputText("Result file", &filePath);
+				
+				if(ImGui::Button("Record session...")) {
+					SA_PROFILER_BEGIN_SESSION();
+					isRecording = true;
+				}
+			}
+
+
+			ImGui::End();
+		}
+	}
 
 	void EngineEditor::onAttach(sa::Engine& engine, sa::RenderWindow& renderWindow) {
 		m_pEngine = &engine;
@@ -471,6 +494,11 @@ namespace sa {
 		for (auto& module : m_editorModules) {
 			module->onImGui();
 		}
+
+#if SA_PROFILER_ENABLE
+		imGuiProfiler();
+#endif
+
 	}
 
 	void EngineEditor::onUpdate(float dt) {

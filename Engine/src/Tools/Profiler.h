@@ -34,6 +34,7 @@ namespace sa {
 		};
 
 		Profiler();
+		~Profiler();
 
 		static Profiler& get()
 		{
