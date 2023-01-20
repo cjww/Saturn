@@ -11,20 +11,17 @@ layout(set = 0, binding = 3, rgba8) uniform writeonly image2D resultImage;
 
 shared int sumLuminance;
 
-vec4 upsample(ivec2 coordinate, vec4 sampleScale, vec2 texelSize) {
-
-	vec4 d = vec4(1.0, 1.0, -1.0, 0.0) * sampleScale;
-
+vec4 upsample(ivec2 coordinate) {
     vec4 s;
-    s =  imageLoad(bloomImage, ivec2(coordinate - texelSize * d.xy));
-    s += imageLoad(bloomImage, ivec2(coordinate - texelSize * d.wy)) * 2.0;
-    s += imageLoad(bloomImage, ivec2(coordinate - texelSize * d.zy));
-    s += imageLoad(bloomImage, ivec2(coordinate + texelSize * d.zw)) * 2.0;
-    s += imageLoad(bloomImage, ivec2(coordinate					  )) * 4.0;
-    s += imageLoad(bloomImage, ivec2(coordinate + texelSize * d.xw)) * 2.0;
-    s += imageLoad(bloomImage, ivec2(coordinate + texelSize * d.zy));
-    s += imageLoad(bloomImage, ivec2(coordinate + texelSize * d.wy)) * 2.0;
-    s += imageLoad(bloomImage, ivec2(coordinate + texelSize * d.xy));
+	s =  imageLoad(bloomImage, ivec2(coordinate + ivec2(1, 1)));
+    s += imageLoad(bloomImage, ivec2(coordinate + ivec2(0, 1))) * 2.0;
+    s += imageLoad(bloomImage, ivec2(coordinate + ivec2(-1, 1)));
+    s += imageLoad(bloomImage, ivec2(coordinate + ivec2(1, 0))) * 2.0;
+    s += imageLoad(bloomImage, ivec2(coordinate				 )) * 4.0;
+    s += imageLoad(bloomImage, ivec2(coordinate + ivec2(-1, 0))) * 2.0;
+    s += imageLoad(bloomImage, ivec2(coordinate + ivec2(1, -1)));
+    s += imageLoad(bloomImage, ivec2(coordinate + ivec2(0, -1))) * 2.0;
+    s += imageLoad(bloomImage, ivec2(coordinate + ivec2(-1, -1)));
 
     return s * (1.0 / 16.0);
 }
@@ -40,6 +37,69 @@ vec4 filmicToneMapping(vec4 color) {
     vec3 x = color.rgb;
     vec3 result = (x * (6.2 * x + 0.5)) / (x * (6.2 * x + 1.7) + 0.06);
     return vec4(result, 1.0);
+}
+
+vec3 FilmicTonemapping(vec3 color, float exposure, float whitePoint)
+{
+    vec3 linearColor = pow(color / 12.92, vec3(2.2));
+    vec3 x = max(vec3(0), linearColor - 0.004);
+    vec3 curve = (x * (6.2 * x + 0.5)) / (x * (6.2 * x + 1.7) + 0.06);
+    vec3 tonemappedColor = curve * (1. / 2.51) * (exposure * whitePoint);
+    vec3 sRGBcolor = pow(tonemappedColor, vec3(1.0 / 2.2));
+    return sRGBcolor;
+}
+
+vec3 reinhard(vec3 v)
+{
+    return v / (1.0 + v);
+}
+
+float luminance(vec3 v) {
+    return dot(v, vec3(0.2126, 0.7152, 0.0722));
+}
+
+vec3 change_luminance(vec3 c_in, float l_out) {
+    float l_in = luminance(c_in);
+    return c_in * (l_out / l_in);
+}
+
+vec3 reinhard_extended_luminance(vec3 v, float max_white_l) {
+    float l_old = luminance(v);
+    float numerator = l_old * (1.0 + (l_old / (max_white_l * max_white_l)));
+    float l_new = numerator / (1.0 + l_old);
+    return change_luminance(v, l_new);
+}
+
+vec3 aces_approx(vec3 v)
+{
+    v *= 0.5;
+    float a = 2.51;
+    float b = 0.03;
+    float c = 2.43;
+    float d = 0.59;
+    float e = 0.14;
+    return clamp((v*(a*v+b))/(v*(c*v+d)+e), 0.0, 1.0);
+}
+
+vec3 uncharted2_tonemap_partial(vec3 x)
+{
+    float A = 0.15;
+    float B = 0.50;
+    float C = 0.10;
+    float D = 0.20;
+    float E = 0.02;
+    float F = 0.30;
+    return ((x*(A*x+C*B)+D*E)/(x*(A*x+B)+D*F))-E/F;
+}
+
+vec3 uncharted2_filmic(vec3 v)
+{
+    float exposure_bias = 2.0;
+    vec3 curr = uncharted2_tonemap_partial(v * exposure_bias);
+
+    vec3 W = vec3(11.2);
+    vec3 white_scale = vec3(1.0) / uncharted2_tonemap_partial(W);
+    return curr * white_scale;
 }
 
 vec4 gammaCorrect(vec4 color, float gamma) {
@@ -58,13 +118,18 @@ void main() {
 	vec4 color = texture(colorImage, uv);
     
     // add Bloom
-	vec4 bloom = upsample(ivec2(pos * 0.5), vec4(1), vec2(1));
+	vec4 bloom = upsample(ivec2(pos * 0.5));
     color += bloom;
    
     // Tonemapping
-    color = gammaCorrect(color, 2.2);
-    color = color * filmicToneMapping(color);
+    //color = gammaCorrect(color, 2.2);
+    //color = color * filmicToneMapping(color);
+    //color.rgb = FilmicTonemapping(color.rgb, 0.1, 1.0);
     //color = color * reinhard(color, 0.18, 1.0);
+    //color.rgb = reinhard(color.rgb);
+	//color.rgb = reinhard_extended_luminance(color.rgb, 600);
+    color.rgb = aces_approx(color.rgb);
+    //color.rgb = uncharted2_filmic(color.rgb);
 
-	imageStore(resultImage, pos, vec4(color.rgb, 1.0));
+    imageStore(resultImage, pos, vec4(color.rgb, 1.0));
 }

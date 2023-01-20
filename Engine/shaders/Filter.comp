@@ -7,6 +7,12 @@ layout(set = 0, binding = 1, rgba8) uniform writeonly image2D resultImage; // ha
 
 const float threshold = 1.0;
 
+/*
+layout(set = 0, binding = 2) uniform FilterInfo {
+    float threshold;
+} filterInfo;
+*/
+
 
 // [Jimenez14] http://goo.gl/eomGso
 // . . . . . . .
@@ -17,19 +23,19 @@ const float threshold = 1.0;
 // . K . L . M .
 // . . . . . . .
 vec4 downsample(vec2 uv, vec2 texelSize) {
-	vec4 A = texture(inputImage, uv + texelSize * ivec2(-1.0, -1.0));
-    vec4 B = texture(inputImage, uv + texelSize * ivec2( 0.0, -1.0));
-    vec4 C = texture(inputImage, uv + texelSize * ivec2( 1.0, -1.0));
-    vec4 D = texture(inputImage, uv + texelSize * ivec2(-0.5, -0.5));
-    vec4 E = texture(inputImage, uv + texelSize * ivec2( 0.5, -0.5));
-    vec4 F = texture(inputImage, uv + texelSize * ivec2(-1.0,  0.0));
+	vec4 A = texture(inputImage, uv + texelSize * vec2(-1.0, -1.0));
+    vec4 B = texture(inputImage, uv + texelSize * vec2( 0.0, -1.0));
+    vec4 C = texture(inputImage, uv + texelSize * vec2( 1.0, -1.0));
+    vec4 D = texture(inputImage, uv + texelSize * vec2(-0.5, -0.5));
+    vec4 E = texture(inputImage, uv + texelSize * vec2( 0.5, -0.5));
+    vec4 F = texture(inputImage, uv + texelSize * vec2(-1.0,  0.0));
     vec4 G = texture(inputImage, uv);
-    vec4 H = texture(inputImage, uv + texelSize * ivec2( 1.0,  0.0));
-    vec4 I = texture(inputImage, uv + texelSize * ivec2(-0.5,  0.5));
-    vec4 J = texture(inputImage, uv + texelSize * ivec2( 0.5,  0.5));
-    vec4 K = texture(inputImage, uv + texelSize * ivec2(-1.0,  1.0));
-    vec4 L = texture(inputImage, uv + texelSize * ivec2( 0.0,  1.0));
-    vec4 M = texture(inputImage, uv + texelSize * ivec2( 1.0,  1.0));
+    vec4 H = texture(inputImage, uv + texelSize * vec2( 1.0,  0.0));
+    vec4 I = texture(inputImage, uv + texelSize * vec2(-0.5,  0.5));
+    vec4 J = texture(inputImage, uv + texelSize * vec2( 0.5,  0.5));
+    vec4 K = texture(inputImage, uv + texelSize * vec2(-1.0,  1.0));
+    vec4 L = texture(inputImage, uv + texelSize * vec2( 0.0,  1.0));
+    vec4 M = texture(inputImage, uv + texelSize * vec2( 1.0,  1.0));
 
     vec2 div = 0.25 * vec2(0.5, 0.125);
 
@@ -46,11 +52,14 @@ void main() {
     ivec2 pos = ivec2(gl_GlobalInvocationID.xy); // coordinates on result image
 	vec2 texSize = textureSize(inputImage, 0);
 	ivec2 inputPos = pos * 2;
-	vec2 uv = inputPos / texSize;
+	vec2 uv = vec2(inputPos) / texSize;
 
 	vec3 color = downsample(uv, 1 / texSize).xyz;
+    //vec3 color = texture(inputImage, uv + 1 / texSize).xyz;
+    
 
-	float brightness = max(color.r, max(color.g, color.b));
+	//float brightness = max(color.r, max(color.g, color.b));
+    float brightness = dot(color, vec3(0.2126, 0.7152, 0.0722));
 	float contribution = max(0, brightness - threshold);
 	contribution /= max(brightness, 0.00001);
 	color = color * contribution;

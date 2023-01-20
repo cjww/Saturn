@@ -54,7 +54,8 @@ namespace sa {
 
 		m_pEngine->on<engine_event::OnRender>([&](engine_event::OnRender& e, Engine& engine) {
 			e.pRenderPipeline->render(&m_camera, &m_renderTarget);
-			m_colorTexture.swap();
+			//m_colorTexture.swap();
+			sa::Renderer::get().swapFramebuffer(m_renderTarget.framebuffer);
 		});
 
 		Entity light = m_pEngine->getCurrentScene()->createEntity();
@@ -71,17 +72,18 @@ namespace sa {
 		static bool spawned = false;
 		timer += dt;
 		static Entity box;
-		if (timer > 2 && !spawned) {
+		if (timer > 1 && !spawned) {
 			spawned = true;
 			box = m_pEngine->getCurrentScene()->createEntity();
 
-			box.addComponent<comp::Transform>();
+			box.addComponent<comp::Transform>()->position = {0, 0, 0};
 			box.addComponent<comp::Model>()->modelID = AssetManager::get().loadBox();
 
 		}
-
-		if(spawned)
-			box.getComponent<comp::Transform>()->position = glm::vec3(1, 0, 0) * sin(timer * 4) * 2.f;
+		
+		if (spawned) {
+			//box.getComponent<comp::Transform>()->position = glm::vec3(1, 0, 0) * sin(timer * 4) * 2.f;
+		}
 
 		std::queue<Entity> entitiesDone;
 		for (const auto& [entity, progress] : m_completions) {
