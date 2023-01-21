@@ -55,12 +55,9 @@ void main() {
 	vec2 uv = vec2(inputPos) / texSize;
 
 	vec3 color = downsample(uv, 1 / texSize).xyz;
-    //vec3 color = texture(inputImage, uv + 1 / texSize).xyz;
-    
 
-	//float brightness = max(color.r, max(color.g, color.b));
-    float brightness = dot(color, vec3(0.2126, 0.7152, 0.0722));
-	float contribution = max(0, brightness - threshold);
+	float brightness = max(color.r, max(color.g, color.b));
+    float contribution = max(0, brightness - threshold);
 	contribution /= max(brightness, 0.00001);
 	color = color * contribution;
 	

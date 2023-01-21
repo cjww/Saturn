@@ -80,7 +80,7 @@ void main() {
 
     Material material = materialBuffer.materials[materialIndex];
 
-    vec4 ambientColor = material.ambientColor * 0.1;
+    vec4 ambientColor = material.ambientColor * 0.01;
     vec4 diffuseColor = vec4(0, 0, 0, 1);
     vec4 specularColor = vec4(0, 0, 0, 1);
 
@@ -132,7 +132,5 @@ void main() {
     vec4 finalColor = (ambientColor + diffuseColor + specularColor) * occlusion * objectColor;
         
     out_color = vec4(finalColor.xyz, material.opacity);
-
-    //float brightness = (0.2126 * finalColor.r + 0.7152 * finalColor.g + 0.0722 * finalColor.b);
 
 }

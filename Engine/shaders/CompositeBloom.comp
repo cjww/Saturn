@@ -9,7 +9,19 @@ layout(set = 0, binding = 2, rgba8) uniform readonly image2D toneMapping;
 
 layout(set = 0, binding = 3, rgba8) uniform writeonly image2D resultImage;
 
-shared int sumLuminance;
+/*
+layout(set = 0, binding = 4) uniform BloomInfo {
+    float intensity;
+    float spread;
+} bloomInfo;
+
+layout(set = 0, binding = 5) uniform TonemapInfo {
+    int mode;
+    float gamma;
+    float exposure;
+} tonemapInfo;
+*/
+
 
 vec4 upsample(ivec2 coordinate) {
     vec4 s;
@@ -49,8 +61,7 @@ vec3 FilmicTonemapping(vec3 color, float exposure, float whitePoint)
     return sRGBcolor;
 }
 
-vec3 reinhard(vec3 v)
-{
+vec3 reinhard(vec3 v) {
     return v / (1.0 + v);
 }
 
@@ -70,9 +81,7 @@ vec3 reinhard_extended_luminance(vec3 v, float max_white_l) {
     return change_luminance(v, l_new);
 }
 
-vec3 aces_approx(vec3 v)
-{
-    v *= 0.5;
+vec3 aces_approx(vec3 v) {
     float a = 2.51;
     float b = 0.03;
     float c = 2.43;
@@ -107,10 +116,6 @@ vec4 gammaCorrect(vec4 color, float gamma) {
 }
 
 void main() {
-    if(gl_LocalInvocationIndex == 0) {
-        sumLuminance = 0;
-    }
-
     ivec2 pos = ivec2(gl_GlobalInvocationID.xy);
 	ivec2 colorImageExtent = textureSize(colorImage, 0);
 	
@@ -122,14 +127,17 @@ void main() {
     color += bloom;
    
     // Tonemapping
-    //color = gammaCorrect(color, 2.2);
     //color = color * filmicToneMapping(color);
     //color.rgb = FilmicTonemapping(color.rgb, 0.1, 1.0);
     //color = color * reinhard(color, 0.18, 1.0);
     //color.rgb = reinhard(color.rgb);
 	//color.rgb = reinhard_extended_luminance(color.rgb, 600);
-    color.rgb = aces_approx(color.rgb);
     //color.rgb = uncharted2_filmic(color.rgb);
+    float exposure = 0.6;
+    color.rgb *= exposure;
+    color.rgb = aces_approx(color.rgb);
+    color = gammaCorrect(color, 2.2);
+
 
     imageStore(resultImage, pos, vec4(color.rgb, 1.0));
 }
