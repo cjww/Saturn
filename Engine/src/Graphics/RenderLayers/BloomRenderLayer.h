@@ -5,7 +5,6 @@
 
 namespace sa {
 
-
 	struct GaussianData {
 		float normFactor;
 		int kernelRadius = 3;
