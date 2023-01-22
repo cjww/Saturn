@@ -4,22 +4,28 @@
 #include "Tools/Profiler.h"
 
 namespace sa {
+
+	void generateGaussianKernel(GaussianData& gaussData);
+
 	class BloomRenderLayer : public IRenderLayer {
 	private:
-		ResourceID m_filterPipeline;
-		ResourceID m_blurComputePipeline;
-		ResourceID m_upsamplePipeline;
-		ResourceID m_compositePipeline;
-
-		IRenderTechnique* m_pRenderTechnique;
 		
+		ResourceID m_bloomPipeline;
+
+		Buffer m_bloomInfoBuffer;
+		BloomInfo m_bloomInfo = {};
+		ResourceID m_bloomInfoDescriptorSet;
+		
+		IRenderTechnique* m_pRenderTechnique;
+
 		ResourceID m_sampler;
 
 		Extent m_threadCountStack[7];
 		uint8_t m_stackSize;
 
-		bool m_wasResized;
 
+		bool m_wasResized;
+		
 		void cleanupBloomData(RenderTarget::BloomData& bd);
 		void initializeBloomData(RenderContext& context, Extent extent, DynamicTexture* colorTexture, RenderTarget::BloomData& bd);
 

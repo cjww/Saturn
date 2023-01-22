@@ -7,6 +7,26 @@
 
 namespace sa {
 
+	struct GaussianData {
+		float normFactor;
+		int kernelRadius = 3;
+		alignas(16) glm::vec4 kernel[13];
+	};
+
+	struct TonemapInfo {
+		float gamma = 2.2;
+		float exposure = 0.6;
+		int tonemappingMode = 0;
+	};
+
+	struct BloomInfo {
+		float threshold = 1.0;
+		float intensity = 1.0;
+		alignas(16) TonemapInfo tonemapInfo = {};
+		alignas(16) GaussianData gaussData = {};
+	};
+
+
 	struct RenderTarget {
 		DynamicTexture colorTexture;
 		ResourceID framebuffer = NULL_RESOURCE;
@@ -20,7 +40,7 @@ namespace sa {
 			std::vector<ResourceID> blurDescriptorSets;
 			std::vector<ResourceID> upsampleDescriptorSets;
 			ResourceID compositeDescriptorSet = NULL_RESOURCE;
-
+			
 			DynamicTexture2D bloomTexture;
 			std::vector<DynamicTexture2D> bloomMipTextures;
 

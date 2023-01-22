@@ -498,7 +498,7 @@ namespace sa {
 #if SA_PROFILER_ENABLE
 		imGuiProfiler();
 #endif
-
+		
 	}
 
 	void EngineEditor::onUpdate(float dt) {

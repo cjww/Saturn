@@ -3,6 +3,27 @@
 
 namespace sa {
 
+	void generateGaussianKernel(GaussianData& gaussData) {
+
+		gaussData.kernelRadius = std::min(gaussData.kernelRadius, 6);
+
+		int kSize = gaussData.kernelRadius;
+		int mSize = gaussData.kernelRadius * 2 + 1;
+
+		//create the 1-D kernel
+		constexpr float sigma = 7.0f;
+		float Z = 0.0f;
+
+		for (int i = 0; i <= kSize; ++i) {
+			gaussData.kernel[kSize + i].x = gaussData.kernel[kSize - i].x = 0.39894f * exp(-0.5f * i * i / (sigma * sigma)) / sigma;
+		}
+		for (int j = 0; j < mSize; ++j) {
+			Z += gaussData.kernel[j].x;
+		}
+		gaussData.normFactor = Z * Z;
+
+	}
+
 	void BloomRenderLayer::cleanupBloomData(RenderTarget::BloomData& bd) {
 
 		if (bd.bloomTexture.isValid()) {
@@ -20,6 +41,7 @@ namespace sa {
 		if (bd.outputTexture.isValid())
 			bd.outputTexture.destroy();
 
+		/*
 		// DescriptorSets
 		if (bd.filterDescriptorSet != NULL_RESOURCE)
 			m_renderer.freeDescriptorSet(bd.filterDescriptorSet);
@@ -33,6 +55,7 @@ namespace sa {
 
 		if (bd.compositeDescriptorSet != NULL_RESOURCE)
 			m_renderer.freeDescriptorSet(bd.compositeDescriptorSet);
+		*/
 	}
 
 	void BloomRenderLayer::initializeBloomData(RenderContext& context, Extent extent, DynamicTexture* colorTexture, RenderTarget::BloomData& bd) {
@@ -48,18 +71,27 @@ namespace sa {
 		bd.outputTexture = DynamicTexture2D(TextureTypeFlagBits::STORAGE | TextureTypeFlagBits::SAMPLED, colorTexture->getExtent());
 
 		// DescriptorSets
-		bd.filterDescriptorSet = m_renderer.allocateDescriptorSet(m_filterPipeline, 0);
+		if (bd.filterDescriptorSet == NULL_RESOURCE)
+			bd.filterDescriptorSet = m_renderer.allocateDescriptorSet(m_bloomPipeline, 0);
 
-		bd.blurDescriptorSets.resize(bd.bloomMipTextures.size() - 1);
-		for (size_t i = 0; i < bd.blurDescriptorSets.size(); i++) {
-			bd.blurDescriptorSets[i] = m_renderer.allocateDescriptorSet(m_blurComputePipeline, 0);
+		if (bd.blurDescriptorSets.empty()) {
+			bd.blurDescriptorSets.resize(bd.bloomMipTextures.size() - 1);
+			for (size_t i = 0; i < bd.blurDescriptorSets.size(); i++) {
+				bd.blurDescriptorSets[i] = m_renderer.allocateDescriptorSet(m_bloomPipeline, 0);
+			}
 		}
 
-		bd.upsampleDescriptorSets.resize(bd.bloomMipTextures.size() - 1);
-		for (size_t i = 0; i < bd.upsampleDescriptorSets.size(); i++) {
-			bd.upsampleDescriptorSets[i] = m_renderer.allocateDescriptorSet(m_upsamplePipeline, 0);
+		if (bd.upsampleDescriptorSets.empty()) {
+			bd.upsampleDescriptorSets.resize(bd.bloomMipTextures.size() - 1);
+			for (size_t i = 0; i < bd.upsampleDescriptorSets.size(); i++) {
+				bd.upsampleDescriptorSets[i] = m_renderer.allocateDescriptorSet(m_bloomPipeline, 0);
+			}
 		}
-		bd.compositeDescriptorSet = m_renderer.allocateDescriptorSet(m_compositePipeline, 0);
+
+		if (bd.compositeDescriptorSet == NULL_RESOURCE)
+			bd.compositeDescriptorSet = m_renderer.allocateDescriptorSet(m_bloomPipeline, 0);
+
+		
 
 		for (int i = 0; i < bd.bloomTexture.getTextureCount(); i++) {
 			context.transitionTexture(bd.bloomTexture.getTexture(i), sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_WRITE);
@@ -69,17 +101,22 @@ namespace sa {
 
 		m_renderer.updateDescriptorSet(bd.filterDescriptorSet, 0, *colorTexture, m_sampler);
 		m_renderer.updateDescriptorSet(bd.filterDescriptorSet, 1, bd.bloomMipTextures[0]);
+		m_renderer.updateDescriptorSet(bd.filterDescriptorSet, 2, bd.bloomMipTextures[0]);
+		m_renderer.updateDescriptorSet(bd.filterDescriptorSet, 3, bd.bloomMipTextures[0]);
 		for (size_t i = 0; i < bd.bloomMipTextures.size() - 1; i++) {
-			m_renderer.updateDescriptorSet(bd.blurDescriptorSets[i], 0, bd.bloomMipTextures[i]);
-			m_renderer.updateDescriptorSet(bd.blurDescriptorSets[i], 1, bd.bloomMipTextures[i + 1]);
+			m_renderer.updateDescriptorSet(bd.blurDescriptorSets[i], 0, bd.bloomMipTextures[i], m_sampler);
+			m_renderer.updateDescriptorSet(bd.blurDescriptorSets[i], 1, bd.bloomMipTextures[i]);
+			m_renderer.updateDescriptorSet(bd.blurDescriptorSets[i], 2, bd.bloomMipTextures[i]);
+			m_renderer.updateDescriptorSet(bd.blurDescriptorSets[i], 3, bd.bloomMipTextures[i + 1]);
 		}
 
 		DynamicTexture2D smallImage = bd.bloomMipTextures[bd.bloomMipTextures.size() - 1];
 		DynamicTexture2D bigImage = bd.bloomMipTextures[bd.bloomMipTextures.size() - 2];
 		for (int i = (int)bd.bufferMipTextures.size() - 1; i >= 0; i--) {
-			m_renderer.updateDescriptorSet(bd.upsampleDescriptorSets[i], 0, smallImage);
-			m_renderer.updateDescriptorSet(bd.upsampleDescriptorSets[i], 1, bigImage);
-			m_renderer.updateDescriptorSet(bd.upsampleDescriptorSets[i], 2, bd.bufferMipTextures[i]);
+			m_renderer.updateDescriptorSet(bd.upsampleDescriptorSets[i], 0, *colorTexture, m_sampler);
+			m_renderer.updateDescriptorSet(bd.upsampleDescriptorSets[i], 1, smallImage);
+			m_renderer.updateDescriptorSet(bd.upsampleDescriptorSets[i], 2, bigImage);
+			m_renderer.updateDescriptorSet(bd.upsampleDescriptorSets[i], 3, bd.bufferMipTextures[i]);
 			if (i > 0) {
 				smallImage = bd.bufferMipTextures[i];
 				bigImage = bd.bloomMipTextures[i - 1];
@@ -90,20 +127,27 @@ namespace sa {
 		m_renderer.updateDescriptorSet(bd.compositeDescriptorSet, 1, bd.bufferMipTextures[0]);
 		m_renderer.updateDescriptorSet(bd.compositeDescriptorSet, 2, bd.bufferMipTextures[0]);
 		m_renderer.updateDescriptorSet(bd.compositeDescriptorSet, 3, bd.outputTexture);
+	
+	
 	}
 
 	void BloomRenderLayer::init(RenderWindow* pWindow, IRenderTechnique* pRenderTechnique) {
 
 		m_pRenderTechnique = pRenderTechnique;
 
-		m_filterPipeline = m_renderer.createComputePipeline("../Engine/shaders/Filter.comp.spv");
-		m_blurComputePipeline = m_renderer.createComputePipeline("../Engine/shaders/GaussianBlur.comp.spv");
-		m_upsamplePipeline = m_renderer.createComputePipeline("../Engine/shaders/Upsample.comp.spv");
-		m_compositePipeline = m_renderer.createComputePipeline("../Engine/shaders/CompositeBloom.comp.spv");
-		
+		m_bloomPipeline = m_renderer.createComputePipeline("../Engine/shaders/BloomShader.comp.spv");
+
+
+		m_bloomInfoDescriptorSet = m_renderer.allocateDescriptorSet(m_bloomPipeline, 1);
+
+		generateGaussianKernel(m_bloomInfo.gaussData);
+		m_bloomInfoBuffer = m_renderer.createBuffer(BufferType::UNIFORM, sizeof(BloomInfo), &m_bloomInfo);
+		m_renderer.updateDescriptorSet(m_bloomInfoDescriptorSet, 0, m_bloomInfoBuffer);
+
+
 		SamplerInfo samplerInfo = {};
-		samplerInfo.minFilter = FilterMode::LINEAR;
-		samplerInfo.magFilter = FilterMode::LINEAR;
+		samplerInfo.minFilter = FilterMode::NEAREST;
+		samplerInfo.magFilter = FilterMode::NEAREST;
 		
 		samplerInfo.addressModeU = SamplerAddressMode::CLAMP_TO_EDGE;
 		samplerInfo.addressModeV = SamplerAddressMode::CLAMP_TO_EDGE;
@@ -146,13 +190,15 @@ namespace sa {
 		m_threadCountStack[m_stackSize++] = { threadX, threadY };
 
 		// Filter
-		context.bindPipeline(m_filterPipeline);
-		context.bindDescriptorSet(bd.filterDescriptorSet, m_filterPipeline);
+		context.bindPipeline(m_bloomPipeline);
+		context.bindDescriptorSet(m_bloomInfoDescriptorSet, m_bloomPipeline);
+
+		context.bindDescriptorSet(bd.filterDescriptorSet, m_bloomPipeline);
+		context.pushConstant(m_bloomPipeline, ShaderStageFlagBits::COMPUTE, 0);
 		context.dispatch(threadX, threadY, 1);
 
 		
 		// Downsample + blur
-		context.bindPipeline(m_blurComputePipeline);
 		for (size_t i = 0; i < bd.bloomMipTextures.size() - 1; i++) {
 			threadX += 1 * threadX % 2;
 			threadX = threadX >> 1;
@@ -161,20 +207,21 @@ namespace sa {
 			threadY = threadY >> 1;
 			m_threadCountStack[m_stackSize++] = { threadX, threadY };
 
-			context.bindDescriptorSet(bd.blurDescriptorSets[i], m_blurComputePipeline);
+			context.bindDescriptorSet(bd.blurDescriptorSets[i], m_bloomPipeline);
+			context.pushConstant(m_bloomPipeline, ShaderStageFlagBits::COMPUTE, 1);
 			context.dispatch(threadX, threadY, 1);
 		}
 
 		// Upsample + combine
 
-		context.bindPipeline(m_upsamplePipeline);
 		m_stackSize--;
 		for (int i = (int)bd.bufferMipTextures.size() - 1; i >= 0; i--) {
 			m_stackSize--;
 			threadX = m_threadCountStack[m_stackSize].width;
 			threadY = m_threadCountStack[m_stackSize].height;
 
-			context.bindDescriptorSet(bd.upsampleDescriptorSets[i], m_upsamplePipeline);
+			context.bindDescriptorSet(bd.upsampleDescriptorSets[i], m_bloomPipeline);
+			context.pushConstant(m_bloomPipeline, ShaderStageFlagBits::COMPUTE, 2);
 			context.dispatch(threadX, threadY, 1);
 			
 		}
@@ -183,9 +230,9 @@ namespace sa {
 		threadY = m_threadCountStack[m_stackSize].height;
 
 		// Composite + Tonemap
-		context.bindPipeline(m_compositePipeline);
 		
-		context.bindDescriptorSet(bd.compositeDescriptorSet, m_compositePipeline);
+		context.bindDescriptorSet(bd.compositeDescriptorSet, m_bloomPipeline);
+		context.pushConstant(m_bloomPipeline, ShaderStageFlagBits::COMPUTE, 3);
 		context.dispatch(threadX, threadY, 1);
 
 		m_pRenderTechnique->drawData.finalTexture = bd.outputTexture;
