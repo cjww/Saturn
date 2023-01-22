@@ -9,6 +9,7 @@
 #include "SceneHierarchy.h"
 #include "EntityInspector.h"
 #include "GameView.h"
+#include "RenderPipelinePreferences.h"
 
 namespace sa {
 

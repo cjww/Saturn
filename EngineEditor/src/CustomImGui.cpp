@@ -256,8 +256,8 @@ namespace ImGui {
 
 		ImGui::ColorEdit4("Color", (float*)&light->values.color);
 
-		ImGui::SliderFloat("Intensity", &light->values.intensity, 0.1f, 1.f);
-		ImGui::SliderFloat("Attenuation radius", &light->values.attenuationRadius, 2.f, 50.f);
+		ImGui::SliderFloat("Intensity", &light->values.intensity, 0.0f, 10.f);
+		ImGui::SliderFloat("Attenuation radius", &light->values.attenuationRadius, 0.0, 200.f);
 
 		static std::string preview = "Point";
 		if (ImGui::BeginCombo("Type", preview.c_str())) {

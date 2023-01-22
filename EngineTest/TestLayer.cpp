@@ -52,11 +52,22 @@ namespace sa {
 		
 		m_renderTarget.framebuffer = m_pEngine->getRenderPipeline().getRenderTechnique()->createColorFramebuffer(m_colorTexture);
 
+		
 		m_pEngine->on<engine_event::OnRender>([&](engine_event::OnRender& e, Engine& engine) {
 			e.pRenderPipeline->render(&m_camera, &m_renderTarget);
 			//m_colorTexture.swap();
 			sa::Renderer::get().swapFramebuffer(m_renderTarget.framebuffer);
 		});
+
+		m_pEngine->on<engine_event::WindowResized>([&](engine_event::WindowResized& e, Engine& engine) {
+			m_colorTexture.destroy();
+			m_colorTexture = DynamicTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, e.newExtent);
+			sa::Renderer::get().destroyFramebuffer(m_renderTarget.framebuffer);
+			m_renderTarget.framebuffer = engine.getRenderPipeline().getRenderTechnique()->createColorFramebuffer(m_colorTexture);
+			m_renderTarget.bloomData.isInitialized = false;
+		});
+
+
 
 		Entity light = m_pEngine->getCurrentScene()->createEntity();
 		LightData& values = light.addComponent<comp::Light>()->values;

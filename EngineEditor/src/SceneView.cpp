@@ -6,7 +6,7 @@
 
 
 SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWindow* pWindow)
-	: EditorModule(pEngine, pEditor)
+	: EditorModule(pEngine, pEditor, "Scene View", false)
 {
 	m_pWindow = pWindow;
 	m_isFocused = false;
@@ -158,7 +158,7 @@ void SceneView::update(float dt) {
 void SceneView::onImGui() {
 	SA_PROFILE_FUNCTION();
 
-	bool isOpen = ImGui::Begin("Scene view", 0, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
+	bool isOpen = ImGui::Begin(m_name, 0, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
 	if (isOpen) {
 
 		static ImGuizmo::OPERATION operation = ImGuizmo::TRANSLATE;

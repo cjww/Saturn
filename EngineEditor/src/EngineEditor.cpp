@@ -360,6 +360,8 @@ namespace sa {
 
 		m_editorModules.push_back(std::make_unique<GameView>(&engine, this, &renderWindow));
 
+		m_editorModules.push_back(std::make_unique<RenderPipelinePreferences>(&engine, this));
+
 		//Application::get()->pushLayer(new TestLayer);
 
 		Image logo("resources/Logo-white.png");
@@ -452,11 +454,24 @@ namespace sa {
 				}
 				ImGui::EndMenu();
 			}
+
+			if (ImGui::BeginMenu("Windows")) {
+
+				for (auto& module : m_editorModules) {
+					if (ImGui::MenuItem(module->getName())) {
+						module->open();
+					}
+				}
+
+				ImGui::End();
+			}
+
 			ImGui::EndDisabled();
 
 			if (enterSceneNamePopup) {
 				ImGui::OpenPopup("Create New Scene");
 			}
+
 
 			ImGui::SetCursorPosY(framePaddingY - (buttonSize * 0.25f));
 			ImGui::SetCursorPosX(ImGui::GetWindowWidth() * 0.5f - buttonSize * 0.5f);

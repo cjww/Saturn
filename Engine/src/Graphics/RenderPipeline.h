@@ -41,6 +41,28 @@ namespace sa {
 		void endScene();
 
 		IRenderTechnique* getRenderTechnique() const;
+
+		template<typename T>
+		T* getLayer() const;
+
 	};
+
+	template<typename T>
+	inline T* RenderPipeline::getLayer() const {
+		for (auto layer : m_layers) {
+			T* l = dynamic_cast<T*>(layer);
+			if (l)
+				return l;
+		}
+
+		for (auto layer : m_overlays) {
+			T* l = dynamic_cast<T*>(layer);
+			if (l)
+				return l;
+		}
+
+		return nullptr;
+	}
+
 
 }

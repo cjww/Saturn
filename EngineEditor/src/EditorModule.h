@@ -18,13 +18,22 @@ namespace sa {
 }
 
 class EditorModule {
+private:
+	bool m_isClosable;
 protected:
 	sa::Engine* m_pEngine;
 	sa::EngineEditor* m_pEditor;
+	bool m_isOpen;
+	const char* m_name;
 
 public:
-	EditorModule(sa::Engine* pEngine, sa::EngineEditor* pEditor);
+	EditorModule(sa::Engine* pEngine, sa::EngineEditor* pEditor, const char* name, bool isClosable);
 	virtual ~EditorModule();
 	virtual void onImGui() = 0;
 	virtual void update(float dt) = 0;
+
+	void open();
+	void close();
+
+	const char* getName() const;
 };

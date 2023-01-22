@@ -3,8 +3,10 @@
 #include "Tools\ScopeTimer.h"
 
 GameView::GameView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWindow* pWindow)
-	: EditorModule(pEngine, pEditor)
+	: EditorModule(pEngine, pEditor, "Game View", true)
 {
+	m_isOpen = true;
+
 	m_renderTarget.colorTexture = sa::DynamicTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, pWindow->getCurrentExtent());
 	m_renderTarget.framebuffer = pEngine->getRenderPipeline().getRenderTechnique()->createColorFramebuffer(m_renderTarget.colorTexture);
 
@@ -61,7 +63,7 @@ void GameView::update(float dt) {
 
 void GameView::onImGui() {
 
-	if (m_isWindowOpen = ImGui::Begin("Game View", 0, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_MenuBar)) {
+	if (m_isOpen && (m_isWindowOpen = ImGui::Begin(m_name, &m_isOpen, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_MenuBar))) {
 		if (ImGui::BeginMenuBar()) {
 
 			if (ImGui::BeginMenu("Format")) {

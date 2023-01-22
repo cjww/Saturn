@@ -76,7 +76,8 @@ void EntityInspector::makePopups() {
 
 }
 
-EntityInspector::EntityInspector(sa::Engine* pEngine, sa::EngineEditor* pEditor) : EditorModule(pEngine, pEditor) {
+EntityInspector::EntityInspector(sa::Engine* pEngine, sa::EngineEditor* pEditor) 
+	: EditorModule(pEngine, pEditor, "Inspector", false) {
 	m_selectedEntity = {};
 
 	pEngine->on<sa::editor_event::EntitySelected>([&](const sa::editor_event::EntitySelected& e, sa::Engine&) {
@@ -95,7 +96,7 @@ EntityInspector::~EntityInspector() {
 void EntityInspector::onImGui() {
 	SA_PROFILE_FUNCTION();
 
-	if (ImGui::Begin("Inspector")) {
+	if (ImGui::Begin(m_name)) {
 
 		if (m_selectedEntity) {
 			

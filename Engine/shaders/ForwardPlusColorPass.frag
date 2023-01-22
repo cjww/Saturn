@@ -70,6 +70,10 @@ layout(push_constant) uniform PushConstants {
     uint tileCountX;
 } pc;
 
+vec3 invertGammaCorrect(vec3 color, float gamma) {
+    return pow(color, vec3(gamma));
+}
+
 void main() {
 
     ivec2 pos = ivec2(gl_FragCoord.xy);
@@ -85,8 +89,14 @@ void main() {
     vec4 specularColor = vec4(0, 0, 0, 1);
 
     vec4 objectColor = material.diffuseColor;
-    if(material.diffuseMapCount > 0)
-        objectColor *= texture(sampler2D(textures[material.diffuseMapFirst], samp), in_vertexUV);
+    if(material.diffuseMapCount > 0) {
+        vec4 diffuseColor = texture(sampler2D(textures[material.diffuseMapFirst], samp), in_vertexUV);
+        
+        //TODO send value to shader
+        float gamma = 2.2;
+        diffuseColor.rgb = invertGammaCorrect(diffuseColor.rgb, gamma);
+        objectColor *= diffuseColor;
+    }
     
     if(material.specularMapCount > 0) {
         specularColor += texture(sampler2D(textures[material.specularMapFirst], samp), in_vertexUV);
@@ -109,8 +119,9 @@ void main() {
             toLight = normalize(toLight);
             
             float diffuseFactor = max(dot(in_vertexWorldNormal, toLight), 0.0);
-            //float attenuation = light.attenuationRadius / lightDistance;
-            float attenuation = (1 - lightDistance / (light.attenuationRadius)) / 0.2;
+            //TODO send value to shader
+            float falloff = 1.0;
+            float attenuation = (1 - lightDistance / (light.attenuationRadius)) / falloff;
             attenuation = clamp(attenuation, 0.0, 1.0);
             vec4 radiance = light.color * attenuation * light.intensity; 
 

@@ -60,7 +60,8 @@ void SceneHierarchy::makePopups() {
 	}
 }
 
-SceneHierarchy::SceneHierarchy(sa::Engine* pEngine, sa::EngineEditor* pEditor) : EditorModule(pEngine, pEditor) {
+SceneHierarchy::SceneHierarchy(sa::Engine* pEngine, sa::EngineEditor* pEditor) 
+	: EditorModule(pEngine, pEditor, "Scene Hierarchy", false) {
 	pEngine->on<sa::engine_event::SceneSet>([&](sa::engine_event::SceneSet& e, sa::Engine& engine) {
 		m_hoveredEntity = {};
 		m_selectedEntity = {};
@@ -172,7 +173,7 @@ void SceneHierarchy::onImGui() {
 	//ImGui::ShowStyleEditor();
 
 
-	if (ImGui::Begin("Scene Hierarchy")) {
+	if (ImGui::Begin(m_name)) {
 
 		if(!m_isPopupMenuOpen)
 			m_hoveredEntity = {};
