@@ -185,10 +185,10 @@ namespace sa {
 		
 		// Downsample + blur
 		for (size_t i = 0; i < bd.bloomMipTextures.size() - 1; i++) {
-			threadX += 1 * threadX % 2;
+			threadX += threadX % 2;
 			threadX = threadX >> 1;
 
-			threadY += 1 * threadY % 2;
+			threadY += threadY % 2;
 			threadY = threadY >> 1;
 			m_threadCountStack[m_stackSize++] = { threadX, threadY };
 
@@ -196,7 +196,6 @@ namespace sa {
 			context.pushConstant(m_bloomPipeline, ShaderStageFlagBits::COMPUTE, 1);
 			context.dispatch(threadX, threadY, 1);
 		}
-
 		// Upsample + combine
 
 		m_stackSize--;

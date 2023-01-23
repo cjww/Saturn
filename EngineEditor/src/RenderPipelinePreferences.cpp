@@ -28,14 +28,18 @@ void RenderPipelinePreferences::onImGui() {
 				changed = true;
 			}
 
+			if (ImGui::DragFloat("Spread", &bloomPrefs.spread, 0.1f)) {
+				bloomPrefs.spread = std::max(bloomPrefs.spread, 0.0f);
+
+				changed = true;
+			}
+
 			if (ImGui::InputInt("Gaussian Kernel Radius", &bloomPrefs.gaussData.kernelRadius, 1, 10)) {
 				bloomPrefs.gaussData.kernelRadius = std::min(bloomPrefs.gaussData.kernelRadius, 6);
 				bloomPrefs.gaussData.kernelRadius = std::max(bloomPrefs.gaussData.kernelRadius, 1);
 
 				changed = true;
 			}
-
-
 		}
 
 		if (ImGui::CollapsingHeader("Tonemapping")) {

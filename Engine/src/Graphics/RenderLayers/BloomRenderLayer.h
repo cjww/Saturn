@@ -21,6 +21,7 @@ namespace sa {
 	struct BloomPreferences {
 		float threshold = 1.0f;
 		float intensity = 1.0f;
+		float spread = 1.0f;
 		alignas(16) TonemapPreferences tonemapPreferences = {};
 		alignas(16) GaussianData gaussData = {};
 	};
