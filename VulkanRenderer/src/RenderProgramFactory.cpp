@@ -120,6 +120,19 @@ namespace sa {
 		return *this;
 	}
 
+	RenderProgramFactory& RenderProgramFactory::addColorAttachment(bool store, Format format) {
+		m_pProgram->addAttachment(
+			vk::ImageLayout::eUndefined,
+			vk::ImageLayout::eShaderReadOnlyOptimal,
+			(vk::Format)format,
+			vk::AttachmentLoadOp::eClear,
+			(store) ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare,
+			vk::SampleCountFlagBits::e1
+		);
+		return *this;
+	}
+
+
 	RenderProgramFactory& RenderProgramFactory::addSwapchainAttachment(ResourceID swapchain) {
 		Swapchain* pSwapChain = RenderContext::getSwapchain(swapchain);
 		m_pProgram->addAttachment(
@@ -133,19 +146,19 @@ namespace sa {
 		return *this;
 	}
 
-	RenderProgramFactory& RenderProgramFactory::addDepthAttachment() {
+	RenderProgramFactory& RenderProgramFactory::addDepthAttachment(bool store) {
 		m_pProgram->addAttachment(
 			vk::ImageLayout::eUndefined,
 			vk::ImageLayout::eDepthStencilAttachmentOptimal,
 			m_pCore->getDefaultDepthFormat(),
 			vk::AttachmentLoadOp::eClear,
-			vk::AttachmentStoreOp::eDontCare,
+			(store) ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare,
 			vk::SampleCountFlagBits::e1
 		);
 		return *this;
 	}
 
-	RenderProgramFactory& RenderProgramFactory::addDepthAttachment(const Texture2D& framebufferTexture, bool store) {
+	RenderProgramFactory& RenderProgramFactory::addDepthAttachment(bool store, const Texture2D& framebufferTexture) {
 		const DeviceImage* pDeviceImage = (const DeviceImage*)framebufferTexture;
 
 		vk::ImageLayout finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
@@ -165,6 +178,18 @@ namespace sa {
 
 		DeviceImage* pImage = (DeviceImage*)framebufferTexture;
 		pImage->layout = finalLayout;
+		return *this;
+	}
+
+	RenderProgramFactory& RenderProgramFactory::addDepthAttachment(bool store, Format format) {
+		m_pProgram->addAttachment(
+			vk::ImageLayout::eUndefined,
+			vk::ImageLayout::eDepthStencilAttachmentOptimal,
+			(vk::Format)format,
+			vk::AttachmentLoadOp::eClear,
+			(store) ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare,
+			vk::SampleCountFlagBits::e1
+		);
 		return *this;
 	}
 

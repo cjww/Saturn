@@ -58,10 +58,13 @@ namespace sa {
 		
 		RenderProgramFactory& addColorAttachment(bool store);
 		RenderProgramFactory& addColorAttachment(bool store, const Texture2D& framebufferTexture);
+		RenderProgramFactory& addColorAttachment(bool store, Format format);
+
 
 		RenderProgramFactory& addSwapchainAttachment(ResourceID swapchain);
-		RenderProgramFactory& addDepthAttachment();
-		RenderProgramFactory& addDepthAttachment(const Texture2D& framebufferTexture, bool store = false);
+		RenderProgramFactory& addDepthAttachment(bool store = false);
+		RenderProgramFactory& addDepthAttachment(bool store, const Texture2D& framebufferTexture);
+		RenderProgramFactory& addDepthAttachment(bool store, Format format);
 
 
 

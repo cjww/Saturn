@@ -373,8 +373,8 @@ namespace ImGui {
 					viewFile(entry.path());
 				}
 			}
-			ImGui::EndChild();
 		}
+		ImGui::EndChild();
 
 	}
 
@@ -417,8 +417,8 @@ namespace ImGui {
 					}
 
 				}
-				ImGui::EndChild();
 			}
+			ImGui::EndChild();
 		}
 
 	}

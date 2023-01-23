@@ -25,6 +25,8 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 	m_statsUpdateTime = 0.1f;
 	m_statsTimer = m_statsUpdateTime;
 
+	m_renderTarget.initialize(pEngine, pWindow->getCurrentExtent());
+
 	pEngine->on<sa::engine_event::SceneSet>([&](const sa::engine_event::SceneSet& sceneSetEvent, sa::Engine& engine) {
 		m_selectedEntity = {};
 	});
@@ -41,27 +43,13 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 	m_pWindow->addScrollCallback([&](double x, double y) {
 		if(m_isFocused) m_zoom = y;
 	});
-
-	m_renderTarget.colorTexture = sa::DynamicTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, pWindow->getCurrentExtent());
-	m_renderTarget.framebuffer = pEngine->getRenderPipeline().getRenderTechnique()->createColorFramebuffer(m_renderTarget.colorTexture);
-
-	m_camera.setViewport(sa::Rect{ { 0, 0 }, sa::Renderer::get().getFramebufferExtent(m_renderTarget.framebuffer) });
+	
+	m_camera.setViewport(sa::Rect{ { 0, 0 }, m_renderTarget.extent });
 
 	pEngine->on<sa::engine_event::OnRender>([&](sa::engine_event::OnRender& e, sa::Engine& engine) {
 		e.pRenderPipeline->render(&m_camera, &m_renderTarget);
 		sa::Renderer::get().swapFramebuffer(m_renderTarget.framebuffer);
 	});
-
-	pEngine->on<sa::engine_event::WindowResized>([&](sa::engine_event::WindowResized& e, sa::Engine& engine) {
-		m_camera.setViewport(sa::Rect{ { 0, 0 }, e.newExtent });
-
-		sa::Renderer::get().destroyFramebuffer(m_renderTarget.framebuffer);
-		m_renderTarget.colorTexture.destroy();
-		m_renderTarget.colorTexture = sa::DynamicTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, e.newExtent);
-		m_renderTarget.framebuffer = engine.getRenderPipeline().getRenderTechnique()->createColorFramebuffer(m_renderTarget.colorTexture);
-		m_renderTarget.bloomData.isInitialized = false;
-	});
-
 }
 
 SceneView::~SceneView() {
@@ -217,15 +205,19 @@ void SceneView::onImGui() {
 		glm::vec2 availSize(imAvailSize.x, imAvailSize.y);
 
 		if (availSize != m_displayedSize) {
-			m_camera.setAspectRatio(availSize.x / availSize.y);
+			if (!ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+				//m_camera.setAspectRatio(availSize.x / availSize.y);
+				m_camera.setViewport({ { 0, 0 }, { (uint32_t)availSize.x, (uint32_t)availSize.y } });
+				m_renderTarget.resize({ (uint32_t)availSize.x, (uint32_t)availSize.y });
+				m_displayedSize = availSize;
+			}
 		}
-		if (m_renderTarget.outputTexture) {
+		else if (m_renderTarget.outputTexture && m_renderTarget.isInitialized && m_renderTarget.outputTexture->isValid()) {
 			ImGui::Image((sa::Texture)*m_renderTarget.outputTexture, imAvailSize);
 		}
 		ImVec2 imageMin = ImGui::GetItemRectMin();
 		ImVec2 imageSize = ImGui::GetItemRectSize();
 
-		m_displayedSize = availSize;
 
 
 		if (!ImGui::IsMouseDown(ImGuiMouseButton_Right) && m_isFocused) {

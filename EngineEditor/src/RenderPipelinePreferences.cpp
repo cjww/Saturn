@@ -10,8 +10,10 @@ RenderPipelinePreferences::~RenderPipelinePreferences() {
 }
 
 void RenderPipelinePreferences::onImGui() {
+	if (m_isOpen)
+		return;
 
-	if (m_isOpen && ImGui::Begin(m_name, &m_isOpen)) {
+	if (ImGui::Begin(m_name, &m_isOpen)) {
 		static sa::BloomPreferences bloomPrefs = m_pEngine->getRenderPipeline().getLayer<sa::BloomRenderLayer>()->getBloomPreferences();
 		bool changed = false;
 		static bool autoUpdate = true;
@@ -65,8 +67,9 @@ void RenderPipelinePreferences::onImGui() {
 			m_pEngine->getRenderPipeline().getLayer<sa::BloomRenderLayer>()->setBloomPreferences(bloomPrefs);
 		}
 
-		ImGui::End();
 	}
+	ImGui::End();
+	
 }
 
 void RenderPipelinePreferences::update(float dt) {

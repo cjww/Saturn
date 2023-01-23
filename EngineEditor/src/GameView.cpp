@@ -7,14 +7,12 @@ GameView::GameView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWin
 {
 	m_isOpen = true;
 
-	m_renderTarget.colorTexture = sa::DynamicTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, pWindow->getCurrentExtent());
-	m_renderTarget.framebuffer = pEngine->getRenderPipeline().getRenderTechnique()->createColorFramebuffer(m_renderTarget.colorTexture);
-
 	m_renderedCamera = false;
 	
 	m_resolutionIndex = 0;
 
-	m_Resolutions[0] = sa::Renderer::get().getFramebufferExtent(m_renderTarget.framebuffer);
+	m_renderTarget.initialize(pEngine, m_Resolutions[0]);
+	
 
 	m_isWindowOpen = false;
 
@@ -34,26 +32,15 @@ GameView::GameView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWin
 
 		engine.getCurrentScene()->forEach<comp::Camera>([&](comp::Camera& camera) {
 			if (camera.isPrimary) {
+				if (camera.camera.getViewport().extent != m_renderTarget.extent) {
+					camera.camera.setViewport({ { 0, 0 }, m_renderTarget.extent });
+				}
 				e.pRenderPipeline->render(&camera.camera, &m_renderTarget);
 				sa::Renderer::get().swapFramebuffer(m_renderTarget.framebuffer);
 				m_renderedCamera = true;
 			}
 		});
 		
-	});
-
-	pEngine->on<sa::engine_event::WindowResized>([&](sa::engine_event::WindowResized& e, sa::Engine& engine) {
-		
-		sa::Renderer::get().destroyFramebuffer(m_renderTarget.framebuffer);
-		m_renderTarget.colorTexture.destroy();
-
-		m_renderTarget.colorTexture = sa::DynamicTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, e.newExtent);
-		m_renderTarget.framebuffer = engine.getRenderPipeline().getRenderTechnique()->createColorFramebuffer(m_renderTarget.colorTexture);
-		m_renderTarget.bloomData.isInitialized = false;
-
-		m_Resolutions[0] = sa::Renderer::get().getFramebufferExtent(m_renderTarget.framebuffer);
-
-		m_mipLevel = 0;
 	});
 }
 
@@ -62,18 +49,21 @@ void GameView::update(float dt) {
 }
 
 void GameView::onImGui() {
+	if (!m_isOpen) 
+		return;
 
-	if (m_isOpen && (m_isWindowOpen = ImGui::Begin(m_name, &m_isOpen, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_MenuBar))) {
+	if (m_isWindowOpen = ImGui::Begin(m_name, &m_isOpen, ImGuiWindowFlags_NoScrollbar | ImGuiWindowFlags_MenuBar)) {
 		if (ImGui::BeginMenuBar()) {
 
 			if (ImGui::BeginMenu("Format")) {
-				ImGui::RadioButton("Window Size", &m_resolutionIndex, 0);
-				ImGui::RadioButton("1920x1080", &m_resolutionIndex, 1);
-				ImGui::RadioButton("1366x768", &m_resolutionIndex, 2);
-				ImGui::RadioButton("1600x900", &m_resolutionIndex, 3);
-				ImGui::RadioButton("1920x1200", &m_resolutionIndex, 4);
-				ImGui::RadioButton("2560x1440", &m_resolutionIndex, 5);
-				ImGui::RadioButton("3440x1440", &m_resolutionIndex, 6);
+				std::string s;
+				for (int i = 0; i < m_Resolutions.size(); i++) {
+					s = std::to_string(m_Resolutions[i].width) + "x" + std::to_string(m_Resolutions[i].height);
+					if (ImGui::RadioButton(s.c_str(), &m_resolutionIndex, i)) {
+						SA_DEBUG_LOG_INFO("Changed game resolution: ", m_Resolutions[i].width, "x", m_Resolutions[i].height);
+						m_renderTarget.resize(m_Resolutions[i]);
+					}
+				}
 				
 				ImGui::EndMenu();
 			}
@@ -81,11 +71,11 @@ void GameView::onImGui() {
 			ImGui::EndMenuBar();
 		}
 
-		if (m_renderedCamera && m_renderTarget.outputTexture) {
+		if (m_renderedCamera && m_renderTarget.outputTexture && m_renderTarget.isInitialized && m_renderTarget.outputTexture->isValid()) {
 			// render outputTexture with constant aspect ratio
-			sa::Extent extent = m_Resolutions[m_resolutionIndex];
+			sa::Extent extent = m_renderTarget.extent;
 			float aspect = (float)extent.height / extent.width;
-
+			
 			ImVec2 imAvailSize = ImGui::GetContentRegionAvail();
 			glm::vec2 imageSize(imAvailSize.x, imAvailSize.y);
 			glm::vec2 pos = glm::vec2(ImGui::GetCursorPos().x, ImGui::GetCursorPos().y) + imageSize * 0.5f;

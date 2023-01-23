@@ -292,6 +292,7 @@
     <ClInclude Include="include\Tools\utils.hpp" />
     <ClInclude Include="include\VulkanCore.hpp" />
     <ClInclude Include="include\Window.hpp" />
+    <ClInclude Include="include\Format.hpp" />
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="src\DynamicBuffer.cpp" />

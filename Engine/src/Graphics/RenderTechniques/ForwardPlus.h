@@ -21,19 +21,17 @@ namespace sa {
 	class ForwardPlus : public IRenderTechnique {
 	private:
 
-		// Color pass
-		DynamicTexture2D m_colorTexture;
-		DynamicTexture2D m_depthTexture;
 
 		ResourceID m_colorRenderProgram = NULL_RESOURCE;
-		ResourceID m_colorFramebuffer = NULL_RESOURCE;
 		ResourceID m_colorPipeline = NULL_RESOURCE;
 
 		ResourceID m_sceneDescriptorSet = NULL_RESOURCE;
 		
 		ResourceID m_linearSampler = NULL_RESOURCE;
 		ResourceID m_nearestSampler = NULL_RESOURCE;
+		
 
+		DynamicTexture2D m_depthTexture;
 		ResourceID m_depthPreRenderProgram = NULL_RESOURCE;
 		ResourceID m_depthPreFramebuffer = NULL_RESOURCE;
 		ResourceID m_depthPrePipeline = NULL_RESOURCE;
@@ -97,7 +95,10 @@ namespace sa {
 		virtual void render(RenderContext& context, SceneCamera* pCamera, ResourceID framebuffer) override;
 		virtual void endRender(RenderContext& context) override;
 
-		virtual ResourceID createColorFramebuffer(const DynamicTexture& colorTexture) override;
+		virtual ResourceID createColorFramebuffer(const DynamicTexture& colorTexture, const DynamicTexture& depthTexture) override;
+		virtual DynamicTexture2D createColorAttachmentTexture(Extent extent) override;
+		virtual DynamicTexture2D createDepthAttachmentTexture(Extent extent) override;
+
 
 		virtual void updateLights(Scene* pScene) override;
 		virtual void collectMeshes(Scene* pScene) override;

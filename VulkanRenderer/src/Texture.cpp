@@ -90,6 +90,11 @@ namespace sa {
 		create(type, extent, precisions, dimensions, types, sampleCount, mipLevels);
 	}
 
+	Texture2D::Texture2D(TextureTypeFlags type, Extent extent, Format format, uint32_t sampleCount, uint32_t mipLevels) {
+		m_type = type;
+		create(type, extent, format, sampleCount, mipLevels);
+	}
+
 	Texture2D::Texture2D(TextureTypeFlags type, Extent extent, Swapchain* pSwapchain, uint32_t sampleCount) 
 		: Texture()
 	{
@@ -259,7 +264,7 @@ namespace sa {
 			}
 		}
 
-		//SA_DEBUG_LOG_INFO("Created 2D texture\nExtent: { w:", extent.width, " h:", extent.height, "}\nFormat: ", vk::to_string(format), "\nSampleCount: ", sampleCount);
+		SA_DEBUG_LOG_INFO("Created 2D texture\nExtent: { w:", extent.width, " h:", extent.height, "}\nFormat: ", vk::to_string(format), "\nSampleCount: ", sampleCount);
 		m_pImage = m_pCore->createImage2D(
 			extent,
 			format,
@@ -281,6 +286,36 @@ namespace sa {
 		));
 
 	}
+
+	void Texture2D::create(TextureTypeFlags type, Extent extent, Format format, uint32_t sampleCount, uint32_t mipLevels) {
+		vk::ImageUsageFlags usage = (vk::ImageUsageFlags)type;
+		vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
+
+		if (type & TextureTypeFlagBits::DEPTH_ATTACHMENT) {
+			aspect = vk::ImageAspectFlagBits::eDepth;
+		}
+		
+		m_pImage = m_pCore->createImage2D(
+			extent,
+			(vk::Format)format,
+			usage,
+			(vk::SampleCountFlagBits)sampleCount,
+			mipLevels,
+			1
+		);
+
+		m_view = ResourceManager::get().insert<vk::ImageView>(m_pCore->createImageView(
+			vk::ImageViewType::e2D,
+			m_pImage->image,
+			(vk::Format)format,
+			aspect,
+			mipLevels,
+			0,
+			1,
+			0
+		));
+	}
+
 
 	void Texture2D::create(TextureTypeFlags type, Extent extent, Swapchain* pSwapchain, uint32_t sampleCount) {
 

@@ -9,3 +9,4 @@ EngineEditor/profile_result.json
 *.spv
 EngineEditor/imgui.ini
 EngineTest/profile_result.json
+EngineEditor/sceneCache.json

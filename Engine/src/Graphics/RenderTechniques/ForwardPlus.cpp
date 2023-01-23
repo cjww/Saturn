@@ -28,7 +28,7 @@ namespace sa {
 		m_depthTexture = DynamicTexture2D(sa::TextureTypeFlagBits::DEPTH_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, extent);
 		
 		m_depthPreRenderProgram = m_renderer.createRenderProgram()
-			.addDepthAttachment(m_depthTexture, true)
+			.addDepthAttachment(true, m_depthTexture)
 			.beginSubpass()
 			.addAttachmentReference(0, SubpassAttachmentUsage::DepthTarget)
 			.endSubpass()
@@ -74,35 +74,23 @@ namespace sa {
 			m_renderer.destroyPipeline(m_colorPipeline);
 			m_colorPipeline = NULL_RESOURCE;
 		}
-		
-		if (m_colorFramebuffer != NULL_RESOURCE) {
-			m_renderer.destroyFramebuffer(m_colorFramebuffer);
-			m_colorFramebuffer = NULL_RESOURCE;
-		}
 
 		if (m_colorRenderProgram != NULL_RESOURCE) {
 			m_renderer.destroyRenderProgram(m_colorRenderProgram);
 			m_colorRenderProgram = NULL_RESOURCE;
 		}
 
-		if (m_colorTexture.isValid()) 
-			m_colorTexture.destroy();
-		
-
-		m_colorTexture = DynamicTexture2D(sa::TextureTypeFlagBits::COLOR_ATTACHMENT | sa::TextureTypeFlagBits::SAMPLED, extent);
-		drawData.colorTexture = m_colorTexture;
+		Format colorFormat = m_renderer.selectFormat({ Format::R32G32B32A32_SFLOAT }, TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED);
 
 		m_colorRenderProgram = m_renderer.createRenderProgram()
-			.addColorAttachment(true, m_colorTexture)
-			.addDepthAttachment(m_depthTexture)
+			.addColorAttachment(true, Format::R32G32B32A32_SFLOAT)
+			.addDepthAttachment()
 			.beginSubpass()
 			.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
 			.addAttachmentReference(1, sa::SubpassAttachmentUsage::DepthTarget)
 			.endSubpass()
 			.end();
 		m_renderer.setClearColor(m_colorRenderProgram, Color{ 0.0f, 0.0f, 0.1f });
-	
-		m_colorFramebuffer = m_renderer.createFramebuffer(m_colorRenderProgram, { m_colorTexture, m_depthTexture });
 	
 		PipelineSettings settings = {};
 		settings.dynamicStates.push_back(DynamicState::VIEWPORT);
@@ -482,16 +470,28 @@ namespace sa {
 		m_objectBuffer.swap();
 		m_materialBuffer.swap();
 		m_materialIndicesBuffer.swap();
-		
+	
 		m_depthTexture.swap();
 	}
 
-	ResourceID ForwardPlus::createColorFramebuffer(const DynamicTexture& colorTexture) {
+	ResourceID ForwardPlus::createColorFramebuffer(const DynamicTexture& colorTexture, const DynamicTexture& depthTexture) {
 		return m_renderer.createFramebuffer(m_colorRenderProgram, {
 			colorTexture,
-			m_depthTexture
+			depthTexture
 		});
 	}
+
+	DynamicTexture2D ForwardPlus::createColorAttachmentTexture(Extent extent) {
+		Format format = m_renderer.getAttachmentFormat(m_colorRenderProgram, 0);
+		return DynamicTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, extent, format);
+	}
+
+	DynamicTexture2D ForwardPlus::createDepthAttachmentTexture(Extent extent) {
+		Format format = m_renderer.getAttachmentFormat(m_colorRenderProgram, 1);
+		return DynamicTexture2D(TextureTypeFlagBits::DEPTH_ATTACHMENT, extent, format);
+	}
+
+
 
 	void ForwardPlus::updateLights(Scene* pScene) {
 		SA_PROFILE_FUNCTION();

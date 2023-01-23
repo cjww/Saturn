@@ -200,8 +200,8 @@ namespace sa {
 						break;
 					}
 				}
-				ImGui::EndChild();
 			}
+			ImGui::EndChild();
 
 			if (ImGui::Button("Open Project...")) {
 				openProject();
@@ -328,8 +328,8 @@ namespace sa {
 			}
 
 
-			ImGui::End();
 		}
+		ImGui::End();
 	}
 
 	void EngineEditor::onAttach(sa::Engine& engine, sa::RenderWindow& renderWindow) {

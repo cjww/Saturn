@@ -7,34 +7,6 @@
 
 namespace sa {
 
-	struct RenderTarget {
-		DynamicTexture colorTexture;
-		ResourceID framebuffer = NULL_RESOURCE;
-		ResourceID renderProgram = NULL_RESOURCE;
-		ResourceID pipeline = NULL_RESOURCE;
-		
-		struct BloomData {
-			bool isInitialized = false;
-
-			ResourceID filterDescriptorSet = NULL_RESOURCE;
-			std::vector<ResourceID> blurDescriptorSets;
-			std::vector<ResourceID> upsampleDescriptorSets;
-			ResourceID compositeDescriptorSet = NULL_RESOURCE;
-			
-			DynamicTexture2D bloomTexture;
-			std::vector<DynamicTexture2D> bloomMipTextures;
-
-			DynamicTexture2D bufferTexture;
-			std::vector<DynamicTexture2D> bufferMipTextures;
-
-			DynamicTexture2D outputTexture;
-
-		} bloomData;
-
-		DynamicTexture* outputTexture = nullptr;
-	};
-
-
 	struct DrawData {
 		Texture colorTexture;
 		Texture finalTexture;
@@ -63,7 +35,9 @@ namespace sa {
 		virtual void render(RenderContext& context, SceneCamera* pCamera, ResourceID framebuffer) = 0;
 		virtual void endRender(RenderContext& context) {};
 
-		virtual ResourceID createColorFramebuffer(const DynamicTexture& colorTexture) = 0;
+		virtual ResourceID createColorFramebuffer(const DynamicTexture& colorTexture, const DynamicTexture& depthTexture) = 0;
+		virtual DynamicTexture2D createColorAttachmentTexture(Extent extent) = 0;
+		virtual DynamicTexture2D createDepthAttachmentTexture(Extent extent) = 0;
 
 		virtual void updateLights(Scene* pScene) = 0;
 		virtual void collectMeshes(Scene* pScene) = 0;

@@ -195,6 +195,7 @@ namespace sa {
 		m_renderPipeline.onWindowResize(newExtent);
 		publish<sa::engine_event::WindowResized>(m_windowExtent, newExtent);
 		
+		/*
 		for (auto& [name, scene] : m_scenes) {
 			scene.view<comp::Camera>().each([&](comp::Camera& camera) {
 				sa::Rect viewport = camera.camera.getViewport();
@@ -204,6 +205,7 @@ namespace sa {
 				camera.camera.setViewport(viewport);
 			});
 		}
+		*/
 
 		
 		m_windowExtent = newExtent;

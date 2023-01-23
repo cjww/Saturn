@@ -119,7 +119,15 @@ namespace sa {
 	DynamicTexture2D::DynamicTexture2D(TextureTypeFlags type, Extent extent, FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, uint32_t sampleCount, uint32_t mipLevels) : DynamicTexture() {
 		m_textures.resize(m_pCore->getQueueCount());
 		for (int i = 0; i < m_pCore->getQueueCount(); i++) {
-			m_textures[i].texture2D = Texture2D(type, extent, precisions, dimensions, type, sampleCount, mipLevels);
+			m_textures[i].texture2D = Texture2D(type, extent, precisions, dimensions, types, sampleCount, mipLevels);
+			m_textures[i].activeBit = 2;
+		}
+	}
+
+	DynamicTexture2D::DynamicTexture2D(TextureTypeFlags type, Extent extent, Format format, uint32_t sampleCount, uint32_t mipLevels) {
+		m_textures.resize(m_pCore->getQueueCount());
+		for (int i = 0; i < m_pCore->getQueueCount(); i++) {
+			m_textures[i].texture2D = Texture2D(type, extent, format, sampleCount, mipLevels);
 			m_textures[i].activeBit = 2;
 		}
 	}

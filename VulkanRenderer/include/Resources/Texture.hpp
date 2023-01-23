@@ -3,6 +3,7 @@
 #include "structs.hpp"
 #include "Image.hpp"
 #include "FormatFlags.hpp"
+#include "Format.hpp"
 
 namespace vk {
 	class ImageView;
@@ -75,6 +76,7 @@ namespace sa {
 		void create(TextureTypeFlags type, Extent extent,
 			FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, uint32_t sampleCount, uint32_t mipLevels);
 		void create(TextureTypeFlags type, Extent extent, Swapchain* pSwapchain, uint32_t sampleCount);
+		void create(TextureTypeFlags type, Extent extent, Format format, uint32_t sampleCount, uint32_t mipLevels);
 
 		Texture2D(TextureTypeFlags type, Extent extent,
 			Swapchain* pSwapchain, uint32_t sampleCount = 1);
@@ -84,6 +86,8 @@ namespace sa {
 		Texture2D(TextureTypeFlags type, Extent extent, uint32_t sampleCount = 1, uint32_t mipLevels = 1);
 		Texture2D(TextureTypeFlags type, Extent extent,
 			FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, uint32_t sampleCount = 1, uint32_t mipLevels = 1);
+
+		Texture2D(TextureTypeFlags type, Extent extent, Format format, uint32_t sampleCount = 1, uint32_t mipLevels = 1);
 
 		Texture2D(const Image& image, bool generateMipmaps);
 		

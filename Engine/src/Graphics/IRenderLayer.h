@@ -5,6 +5,7 @@
 #include "SceneCamera.h"
 
 #include "IRenderTechnique.h"
+#include "RenderTarget.h"
 
 namespace sa {
 

@@ -500,6 +500,36 @@ namespace sa {
 		return SubContext(m_pCore.get(), nullptr, nullptr, 0, contextPool);
 	}
 
+	Format Renderer::selectFormat(const std::vector<Format>& formatCandidates, TextureTypeFlags textureType) const {
+		vk::FormatFeatureFlags features = (vk::FormatFeatureFlagBits)0;
+
+		if (textureType & TextureTypeFlagBits::DEPTH_ATTACHMENT) {
+			features |= vk::FormatFeatureFlagBits::eDepthStencilAttachment;
+		}
+		if (textureType & TextureTypeFlagBits::SAMPLED) {
+			features |= vk::FormatFeatureFlagBits::eSampledImage;
+		}
+		if (textureType & TextureTypeFlagBits::COLOR_ATTACHMENT) {
+			features |= vk::FormatFeatureFlagBits::eColorAttachment;
+		}
+		if (textureType & TextureTypeFlagBits::STORAGE) {
+			features |= vk::FormatFeatureFlagBits::eStorageImage;
+		}
+		if (textureType & TextureTypeFlagBits::TRANSFER_DST) {
+			features |= vk::FormatFeatureFlagBits::eTransferDst;
+		}
+		std::vector<vk::Format> candidates(formatCandidates.size());
+		memcpy(candidates.data(), formatCandidates.data(), candidates.size() * sizeof(vk::Format));
+
+		return (Format)m_pCore->getFormat(candidates, features, vk::ImageTiling::eOptimal);
+	}
+
+	Format Renderer::getAttachmentFormat(ResourceID renderProgram, uint32_t attachmentIndex) const {
+		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
+		vk::AttachmentDescription attachment = pRenderProgram->getAttachment(attachmentIndex);
+		return (Format)attachment.format;
+	}
+
 
 }
 

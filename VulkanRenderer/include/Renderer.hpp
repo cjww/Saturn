@@ -187,6 +187,7 @@ namespace sa {
 
 		DeviceMemoryStats getGPUMemoryUsage() const;
 
+
 		void queueTransfer(const DataTransfer& transfer);
 
 		ResourceID createSampler(FilterMode filterMode = FilterMode::NEAREST);
@@ -200,6 +201,10 @@ namespace sa {
 		DirectContext createDirectContext(ResourceID contextPool = NULL_RESOURCE);
 		SubContext createSubContext(ResourceID framebuffer, ResourceID renderProgram, uint32_t subpassIndex, ResourceID contextPool = NULL_RESOURCE);
 		SubContext createSubContext(ResourceID contextPool = NULL_RESOURCE);
+		
+		Format selectFormat(const std::vector<Format>& formatCandidates, TextureTypeFlags textureType) const;
+		Format getAttachmentFormat(ResourceID renderProgram, uint32_t attachmentIndex) const;
+
 	};
 
 
