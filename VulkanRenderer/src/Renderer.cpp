@@ -417,7 +417,23 @@ namespace sa {
 
 	ResourceID Renderer::createSampler(const SamplerInfo& samplerInfo) {
 		vk::SamplerCreateInfo info = {};
-		memcpy(&info + offsetof(vk::SamplerCreateInfo, vk::SamplerCreateInfo::magFilter), &samplerInfo, sizeof(SamplerInfo));
+		
+		info.magFilter = (vk::Filter)samplerInfo.magFilter;
+		info.minFilter = (vk::Filter)samplerInfo.minFilter;
+		info.mipmapMode = (vk::SamplerMipmapMode)samplerInfo.mipmapMode;
+		info.addressModeU = (vk::SamplerAddressMode)samplerInfo.addressModeU;
+		info.addressModeV = (vk::SamplerAddressMode)samplerInfo.addressModeV;
+		info.addressModeW = (vk::SamplerAddressMode)samplerInfo.addressModeW;
+		info.mipLodBias = samplerInfo.mipLodBias;
+		info.anisotropyEnable = samplerInfo.anisotropyEnable;
+		info.maxAnisotropy = samplerInfo.maxAnisotropy;
+		info.compareEnable = samplerInfo.compareEnable;
+		info.compareOp = (vk::CompareOp)samplerInfo.compareOp;
+		info.minLod = samplerInfo.minLod;
+		info.maxLod = samplerInfo.maxLod;
+		info.borderColor = (vk::BorderColor)samplerInfo.borderColor;
+		info.unnormalizedCoordinates = samplerInfo.unnormalizedCoordinates;
+
 		return ResourceManager::get().insert(m_pCore->createSampler(info));
 	}
 
