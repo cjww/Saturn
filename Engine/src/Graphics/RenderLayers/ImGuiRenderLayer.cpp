@@ -10,7 +10,7 @@ namespace sa {
 
 		
 		m_imGuiRenderProgram = m_renderer.createRenderProgram()
-			.addColorAttachment(true, m_outputTexture)
+			.addColorAttachment(AttachmentFlagBits::eClear | AttachmentFlagBits::eStore | AttachmentFlagBits::eSampled, m_outputTexture)
 			.beginSubpass()
 			.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
 			.endSubpass()

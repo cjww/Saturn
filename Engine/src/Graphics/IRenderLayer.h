@@ -20,8 +20,8 @@ namespace sa {
 		virtual void init(RenderWindow* pWindow, IRenderTechnique* pRenderTechnique = nullptr) = 0;
 		virtual void cleanup() = 0;
 
-		virtual void preRender(RenderContext& context, SceneCamera* pCamera) {};
-		virtual void render(RenderContext& context, SceneCamera* pCamera, RenderTarget* rendertarget = nullptr) {};
+		virtual void preRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* rendertarget) {};
+		virtual void render(RenderContext& context, SceneCamera* pCamera, RenderTarget* rendertarget) {};
 		virtual void postRender(RenderContext& context) {};
 
 		virtual void onWindowResize(Extent newExtent) = 0;

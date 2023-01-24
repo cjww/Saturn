@@ -18,7 +18,9 @@ namespace sa {
 
 		tf::Executor m_executor;
 
-		RenderTarget m_swapchainRenderTarget;
+		ResourceID m_swapchainFramebuffer;
+		ResourceID m_swapchainPipeline;
+		ResourceID m_swapchainRenderProgram;
 		ResourceID m_swapchainDescriptorSet;
 		ResourceID m_sampler;
 

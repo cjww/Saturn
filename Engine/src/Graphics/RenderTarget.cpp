@@ -5,22 +5,6 @@
 #include "Engine.h"
 
 namespace sa {
-	void RenderTarget::initializeMainData(IRenderTechnique* pRenderTechnique) {
-		colorTexture = pRenderTechnique->createColorAttachmentTexture(extent);
-		depthTexture = pRenderTechnique->createDepthAttachmentTexture(extent);
-		framebuffer = pRenderTechnique->createColorFramebuffer(colorTexture, depthTexture);
-	}
-
-	void RenderTarget::cleanupMainData() {
-		if(colorTexture.isValid())
-			colorTexture.destroy();
-		if (depthTexture.isValid())
-			depthTexture.destroy();
-		if (framebuffer != NULL_RESOURCE) {
-			m_renderer.destroyFramebuffer(framebuffer);
-			framebuffer = NULL_RESOURCE;
-		}
-	}
 
 	void RenderTarget::initializeBloomData(RenderContext& context, Extent extent, DynamicTexture* colorTexture, ResourceID bloomPipeline, ResourceID sampler) {
 		//Textures
@@ -109,6 +93,46 @@ namespace sa {
 			bloomData.outputTexture.destroy();
 	}
 
+	void RenderTarget::cleanupMainRenderData() {
+		if (mainRenderData.colorTexture.isValid())
+			mainRenderData.colorTexture.destroy();
+		if (mainRenderData.depthTexture.isValid())
+			mainRenderData.depthTexture.destroy();
+
+		if (mainRenderData.depthFramebuffer != NULL_RESOURCE) {
+			m_renderer.destroyFramebuffer(mainRenderData.depthFramebuffer);
+			mainRenderData.depthFramebuffer = NULL_RESOURCE;
+		}
+
+		if (mainRenderData.sceneDepthDescriptorSet != NULL_RESOURCE) {
+			m_renderer.freeDescriptorSet(mainRenderData.sceneDepthDescriptorSet);
+			mainRenderData.sceneDepthDescriptorSet = NULL_RESOURCE;
+		}
+
+		if (mainRenderData.depthPipeline != NULL_RESOURCE) {
+			m_renderer.destroyPipeline(mainRenderData.depthPipeline);
+			mainRenderData.depthPipeline = NULL_RESOURCE;
+		}
+
+		if (mainRenderData.lightIndexBuffer.isValid())
+			mainRenderData.lightIndexBuffer.destroy();
+
+		if (mainRenderData.colorFramebuffer != NULL_RESOURCE) {
+			m_renderer.destroyFramebuffer(mainRenderData.colorFramebuffer);
+			mainRenderData.colorFramebuffer = NULL_RESOURCE;
+		}
+
+		if (mainRenderData.sceneDescriptorSet != NULL_RESOURCE) {
+			m_renderer.freeDescriptorSet(mainRenderData.sceneDescriptorSet);
+			mainRenderData.sceneDescriptorSet = NULL_RESOURCE;
+		}
+		if (mainRenderData.colorPipeline != NULL_RESOURCE) {
+			m_renderer.destroyPipeline(mainRenderData.colorPipeline);
+			mainRenderData.colorPipeline = NULL_RESOURCE;
+		}
+	}
+
+
 	RenderTarget::RenderTarget()
 		: m_renderer(Renderer::get())
 		, m_pEngine(nullptr)
@@ -116,16 +140,15 @@ namespace sa {
 
 	}
 
+	RenderTarget::~RenderTarget() {
+		destroy();
+	}
+
 	void RenderTarget::initialize(Engine* pEngine, Extent extent) {
 		m_pEngine = pEngine;
 		this->extent = extent;
-		/*
-		colorTexture = DynamicTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, extent);
-		depthTexture = DynamicTexture2D(TextureTypeFlagBits::DEPTH_ATTACHMENT, extent);
-		framebuffer = pEngine->getRenderPipeline().getRenderTechnique()->createColorFramebuffer(colorTexture, depthTexture);
-		*/
 		
-		isInitialized = false; // initialize main data in main render pass
+		mainRenderData.isInitialized = false; // initialize main data in main render pass
 		bloomData.isInitialized = false; // initialize bloom data in bloom pass
 	}
 	
@@ -139,12 +162,27 @@ namespace sa {
 	}
 
 	void RenderTarget::destroy() {
-		
+		cleanupMainRenderData();
+		cleanupBloomData();
 	}
 
 	void RenderTarget::resize(Extent extent) {
-		destroy();
-		initialize(m_pEngine, extent);
+		this->extent = extent;
+
+		mainRenderData.isInitialized = false; // initialize main data in main render pass
+		bloomData.isInitialized = false; // initialize bloom data in bloom pass
+	}
+
+	void RenderTarget::swap() {
+		mainRenderData.colorTexture.swap();
+		mainRenderData.depthTexture.swap();
+		mainRenderData.lightIndexBuffer.swap();
+
+		m_renderer.swapFramebuffer(mainRenderData.colorFramebuffer);
+		m_renderer.swapFramebuffer(mainRenderData.depthFramebuffer);
+
+		bloomData.outputTexture.swap();
+
 	}
 
 }

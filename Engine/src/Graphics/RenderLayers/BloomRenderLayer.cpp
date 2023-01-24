@@ -62,7 +62,7 @@ namespace sa {
 	void BloomRenderLayer::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget) {
 		SA_PROFILE_FUNCTION();
 
-		DynamicTexture* tex = m_renderer.getFramebufferDynamicTexturePtr(pRenderTarget->framebuffer, 0);
+		DynamicTexture* tex = &pRenderTarget->mainRenderData.colorTexture; //m_renderer.getFramebufferDynamicTexturePtr(pRenderTarget->framebuffer, 0);
 		Extent extent = { std::ceil(tex->getExtent().width * 0.5f), std::ceil(tex->getExtent().height * 0.5f) };
 		
 		RenderTarget::BloomData& bd = pRenderTarget->bloomData;
@@ -135,8 +135,6 @@ namespace sa {
 		m_pRenderTechnique->drawData.finalTexture = bd.outputTexture;
 		pRenderTarget->outputTexture = &bd.outputTexture;
 		
-		bd.outputTexture.swap();
-
 	}
 
 	const Texture2D& BloomRenderLayer::getOutputTexture() const {

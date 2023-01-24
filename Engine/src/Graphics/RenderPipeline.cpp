@@ -29,24 +29,25 @@ namespace sa {
 
 		auto& renderer = Renderer::get();
 		renderer.freeDescriptorSet(m_swapchainDescriptorSet);
-		renderer.destroyPipeline(m_swapchainRenderTarget.pipeline);
-		renderer.destroyFramebuffer(m_swapchainRenderTarget.framebuffer);
-		renderer.destroyRenderProgram(m_swapchainRenderTarget.renderProgram);
+		renderer.destroyPipeline(m_swapchainPipeline);
+		renderer.destroyFramebuffer(m_swapchainFramebuffer);
+		renderer.destroyRenderProgram(m_swapchainRenderProgram);
 
 
-		m_swapchainRenderTarget.renderProgram = renderer.createRenderProgram()
+		m_swapchainRenderProgram = renderer.createRenderProgram()
 			.addSwapchainAttachment(m_pWindow->getSwapchainID())
 			.beginSubpass()
 			.addAttachmentReference(0, SubpassAttachmentUsage::ColorTarget)
 			.endSubpass()
+			.addColorDependency(SA_SUBPASS_EXTERNAL, 0)
 			.end();
 
-		m_swapchainRenderTarget.pipeline = renderer.createGraphicsPipeline(m_swapchainRenderTarget.renderProgram, 0, newExtent,
+		m_swapchainPipeline = renderer.createGraphicsPipeline(m_swapchainRenderProgram, 0, newExtent,
 			"../Engine/shaders/TransferToSwapchain.vert.spv", "../Engine/shaders/TransferToSwapchain.frag.spv");
 
 		std::vector<Texture> textures;
-		m_swapchainRenderTarget.framebuffer = renderer.createSwapchainFramebuffer(m_swapchainRenderTarget.renderProgram, m_pWindow->getSwapchainID(), textures);
-		m_swapchainDescriptorSet = renderer.allocateDescriptorSet(m_swapchainRenderTarget.pipeline, 0);
+		m_swapchainFramebuffer = renderer.createSwapchainFramebuffer(m_swapchainRenderProgram, m_pWindow->getSwapchainID(), textures);
+		m_swapchainDescriptorSet = renderer.allocateDescriptorSet(m_swapchainPipeline, 0);
 
 	}
 
@@ -54,24 +55,24 @@ namespace sa {
 		m_pRenderTechnique = pRenderTechnique;
 		m_pWindow = pWindow;
 
-		m_pRenderTechnique->init(pWindow->getCurrentExtent());
+		m_pRenderTechnique->init();
 
 		Renderer& renderer = Renderer::get();
 
-		m_swapchainRenderTarget.renderProgram = renderer.createRenderProgram()
-			.addSwapchainAttachment(pWindow->getSwapchainID())
+		m_swapchainRenderProgram = renderer.createRenderProgram()
+			.addSwapchainAttachment(m_pWindow->getSwapchainID())
 			.beginSubpass()
 			.addAttachmentReference(0, SubpassAttachmentUsage::ColorTarget)
 			.endSubpass()
 			.addColorDependency(SA_SUBPASS_EXTERNAL, 0)
 			.end();
 
-		m_swapchainRenderTarget.pipeline = renderer.createGraphicsPipeline(m_swapchainRenderTarget.renderProgram, 0, pWindow->getCurrentExtent(),
+		m_swapchainPipeline = renderer.createGraphicsPipeline(m_swapchainRenderProgram, 0, m_pWindow->getCurrentExtent(),
 			"../Engine/shaders/TransferToSwapchain.vert.spv", "../Engine/shaders/TransferToSwapchain.frag.spv");
 
 		std::vector<Texture> textures;
-		m_swapchainRenderTarget.framebuffer = renderer.createSwapchainFramebuffer(m_swapchainRenderTarget.renderProgram, pWindow->getSwapchainID(), textures);
-		m_swapchainDescriptorSet = renderer.allocateDescriptorSet(m_swapchainRenderTarget.pipeline, 0);
+		m_swapchainFramebuffer = renderer.createSwapchainFramebuffer(m_swapchainRenderProgram, m_pWindow->getSwapchainID(), textures);
+		m_swapchainDescriptorSet = renderer.allocateDescriptorSet(m_swapchainPipeline, 0);
 
 		m_sampler = renderer.createSampler(FilterMode::LINEAR);
 
@@ -108,17 +109,18 @@ namespace sa {
 		return m_context;
 	}
 
-	void RenderPipeline::render(SceneCamera* pCamera, RenderTarget* rendertarget) {
+	void RenderPipeline::render(SceneCamera* pCamera, RenderTarget* pRendertarget) {
 		SA_PROFILE_FUNCTION();
 
 		for (auto& layer : m_layers) {
-			layer->preRender(m_context, pCamera);
+			layer->preRender(m_context, pCamera, pRendertarget);
 		}
 
 		for (auto& layer : m_layers) {
-			layer->render(m_context, pCamera, rendertarget);
+			layer->render(m_context, pCamera, pRendertarget);
 		}
 
+		pRendertarget->swap();
 	}
 
 	void RenderPipeline::endScene() {
@@ -136,11 +138,11 @@ namespace sa {
 			// render finalTextuer to swapchain
 			//m_context.copyImageToSwapchain(m_pRenderTechnique->drawData.finalTexture, m_pWindow->getSwapchainID());
 			m_context.updateDescriptorSet(m_swapchainDescriptorSet, 0, m_pRenderTechnique->drawData.finalTexture, m_sampler);
-			m_context.beginRenderProgram(m_swapchainRenderTarget.renderProgram, m_swapchainRenderTarget.framebuffer, SubpassContents::DIRECT);
-			m_context.bindPipeline(m_swapchainRenderTarget.pipeline);
-			m_context.bindDescriptorSet(m_swapchainDescriptorSet, m_swapchainRenderTarget.pipeline);
+			m_context.beginRenderProgram(m_swapchainRenderProgram, m_swapchainFramebuffer, SubpassContents::DIRECT);
+			m_context.bindPipeline(m_swapchainPipeline);
+			m_context.bindDescriptorSet(m_swapchainDescriptorSet, m_swapchainPipeline);
 			m_context.draw(6, 1);
-			m_context.endRenderProgram(m_swapchainRenderTarget.renderProgram);
+			m_context.endRenderProgram(m_swapchainRenderProgram);
 		}
 		
 		{

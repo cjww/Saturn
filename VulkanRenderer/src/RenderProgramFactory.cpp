@@ -80,54 +80,56 @@ namespace sa {
 
 	RenderProgramFactory::RenderProgramFactory(VulkanCore* pCore) {
 		m_pCore = pCore;
-		m_id = sa::ResourceManager::get().insert<RenderProgram>();
-		m_pProgram = sa::ResourceManager::get().get<RenderProgram>(m_id);
+		m_id = ResourceManager::get().insert<RenderProgram>();
+		m_pProgram = ResourceManager::get().get<RenderProgram>(m_id);
 	}
 
-	RenderProgramFactory& RenderProgramFactory::addColorAttachment(bool store) {
+	RenderProgramFactory& RenderProgramFactory::addColorAttachment(AttachmentFlags flags, uint32_t sampleCount) {
 		m_pProgram->addAttachment(
-			vk::ImageLayout::eUndefined,
+			(flags & AttachmentFlagBits::eLoad) ? vk::ImageLayout::eColorAttachmentOptimal : vk::ImageLayout::eUndefined,
 			vk::ImageLayout::eShaderReadOnlyOptimal,
 			m_pCore->getDefaultColorFormat(),
-			vk::AttachmentLoadOp::eClear,
-			(store) ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare,
-			vk::SampleCountFlagBits::e1
+			(flags & AttachmentFlagBits::eClear) ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eDontCare,
+			(flags & AttachmentFlagBits::eStore) ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare,
+			(vk::SampleCountFlagBits)sampleCount
 		);
 		return *this;
 	}
 
-	RenderProgramFactory& RenderProgramFactory::addColorAttachment(bool store, const Texture2D& framebufferTexture) {
+	RenderProgramFactory& RenderProgramFactory::addColorAttachment(AttachmentFlags flags, const Texture2D& framebufferTexture) {
 		const DeviceImage* pDeviceImage = (const DeviceImage*)framebufferTexture;
 		vk::ImageLayout finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
-		if (framebufferTexture.getTypeFlags() & TextureTypeFlagBits::INPUT_ATTACHMENT ||
-			framebufferTexture.getTypeFlags() & TextureTypeFlagBits::SAMPLED) {
+		if ((framebufferTexture.getTypeFlags() & TextureTypeFlagBits::INPUT_ATTACHMENT ||
+			framebufferTexture.getTypeFlags() & TextureTypeFlagBits::SAMPLED) && 
+			flags & AttachmentFlagBits::eSampled) {
 			finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 		}
 		if (framebufferTexture.getTypeFlags() & TextureTypeFlagBits::STORAGE) {
 			finalLayout = vk::ImageLayout::eGeneral;
 		}
 		m_pProgram->addAttachment(
-			vk::ImageLayout::eUndefined,
+			(flags & AttachmentFlagBits::eLoad) ? vk::ImageLayout::eColorAttachmentOptimal : vk::ImageLayout::eUndefined,
 			finalLayout,
 			pDeviceImage->format,
-			vk::AttachmentLoadOp::eClear,
-			(store)? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare,
+			(flags & AttachmentFlagBits::eClear) ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eDontCare,
+			(flags & AttachmentFlagBits::eStore) ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare,
 			pDeviceImage->sampleCount
 		);
+
 
 		DeviceImage* pImage = (DeviceImage*)framebufferTexture;
 		pImage->layout = finalLayout;
 		return *this;
 	}
 
-	RenderProgramFactory& RenderProgramFactory::addColorAttachment(bool store, Format format) {
+	RenderProgramFactory& RenderProgramFactory::addColorAttachment(AttachmentFlags flags, Format format, uint32_t sampleCount) {
 		m_pProgram->addAttachment(
-			vk::ImageLayout::eUndefined,
+			(flags & AttachmentFlagBits::eLoad) ? vk::ImageLayout::eColorAttachmentOptimal : vk::ImageLayout::eUndefined,
 			vk::ImageLayout::eShaderReadOnlyOptimal,
 			(vk::Format)format,
-			vk::AttachmentLoadOp::eClear,
-			(store) ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare,
-			vk::SampleCountFlagBits::e1
+			(flags & AttachmentFlagBits::eClear) ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eDontCare,
+			(flags & AttachmentFlagBits::eStore) ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare,
+			(vk::SampleCountFlagBits)sampleCount
 		);
 		return *this;
 	}
@@ -146,33 +148,49 @@ namespace sa {
 		return *this;
 	}
 
-	RenderProgramFactory& RenderProgramFactory::addDepthAttachment(bool store) {
+	RenderProgramFactory& RenderProgramFactory::addDepthAttachment(AttachmentFlags flags, uint32_t sampleCount) {
 		m_pProgram->addAttachment(
-			vk::ImageLayout::eUndefined,
-			vk::ImageLayout::eDepthStencilAttachmentOptimal,
+			((flags & (AttachmentFlagBits::eLoad | AttachmentFlagBits::eSampled)) == (AttachmentFlagBits::eLoad | AttachmentFlagBits::eSampled)) ?
+				vk::ImageLayout::eShaderReadOnlyOptimal : (flags & AttachmentFlagBits::eLoad) ? 
+					vk::ImageLayout::eDepthStencilAttachmentOptimal : vk::ImageLayout::eUndefined,
+			
+			((flags & (AttachmentFlagBits::eStore | AttachmentFlagBits::eSampled)) == (AttachmentFlagBits::eStore | AttachmentFlagBits::eSampled)) ?
+				vk::ImageLayout::eShaderReadOnlyOptimal : vk::ImageLayout::eDepthStencilAttachmentOptimal,
+			
 			m_pCore->getDefaultDepthFormat(),
-			vk::AttachmentLoadOp::eClear,
-			(store) ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare,
-			vk::SampleCountFlagBits::e1
+			
+			(flags & AttachmentFlagBits::eClear) ? 
+				vk::AttachmentLoadOp::eClear : (flags & AttachmentFlagBits::eLoad) ?
+					vk::AttachmentLoadOp::eLoad : vk::AttachmentLoadOp::eDontCare,
+
+			(flags & AttachmentFlagBits::eStore) ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare,
+			
+			(vk::SampleCountFlagBits)sampleCount
 		);
 		return *this;
 	}
 
-	RenderProgramFactory& RenderProgramFactory::addDepthAttachment(bool store, const Texture2D& framebufferTexture) {
+	RenderProgramFactory& RenderProgramFactory::addDepthAttachment(AttachmentFlags flags, const Texture2D& framebufferTexture) {
 		const DeviceImage* pDeviceImage = (const DeviceImage*)framebufferTexture;
 
 		vk::ImageLayout finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-		if (framebufferTexture.getTypeFlags() & TextureTypeFlagBits::INPUT_ATTACHMENT ||
-			framebufferTexture.getTypeFlags() & TextureTypeFlagBits::SAMPLED) {
+		if ((framebufferTexture.getTypeFlags() & TextureTypeFlagBits::INPUT_ATTACHMENT ||
+			framebufferTexture.getTypeFlags() & TextureTypeFlagBits::SAMPLED) &&
+			flags & AttachmentFlagBits::eSampled) {
 			finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 		}
 
 		m_pProgram->addAttachment(
-			vk::ImageLayout::eUndefined,
-			finalLayout,
+			((flags & (AttachmentFlagBits::eLoad | AttachmentFlagBits::eSampled)) == (AttachmentFlagBits::eLoad | AttachmentFlagBits::eSampled)) ?
+				vk::ImageLayout::eShaderReadOnlyOptimal : (flags & AttachmentFlagBits::eLoad) ?
+					vk::ImageLayout::eDepthStencilAttachmentOptimal : vk::ImageLayout::eUndefined,
+
+			((flags & (AttachmentFlagBits::eStore | AttachmentFlagBits::eSampled)) == (AttachmentFlagBits::eStore | AttachmentFlagBits::eSampled)) ?
+				vk::ImageLayout::eShaderReadOnlyOptimal : vk::ImageLayout::eDepthStencilAttachmentOptimal,
+			
 			pDeviceImage->format,
-			vk::AttachmentLoadOp::eClear,
-			(store) ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare,
+			(flags & AttachmentFlagBits::eClear) ? vk::AttachmentLoadOp::eClear : (flags & AttachmentFlagBits::eLoad) ? vk::AttachmentLoadOp::eLoad : vk::AttachmentLoadOp::eDontCare,
+			(flags & AttachmentFlagBits::eStore) ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare,
 			pDeviceImage->sampleCount
 		);
 
@@ -181,14 +199,19 @@ namespace sa {
 		return *this;
 	}
 
-	RenderProgramFactory& RenderProgramFactory::addDepthAttachment(bool store, Format format) {
+	RenderProgramFactory& RenderProgramFactory::addDepthAttachment(AttachmentFlags flags, Format format, uint32_t sampleCount) {
 		m_pProgram->addAttachment(
-			vk::ImageLayout::eUndefined,
-			vk::ImageLayout::eDepthStencilAttachmentOptimal,
+			((flags & (AttachmentFlagBits::eLoad | AttachmentFlagBits::eSampled)) == (AttachmentFlagBits::eLoad | AttachmentFlagBits::eSampled)) ?
+				vk::ImageLayout::eShaderReadOnlyOptimal : (flags & AttachmentFlagBits::eLoad) ?
+					vk::ImageLayout::eDepthStencilAttachmentOptimal : vk::ImageLayout::eUndefined,
+
+			((flags & (AttachmentFlagBits::eStore | AttachmentFlagBits::eSampled)) == (AttachmentFlagBits::eStore | AttachmentFlagBits::eSampled)) ?
+				vk::ImageLayout::eShaderReadOnlyOptimal : vk::ImageLayout::eDepthStencilAttachmentOptimal,
+			
 			(vk::Format)format,
-			vk::AttachmentLoadOp::eClear,
-			(store) ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare,
-			vk::SampleCountFlagBits::e1
+			(flags & AttachmentFlagBits::eClear) ? vk::AttachmentLoadOp::eClear : (flags & AttachmentFlagBits::eLoad) ? vk::AttachmentLoadOp::eLoad : vk::AttachmentLoadOp::eDontCare,
+			(flags & AttachmentFlagBits::eStore) ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare,
+			(vk::SampleCountFlagBits)sampleCount
 		);
 		return *this;
 	}

@@ -15,24 +15,20 @@ namespace sa {
 
 	}
 
-	void MainRenderLayer::preRender(RenderContext& context, SceneCamera* pCamera) {
-		m_pRenderTechnique->prepareRender(context, pCamera);
+	void MainRenderLayer::preRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget) {
+		m_pRenderTechnique->prepareRender(context, pCamera, pRenderTarget);
 	}
 
 	void MainRenderLayer::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget) {
 		Renderer& renderer = Renderer::get();
-		if (!pRenderTarget->isInitialized) {
-			pRenderTarget->cleanupMainData();
-			pRenderTarget->initializeMainData(m_pRenderTechnique);
-			pRenderTarget->isInitialized = true;
-		}
-
-		pRenderTarget->outputTexture = Renderer::get().getFramebufferDynamicTexturePtr(pRenderTarget->framebuffer, 0); // We know the first texture has to be the color texture
 		
+		m_pRenderTechnique->render(context, pCamera, pRenderTarget);
+
+		pRenderTarget->outputTexture = &pRenderTarget->mainRenderData.colorTexture;
+
 		m_pRenderTechnique->drawData.colorTexture = *pRenderTarget->outputTexture;
 		m_pRenderTechnique->drawData.finalTexture = m_pRenderTechnique->drawData.colorTexture;
 
-		m_pRenderTechnique->render(context, pCamera, pRenderTarget->framebuffer);
 	}
 
 	void MainRenderLayer::postRender(RenderContext& context) {

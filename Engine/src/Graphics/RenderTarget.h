@@ -15,24 +15,37 @@ namespace sa {
 		Renderer& m_renderer;
 		Engine* m_pEngine;
 		
-		friend class MainRenderLayer;
-		void initializeMainData(IRenderTechnique* pRenderTechnique);
-		void cleanupMainData();
-
-
 		friend class BloomRenderLayer;
 		void initializeBloomData(RenderContext& context, Extent extent, DynamicTexture* colorTexture, ResourceID bloomPipeline, ResourceID sampler);
 		void cleanupBloomData();
 
+		friend class ForwardPlus;
+		void cleanupMainRenderData();
+
 	public:
+
 		Extent extent;
 
-		DynamicTexture colorTexture;
-		DynamicTexture depthTexture;
-		ResourceID framebuffer = NULL_RESOURCE;
-		ResourceID renderProgram = NULL_RESOURCE;
-		ResourceID pipeline = NULL_RESOURCE;
-		bool isInitialized = false;
+		struct MainRenderData {
+			DynamicTexture colorTexture;
+			DynamicTexture depthTexture;
+			ResourceID colorFramebuffer = NULL_RESOURCE;
+			ResourceID colorPipeline = NULL_RESOURCE;
+			ResourceID sceneDescriptorSet = NULL_RESOURCE;
+			
+			ResourceID depthPipeline = NULL_RESOURCE;
+			ResourceID depthFramebuffer = NULL_RESOURCE;
+			ResourceID sceneDepthDescriptorSet = NULL_RESOURCE;
+
+
+			// Light culling
+			glm::uvec2 tileCount;
+			DynamicBuffer lightIndexBuffer;
+			ResourceID lightCullingDescriptorSet = NULL_RESOURCE;
+
+			bool isInitialized = false;
+		} mainRenderData;
+		
 		struct BloomData {
 			bool isInitialized = false;
 
@@ -54,12 +67,15 @@ namespace sa {
 		DynamicTexture* outputTexture = nullptr;
 
 		RenderTarget();
+		virtual ~RenderTarget();
 
 		void initialize(Engine* pEngine, Extent extent);
 		void initialize(Engine* pEngine, RenderWindow* pWindow);
 		void destroy();
 
 		void resize(Extent extent);
+
+		void swap();
 
 	};
 }

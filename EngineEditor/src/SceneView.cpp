@@ -48,7 +48,6 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 
 	pEngine->on<sa::engine_event::OnRender>([&](sa::engine_event::OnRender& e, sa::Engine& engine) {
 		e.pRenderPipeline->render(&m_camera, &m_renderTarget);
-		sa::Renderer::get().swapFramebuffer(m_renderTarget.framebuffer);
 	});
 }
 
@@ -212,7 +211,7 @@ void SceneView::onImGui() {
 				m_displayedSize = availSize;
 			}
 		}
-		else if (m_renderTarget.outputTexture && m_renderTarget.isInitialized && m_renderTarget.outputTexture->isValid()) {
+		else if (m_renderTarget.outputTexture && m_renderTarget.mainRenderData.isInitialized && m_renderTarget.outputTexture->isValid()) {
 			ImGui::Image((sa::Texture)*m_renderTarget.outputTexture, imAvailSize);
 		}
 		ImVec2 imageMin = ImGui::GetItemRectMin();

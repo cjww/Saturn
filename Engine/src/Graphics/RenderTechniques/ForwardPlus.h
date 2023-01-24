@@ -23,27 +23,27 @@ namespace sa {
 
 
 		ResourceID m_colorRenderProgram = NULL_RESOURCE;
-		ResourceID m_colorPipeline = NULL_RESOURCE;
+		//ResourceID m_colorPipeline = NULL_RESOURCE;
 
-		ResourceID m_sceneDescriptorSet = NULL_RESOURCE;
+		//ResourceID m_sceneDescriptorSet = NULL_RESOURCE;
 		
 		ResourceID m_linearSampler = NULL_RESOURCE;
 		ResourceID m_nearestSampler = NULL_RESOURCE;
 		
 
-		DynamicTexture2D m_depthTexture;
+		//DynamicTexture2D m_depthTexture;
 		ResourceID m_depthPreRenderProgram = NULL_RESOURCE;
-		ResourceID m_depthPreFramebuffer = NULL_RESOURCE;
-		ResourceID m_depthPrePipeline = NULL_RESOURCE;
-		ResourceID m_sceneDepthDescriptorSet = NULL_RESOURCE;
+		//ResourceID m_depthPreFramebuffer = NULL_RESOURCE;
+		//ResourceID m_depthPrePipeline = NULL_RESOURCE;
+		//ResourceID m_sceneDepthDescriptorSet = NULL_RESOURCE;
 
 		ResourceID m_lightCullingPipeline = NULL_RESOURCE;
-		ResourceID m_lightCullingDescriptorSet = NULL_RESOURCE;
+		//ResourceID m_lightCullingDescriptorSet = NULL_RESOURCE;
 
 		
 		
-		Vector2u m_tileCount;
-		DynamicBuffer m_lightIndexBuffer;
+		//Vector2u m_tileCount;
+		//DynamicBuffer m_lightIndexBuffer;
 
 		ResourceID m_debugLightHeatmapRenderProgram = NULL_RESOURCE;
 		ResourceID m_debugLightHeatmapPipeline = NULL_RESOURCE;
@@ -72,32 +72,24 @@ namespace sa {
 		DynamicBuffer m_materialBuffer;
 		DynamicBuffer m_materialIndicesBuffer;
 
-		void createPreDepthPass(Extent extent);
+		void createPreDepthPass();
 		void createLightCullingShader();
-		void createColorPass(Extent extent);
+		void createColorPass();
 
-		void resizeLightIndexBuffer(Extent extent);
+		void initializeMainRenderData(RenderTarget::MainRenderData& data, Extent extent);
 		
-		void updateDescriptorSets();
-
-		
-
 	public:
 		using IRenderTechnique::IRenderTechnique;
 
 		virtual void onWindowResize(Extent extent) override;
 
-		virtual void init(Extent extent);
+		virtual void init() override;
 		virtual void cleanup() override;
 
 		virtual void updateData(RenderContext& context) override;
-		virtual bool prepareRender(RenderContext& context, SceneCamera* pCamera) override;
-		virtual void render(RenderContext& context, SceneCamera* pCamera, ResourceID framebuffer) override;
+		virtual bool prepareRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget) override;
+		virtual void render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget) override;
 		virtual void endRender(RenderContext& context) override;
-
-		virtual ResourceID createColorFramebuffer(const DynamicTexture& colorTexture, const DynamicTexture& depthTexture) override;
-		virtual DynamicTexture2D createColorAttachmentTexture(Extent extent) override;
-		virtual DynamicTexture2D createDepthAttachmentTexture(Extent extent) override;
 
 
 		virtual void updateLights(Scene* pScene) override;

@@ -36,7 +36,6 @@ GameView::GameView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWin
 					camera.camera.setViewport({ { 0, 0 }, m_renderTarget.extent });
 				}
 				e.pRenderPipeline->render(&camera.camera, &m_renderTarget);
-				sa::Renderer::get().swapFramebuffer(m_renderTarget.framebuffer);
 				m_renderedCamera = true;
 			}
 		});
@@ -71,7 +70,7 @@ void GameView::onImGui() {
 			ImGui::EndMenuBar();
 		}
 
-		if (m_renderedCamera && m_renderTarget.outputTexture && m_renderTarget.isInitialized && m_renderTarget.outputTexture->isValid()) {
+		if (m_renderedCamera && m_renderTarget.outputTexture && m_renderTarget.mainRenderData.isInitialized && m_renderTarget.outputTexture->isValid()) {
 			// render outputTexture with constant aspect ratio
 			sa::Extent extent = m_renderTarget.extent;
 			float aspect = (float)extent.height / extent.width;
