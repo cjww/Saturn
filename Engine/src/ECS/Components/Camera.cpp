@@ -23,13 +23,13 @@ namespace comp {
 
 	void Camera::onConstruct(sa::Entity* entity) {
 		camera.setViewport({ { 0, 0 }, sa::Application::get()->getWindow()->getCurrentExtent() });
-	
-		
+		if (!entity->hasComponent<comp::Transform>()) {
+			entity->addComponent<comp::Transform>();
+		}
 	}
 
 	void Camera::onDestroy(sa::Entity* entity) {
 
-		//sa::Application::get()->getEngine().erase(*(sa::Engine::connection<sa::engine_event::WindowResized>*)windowCallbackConnection);
 	}
 
 

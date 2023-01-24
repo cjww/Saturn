@@ -50,6 +50,7 @@ namespace sa {
 
 		void updatePhysics(float dt);
 		void updateChildPositions();
+		void updateCameraPositions();
 
 	public:
 		using entt::registry::view;

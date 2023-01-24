@@ -23,12 +23,6 @@ GameView::GameView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWin
 		m_renderedCamera = false;
 		if (!m_isWindowOpen || !m_isOpen)
 			return;
-		
-		engine.getCurrentScene()->forEach<comp::Camera, comp::Transform>([&](comp::Camera& camera, comp::Transform& transform) {
-			camera.camera.setPosition(transform.position);
-			glm::vec3 forward = transform.rotation * glm::vec3(0, 0, 1);
-			camera.camera.lookAt(transform.position + forward);
-		});
 
 		engine.getCurrentScene()->forEach<comp::Camera>([&](comp::Camera& camera) {
 			if (camera.isPrimary) {

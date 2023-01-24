@@ -36,6 +36,14 @@ namespace sa {
 		});
 	}
 
+	void Scene::updateCameraPositions() {
+		view<comp::Camera, comp::Transform>().each([](comp::Camera& camera, comp::Transform& transform) {
+			camera.camera.setPosition(transform.position);
+			glm::vec3 forward = transform.rotation * glm::vec3(0, 0, 1);
+			camera.camera.lookAt(transform.position + forward);
+		});
+	}
+
 	Scene::Scene(const std::string& name)
 		: m_name(name)
 		, m_pPhysicsScene(PhysicsSystem::get().createScene())
@@ -85,11 +93,12 @@ namespace sa {
 		m_scriptManager.broadcast("onUpdate", dt);
 		
 		updateChildPositions();
-
+		updateCameraPositions();
 	}
 
 	void Scene::inEditorUpdate(float dt) {
 		updateChildPositions();
+		updateCameraPositions();
 	}
 
 	void Scene::serialize(Serializer& s) {

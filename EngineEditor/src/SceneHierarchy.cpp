@@ -52,6 +52,13 @@ void SceneHierarchy::makePopups() {
 				m_pEngine->publish<sa::editor_event::EntitySelected>(entity);
 			}
 
+			if (ImGui::MenuItem("Light")) {
+				sa::Entity entity = m_pEngine->getCurrentScene()->createEntity("Light");
+				entity.addComponent<comp::Transform>();
+				entity.addComponent<comp::Light>();
+				m_pEngine->publish<sa::editor_event::EntitySelected>(entity);
+			}
+
 			ImGui::EndMenu();
 		}
 
