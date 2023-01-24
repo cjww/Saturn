@@ -70,7 +70,7 @@ namespace sa {
 
 		// Light culling pass
 		data.tileCount = { extent.width, extent.height };
-		data.tileCount += data.tileCount % TILE_SIZE;
+		data.tileCount += (TILE_SIZE - data.tileCount % TILE_SIZE);
 		data.tileCount /= TILE_SIZE;
 
 		size_t totalTileCount = data.tileCount.x * data.tileCount.y;

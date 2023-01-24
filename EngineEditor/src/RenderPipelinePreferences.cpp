@@ -10,7 +10,7 @@ RenderPipelinePreferences::~RenderPipelinePreferences() {
 }
 
 void RenderPipelinePreferences::onImGui() {
-	if (m_isOpen)
+	if (!m_isOpen)
 		return;
 
 	if (ImGui::Begin(m_name, &m_isOpen)) {

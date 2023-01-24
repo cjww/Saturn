@@ -21,7 +21,7 @@ GameView::GameView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWin
 	pEngine->on<sa::engine_event::OnRender>([&](sa::engine_event::OnRender& e, sa::Engine& engine) {
 		SA_PROFILE_SCOPE("GameView: OnRender");
 		m_renderedCamera = false;
-		if (!m_isWindowOpen)
+		if (!m_isWindowOpen || !m_isOpen)
 			return;
 		
 		engine.getCurrentScene()->forEach<comp::Camera, comp::Transform>([&](comp::Camera& camera, comp::Transform& transform) {

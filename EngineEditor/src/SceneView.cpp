@@ -47,7 +47,8 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 	m_camera.setViewport(sa::Rect{ { 0, 0 }, m_renderTarget.extent });
 
 	pEngine->on<sa::engine_event::OnRender>([&](sa::engine_event::OnRender& e, sa::Engine& engine) {
-		e.pRenderPipeline->render(&m_camera, &m_renderTarget);
+		if(m_isOpen)
+			e.pRenderPipeline->render(&m_camera, &m_renderTarget);
 	});
 }
 
