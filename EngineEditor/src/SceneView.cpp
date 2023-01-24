@@ -203,14 +203,15 @@ void SceneView::onImGui() {
 		// render outputTexture with variable aspect ratio
 		ImVec2 imAvailSize = ImGui::GetContentRegionAvail();
 		glm::vec2 availSize(imAvailSize.x, imAvailSize.y);
-
+		
 		if (availSize != m_displayedSize) {
-			if (!ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-				//m_camera.setAspectRatio(availSize.x / availSize.y);
-				m_camera.setViewport({ { 0, 0 }, { (uint32_t)availSize.x, (uint32_t)availSize.y } });
-				m_renderTarget.resize({ (uint32_t)availSize.x, (uint32_t)availSize.y });
-				m_displayedSize = availSize;
-			}
+			m_camera.setAspectRatio(availSize.x / availSize.y);
+		}
+
+		if (availSize != m_displayedSize && !ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+			m_camera.setViewport({ { 0, 0 }, { (uint32_t)availSize.x, (uint32_t)availSize.y } });
+			m_renderTarget.resize({ (uint32_t)availSize.x, (uint32_t)availSize.y });
+			m_displayedSize = availSize;
 		}
 		else if (m_renderTarget.outputTexture && m_renderTarget.mainRenderData.isInitialized && m_renderTarget.outputTexture->isValid()) {
 			ImGui::Image((sa::Texture)*m_renderTarget.outputTexture, imAvailSize);
@@ -246,6 +247,10 @@ void SceneView::onImGui() {
 
 		glm::vec2 screenPos = { imageMin.x, imageMin.y };
 		glm::vec2 screenSize = { imageSize.x, imageSize.y };
+
+		ImVec2 min = { screenPos.x, screenPos.y }, max = { screenPos.x + screenSize.x, screenPos.y + screenSize.y };
+		ImGui::PushClipRect(min, max, true);
+
 
 		if (showIcons) {
 			sa::Texture2D* tex = sa::AssetManager::get().loadTexture("resources/lightbulb-icon.png", true);
@@ -328,7 +333,8 @@ void SceneView::onImGui() {
 			}
 
 		}
-		
+		ImGui::PopClipRect();
+
 		/*
 		ImVec2 viewManipSize = ImVec2(100, 100);
 		ImVec2 viewManipPos = ImVec2(imageMin.y, imageMin.y + imageSize.y - ImGui::GetWindowWidth() - viewManipSize.x);

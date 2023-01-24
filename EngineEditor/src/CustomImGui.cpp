@@ -610,6 +610,7 @@ namespace ImGui {
 		else if (numSegments > 128)
 			numSegments = 128;
 
+		
 		constexpr float twoPi = glm::radians(360.f);
 		ImVec2 points[128];
 		int pointCount = 0;
@@ -627,15 +628,15 @@ namespace ImGui {
 
 			glm::vec2 screenPoint = screenPoint3D;
 			if (pointCount == 0) {
+				ImVec2 windowPos = ImGui::GetWindowPos();
+				glm::vec2 windowPoint = { screenPoint.x - windowPos.x, screenPoint.y - windowPos.y };
+
 				ImVec2 rectMin(screenPoint.x - HandleSize, screenPoint.y - HandleSize);
 				ImVec2 rectMax(screenPoint.x + HandleSize, screenPoint.y + HandleSize);
-
 				ImGui::GetWindowDrawList()->AddCircleFilled({ screenPoint.x, screenPoint.y }, HandleSize, color);
 
-				ImVec2 windowPos = ImGui::GetWindowPos();
-				ImGui::SetCursorPos(ImVec2(rectMin.x - windowPos.x, rectMin.y - windowPos.y));
-				ImGui::InvisibleButton("circle_handle", ImVec2(rectMax.x - rectMin.x, rectMax.y - rectMin.y));
-				bool isOver = ImGui::IsItemHovered();
+				bool isOver = ImGui::IsMouseHoveringRect(rectMin, rectMax);
+
 				if (isOver) 
 					ImGui::GetWindowDrawList()->AddCircleFilled({ screenPoint.x, screenPoint.y }, HandleSize, ImColor(1.f, 1.f, 1.f));
 
@@ -659,7 +660,6 @@ namespace ImGui {
 
 					screenRadius = glm::distance(center, screenPoint);
 					radius = screenRadius * ratio;
-
 
 					ImGui::GetWindowDrawList()->AddCircleFilled({ screenPoint.x, screenPoint.y }, HandleSize * 1.5f, color);
 				}
