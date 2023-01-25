@@ -336,44 +336,33 @@ namespace ImGui {
 
 			ImGui::EndCombo();
 		}
+		
 		if (currentItem == items[0]) {
 			float fov = camera->camera.getFOVRadians();
 			if (ImGui::SliderAngle("Fov", &fov, 10.f, 180.f)) {
 				camera->camera.setFOVRadians(fov);
 			}
-
-			float near = camera->camera.getNear();
-			if (ImGui::SliderFloat("Near", &near, 0.0001f, 10.f)) {
-				camera->camera.setNear(near);
-			}
-
-			float far = camera->camera.getFar();
-			if (ImGui::SliderFloat("Far", &far, 1.f, 1000000.f)) {
-				camera->camera.setNear(far);
-			}
 		}
 		else if (currentItem == items[1]) {
 			
-			sa::Bounds orthoBounds = camera->camera.getOrthoBounds();
-
-			if (ImGui::DragFloat("Left", &orthoBounds.left, 1.0f, -1000.f, 1000.f)) {
-				camera->camera.setOrthoBounds(orthoBounds);
+			float orthoSize = camera->camera.getOrthoWidth();
+			if (ImGui::DragFloat("View Width", &orthoSize, 1.0f)) {
+				camera->camera.setOrthoWidth(orthoSize);
 			}
-			
-			if (ImGui::DragFloat("Right", &orthoBounds.right, 1.f, -1000.f, 1000.f)) {
-				camera->camera.setOrthoBounds(orthoBounds);
-			}
-			
-			if (ImGui::DragFloat("Top", &orthoBounds.top, 1.f, -1000.f, 1000.f)) {
-				camera->camera.setOrthoBounds(orthoBounds);
-			}
-			
-			if (ImGui::DragFloat("Bottom", &orthoBounds.bottom, 1.0f, -1000.f, 1000.f)) {
-				camera->camera.setOrthoBounds(orthoBounds);
-			}
-
 		}
 
+		ImGui::Spacing();
+		
+		float near = camera->camera.getNear();
+		if (ImGui::DragFloat("Near", &near, 0.1f, 0.0f)) {
+			near = std::max(near, 0.f);
+			camera->camera.setNear(near);
+		}
+
+		float far = camera->camera.getFar();
+		if (ImGui::DragFloat("Far", &far, 10.f, 1.0f)) {
+			camera->camera.setFar(far);
+		}
 
 	}
 

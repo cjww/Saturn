@@ -3,10 +3,17 @@
 
 namespace sa {
     void SceneCamera::updateProjection() {
-        m_projMat = (m_projectionMode == ePerspective) ?
-            glm::perspective(m_fov, m_apectRatio, m_near, m_far) :
-            glm::ortho(m_orthoBounds.left, m_orthoBounds.right, m_orthoBounds.bottom, m_orthoBounds.top);
-
+        switch (m_projectionMode)
+        {
+        case sa::ePerspective:
+            m_projMat = glm::perspective(m_fov, m_apectRatio, m_near, m_far);
+            break;
+        case sa::eOrthographic:
+            m_projMat = glm::ortho(m_orthoBounds.left, m_orthoBounds.right, m_orthoBounds.bottom, m_orthoBounds.top, m_near, m_far);
+            break;
+        default:
+            return;
+        }
         m_projMat[1][1] *= -1;
     }
 
@@ -19,7 +26,7 @@ namespace sa {
         , m_apectRatio(1)
         , m_viewport({ {0, 0}, { 128, 128 } })
         , m_projectionMode(ePerspective)
-        , m_orthoBounds({-1, 1, -1, 1})
+        , m_orthoBounds({-5, 5, -5, 5})
     {
         updateProjection();
     }
@@ -135,6 +142,23 @@ namespace sa {
         m_orthoBounds = bounds;
         updateProjection();
     }
+
+    float SceneCamera::getOrthoWidth() const {
+        return m_orthoBounds.right - m_orthoBounds.left;
+    }
+
+    void SceneCamera::setOrthoWidth(float width) {
+        float halfWidth = width * 0.5f;
+        m_orthoBounds.left = -halfWidth;
+        m_orthoBounds.right = halfWidth;
+        float height = width / m_apectRatio;
+        float halfHeight = height * 0.5f;
+
+        m_orthoBounds.bottom = -halfHeight;
+        m_orthoBounds.top = halfHeight;
+        updateProjection();
+    }
+
 
     ProjectionMode SceneCamera::getProjectionMode() const {
         return m_projectionMode;

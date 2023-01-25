@@ -72,6 +72,8 @@ namespace sa {
 		Bounds getOrthoBounds() const;
 		void setOrthoBounds(Bounds bounds);
 		
+		float getOrthoWidth() const;
+		void setOrthoWidth(float width);
 
 
 		ProjectionMode getProjectionMode() const;
