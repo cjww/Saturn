@@ -113,11 +113,13 @@ namespace sa {
 		SA_PROFILE_FUNCTION();
 
 		for (auto& layer : m_layers) {
-			layer->preRender(m_context, pCamera, pRendertarget);
+			if(layer->isActive())
+				layer->preRender(m_context, pCamera, pRendertarget);
 		}
 
 		for (auto& layer : m_layers) {
-			layer->render(m_context, pCamera, pRendertarget);
+			if(layer->isActive())
+				layer->render(m_context, pCamera, pRendertarget);
 		}
 
 		pRendertarget->swap();
@@ -127,10 +129,12 @@ namespace sa {
 		SA_PROFILE_FUNCTION();
 
 		for (auto& layer : m_layers) {
-			layer->postRender(m_context);
+			if (layer->isActive())
+				layer->postRender(m_context);
 		}
 		for (auto& layer : m_overlays) {
-			layer->postRender(m_context);
+			if (layer->isActive())
+				layer->postRender(m_context);
 		}
 
 		{

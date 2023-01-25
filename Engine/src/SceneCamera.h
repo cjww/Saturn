@@ -4,6 +4,12 @@
 #include "Tools/Vector.h"
 
 namespace sa {
+
+	enum ProjectionMode {
+		ePerspective,
+		eOrthographic
+	};
+
 	class SceneCamera {
 	private:
 		Rect m_viewport;
@@ -13,11 +19,14 @@ namespace sa {
 		Vector3 m_forward;
 		Vector3 m_up;
 
+		ProjectionMode m_projectionMode;
 
 		float m_fov;
 		float m_apectRatio;
-		inline static const float m_near = 0.01f;
-		inline static const float m_far = 1000.0f;
+		float m_near = 0.01f;
+		float m_far = 1000.0f;
+
+		Bounds m_orthoBounds;
 
 		void updateProjection();
 
@@ -29,9 +38,13 @@ namespace sa {
 		SceneCamera(const SceneCamera&) = default;
 		SceneCamera& operator=(const SceneCamera&) = default;
 		
+		float getFOVRadians() const;
 		void setFOVRadians(float fovRadians);
+		float getFOVDegrees() const;
 		void setFOVDegrees(float fovDegrees);
 
+
+		Rect getViewport() const;
 		void setViewport(Rect viewport);
 		
 		void setAspectRatio(float aspectRatio);
@@ -50,11 +63,18 @@ namespace sa {
 		Matrix4x4 getViewMatrix() const;
 		Matrix4x4 getProjectionMatrix() const;
 
-		Rect getViewport() const;
 
-		static float getNear();
-		static float getFar();
+		float getNear() const;
+		void setNear(float value);
+		float getFar() const;
+		void setFar(float value);
+
+		Bounds getOrthoBounds() const;
+		void setOrthoBounds(Bounds bounds);
+		
 
 
+		ProjectionMode getProjectionMode() const;
+		void setProjectionMode(ProjectionMode projectionMode);
 	};
 }

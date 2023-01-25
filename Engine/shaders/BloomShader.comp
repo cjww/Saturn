@@ -17,12 +17,6 @@ layout(push_constant) uniform PushConstant {
     int mode;
 } pc;
 
-struct GaussianData {
-    float normFactor;
-    int kernelRadius;
-    float kernel[13];
-};
-
 struct TonemapPreferences {
   float gamma;
   float exposure;
@@ -34,7 +28,6 @@ layout(set = 1, binding = 0) uniform BloomPreferences {
     float intensity;
     float spread;
     TonemapPreferences tonemapPreferences;
-    GaussianData gaussData;
 } bloomPreferences;
 
 
@@ -47,6 +40,7 @@ float karisAverage(vec3 color) {
     return 1.0 / (1.0 + luma);
 }
 
+/*
 vec3 gaussian(ivec2 pos) {
 	//declare stuff
 	const int kSize = bloomPreferences.gaussData.kernelRadius;
@@ -61,6 +55,7 @@ vec3 gaussian(ivec2 pos) {
 	}
 	return final_colour / bloomPreferences.gaussData.normFactor;
 }
+*/
 
 
 // [Jimenez14] http://goo.gl/eomGso

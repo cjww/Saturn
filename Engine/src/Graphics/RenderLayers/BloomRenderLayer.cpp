@@ -3,27 +3,6 @@
 
 namespace sa {
 
-	void generateGaussianKernel(GaussianData& gaussData) {
-
-		gaussData.kernelRadius = std::min(gaussData.kernelRadius, 6);
-
-		int kSize = gaussData.kernelRadius;
-		int mSize = gaussData.kernelRadius * 2 + 1;
-
-		//create the 1-D kernel
-		constexpr float sigma = 7.0f;
-		float Z = 0.0f;
-
-		for (int i = 0; i <= kSize; ++i) {
-			gaussData.kernel[kSize + i].x = gaussData.kernel[kSize - i].x = 0.39894f * exp(-0.5f * i * i / (sigma * sigma)) / sigma;
-		}
-		for (int j = 0; j < mSize; ++j) {
-			Z += gaussData.kernel[j].x;
-		}
-		gaussData.normFactor = Z * Z;
-
-	}
-
 	void BloomRenderLayer::init(RenderWindow* pWindow, IRenderTechnique* pRenderTechnique) {
 
 		m_pRenderTechnique = pRenderTechnique;
@@ -33,7 +12,6 @@ namespace sa {
 
 		m_bloomPreferencesDescriptorSet = m_renderer.allocateDescriptorSet(m_bloomPipeline, 1);
 
-		generateGaussianKernel(m_bloomPreferences.gaussData);
 		m_bloomPreferencesBuffer = m_renderer.createBuffer(BufferType::UNIFORM, sizeof(BloomPreferences), &m_bloomPreferences);
 		m_renderer.updateDescriptorSet(m_bloomPreferencesDescriptorSet, 0, m_bloomPreferencesBuffer);
 
@@ -147,7 +125,6 @@ namespace sa {
 
 	void BloomRenderLayer::setBloomPreferences(const BloomPreferences& bloomPreferences) {
 		m_bloomPreferences = bloomPreferences;
-		generateGaussianKernel(m_bloomPreferences.gaussData);
 		m_bloomPreferencesBuffer.write(m_bloomPreferences);
 		m_renderer.updateDescriptorSet(m_bloomPreferencesDescriptorSet, 0, m_bloomPreferencesBuffer);
 	}

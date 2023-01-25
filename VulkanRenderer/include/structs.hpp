@@ -52,4 +52,8 @@ namespace sa {
 		Offset offset;
 		Extent extent;
 	};
+
+	struct Bounds {
+		float left, right, top, bottom;
+	};
 }

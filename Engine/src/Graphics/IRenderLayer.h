@@ -12,7 +12,7 @@ namespace sa {
 	class IRenderLayer {
 	protected:
 		Renderer& m_renderer;
-		
+		bool m_isActive;
 	public:
 		IRenderLayer();
 		virtual ~IRenderLayer() = default;
@@ -27,6 +27,10 @@ namespace sa {
 		virtual void onWindowResize(Extent newExtent) = 0;
 
 		virtual const Texture2D& getOutputTexture() const = 0;
+
+		bool isActive() const;
+		void setActive(bool active);
+
 
 	};
 }

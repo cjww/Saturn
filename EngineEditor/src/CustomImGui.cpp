@@ -305,10 +305,6 @@ namespace ImGui {
 	void Component(sa::Entity entity, comp::Camera* camera) {
 		ImGui::Checkbox("Is Primary", &camera->isPrimary);
 
-		glm::vec3 position = camera->camera.getPosition();
-		if (ImGui::DragFloat3("Position##Camera", (float*)&position)) {
-			camera->camera.setPosition(position);
-		}
 		sa::Rect rect = camera->camera.getViewport();
 		ImGui::Text("Viewport");
 		ImGui::Indent();
@@ -323,7 +319,60 @@ namespace ImGui {
 		}
 		ImGui::Unindent();
 
+		const char* items[] = { "Perspective", "Orthographic" };
+		const char* currentItem = items[(int)camera->camera.getProjectionMode()];
+		if (ImGui::BeginCombo("Projection", currentItem)) {
+			bool isSelected = currentItem == items[0];
+			if (ImGui::Selectable(items[0], &isSelected)) {
+				currentItem = items[0];
+				camera->camera.setProjectionMode(sa::ProjectionMode::ePerspective);
 
+			}
+			isSelected = currentItem == items[1];
+			if (ImGui::Selectable(items[1], &isSelected)) {
+				currentItem = items[1];
+				camera->camera.setProjectionMode(sa::ProjectionMode::eOrthographic);
+			}
+
+			ImGui::EndCombo();
+		}
+		if (currentItem == items[0]) {
+			float fov = camera->camera.getFOVRadians();
+			if (ImGui::SliderAngle("Fov", &fov, 10.f, 180.f)) {
+				camera->camera.setFOVRadians(fov);
+			}
+
+			float near = camera->camera.getNear();
+			if (ImGui::SliderFloat("Near", &near, 0.0001f, 10.f)) {
+				camera->camera.setNear(near);
+			}
+
+			float far = camera->camera.getFar();
+			if (ImGui::SliderFloat("Far", &far, 1.f, 1000000.f)) {
+				camera->camera.setNear(far);
+			}
+		}
+		else if (currentItem == items[1]) {
+			
+			sa::Bounds orthoBounds = camera->camera.getOrthoBounds();
+
+			if (ImGui::DragFloat("Left", &orthoBounds.left, 1.0f, -1000.f, 1000.f)) {
+				camera->camera.setOrthoBounds(orthoBounds);
+			}
+			
+			if (ImGui::DragFloat("Right", &orthoBounds.right, 1.f, -1000.f, 1000.f)) {
+				camera->camera.setOrthoBounds(orthoBounds);
+			}
+			
+			if (ImGui::DragFloat("Top", &orthoBounds.top, 1.f, -1000.f, 1000.f)) {
+				camera->camera.setOrthoBounds(orthoBounds);
+			}
+			
+			if (ImGui::DragFloat("Bottom", &orthoBounds.bottom, 1.0f, -1000.f, 1000.f)) {
+				camera->camera.setOrthoBounds(orthoBounds);
+			}
+
+		}
 
 
 	}

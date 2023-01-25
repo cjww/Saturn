@@ -5,13 +5,7 @@
 
 namespace sa {
 
-	struct GaussianData {
-		float normFactor;
-		int kernelRadius = 3;
-		alignas(16) glm::vec4 kernel[13];
-	};
-	void generateGaussianKernel(GaussianData& gaussData);
-
+	
 	struct TonemapPreferences {
 		float gamma = 2.2f;
 		float exposure = 1.0f;
@@ -23,7 +17,6 @@ namespace sa {
 		float intensity = 1.0f;
 		float spread = 1.0f;
 		alignas(16) TonemapPreferences tonemapPreferences = {};
-		alignas(16) GaussianData gaussData = {};
 	};
 	
 
