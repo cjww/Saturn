@@ -248,15 +248,32 @@ void SceneView::onImGui() {
 		glm::vec2 screenPos = { imageMin.x, imageMin.y };
 		glm::vec2 screenSize = { imageSize.x, imageSize.y };
 
+		/*
 		ImVec2 min = { screenPos.x, screenPos.y }, max = { screenPos.x + screenSize.x, screenPos.y + screenSize.y };
 		ImGui::PushClipRect(min, max, true);
+		*/
 
 
 		if (showIcons) {
 			sa::Texture2D* tex = sa::AssetManager::get().loadTexture("resources/lightbulb-icon.png", true);
+			sa::Texture2D* sunTexture = sa::AssetManager::get().loadTexture("resources/sun-icon.png", true);
 			m_pEngine->getCurrentScene()->forEach<comp::Light>([&](const comp::Light& light) {
 				ImColor color(light.values.color);
-				ImGui::GizmoIcon(tex, light.values.position, &m_camera, screenPos, screenSize, iconSize, color);
+				switch (light.values.type) {
+				case sa::LightType::POINT:
+					ImGui::GizmoIcon(tex, light.values.position, &m_camera, screenPos, screenSize, iconSize, color);
+					break;
+				case sa::LightType::DIRECTIONAL:
+					ImGui::GizmoIcon(sunTexture, light.values.position, &m_camera, screenPos, screenSize, iconSize * 1.5f, color);
+					break;
+				case sa::LightType::SPOT:
+
+					break;
+				default:
+					break;
+				}
+				
+
 			});
 
 			tex = sa::AssetManager::get().loadTexture("resources/camera-transparent.png", true);
@@ -307,7 +324,19 @@ void SceneView::onImGui() {
 			// Light icons
 			comp::Light* light = m_selectedEntity.getComponent<comp::Light>();
 			if (light) {
-				ImGui::GizmoSphereResizable(light->values.position, light->values.attenuationRadius, glm::quat(1, 0, 0, 0), &m_camera, screenPos, screenSize, lightSphereColor, isOperating);
+				switch (light->values.type) {
+				case sa::LightType::POINT:
+					ImGui::GizmoSphereResizable(light->values.position, light->values.position.w, glm::quat(1, 0, 0, 0), &m_camera, screenPos, screenSize, lightSphereColor, isOperating);
+					break;
+				case sa::LightType::DIRECTIONAL:
+					
+					break;
+				case sa::LightType::SPOT:
+					
+					break;
+				default:
+					break;
+				}
 			}
 
 			// Box colliders
@@ -333,7 +362,7 @@ void SceneView::onImGui() {
 			}
 
 		}
-		ImGui::PopClipRect();
+		//ImGui::PopClipRect();
 
 		/*
 		ImVec2 viewManipSize = ImVec2(100, 100);

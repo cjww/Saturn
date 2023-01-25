@@ -4,6 +4,9 @@
 #define MAX_LIGHTS_PER_TILE 1024
 #define TILE_SIZE 16
 
+#define LIGHT_TYPE_POINT 0
+#define LIGHT_TYPE_DIRECTIONAL 1
+
 layout(location = 0) in vec2 in_vertexUV;
 layout(location = 1) in vec3 in_vertexWorldPos;
 layout(location = 2) in vec3 in_vertexWorldNormal;
@@ -11,6 +14,7 @@ layout(location = 3) in flat vec3 in_viewPos;
 layout(location = 4) in flat uint in_meshIndex;
 
 layout(location = 0) out vec4 out_color;
+
 
 struct Material {
     vec4 diffuseColor;
@@ -36,9 +40,8 @@ struct Material {
 
 struct Light {
     vec4 color;
-    vec3 position;
-    float intensity;
-    float attenuationRadius;
+    vec4 position; //vec3 position, float intensity
+    vec4 direction; //vec3 direction, float attenuationRadius
     uint type;
 };
 
@@ -114,22 +117,46 @@ void main() {
         for(int i = 0; i < MAX_LIGHTS_PER_TILE && lightIndices.data[i + offset] != -1; i++) {
             Light light = lightBuffer.lights[lightIndices.data[i + offset]];
 
-            vec3 toLight = light.position - in_vertexWorldPos;
-            float lightDistance = length(toLight);
-            toLight = normalize(toLight);
-            
-            float diffuseFactor = max(dot(in_vertexWorldNormal, toLight), 0.0);
             //TODO send value to shader
-            float falloff = 1.0;
-            float attenuation = (1 - lightDistance / (light.attenuationRadius)) / falloff;
-            attenuation = clamp(attenuation, 0.0, 1.0);
-            vec4 radiance = light.color * attenuation * light.intensity; 
+            int shininess = 32;
+                
+            switch(light.type) {
+            case LIGHT_TYPE_POINT: {
 
-            diffuseColor += radiance * diffuseFactor;
-            
-            vec3 reflectDir = reflect(-toLight, in_vertexWorldNormal);
-            float spec = pow(max(dot(viewDir, reflectDir), 0.0), 32);
-            specularColor += radiance * spec;
+                vec3 toLight = light.position.xyz - in_vertexWorldPos;
+                float lightDistance = length(toLight);
+                toLight = normalize(toLight);
+                
+                float diffuseFactor = max(dot(in_vertexWorldNormal, toLight), 0.0);
+                //TODO send value to shader
+                float falloff = 1.0;
+                float attenuation = (1 - lightDistance / (light.position.w)) / falloff;
+                attenuation = clamp(attenuation, 0.0, 1.0);
+                vec3 radiance = light.color.rgb * attenuation * light.color.a; 
+
+                diffuseColor += vec4(radiance, 0.0) * diffuseFactor;
+                
+                vec3 reflectDir = reflect(-toLight, in_vertexWorldNormal);
+                float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
+                specularColor += vec4(radiance, 0.0) * spec;
+                break;
+            }
+            case LIGHT_TYPE_DIRECTIONAL: {
+
+                float diffuseFactor = max(dot(in_vertexWorldNormal, -light.direction.xyz), 0.0);
+                vec3 radiance = light.color.rgb * light.color.a;
+                diffuseColor += vec4(radiance, 0.0) * diffuseFactor;
+
+                vec3 reflectDir = reflect(light.direction.xyz, in_vertexWorldNormal);
+                
+                float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
+                specularColor += vec4(radiance, 0.0) * spec;
+                break;
+            }
+            default:
+                break;
+            }
+
         }
        
     }

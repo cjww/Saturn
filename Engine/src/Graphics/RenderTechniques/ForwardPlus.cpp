@@ -414,7 +414,8 @@ namespace sa {
 		
 		m_lights.clear();
 		pScene->view<comp::Transform, comp::Light>().each([](const comp::Transform& transform, comp::Light& light) {
-			light.values.position = transform.position;
+			light.values.position = glm::vec4(transform.position, light.values.position.w);
+			light.values.direction = glm::vec4(transform.rotation * glm::vec3(0, 0, 1), light.values.direction.w);
 		});
 		
 		pScene->view<comp::Light>().each([&](comp::Light& light) {

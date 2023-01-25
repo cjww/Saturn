@@ -254,10 +254,9 @@ namespace ImGui {
 
 	void Component(sa::Entity entity, comp::Light* light) {
 
-		ImGui::ColorEdit4("Color", (float*)&light->values.color);
+		ImGui::ColorEdit3("Color", (float*)&light->values.color);
 
-		ImGui::SliderFloat("Intensity", &light->values.intensity, 0.0f, 10.f);
-		ImGui::SliderFloat("Attenuation radius", &light->values.attenuationRadius, 0.0, 200.f);
+		ImGui::SliderFloat("Intensity", &light->values.color.a, 0.0f, 10.f);
 
 		static std::string preview = "Point";
 		if (ImGui::BeginCombo("Type", preview.c_str())) {
@@ -271,6 +270,9 @@ namespace ImGui {
 			}
 
 			ImGui::EndCombo();
+		}
+		if (light->values.type == sa::LightType::POINT) {
+			ImGui::SliderFloat("Attenuation radius", &light->values.position.w, 0.0, 200.f);
 		}
 
 	}

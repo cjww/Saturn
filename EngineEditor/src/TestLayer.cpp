@@ -20,7 +20,7 @@ namespace sa {
 
 		comp::Light* lightComp = light.addComponent<comp::Light>();
 		lightComp->values.color = color;
-		lightComp->values.position = position;
+		lightComp->values.position = glm::vec4(position, lightComp->values.position.w);
 		return light;
 	}
 

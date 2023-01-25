@@ -3,16 +3,20 @@
 #define MAX_LIGHTS_PER_TILE 1024
 #define TILE_SIZE 16
 
+
+#define LIGHT_TYPE_POINT 0
+#define LIGHT_TYPE_DIRECTIONAL 1
+
+
 struct AABB {
 	vec3 center;
 	vec3 extents;
 };
 
 struct Light {
-    vec4 color;
-    vec3 position;
-    float intensity;
-	float attenuationRadius;
+    vec4 color;		//vec3 rgb, float intensity
+    vec4 position; 	//vec3 position, float attenuationRadius
+    vec4 direction; //vec3 direction
     uint type;
 };
 
@@ -129,11 +133,17 @@ void main() {
 			break;
 		}
 
-		vec4 position = vec4(lightBuffer.lights[lightIndex].position, 1);
+		if(lightBuffer.lights[lightIndex].type == LIGHT_TYPE_DIRECTIONAL) {
+			// Add index to the shared array of visible indices
+			uint offset = atomicAdd(visibleLightCount, 1);
+			visibleLightIndices[offset] = int(lightIndex);
+			continue;
+		}
+		vec4 position = vec4(lightBuffer.lights[lightIndex].position.xyz, 1);
 		vec4 lightPosClipSpace = pc.view * position;
 		float lightDepth = lightPosClipSpace.z;
 		
-		float radius = lightBuffer.lights[lightIndex].attenuationRadius;
+		float radius = lightBuffer.lights[lightIndex].position.w;
 		
 		// We check if the light exists in our frustum
 		float dist = 0.0;
