@@ -599,6 +599,28 @@ namespace ImGui {
 		return pressed;
 	}
 
+	bool TextButton(const char* label, bool center) {
+		ImVec2 pos = ImGui::GetCursorPos();
+		ImVec2 size = ImGui::CalcTextSize(label);
+
+		if (center) {
+			pos = { pos.x - size.x * 0.5f, pos.y - size.y * 0.5f };
+			ImGui::SetCursorPos(pos);
+		}
+		bool pressed = ImGui::InvisibleButton(label, size);
+		bool isHovered = ImGui::IsItemHovered();
+		if (isHovered) {
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.7f, 0.7f, 0.7f, 1.0f));
+		}
+		ImGui::SetCursorPos(pos);
+		ImGui::Text(label);
+		if (isHovered) {
+			ImGui::PopStyleColor();
+		}
+
+		return pressed;
+	}
+
 	void GizmoIcon(const sa::Texture* pTex, const glm::vec3& worldPoint, const sa::SceneCamera* pCamera, const glm::vec2& rectPos, const glm::vec2& rectSize, int iconSize, ImColor tintColor) {
 		ImVec2 windowPos = ImGui::GetWindowPos();
 		glm::vec3 point = sa::math::worldToScreen(worldPoint, pCamera, rectPos, rectSize);
@@ -733,19 +755,31 @@ namespace ImGui {
 	void GizmoCircle2D(const glm::vec3& worldPosition, float radius, const sa::SceneCamera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, int numSegments, float thickness) {
 		glm::vec3 point = sa::math::worldToScreen(worldPosition, pCamera, screenPos, screenSize);
 		glm::vec3 point2 = sa::math::worldToScreen(worldPosition + (pCamera->getRight() * radius), pCamera, screenPos, screenSize);
-		if (point.z < 1.f || point2.z < 1.f)
+		if (point.z > 1.f || point2.z > 1.f)
 			return;
 		float radiusScreenSpace = glm::distance(glm::vec2(point), glm::vec2(point2));
-		ImGui::GetWindowDrawList()->AddCircle(ImVec2(point.x, point.y), radiusScreenSpace, color, numSegments, thickness);
+		if (radiusScreenSpace > 0.0001f)
+			ImGui::GetWindowDrawList()->AddCircle(ImVec2(point.x, point.y), radiusScreenSpace, color, numSegments, thickness);
+	}
+
+	void GizmoCircleFilled2D(const glm::vec3& worldPosition, float radius, const sa::SceneCamera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, int numSegments) {
+		glm::vec3 point = sa::math::worldToScreen(worldPosition, pCamera, screenPos, screenSize);
+		glm::vec3 point2 = sa::math::worldToScreen(worldPosition + (pCamera->getRight() * radius), pCamera, screenPos, screenSize);
+		if (point.z > 1.f || point2.z > 1.f)
+			return;
+		float radiusScreenSpace = glm::distance(glm::vec2(point), glm::vec2(point2));
+		if (radiusScreenSpace > 0.0001f)
+			ImGui::GetWindowDrawList()->AddCircleFilled(ImVec2(point.x, point.y), radiusScreenSpace, color, numSegments);
 	}
 
 	void GizmoCircle2DResizable(const glm::vec3& worldPosition, float& radius, const sa::SceneCamera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, bool& isDragging, int numSegments, float thickness) {
 		glm::vec3 point = sa::math::worldToScreen(worldPosition, pCamera, screenPos, screenSize);
 		glm::vec3 point2 = sa::math::worldToScreen(worldPosition + (pCamera->getRight() * radius), pCamera, screenPos, screenSize);
-		if (point.z < 1.f || point2.z < 1.f)
+		if (point.z > 1.f || point2.z > 1.f)
 			return;
 		float radiusScreenSpace = glm::distance(glm::vec2(point), glm::vec2(point2));
-		ImGui::GetWindowDrawList()->AddCircle(ImVec2(point.x, point.y), radiusScreenSpace, color, numSegments, thickness);
+		if (radiusScreenSpace > 0.0001f)
+			ImGui::GetWindowDrawList()->AddCircle(ImVec2(point.x, point.y), radiusScreenSpace, color, numSegments, thickness);
 	
 		ImVec2 rectMin(point2.x - HandleSize, point2.y - HandleSize);
 		ImVec2 rectMax(point2.x + HandleSize, point2.y + HandleSize);

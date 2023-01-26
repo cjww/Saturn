@@ -15,6 +15,7 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 
 	m_camera.setPosition(sa::Vector3(0, 0, 5));
 	m_camera.lookAt(sa::Vector3(0, 0, 0));
+	m_camera.setOrthoWidth(10.f);
 
 	m_mouseSensitivity = 30.0f;
 
@@ -39,9 +40,12 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 		m_selectedEntity = {};
 	});
 	
+	m_focusPointDistance = 10.f;
 	m_zoom = 0.f;
 	m_pWindow->addScrollCallback([&](double x, double y) {
-		if(m_isFocused) m_zoom = y;
+		if (m_isFocused) {
+			m_zoom = y;
+		}
 	});
 	
 	m_camera.setViewport(sa::Rect{ { 0, 0 }, m_renderTarget.extent });
@@ -92,8 +96,8 @@ void SceneView::update(float dt) {
 		m_camera.setProjectionMode(sa::ePerspective);
 
 		sa::Vector2 delta = m_lastMousePos - mousePos;
-		m_camera.rotate(glm::radians(delta.x) * dt * m_mouseSensitivity, { 0, 1, 0 });
-		m_camera.rotate(glm::radians(delta.y) * dt * m_mouseSensitivity, m_camera.getRight());
+		m_camera.rotate(glm::radians(delta.x) * dt * m_mouseSensitivity * 2.f, { 0, 1, 0 });
+		m_camera.rotate(glm::radians(delta.y) * dt * m_mouseSensitivity * 2.f, m_camera.getRight());
 		
 		int forward = m_pWindow->getKey(sa::Key::W) - m_pWindow->getKey(sa::Key::S);
 		int right = m_pWindow->getKey(sa::Key::D) - m_pWindow->getKey(sa::Key::A);
@@ -124,7 +128,7 @@ void SceneView::update(float dt) {
 		camPos += (float)up * dt * m_moveSpeed * m_camera.getUp();
 		*/
 	}
-	else if (m_pWindow->getMouseButton(sa::MouseButton::MIDDLE) && m_isFocused) {
+	else if (m_pWindow->getMouseButton(sa::MouseButton::MIDDLE)) {
 		glm::vec2 delta = m_lastMousePos - mousePos;
 		glm::vec3 camPos = m_camera.getPosition();
 		glm::vec3 right = glm::normalize(glm::cross(m_camera.getUp(), m_camera.getForward()));
@@ -140,6 +144,7 @@ void SceneView::update(float dt) {
 	if (m_zoom) {
 		m_camera.setPosition(m_camera.getPosition() + m_camera.getForward() * (m_zoom * 5));
 		m_camera.setOrthoWidth(m_camera.getOrthoWidth() - m_zoom * 5);
+		m_focusPointDistance -= m_zoom * 5;
 		m_zoom = 0;
 	}
 
@@ -193,8 +198,6 @@ void SceneView::onImGui() {
 				ImGui::EndMenu();
 			}
 
-			ImGui::Checkbox("World Coordinates", &m_isWorldCoordinates);
-
 			ImGui::RadioButton("T", (int*)&operation, ImGuizmo::OPERATION::TRANSLATE);
 			ImGui::RadioButton("R", (int*)&operation, ImGuizmo::OPERATION::ROTATE);
 			ImGui::RadioButton("S", (int*)&operation, ImGuizmo::OPERATION::SCALE);
@@ -245,68 +248,16 @@ void SceneView::onImGui() {
 			snap = snapAngle;
 		}
 
-		ImGuizmo::SetOrthographic(false);
+		ImGuizmo::SetOrthographic(m_camera.getProjectionMode() == sa::eOrthographic);
 		ImGuizmo::AllowAxisFlip(false);
 		ImGuizmo::SetDrawlist();
 		ImGuizmo::SetRect(imageMin.x, imageMin.y, imageSize.x, imageSize.y);
 
 
-		ImVec2 viewManipSize = ImVec2(100, 100);
-		ImVec2 viewManipPos = ImVec2(imageMin.x + (imageSize.x - viewManipSize.x), imageMin.y);
-		static int interpolationFrames = 0;
-		static bool isDragging = false;
-
 		glm::mat4 projMat = m_camera.getProjectionMatrix();
 		projMat[1][1] *= -1;
 		glm::mat4 viewMat = m_camera.getViewMatrix();
-		int panelIndex = -1;
-		ImGuizmo::ViewManipulate((float*)&viewMat, &panelIndex, 10,
-			viewManipPos, viewManipSize, ImColor(0, 0, 50, 0));
-		/*
-		ImGuizmo::ViewManipulate((float*)&matrix, (float*)&projMat, ImGuizmo::OPERATION::TRANSLATE | ImGuizmo::OPERATION::ROTATE | ImGuizmo::OPERATION::SCALE, ImGuizmo::WORLD,
-			(float*)&matrix, 5, imageMin, viewManipSize, ImColor(0, 0, 50, 150));
-		*/
-		if (panelIndex == 4) {
-			m_camera.setProjectionMode(sa::eOrthographic);
-			m_camera.setOrthoWidth(10.f);
-		}
-		else if (panelIndex != -1) {
-			m_camera.setProjectionMode(sa::ePerspective);
-		}
-
-		if ((ImGui::IsMouseHoveringRect(viewManipPos, { viewManipPos.x + viewManipSize.x, viewManipPos.y + viewManipSize.y })
-			&& (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseDragging(ImGuiMouseButton_Left))) || isDragging || interpolationFrames)
-		{
-			if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-				interpolationFrames = 100;
-			}
-			isDragging = ImGui::IsMouseDragging(ImGuiMouseButton_Left);
-
-			glm::mat4 inverseMatrix = glm::inverse(viewMat);
-			glm::vec3 translation = glm::vec3(inverseMatrix[3]);
-			glm::vec3 forward = -glm::vec3(inverseMatrix[2]);
-			
-			m_camera.setPosition(translation);
-			m_camera.lookTo(forward);
-			
-
-		}
-		if (interpolationFrames)
-			interpolationFrames--;
 		
-		/*
-		ImGui::SetCursorPosY(150);
-		ImGui::Text("\t%f\t%f\t%f\t%f\n\t%f\t%f\t%f\t%f\n\t%f\t%f\t%f\t%f\n\t%f\t%f\t%f\t%f",
-			viewMat[0][0], viewMat[1][0], viewMat[2][0], viewMat[3][0],
-			viewMat[0][1], viewMat[1][1], viewMat[2][1], viewMat[3][1],
-			viewMat[0][2], viewMat[1][2], viewMat[2][2], viewMat[3][2],
-			viewMat[0][3], viewMat[1][3], viewMat[2][3], viewMat[3][3]);
-		*/
-
-
-
-
-
 		glm::vec2 screenPos = { imageMin.x, imageMin.y };
 		glm::vec2 screenSize = { imageSize.x, imageSize.y };
 
@@ -421,7 +372,78 @@ void SceneView::onImGui() {
 
 		}
 		
+		ImVec2 viewManipSize = ImVec2(100, 100);
+		ImVec2 viewManipPos = ImVec2(imageMin.x + (imageSize.x - viewManipSize.x), imageMin.y);
+		static int interpolationFrames = 0;
+		static bool isDragging = false;
+
+		int panelIndex = -1;
+		ImGuizmo::ViewManipulate((float*)&viewMat, &panelIndex, m_focusPointDistance,
+			viewManipPos, viewManipSize, ImColor(0, 0, 0, 0));
+
+		/*
+		ImGuizmo::ViewManipulate((float*)&viewMat, (float*)&projMat, ImGuizmo::OPERATION::TRANSLATE | ImGuizmo::OPERATION::ROTATE | ImGuizmo::OPERATION::SCALE, ImGuizmo::WORLD,
+			(float*)&viewMat, m_focusPointDistance, imageMin, viewManipSize, ImColor(0, 0, 0, 0));
+		*/
+
+		bool isMouseClicked = ImGui::IsMouseClicked(ImGuiMouseButton_Left);
+		bool isMouseDragging = ImGui::IsMouseDragging(ImGuiMouseButton_Left);
+
+
+		if ((ImGui::IsMouseHoveringRect(viewManipPos, { viewManipPos.x + viewManipSize.x, viewManipPos.y + viewManipSize.y })
+			&& (isMouseClicked || isMouseDragging)) || isDragging || interpolationFrames)
+		{
+			if (isMouseClicked) {
+				interpolationFrames = 100;
+			}
+			isDragging = isMouseDragging;
+
+			glm::mat4 inverseMatrix = glm::inverse(viewMat);
+			glm::vec3 translation = glm::vec3(inverseMatrix[3]);
+			glm::vec3 forward = -glm::vec3(inverseMatrix[2]);
+
+			m_camera.setPosition(translation);
+			m_camera.lookTo(forward);
+
+			ImGui::GizmoCircleFilled2D(m_camera.getPosition() + m_camera.getForward() * m_focusPointDistance, 0.05f, &m_camera, { imageMin.x, imageMin.y }, { imageSize.x, imageSize.y }, ImColor(1.0f, 1.0f, 0.0f, 1.0f));
+
+		}
+		if (interpolationFrames)
+			interpolationFrames--;
+
+		if (panelIndex == 4) {
+			m_camera.setProjectionMode(sa::eOrthographic);
+		}
+		else if (panelIndex != -1) {
+			m_camera.setProjectionMode(sa::ePerspective);
+		}
+
 		
+		ImVec2 pos = { 
+			ImGui::GetCursorStartPos().x + imageSize.x - viewManipSize.x * 0.5f,
+			ImGui::GetCursorStartPos().y + viewManipSize.y + ImGui::GetStyle().ItemSpacing.y
+		};
+		ImGui::PushStyleVar(ImGuiStyleVar_ItemSpacing, ImVec2(40, 15));
+		ImGui::SetCursorPos(pos);
+		if (ImGui::TextButton((m_camera.getProjectionMode() == sa::ePerspective) ? "Perspective" : "Orthographic", true)) {
+			m_camera.setProjectionMode(sa::ProjectionMode(((int)m_camera.getProjectionMode() + 1) % 2));
+		}
+
+		ImGui::SetCursorPosX(pos.x);
+		if (ImGui::TextButton((m_isWorldCoordinates) ? "World Space" : "Object Space", true)) {
+			m_isWorldCoordinates = !m_isWorldCoordinates;
+		}
+		ImGui::PopStyleVar();
+
+
+		/*
+		ImGui::SetCursorPosY(150);
+		ImGui::Text("\t%f\t%f\t%f\t%f\n\t%f\t%f\t%f\t%f\n\t%f\t%f\t%f\t%f\n\t%f\t%f\t%f\t%f",
+			viewMat[0][0], viewMat[1][0], viewMat[2][0], viewMat[3][0],
+			viewMat[0][1], viewMat[1][1], viewMat[2][1], viewMat[3][1],
+			viewMat[0][2], viewMat[1][2], viewMat[2][2], viewMat[3][2],
+			viewMat[0][3], viewMat[1][3], viewMat[2][3], viewMat[3][3]);
+		*/
 		
 		if (showStats) {
 			ImGui::SetCursorPosY(ImGui::GetCursorStartPos().y);

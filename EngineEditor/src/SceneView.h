@@ -33,6 +33,7 @@ private:
 	bool m_isWorldCoordinates;
 	
 	float m_zoom;
+	float m_focusPointDistance;
 
 	struct Statistics {
 		float frameTime;
