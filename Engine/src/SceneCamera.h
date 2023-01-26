@@ -50,6 +50,8 @@ namespace sa {
 		void setAspectRatio(float aspectRatio);
 
 		void lookAt(Vector3 target);
+		void lookTo(Vector3 forward);
+
 	
 		void setPosition(Vector3 position);
 		Vector3 getPosition() const;

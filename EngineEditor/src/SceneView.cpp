@@ -89,6 +89,8 @@ void SceneView::update(float dt) {
 	sa::Vector2 mousePos = m_pWindow->getCursorPosition();
 	if (m_pWindow->getMouseButton(sa::MouseButton::RIGHT)) {
 		// First-person controls
+		m_camera.setProjectionMode(sa::ePerspective);
+
 		sa::Vector2 delta = m_lastMousePos - mousePos;
 		m_camera.rotate(glm::radians(delta.x) * dt * m_mouseSensitivity, { 0, 1, 0 });
 		m_camera.rotate(glm::radians(delta.y) * dt * m_mouseSensitivity, m_camera.getRight());
@@ -125,8 +127,10 @@ void SceneView::update(float dt) {
 	else if (m_pWindow->getMouseButton(sa::MouseButton::MIDDLE) && m_isFocused) {
 		glm::vec2 delta = m_lastMousePos - mousePos;
 		glm::vec3 camPos = m_camera.getPosition();
-		camPos += m_camera.getRight() * delta.x * dt * m_mouseSensitivity;
-		camPos += m_camera.getUp() * delta.y * dt * m_mouseSensitivity;
+		glm::vec3 right = glm::normalize(glm::cross(m_camera.getUp(), m_camera.getForward()));
+		glm::vec3 up = glm::normalize(glm::cross(m_camera.getForward(), right));
+		camPos += right * delta.x * dt * m_mouseSensitivity;
+		camPos += up * delta.y * dt * m_mouseSensitivity;
 		m_camera.setPosition(camPos);
 	}
 	else {
@@ -135,6 +139,7 @@ void SceneView::update(float dt) {
 
 	if (m_zoom) {
 		m_camera.setPosition(m_camera.getPosition() + m_camera.getForward() * (m_zoom * 5));
+		m_camera.setOrthoWidth(m_camera.getOrthoWidth() - m_zoom * 5);
 		m_zoom = 0;
 	}
 
@@ -245,14 +250,65 @@ void SceneView::onImGui() {
 		ImGuizmo::SetDrawlist();
 		ImGuizmo::SetRect(imageMin.x, imageMin.y, imageSize.x, imageSize.y);
 
-		glm::vec2 screenPos = { imageMin.x, imageMin.y };
-		glm::vec2 screenSize = { imageSize.x, imageSize.y };
 
+		ImVec2 viewManipSize = ImVec2(100, 100);
+		ImVec2 viewManipPos = ImVec2(imageMin.x + (imageSize.x - viewManipSize.x), imageMin.y);
+		static int interpolationFrames = 0;
+		static bool isDragging = false;
+
+		glm::mat4 projMat = m_camera.getProjectionMatrix();
+		projMat[1][1] *= -1;
+		glm::mat4 viewMat = m_camera.getViewMatrix();
+		int panelIndex = -1;
+		ImGuizmo::ViewManipulate((float*)&viewMat, &panelIndex, 10,
+			viewManipPos, viewManipSize, ImColor(0, 0, 50, 0));
 		/*
-		ImVec2 min = { screenPos.x, screenPos.y }, max = { screenPos.x + screenSize.x, screenPos.y + screenSize.y };
-		ImGui::PushClipRect(min, max, true);
+		ImGuizmo::ViewManipulate((float*)&matrix, (float*)&projMat, ImGuizmo::OPERATION::TRANSLATE | ImGuizmo::OPERATION::ROTATE | ImGuizmo::OPERATION::SCALE, ImGuizmo::WORLD,
+			(float*)&matrix, 5, imageMin, viewManipSize, ImColor(0, 0, 50, 150));
+		*/
+		if (panelIndex == 4) {
+			m_camera.setProjectionMode(sa::eOrthographic);
+			m_camera.setOrthoWidth(10.f);
+		}
+		else if (panelIndex != -1) {
+			m_camera.setProjectionMode(sa::ePerspective);
+		}
+
+		if ((ImGui::IsMouseHoveringRect(viewManipPos, { viewManipPos.x + viewManipSize.x, viewManipPos.y + viewManipSize.y })
+			&& (ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseDragging(ImGuiMouseButton_Left))) || isDragging || interpolationFrames)
+		{
+			if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+				interpolationFrames = 100;
+			}
+			isDragging = ImGui::IsMouseDragging(ImGuiMouseButton_Left);
+
+			glm::mat4 inverseMatrix = glm::inverse(viewMat);
+			glm::vec3 translation = glm::vec3(inverseMatrix[3]);
+			glm::vec3 forward = -glm::vec3(inverseMatrix[2]);
+			
+			m_camera.setPosition(translation);
+			m_camera.lookTo(forward);
+			
+
+		}
+		if (interpolationFrames)
+			interpolationFrames--;
+		
+		/*
+		ImGui::SetCursorPosY(150);
+		ImGui::Text("\t%f\t%f\t%f\t%f\n\t%f\t%f\t%f\t%f\n\t%f\t%f\t%f\t%f\n\t%f\t%f\t%f\t%f",
+			viewMat[0][0], viewMat[1][0], viewMat[2][0], viewMat[3][0],
+			viewMat[0][1], viewMat[1][1], viewMat[2][1], viewMat[3][1],
+			viewMat[0][2], viewMat[1][2], viewMat[2][2], viewMat[3][2],
+			viewMat[0][3], viewMat[1][3], viewMat[2][3], viewMat[3][3]);
 		*/
 
+
+
+
+
+		glm::vec2 screenPos = { imageMin.x, imageMin.y };
+		glm::vec2 screenSize = { imageSize.x, imageSize.y };
 
 		if (showIcons) {
 			sa::Texture2D* tex = sa::AssetManager::get().loadTexture("resources/lightbulb-icon.png", true);
@@ -284,12 +340,6 @@ void SceneView::onImGui() {
 
 		if (m_selectedEntity) {
 
-
-			sa::Matrix4x4 projMat = m_camera.getProjectionMatrix();
-			projMat[1][1] *= -1;
-			glm::mat4 viewMat = m_camera.getViewMatrix();
-
-
 			bool isOperating = false;
 
 			if (operation) {
@@ -316,8 +366,16 @@ void SceneView::onImGui() {
 					if (ImGuizmo::IsOver() && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
 						isOperating = true;
 					}
+
+					if (doSnap) {
+						glm::mat4 gridMat(1);
+						ImGuizmo::DrawGrid((float*)&viewMat, (float*)&projMat, (float*)&gridMat, 10.f);
+					}
 				}
 			}
+
+
+
 
 			const ImColor colliderColor = ImColor(0, 255, 0);
 			const ImColor lightSphereColor = ImColor(255, 255, 0);
@@ -362,44 +420,8 @@ void SceneView::onImGui() {
 			}
 
 		}
-		//ImGui::PopClipRect();
-
-		/*
-		ImVec2 viewManipSize = ImVec2(100, 100);
-		ImVec2 viewManipPos = ImVec2(imageMin.y, imageMin.y + imageSize.y - ImGui::GetWindowWidth() - viewManipSize.x);
-		static glm::mat4 matrix = m_camera.getViewMatrix();
-		static int interpolationFrames = 0;
-		static bool isDragging = false;
-		ImGuizmo::ViewManipulate((float*)&matrix, 5,
-			imageMin, viewManipSize, ImColor(0, 0, 50, 150));
-		if (interpolationFrames)
-			interpolationFrames--;
-
-		if (ImGui::IsMouseHoveringRect(imageMin, { imageMin.x + viewManipSize.x, imageMin.y + viewManipSize.y })
-			&& ImGui::IsMouseClicked(ImGuiMouseButton_Left) || ImGui::IsMouseDragging(ImGuiMouseButton_Left) || interpolationFrames || isDragging)
-		{	
-			if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-				interpolationFrames = 40;
-			}
-			isDragging = ImGui::IsMouseDragging(ImGuiMouseButton_Left);
-
-			glm::vec3 translation;
-			glm::vec3 rotation;
-			glm::vec3 scale;
-			ImGuizmo::DecomposeMatrixToComponents((float*)&matrix, (float*)&translation, (float*)&rotation, (float*)&scale);
-			glm::vec3 forward = glm::vec3(0, 0, 1) * glm::quat(glm::radians(rotation));
-			m_camera.setPosition(translation);
-			m_camera.lookAt(translation + forward);
-
-		}
-		ImGui::SetCursorPosY(150);
-		ImGui::Text("%f %f %f %f\n%f %f %f %f\n%f %f %f %f\n%f %f %f %f",
-			matrix[0][0], matrix[1][0], matrix[2][0], matrix[3][0],
-			matrix[0][1], matrix[1][1], matrix[2][1], matrix[3][1],
-			matrix[0][2], matrix[1][2], matrix[2][2], matrix[3][2],
-			matrix[0][3], matrix[1][3], matrix[2][3], matrix[3][3]);
-
-		*/
+		
+		
 		
 		if (showStats) {
 			ImGui::SetCursorPosY(ImGui::GetCursorStartPos().y);

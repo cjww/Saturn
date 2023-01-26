@@ -9,7 +9,7 @@ namespace sa {
             m_projMat = glm::perspective(m_fov, m_apectRatio, m_near, m_far);
             break;
         case sa::eOrthographic:
-            m_projMat = glm::ortho(m_orthoBounds.left, m_orthoBounds.right, m_orthoBounds.bottom, m_orthoBounds.top, m_near, m_far);
+            m_projMat = glm::orthoRH_ZO(m_orthoBounds.left, m_orthoBounds.right, m_orthoBounds.bottom, m_orthoBounds.top, m_near, m_far);
             break;
         default:
             return;
@@ -26,7 +26,7 @@ namespace sa {
         , m_apectRatio(1)
         , m_viewport({ {0, 0}, { 128, 128 } })
         , m_projectionMode(ePerspective)
-        , m_orthoBounds({-5, 5, -5, 5})
+        , m_orthoBounds({-10, 10, -10, 10})
     {
         updateProjection();
     }
@@ -82,6 +82,10 @@ namespace sa {
     void SceneCamera::lookAt(Vector3 target) {
         m_forward = target - m_position;
         m_forward = glm::normalize(m_forward);
+    }
+
+    void SceneCamera::lookTo(Vector3 forward) {
+        m_forward = glm::normalize(forward);
     }
 
     void SceneCamera::setPosition(Vector3 position) {
