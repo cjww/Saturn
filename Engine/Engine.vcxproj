@@ -311,6 +311,7 @@
     <ClCompile Include="src\ECS\Components\RigidBody.cpp" />
     <ClCompile Include="src\ECS\Components\SphereCollider.cpp" />
     <ClCompile Include="src\ECS\Components\Transform.cpp" />
+    <ClCompile Include="src\EntityScript.cpp" />
     <ClCompile Include="src\Graphics\IRenderLayer.cpp" />
     <ClCompile Include="src\Graphics\RenderLayers\BloomRenderLayer.cpp" />
     <ClCompile Include="src\Graphics\RenderLayers\ImGuiRenderLayer.cpp" />
@@ -357,6 +358,7 @@
     <ClInclude Include="src\ECS\Components\RigidBody.h" />
     <ClInclude Include="src\ECS\Components\SphereCollider.h" />
     <ClInclude Include="src\ECS\Components\Transform.h" />
+    <ClInclude Include="src\EntityScript.h" />
     <ClInclude Include="src\Graphics\RenderLayers\MainRenderLayer.h" />
     <ClInclude Include="src\Graphics\RenderTarget.h" />
     <ClInclude Include="src\Serializable.h" />

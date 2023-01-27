@@ -47,13 +47,13 @@ namespace sa {
 
         );
         
-        type["__index"] = [](const Entity& self, std::string key) -> sol::lua_value {
+        type["__index"] = [](Entity& self, std::string key) -> sol::lua_value {
             key[0] = utils::toUpper(key[0]);
-            std::optional<EntityScript> optScript = self.getScript(key);
-            if (!optScript.has_value())
+            EntityScript* pScript = self.getScript(key);
+            if (!pScript)
                 return sol::nil;
             
-            return optScript.value().env;
+            return pScript->env;
         };
 
     }
@@ -136,11 +136,12 @@ namespace sa {
         }
 
         for (object script : obj["scripts"]) {
-            addScript(script["path"].get_string().value());
+            EntityScript* pScript = addScript(script["path"].get_string().value());
+            pScript->deserialize(&script);
         }
     }
 
-    Scene* Entity::getScene() {
+    Scene* Entity::getScene() const {
         return m_pScene;
     }
 
@@ -181,15 +182,15 @@ namespace sa {
         removeComponent(type);
     }
 
-    void Entity::addScript(const std::filesystem::path& path) {
-        m_pScene->addScript(*this, path);
+    EntityScript* Entity::addScript(const std::filesystem::path& path) {
+        return m_pScene->addScript(*this, path);
     }
 
     void Entity::removeScript(const std::string& name) {
         m_pScene->removeScript(*this, name);
     }
 
-    std::optional<EntityScript> Entity::getScript(const std::string& name) const {
+    EntityScript* Entity::getScript(const std::string& name) {
         return m_pScene->getScript(*this, name);
     }
 

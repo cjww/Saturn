@@ -36,9 +36,9 @@ namespace sa {
 	
 		friend class Entity;
 		void destroyEntity(const Entity& entity);
-		std::optional<EntityScript> addScript(const Entity& entity, const std::filesystem::path& path);
+		EntityScript* addScript(const Entity& entity, const std::filesystem::path& path);
 		void removeScript(const Entity& entity, const std::string& name);
-		std::optional<EntityScript> getScript(const Entity& entity, const std::string& name) const;
+		EntityScript* getScript(const Entity& entity, const std::string& name);
 
 		friend class Engine;
 		template<typename T>

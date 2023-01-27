@@ -6,25 +6,6 @@
 #include <simdjson.h>
 
 namespace sa {
-	
-	void EntityScript::serialize(Serializer& s) {
-		s.beginObject();
-		s.value("path", path.generic_string().c_str());
-
-		s.beginObject("env");
-		
-		s.endObject();
-		s.endObject();
-	}
-
-	void EntityScript::deserialize(void* pDoc) {
-		/*
-		using namespace simdjson::ondemand;
-		object& obj = *(object*)pDoc;
-		name = obj["name"].get_string().value();
-		*/
-
-	}
 
 	void ScriptManager::setComponents(const entt::entity& entity, sol::environment& env, std::vector<ComponentType>& components) {
 		for (auto& type : components) {
@@ -125,7 +106,7 @@ namespace sa {
 		lua.stack_clear();
 	}
 
-	std::optional<EntityScript> ScriptManager::addScript(const entt::entity& entity, const std::filesystem::path& path) {
+	EntityScript* ScriptManager::addScript(const Entity& entity, const std::filesystem::path& path) {
 		if (!std::filesystem::exists(path)) {
 			SA_DEBUG_LOG_ERROR("File does not exist: ", path);
 			return {};
@@ -149,16 +130,20 @@ namespace sa {
 		sol::safe_function& func = m_scripts[hashedString];
 		env.set_on(func);
 
+		env["entity"] = entity;
+		env["scriptName"] = scriptName;
+		env["scene"] = entity.getScene();
+
+		m_allScripts.emplace_back(scriptName, path, env, entity);
+		m_entityScriptIndices[entity][scriptName] = m_allScripts.size() - 1;
+
 		// fill environment with contents of script
 		auto ret = func();
 		if (!ret.valid()) {
 			SA_DEBUG_LOG_ERROR(lua_tostring(lua, -1));
 		}
 
-		m_allScripts.emplace_back(scriptName, path, env, entity);
-		m_entityScriptIndices[entity][scriptName] = m_allScripts.size() - 1;
-
-		return m_allScripts.back();
+		return &m_allScripts.back();
 	}
 
 	void ScriptManager::removeScript(const entt::entity& entity, const std::string& name) {
@@ -194,14 +179,14 @@ namespace sa {
 		m_entityScriptIndices.erase(entity);
 	}
 
-	std::optional<EntityScript> ScriptManager::getScript(const entt::entity& entity, const std::string& name) const {
+	EntityScript* ScriptManager::getScript(const entt::entity& entity, const std::string& name) {
 		if (!m_entityScriptIndices.count(entity))
-			return {};
+			return nullptr;
 		auto& entityScripts = m_entityScriptIndices.at(entity);
 		if (!entityScripts.count(name))
-			return {};
+			return nullptr;
 
-		return m_allScripts.at(entityScripts.at(name));
+		return &m_allScripts.at(entityScripts.at(name));
 	}
 
 	void ScriptManager::clearAll() {

@@ -138,6 +138,40 @@ namespace sa {
 		endObject();
 	}
 
+	template<>
+	inline void Serializer::value(const std::string& key, sol::object luaValue) {
+		switch (luaValue.get_type()) {
+		case sol::type::number:
+			value(key, (float)luaValue.as<float>());
+			break;
+		case sol::type::boolean:
+			value(key, (bool)luaValue.as<bool>());
+			break;
+		case sol::type::string:
+			value(key, luaValue.as<std::string>().c_str());
+			break;
+		case sol::type::userdata:
+
+			break;
+		case sol::type::lightuserdata:
+
+			break;
+		case sol::type::table:
+			beginObject(key);
+			for (auto& [tableKey, tableValue] : luaValue.as<sol::table>()) {
+				if (tableKey.get_type() == sol::type::number) {
+					value(std::to_string(tableKey.as<int>()), (sol::object)tableValue);
+				}
+				else {
+					value(tableKey.as<std::string>(), (sol::object)tableValue);
+				}
+			}
+			endObject();
+			break;
+		default:
+			break;
+		}
+	}
 
 	template<typename T>
 	inline void Serializer::value(T value) {

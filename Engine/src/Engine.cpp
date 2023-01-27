@@ -175,8 +175,41 @@ namespace sa {
 			}
 			return &getScene(sceneName.as<std::string>());
 		};
-		
 
+		lua["Serialize"] = [](sol::lua_value table, sol::this_environment thisEnv) {
+			if (!table.is<sol::table>()) {
+				SA_DEBUG_LOG_ERROR("First argument is not a table");
+				return;
+			}
+			sol::table t = table.as<sol::table>();
+			sol::environment& env = thisEnv;
+			sa::Entity entity = env["entity"];
+			std::string scriptName = env["scriptName"];
+			
+			EntityScript* pScript = entity.getScript(scriptName);
+			if (!pScript) {
+				SA_DEBUG_LOG_ERROR("No such script! ", scriptName);
+				return;
+			}
+			
+			for (auto& [key, value] : t) {
+				sol::object v = value;
+				std::string variableName = key.as<std::string>();
+				// if stored load stored value
+				if (pScript->serializedData.count(variableName)) {
+					value = pScript->serializedData[variableName];
+				}
+				else {
+					// else store this value
+					pScript->serializedData[variableName] = value;
+				}
+				// initialize variable with appropriate value
+				env[variableName] = value;
+			}
+			
+			
+			//SA_DEBUG_LOG_INFO("Serialize");
+		};
 
 		/*
 		{

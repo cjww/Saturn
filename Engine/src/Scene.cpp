@@ -60,6 +60,7 @@ namespace sa {
 	}
 
 	void Scene::reg() {
+
 		auto type = LuaAccessable::registerType<Scene>();
 		type["findEntitiesByName"] = [](Scene& self, const std::string& name) {
 			std::vector<Entity> entities;
@@ -160,16 +161,8 @@ namespace sa {
 		return alive();
 	}
 
-	std::optional<EntityScript> Scene::addScript(const Entity& entity, const std::filesystem::path& path) {
-		std::optional<EntityScript> scriptOpt = m_scriptManager.addScript(entity, path);
-		if (!scriptOpt.has_value())
-			return scriptOpt;
-
-		EntityScript& script = scriptOpt.value();
-		script.env["scene"] = this;
-		script.env["entity"] = entity;
-		
-		return scriptOpt;
+	EntityScript* Scene::addScript(const Entity& entity, const std::filesystem::path& path) {
+		return m_scriptManager.addScript(entity, path);
 	}
 
 	void Scene::clearEntities() {
@@ -183,7 +176,7 @@ namespace sa {
 		m_scriptManager.removeScript(entity, name);
 	}
 
-	std::optional<EntityScript> Scene::getScript(const Entity& entity, const std::string& name) const {
+	EntityScript* Scene::getScript(const Entity& entity, const std::string& name) {
 		return m_scriptManager.getScript(entity, name);
 	}
 

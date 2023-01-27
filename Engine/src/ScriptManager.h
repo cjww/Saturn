@@ -12,7 +12,8 @@
 #include <Tools/Logger.hpp>
 #include <filesystem>
 
-#include "Serializable.h"
+#include "ECS/Entity.h"
+#include "EntityScript.h"
 
 namespace sa {
 
@@ -24,21 +25,7 @@ namespace sa {
 		std::vector<ComponentType> components;
 	};
 
-	struct EntityScript : public Serializable {
-		std::string name;
-		std::filesystem::path path;
-		sol::environment env;
-		entt::entity owner;
-		EntityScript(std::string name, std::filesystem::path path, sol::environment env, entt::entity owner)
-			: name(name)
-			, path(path)
-			, env(env) 
-			, owner(owner)
-		{}
-
-		virtual void serialize(Serializer& s) override;
-		virtual void deserialize(void* pDoc) override;
-	};
+	
 
 	class ScriptManager {
 	public:
@@ -64,10 +51,10 @@ namespace sa {
 
 		void loadSystemScript(const std::string& path);
 
-		std::optional<EntityScript> addScript(const entt::entity& entity, const std::filesystem::path& path);
+		EntityScript* addScript(const Entity& entity, const std::filesystem::path& path);
 		void removeScript(const entt::entity& entity, const std::string& name);
 		void clearEntity(const entt::entity& entity);
-		std::optional<EntityScript> getScript(const entt::entity& entity, const std::string& name) const;
+		EntityScript* getScript(const entt::entity& entity, const std::string& name);
 
 		void clearAll();
 
