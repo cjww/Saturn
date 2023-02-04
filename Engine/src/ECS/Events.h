@@ -3,9 +3,17 @@
 
 namespace sa {
 	class Scene;
-	class Camera;
+	class SceneCamera;
 	
+	class RenderPipeline;
+	class RenderContext;
+
 	namespace engine_event {
+
+		struct OnRender {
+			RenderContext* pContext;
+			RenderPipeline* pRenderPipeline;
+		};
 
 		struct SceneSet {
 			Scene* oldScene;
@@ -13,6 +21,7 @@ namespace sa {
 		};
 
 		struct WindowResized {
+			Extent oldExtent;
 			Extent newExtent;
 		};
 
@@ -24,11 +33,11 @@ namespace sa {
 		};
 
 		struct AddedCamera {
-			Camera* cam;
+			SceneCamera* cam;
 		};
 
 		struct RemovedCamera {
-			Camera* cam;
+			SceneCamera* cam;
 		};
 
 		struct EntityDestroyed {

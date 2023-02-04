@@ -103,11 +103,52 @@ namespace ImGui {
 				switch (value.get_type()) {
 					case sol::type::userdata:
 					{
-						std::string valueAsStr = sa::LuaAccessable::getState()["tostring"](value);
-						std::string str = key.as<std::string>() + " = " + valueAsStr;
-						ImGui::Text(str.c_str());
-						if(ImGui::IsItemHovered()) {
-							ImGui::SetTooltip("userdata");
+						if (value.is<sa::Vector2>()) {
+							sa::Vector2& vec2 = value.as<sa::Vector2>();
+							if (ImGui::DragFloat2(key.as<std::string>().c_str(), (float*)&vec2, 0.5f)) {
+								table[key] = vec2;
+							}
+							if (ImGui::IsItemHovered()) {
+								ImGui::SetTooltip("Vec2");
+							}
+						}
+						else if (value.is<sa::Vector3>()) {
+							sa::Vector3& vec3 = value.as<sa::Vector3>();
+							if (ImGui::DragFloat3(key.as<std::string>().c_str(), (float*)&vec3, 0.5f)) {
+								table[key] = vec3;
+							}
+							if (ImGui::IsItemHovered()) {
+								ImGui::SetTooltip("Vec3");
+							}
+						}
+						else if (value.is<sa::Vector4>()) {
+							sa::Vector4& vec4 = value.as<sa::Vector4>();
+							if (ImGui::DragFloat4(key.as<std::string>().c_str(), (float*)&vec4, 0.5f)) {
+								table[key] = vec4;
+							}
+							ImGui::SameLine();
+							
+							ImVec4 col = { vec4.x, vec4.y, vec4.z, vec4.w };
+							if (ImGui::ColorButton("as_color", col)) {
+								ImGui::OpenPopup("##ColorPicker");
+							}
+							
+							if (ImGui::BeginPopup("##ColorPicker")) {
+								ImGui::ColorPicker3("##Vec4AsColor", (float*)&vec4);
+								ImGui::EndPopup();
+							}
+							
+							if (ImGui::IsItemHovered()) {
+								ImGui::SetTooltip("Vec4");
+							}
+						}
+						else {
+							std::string valueAsStr = sa::LuaAccessable::getState()["tostring"](value);
+							std::string str = key.as<std::string>() + " = " + valueAsStr;
+							ImGui::Text(str.c_str());
+							if(ImGui::IsItemHovered()) {
+								ImGui::SetTooltip("userdata");
+							}
 						}
 						break;
 					}
@@ -132,8 +173,9 @@ namespace ImGui {
 						break;
 					case sol::type::string: {
 						std::string v = value.as<std::string>();
-						ImGui::InputText(key.as<std::string>().c_str(), &v);
-						table[key] = v;
+						if (ImGui::InputText(key.as<std::string>().c_str(), &v, ImGuiInputTextFlags_EnterReturnsTrue)) {
+							table[key] = v;
+						}
 						if (ImGui::IsItemHovered()) {
 							ImGui::SetTooltip("string");
 						}
@@ -212,15 +254,12 @@ namespace ImGui {
 
 	void Component(sa::Entity entity, comp::Light* light) {
 
-		ImGui::DragFloat3("Position##Light", (float*)&light->values.position, 0.1f);
+		ImGui::ColorEdit3("Color", (float*)&light->values.color);
 
-		ImGui::ColorEdit4("Color", (float*)&light->values.color);
+		ImGui::SliderFloat("Intensity", &light->values.color.a, 0.0f, 10.f);
 
-		ImGui::SliderFloat("Intensity", &light->values.intensity, 0.1f, 1.f);
-		ImGui::SliderFloat("Attenuation radius", &light->values.attenuationRadius, 2.f, 50.f);
-
-		static std::string preview = "-";
-		if (ImGui::BeginCombo("Type", preview.data())) {
+		static std::string preview = "Point";
+		if (ImGui::BeginCombo("Type", preview.c_str())) {
 			if (ImGui::Selectable("Point", light->values.type == sa::LightType::POINT)) {
 				light->values.type = sa::LightType::POINT;
 				preview = "Point";
@@ -231,6 +270,9 @@ namespace ImGui {
 			}
 
 			ImGui::EndCombo();
+		}
+		if (light->values.type == sa::LightType::POINT) {
+			ImGui::SliderFloat("Attenuation radius", &light->values.position.w, 0.0, 200.f);
 		}
 
 	}
@@ -262,8 +304,72 @@ namespace ImGui {
 		}
 	}
 
+	void Component(sa::Entity entity, comp::Camera* camera) {
+		ImGui::Checkbox("Is Primary", &camera->isPrimary);
+
+		sa::Rect rect = camera->camera.getViewport();
+		ImGui::Text("Viewport");
+		ImGui::Indent();
+		if (ImGui::DragInt2("Offset##Camera", (int32_t*)&rect.offset)) {
+			camera->camera.setViewport(rect);
+		}
+
+		glm::ivec2 extent(rect.extent.width, rect.extent.height);
+		if (ImGui::DragInt2("Extent##Camera", (int32_t*)&extent)) {
+			rect.extent = { (uint32_t)extent.x, (uint32_t)extent.y };
+			camera->camera.setViewport(rect);
+		}
+		ImGui::Unindent();
+
+		const char* items[] = { "Perspective", "Orthographic" };
+		const char* currentItem = items[(int)camera->camera.getProjectionMode()];
+		if (ImGui::BeginCombo("Projection", currentItem)) {
+			bool isSelected = currentItem == items[0];
+			if (ImGui::Selectable(items[0], &isSelected)) {
+				currentItem = items[0];
+				camera->camera.setProjectionMode(sa::ProjectionMode::ePerspective);
+
+			}
+			isSelected = currentItem == items[1];
+			if (ImGui::Selectable(items[1], &isSelected)) {
+				currentItem = items[1];
+				camera->camera.setProjectionMode(sa::ProjectionMode::eOrthographic);
+			}
+
+			ImGui::EndCombo();
+		}
+		
+		if (currentItem == items[0]) {
+			float fov = camera->camera.getFOVRadians();
+			if (ImGui::SliderAngle("Fov", &fov, 10.f, 180.f)) {
+				camera->camera.setFOVRadians(fov);
+			}
+		}
+		else if (currentItem == items[1]) {
+			
+			float orthoSize = camera->camera.getOrthoWidth();
+			if (ImGui::DragFloat("View Width", &orthoSize, 1.0f)) {
+				camera->camera.setOrthoWidth(orthoSize);
+			}
+		}
+
+		ImGui::Spacing();
+		
+		float near = camera->camera.getNear();
+		if (ImGui::DragFloat("Near", &near, 0.1f, 0.0f)) {
+			near = std::max(near, 0.f);
+			camera->camera.setNear(near);
+		}
+
+		float far = camera->camera.getFar();
+		if (ImGui::DragFloat("Far", &far, 10.f, 1.0f)) {
+			camera->camera.setFar(far);
+		}
+
+	}
+
 	void viewFile(std::filesystem::path filePath) {
-		ImGui::Selectable(filePath.filename().string().c_str());
+		ImGui::Selectable(filePath.filename().generic_string().c_str());
 	}
 
 	void viewDirectory(const std::filesystem::path& directory, std::filesystem::path& openDirectory) {
@@ -274,7 +380,7 @@ namespace ImGui {
 		std::filesystem::perms flags = std::filesystem::perms::owner_write | std::filesystem::perms::owner_read;
 		*/
 		
-		bool opened = ImGui::TreeNodeEx(directory.filename().string().c_str(), ImGuiTreeNodeFlags_OpenOnArrow);
+		bool opened = ImGui::TreeNodeEx(directory.filename().generic_string().c_str(), ImGuiTreeNodeFlags_OpenOnArrow);
 		if (ImGui::IsItemClicked()) {
 			openDirectory = directory;
 		}
@@ -307,8 +413,8 @@ namespace ImGui {
 					viewFile(entry.path());
 				}
 			}
-			ImGui::EndChild();
 		}
+		ImGui::EndChild();
 
 	}
 
@@ -330,7 +436,7 @@ namespace ImGui {
 			ImGui::SameLine();
 			if (ImGui::BeginChild((std::string(str_id) + "1").c_str(), viewArea)) {
 				
-				ImGui::Text(openDirectory.string().c_str());
+				ImGui::Text(openDirectory.generic_string().c_str());
 				ImGui::SameLine();
 
 				ImGui::SetNextItemWidth(200);
@@ -351,8 +457,8 @@ namespace ImGui {
 					}
 
 				}
-				ImGui::EndChild();
 			}
+			ImGui::EndChild();
 		}
 
 	}
@@ -493,10 +599,34 @@ namespace ImGui {
 		return pressed;
 	}
 
-	void GizmoIcon(const sa::Texture* pTex, const glm::vec3& worldPoint, const sa::Camera* pCamera, const glm::vec2& rectPos, const glm::vec2& rectSize, int iconSize, ImColor tintColor) {
+	bool TextButton(const char* label, bool center) {
+		ImVec2 pos = ImGui::GetCursorPos();
+		ImVec2 size = ImGui::CalcTextSize(label);
+
+		if (center) {
+			pos = { pos.x - size.x * 0.5f, pos.y - size.y * 0.5f };
+			ImGui::SetCursorPos(pos);
+		}
+		bool pressed = ImGui::InvisibleButton(label, size);
+		bool isHovered = ImGui::IsItemHovered();
+		if (isHovered) {
+			ImGui::PushStyleColor(ImGuiCol_Text, ImVec4(0.7f, 0.7f, 0.7f, 1.0f));
+		}
+		ImGui::SetCursorPos(pos);
+		ImGui::Text(label);
+		if (isHovered) {
+			ImGui::PopStyleColor();
+		}
+
+		return pressed;
+	}
+
+	void GizmoIcon(const sa::Texture* pTex, const glm::vec3& worldPoint, const sa::SceneCamera* pCamera, const glm::vec2& rectPos, const glm::vec2& rectSize, int iconSize, ImColor tintColor) {
 		ImVec2 windowPos = ImGui::GetWindowPos();
 		glm::vec3 point = sa::math::worldToScreen(worldPoint, pCamera, rectPos, rectSize);
 		if (point.z < 1) {
+			
+			iconSize /= glm::distance(worldPoint, pCamera->getPosition());
 			ImGui::GetWindowDrawList()->AddImageQuad(
 				sa::Renderer::get().getImGuiTexture(pTex),
 				ImVec2(point.x - iconSize, point.y - iconSize),
@@ -509,7 +639,7 @@ namespace ImGui {
 		}
 	}
 
-	void GizmoCircle(const glm::vec3& worldPosition, float radius, const glm::quat& rotation, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, int numSegments, float thickness) {
+	void GizmoCircle(const glm::vec3& worldPosition, float radius, const glm::quat& rotation, const sa::SceneCamera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, int numSegments, float thickness) {
 		if (numSegments == 0) 
 			numSegments = 64;
 		else if (numSegments > 128) 
@@ -536,12 +666,13 @@ namespace ImGui {
 
 	}
 
-	bool GizmoCircleResizable(const glm::vec3& worldPosition, float& radius, const glm::quat& rotation, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, bool& isDragging, int numSegments, float thickness) {
+	bool GizmoCircleResizable(const glm::vec3& worldPosition, float& radius, const glm::quat& rotation, const sa::SceneCamera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, bool& isDragging, int numSegments, float thickness) {
 		if (numSegments == 0)
 			numSegments = 64;
 		else if (numSegments > 128)
 			numSegments = 128;
 
+		
 		constexpr float twoPi = glm::radians(360.f);
 		ImVec2 points[128];
 		int pointCount = 0;
@@ -559,15 +690,15 @@ namespace ImGui {
 
 			glm::vec2 screenPoint = screenPoint3D;
 			if (pointCount == 0) {
+				ImVec2 windowPos = ImGui::GetWindowPos();
+				glm::vec2 windowPoint = { screenPoint.x - windowPos.x, screenPoint.y - windowPos.y };
+
 				ImVec2 rectMin(screenPoint.x - HandleSize, screenPoint.y - HandleSize);
 				ImVec2 rectMax(screenPoint.x + HandleSize, screenPoint.y + HandleSize);
-
 				ImGui::GetWindowDrawList()->AddCircleFilled({ screenPoint.x, screenPoint.y }, HandleSize, color);
 
-				ImVec2 windowPos = ImGui::GetWindowPos();
-				ImGui::SetCursorPos(ImVec2(rectMin.x - windowPos.x, rectMin.y - windowPos.y));
-				ImGui::InvisibleButton("circle_handle", ImVec2(rectMax.x - rectMin.x, rectMax.y - rectMin.y));
-				bool isOver = ImGui::IsItemHovered();
+				bool isOver = ImGui::IsMouseHoveringRect(rectMin, rectMax);
+
 				if (isOver) 
 					ImGui::GetWindowDrawList()->AddCircleFilled({ screenPoint.x, screenPoint.y }, HandleSize, ImColor(1.f, 1.f, 1.f));
 
@@ -592,7 +723,6 @@ namespace ImGui {
 					screenRadius = glm::distance(center, screenPoint);
 					radius = screenRadius * ratio;
 
-
 					ImGui::GetWindowDrawList()->AddCircleFilled({ screenPoint.x, screenPoint.y }, HandleSize * 1.5f, color);
 				}
 			}
@@ -604,7 +734,7 @@ namespace ImGui {
 		return false;
 	}
 
-	bool GizmoSphereResizable(const glm::vec3& worldPosition, float& radius, const glm::quat& rotation, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, bool disabled, int numSegments, float thickness) {
+	bool GizmoSphereResizable(const glm::vec3& worldPosition, float& radius, const glm::quat& rotation, const sa::SceneCamera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, bool disabled, int numSegments, float thickness) {
 		static bool dragFirstCircle = false;
 		static bool dragSecondCircle = false;
 
@@ -622,22 +752,34 @@ namespace ImGui {
 		return released;
 	}
 
-	void GizmoCircle2D(const glm::vec3& worldPosition, float radius, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, int numSegments, float thickness) {
+	void GizmoCircle2D(const glm::vec3& worldPosition, float radius, const sa::SceneCamera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, int numSegments, float thickness) {
 		glm::vec3 point = sa::math::worldToScreen(worldPosition, pCamera, screenPos, screenSize);
 		glm::vec3 point2 = sa::math::worldToScreen(worldPosition + (pCamera->getRight() * radius), pCamera, screenPos, screenSize);
-		if (point.z < 1.f || point2.z < 1.f)
+		if (point.z > 1.f || point2.z > 1.f)
 			return;
 		float radiusScreenSpace = glm::distance(glm::vec2(point), glm::vec2(point2));
-		ImGui::GetWindowDrawList()->AddCircle(ImVec2(point.x, point.y), radiusScreenSpace, color, numSegments, thickness);
+		if (radiusScreenSpace > 0.0001f)
+			ImGui::GetWindowDrawList()->AddCircle(ImVec2(point.x, point.y), radiusScreenSpace, color, numSegments, thickness);
 	}
 
-	void GizmoCircle2DResizable(const glm::vec3& worldPosition, float& radius, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, bool& isDragging, int numSegments, float thickness) {
+	void GizmoCircleFilled2D(const glm::vec3& worldPosition, float radius, const sa::SceneCamera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, int numSegments) {
 		glm::vec3 point = sa::math::worldToScreen(worldPosition, pCamera, screenPos, screenSize);
 		glm::vec3 point2 = sa::math::worldToScreen(worldPosition + (pCamera->getRight() * radius), pCamera, screenPos, screenSize);
-		if (point.z < 1.f || point2.z < 1.f)
+		if (point.z > 1.f || point2.z > 1.f)
 			return;
 		float radiusScreenSpace = glm::distance(glm::vec2(point), glm::vec2(point2));
-		ImGui::GetWindowDrawList()->AddCircle(ImVec2(point.x, point.y), radiusScreenSpace, color, numSegments, thickness);
+		if (radiusScreenSpace > 0.0001f)
+			ImGui::GetWindowDrawList()->AddCircleFilled(ImVec2(point.x, point.y), radiusScreenSpace, color, numSegments);
+	}
+
+	void GizmoCircle2DResizable(const glm::vec3& worldPosition, float& radius, const sa::SceneCamera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, bool& isDragging, int numSegments, float thickness) {
+		glm::vec3 point = sa::math::worldToScreen(worldPosition, pCamera, screenPos, screenSize);
+		glm::vec3 point2 = sa::math::worldToScreen(worldPosition + (pCamera->getRight() * radius), pCamera, screenPos, screenSize);
+		if (point.z > 1.f || point2.z > 1.f)
+			return;
+		float radiusScreenSpace = glm::distance(glm::vec2(point), glm::vec2(point2));
+		if (radiusScreenSpace > 0.0001f)
+			ImGui::GetWindowDrawList()->AddCircle(ImVec2(point.x, point.y), radiusScreenSpace, color, numSegments, thickness);
 	
 		ImVec2 rectMin(point2.x - HandleSize, point2.y - HandleSize);
 		ImVec2 rectMax(point2.x + HandleSize, point2.y + HandleSize);
@@ -662,7 +804,7 @@ namespace ImGui {
 
 	}
 
-	void GizmoQuad(const glm::vec3& worldPosition, const glm::vec2& size, const glm::quat& rotation, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, float thickness) {
+	void GizmoQuad(const glm::vec3& worldPosition, const glm::vec2& size, const glm::quat& rotation, const sa::SceneCamera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, float thickness) {
 		
 		glm::vec3 point1 = worldPosition + rotation * glm::vec3(size.x, size.y, 0);
 		glm::vec3 point2 = worldPosition + rotation * glm::vec3(size.x, -size.y, 0);
@@ -688,7 +830,7 @@ namespace ImGui {
 
 	}
 
-	void GizmoBox(const glm::vec3& worldPosition, const glm::vec3& halfLengths, const glm::quat& rotation, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, float thickness) {
+	void GizmoBox(const glm::vec3& worldPosition, const glm::vec3& halfLengths, const glm::quat& rotation, const sa::SceneCamera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, float thickness) {
 		
 		glm::vec3 dirZ = rotation * glm::vec3(0, 0, halfLengths.z);
 		glm::vec3 dirX = rotation * glm::vec3(halfLengths.x, 0, 0);
@@ -700,7 +842,7 @@ namespace ImGui {
 
 	}
 
-	bool GizmoBoxResizable(const glm::vec3& worldPosition, glm::vec3& halfLengths, const glm::quat& rotation, const sa::Camera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, bool disabled, float thickness) {
+	bool GizmoBoxResizable(const glm::vec3& worldPosition, glm::vec3& halfLengths, const glm::quat& rotation, const sa::SceneCamera* pCamera, const glm::vec2& screenPos, const glm::vec2& screenSize, const ImColor& color, bool disabled, float thickness) {
 		glm::vec3 dirZ = rotation * glm::vec3(0, 0, halfLengths.z);
 		glm::vec3 dirX = rotation * glm::vec3(halfLengths.x, 0, 0);
 

@@ -42,8 +42,8 @@ namespace sa {
 
 			m_pCore = std::make_unique<VulkanCore>();
 			
-			m_pCore->init(info);
-
+			m_pCore->init(info, c_useVaildationLayers);
+			
 			ResourceManager::get().setCleanupFunction<Swapchain>([](Swapchain* p) { p->destroy(); });
 			ResourceManager::get().setCleanupFunction<FramebufferSet>([](FramebufferSet* p) { p->destroy(); });
 			ResourceManager::get().setCleanupFunction<RenderProgram>([](RenderProgram* p) { p->destroy(); });
@@ -164,12 +164,39 @@ namespace sa {
 		pRenderProgram->setClearColor(color);
 	}
 
-	ResourceID Renderer::createFramebuffer(ResourceID renderProgram, const std::vector<Texture>& attachmentTextures, uint32_t layers) {
+	ResourceID Renderer::createFramebuffer(ResourceID renderProgram, const std::vector<DynamicTexture>& attachmentTextures, uint32_t layers) {
 		if (attachmentTextures.empty())
 			throw std::runtime_error("At least one attachmnet is required to create a framebuffer");
 
 		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
 		
+		return ResourceManager::get().insert<FramebufferSet>(
+			m_pCore.get(),
+			pRenderProgram->getRenderPass(),
+			attachmentTextures,
+			attachmentTextures[0].getExtent(),
+			layers);
+	}
+
+	ResourceID Renderer::createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<DynamicTexture>& additionalAttachmentTextures, uint32_t layers) {
+		Swapchain* pSwapchain = RenderContext::getSwapchain(swapchain);
+		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
+
+		return ResourceManager::get().insert<FramebufferSet>(
+			m_pCore.get(),
+			pRenderProgram->getRenderPass(),
+			pSwapchain,
+			additionalAttachmentTextures,
+			layers);
+	}
+
+
+	ResourceID Renderer::createFramebuffer(ResourceID renderProgram, const std::vector<Texture>& attachmentTextures, uint32_t layers) {
+		if (attachmentTextures.empty())
+			throw std::runtime_error("At least one attachmnet is required to create a framebuffer");
+
+		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
+
 		return ResourceManager::get().insert<FramebufferSet>(
 			m_pCore.get(),
 			pRenderProgram->getRenderPass(),
@@ -192,6 +219,35 @@ namespace sa {
 
 	void Renderer::destroyFramebuffer(ResourceID framebuffer) {
 		ResourceManager::get().remove<FramebufferSet>(framebuffer);
+	}
+
+	Texture Renderer::getFramebufferTexture(ResourceID framebuffer, uint32_t attachmentIndex) const {
+		return RenderContext::getFramebufferSet(framebuffer)->getTexture(attachmentIndex);
+	}
+	
+	DynamicTexture Renderer::getFramebufferDynamicTexture(ResourceID framebuffer, uint32_t attachmentIndex) const {
+		return RenderContext::getFramebufferSet(framebuffer)->getDynamicTexture(attachmentIndex);
+	}
+
+	DynamicTexture* Renderer::getFramebufferDynamicTexturePtr(ResourceID framebuffer, uint32_t attachmentIndex) const {
+		return RenderContext::getFramebufferSet(framebuffer)->getDynamicTexturePtr(attachmentIndex);
+	}
+	
+	void Renderer::waitForFrame(ResourceID swapchains) {
+		RenderContext::getSwapchain(swapchains)->waitForFrame();
+	}
+
+	size_t Renderer::getFramebufferTextureCount(ResourceID framebuffer) const {
+		return RenderContext::getFramebufferSet(framebuffer)->getTextureCount();
+	}
+
+	Extent Renderer::getFramebufferExtent(ResourceID framebuffer) const {
+		return RenderContext::getFramebufferSet(framebuffer)->getExtent();
+	}
+
+	void Renderer::swapFramebuffer(ResourceID framebuffer) {
+		FramebufferSet* pFramebufferSet = RenderContext::getFramebufferSet(framebuffer);
+		pFramebufferSet->swap();
 	}
 
 	ResourceID Renderer::createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, PipelineSettings settings) {
@@ -254,8 +310,15 @@ namespace sa {
 	}
 	
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, DynamicBuffer& buffer) {
+		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		for (uint32_t i = 0; i < buffer.getBufferCount(); i++) {
-			updateDescriptorSet(descriptorSet, binding, buffer.getBuffer(i));
+			auto& b = buffer.getBuffer(i);
+			const DeviceBuffer* pDeviceBuffer = (const DeviceBuffer*)b;
+			vk::BufferView* pView = nullptr;
+			if (buffer.getType() == BufferType::UNIFORM_TEXEL || buffer.getType() == BufferType::STORAGE_TEXEL) {
+				pView = b.getView();
+			}
+			pDescriptorSet->update(binding, pDeviceBuffer->buffer, pDeviceBuffer->size, 0, pView, i);
 		}
 	}
 
@@ -278,6 +341,33 @@ namespace sa {
 		}
 
 		pDescriptorSet->update(binding, *texture.getView(), layout, nullptr, UINT32_MAX);
+	}
+
+	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const DynamicTexture& texture, ResourceID sampler) {
+		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
+
+		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		if ((texture.getTypeFlags() & sa::TextureTypeFlagBits::STORAGE) == sa::TextureTypeFlagBits::STORAGE) {
+			layout = vk::ImageLayout::eGeneral;
+		}
+
+		for (uint32_t i = 0; i < texture.getTextureCount(); i++) {
+			pDescriptorSet->update(binding, *texture.getTexture(i).getView(), layout, pSampler, i);
+		}
+	}
+
+	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const DynamicTexture& texture) {
+		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+
+		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		if ((texture.getTypeFlags() & sa::TextureTypeFlagBits::STORAGE) == sa::TextureTypeFlagBits::STORAGE) {
+			layout = vk::ImageLayout::eGeneral;
+		}
+
+		for (uint32_t i = 0; i < texture.getTextureCount(); i++) {
+			pDescriptorSet->update(binding, *texture.getTexture(i).getView(), layout, nullptr, i);
+		}
 	}
 
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement) {
@@ -303,35 +393,6 @@ namespace sa {
 		return DynamicBuffer(m_pCore.get(), type, m_pCore->getQueueCount(), size, initialData);
 	}
 
-	Texture2D Renderer::createTexture2D(TextureTypeFlags type, Extent extent, uint32_t sampleCount) {
-		return Texture2D(m_pCore.get(), type, extent, sampleCount);
-	}
-
-	Texture2D Renderer::createTexture2D(TextureTypeFlags type, Extent extent, FormatPrecisionFlags formatPrecision, FormatDimensionFlags formatDimensions, FormatTypeFlags formatType, uint32_t sampleCount) {
-		return Texture2D(m_pCore.get(), type, extent, formatPrecision, formatDimensions, formatType, sampleCount);
-	}
-
-	Texture2D Renderer::createTexture2D(TextureTypeFlags type, Extent extent, ResourceID swapchain, uint32_t sampleCount) {
-		Swapchain* pSwapchain = RenderContext::getSwapchain(swapchain);
-		return Texture2D(m_pCore.get(), type, extent, pSwapchain, sampleCount);
-	}
-
-	Texture2D Renderer::createTexture2D(const Image& image, bool generateMipMaps) {
-		return Texture2D(m_pCore.get(), image, generateMipMaps);
-	}
-
-	TextureCube Renderer::createTextureCube(const Image& image, bool generateMipMaps) {
-		return TextureCube(m_pCore.get(), image, generateMipMaps);
-	}
-
-	TextureCube Renderer::createTextureCube(const std::vector<Image>& images, bool generateMipMaps) {
-		return TextureCube(m_pCore.get(), images, generateMipMaps);
-	}
-
-	Texture3D Renderer::createTexture3D(TextureTypeFlags type, Extent3D extent, FormatPrecisionFlags formatPrecision, FormatDimensionFlags formatDimensions, FormatTypeFlags formatType, uint32_t sampleCount) {
-		return Texture3D(m_pCore.get(), type, extent, sampleCount, 1, formatPrecision, formatDimensions, formatType);
-	}
-
 	DeviceMemoryStats Renderer::getGPUMemoryUsage() const {
 		return std::move(m_pCore->getGPUMemoryUsage());
 	}
@@ -351,6 +412,28 @@ namespace sa {
 			.minLod = 0,
 			.maxLod = 9,
 		};
+		return ResourceManager::get().insert(m_pCore->createSampler(info));
+	}
+
+	ResourceID Renderer::createSampler(const SamplerInfo& samplerInfo) {
+		vk::SamplerCreateInfo info = {};
+		
+		info.magFilter = (vk::Filter)samplerInfo.magFilter;
+		info.minFilter = (vk::Filter)samplerInfo.minFilter;
+		info.mipmapMode = (vk::SamplerMipmapMode)samplerInfo.mipmapMode;
+		info.addressModeU = (vk::SamplerAddressMode)samplerInfo.addressModeU;
+		info.addressModeV = (vk::SamplerAddressMode)samplerInfo.addressModeV;
+		info.addressModeW = (vk::SamplerAddressMode)samplerInfo.addressModeW;
+		info.mipLodBias = samplerInfo.mipLodBias;
+		info.anisotropyEnable = samplerInfo.anisotropyEnable;
+		info.maxAnisotropy = samplerInfo.maxAnisotropy;
+		info.compareEnable = samplerInfo.compareEnable;
+		info.compareOp = (vk::CompareOp)samplerInfo.compareOp;
+		info.minLod = samplerInfo.minLod;
+		info.maxLod = samplerInfo.maxLod;
+		info.borderColor = (vk::BorderColor)samplerInfo.borderColor;
+		info.unnormalizedCoordinates = samplerInfo.unnormalizedCoordinates;
+
 		return ResourceManager::get().insert(m_pCore->createSampler(info));
 	}
 
@@ -431,6 +514,36 @@ namespace sa {
 
 	SubContext Renderer::createSubContext(ResourceID contextPool) {
 		return SubContext(m_pCore.get(), nullptr, nullptr, 0, contextPool);
+	}
+
+	Format Renderer::selectFormat(const std::vector<Format>& formatCandidates, TextureTypeFlags textureType) const {
+		vk::FormatFeatureFlags features = (vk::FormatFeatureFlagBits)0;
+
+		if (textureType & TextureTypeFlagBits::DEPTH_ATTACHMENT) {
+			features |= vk::FormatFeatureFlagBits::eDepthStencilAttachment;
+		}
+		if (textureType & TextureTypeFlagBits::SAMPLED) {
+			features |= vk::FormatFeatureFlagBits::eSampledImage;
+		}
+		if (textureType & TextureTypeFlagBits::COLOR_ATTACHMENT) {
+			features |= vk::FormatFeatureFlagBits::eColorAttachment;
+		}
+		if (textureType & TextureTypeFlagBits::STORAGE) {
+			features |= vk::FormatFeatureFlagBits::eStorageImage;
+		}
+		if (textureType & TextureTypeFlagBits::TRANSFER_DST) {
+			features |= vk::FormatFeatureFlagBits::eTransferDst;
+		}
+		std::vector<vk::Format> candidates(formatCandidates.size());
+		memcpy(candidates.data(), formatCandidates.data(), candidates.size() * sizeof(vk::Format));
+
+		return (Format)m_pCore->getFormat(candidates, features, vk::ImageTiling::eOptimal);
+	}
+
+	Format Renderer::getAttachmentFormat(ResourceID renderProgram, uint32_t attachmentIndex) const {
+		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
+		vk::AttachmentDescription attachment = pRenderProgram->getAttachment(attachmentIndex);
+		return (Format)attachment.format;
 	}
 
 

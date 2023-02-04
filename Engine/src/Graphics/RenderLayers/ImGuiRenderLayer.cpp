@@ -2,18 +2,24 @@
 #include "ImGuiRenderLayer.h"
 namespace sa {
 
-	void ImGuiRenderLayer::init(RenderWindow* pWindow, IRenderLayer*) {
+	void ImGuiRenderLayer::init(RenderWindow* pWindow, IRenderTechnique* pRenderTechnique) {
 		m_pWindow = pWindow;
+		m_pRenderTechnique = pRenderTechnique;
+
+		m_outputTexture = DynamicTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, pWindow->getCurrentExtent());
+
 		
 		m_imGuiRenderProgram = m_renderer.createRenderProgram()
-			.addSwapchainAttachment(pWindow->getSwapchainID())
+			.addColorAttachment(AttachmentFlagBits::eClear | AttachmentFlagBits::eStore | AttachmentFlagBits::eSampled, m_outputTexture)
 			.beginSubpass()
 			.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
 			.endSubpass()
 			.end();
 
-		m_imGuiFramebuffer = m_renderer.createSwapchainFramebuffer(m_imGuiRenderProgram, pWindow->getSwapchainID(), {});
+		m_imGuiFramebuffer = m_renderer.createFramebuffer(m_imGuiRenderProgram, { m_outputTexture });
 		m_renderer.initImGui(*pWindow, m_imGuiRenderProgram, 0);
+
+
 	}
 
 	void ImGuiRenderLayer::cleanup() {
@@ -28,14 +34,22 @@ namespace sa {
 	}
 
 	void ImGuiRenderLayer::postRender(RenderContext& context) {
+		SA_PROFILE_FUNCTION();
+		m_pRenderTechnique->drawData.finalTexture = m_outputTexture;
 		context.beginRenderProgram(m_imGuiRenderProgram, m_imGuiFramebuffer, sa::SubpassContents::DIRECT);
 		context.renderImGuiFrame();
 		context.endRenderProgram(m_imGuiRenderProgram);
+
+		m_outputTexture.swap();
 	}
 
 	void ImGuiRenderLayer::onWindowResize(Extent newExtent) {
 		Renderer::get().cleanupImGui();
 		cleanup();
-		init(m_pWindow, nullptr);
+		init(m_pWindow, m_pRenderTechnique);
+	}
+	
+	const Texture2D& ImGuiRenderLayer::getOutputTexture() const {
+		return {};
 	}
 }

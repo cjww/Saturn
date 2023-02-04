@@ -80,4 +80,8 @@ namespace sa {
 		return m_engine;
 	}
 
+	sa::Engine& Application::getEngine() {
+		return m_engine;
+	}
+
 }

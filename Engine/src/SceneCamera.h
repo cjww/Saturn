@@ -4,7 +4,13 @@
 #include "Tools/Vector.h"
 
 namespace sa {
-	class Camera {
+
+	enum ProjectionMode {
+		ePerspective,
+		eOrthographic
+	};
+
+	class SceneCamera {
 	private:
 		Rect m_viewport;
 		Matrix4x4 m_projMat;
@@ -13,30 +19,39 @@ namespace sa {
 		Vector3 m_forward;
 		Vector3 m_up;
 
+		ProjectionMode m_projectionMode;
 
 		float m_fov;
 		float m_apectRatio;
-		const float m_near = 0.01f;
-		const float m_far = 1000.0f;
+		float m_near = 0.01f;
+		float m_far = 1000.0f;
+
+		Bounds m_orthoBounds;
 
 		void updateProjection();
 
 	public:
-		Camera();
-		Camera(const Window* pWindow);
-		Camera(Extent windowExtent);
+		SceneCamera();
+		SceneCamera(const Window* pWindow);
+		SceneCamera(Extent windowExtent);
 		
-		Camera(const Camera&) = default;
-		Camera& operator=(const Camera&) = default;
+		SceneCamera(const SceneCamera&) = default;
+		SceneCamera& operator=(const SceneCamera&) = default;
 		
+		float getFOVRadians() const;
 		void setFOVRadians(float fovRadians);
+		float getFOVDegrees() const;
 		void setFOVDegrees(float fovDegrees);
 
+
+		Rect getViewport() const;
 		void setViewport(Rect viewport);
 		
 		void setAspectRatio(float aspectRatio);
 
 		void lookAt(Vector3 target);
+		void lookTo(Vector3 forward);
+
 	
 		void setPosition(Vector3 position);
 		Vector3 getPosition() const;
@@ -50,11 +65,20 @@ namespace sa {
 		Matrix4x4 getViewMatrix() const;
 		Matrix4x4 getProjectionMatrix() const;
 
-		Rect getViewport() const;
 
 		float getNear() const;
+		void setNear(float value);
 		float getFar() const;
+		void setFar(float value);
+
+		Bounds getOrthoBounds() const;
+		void setOrthoBounds(Bounds bounds);
+		
+		float getOrthoWidth() const;
+		void setOrthoWidth(float width);
 
 
+		ProjectionMode getProjectionMode() const;
+		void setProjectionMode(ProjectionMode projectionMode);
 	};
 }

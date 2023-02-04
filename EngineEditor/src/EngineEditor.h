@@ -8,6 +8,9 @@
 #include "SceneView.h"
 #include "SceneHierarchy.h"
 #include "EntityInspector.h"
+#include "GameView.h"
+#include "RenderPipelinePreferences.h"
+#include "DirectoryView.h"
 
 namespace sa {
 
@@ -20,8 +23,14 @@ namespace sa {
 		} m_state = State::EDIT;
 
 		sa::Engine* m_pEngine;
+		sa::RenderWindow* m_pWindow;
+
 		std::vector<std::unique_ptr<EditorModule>> m_editorModules;
-		std::filesystem::path m_projectPath;
+		
+		std::filesystem::path m_projectFile;
+		std::filesystem::path m_editorPath;
+
+
 		
 		std::vector<std::filesystem::path> m_recentProjectPaths;
 		std::unordered_map<Scene*, std::filesystem::path> m_savedScenes;
@@ -50,9 +59,7 @@ namespace sa {
 		void stopSimulation();
 
 
-		std::filesystem::path makeProjectRelative(const std::filesystem::path& path);
-		std::filesystem::path makeEditorRelative(const std::filesystem::path& projectRelativePath);
-
+		void imGuiProfiler();
 
 	public:
 		EngineEditor() = default;
@@ -62,7 +69,10 @@ namespace sa {
 		void onImGuiRender() override;
 		void onUpdate(float dt) override;
 		
+		std::filesystem::path editorRelativePath(const std::filesystem::path& editorRelativePath);
 		std::vector<std::filesystem::path> fetchAllScriptsInProject();
+
+		RenderWindow* getWindow() const;
 
 	};
 }

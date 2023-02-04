@@ -20,10 +20,12 @@ namespace sa {
 
 		//bool setFormat(FormatPrecisionFlags precision, FormatDimensionFlags dimensions, FormatTypeFlags type);
 
-		sa::Buffer& getBuffer(uint32_t index = -1);
 		const sa::Buffer& getBuffer(uint32_t index = -1) const;
-		const sa::Buffer& getCurrentBuffer() const;
-		void manualIncrement();
+		uint32_t getBufferIndex() const;
+		uint32_t getPreviousBufferIndex() const;
+		uint32_t getNextBufferIndex() const;
+		
+		void swap();
 
 		uint32_t getBufferCount() const;
 
@@ -113,32 +115,32 @@ namespace sa {
 
 	template<typename T>
 	inline size_t DynamicBuffer::getElementCount() const{
-		return getBuffer(m_currentBufferIndex).getElementCount<T>();
+		return m_buffers[m_currentBufferIndex].getElementCount<T>();
 	}
 
 	template<typename T>
 	inline std::vector<T> DynamicBuffer::getContent() {
-		return getBuffer(m_currentBufferIndex).getContent<T>();
+		return m_buffers[m_currentBufferIndex].getContent<T>();
 	}
 
 	template<typename T>
 	inline Buffer& DynamicBuffer::operator<<(const T& value) {
-		return getBuffer(m_currentBufferIndex) << value;
+		return m_buffers[m_currentBufferIndex] << value;
 	}
 
 	template<typename T>
 	inline Buffer& DynamicBuffer::operator<<(std::vector<T>& values) {
-		return getBuffer(m_currentBufferIndex) << values;
+		return m_buffers[m_currentBufferIndex] << values;
 	}
 
 	template<typename T, size_t Size>
 	inline Buffer& DynamicBuffer::operator<<(std::array<T, Size>& values) {
-		return getBuffer(m_currentBufferIndex) << values;
+		return m_buffers[m_currentBufferIndex] << values;
 	}
 
 	template<typename T>
 	inline T& DynamicBuffer::at(uint32_t index) const {
-		return getBuffer(m_currentBufferIndex).at<T>(index);
+		return m_buffers[m_currentBufferIndex].at<T>(index);
 	}
 
 }

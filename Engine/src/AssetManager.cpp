@@ -9,9 +9,10 @@
 
 #include "assimp/ProgressHandler.hpp"
 
-#include "Tools/Logger.hpp"
 #include "Tools/Vector.h"
 
+
+#include "Assets\ModelAsset.h"
 
 namespace sa {
 
@@ -134,7 +135,7 @@ namespace sa {
 
 			Texture2D* tex = AssetManager::get().loadTexture(finalPath, true);
 			if (!tex) {
-				SA_DEBUG_LOG_ERROR("Failed to create texture, ", finalPath.string());
+				SA_DEBUG_LOG_ERROR("Failed to create texture, ", finalPath.generic_string());
 				continue;
 			}
 
@@ -157,6 +158,67 @@ namespace sa {
 		return defaultColor;
 	}
 
+	void AssetManager::locateAssetPackages() {
+		
+	}
+
+	void AssetManager::locateStandaloneAssets() {
+		std::filesystem::path path = SA_ASSET_DIR;
+		for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) {
+			if (entry.is_regular_file()) {
+				if (entry.path().extension() == ".asset") {
+					addAsset(entry.path());
+				}
+			}
+		}
+
+	}
+
+	IAsset* AssetManager::addAsset(const std::filesystem::path& assetPath) {
+		// read header
+		std::ifstream file(assetPath, std::ios::binary);
+		if (!file.good()) {
+			SA_DEBUG_LOG_ERROR("Failed to open persumed asset ", assetPath);
+		}
+		AssetHeader header = IAsset::readHeader(file);
+		file.close();
+	
+		if (m_assets.count(header.id)) {
+			return nullptr;
+		}
+
+		IAsset* pAsset = nullptr;
+		switch (header.type) {
+		case AssetType::MODEL:
+			 pAsset = m_assets.insert({ header.id, std::make_unique<ModelAsset>(header) }).first->second.get();
+			break;
+		case AssetType::SCRIPT:
+			break;
+		case AssetType::OTHER:
+			break;
+		default:
+			break;
+		}
+
+		pAsset->setAssetPath(assetPath); // The path the asset will write to
+		
+		return pAsset;
+	}
+
+	void AssetManager::loadAssetPackage(AssetPackage& package) {
+	
+	}
+
+	AssetPackage& AssetManager::newAssetPackage(const std::filesystem::path& path) {
+		AssetPackage& package = m_assetPackages.emplace_back();
+		package.path = path;
+		package.file.open(path, std::ios::binary | std::ios::app);
+		if (!package.file.is_open())
+			SA_DEBUG_LOG_ERROR("Failed to open package file");
+		return package;
+	}
+
+
 	AssetManager& AssetManager::get() {
 		static AssetManager instance;
 		return instance;
@@ -177,6 +239,9 @@ namespace sa {
 		m_textures.clear();
 		m_models.clear();
 		m_materials.clear();
+	
+		m_assets.clear();
+		m_assetPackages.clear();
 	}
 	
 	Texture2D* AssetManager::loadDefaultTexture() {
@@ -187,8 +252,8 @@ namespace sa {
 			return tex;
 
 		sa::Image img(2, 2, sa::Color{ 1, 1, 1, 1 });
-		ResourceID id = sa::ResourceManager::get().insert<Texture2D>("default_white", sa::Renderer::get().createTexture2D(img, false));
-		return sa::ResourceManager::get().get<Texture2D>(id);
+		ResourceID id = ResourceManager::get().insert<Texture2D>("default_white", Texture2D(img, false));
+		return ResourceManager::get().get<Texture2D>(id);
 	}
 
 	Texture2D* AssetManager::loadDefaultBlackTexture() {
@@ -199,13 +264,13 @@ namespace sa {
 			return tex;
 
 		sa::Image img(2, 2, sa::Color{ 0, 0, 0, 0 });
-		ResourceID id = sa::ResourceManager::get().insert<Texture2D>("default_black", sa::Renderer::get().createTexture2D(img, false));
-		return sa::ResourceManager::get().get<Texture2D>(id);
+		ResourceID id = ResourceManager::get().insert<Texture2D>("default_black", Texture2D(img, false));
+		return ResourceManager::get().get<Texture2D>(id);
 	}
 
 	Texture2D* AssetManager::loadTexture(const std::filesystem::path& path, bool generateMipMaps) {
 		SA_PROFILE_FUNCTION();
-		ResourceID id = ResourceManager::get().keyToID<Texture2D>(path.string());
+		ResourceID id = ResourceManager::get().keyToID<Texture2D>(path.generic_string());
 		if (m_textures.count(id)) {
 			return m_textures.at(id);
 		}
@@ -214,9 +279,9 @@ namespace sa {
 
 		if (!tex) {
 			try {
-				Image img(path.string());
-				id = ResourceManager::get().insert<Texture2D>(path.string(), Renderer::get().createTexture2D(img, generateMipMaps));
-				//SA_DEBUG_LOG_INFO("Loaded texture", path.string());
+				Image img(path.generic_string());
+				id = ResourceManager::get().insert<Texture2D>(path.generic_string(), Texture2D(img, generateMipMaps));
+				//SA_DEBUG_LOG_INFO("Loaded texture", path.generic_string());
 			}
 			catch (const std::exception& e) {
 				return nullptr;
@@ -407,10 +472,29 @@ namespace sa {
 		return ResourceManager::get().get<Material>(id);
 	}
 
+	const std::unordered_map<UUID, std::unique_ptr<IAsset>>& AssetManager::getAssets() const{
+		return m_assets;
+	}
 
-	AssetManager::AssetManager()
-		: m_nextID(0)
-	{
+	void AssetManager::rescanAssets() {
+		clear();
+
+		locateStandaloneAssets();
+		locateAssetPackages();
+		for (auto& pkg : m_assetPackages) {
+			loadAssetPackage(pkg);
+		}
+	}
+
+	void AssetManager::removeAsset(IAsset* asset) {
+		m_assets.erase(asset->getHeader().id);
+	}
+
+	void AssetManager::removeAsset(UUID id) {
+		m_assets.erase(id);
+	}
+
+	AssetManager::AssetManager() {
 		loadDefaultTexture();
 		sa::ResourceManager::get().setCleanupFunction<Texture2D>([](Texture2D* pTexture) {
 			pTexture->destroy();
@@ -431,15 +515,15 @@ namespace sa {
 			SA_DEBUG_LOG_ERROR("Assimp Flag validation failed");
 		}
 
-		const aiScene* scene = importer.ReadFile(path.string(), flags);
+		const aiScene* scene = importer.ReadFile(path.generic_string(), flags);
 
 		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-			SA_DEBUG_LOG_ERROR("Failed to read file ", path.string(), " : ", importer.GetErrorString());
+			SA_DEBUG_LOG_ERROR("Failed to read file ", path.generic_string(), " : ", importer.GetErrorString());
 			return;
 		}
 
 		SA_DEBUG_LOG_INFO(
-			"Loaded file", path.string(),
+			"Loaded file", path.generic_string(),
 			"\nMeshes", scene->mNumMeshes,
 			"\nAnimations", scene->mNumAnimations,
 			"\nLights", scene->mNumLights);
@@ -458,8 +542,8 @@ namespace sa {
 		
 		taskflow.for_each_index(0U, scene->mNumMaterials, 1U, [&](int i) {
 				aiMaterial* aMaterial = scene->mMaterials[i];
-				SA_PROFILE_SCOPE(path.string() + ", Load material [" + std::to_string(i) + "] " + aMaterial->GetName().C_Str());
-				SA_DEBUG_LOG_INFO("Load material: ", path.string(), "-", aMaterial->GetName().C_Str());
+				SA_PROFILE_SCOPE(path.generic_string() + ", Load material [" + std::to_string(i) + "] " + aMaterial->GetName().C_Str());
+				SA_DEBUG_LOG_INFO("Load material: ", path.generic_string(), "-", aMaterial->GetName().C_Str());
 
 				Material material;
 

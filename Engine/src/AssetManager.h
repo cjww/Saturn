@@ -19,11 +19,16 @@
 
 #include "ECS\Entity.h"
 #include "ECS/Components.h"
+
+#include "Tools/Profiler.h"
+
+#include "Assets\IAsset.h"
+
+#define SA_ASSET_DIR "Assets/"
+
 //--------------------------------------------------------------------------------------
 // AssetManager is the class that will hold all assets. 
 //--------------------------------------------------------------------------------------
-
-
 namespace sa {
 
 	struct Mesh {
@@ -37,14 +42,24 @@ namespace sa {
 		std::vector<Mesh> meshes;
 	};
 
+	
+	class AssetPackage {
+	public:
+		std::filesystem::path path;
+		size_t size;
+		std::fstream file;
+
+		~AssetPackage() {
+			file.close();
+		}
+	};
+
 	// Singelton class
 	class AssetManager
 	{
 	private:	
 		tf::Executor m_taskExecutor;
 
-		ResourceID m_nextID;
-	
 		std::mutex m_mutex;
 
 		std::unordered_map<std::string, ProgressView<ResourceID>> m_loadingModels;
@@ -54,10 +69,27 @@ namespace sa {
 		std::unordered_map<ResourceID, Material*> m_materials;
 
 
+		// Assets
+		std::unordered_map<UUID, std::unique_ptr<IAsset>> m_assets;
+		std::list<AssetPackage> m_assetPackages;
+
 		AssetManager();
 
 		void loadAssimpModel(const std::filesystem::path& path, ModelData* pModel, ProgressView<ResourceID>& progress);
 		ResourceID loadModel(const std::filesystem::path& path, ProgressView<ResourceID>& progress);
+
+		void locateAssetPackages();
+		void locateStandaloneAssets();
+		IAsset* addAsset(const std::filesystem::path& assetPath);
+
+		void loadAssetPackage(AssetPackage& package);
+
+		AssetPackage& newAssetPackage(const std::filesystem::path& path);
+		
+		template<typename T, typename ...Args>
+		T* allocateAsset(Args&&... args);
+
+
 	public:
 		~AssetManager();
 	
@@ -81,7 +113,41 @@ namespace sa {
 
 		ModelData* getModel(ResourceID id) const;
 		Material* getMaterial(ResourceID id) const;
+		
+		const std::unordered_map<UUID, std::unique_ptr<IAsset>>& getAssets() const;
+
+		void rescanAssets();
+
+		template<typename T>
+		T* getAsset(UUID id) const;
+
+		template<typename T>
+		T* importAsset(const std::filesystem::path& path);
+
+		void removeAsset(IAsset* asset);
+		void removeAsset(UUID id);
+
 
 	};
 
+	template<typename T>
+	inline T* AssetManager::getAsset(UUID id) const {
+		return dynamic_cast<T*>(m_assets.at(id).get());
+	}
+
+	template<typename T>
+	inline T* AssetManager::importAsset(const std::filesystem::path& path) {
+		UUID id;
+		auto [it, success] = m_assets.insert({ id, std::make_unique<T>(id) });
+		IAsset* asset = it->second.get();
+		
+		auto filename = path.filename().replace_extension(".asset");
+		asset->setAssetPath(SA_ASSET_DIR / filename); // The path the asset will write to
+
+		if (!asset->importFromFile(path)) {
+			removeAsset(asset);
+			return nullptr;
+		}
+		return static_cast<T*>(asset);
+	}
 }

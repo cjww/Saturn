@@ -42,7 +42,7 @@ void EntityInspector::makePopups() {
 		if (ImGui::BeginListBox("##ScriptFileList")) {
 
 			for (auto& path : paths) {
-				std::string scriptName = sa::utils::toLower(path.filename().string());
+				std::string scriptName = sa::utils::toLower(path.filename().generic_string());
 				if (scriptName.find(sa::utils::toLower(filter)) == std::string::npos) {
 					continue;
 				}
@@ -76,7 +76,8 @@ void EntityInspector::makePopups() {
 
 }
 
-EntityInspector::EntityInspector(sa::Engine* pEngine, sa::EngineEditor* pEditor) : EditorModule(pEngine, pEditor) {
+EntityInspector::EntityInspector(sa::Engine* pEngine, sa::EngineEditor* pEditor) 
+	: EditorModule(pEngine, pEditor, "Inspector", false) {
 	m_selectedEntity = {};
 
 	pEngine->on<sa::editor_event::EntitySelected>([&](const sa::editor_event::EntitySelected& e, sa::Engine&) {
@@ -95,7 +96,7 @@ EntityInspector::~EntityInspector() {
 void EntityInspector::onImGui() {
 	SA_PROFILE_FUNCTION();
 
-	if (ImGui::Begin("Inspector")) {
+	if (ImGui::Begin(m_name)) {
 
 		if (m_selectedEntity) {
 			
@@ -119,6 +120,7 @@ void EntityInspector::onImGui() {
 			ImGui::Component<comp::RigidBody>(m_selectedEntity);
 			ImGui::Component<comp::BoxCollider>(m_selectedEntity);
 			ImGui::Component<comp::SphereCollider>(m_selectedEntity);
+			ImGui::Component<comp::Camera>(m_selectedEntity);
 
 
 			// Display entity scripts

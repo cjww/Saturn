@@ -8,6 +8,9 @@
 
 #include <simdjson.h>
 
+#include "AssetManager.h"
+#include "Assets\ModelAsset.h"
+
 namespace sa {
 	void EngineEditor::makePopups() {
 		static std::string name;
@@ -82,34 +85,38 @@ namespace sa {
 
 		using namespace simdjson;
 		ondemand::parser parser;
-		auto json = padded_string::load(path.string());
+		auto json = padded_string::load(path.generic_string());
 		if (json.error()) {
 			return false;
 		}
 		ondemand::document doc = parser.iterate(json);
 		
-		SA_DEBUG_LOG_INFO("Opened Project: ", path);
-		const char* version = doc["version"].get_string().value().data();
-		if (strcmp(version, SA_VERSION) != 0) {
-			SA_DEBUG_LOG_ERROR("Project version missmatch:\n\tProject: ", verison, "\n\tEngine: ", SA_VERSION);
+		auto version = doc["version"];
+		if (version != SA_VERSION) {
+			SA_DEBUG_LOG_ERROR("Project version missmatch:\n\tProject: ", version, "\n\tEngine: ", SA_VERSION);
 		}
+		SA_DEBUG_LOG_INFO("Opened Project: ", path);
 		
-		m_projectPath = path;
+		m_projectFile = path.filename();
+		std::filesystem::current_path(path.parent_path());
+
+		AssetManager::get().rescanAssets();
 
 		auto scenesArray = doc["scenes"];
 		for (const auto& scenePath : scenesArray) {
 			simdjson::ondemand::value s = scenePath.value_unsafe();
 			std::filesystem::path projectRealtiveScene(s.get_string().value());
-			Scene& scene = m_pEngine->loadSceneFromFile(makeEditorRelative(projectRealtiveScene));
+			Scene& scene = m_pEngine->loadSceneFromFile(projectRealtiveScene);
 			m_savedScenes[&scene] = projectRealtiveScene;
 		}
 
-
-		auto it = std::find(m_recentProjectPaths.begin(), m_recentProjectPaths.end(), m_projectPath);
+		std::filesystem::path projectPath = path;
+		auto it = std::find(m_recentProjectPaths.begin(), m_recentProjectPaths.end(), projectPath);
 		if (it != m_recentProjectPaths.end()) {
 			m_recentProjectPaths.erase(it);
 		}
-		m_recentProjectPaths.push_back(m_projectPath);
+		m_recentProjectPaths.push_back(projectPath);
+
 
 		return true;
 	}
@@ -163,7 +170,7 @@ namespace sa {
 		s.beginArray("scenes");
 
 		for (const auto& [pScene, scenePath] : m_savedScenes) {
-			s.value(makeProjectRelative(scenePath).generic_string().c_str());
+			s.value(scenePath.generic_string().c_str());
 		}
 
 		s.endArray();
@@ -202,8 +209,8 @@ namespace sa {
 						break;
 					}
 				}
-				ImGui::EndChild();
 			}
+			ImGui::EndChild();
 
 			if (ImGui::Button("Open Project...")) {
 				openProject();
@@ -220,7 +227,7 @@ namespace sa {
 	void EngineEditor::fileMenu() {
 
 		if (ImGui::MenuItem("Save Project")) {
-			saveProject(m_projectPath);
+			saveProject(m_projectFile);
 		}
 
 		if (ImGui::MenuItem("Open Project")) {
@@ -250,13 +257,13 @@ namespace sa {
 		auto it = m_savedScenes.find(pScene);
 		if (it == m_savedScenes.end()) {
 			std::filesystem::path path;
-			if (!FileDialogs::SaveFile("Saturn Scene (*.json)\0*.json\0", path, m_projectPath.parent_path())) {
+			if (!FileDialogs::SaveFile("Saturn Scene (*.json)\0*.json\0", path)) {
 				return false;
 			}
 			it = m_savedScenes.insert({ pScene, path }).first;
 		}
 
-		m_pEngine->storeSceneToFile(pScene, makeEditorRelative(it->second));
+		m_pEngine->storeSceneToFile(pScene, it->second);
 		return true;
 	}
 
@@ -264,19 +271,19 @@ namespace sa {
 		auto it = m_savedScenes.find(pScene);
 		if (it == m_savedScenes.end()) {
 			std::filesystem::path path;
-			if (!FileDialogs::OpenFile("Saturn Scene (*.json)\0*.json\0", path, m_projectPath.parent_path())) {
+			if (!FileDialogs::OpenFile("Saturn Scene (*.json)\0*.json\0", path)) {
 				return false;
 			}
 			it = m_savedScenes.insert({ pScene, path }).first;
 		}
 
-		m_pEngine->loadSceneFromFile(makeEditorRelative(it->second));
+		m_pEngine->loadSceneFromFile(it->second);
 		return true;
 	}
 
 	bool EngineEditor::openScene() {
 		std::filesystem::path path;
-		if (!FileDialogs::OpenFile("Saturn Scene (*.json)\0*.json\0", path, m_projectPath.parent_path())) {
+		if (!FileDialogs::OpenFile("Saturn Scene (*.json)\0*.json\0", path)) {
 			return false;
 		}
 		openScene(path);
@@ -284,7 +291,7 @@ namespace sa {
 	}
 
 	void EngineEditor::openScene(const std::filesystem::path& path) {
-		Scene& scene = m_pEngine->loadSceneFromFile(makeEditorRelative(path));
+		Scene& scene = m_pEngine->loadSceneFromFile(path);
 		m_pEngine->publish<editor_event::EntityDeselected>();
 		m_pEngine->setScene(scene);
 	}
@@ -301,19 +308,39 @@ namespace sa {
 		m_state = State::EDIT;
 	}
 
-	std::filesystem::path EngineEditor::makeProjectRelative(const std::filesystem::path& editorRelativePath) {
-		return std::filesystem::proximate(editorRelativePath, m_projectPath.parent_path());
-	}
 
-	std::filesystem::path EngineEditor::makeEditorRelative(const std::filesystem::path& projectRelativePath) {
-		return m_projectPath.parent_path() / projectRelativePath;
-	}
+	void EngineEditor::imGuiProfiler() {
+		if (ImGui::Begin("Profiler")) {
+			
+			static bool isRecording = false;
+			static std::string filePath = "profile_editor_result.json";
+			if (isRecording) {
+				if (ImGui::Button("Stop recording")) {
+					SA_PROFILER_END_SESSION();
+					isRecording = false;
+				}
+			}
+			else {
+				ImGui::InputText("Result file", &filePath);
+				
+				if(ImGui::Button("Record session...")) {
+					SA_PROFILER_BEGIN_SESSION();
+					isRecording = true;
+				}
+			}
 
-	
+
+		}
+		ImGui::End();
+	}
 
 	void EngineEditor::onAttach(sa::Engine& engine, sa::RenderWindow& renderWindow) {
 		m_pEngine = &engine;
+		m_pWindow = &renderWindow;
+
+		m_editorPath = std::filesystem::current_path();
 		
+
 		ImGui::SetupImGuiStyle();
 		engine.on<engine_event::WindowResized>([](const engine_event::WindowResized& e, Engine& engine) {
 			ImGui::SetupImGuiStyle();
@@ -337,13 +364,19 @@ namespace sa {
 
 		m_editorModules.push_back(std::make_unique<SceneHierarchy>(&engine, this));
 
+		m_editorModules.push_back(std::make_unique<GameView>(&engine, this, &renderWindow));
+
+		m_editorModules.push_back(std::make_unique<RenderPipelinePreferences>(&engine, this));
+		
+		m_editorModules.push_back(std::make_unique<DirectoryView>(&engine, this));
+
 		//Application::get()->pushLayer(new TestLayer);
 
 		Image logo("resources/Logo-white.png");
-		m_logoTex = Renderer::get().createTexture2D(logo, true);
+		m_logoTex = Texture2D(logo, true);
 
 		Image playPauseButtons("resources/play-pause-buttons.png");
-		m_playPauseTex = Renderer::get().createTexture2D(playPauseButtons, true);
+		m_playPauseTex = Texture2D(playPauseButtons, true);
 
 		// read recent projects
 		std::ifstream recentProjectsFile("recent_projects.txt");
@@ -356,14 +389,13 @@ namespace sa {
 			}
 			recentProjectsFile.close();
 		}
-
-
 	}
 
 	void EngineEditor::onDetach() {
+		
 		std::ofstream recentProjectsFile("recent_projects.txt");
 		for (const auto& path : m_recentProjectPaths) {
-			recentProjectsFile << path.string() << "\n";
+			recentProjectsFile << path.generic_string() << "\n";
 		}
 		recentProjectsFile.close();
 
@@ -372,7 +404,7 @@ namespace sa {
 
 	void EngineEditor::onImGuiRender() {
 		ImGuizmo::BeginFrame();
-		if (m_projectPath.empty()) {
+		if (m_projectFile.empty()) {
 			projectSelector();
 			return;
 		}
@@ -431,11 +463,24 @@ namespace sa {
 				}
 				ImGui::EndMenu();
 			}
+
+			if (ImGui::BeginMenu("Windows")) {
+
+				for (auto& module : m_editorModules) {
+					if (ImGui::MenuItem(module->getName())) {
+						module->open();
+					}
+				}
+
+				ImGui::End();
+			}
+
 			ImGui::EndDisabled();
 
 			if (enterSceneNamePopup) {
 				ImGui::OpenPopup("Create New Scene");
 			}
+
 
 			ImGui::SetCursorPosY(framePaddingY - (buttonSize * 0.25f));
 			ImGui::SetCursorPosX(ImGui::GetWindowWidth() * 0.5f - buttonSize * 0.5f);
@@ -473,6 +518,11 @@ namespace sa {
 		for (auto& module : m_editorModules) {
 			module->onImGui();
 		}
+
+#if SA_PROFILER_ENABLE
+		imGuiProfiler();
+#endif
+		
 	}
 
 	void EngineEditor::onUpdate(float dt) {
@@ -489,9 +539,13 @@ namespace sa {
 		}
 	}
 
+	std::filesystem::path EngineEditor::editorRelativePath(const std::filesystem::path& editorRelativePath) {
+		return m_editorPath / editorRelativePath;
+	}
+
 	std::vector<std::filesystem::path> EngineEditor::fetchAllScriptsInProject() {
 		std::vector<std::filesystem::path> paths;
-		for (const auto& entry : std::filesystem::recursive_directory_iterator(makeEditorRelative("Assets"))) {
+		for (const auto& entry : std::filesystem::recursive_directory_iterator("Assets")) {
 			if (entry.is_regular_file()) {
 				std::filesystem::path path = entry;
 				if (path.extension() == ".lua") {
@@ -500,5 +554,8 @@ namespace sa {
 			}
 		}
 		return std::move(paths);
+	}
+	RenderWindow* EngineEditor::getWindow() const {
+		return m_pWindow;
 	}
 }

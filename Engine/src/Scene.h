@@ -1,14 +1,18 @@
 #pragma once
 
-#include "Camera.h"
+#include "SceneCamera.h"
 #include "ECS/Entity.h"
 #include "ECS/Events.h"
-#include "ECS/Components.h"
+
+#include "ECS\Components.h"
+
 #include "PhysicsSystem.h"
 
 #include <iostream>
 
 #include "Tools\utils.h"
+#include "Tools/Profiler.h"
+
 
 #include "ScriptManager.h"
 #include "EntityHierarchy.h"
@@ -21,9 +25,6 @@ namespace sa {
 
 	class Scene : public entt::emitter<Scene>, entt::registry, public Serializable {
 	private:
-		std::vector<Camera*> m_cameras;
-		std::set<Camera*> m_activeCameras;
-
 		ScriptManager m_scriptManager;
 
 		EntityHierarchy m_hierarchy;
@@ -35,9 +36,9 @@ namespace sa {
 	
 		friend class Entity;
 		void destroyEntity(const Entity& entity);
-		std::optional<EntityScript> addScript(const Entity& entity, const std::filesystem::path& path);
+		EntityScript* addScript(const Entity& entity, const std::filesystem::path& path);
 		void removeScript(const Entity& entity, const std::string& name);
-		std::optional<EntityScript> getScript(const Entity& entity, const std::string& name) const;
+		EntityScript* getScript(const Entity& entity, const std::string& name);
 
 		friend class Engine;
 		template<typename T>
@@ -49,6 +50,7 @@ namespace sa {
 
 		void updatePhysics(float dt);
 		void updateChildPositions();
+		void updateCameraPositions();
 
 	public:
 		using entt::registry::view;
@@ -67,15 +69,6 @@ namespace sa {
 
 		void serialize(Serializer& s) override;
 		void deserialize(void* pDoc) override;
-
-
-		// Camera
-		Camera* newCamera();
-		Camera* newCamera(const Window* pWindow);
-
-		void addActiveCamera(Camera* camera);
-		void removeActiveCamera(Camera* camera);
-		std::set<Camera*> getActiveCameras() const;
 
 		// Event emitter
 		void setScene(const std::string& name);

@@ -2742,10 +2742,11 @@ namespace IMGUIZMO_NAMESPACE
    {
       // Scale is always local or matrix will be skewed when applying world scale or oriented matrix
       ComputeContext(view, projection, matrix, (operation & SCALE) ? LOCAL : mode);
-      ViewManipulate(view, length, position, size, backgroundColor);
+      int panelIndex;
+      ViewManipulate(view, &panelIndex, length, position, size, backgroundColor);
    }
 
-   void ViewManipulate(float* view, float length, ImVec2 position, ImVec2 size, ImU32 backgroundColor)
+   void ViewManipulate(float* view, int* panelIndex, float length, ImVec2 position, ImVec2 size, ImU32 backgroundColor)
    {
       static bool isDraging = false;
       static bool isClicking = false;
@@ -2871,6 +2872,7 @@ namespace IMGUIZMO_NAMESPACE
                         overBox = boxCoordInt;
                         isClicking = true;
                         isDraging = true;
+                        *panelIndex = iPanel;
                      }
                   }
                }

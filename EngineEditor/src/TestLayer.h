@@ -1,8 +1,7 @@
 #pragma once
 
 #include "Application.h"
-#include "Camera.h"
-#include "CameraController.h"
+#include "SceneCamera.h"
 #include "Tools/Clock.h"
 
 

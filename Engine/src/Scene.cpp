@@ -1,12 +1,13 @@
 #include "pch.h"
 #include "Scene.h"
+#include "ECS/Components.h"
 
 namespace sa {
 	void Scene::updatePhysics(float dt) {
 		// Physics
 		view<comp::RigidBody, comp::Transform>().each([&](const comp::RigidBody& rb, const comp::Transform& transform) {
 			rb.pActor->setGlobalPose(transform, false);
-			});
+		});
 
 		m_pPhysicsScene->simulate(dt);
 		m_pPhysicsScene->fetchResults(true);
@@ -35,6 +36,14 @@ namespace sa {
 		});
 	}
 
+	void Scene::updateCameraPositions() {
+		view<comp::Camera, comp::Transform>().each([](comp::Camera& camera, comp::Transform& transform) {
+			camera.camera.setPosition(transform.position);
+			glm::vec3 forward = transform.rotation * glm::vec3(0, 0, 1);
+			camera.camera.lookAt(transform.position + forward);
+		});
+	}
+
 	Scene::Scene(const std::string& name)
 		: m_name(name)
 		, m_pPhysicsScene(PhysicsSystem::get().createScene())
@@ -48,12 +57,10 @@ namespace sa {
 	Scene::~Scene() {
 		clearEntities();
 		m_pPhysicsScene->release();
-		for (auto& cam : m_cameras) {
-			delete cam;
-		}
 	}
 
 	void Scene::reg() {
+
 		auto type = LuaAccessable::registerType<Scene>();
 		type["findEntitiesByName"] = [](Scene& self, const std::string& name) {
 			std::vector<Entity> entities;
@@ -87,11 +94,12 @@ namespace sa {
 		m_scriptManager.broadcast("onUpdate", dt);
 		
 		updateChildPositions();
-
+		updateCameraPositions();
 	}
 
 	void Scene::inEditorUpdate(float dt) {
 		updateChildPositions();
+		updateCameraPositions();
 	}
 
 	void Scene::serialize(Serializer& s) {
@@ -131,36 +139,6 @@ namespace sa {
 		}
 	}
 
-
-	Camera* Scene::newCamera() {
-		m_cameras.push_back(new Camera());
-		return m_cameras.back();
-	}
-
-	Camera* Scene::newCamera(const Window* pWindow) {
-		m_cameras.push_back(new Camera(pWindow));
-		return m_cameras.back();
-	}
-
-
-	void Scene::addActiveCamera(Camera* camera) {
-		size_t s = m_activeCameras.size();
-		m_activeCameras.insert(camera);
-		if(s != m_activeCameras.size())
-			publish<scene_event::AddedCamera>(camera);
-	}
-
-	void Scene::removeActiveCamera(Camera* camera) {
-		size_t s = m_activeCameras.size();
-		m_activeCameras.erase(camera);
-		if (s != m_activeCameras.size())
-			publish<scene_event::RemovedCamera>(camera);
-	}
-
-	std::set<Camera*> Scene::getActiveCameras() const {
-		return m_activeCameras;
-	}
-
 	void Scene::setScene(const std::string& name) {
 		publish<scene_event::SceneRequest>(name);
 	}
@@ -183,16 +161,8 @@ namespace sa {
 		return alive();
 	}
 
-	std::optional<EntityScript> Scene::addScript(const Entity& entity, const std::filesystem::path& path) {
-		std::optional<EntityScript> scriptOpt = m_scriptManager.addScript(entity, path);
-		if (!scriptOpt.has_value())
-			return scriptOpt;
-
-		EntityScript& script = scriptOpt.value();
-		script.env["scene"] = this;
-		script.env["entity"] = entity;
-		
-		return scriptOpt;
+	EntityScript* Scene::addScript(const Entity& entity, const std::filesystem::path& path) {
+		return m_scriptManager.addScript(entity, path);
 	}
 
 	void Scene::clearEntities() {
@@ -206,7 +176,7 @@ namespace sa {
 		m_scriptManager.removeScript(entity, name);
 	}
 
-	std::optional<EntityScript> Scene::getScript(const Entity& entity, const std::string& name) const {
+	EntityScript* Scene::getScript(const Entity& entity, const std::string& name) {
 		return m_scriptManager.getScript(entity, name);
 	}
 

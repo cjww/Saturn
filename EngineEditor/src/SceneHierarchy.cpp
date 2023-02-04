@@ -28,18 +28,35 @@ void SceneHierarchy::makePopups() {
 			if (ImGui::MenuItem("Empty")) {
 				sa::Entity entity = m_pEngine->getCurrentScene()->createEntity("Empty");
 				entity.addComponent<comp::Transform>();
+				m_pEngine->publish<sa::editor_event::EntitySelected>(entity);
 			}
 			
 			if (ImGui::MenuItem("Quad")) {
 				sa::Entity entity = m_pEngine->getCurrentScene()->createEntity("Quad");
 				entity.addComponent<comp::Transform>();
 				entity.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadQuad();
+				m_pEngine->publish<sa::editor_event::EntitySelected>(entity);
 			}
 			
 			if (ImGui::MenuItem("Box")) {
 				sa::Entity entity = m_pEngine->getCurrentScene()->createEntity("Box");
 				entity.addComponent<comp::Transform>();
 				entity.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadBox();
+				m_pEngine->publish<sa::editor_event::EntitySelected>(entity);
+			}
+
+			if (ImGui::MenuItem("Camera")) {
+				sa::Entity entity = m_pEngine->getCurrentScene()->createEntity("Camera");
+				entity.addComponent<comp::Transform>();
+				entity.addComponent<comp::Camera>();
+				m_pEngine->publish<sa::editor_event::EntitySelected>(entity);
+			}
+
+			if (ImGui::MenuItem("Light")) {
+				sa::Entity entity = m_pEngine->getCurrentScene()->createEntity("Light");
+				entity.addComponent<comp::Transform>();
+				entity.addComponent<comp::Light>();
+				m_pEngine->publish<sa::editor_event::EntitySelected>(entity);
 			}
 
 			ImGui::EndMenu();
@@ -50,7 +67,8 @@ void SceneHierarchy::makePopups() {
 	}
 }
 
-SceneHierarchy::SceneHierarchy(sa::Engine* pEngine, sa::EngineEditor* pEditor) : EditorModule(pEngine, pEditor) {
+SceneHierarchy::SceneHierarchy(sa::Engine* pEngine, sa::EngineEditor* pEditor) 
+	: EditorModule(pEngine, pEditor, "Scene Hierarchy", false) {
 	pEngine->on<sa::engine_event::SceneSet>([&](sa::engine_event::SceneSet& e, sa::Engine& engine) {
 		m_hoveredEntity = {};
 		m_selectedEntity = {};
@@ -162,7 +180,7 @@ void SceneHierarchy::onImGui() {
 	//ImGui::ShowStyleEditor();
 
 
-	if (ImGui::Begin("Scene Hierarchy")) {
+	if (ImGui::Begin(m_name)) {
 
 		if(!m_isPopupMenuOpen)
 			m_hoveredEntity = {};

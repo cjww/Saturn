@@ -49,7 +49,11 @@ namespace sa {
 		CommandBufferSet* beginFrame();
 		void endFrame();
 
+		void waitForFrame();
+
 		std::vector<vk::ImageView> getImageViews() const;
+		vk::Image getImage(uint32_t imageIndex) const;
+
 		Extent getExtent() const;
 		vk::Format getFormat() const;
 
@@ -58,5 +62,7 @@ namespace sa {
 		const CommandBufferSet* getCommandBufferSet() const;
 	
 		uint32_t getFrameIndex() const;
+		uint32_t getImageIndex() const;
+
 	};
 }

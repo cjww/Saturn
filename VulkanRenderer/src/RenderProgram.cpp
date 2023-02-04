@@ -104,9 +104,14 @@ namespace sa {
 			.extent = { renderArea.extent.width, renderArea.extent.height },
 		};
 
+		uint32_t frameBufferIndex = cmd->getBufferIndex() % framebuffer->getBufferCount();
+		Swapchain* pSwapchain = framebuffer->getSwapchain();
+		if (pSwapchain) {
+			frameBufferIndex = pSwapchain->getImageIndex();
+		}
 		vk::RenderPassBeginInfo info{
 			.renderPass = m_renderPass,
-			.framebuffer = framebuffer->getBuffer(cmd->getBufferIndex() % framebuffer->getBufferCount()),
+			.framebuffer = framebuffer->getBuffer(frameBufferIndex),
 			.renderArea = rect,
 		};
 

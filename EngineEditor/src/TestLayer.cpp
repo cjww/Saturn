@@ -1,6 +1,6 @@
 
 #include "TestLayer.h"
-#define SA_PROFILER_ENABLE
+
 #include "Tools\Profiler.h"
 
 namespace sa {
@@ -20,12 +20,12 @@ namespace sa {
 
 		comp::Light* lightComp = light.addComponent<comp::Light>();
 		lightComp->values.color = color;
-		lightComp->values.position = position;
+		lightComp->values.position = glm::vec4(position, lightComp->values.position.w);
 		return light;
 	}
 
 	Entity TestLayer::createModelEntity(Engine& engine, const std::filesystem::path& modelPath, float scale) {
-		Entity entity = engine.getCurrentScene()->createEntity(modelPath.filename().string());
+		Entity entity = engine.getCurrentScene()->createEntity(modelPath.filename().generic_string());
 
 		comp::Model* model = entity.addComponent<comp::Model>();
 

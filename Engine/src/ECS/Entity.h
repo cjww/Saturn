@@ -4,9 +4,10 @@
 #include "MetaComponent.h"
 #include "ComponentBase.h"
 
-#include "ScriptManager.h"
-
 #include "Serializable.h"
+#include "EntityScript.h"
+
+#include <Tools/Logger.hpp>
 
 namespace sa {
 	
@@ -31,7 +32,7 @@ namespace sa {
 		virtual void serialize(Serializer& s) override;
 		virtual void deserialize(void* pDoc) override;
 
-		Scene* getScene();
+		Scene* getScene() const;
 
 		template<typename T>
 		T* getComponent() const;
@@ -59,9 +60,9 @@ namespace sa {
 		template<typename ...Components>
 		void update();
 
-		void addScript(const std::filesystem::path& path);
+		EntityScript* addScript(const std::filesystem::path& path);
 		void removeScript(const std::string& name);
-		std::optional<EntityScript> getScript(const std::string& name) const;
+		EntityScript* getScript(const std::string& name);
 
 		void setParent(const Entity& parent);
 		void orphan() const;

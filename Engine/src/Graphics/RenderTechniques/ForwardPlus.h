@@ -1,6 +1,13 @@
 #pragma once
 #include "Graphics/IRenderTechnique.h"
 
+#include "AssetManager.h"
+
+#include "Resources/DynamicTexture.hpp"
+#include "Resources/DynamicBuffer.hpp"
+
+#include "Tools/Profiler.h"
+
 #define TILE_SIZE 16U
 #define MAX_LIGHTS_PER_TILE 1024
 
@@ -14,37 +21,29 @@ namespace sa {
 	class ForwardPlus : public IRenderTechnique {
 	private:
 
-		// Color pass
-		Texture2D m_colorTexture;
-		Texture2D m_depthTexture;
 
 		ResourceID m_colorRenderProgram = NULL_RESOURCE;
-		ResourceID m_colorFramebuffer = NULL_RESOURCE;
-		ResourceID m_colorPipeline = NULL_RESOURCE;
+		//ResourceID m_colorPipeline = NULL_RESOURCE;
 
-		ResourceID m_composeRenderProgram = NULL_RESOURCE;
-		ResourceID m_composeFramebuffer = NULL_RESOURCE;
-		ResourceID m_composePipeline = NULL_RESOURCE;
-
-		ResourceID m_composeDescriptorSet = NULL_RESOURCE;
-		
-		ResourceID m_sceneDescriptorSet = NULL_RESOURCE;
+		//ResourceID m_sceneDescriptorSet = NULL_RESOURCE;
 		
 		ResourceID m_linearSampler = NULL_RESOURCE;
 		ResourceID m_nearestSampler = NULL_RESOURCE;
+		
 
+		//DynamicTexture2D m_depthTexture;
 		ResourceID m_depthPreRenderProgram = NULL_RESOURCE;
-		ResourceID m_depthPreFramebuffer = NULL_RESOURCE;
-		ResourceID m_depthPrePipeline = NULL_RESOURCE;
-		ResourceID m_sceneDepthDescriptorSet = NULL_RESOURCE;
+		//ResourceID m_depthPreFramebuffer = NULL_RESOURCE;
+		//ResourceID m_depthPrePipeline = NULL_RESOURCE;
+		//ResourceID m_sceneDepthDescriptorSet = NULL_RESOURCE;
 
 		ResourceID m_lightCullingPipeline = NULL_RESOURCE;
-		ResourceID m_lightCullingDescriptorSet = NULL_RESOURCE;
+		//ResourceID m_lightCullingDescriptorSet = NULL_RESOURCE;
 
 		
 		
-		Vector2u m_tileCount;
-		Buffer m_lightIndexBuffer;
+		//Vector2u m_tileCount;
+		//DynamicBuffer m_lightIndexBuffer;
 
 		ResourceID m_debugLightHeatmapRenderProgram = NULL_RESOURCE;
 		ResourceID m_debugLightHeatmapPipeline = NULL_RESOURCE;
@@ -52,6 +51,7 @@ namespace sa {
 		Texture2D m_debugLightHeatmap;
 		ResourceID m_debugLightHeatmapDescriptorSet = NULL_RESOURCE;
 		
+		// DrawData
 		// used for collecting meshes every frame
 		std::vector<ModelData*> m_models;
 		std::vector<std::vector<ObjectData>> m_objects;
@@ -72,29 +72,25 @@ namespace sa {
 		DynamicBuffer m_materialBuffer;
 		DynamicBuffer m_materialIndicesBuffer;
 
-		void createPreDepthPass(Extent extent);
+		void createPreDepthPass();
 		void createLightCullingShader();
-		void createColorPass(Extent extent);
-		void createComposePass(Extent extent);
+		void createColorPass();
 
-		void resizeLightIndexBuffer(Extent extent);
+		void initializeMainRenderData(RenderTarget::MainRenderData& data, Extent extent);
 		
-		void updateDescriptorSets();
-
-		
-
 	public:
 		using IRenderTechnique::IRenderTechnique;
 
 		virtual void onWindowResize(Extent extent) override;
 
-		virtual void init(sa::RenderWindow* pWindow, IRenderLayer* = nullptr) override;
+		virtual void init() override;
 		virtual void cleanup() override;
 
 		virtual void updateData(RenderContext& context) override;
-		virtual void preRender(RenderContext& context, Camera* pCamera) override;
-		virtual void render(RenderContext& context, Camera* pCamera) override;
-		virtual void postRender(RenderContext& context) override;
+		virtual bool prepareRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget) override;
+		virtual void render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget) override;
+		virtual void endRender(RenderContext& context) override;
+
 
 		virtual void updateLights(Scene* pScene) override;
 		virtual void collectMeshes(Scene* pScene) override;

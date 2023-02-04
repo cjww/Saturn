@@ -1,2 +1,3 @@
-D:\repos\TestProject\TestProject.saproj
 D:\repos\TestProject2\TestProject2.saproj
+C:\Users\juliu\Documents\SaturnProjects\MyProject\MyProject\MyProject.saproj
+D:\repos\TestProject\TestProject.saproj

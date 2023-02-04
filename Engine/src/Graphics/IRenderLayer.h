@@ -2,29 +2,35 @@
 
 #include "Renderer.hpp"
 #include "RenderWindow.hpp"
-#include "Camera.h"
+#include "SceneCamera.h"
+
+#include "IRenderTechnique.h"
+#include "RenderTarget.h"
 
 namespace sa {
 
 	class IRenderLayer {
 	protected:
 		Renderer& m_renderer;
-		sa::Texture2D m_outputTexture;
-
+		bool m_isActive;
 	public:
 		IRenderLayer();
 		virtual ~IRenderLayer() = default;
 
-		virtual void init(RenderWindow* pWindow, IRenderLayer* pPreviousLayer = nullptr) = 0;
+		virtual void init(RenderWindow* pWindow, IRenderTechnique* pRenderTechnique = nullptr) = 0;
 		virtual void cleanup() = 0;
 
-		virtual void preRender(RenderContext& context, Camera* pCamera) {};
-		virtual void render(RenderContext& context, Camera* pCamera) {};
+		virtual void preRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* rendertarget) {};
+		virtual void render(RenderContext& context, SceneCamera* pCamera, RenderTarget* rendertarget) {};
 		virtual void postRender(RenderContext& context) {};
 
 		virtual void onWindowResize(Extent newExtent) = 0;
 
-		virtual const Texture2D& getOutputTexture() const;
+		virtual const Texture2D& getOutputTexture() const = 0;
+
+		bool isActive() const;
+		void setActive(bool active);
+
 
 	};
 }

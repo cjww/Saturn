@@ -19,7 +19,7 @@ bool sa::FileDialogs::OpenFile(const char* filter, std::filesystem::path& filePa
     ofn.lpstrFile = szfile;
     ofn.nMaxFile = sizeof(szfile);
     
-    ofn.lpstrInitialDir = initialPath.string().c_str();
+    ofn.lpstrInitialDir = initialPath.generic_string().c_str();
 
     ofn.lpstrFilter = filter;
     ofn.nFilterIndex = 1;
@@ -46,7 +46,7 @@ bool sa::FileDialogs::SaveFile(const char* filter, std::filesystem::path& filePa
     ofn.lpstrFile = szfile;
     ofn.nMaxFile = sizeof(szfile);
 
-    ofn.lpstrInitialDir = initialPath.string().c_str();
+    ofn.lpstrInitialDir = initialPath.generic_string().c_str();
 
     ofn.lpstrFilter = filter;
     ofn.nFilterIndex = 1;

@@ -2,14 +2,9 @@
 #include "IRenderTechnique.h"
 
 namespace sa {
-    IRenderTechnique::IRenderTechnique(bool renderToSwapchain)
-        : m_isRenderingToSwapchain(renderToSwapchain)
+    IRenderTechnique::IRenderTechnique()
+        : m_renderer(Renderer::get())
     {
 
     }
-
-    sa::Extent IRenderTechnique::getCurrentExtent() const {
-        return m_pWindow->getCurrentExtent();
-    }
-
 }

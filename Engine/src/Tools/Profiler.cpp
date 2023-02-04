@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Profiler.h"
 
-#include "Logger.hpp"
+#include "Tools/Logger.hpp"
 
 namespace sa {
 
@@ -11,8 +11,12 @@ namespace sa {
 	{
 	}
 
-	void Profiler::beginSession(const std::string& filepath)
-	{
+	Profiler::~Profiler() {
+		endSession();
+	}
+
+	void Profiler::beginSession(const std::string& filepath) {
+		SA_DEBUG_LOG_INFO("PROFILER: Starting session..., File: ", filepath);
 		if (m_outputStream.is_open())
 			return;
 
@@ -32,6 +36,8 @@ namespace sa {
 
 	void Profiler::endSession()
 	{
+		SA_DEBUG_LOG_INFO("PROFILER: Ending session...");
+
 		if (!m_outputStream.is_open())
 			return;
 

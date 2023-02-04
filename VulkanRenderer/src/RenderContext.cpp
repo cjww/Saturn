@@ -248,10 +248,12 @@ namespace sa {
 		m_pCommandBufferSet->getBuffer().dispatch(groupCountX, groupCountY, groupCountZ);
 	}
 
-	void RenderContext::barrier(const Texture& texture) {
+	void RenderContext::barrierColorAttachment(const Texture& texture) {
 
 		DeviceImage* pImage = (DeviceImage*)texture;
 		vk::ImageLayout newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		if (texture.getTypeFlags() & sa::TextureTypeFlagBits::STORAGE)
+			newLayout = vk::ImageLayout::eGeneral;
 
 
 		vk::ImageMemoryBarrier imageBarrier{
@@ -263,9 +265,11 @@ namespace sa {
 			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
 			.image = pImage->image,
 			.subresourceRange{
-				.aspectMask = vk::ImageAspectFlagBits::eDepth,
-				.levelCount = 1,
-				.layerCount = 1,
+				.aspectMask = vk::ImageAspectFlagBits::eColor,
+				.baseMipLevel = 0,
+				.levelCount = pImage->mipLevels,
+				.baseArrayLayer = 0,
+				.layerCount = pImage->arrayLayers,
 			},
 		};
 
@@ -273,10 +277,68 @@ namespace sa {
 
 		m_pCommandBufferSet->getBuffer().pipelineBarrier(
 			vk::PipelineStageFlagBits::eColorAttachmentOutput,
-			vk::PipelineStageFlagBits::eComputeShader,
+			vk::PipelineStageFlagBits::eFragmentShader,
 			(vk::DependencyFlags)0,
 			nullptr,
 			nullptr,
+			imageBarrier);
+	}
+
+	void RenderContext::barrierColorCompute(const Texture& texture) {
+
+		DeviceImage* pImage = (DeviceImage*)texture;
+		vk::ImageLayout newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		if (texture.getTypeFlags() & sa::TextureTypeFlagBits::STORAGE)
+			newLayout = vk::ImageLayout::eGeneral;
+
+		vk::ImageMemoryBarrier imageBarrier{
+			.srcAccessMask = vk::AccessFlagBits::eShaderWrite,
+			.dstAccessMask = vk::AccessFlagBits::eShaderRead,
+			.oldLayout = pImage->layout,
+			.newLayout = newLayout,
+			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.image = pImage->image,
+			.subresourceRange{
+				.aspectMask = vk::ImageAspectFlagBits::eColor,
+				.baseMipLevel = 0,
+				.levelCount = pImage->mipLevels,
+				.baseArrayLayer = 0,
+				.layerCount = pImage->arrayLayers,
+			},
+		};
+
+		pImage->layout = newLayout;
+
+		m_pCommandBufferSet->getBuffer().pipelineBarrier(
+			vk::PipelineStageFlagBits::eComputeShader,
+			vk::PipelineStageFlagBits::eFragmentShader,
+			(vk::DependencyFlags)0,
+			nullptr,
+			nullptr,
+			imageBarrier);
+	}
+
+	void RenderContext::barrierColorCompute(const Buffer& buffer) {
+
+		const DeviceBuffer* pBuffer = (const DeviceBuffer*)buffer;
+		
+		vk::BufferMemoryBarrier bufferBarrier {
+			.srcAccessMask = vk::AccessFlagBits::eShaderWrite,
+			.dstAccessMask = vk::AccessFlagBits::eShaderRead,
+			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.buffer = pBuffer->buffer,
+			.offset = 0,
+			.size = pBuffer->size,
+		};
+
+		m_pCommandBufferSet->getBuffer().pipelineBarrier(
+			vk::PipelineStageFlagBits::eComputeShader,
+			vk::PipelineStageFlagBits::eFragmentShader,
+			(vk::DependencyFlags)0,
+			nullptr,
+			bufferBarrier,
 			nullptr);
 	}
 
@@ -397,6 +459,62 @@ namespace sa {
 		);
 		pImage->layout = newLayout;
 	}
+
+	void RenderContext::copyImageToImageColor(const Texture& src, const Texture& dst) {
+		const DeviceImage* pSrc = src;
+		const DeviceImage* pDst = dst;
+
+		vk::ImageCopy region = {
+			.srcSubresource = {
+					.aspectMask = vk::ImageAspectFlagBits::eColor,
+					.mipLevel = 0,
+					.baseArrayLayer = 0,
+					.layerCount = 0,
+			},
+			.srcOffset = { 0, 0, 0 },
+			.dstSubresource = {
+					.aspectMask = vk::ImageAspectFlagBits::eColor,
+					.mipLevel = 0,
+					.baseArrayLayer = 0,
+					.layerCount = 0,
+			},
+			.dstOffset = { 0, 0, 0 },
+			.extent = pSrc->extent
+		};
+
+		m_pCommandBufferSet->getBuffer().copyImage(pSrc->image, pSrc->layout, pDst->image, pDst->layout, region);
+	}
+	
+	void RenderContext::copyImageToSwapchain(const Texture& src, ResourceID swapchain) {
+		const DeviceImage* pSrc = src;
+		Swapchain* pSwapchain = getSwapchain(swapchain);
+		vk::Image swapchainImage = pSwapchain->getImage(pSwapchain->getImageIndex());
+
+		vk::ImageCopy region = {
+			.srcSubresource = {
+					.aspectMask = vk::ImageAspectFlagBits::eColor,
+					.mipLevel = 0,
+					.baseArrayLayer = 0,
+					.layerCount = 1,
+			},
+			.srcOffset = { 0, 0, 0 },
+			.dstSubresource = {
+					.aspectMask = vk::ImageAspectFlagBits::eColor,
+					.mipLevel = 0,
+					.baseArrayLayer = 0,
+					.layerCount = 1,
+			},
+			.dstOffset = { 0, 0, 0 },
+			.extent = pSrc->extent
+		};
+
+		m_pCommandBufferSet->getBuffer().copyImage(pSrc->image, pSrc->layout, swapchainImage, vk::ImageLayout::ePresentSrcKHR, region);
+	}
+
+	uint32_t RenderContext::getFrameIndex() const {
+		return m_pCommandBufferSet->getBufferIndex();
+	}
+
 
 	SubContext::SubContext()
 		: RenderContext()

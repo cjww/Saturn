@@ -13,10 +13,9 @@ namespace sa {
 	};
 
 	struct alignas(16) LightData {
-		Color color = SA_COLOR_WHITE;	// 16 bytes
-		sa::Vector3 position = sa::Vector3(0);		// 12 bytes - 16 offset
-		float intensity = 1.0f;						// 4 bytes - 28 offset
-		float attenuationRadius = 7.0f;
+		Color color = SA_COLOR_WHITE;					// vec3 rgb, float intensity
+		glm::vec4 position = glm::vec4(0, 0, 0, 7);		// vec3 position, float attenuationRadius
+		glm::vec4 direction = glm::vec4(1, 0, 0, 0);	// vec3 direction,
 		LightType type = LightType::POINT;
 	};
 

@@ -2,12 +2,15 @@
 #include "Engine.h"
 
 namespace sa {
+	std::filesystem::path Engine::s_shaderDirectory = std::filesystem::current_path();
+
 	void Engine::registerComponentCallBacks(Scene& scene) {
 		registerComponentCallBack<comp::RigidBody>(scene);
 		registerComponentCallBack<comp::BoxCollider>(scene);
 		registerComponentCallBack<comp::SphereCollider>(scene);
 		registerComponentCallBack<comp::Transform>(scene);
 		registerComponentCallBack<comp::Model>(scene);
+		registerComponentCallBack<comp::Camera>(scene);
 	}
 
 	void Engine::registerMath() {
@@ -35,10 +38,10 @@ namespace sa {
 					}
 					throw std::runtime_error("Vec3 __div: Unmatched type");
 				},
-
-					sol::meta_function::length, &Vector3::length,
-					sol::meta_function::to_string, &Vector3::toString
-					);
+				sol::meta_function::length, &Vector3::length,
+				sol::meta_function::to_string, &Vector3::toString
+			);
+			
 			type["x"] = &Vector3::x;
 			type["y"] = &Vector3::y;
 			type["z"] = &Vector3::z;
@@ -157,7 +160,6 @@ namespace sa {
 	}
 
 	void Engine::reg() {
-		
 		registerMath();
 
 		auto& lua = LuaAccessable::getState();
@@ -175,8 +177,41 @@ namespace sa {
 			}
 			return &getScene(sceneName.as<std::string>());
 		};
-		
 
+		lua["Serialize"] = [](sol::lua_value table, sol::this_environment thisEnv) {
+			if (!table.is<sol::table>()) {
+				SA_DEBUG_LOG_ERROR("First argument is not a table");
+				return;
+			}
+			sol::table t = table.as<sol::table>();
+			sol::environment& env = thisEnv;
+			sa::Entity entity = env["entity"];
+			std::string scriptName = env["scriptName"];
+			
+			EntityScript* pScript = entity.getScript(scriptName);
+			if (!pScript) {
+				SA_DEBUG_LOG_ERROR("No such script! ", scriptName);
+				return;
+			}
+			
+			for (auto& [key, value] : t) {
+				sol::object v = value;
+				std::string variableName = key.as<std::string>();
+				// if stored load stored value
+				if (pScript->serializedData.count(variableName)) {
+					value = pScript->serializedData[variableName];
+				}
+				else {
+					// else store this value
+					pScript->serializedData[variableName] = value;
+				}
+				// initialize variable with appropriate value
+				env[variableName] = value;
+			}
+			
+			
+			//SA_DEBUG_LOG_INFO("Serialize");
+		};
 
 		/*
 		{
@@ -192,13 +227,36 @@ namespace sa {
 	}
 
 	void Engine::onWindowResize(Extent newExtent) {
-		publish<sa::engine_event::WindowResized>(newExtent);
+		m_renderPipeline.onWindowResize(newExtent);
+		publish<sa::engine_event::WindowResized>(m_windowExtent, newExtent);
+		
+		/*
+		for (auto& [name, scene] : m_scenes) {
+			scene.view<comp::Camera>().each([&](comp::Camera& camera) {
+				sa::Rect viewport = camera.camera.getViewport();
+				// resize viewport but keep relative size to window size
+				viewport.extent.width = newExtent.width * viewport.extent.width / (float)m_windowExtent.width;
+				viewport.extent.height = newExtent.height * viewport.extent.height / (float)m_windowExtent.height;
+				camera.camera.setViewport(viewport);
+			});
+		}
+		*/
+
+		
 		m_windowExtent = newExtent;
+	}
+
+	const std::filesystem::path& Engine::getShaderDirectory() {
+		return s_shaderDirectory;
+	}
+
+	void Engine::setShaderDirectory(const std::filesystem::path& path) {
+		s_shaderDirectory = std::filesystem::absolute(path);
 	}
 
 	void Engine::setup(sa::RenderWindow* pWindow, bool enableImgui) {
 		SA_PROFILE_FUNCTION();
-
+		
 		m_currentScene = nullptr;
 		m_pWindow = pWindow;
 		
@@ -209,31 +267,18 @@ namespace sa {
 		Entity::reg();
 		
 		if (pWindow) {
-			m_renderPipeline.create(pWindow, new ForwardPlus(!enableImgui));
-			if (enableImgui)
-				m_renderPipeline.pushLayer(new ImGuiRenderLayer);
+			m_renderPipeline.create(pWindow, new ForwardPlus);
+			
+			m_renderPipeline.pushLayer(new MainRenderLayer);
+			m_renderPipeline.pushLayer(new BloomRenderLayer);
+			if (enableImgui) {
+				m_renderPipeline.pushOverlay(new ImGuiRenderLayer);
+			}
+			
 
 			pWindow->setResizeCallback(std::bind(&Engine::onWindowResize, this, std::placeholders::_1));
 			m_windowExtent = pWindow->getCurrentExtent();
 
-			on<engine_event::WindowResized>([&](engine_event::WindowResized& e, Engine& emitter) {
-				m_renderPipeline.onWindowResize(e.newExtent);
-
-				for (const auto& [id, scene] : m_scenes) {
-					for (auto& cam : scene.getActiveCameras()) {
-						Rect viewport = cam->getViewport();
-						// resize viewport but keep relative size to window size
-						
-						viewport.extent.width = e.newExtent.width * viewport.extent.width / (float)m_windowExtent.width;
-						viewport.extent.height = e.newExtent.height * viewport.extent.height / (float)m_windowExtent.height;
-						
-						cam->setViewport(viewport);
-					}
-				}
-
-				m_windowExtent = e.newExtent;
-
-			});
 		}
 		
 		on<engine_event::SceneSet>([](engine_event::SceneSet& e, Engine&) {
@@ -242,6 +287,7 @@ namespace sa {
 			}
 			e.newScene->onRuntimeStart();
 		});
+		
 	}
 
 	void Engine::cleanup() {
@@ -260,7 +306,11 @@ namespace sa {
 		if (!m_pWindow)
 			return;
 
-		m_renderPipeline.render(getCurrentScene());
+		RenderContext context = m_renderPipeline.beginScene(getCurrentScene());
+		if (context) {
+			publish<engine_event::OnRender>(&context, &m_renderPipeline);
+			m_renderPipeline.endScene();
+		}
 	}
 
 	std::chrono::duration<double, std::milli> Engine::getCPUFrameTime() const {
@@ -285,7 +335,7 @@ namespace sa {
 
 	Scene& Engine::loadSceneFromFile(const std::filesystem::path& path) {
 		simdjson::ondemand::parser parser;
-		auto json = simdjson::padded_string::load(path.string());
+		auto json = simdjson::padded_string::load(path.generic_string());
 		if (json.error()) {
 			throw std::runtime_error("JSON load failed : " + std::string(simdjson::error_message(json.error())));
 		}
