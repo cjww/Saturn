@@ -44,6 +44,8 @@ namespace sa {
 
 	typedef std::function<void(Joystick, ConnectionState)> JoystickConnectedCallback;
 
+	typedef std::function<void(int, const char**)> DragDropCallback;
+
 
 	class Window {
 	private:
@@ -62,6 +64,8 @@ namespace sa {
 		std::vector<KeyCallback> m_onKeyFunctions;
 		std::vector<MouseButtonCallback> m_onMouseButtonFunctions;
 		std::vector<ScrollCallback> m_onScrollFunctions;
+		std::vector<DragDropCallback> m_onDragDropFunctions;
+
 		
 	protected:
 		static void onResize(GLFWwindow* window, int width, int height);
@@ -70,6 +74,8 @@ namespace sa {
 		static void onMouseButton(GLFWwindow* window, int button, int action, int mods);
 		static void onScroll(GLFWwindow* window, double x, double y);
 		static void onClose(GLFWwindow* window);
+		static void onDragDrop(GLFWwindow* window, int count, const char** pathUTF8);
+
 		static void onJoystickDetect(int jid, int state);
 
 		virtual void create(uint32_t width, uint32_t height, const char* title, GLFWmonitor* monitor);
@@ -137,6 +143,7 @@ namespace sa {
 		void addKeyCallback(KeyCallback func);
 		void addMouseButtonCallback(MouseButtonCallback func);
 		void addScrollCallback(ScrollCallback func);
+		void addDragDropCallback(DragDropCallback func);
 
 		bool wasResized() const;
 		bool isIconified() const;

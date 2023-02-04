@@ -70,6 +70,13 @@ namespace sa {
 		w->close();
 	}
 
+	void Window::onDragDrop(GLFWwindow* window, int count, const char** pathUTF8) { 
+		Window* thisWindow = (Window*)glfwGetWindowUserPointer(window);
+		for (auto& func : thisWindow->m_onDragDropFunctions) {
+			func(count, pathUTF8);
+		}
+	}
+
 	void Window::onJoystickDetect(int jid, int state) {
 		if (s_onJoystickDetectFunction) {
 			if (state == GLFW_CONNECTED) {	
@@ -96,6 +103,7 @@ namespace sa {
 		glfwSetMouseButtonCallback(m_window, &Window::onMouseButton);
 		glfwSetScrollCallback(m_window, &Window::onScroll);
 		glfwSetWindowCloseCallback(m_window, &Window::onClose);
+		glfwSetDropCallback(m_window, &Window::onDragDrop);
 		
 		glfwSetJoystickCallback(&Window::onJoystickDetect);
 
@@ -410,6 +418,10 @@ namespace sa {
 
 	void Window::addScrollCallback(ScrollCallback func) {
 		m_onScrollFunctions.push_back(func);
+	}
+
+	void Window::addDragDropCallback(DragDropCallback func) {
+		m_onDragDropFunctions.push_back(func);
 	}
 
 	void Window::addMouseButtonCallback(MouseButtonCallback func) {

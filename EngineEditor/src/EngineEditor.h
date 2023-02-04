@@ -23,6 +23,8 @@ namespace sa {
 		} m_state = State::EDIT;
 
 		sa::Engine* m_pEngine;
+		sa::RenderWindow* m_pWindow;
+
 		std::vector<std::unique_ptr<EditorModule>> m_editorModules;
 		
 		std::filesystem::path m_projectFile;
@@ -69,6 +71,8 @@ namespace sa {
 		
 		std::filesystem::path editorRelativePath(const std::filesystem::path& editorRelativePath);
 		std::vector<std::filesystem::path> fetchAllScriptsInProject();
+
+		RenderWindow* getWindow() const;
 
 	};
 }

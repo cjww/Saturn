@@ -334,9 +334,11 @@ namespace sa {
 
 	void EngineEditor::onAttach(sa::Engine& engine, sa::RenderWindow& renderWindow) {
 		m_pEngine = &engine;
+		m_pWindow = &renderWindow;
 
 		m_editorPath = std::filesystem::current_path();
 		
+
 		ImGui::SetupImGuiStyle();
 		engine.on<engine_event::WindowResized>([](const engine_event::WindowResized& e, Engine& engine) {
 			ImGui::SetupImGuiStyle();
@@ -548,5 +550,8 @@ namespace sa {
 			}
 		}
 		return std::move(paths);
+	}
+	RenderWindow* EngineEditor::getWindow() const {
+		return m_pWindow;
 	}
 }

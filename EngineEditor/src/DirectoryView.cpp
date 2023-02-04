@@ -3,6 +3,8 @@
 #include "AssetManager.h"
 #include "Assets/ModelAsset.h"
 
+#include "EngineEditor.h"
+
 DirectoryView::DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor) 
 	: EditorModule(pEngine, pEditor, "Directory View", true)
 {
@@ -37,8 +39,11 @@ DirectoryView::DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor)
 
 
 	modelAsset = sa::AssetManager::get().getAsset(id);
-	*/
 
+	m_pEditor->getWindow()->addDragDropCallback([](int count, const char** paths) {
+		SA_DEBUG_LOG_INFO("OnDragDrop: ", count);
+	});
+	*/
 }
 
 void DirectoryView::onImGui() {
