@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "RenderPipeline.h"
+#include "Engine.h"
 
 namespace sa {
 
@@ -43,7 +44,7 @@ namespace sa {
 			.end();
 
 		m_swapchainPipeline = renderer.createGraphicsPipeline(m_swapchainRenderProgram, 0, newExtent,
-			"../Engine/shaders/TransferToSwapchain.vert.spv", "../Engine/shaders/TransferToSwapchain.frag.spv");
+			(Engine::getShaderDirectory()  / "TransferToSwapchain.vert.spv").generic_string(), (Engine::getShaderDirectory() / "TransferToSwapchain.frag.spv").generic_string());
 
 		std::vector<Texture> textures;
 		m_swapchainFramebuffer = renderer.createSwapchainFramebuffer(m_swapchainRenderProgram, m_pWindow->getSwapchainID(), textures);
@@ -68,8 +69,7 @@ namespace sa {
 			.end();
 
 		m_swapchainPipeline = renderer.createGraphicsPipeline(m_swapchainRenderProgram, 0, m_pWindow->getCurrentExtent(),
-			"../Engine/shaders/TransferToSwapchain.vert.spv", "../Engine/shaders/TransferToSwapchain.frag.spv");
-
+			(Engine::getShaderDirectory() / "TransferToSwapchain.vert.spv").generic_string(), (Engine::getShaderDirectory() / "TransferToSwapchain.frag.spv").generic_string());
 		std::vector<Texture> textures;
 		m_swapchainFramebuffer = renderer.createSwapchainFramebuffer(m_swapchainRenderProgram, m_pWindow->getSwapchainID(), textures);
 		m_swapchainDescriptorSet = renderer.allocateDescriptorSet(m_swapchainPipeline, 0);

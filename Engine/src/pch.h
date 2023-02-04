@@ -53,6 +53,7 @@
 #include <glm/common.hpp>
 
 // My code
+#include "UUID.h"
 //#include "Tools/Profiler.h"
 //#include <Tools/Logger.hpp>
 

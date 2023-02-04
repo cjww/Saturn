@@ -25,7 +25,7 @@ namespace sa {
 	}
 
 	Entity TestLayer::createModelEntity(Engine& engine, const std::filesystem::path& modelPath, float scale) {
-		Entity entity = engine.getCurrentScene()->createEntity(modelPath.filename().string());
+		Entity entity = engine.getCurrentScene()->createEntity(modelPath.filename().generic_string());
 
 		comp::Model* model = entity.addComponent<comp::Model>();
 

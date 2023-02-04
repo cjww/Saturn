@@ -42,7 +42,7 @@ void EntityInspector::makePopups() {
 		if (ImGui::BeginListBox("##ScriptFileList")) {
 
 			for (auto& path : paths) {
-				std::string scriptName = sa::utils::toLower(path.filename().string());
+				std::string scriptName = sa::utils::toLower(path.filename().generic_string());
 				if (scriptName.find(sa::utils::toLower(filter)) == std::string::npos) {
 					continue;
 				}

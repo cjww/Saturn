@@ -2,6 +2,8 @@
 #include "Engine.h"
 
 namespace sa {
+	std::filesystem::path Engine::s_shaderDirectory = std::filesystem::current_path();
+
 	void Engine::registerComponentCallBacks(Scene& scene) {
 		registerComponentCallBack<comp::RigidBody>(scene);
 		registerComponentCallBack<comp::BoxCollider>(scene);
@@ -244,9 +246,17 @@ namespace sa {
 		m_windowExtent = newExtent;
 	}
 
+	const std::filesystem::path& Engine::getShaderDirectory() {
+		return s_shaderDirectory;
+	}
+
+	void Engine::setShaderDirectory(const std::filesystem::path& path) {
+		s_shaderDirectory = std::filesystem::absolute(path);
+	}
+
 	void Engine::setup(sa::RenderWindow* pWindow, bool enableImgui) {
 		SA_PROFILE_FUNCTION();
-
+		
 		m_currentScene = nullptr;
 		m_pWindow = pWindow;
 		
@@ -325,7 +335,7 @@ namespace sa {
 
 	Scene& Engine::loadSceneFromFile(const std::filesystem::path& path) {
 		simdjson::ondemand::parser parser;
-		auto json = simdjson::padded_string::load(path.string());
+		auto json = simdjson::padded_string::load(path.generic_string());
 		if (json.error()) {
 			throw std::runtime_error("JSON load failed : " + std::string(simdjson::error_message(json.error())));
 		}

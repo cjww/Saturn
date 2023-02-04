@@ -297,6 +297,8 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Assets\IAsset.cpp" />
+    <ClCompile Include="src\Assets\ModelAsset.cpp" />
     <ClCompile Include="src\ECS\Components\BoxCollider.cpp" />
     <ClCompile Include="deps\simdjson\src\simdjson.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
@@ -348,8 +350,11 @@
     <ClCompile Include="src\Tools\utils.cpp" />
     <ClCompile Include="src\Tools\Vector.cpp" />
     <ClCompile Include="src\EntityHierarchy.cpp" />
+    <ClCompile Include="src\UUID.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Assets\IAsset.h" />
+    <ClInclude Include="src\Assets\ModelAsset.h" />
     <ClInclude Include="src\ECS\Components\BoxCollider.h" />
     <ClInclude Include="src\ECS\Components\Camera.h" />
     <ClInclude Include="src\ECS\Components\Light.h" />
@@ -397,6 +402,7 @@
     <ClInclude Include="src\Tools\utils.h" />
     <ClInclude Include="src\Tools\Vector.h" />
     <ClInclude Include="src\EntityHierarchy.h" />
+    <ClInclude Include="src\UUID.h" />
     <ClInclude Include="src\Vertex.h" />
     <ClInclude Include="src\ECS\Entity.h" />
     <ClInclude Include="src\AssetManager.h" />

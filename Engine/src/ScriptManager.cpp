@@ -113,7 +113,7 @@ namespace sa {
 		}
 
 
-		std::string scriptName = path.filename().replace_extension().string();
+		std::string scriptName = path.filename().replace_extension().generic_string();
 		if (m_entityScriptIndices[entity].count(scriptName)) {
 			return {}; // don't add same script again
 		}
@@ -123,7 +123,7 @@ namespace sa {
 
 		if (!m_scripts.count(hashedString)) {
 			// load file as function
-			m_scripts[hashedString] = lua.load_file(path.string());
+			m_scripts[hashedString] = lua.load_file(path.generic_string());
 		}
 
 		sol::environment env = sol::environment(lua, sol::create, lua.globals());

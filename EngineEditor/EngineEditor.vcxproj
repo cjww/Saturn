@@ -264,6 +264,7 @@
     <ClCompile Include="deps\ImGuizmo\ImGuizmo.cpp" />
     <ClCompile Include="deps\simdjson\src\simdjson.cpp" />
     <ClCompile Include="src\CustomImGui.cpp" />
+    <ClCompile Include="src\DirectoryView.cpp" />
     <ClCompile Include="src\EditorModule.cpp" />
     <ClCompile Include="src\EngineEditor.cpp" />
     <ClCompile Include="src\EntityInspector.cpp" />
@@ -286,6 +287,7 @@
     <ClInclude Include="src\SceneHierarchy.h" />
     <ClInclude Include="src\SceneView.h" />
     <ClInclude Include="src\TestLayer.h" />
+    <ClInclude Include="src\DirectoryView.h" />
     <ClInclude Include="src\Tools\FileDialogs.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

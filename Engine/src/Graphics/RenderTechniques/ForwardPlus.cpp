@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "ForwardPlus.h"
 
+#include "Engine.h"
+
 namespace sa {
 	void ForwardPlus::createPreDepthPass() {
 		
@@ -24,8 +26,8 @@ namespace sa {
 			m_lightCullingPipeline = NULL_RESOURCE;
 		}
 
-		m_lightCullingPipeline = m_renderer.createComputePipeline("../Engine/shaders/LightCulling.comp.spv");
-
+		m_lightCullingPipeline = m_renderer.createComputePipeline((Engine::getShaderDirectory() / "LightCulling.comp.spv").generic_string());
+		
 	}
 
 	void ForwardPlus::createColorPass() {
@@ -64,7 +66,7 @@ namespace sa {
 		PipelineSettings settings = {};
 		settings.dynamicStates.push_back(DynamicState::VIEWPORT);
 		data.depthPipeline = m_renderer.createGraphicsPipeline(m_depthPreRenderProgram, 0, extent,
-			"../Engine/shaders/ForwardPlusColorPass.vert.spv", settings);
+			(Engine::getShaderDirectory()  / "ForwardPlusColorPass.vert.spv").generic_string(), settings);
 		
 		data.sceneDepthDescriptorSet = m_renderer.allocateDescriptorSet(data.depthPipeline, 0);
 
@@ -83,7 +85,7 @@ namespace sa {
 		// Color pass
 		data.colorFramebuffer = m_renderer.createFramebuffer(m_colorRenderProgram, { data.colorTexture, data.depthTexture });
 		data.colorPipeline = m_renderer.createGraphicsPipeline(m_colorRenderProgram, 0, extent,
-			"../Engine/shaders/ForwardPlusColorPass.vert.spv", "../Engine/shaders/ForwardPlusColorPass.frag.spv", settings);
+			(Engine::getShaderDirectory()  / "ForwardPlusColorPass.vert.spv").generic_string(), (Engine::getShaderDirectory() / "ForwardPlusColorPass.frag.spv").generic_string(), settings);
 
 		data.sceneDescriptorSet = m_renderer.allocateDescriptorSet(data.colorPipeline, SET_PER_FRAME);
 
@@ -269,7 +271,7 @@ namespace sa {
 
 		m_debugLightHeatmapFramebuffer = m_renderer.createFramebuffer(m_debugLightHeatmapRenderProgram, { m_debugLightHeatmap });
 		m_debugLightHeatmapPipeline = m_renderer.createGraphicsPipeline(m_debugLightHeatmapRenderProgram, 0, { m_tileCount.x, m_tileCount.y },
-			"../Engine/shaders/DebugHeatmap.vert.spv",
+			(Engine::getShaderDirectory()  / "DebugHeatmap.vert.spv",
 			"../Engine/shaders/DebugHeatmap.frag.spv"
 			);
 		m_debugLightHeatmapDescriptorSet = m_renderer.allocateDescriptorSet(m_debugLightHeatmapPipeline, 0);

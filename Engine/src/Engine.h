@@ -23,9 +23,9 @@ namespace sa {
 
 	class Engine : public entt::emitter<Engine> {
 	private:
+		static std::filesystem::path s_shaderDirectory;
 		
 		RenderPipeline m_renderPipeline;
-
 
 		Extent m_windowExtent;
 		RenderWindow* m_pWindow;
@@ -49,6 +49,10 @@ namespace sa {
 		void onWindowResize(Extent newExtent);
 
 	public:
+		static const std::filesystem::path& getShaderDirectory();
+		static void setShaderDirectory(const std::filesystem::path& path);
+
+
 		// Call this to set up engine
 		void setup(sa::RenderWindow* pWindow = nullptr, bool enableImgui = false);
 

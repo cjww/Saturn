@@ -1,13 +1,13 @@
 #include "pch.h"
 #include "BloomRenderLayer.h"
-
+#include "Engine.h"
 namespace sa {
 
 	void BloomRenderLayer::init(RenderWindow* pWindow, IRenderTechnique* pRenderTechnique) {
 
 		m_pRenderTechnique = pRenderTechnique;
-
-		m_bloomPipeline = m_renderer.createComputePipeline("../Engine/shaders/BloomShader.comp.spv");
+		
+		m_bloomPipeline = m_renderer.createComputePipeline((Engine::getShaderDirectory() / "BloomShader.comp.spv").generic_string());
 
 
 		m_bloomPreferencesDescriptorSet = m_renderer.allocateDescriptorSet(m_bloomPipeline, 1);

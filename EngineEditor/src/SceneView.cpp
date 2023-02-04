@@ -4,6 +4,7 @@
 
 #include <limits>
 
+#include "EngineEditor.h"
 
 SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWindow* pWindow)
 	: EditorModule(pEngine, pEditor, "Scene View", false)
@@ -262,8 +263,8 @@ void SceneView::onImGui() {
 		glm::vec2 screenSize = { imageSize.x, imageSize.y };
 
 		if (showIcons) {
-			sa::Texture2D* tex = sa::AssetManager::get().loadTexture("resources/lightbulb-icon.png", true);
-			sa::Texture2D* sunTexture = sa::AssetManager::get().loadTexture("resources/sun-icon.png", true);
+			sa::Texture2D* tex = sa::AssetManager::get().loadTexture(m_pEditor->editorRelativePath("resources/lightbulb-icon.png"), true);
+			sa::Texture2D* sunTexture = sa::AssetManager::get().loadTexture(m_pEditor->editorRelativePath("resources/sun-icon.png"), true);
 			m_pEngine->getCurrentScene()->forEach<comp::Light>([&](const comp::Light& light) {
 				ImColor color(light.values.color);
 				switch (light.values.type) {
@@ -282,8 +283,8 @@ void SceneView::onImGui() {
 				
 
 			});
-
-			tex = sa::AssetManager::get().loadTexture("resources/camera-transparent.png", true);
+			
+			tex = sa::AssetManager::get().loadTexture(m_pEditor->editorRelativePath("resources/camera-transparent.png"), true);
 			m_pEngine->getCurrentScene()->forEach<comp::Camera>([&](const comp::Camera& camera) {
 				ImGui::GizmoIcon(tex, camera.camera.getPosition(), &m_camera, screenPos, screenSize, iconSize, ImColor(1.f, 1.f, 1.f, 1.f));
 			});

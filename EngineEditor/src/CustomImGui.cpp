@@ -369,7 +369,7 @@ namespace ImGui {
 	}
 
 	void viewFile(std::filesystem::path filePath) {
-		ImGui::Selectable(filePath.filename().string().c_str());
+		ImGui::Selectable(filePath.filename().generic_string().c_str());
 	}
 
 	void viewDirectory(const std::filesystem::path& directory, std::filesystem::path& openDirectory) {
@@ -380,7 +380,7 @@ namespace ImGui {
 		std::filesystem::perms flags = std::filesystem::perms::owner_write | std::filesystem::perms::owner_read;
 		*/
 		
-		bool opened = ImGui::TreeNodeEx(directory.filename().string().c_str(), ImGuiTreeNodeFlags_OpenOnArrow);
+		bool opened = ImGui::TreeNodeEx(directory.filename().generic_string().c_str(), ImGuiTreeNodeFlags_OpenOnArrow);
 		if (ImGui::IsItemClicked()) {
 			openDirectory = directory;
 		}
@@ -436,7 +436,7 @@ namespace ImGui {
 			ImGui::SameLine();
 			if (ImGui::BeginChild((std::string(str_id) + "1").c_str(), viewArea)) {
 				
-				ImGui::Text(openDirectory.string().c_str());
+				ImGui::Text(openDirectory.generic_string().c_str());
 				ImGui::SameLine();
 
 				ImGui::SetNextItemWidth(200);
