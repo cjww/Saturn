@@ -260,10 +260,12 @@ namespace sa {
 			if (!FileDialogs::SaveFile("Saturn Scene (*.json)\0*.json\0", path)) {
 				return false;
 			}
-			it = m_savedScenes.insert({ pScene, path }).first;
+			it = m_savedScenes.insert({ pScene, std::filesystem::proximate(path) }).first;
 		}
 
 		m_pEngine->storeSceneToFile(pScene, it->second);
+
+		saveProject(m_projectFile);
 		return true;
 	}
 
@@ -274,7 +276,7 @@ namespace sa {
 			if (!FileDialogs::OpenFile("Saturn Scene (*.json)\0*.json\0", path)) {
 				return false;
 			}
-			it = m_savedScenes.insert({ pScene, path }).first;
+			it = m_savedScenes.insert({ pScene, std::filesystem::proximate(path) }).first;
 		}
 
 		m_pEngine->loadSceneFromFile(it->second);
@@ -340,6 +342,9 @@ namespace sa {
 
 		m_editorPath = std::filesystem::current_path();
 		
+		renderWindow.addDragDropCallback([&](int count, const char** paths) {
+			m_pEngine->publish<editor_event::DragDropped>(count, paths);
+		});
 
 		ImGui::SetupImGuiStyle();
 		engine.on<engine_event::WindowResized>([](const engine_event::WindowResized& e, Engine& engine) {
@@ -356,7 +361,6 @@ namespace sa {
 			}
 			e.newScene->onRuntimeStart();
 		});
-
 
 		m_editorModules.push_back(std::make_unique<SceneView>(&engine, this, &renderWindow));
 
@@ -379,7 +383,7 @@ namespace sa {
 		m_playPauseTex = Texture2D(playPauseButtons, true);
 
 		// read recent projects
-		std::ifstream recentProjectsFile("recent_projects.txt");
+		std::ifstream recentProjectsFile(m_editorPath / "recent_projects.txt");
 		std::string line;
 		if (recentProjectsFile) {
 			while (!recentProjectsFile.eof()) {
@@ -393,7 +397,7 @@ namespace sa {
 
 	void EngineEditor::onDetach() {
 		
-		std::ofstream recentProjectsFile("recent_projects.txt");
+		std::ofstream recentProjectsFile(m_editorPath / "recent_projects.txt");
 		for (const auto& path : m_recentProjectPaths) {
 			recentProjectsFile << path.generic_string() << "\n";
 		}

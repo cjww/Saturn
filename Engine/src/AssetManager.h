@@ -140,7 +140,7 @@ namespace sa {
 		UUID id;
 		auto [it, success] = m_assets.insert({ id, std::make_unique<T>(id) });
 		IAsset* asset = it->second.get();
-		
+
 		auto filename = path.filename().replace_extension(".asset");
 		asset->setAssetPath(SA_ASSET_DIR / filename); // The path the asset will write to
 

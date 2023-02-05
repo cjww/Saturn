@@ -40,10 +40,15 @@ DirectoryView::DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor)
 
 	modelAsset = sa::AssetManager::get().getAsset(id);
 
-	m_pEditor->getWindow()->addDragDropCallback([](int count, const char** paths) {
-		SA_DEBUG_LOG_INFO("OnDragDrop: ", count);
-	});
 	*/
+	m_pEngine->on<sa::editor_event::DragDropped>([](const sa::editor_event::DragDropped& e, const sa::Engine& engine) {
+		for (uint32_t i = 0; i < e.count; i++) {
+			std::filesystem::path path = e.paths[i];
+			if (path.extension() == ".gltf") {
+				sa::AssetManager::get().importAsset<sa::ModelAsset>(path);
+			}
+		}
+	});
 }
 
 void DirectoryView::onImGui() {
