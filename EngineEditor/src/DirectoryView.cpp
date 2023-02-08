@@ -71,9 +71,20 @@ void DirectoryView::onImGui() {
 		if (ImGui::BeginListBox("Assets")) {
 			for (auto& [id, asset] : assets) {
 				std::string label = asset->getName() + "\t"
-					+ (asset->isLoaded() ? "Loaded\t" : "Unloaded\t")
 					+ asset->getAssetPath().generic_string() + "\t"
+					+ std::to_string((int)asset->getType()) + "\t"
 					+ std::to_string(asset->getHeader().id);
+				if (!asset->isLoaded()) {
+					if (!asset->getProgress().isDone()) {
+						label += "\t" + std::to_string(asset->getProgress().getProgress());
+					}
+					else {
+						label += "\tUnloaded";
+					}
+				}
+				else {
+					label += "\tLoaded";
+				}
 
 				if (ImGui::Selectable(label.c_str(), selected == asset.get())) {
 					selected = asset.get();

@@ -27,6 +27,8 @@ namespace sa {
 		void wait(const std::chrono::seconds& timeout);
 		bool isDone() const;
 
+		void reset();
+
 		operator T();
 
 	};
@@ -76,6 +78,11 @@ namespace sa {
 	template<typename T>
 	inline bool ProgressView<T>::isDone() const {
 		return m_future._Is_ready();
+	}
+
+	template<typename T>
+	inline void ProgressView<T>::reset() {
+		m_count = 0;
 	}
 
 	template<typename T>

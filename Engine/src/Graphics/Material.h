@@ -240,5 +240,6 @@ namespace sa {
 	
 		void setTextures(const std::vector<BlendedTexture>& textures, MaterialTextureType type);
 		const std::vector<Texture>& getTextures() const;
+
 	};
 }

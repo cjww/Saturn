@@ -31,6 +31,10 @@ namespace sa {
 		return m_isLoaded;
 	}
 
+	const ProgressView<bool>& IAsset::getProgress() const {
+		return m_progress;
+	}
+
 	AssetType IAsset::getType() const {
 		return m_header.type;
 	}

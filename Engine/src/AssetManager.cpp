@@ -15,7 +15,7 @@
 #include "Assets\ModelAsset.h"
 
 namespace sa {
-
+	/*
 	bool searchForFile(const std::filesystem::path& directory, const std::filesystem::path& filename, std::filesystem::path& outPath) {
 		outPath = directory / filename;
 		if (std::filesystem::exists(outPath)) {
@@ -157,6 +157,7 @@ namespace sa {
 			return { color.r, color.g, color.b, 1 };
 		return defaultColor;
 	}
+	*/
 
 	void AssetManager::locateAssetPackages() {
 		
@@ -502,6 +503,7 @@ namespace sa {
 	}
 
 	void AssetManager::loadAssimpModel(const std::filesystem::path& path, ModelData* pModel, ProgressView<ResourceID>& progress) {
+		/*
 		SA_PROFILE_FUNCTION();
 		Assimp::Importer importer;
 
@@ -577,6 +579,7 @@ namespace sa {
 			mesh.materialID = materials[mesh.materialID]; // swap index to material ID
 			m_materials[mesh.materialID] = ResourceManager::get().get<Material>(mesh.materialID);
 		}
+		*/
 	}
 
 	ResourceID AssetManager::loadModel(const std::filesystem::path& path, ProgressView<ResourceID>& progress) {
@@ -600,6 +603,7 @@ namespace sa {
 		m_models[id] = model;
 		loadAssimpModel(path, model, progress);
 		return id;
+		
 	}
 
 	AssetManager::~AssetManager() {

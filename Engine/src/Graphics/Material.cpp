@@ -36,7 +36,6 @@ namespace sa {
 	}
 
 	void Material::update() {
-		Renderer& renderer = Renderer::get();
 		values.diffuseMapCount = m_textures[MaterialTextureType::DIFFUSE].size();
 		values.diffuseMapFirst = 0;
 		
@@ -67,6 +66,7 @@ namespace sa {
 	const std::vector<Texture>& Material::getTextures() const {
 		return m_allTextures;
 	}
+
 	
 	std::string toString(MaterialTextureType type) {
 		switch (type) {

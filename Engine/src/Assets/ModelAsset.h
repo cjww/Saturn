@@ -4,15 +4,18 @@
 #include "AssetManager.h"
 
 namespace sa {
+
 	class ModelAsset : public IAsset {
 	private:
 		ResourceID m_id;
+
+		bool loadAssimpModel(const std::filesystem::path& path);
+
 	public:
 		using IAsset::IAsset;
 
-		ModelData* data = nullptr;
-
-		
+		//Data
+		ModelData data;
 
 		/*
 		virtual bool create(const std::string& name) override {
@@ -23,12 +26,6 @@ namespace sa {
 		virtual bool importFromFile(const std::filesystem::path& path) override;
 
 		
-		virtual bool loadFromPackage(std::ifstream& file) override;
-		virtual bool loadFromFile(const std::filesystem::path& path) override;
-
-		virtual bool writeToPackage(std::ofstream& file) override;
-		virtual bool writeToFile(const std::filesystem::path& path) override;
-
 		virtual bool load() override;
 		virtual bool write() override;
 

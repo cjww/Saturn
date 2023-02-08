@@ -35,7 +35,7 @@ namespace sa {
 		std::vector<VertexNormalUV> vertices;
 		std::vector<uint32_t> indices;
 
-		ResourceID materialID;
+		UUID materialID;
 	};
 
 	struct ModelData {
@@ -70,6 +70,7 @@ namespace sa {
 
 
 		// Assets
+		std::unordered_map<std::filesystem::path, UUID> m_importedAssets;
 		std::unordered_map<UUID, std::unique_ptr<IAsset>> m_assets;
 		std::list<AssetPackage> m_assetPackages;
 
@@ -85,10 +86,6 @@ namespace sa {
 		void loadAssetPackage(AssetPackage& package);
 
 		AssetPackage& newAssetPackage(const std::filesystem::path& path);
-		
-		template<typename T, typename ...Args>
-		T* allocateAsset(Args&&... args);
-
 
 	public:
 		~AssetManager();
@@ -124,9 +121,11 @@ namespace sa {
 		template<typename T>
 		T* importAsset(const std::filesystem::path& path);
 
+		template<typename T>
+		T* createAsset(const std::string& name);
+
 		void removeAsset(IAsset* asset);
 		void removeAsset(UUID id);
-
 
 	};
 
@@ -138,13 +137,39 @@ namespace sa {
 	template<typename T>
 	inline T* AssetManager::importAsset(const std::filesystem::path& path) {
 		UUID id;
-		auto [it, success] = m_assets.insert({ id, std::make_unique<T>(id) });
-		IAsset* asset = it->second.get();
-
+		IAsset* asset;
+		{
+			std::lock_guard<std::mutex> lock(m_mutex);
+			if (m_importedAssets.count(path)) {
+				return dynamic_cast<T*>(m_assets.at(m_importedAssets.at(path)).get());
+			}
+			auto [it, success] = m_assets.insert({ id, std::make_unique<T>(id) });
+			asset = it->second.get();
+		}
+		
 		auto filename = path.filename().replace_extension(".asset");
 		asset->setAssetPath(SA_ASSET_DIR / filename); // The path the asset will write to
 
 		if (!asset->importFromFile(path)) {
+			removeAsset(asset);
+			return nullptr;
+		}
+		m_importedAssets[path] = id;
+		return static_cast<T*>(asset);
+	}
+	
+	template<typename T>
+	inline T* AssetManager::createAsset(const std::string& name) {
+		UUID id;
+		m_mutex.lock();
+		auto [it, success] = m_assets.insert({ id, std::make_unique<T>(id) });
+		m_mutex.unlock();
+		IAsset* asset = it->second.get();
+
+		std::filesystem::path filename = name + ".asset";
+		asset->setAssetPath(SA_ASSET_DIR / filename); // The path the asset will write to
+
+		if (!asset->create(name)) {
 			removeAsset(asset);
 			return nullptr;
 		}
