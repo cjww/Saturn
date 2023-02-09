@@ -14,6 +14,7 @@ namespace comp {
 	}
 
 	void Model::deserialize(void* pDoc) {
+		/*
 		simdjson::ondemand::object& obj = *(simdjson::ondemand::object*)pDoc;
 		std::string_view pathView = obj["path"].get_string().value();
 		if (!pathView.empty()) {
@@ -27,6 +28,7 @@ namespace comp {
 			}
 			modelID = sa::AssetManager::get().loadModel(pathView);
 		}
+		*/
 	}
 
 	void Model::reg() {

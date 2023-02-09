@@ -101,7 +101,7 @@ namespace sa {
 		}
 	}
 
-	void loadMaterialTexture(Material& material, const std::filesystem::path& directory, aiTextureType type, aiTexture** ppAiTextures, aiMaterial* pAiMaterial) {
+	void loadMaterialTexture(Material& material, const std::filesystem::path& directory, aiTextureType type, aiTexture** ppAiTextures, aiMaterial* pAiMaterial, const std::filesystem::path& textureDir) {
 		std::vector<BlendedTexture> textures(pAiMaterial->GetTextureCount(type));
 
 		for (size_t i = 0; i < textures.size(); i++) {
@@ -128,13 +128,13 @@ namespace sa {
 				continue;
 			}
 
-			TextureAsset* tex = AssetManager::get().importAsset<TextureAsset>(finalPath);
+			TextureAsset* tex = AssetManager::get().importAsset<TextureAsset>(finalPath, textureDir);
 			if (!tex) {
 				SA_DEBUG_LOG_ERROR("Failed to create texture, ", finalPath.generic_string());
 				continue;
 			}
 
-			textures[i].texture = tex->getTexture();
+			textures[i].textureAssetID = tex->getHeader().id;
 			textures[i].blendFactor = blending;
 			textures[i].blendOp = (TextureBlendOp)op;
 
@@ -190,13 +190,36 @@ namespace sa {
 
 
 		std::vector<MaterialAsset*> materials(scene->mNumMaterials);
+		if (scene->mNumMaterials > 0 || scene->mNumTextures > 0) {
+			auto filename = m_assetPath.filename();
+			auto dirname = m_assetPath.parent_path() / filename;
+			dirname.replace_extension();
+			
+			int i = 1;
+			while (std::filesystem::exists(dirname)) {
+				dirname.replace_filename(dirname.filename().generic_string() + std::to_string(i));
+				i++;
+			}
+			std::filesystem::create_directory(dirname);
+			m_assetPath = dirname / filename;
+		}
+
+		auto materialDir = m_assetPath.parent_path() / "Materials";
+		if (!std::filesystem::exists(materialDir)) {
+			std::filesystem::create_directory(materialDir);
+		}
+
+		auto textureDir = m_assetPath.parent_path() / "Textures";
+		if (!std::filesystem::exists(textureDir)) {
+			std::filesystem::create_directory(textureDir);
+		}
 
 		taskflow.for_each_index(0U, scene->mNumMaterials, 1U, [&](int i) {
 			aiMaterial* aMaterial = scene->mMaterials[i];
 			SA_PROFILE_SCOPE(path.generic_string() + ", Load material [" + std::to_string(i) + "] " + aMaterial->GetName().C_Str());
 			SA_DEBUG_LOG_INFO("Load material: ", path.generic_string(), "-", aMaterial->GetName().C_Str());
 
-			MaterialAsset* materialAsset = AssetManager::get().createAsset<MaterialAsset>(aMaterial->GetName().C_Str());
+			MaterialAsset* materialAsset = AssetManager::get().createAsset<MaterialAsset>(aMaterial->GetName().C_Str(), materialDir);
 			Material& material = materialAsset->data;
 			// Diffuse Color
 			material.values.diffuseColor = getColor(aMaterial, AI_MATKEY_COLOR_DIFFUSE);
@@ -212,8 +235,9 @@ namespace sa {
 			aMaterial->Get(AI_MATKEY_SHININESS, material.values.shininess);
 			aMaterial->Get(AI_MATKEY_METALLIC_FACTOR, material.values.metallic);
 			aMaterial->Get(AI_MATKEY_TWOSIDED, material.twoSided);
+
 			for (unsigned int j = aiTextureType::aiTextureType_NONE; j <= aiTextureType::aiTextureType_TRANSMISSION; j++) {
-				loadMaterialTexture(material, path.parent_path(), (aiTextureType)j, scene->mTextures, aMaterial);
+				loadMaterialTexture(material, path.parent_path(), (aiTextureType)j, scene->mTextures, aMaterial, textureDir);
 			}
 			material.update();
 			materials[i] = materialAsset;
@@ -228,13 +252,6 @@ namespace sa {
 	}
 
 	bool ModelAsset::importFromFile(const std::filesystem::path& path) {
-		/*
-		m_id = AssetManager::get().loadModel(path);
-		if (m_id == NULL_RESOURCE)
-			return false;
-
-		data = AssetManager::get().getModel(m_id);
-		*/
 		if (!std::filesystem::exists(path)) {
 			return false;
 		}

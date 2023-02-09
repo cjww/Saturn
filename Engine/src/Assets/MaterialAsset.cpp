@@ -6,6 +6,7 @@ namespace sa {
 		m_name = name;
 
 		m_header.type = AssetType::MATERIAL;
+		m_isLoaded = true;
 		return true;
 	}
 

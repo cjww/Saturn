@@ -34,7 +34,7 @@ namespace sa {
 		//m_completions.at(entity).wait();
 
 		if (m_completions.at(entity).isDone()) {
-			entity.getComponent<comp::Model>()->modelID = m_completions.at(entity);
+			//entity.getComponent<comp::Model>()->modelID = m_completions.at(entity);
 			m_completions.erase(entity);
 		}
 
@@ -170,7 +170,7 @@ namespace sa {
 				}
 
 				if (progress.isDone()) {
-					entity.getComponent<comp::Model>()->modelID = progress;
+					//entity.getComponent<comp::Model>()->modelID = progress;
 					entitiesDone.push(entity);
 				}
 			}

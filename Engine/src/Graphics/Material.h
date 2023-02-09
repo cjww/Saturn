@@ -7,6 +7,8 @@
 
 #include "Tools/Logger.hpp"
 
+#include "Assets/TextureAsset.h"
+
 #define MAX_TEXTURE_MAP_COUNT 4U
 
 namespace sa {
@@ -191,7 +193,7 @@ namespace sa {
 	};
 
 	struct BlendedTexture {
-		Texture texture;
+		UUID textureAssetID;
 		float blendFactor;
 		TextureBlendOp blendOp;
 	};
@@ -199,7 +201,7 @@ namespace sa {
 	class Material {
 	private:
 		
-		std::unordered_map<MaterialTextureType, std::vector<Texture>> m_textures;
+		std::unordered_map<MaterialTextureType, std::vector<UUID>> m_textures;
 		std::unordered_map<MaterialTextureType, std::vector<std::pair<TextureBlendOp, float>>> m_blending;
 		std::vector<Texture> m_allTextures;
 
@@ -239,7 +241,9 @@ namespace sa {
 		void update();
 	
 		void setTextures(const std::vector<BlendedTexture>& textures, MaterialTextureType type);
-		const std::vector<Texture>& getTextures() const;
+		
+		// Gathers all textures into an array, unless already gathered since last update
+		const std::vector<Texture>& fetchTextures();
 
 	};
 }

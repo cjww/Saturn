@@ -7,7 +7,7 @@
 namespace comp {
 	class Model : public sa::LuaAccessable {
 	public:
-		ResourceID modelID = NULL_RESOURCE;
+		sa::UUID modelID = NULL_RESOURCE;
 
 		Model() = default;
 		Model(const std::string& name);

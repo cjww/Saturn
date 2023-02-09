@@ -12,7 +12,7 @@ namespace sa {
             return false;
         }
         m_header.type = AssetType::TEXTURE;
-
+        m_isLoaded = true;
         return true;
     }
 

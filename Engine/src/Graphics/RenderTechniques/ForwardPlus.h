@@ -1,7 +1,8 @@
 #pragma once
 #include "Graphics/IRenderTechnique.h"
 
-#include "AssetManager.h"
+#include "Assets/ModelAsset.h"
+#include "Assets/MaterialAsset.h"
 
 #include "Resources/DynamicTexture.hpp"
 #include "Resources/DynamicBuffer.hpp"

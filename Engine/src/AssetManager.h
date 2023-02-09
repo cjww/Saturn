@@ -119,10 +119,10 @@ namespace sa {
 		T* getAsset(UUID id) const;
 
 		template<typename T>
-		T* importAsset(const std::filesystem::path& path);
+		T* importAsset(const std::filesystem::path& path, const std::filesystem::path& assetDirectory = SA_ASSET_DIR);
 
 		template<typename T>
-		T* createAsset(const std::string& name);
+		T* createAsset(const std::string& name, const std::filesystem::path& assetDirectory = SA_ASSET_DIR);
 
 		void removeAsset(IAsset* asset);
 		void removeAsset(UUID id);
@@ -131,11 +131,13 @@ namespace sa {
 
 	template<typename T>
 	inline T* AssetManager::getAsset(UUID id) const {
+		if (!m_assets.count(id)) 
+			return nullptr;
 		return dynamic_cast<T*>(m_assets.at(id).get());
 	}
 
 	template<typename T>
-	inline T* AssetManager::importAsset(const std::filesystem::path& path) {
+	inline T* AssetManager::importAsset(const std::filesystem::path& path, const std::filesystem::path& assetDirectory) {
 		UUID id;
 		IAsset* asset;
 		{
@@ -143,23 +145,26 @@ namespace sa {
 			if (m_importedAssets.count(path)) {
 				return dynamic_cast<T*>(m_assets.at(m_importedAssets.at(path)).get());
 			}
+			m_importedAssets[path] = id;
 			auto [it, success] = m_assets.insert({ id, std::make_unique<T>(id) });
 			asset = it->second.get();
 		}
 		
 		auto filename = path.filename().replace_extension(".asset");
-		asset->setAssetPath(SA_ASSET_DIR / filename); // The path the asset will write to
+		asset->setAssetPath(assetDirectory / filename); // The path the asset will write to
 
 		if (!asset->importFromFile(path)) {
+			std::lock_guard<std::mutex> lock(m_mutex);
+			m_importedAssets.erase(path);
 			removeAsset(asset);
 			return nullptr;
 		}
-		m_importedAssets[path] = id;
+		
 		return static_cast<T*>(asset);
 	}
 	
 	template<typename T>
-	inline T* AssetManager::createAsset(const std::string& name) {
+	inline T* AssetManager::createAsset(const std::string& name, const std::filesystem::path& assetDirectory) {
 		UUID id;
 		m_mutex.lock();
 		auto [it, success] = m_assets.insert({ id, std::make_unique<T>(id) });
@@ -167,7 +172,7 @@ namespace sa {
 		IAsset* asset = it->second.get();
 
 		std::filesystem::path filename = name + ".asset";
-		asset->setAssetPath(SA_ASSET_DIR / filename); // The path the asset will write to
+		asset->setAssetPath(assetDirectory / filename); // The path the asset will write to
 
 		if (!asset->create(name)) {
 			removeAsset(asset);

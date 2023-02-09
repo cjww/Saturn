@@ -110,8 +110,7 @@ void DirectoryView::onImGui() {
 			sa::Entity entity = m_pEngine->getCurrentScene()->createEntity();
 			entity.addComponent<comp::Transform>();
 			if (selected->getType() == sa::AssetType::MODEL) {
-				sa::ModelAsset* pModel = static_cast<sa::ModelAsset*>(selected);
-				entity.addComponent<comp::Model>()->modelID = pModel->getID();
+				entity.addComponent<comp::Model>()->modelID = selected->getHeader().id;
 			}
 		}
 

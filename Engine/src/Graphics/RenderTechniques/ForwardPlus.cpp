@@ -128,9 +128,10 @@ namespace sa {
 		m_models.clear();
 
 		pScene->view<comp::Transform, comp::Model>().each([&](const comp::Transform& transform, const comp::Model& model) {
-			ModelData* pModel = AssetManager::get().getModel(model.modelID);
-			if (!pModel)
+			ModelAsset* modelAsset = AssetManager::get().getAsset<ModelAsset>(model.modelID);
+			if (!modelAsset || !modelAsset->isLoaded())
 				return;
+			ModelData* pModel = &modelAsset->data;
 
 			ObjectData objectBuffer = {};
 			objectBuffer.worldMat = transform.getMatrix();
@@ -194,12 +195,15 @@ namespace sa {
 				m_indirectIndexedBuffer << cmd;
 
 				//Material
-				Material* pMaterial = AssetManager::get().getMaterial(mesh.materialID);
-				if (pMaterial) {
+				MaterialAsset* materialAsset = AssetManager::get().getAsset<MaterialAsset>(mesh.materialID);
+				Material* pMaterial = nullptr;
+				if(materialAsset)
+					pMaterial = &materialAsset->data;
+				if (pMaterial && materialAsset->isLoaded()) {
 					auto it = std::find(m_materials.begin(), m_materials.end(), pMaterial);
 					if (it == m_materials.end()) {
 						uint32_t textureOffset = m_textures.size();
-						const std::vector<Texture>& matTextures = pMaterial->getTextures();
+						const std::vector<Texture>& matTextures = pMaterial->fetchTextures();
 						m_textures.insert(m_textures.end(), matTextures.begin(), matTextures.end());
 					
 						Material::Values values = pMaterial->values;
@@ -208,8 +212,7 @@ namespace sa {
 						values.lightMapFirst = values.lightMapFirst + textureOffset;
 						values.normalMapFirst = values.normalMapFirst + textureOffset;
 						values.specularMapFirst = values.specularMapFirst + textureOffset;
-						//m_materialBuffer << values;
-
+						
 						m_materials.push_back(pMaterial);
 						m_materialData.push_back(values);
 						m_materialIndices.push_back(materialCount);
