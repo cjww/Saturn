@@ -12,7 +12,9 @@
 #include "Tools/Vector.h"
 
 
-#include "Assets\ModelAsset.h"
+#include "Assets/ModelAsset.h"
+#include "Assets/MaterialAsset.h"
+#include "Assets/TextureAsset.h"
 
 namespace sa {
 	/*
@@ -187,19 +189,12 @@ namespace sa {
 		if (m_assets.count(header.id)) {
 			return nullptr;
 		}
-
-		IAsset* pAsset = nullptr;
-		switch (header.type) {
-		case AssetType::MODEL:
-			 pAsset = m_assets.insert({ header.id, std::make_unique<ModelAsset>(header) }).first->second.get();
-			break;
-		case AssetType::SCRIPT:
-			break;
-		case AssetType::OTHER:
-			break;
-		default:
-			break;
+		if (!m_assetAddConversions.count(header.type)) {
+			SA_DEBUG_LOG_ERROR("Unknown type");
+			return nullptr;
 		}
+
+		IAsset* pAsset = m_assetAddConversions.at(header.type)(header);
 
 		pAsset->setAssetPath(assetPath); // The path the asset will write to
 		
@@ -487,6 +482,18 @@ namespace sa {
 		}
 	}
 
+	const std::string& AssetManager::getAssetTypeName(AssetTypeID typeID) const {
+		if (!m_typeStrings.count(typeID))
+			return "Unknown";
+		return m_typeStrings.at(typeID);
+	}
+
+	IAsset* AssetManager::getAsset(UUID id) const {
+		if (!m_assets.count(id))
+			return nullptr;
+		return m_assets.at(id).get();
+	}
+
 	void AssetManager::removeAsset(IAsset* asset) {
 		m_assets.erase(asset->getHeader().id);
 	}
@@ -500,6 +507,12 @@ namespace sa {
 		sa::ResourceManager::get().setCleanupFunction<Texture2D>([](Texture2D* pTexture) {
 			pTexture->destroy();
 		});
+
+		m_nextTypeID = 0;
+
+		addAssetType<ModelAsset>();		// 0
+		addAssetType<MaterialAsset>();	// 1
+		addAssetType<TextureAsset>();	// 2
 	}
 
 	void AssetManager::loadAssimpModel(const std::filesystem::path& path, ModelData* pModel, ProgressView<ResourceID>& progress) {

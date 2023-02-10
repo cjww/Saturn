@@ -6,15 +6,8 @@
 #include "UUID.h"
 #include "ProgressView.h"
 namespace sa {
-	
-	enum class AssetType : uint8_t {
-		MODEL,
-		SCRIPT,
-		MATERIAL,
-		TEXTURE,
-		OTHER
-	};
 
+	typedef uint32_t AssetTypeID;
 	struct AssetHeader {
 		/*
 			----Header----
@@ -26,9 +19,19 @@ namespace sa {
 		UUID id;
 		size_t size = 0;
 		std::streampos offset = 0;
-		AssetType type;
+		AssetTypeID type;
 	};
 
+	/*
+		Base class interface for Assets
+		All IAsset subclasses must fill following conditions:
+			* override bool load()
+			* override bool write()
+			* friend class AssetManager
+			* have a private static AssetTypeID s_typeID
+			* have a public static AssetTypeID type() { return s_typeID; }
+			* use IAsset constructors or using IAsset::IAsset
+	*/
 	class IAsset {
 	protected:
 		AssetHeader m_header;
@@ -65,7 +68,7 @@ namespace sa {
 
 		bool isLoaded() const;
 		const ProgressView<bool>& getProgress() const;
-		AssetType getType() const;
+		AssetTypeID getType() const;
 
 		const std::string& getName() const;
 		const std::filesystem::path& getAssetPath() const;
@@ -74,6 +77,8 @@ namespace sa {
 		void setHeader(const AssetHeader& header);
 		const AssetHeader& getHeader() const;
 		
+		const UUID& getID() const;
+
 		static AssetHeader readHeader(std::ifstream& file);
 		static void writeHeader(const AssetHeader& header, std::ofstream& file);
 

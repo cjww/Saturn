@@ -71,9 +71,7 @@ void DirectoryView::onImGui() {
 		if (ImGui::BeginListBox("Assets")) {
 			for (auto& [id, asset] : assets) {
 				std::string label = asset->getName() + "\t"
-					+ asset->getAssetPath().generic_string() + "\t"
-					+ std::to_string((int)asset->getType()) + "\t"
-					+ std::to_string(asset->getHeader().id);
+					+ sa::AssetManager::get().getAssetTypeName(asset->getType());
 				if (!asset->isLoaded()) {
 					if (!asset->getProgress().isDone()) {
 						label += "\t" + std::to_string(asset->getProgress().getProgress());
@@ -85,6 +83,8 @@ void DirectoryView::onImGui() {
 				else {
 					label += "\tLoaded";
 				}
+
+				label += "\t" + asset->getAssetPath().generic_string();
 
 				if (ImGui::Selectable(label.c_str(), selected == asset.get())) {
 					selected = asset.get();
@@ -109,8 +109,9 @@ void DirectoryView::onImGui() {
 			}
 			sa::Entity entity = m_pEngine->getCurrentScene()->createEntity();
 			entity.addComponent<comp::Transform>();
-			if (selected->getType() == sa::AssetType::MODEL) {
-				entity.addComponent<comp::Model>()->modelID = selected->getHeader().id;
+			
+			if (selected->getType() == sa::ModelAsset::type()) {
+				entity.addComponent<comp::Model>()->modelID = selected->getID();
 			}
 		}
 

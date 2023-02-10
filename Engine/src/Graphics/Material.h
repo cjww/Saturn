@@ -200,7 +200,8 @@ namespace sa {
 
 	class Material {
 	private:
-		
+		friend class MaterialAsset;
+
 		std::unordered_map<MaterialTextureType, std::vector<UUID>> m_textures;
 		std::unordered_map<MaterialTextureType, std::vector<std::pair<TextureBlendOp, float>>> m_blending;
 		std::vector<Texture> m_allTextures;

@@ -7,12 +7,14 @@ namespace sa {
 
 	class ModelAsset : public IAsset {
 	private:
-		ResourceID m_id;
+		friend class AssetManager;
+		inline static AssetTypeID s_typeID;
 
 		bool loadAssimpModel(const std::filesystem::path& path);
 
 	public:
 		using IAsset::IAsset;
+		static AssetTypeID type() { return s_typeID; }
 
 		//Data
 		ModelData data;
@@ -29,7 +31,7 @@ namespace sa {
 		virtual bool load() override;
 		virtual bool write() override;
 
-		ResourceID getID();
+
 	};
 
 }

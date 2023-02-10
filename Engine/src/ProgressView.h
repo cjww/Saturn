@@ -49,7 +49,7 @@ namespace sa {
 	inline void ProgressView<T>::setMaxCompletionCount(unsigned int count) {
 		m_maxCompletionCount.store(count);
 	}
-	
+
 	template<typename T>
 	inline void ProgressView<T>::increment() {
 		m_count.fetch_add(1, std::memory_order::memory_order_relaxed);
@@ -77,6 +77,8 @@ namespace sa {
 
 	template<typename T>
 	inline bool ProgressView<T>::isDone() const {
+		if (!m_future.valid()) 
+			return true;
 		return m_future._Is_ready();
 	}
 

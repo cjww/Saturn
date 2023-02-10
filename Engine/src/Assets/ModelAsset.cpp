@@ -257,7 +257,7 @@ namespace sa {
 		}
 
 		m_refCount = 1;
-		m_header.type = AssetType::MODEL;
+		m_header.type = type();
 		m_header.offset = 0;
 		m_header.size = 0;
 		
@@ -348,6 +348,9 @@ namespace sa {
 				file.write((char*)&index, sizeof(index));
 			}
 			file.write((char*)&mesh.materialID, sizeof(mesh.materialID));
+			MaterialAsset* pMaterialAsset = AssetManager::get().getAsset<MaterialAsset>(mesh.materialID);
+			if (pMaterialAsset)
+				pMaterialAsset->write();
 		}
 
 
@@ -355,11 +358,4 @@ namespace sa {
 
 		return true;
 	}
-
-	ResourceID ModelAsset::getID() {
-		return m_id;
-	}
-
-
-
 }

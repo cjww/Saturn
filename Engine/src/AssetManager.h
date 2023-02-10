@@ -74,6 +74,11 @@ namespace sa {
 		std::unordered_map<UUID, std::unique_ptr<IAsset>> m_assets;
 		std::list<AssetPackage> m_assetPackages;
 
+		AssetTypeID m_nextTypeID;
+		std::unordered_map<AssetTypeID, std::function<IAsset* (const AssetHeader&)>> m_assetAddConversions;
+		std::unordered_map<AssetTypeID, std::string> m_typeStrings;
+
+
 		AssetManager();
 
 		void loadAssimpModel(const std::filesystem::path& path, ModelData* pModel, ProgressView<ResourceID>& progress);
@@ -116,7 +121,13 @@ namespace sa {
 		void rescanAssets();
 
 		template<typename T>
+		AssetTypeID addAssetType();
+
+		const std::string& getAssetTypeName(AssetTypeID typeID) const;
+
+		template<typename T>
 		T* getAsset(UUID id) const;
+		IAsset* getAsset(UUID id) const;
 
 		template<typename T>
 		T* importAsset(const std::filesystem::path& path, const std::filesystem::path& assetDirectory = SA_ASSET_DIR);
@@ -128,6 +139,21 @@ namespace sa {
 		void removeAsset(UUID id);
 
 	};
+
+	template<typename T>
+	inline AssetTypeID AssetManager::addAssetType() {
+		AssetTypeID id = m_nextTypeID++;
+		m_assetAddConversions[id] = [&](const AssetHeader& header) {
+			return m_assets.insert({ header.id, std::make_unique<T>(header) }).first->second.get();
+		};
+		T::s_typeID = id;
+
+		std::string str = typeid(T).name();
+		utils::stripTypeName(str);
+		m_typeStrings[id] = str;
+
+		return id;
+	}
 
 	template<typename T>
 	inline T* AssetManager::getAsset(UUID id) const {

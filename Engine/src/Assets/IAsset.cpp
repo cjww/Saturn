@@ -35,7 +35,7 @@ namespace sa {
 		return m_progress;
 	}
 
-	AssetType IAsset::getType() const {
+	AssetTypeID IAsset::getType() const {
 		return m_header.type;
 	}
 
@@ -58,6 +58,10 @@ namespace sa {
 
 	const AssetHeader& IAsset::getHeader() const {
 		return m_header;
+	}
+
+	const UUID& IAsset::getID() const {
+		return m_header.id;
 	}
 
 	AssetHeader IAsset::readHeader(std::ifstream& file) {
