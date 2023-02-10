@@ -47,6 +47,9 @@ namespace sa {
 		tf::Executor m_taskExecutor;
 		std::mutex m_mutex;
 
+		bool dispatchLoad(std::function<bool(std::ifstream&)> loadFunction);
+		bool dispatchWrite(std::function<bool(std::ofstream&)> writeFunction);
+
 	public:
 		IAsset();
 		IAsset(const AssetHeader& header);

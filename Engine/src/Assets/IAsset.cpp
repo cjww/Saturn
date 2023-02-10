@@ -2,7 +2,56 @@
 #include "IAsset.h"
 
 namespace sa {
-	IAsset::IAsset() 
+	bool IAsset::dispatchLoad(std::function<bool(std::ifstream&)> loadFunction) {
+		if (m_isLoaded)
+			return false;
+
+		auto future = m_taskExecutor.async([&, loadFunction]() {
+			std::lock_guard<std::mutex> lock(m_mutex);
+			if (m_isLoaded)
+				return false;
+
+			std::ifstream file(m_assetPath, std::ios::binary);
+			if (!file.good()) {
+				file.close();
+				return false;
+			}
+			m_header = readHeader(file);
+
+			m_isLoaded = loadFunction(file);
+		
+			file.close();
+			return m_isLoaded.load();
+		});
+		m_progress.setFuture(future.share());
+		return true;
+	}
+
+	bool IAsset::dispatchWrite(std::function<bool(std::ofstream&)> writeFunction) {
+		if (!m_isLoaded)
+			return false;
+
+		auto future = m_taskExecutor.async([&, writeFunction]() {
+			std::lock_guard<std::mutex> lock(m_mutex);
+			if (!m_isLoaded)
+				return false;
+
+			std::ofstream file(m_assetPath, std::ios::binary);
+			if (!file.good()) {
+				file.close();
+				return false;
+			}
+			writeHeader(m_header, file);
+
+			bool success = writeFunction(file);
+			file.close();
+			return success;
+		});
+		m_progress.setFuture(future.share());
+		return true;
+	}
+
+	IAsset::IAsset()
 		: m_isLoaded(false)
 		, m_name("New Asset")
 		, m_refCount(0)

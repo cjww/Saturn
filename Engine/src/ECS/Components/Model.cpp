@@ -3,37 +3,29 @@
 
 namespace comp {
 
-	Model::Model(const std::string& name) {
-		sa::AssetManager::get().loadModel(name);
-	}
-
 	void Model::serialize(sa::Serializer& s) {
-		std::filesystem::path path = sa::ResourceManager::get().idToKey<sa::ModelData>(modelID);
-		path = std::filesystem::proximate(path);
-		s.value("path", path.generic_string().c_str());
+		sa::IAsset* pAsset = sa::AssetManager::get().getAsset(modelID);
+		s.value("ID", std::to_string(pAsset->getID()).c_str());
 	}
 
 	void Model::deserialize(void* pDoc) {
-		/*
 		simdjson::ondemand::object& obj = *(simdjson::ondemand::object*)pDoc;
-		std::string_view pathView = obj["path"].get_string().value();
-		if (!pathView.empty()) {
-			if (pathView == "Quad") {
-				modelID = sa::AssetManager::get().loadQuad();
-				return;
-			}
-			if (pathView == "Box") {
-				modelID = sa::AssetManager::get().loadBox();
-				return;
-			}
-			modelID = sa::AssetManager::get().loadModel(pathView);
+
+		std::string_view strID = obj["ID"].get_string().value();
+		char* stopString = NULL;
+		modelID = strtoull(strID.data(), &stopString, 10);
+		sa::IAsset* pAsset = sa::AssetManager::get().getAsset(modelID);
+		if (!pAsset) {
+			SA_DEBUG_LOG_ERROR("Unknown model id ", modelID);
+			return;
 		}
-		*/
+		pAsset->load();
+		
 	}
 
 	void Model::reg() {
 		auto type = registerType<Model>("",
-			sol::constructors<Model(), Model(const std::string&)>()
+			sol::constructors<Model()>()
 			);
 
 		type["id"] = &comp::Model::modelID;

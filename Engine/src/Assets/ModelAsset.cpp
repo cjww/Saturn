@@ -277,82 +277,53 @@ namespace sa {
 	}
 
 	bool ModelAsset::load() {
-		std::lock_guard<std::mutex> lock(m_mutex);
-		if (m_isLoaded)
-			return false;
+		return dispatchLoad([&](std::ifstream& file) {
+			uint32_t meshCount = 0;
+			file.read((char*)&meshCount, sizeof(meshCount));
 
-		SA_DEBUG_LOG_INFO("Loading ModelAsset ", getID());
+			data.meshes.resize(meshCount);
+			for (auto& mesh : data.meshes) {
+				uint32_t vertexCount = 0;
+				file.read((char*)&vertexCount, sizeof(vertexCount));
+				mesh.vertices.resize(vertexCount);
+				file.read((char*)mesh.vertices.data(), sizeof(sa::VertexNormalUV) * vertexCount);
 
-		std::ifstream file(m_assetPath, std::ios::binary);
-		if (!file.good()) {
-			file.close();
-			return false;
-		}
+				uint32_t indexCount = 0;
+				file.read((char*)&indexCount, sizeof(indexCount));
+				mesh.indices.resize(indexCount);
+				file.read((char*)mesh.indices.data(), sizeof(uint32_t) * indexCount);
 
-		m_header = readHeader(file);
-
-		uint32_t meshCount = 0;
-		file.read((char*)&meshCount, sizeof(meshCount));
-
-		data.meshes.resize(meshCount);
-		for (auto& mesh : data.meshes) {
-			uint32_t vertexCount = 0;
-			file.read((char*)&vertexCount, sizeof(vertexCount));
-			mesh.vertices.resize(vertexCount);
-			file.read((char*)mesh.vertices.data(), sizeof(sa::VertexNormalUV) * vertexCount);
-
-			uint32_t indexCount = 0;
-			file.read((char*)&indexCount, sizeof(indexCount));
-			mesh.indices.resize(indexCount);
-			file.read((char*)mesh.indices.data(), sizeof(uint32_t) * indexCount);
-
-			file.read((char*)&mesh.materialID, sizeof(mesh.materialID));
-			MaterialAsset* pMaterialAsset = AssetManager::get().getAsset<MaterialAsset>(mesh.materialID);
-			if (pMaterialAsset) {
-				m_taskExecutor.async([pMaterialAsset]() {
+				file.read((char*)&mesh.materialID, sizeof(mesh.materialID));
+				MaterialAsset* pMaterialAsset = AssetManager::get().getAsset<MaterialAsset>(mesh.materialID);
+				if (pMaterialAsset) 
 					pMaterialAsset->load();
-				});
 			}
-		}
-
-		file.close();
-		m_isLoaded = true;
-		return true;
+			return true;
+		});
 	}
 
 	bool ModelAsset::write() {
-		if (!m_isLoaded)
-			return false;
+		return dispatchWrite([&](std::ofstream& file) {
+			uint32_t meshCount = data.meshes.size();
+			file.write((char*)&meshCount, sizeof(meshCount));
 
-		std::ofstream file(m_assetPath, std::ios::binary | std::ios::out);
-		if (!file.good()) {
-			file.close();
-			return false;
-		}
-		writeHeader(m_header, file);
-
-
-		uint32_t meshCount = data.meshes.size();
-		file.write((char*)&meshCount, sizeof(meshCount));
-
-		for (auto& mesh : data.meshes) {
-			uint32_t vertexCount = mesh.vertices.size();
-			file.write((char*)&vertexCount, sizeof(vertexCount));
-			file.write((char*)mesh.vertices.data(), sizeof(sa::VertexNormalUV) * vertexCount);
+			for (auto& mesh : data.meshes) {
+				uint32_t vertexCount = mesh.vertices.size();
+				file.write((char*)&vertexCount, sizeof(vertexCount));
+				if(vertexCount > 0)
+					file.write((char*)mesh.vertices.data(), sizeof(sa::VertexNormalUV) * vertexCount);
 			
-			uint32_t indexCount = mesh.indices.size();
-			file.write((char*)&indexCount, sizeof(indexCount));
-			file.write((char*)mesh.indices.data(), sizeof(uint32_t) * indexCount);
-
-			file.write((char*)&mesh.materialID, sizeof(mesh.materialID));
-			MaterialAsset* pMaterialAsset = AssetManager::get().getAsset<MaterialAsset>(mesh.materialID);
-			if (pMaterialAsset)
-				pMaterialAsset->write();
-		}
-
-
-		file.close();
-
-		return true;
+				uint32_t indexCount = mesh.indices.size();
+				file.write((char*)&indexCount, sizeof(indexCount));
+				if(indexCount > 0) 
+					file.write((char*)mesh.indices.data(), sizeof(uint32_t) * indexCount);
+				
+				file.write((char*)&mesh.materialID, sizeof(mesh.materialID));
+				MaterialAsset* pMaterialAsset = AssetManager::get().getAsset<MaterialAsset>(mesh.materialID);
+				if (pMaterialAsset)
+					pMaterialAsset->write();
+			}
+			return true;
+		});
 	}
 }

@@ -94,16 +94,16 @@ void DirectoryView::onImGui() {
 			ImGui::EndListBox();
 		}
 
-		if (ImGui::Button("Load Asset")) {
+		if (ImGui::Button("Load Asset") && selected) {
 			selected->load();
 		}
 
-		if (ImGui::Button("Write Asset")) {
+		if (ImGui::Button("Write Asset") && selected) {
 			selected->write();
 		}
 
 
-		if (ImGui::Button("Spawn")) {
+		if (ImGui::Button("Spawn") && selected) {
 			if (!selected->isLoaded()) {
 				SA_DEBUG_LOG_ERROR("Asset ", selected->getName(), " is not loaded!");
 			}
