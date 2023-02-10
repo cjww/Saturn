@@ -99,10 +99,11 @@ namespace sa {
 			if (!m_context)
 				return {};
 		}
-
-		m_pRenderTechnique->updateLights(pScene);
-		// collect meshes
-		m_pRenderTechnique->collectMeshes(pScene);
+		if (pScene) {
+			m_pRenderTechnique->updateLights(pScene);
+			// collect meshes
+			m_pRenderTechnique->collectMeshes(pScene);
+		}
 	
 		m_pRenderTechnique->updateData(m_context);
 		

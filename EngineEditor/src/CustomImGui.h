@@ -4,6 +4,10 @@
 #include "ECS/Entity.h"
 #include "SceneCamera.h"
 
+#include "Assets/ModelAsset.h"
+#include "Assets/TextureAsset.h"
+#include "Assets/MaterialAsset.h"
+
 #include <glm\gtx\matrix_decompose.hpp>
 #include <glm\gtc\quaternion.hpp>
 

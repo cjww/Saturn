@@ -110,6 +110,9 @@ namespace sa {
 			m_savedScenes[&scene] = projectRealtiveScene;
 		}
 
+		std::string_view startScene = doc["startScene"].get_string().value();
+		m_pEngine->setScene(std::string(startScene));
+
 		std::filesystem::path projectPath = path;
 		auto it = std::find(m_recentProjectPaths.begin(), m_recentProjectPaths.end(), projectPath);
 		if (it != m_recentProjectPaths.end()) {
@@ -168,12 +171,12 @@ namespace sa {
 		s.value("last_saved", t);
 
 		s.beginArray("scenes");
-
 		for (const auto& [pScene, scenePath] : m_savedScenes) {
 			s.value(scenePath.generic_string().c_str());
 		}
-
 		s.endArray();
+
+		s.value("startScene", m_pEngine->getCurrentScene()->getName().c_str());
 
 		s.endObject();
 
@@ -530,11 +533,13 @@ namespace sa {
 	}
 
 	void EngineEditor::onUpdate(float dt) {
-		if (m_state == State::PLAYING) {
-			m_pEngine->getCurrentScene()->runtimeUpdate(dt);
-		}
-		else {
-			m_pEngine->getCurrentScene()->inEditorUpdate(dt);
+		if (m_pEngine->getCurrentScene()) {
+			if (m_state == State::PLAYING) {
+				m_pEngine->getCurrentScene()->runtimeUpdate(dt);
+			}
+			else {
+				m_pEngine->getCurrentScene()->inEditorUpdate(dt);
+			}
 		}
 
 

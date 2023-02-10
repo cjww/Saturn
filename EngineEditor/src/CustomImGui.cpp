@@ -227,9 +227,11 @@ namespace ImGui {
 	}
 
 	void Component(sa::Entity entity, comp::Model* model) {
-		ImGui::Text("ModelID: %d", model->modelID);
+		sa::ModelAsset* pAsset = sa::AssetManager::get().getAsset<sa::ModelAsset>(model->modelID);
+		ImGui::Text("ModelID: %llu", model->modelID);
 		ImGui::SameLine();
-		ImGui::Text("Name: %s", sa::ResourceManager::get().idToKey<sa::ModelData>(model->modelID).c_str());
+		ImGui::Text("Name: %s", pAsset->getName().c_str());
+
 		if (model->modelID != NULL_RESOURCE) {
 			/*
 			sa::ModelData* data = sa::AssetManager::get().getModel(model->modelID);

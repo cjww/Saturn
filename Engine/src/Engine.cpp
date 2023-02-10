@@ -364,13 +364,6 @@ namespace sa {
 		return m_currentScene;
 	}
 
-	Scene* Engine::getCurrentScene() {
-		if (!m_currentScene) {
-			setScene("Default Scene");
-		}
-		return m_currentScene;
-	}
-
 	void Engine::setScene(const std::string& name) {
 		setScene(getScene(name));
 	}
