@@ -15,6 +15,7 @@ namespace sa {
 		, m_pImage(nullptr)
 		, m_pStagingBuffer(nullptr)
 		, m_view(NULL_RESOURCE)
+		, m_type(0)
 	{
 	}
 

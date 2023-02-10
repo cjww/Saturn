@@ -277,20 +277,19 @@ namespace sa {
 	}
 
 	bool ModelAsset::load() {
+		std::lock_guard<std::mutex> lock(m_mutex);
+		if (m_isLoaded)
+			return false;
 
-		std::ifstream file(m_assetPath, std::ios::binary | std::ios::in);
+		SA_DEBUG_LOG_INFO("Loading ModelAsset ", getID());
+
+		std::ifstream file(m_assetPath, std::ios::binary);
 		if (!file.good()) {
 			file.close();
 			return false;
 		}
 
-		readHeader(file);
-
-		/*
-		auto [id, modelData] = AssetManager::get().newModel(path.filename().generic_string());
-		m_id = id;
-		data = modelData;
-		*/
+		m_header = readHeader(file);
 
 		uint32_t meshCount = 0;
 		file.read((char*)&meshCount, sizeof(meshCount));
@@ -299,20 +298,21 @@ namespace sa {
 		for (auto& mesh : data.meshes) {
 			uint32_t vertexCount = 0;
 			file.read((char*)&vertexCount, sizeof(vertexCount));
-
 			mesh.vertices.resize(vertexCount);
-			for (auto& vertex : mesh.vertices) {
-				file.read((char*)&vertex, sizeof(vertex));
-			}
+			file.read((char*)mesh.vertices.data(), sizeof(sa::VertexNormalUV) * vertexCount);
 
 			uint32_t indexCount = 0;
 			file.read((char*)&indexCount, sizeof(indexCount));
-
 			mesh.indices.resize(indexCount);
-			for (auto& index : mesh.indices) {
-				file.read((char*)&index, sizeof(index));
-			}
+			file.read((char*)mesh.indices.data(), sizeof(uint32_t) * indexCount);
+
 			file.read((char*)&mesh.materialID, sizeof(mesh.materialID));
+			MaterialAsset* pMaterialAsset = AssetManager::get().getAsset<MaterialAsset>(mesh.materialID);
+			if (pMaterialAsset) {
+				m_taskExecutor.async([pMaterialAsset]() {
+					pMaterialAsset->load();
+				});
+			}
 		}
 
 		file.close();
@@ -338,15 +338,12 @@ namespace sa {
 		for (auto& mesh : data.meshes) {
 			uint32_t vertexCount = mesh.vertices.size();
 			file.write((char*)&vertexCount, sizeof(vertexCount));
-			for (auto& vertex : mesh.vertices) {
-				file.write((char*)&vertex, sizeof(vertex));
-			}
-
+			file.write((char*)mesh.vertices.data(), sizeof(sa::VertexNormalUV) * vertexCount);
+			
 			uint32_t indexCount = mesh.indices.size();
 			file.write((char*)&indexCount, sizeof(indexCount));
-			for (auto& index : mesh.indices) {
-				file.write((char*)&index, sizeof(index));
-			}
+			file.write((char*)mesh.indices.data(), sizeof(uint32_t) * indexCount);
+
 			file.write((char*)&mesh.materialID, sizeof(mesh.materialID));
 			MaterialAsset* pMaterialAsset = AssetManager::get().getAsset<MaterialAsset>(mesh.materialID);
 			if (pMaterialAsset)

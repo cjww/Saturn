@@ -45,6 +45,7 @@ namespace sa {
 
 		ProgressView<bool> m_progress;
 		tf::Executor m_taskExecutor;
+		std::mutex m_mutex;
 
 	public:
 		IAsset();

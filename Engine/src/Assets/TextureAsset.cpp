@@ -33,7 +33,32 @@ namespace sa {
     }
 
     bool TextureAsset::load() {
-        return false;
+        std::lock_guard<std::mutex> lock(m_mutex);
+        if (m_isLoaded)
+            return false;
+
+        SA_DEBUG_LOG_INFO("Loading TextureAsset ", getID());
+
+        std::ifstream file(m_assetPath, std::ios::binary);
+        if (!file.good()) {
+            file.close();
+            return false;
+        }
+        m_header = readHeader(file);
+        m_dataBuffer.resize(m_header.size);
+
+        file.read((char*)m_dataBuffer.data(), m_dataBuffer.size());
+
+        file.close();
+
+        if (m_texture.isValid())
+            m_texture.destroy();
+
+        Image img(m_dataBuffer.data(), m_dataBuffer.size());
+        m_texture = Texture2D(img, true);
+
+        m_isLoaded = true;
+        return true;
     }
 
     bool TextureAsset::write() {
