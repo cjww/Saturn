@@ -1,5 +1,12 @@
 #include "CustomImGui.h"
+
 #include "Tools\Math.h"
+#include "Assets/ModelAsset.h"
+#include "Assets/TextureAsset.h"
+#include "Assets/MaterialAsset.h"
+
+#define IMGUI_DEFINE_MATH_OPERATORS
+#include "imgui_internal.h"
 
 namespace ImGui {
 
@@ -521,12 +528,15 @@ namespace ImGui {
 		return false;
 	}
 
-	bool ProjectButton(const char* name, const char* path) {
-		ImVec2 size(GetWindowContentRegionWidth(), 50);
+	bool ProjectButton(const char* name, const char* path, bool* isOpen) {
+		if (!*isOpen)
+			return false;
+
+		ImVec2 buttonSize(GetWindowContentRegionWidth(), 50);
 		
 		ImVec2 sizeMin, sizeMax;
 		sizeMin = ImVec2(GetCursorPos().x + GetWindowPos().x, GetCursorPos().y + GetWindowPos().y);
-		sizeMax = ImVec2(sizeMin.x + size.x, sizeMin.y + size.y);
+		sizeMax = ImVec2(sizeMin.x + buttonSize.x, sizeMin.y + buttonSize.y);
 
 		bool isHovered = IsMouseHoveringRect(sizeMin, sizeMax);
 		
@@ -544,13 +554,21 @@ namespace ImGui {
 			PushStyleColor(ImGuiCol_ChildBg, GetColorU32(ImGuiCol_Button));
 		}
 
-		BeginChild(path, ImVec2(GetWindowContentRegionWidth(), 50));
+		BeginChild(path, buttonSize, false);
 		
 		SetCursorPosX(GetCursorPosX() + GetStyle().FramePadding.x);
 		SetCursorPosY(GetCursorPosY() + GetStyle().FramePadding.y);
 
 		Text(name);
 
+		//SameLine();
+		//SetCursorPosX(buttonSize.x - GetStyle().FramePadding.x - 50);
+		
+		ImGuiID id = GetCurrentWindow()->GetID(path);
+		if (CloseButton(id, GetCursorPos() + GetWindowPos())) {
+			*isOpen = false;
+		}
+		
 		SetCursorPosX(GetCursorPosX() + GetStyle().FramePadding.x);
 		SetCursorPosY(GetCursorPosY() + GetStyle().FramePadding.y);
 

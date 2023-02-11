@@ -1,12 +1,11 @@
 #pragma once
 
+
+
 #include "ECS/Components.h"
 #include "ECS/Entity.h"
 #include "SceneCamera.h"
 
-#include "Assets/ModelAsset.h"
-#include "Assets/TextureAsset.h"
-#include "Assets/MaterialAsset.h"
 
 #include <glm\gtx\matrix_decompose.hpp>
 #include <glm\gtc\quaternion.hpp>
@@ -56,7 +55,7 @@ namespace ImGui {
 
 	bool MakeEnterNameModalPopup(const char* name, const char* hint, std::string& output);
 
-	bool ProjectButton(const char* name, const char* path);
+	bool ProjectButton(const char* name, const char* path, bool* isOpen);
 
 	bool ImageButtonTinted(const sa::Texture& tex, const ImVec2& size, const ImVec2& uv0 = ImVec2(0, 0), const ImVec2& uv1 = ImVec2(1, 1));
 
