@@ -27,23 +27,25 @@ namespace sa {
             SA_DEBUG_LOG_ERROR(e.what());
             return false;
         }
-        m_header.type = type();
         m_isLoaded = true;
         return true;
     }
 
     bool TextureAsset::load() {
         return dispatchLoad([&](std::ifstream& file) {
-
+            m_progress.setMaxCompletionCount(3);
             m_dataBuffer.resize(m_header.size);
 
             file.read((char*)m_dataBuffer.data(), m_dataBuffer.size());
+            m_progress.increment();
 
             if (m_texture.isValid())
                 m_texture.destroy();
 
             Image img(m_dataBuffer.data(), m_dataBuffer.size());
+            m_progress.increment();
             m_texture = Texture2D(img, true);
+            m_progress.increment();
 
             return true;
         });
@@ -53,8 +55,10 @@ namespace sa {
         std::lock_guard<std::mutex> lock(m_mutex);
         m_header.size = m_dataBuffer.size();
         return dispatchWrite([&](std::ofstream& file) {
+            m_progress.setMaxCompletionCount(1);
             if(m_dataBuffer.size() > 0)
                 file.write((char*)m_dataBuffer.data(), m_dataBuffer.size());
+            m_progress.increment();
             return true;
         });
     }

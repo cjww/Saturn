@@ -15,7 +15,7 @@ namespace sa {
 		int m_row = 0;
 		int m_column = 0;
 
-		std::unordered_map<sa::Entity, sa::ProgressView<ResourceID>&> m_completions;
+		std::unordered_map<sa::Entity, ModelAsset*> m_completions;
 
 		Engine* m_pEngine;
 		RenderWindow* m_pWindow;

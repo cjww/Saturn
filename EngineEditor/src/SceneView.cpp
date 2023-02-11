@@ -156,6 +156,7 @@ void SceneView::update(float dt) {
 
 void SceneView::onImGui() {
 	SA_PROFILE_FUNCTION();
+	
 
 	bool isOpen = ImGui::Begin(m_name, 0, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
 	if (isOpen) {
@@ -262,7 +263,7 @@ void SceneView::onImGui() {
 		glm::vec2 screenPos = { imageMin.x, imageMin.y };
 		glm::vec2 screenSize = { imageSize.x, imageSize.y };
 
-		if (showIcons) {
+		if (m_pEngine->getCurrentScene() && showIcons) {
 			sa::Texture2D* tex = sa::AssetManager::get().loadTexture(m_pEditor->editorRelativePath("resources/lightbulb-icon.png"), true);
 			sa::Texture2D* sunTexture = sa::AssetManager::get().loadTexture(m_pEditor->editorRelativePath("resources/sun-icon.png"), true);
 			m_pEngine->getCurrentScene()->forEach<comp::Light>([&](const comp::Light& light) {

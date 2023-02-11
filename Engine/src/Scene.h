@@ -19,18 +19,23 @@
 
 #include "Serializable.h"
 
+#include "Assets/IAsset.h"
+
 
 namespace sa {
 	typedef uint32_t SceneID;
 
-	class Scene : public entt::emitter<Scene>, entt::registry, public Serializable {
+	class Scene : public entt::emitter<Scene>, public Serializable, public IAsset {
 	private:
+		friend class AssetManager;
+		inline static AssetTypeID s_typeID;
+
+		entt::registry m_reg;
+
 		ScriptManager m_scriptManager;
 
 		EntityHierarchy m_hierarchy;
 
-		std::string m_name;
-		
 		friend class comp::RigidBody;
 		physx::PxScene* m_pPhysicsScene;
 	
@@ -40,7 +45,6 @@ namespace sa {
 		void removeScript(const Entity& entity, const std::string& name);
 		EntityScript* getScript(const Entity& entity, const std::string& name);
 
-		friend class Engine;
 		template<typename T>
 		void onComponentConstruct(entt::registry& reg, entt::entity e);
 		template<typename T>
@@ -48,18 +52,27 @@ namespace sa {
 		template<typename T>
 		void onComponentDestroy(entt::registry& reg, entt::entity e);
 
+		template<typename T>
+		void registerComponentCallBack();
+		void registerComponentCallBacks();
+
+
 		void updatePhysics(float dt);
 		void updateChildPositions();
 		void updateCameraPositions();
 
-	public:
-		using entt::registry::view;
-		
-		Scene(const std::string& name);
 
-		virtual ~Scene();
+	public:
+		Scene(const AssetHeader& header);
+		virtual ~Scene() override;
 
 		static void reg();
+		static AssetTypeID type() { return s_typeID; }
+
+		virtual bool create(const std::string& name) override;
+
+		virtual bool load() override; // IAsset
+		virtual bool write() override; // IAsset
 
 		virtual void onRuntimeStart();
 		virtual void onRuntimeStop();
@@ -116,6 +129,13 @@ namespace sa {
 		reg.get<T>(e).onDestroy(&entity);
 	}
 
+	template<typename T>
+	inline void Scene::registerComponentCallBack() {
+		m_reg.on_construct<T>().connect<&Scene::onComponentConstruct<T>>(this);
+		m_reg.on_update<T>().connect<&Scene::onComponentUpdate<T>>(this);
+		m_reg.on_destroy<T>().connect<&Scene::onComponentDestroy<T>>(this);
+	}
+
 	template<typename ...T, typename F>
 	inline void Scene::forEach(F func) {
 		static_assert(
@@ -124,19 +144,19 @@ namespace sa {
 			std::is_assignable_v<std::function<void(Entity)>, F> &&
 			"Not a valid function signature");
 		if constexpr (std::is_assignable_v<std::function<void(Entity)>, F>) {
-			each([&](const entt::entity e) {
+			m_reg.each([&](const entt::entity e) {
 				Entity entity(this, e);
 				func(entity);
 			});
 		}
 		else if constexpr (std::is_assignable_v<std::function<void(Entity, T&...)>, F>) {
-			view<T...>().each([&](entt::entity e, T&... comp) {
+			m_reg.view<T...>().each([&](entt::entity e, T&... comp) {
 				Entity entity(this, e);
 				func(entity, comp...);
 			});
 		}
 		else if constexpr (std::is_assignable_v<std::function<void(T&...)>, F>) {
-			view<T...>().each(func);
+			m_reg.view<T...>().each(func);
 		}
 
 	}
@@ -151,7 +171,7 @@ namespace sa {
 			types[i] = components[i].getTypeId();
 		}
 
-		runtime_view(std::cbegin(types), std::cend(types)).each([&](entt::entity e) {
+		m_reg.runtime_view(std::cbegin(types), std::cend(types)).each([&](entt::entity e) {
 			Entity entity(this, e);
 			func(entity);
 		});

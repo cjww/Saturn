@@ -30,13 +30,12 @@ namespace sa {
 		std::filesystem::path m_projectFile;
 		std::filesystem::path m_editorPath;
 
-
-		
 		std::vector<std::filesystem::path> m_recentProjectPaths;
-		std::unordered_map<Scene*, std::filesystem::path> m_savedScenes;
-
+		
 		Texture2D m_logoTex;
 		Texture2D m_playPauseTex;
+
+		bool m_enterSceneNamePopup;
 
 		void makePopups();
 
@@ -49,11 +48,6 @@ namespace sa {
 
 		void projectSelector();
 		void fileMenu();
-
-		bool saveScene(Scene* pScene);
-		bool loadScene(Scene* pScene);
-		bool openScene();
-		void openScene(const std::filesystem::path& path);
 
 		void startSimulation();
 		void stopSimulation();

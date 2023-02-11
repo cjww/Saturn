@@ -14,6 +14,13 @@ namespace comp {
 		std::string_view strID = obj["ID"].get_string().value();
 		char* stopString = NULL;
 		modelID = strtoull(strID.data(), &stopString, 10);
+
+		sa::IAsset* pModelAsset = sa::AssetManager::get().getAsset(modelID);
+		if (!pModelAsset) {
+			SA_DEBUG_LOG_ERROR("Invalid model ID: ", modelID);
+			return;
+		}
+		pModelAsset->load();
 	}
 
 	void Model::reg() {

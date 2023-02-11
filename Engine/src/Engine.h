@@ -30,7 +30,6 @@ namespace sa {
 		Extent m_windowExtent;
 		RenderWindow* m_pWindow;
 
-		std::unordered_map<std::string, Scene> m_scenes;
 		Scene* m_currentScene;
 
 		struct FrameTime {
@@ -39,10 +38,7 @@ namespace sa {
 			std::chrono::duration<double, std::milli> gpu;
 		} m_frameTime;
 
-		template<typename T>
-		void registerComponentCallBack(Scene& scene);
-		void registerComponentCallBacks(Scene& scene);
-
+		
 		void registerMath();
 
 		void reg();
@@ -64,25 +60,14 @@ namespace sa {
 		std::chrono::duration<double, std::milli> getCPUFrameTime() const;
 
 		const RenderPipeline& getRenderPipeline() const;
-
-		Scene& getScene(const std::string& name);
+		/*
 		Scene& loadSceneFromFile(const std::filesystem::path& sceneFile);
 		void storeSceneToFile(Scene* pScene, const std::filesystem::path& path);
+		*/
 
 		Scene* getCurrentScene() const;
 
-		void setScene(const std::string& name);
-		void setScene(Scene& scene);
-
-		std::unordered_map<std::string, Scene>& getScenes();
-		void destroyScene(const std::string& name);
-		void destroyScenes();
-
+		void setScene(Scene* scene);
 	};
-	template<typename T>
-	inline void Engine::registerComponentCallBack(Scene& scene) {
-		scene.on_construct<T>().connect<&Scene::onComponentConstruct<T>>(scene);
-		scene.on_update<T>().connect<&Scene::onComponentUpdate<T>>(scene);
-		scene.on_destroy<T>().connect<&Scene::onComponentDestroy<T>>(scene);
-	}
+	
 }

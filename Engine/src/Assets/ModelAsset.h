@@ -5,6 +5,17 @@
 
 namespace sa {
 
+	struct Mesh {
+		std::vector<VertexNormalUV> vertices;
+		std::vector<uint32_t> indices;
+
+		UUID materialID;
+	};
+
+	struct ModelData {
+		std::vector<Mesh> meshes;
+	};
+
 	class ModelAsset : public IAsset {
 	private:
 		friend class AssetManager;
@@ -19,12 +30,7 @@ namespace sa {
 		//Data
 		ModelData data;
 
-		/*
-		virtual bool create(const std::string& name) override {
-			//AssetManager::newModel();
-			return true;
-		}
-		*/
+		virtual bool create(const std::string& name) override;
 		virtual bool importFromFile(const std::filesystem::path& path) override;
 
 		

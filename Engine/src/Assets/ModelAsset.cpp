@@ -180,7 +180,7 @@ namespace sa {
 			"\nAnimations", scene->mNumAnimations,
 			"\nLights", scene->mNumLights);
 
-		m_progress.setMaxCompletionCount(scene->mNumMeshes);
+		m_progress.setMaxCompletionCount(scene->mNumMeshes + scene->mNumMaterials);
 
 		processNode(scene, scene->mRootNode, &data, &m_progress);
 
@@ -241,15 +241,22 @@ namespace sa {
 			}
 			material.update();
 			materials[i] = materialAsset;
+			m_progress.increment();
 		});
 
 		m_taskExecutor.run_and_wait(taskflow);
-
 
 		for (auto& mesh : data.meshes) {
 			mesh.materialID = materials[mesh.materialID]->getHeader().id; // swap index to material ID
 		}
 	}
+
+	bool ModelAsset::create(const std::string& name) {
+		m_isLoaded = true;
+		m_name = name;
+		return true;
+	}
+
 
 	bool ModelAsset::importFromFile(const std::filesystem::path& path) {
 		if (!std::filesystem::exists(path)) {
@@ -257,9 +264,6 @@ namespace sa {
 		}
 
 		m_refCount = 1;
-		m_header.type = type();
-		m_header.offset = 0;
-		m_header.size = 0;
 		
 		m_progress.reset();
 

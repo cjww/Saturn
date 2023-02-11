@@ -15,6 +15,7 @@
 #include "Assets/ModelAsset.h"
 #include "Assets/MaterialAsset.h"
 #include "Assets/TextureAsset.h"
+#include "Scene.h"
 
 namespace sa {
 	/*
@@ -166,11 +167,11 @@ namespace sa {
 	}
 
 	void AssetManager::locateStandaloneAssets() {
-		std::filesystem::path path = SA_ASSET_DIR;
+		std::filesystem::path path = std::filesystem::current_path();
 		for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) {
 			if (entry.is_regular_file()) {
 				if (entry.path().extension() == ".asset") {
-					addAsset(entry.path());
+					addAsset(std::filesystem::proximate(entry.path()));
 				}
 			}
 		}
@@ -221,21 +222,6 @@ namespace sa {
 	}
 
 	void AssetManager::clear() {
-		for (auto& [id, pTexture] : m_textures) {
-			sa::ResourceManager::get().remove<Texture2D>(id);
-		}
-		for (auto& [id, pModel] : m_models) {
-			sa::ResourceManager::get().remove<ModelData>(id);
-		}
-		for (auto& [id, pMaterial] : m_materials) {
-			sa::ResourceManager::get().remove<Material>(id);
-		}
-		
-		m_loadingModels.clear();
-		m_textures.clear();
-		m_models.clear();
-		m_materials.clear();
-	
 		m_assets.clear();
 		m_assetPackages.clear();
 	}
@@ -277,7 +263,6 @@ namespace sa {
 			try {
 				Image img(path.generic_string());
 				id = ResourceManager::get().insert<Texture2D>(path.generic_string(), Texture2D(img, generateMipMaps));
-				//SA_DEBUG_LOG_INFO("Loaded texture", path.generic_string());
 			}
 			catch (const std::exception& e) {
 				return nullptr;
@@ -290,47 +275,17 @@ namespace sa {
 		return tex;
 	}
 
-	std::tuple<ResourceID, ModelData*> AssetManager::newModel(const std::string& name) {
-		SA_PROFILE_FUNCTION();
-
-		ResourceID id;
-		if(!name.empty())
-			id = ResourceManager::get().insert<ModelData>(name, {});
-		else
-			id = ResourceManager::get().insert<ModelData>();
-		
-		m_models[id] = ResourceManager::get().get<ModelData>(id);
-
-		return { id, ResourceManager::get().get<ModelData>(id) };
-	}
 	
-	ProgressView<ResourceID>& AssetManager::loadModel(const std::filesystem::path& path) {
+	MaterialAsset* AssetManager::loadDefaultMaterial() {
 		SA_PROFILE_FUNCTION();
-		auto absPath = std::filesystem::absolute(path).generic_string();
-		
-		m_mutex.lock();
-		if (m_loadingModels.count(absPath)) {
-			m_mutex.unlock();
-			return m_loadingModels.at(absPath);
-		}
+		MaterialAsset* pAsset = getAsset<MaterialAsset>(m_defaultMaterial);
+		if (pAsset)
+			return pAsset;
 
-		ProgressView<ResourceID>& p = m_loadingModels[absPath];
-		m_mutex.unlock();
+		pAsset = createAsset<MaterialAsset>("Default Material", "");
+		m_defaultMaterial = pAsset->getID();
 
-		auto future = m_taskExecutor.async([path, &p]() {
-			return AssetManager::get().loadModel(path, p);
-		});
-		p.setFuture(future.share());
-		return p;
-	}
-
-	ResourceID AssetManager::loadDefaultMaterial() {
-		SA_PROFILE_FUNCTION();
-
-		ResourceID id = ResourceManager::get().keyToID<Material>("default_material");
-		if (id != NULL_RESOURCE)
-			return id;
-		Material mat = {};
+		Material& mat = pAsset->data;
 		memset(&mat.values, 0, sizeof(mat.values));
 		mat.values.ambientColor = SA_COLOR_WHITE;
 		mat.values.diffuseColor = SA_COLOR_WHITE;
@@ -339,20 +294,17 @@ namespace sa {
 		mat.values.shininess = 1.0f;
 		mat.twoSided = false;
 
-		return sa::ResourceManager::get().insert<Material>("default_material", mat);
+		return pAsset;
 	}
 
-	ResourceID AssetManager::loadQuad() {
-		SA_PROFILE_FUNCTION();
+	ModelAsset* AssetManager::loadQuad() {
+		ModelAsset* pAsset = getAsset<ModelAsset>(m_quad);
+		if (pAsset)
+			return pAsset;
 
-		ResourceManager& resManager = ResourceManager::get();
+		pAsset = createAsset<ModelAsset>("Quad", "");
+		m_quad = pAsset->getID();
 
-		ResourceID id = resManager.keyToID<ModelData>("Quad");
-		if (id != NULL_RESOURCE) {
-			return id;
-		}
-
-		
 		Mesh mesh = {};
 		
 		mesh.vertices = {
@@ -367,28 +319,24 @@ namespace sa {
 			1, 2, 3
 		};
 		
-		mesh.materialID = loadDefaultMaterial();
+		mesh.materialID = loadDefaultMaterial()->getID();
 
-		ModelData model = {};
-		model.meshes.push_back(mesh);
-		
-		id = resManager.insert<ModelData>("Quad", model);
+		pAsset->data.meshes.push_back(mesh);
 
-		return id;
+		return pAsset;
 	}
 
-	ResourceID AssetManager::loadBox() {
+	ModelAsset* AssetManager::loadBox() {
 		SA_PROFILE_FUNCTION();
 
-		ResourceManager& resManager = ResourceManager::get();
-		
-		ResourceID id = resManager.keyToID<ModelData>("Box");
-		if (id != NULL_RESOURCE) {
-			return id;
-		}
+		ModelAsset* pAsset = getAsset<ModelAsset>(m_box);
+		if (pAsset)
+			return pAsset;
 
+		pAsset = createAsset<ModelAsset>("Box", "");
+		m_box = pAsset->getID();
 
-		Mesh mesh = {};
+		Mesh& mesh = pAsset->data.meshes.emplace_back();
 
 		mesh.vertices = {
 			{ glm::vec4(-0.5f, 0.5f, 0.5f, 1), glm::vec4(0, 0, 1, 0), glm::vec2(0, 0) },
@@ -444,28 +392,8 @@ namespace sa {
 			21, 22, 23,
 		};
 
-		mesh.materialID = loadDefaultMaterial();
-
-		ModelData model = {};
-		model.meshes.push_back(mesh);
-
-		id = resManager.insert<ModelData>("Box", model);
-
-		return id;
-	}
-
-	ModelData* AssetManager::getModel(ResourceID id) const {
-		if (m_models.count(id)) {
-			return m_models.at(id);
-		}
-		return ResourceManager::get().get<ModelData>(id);
-	}
-
-	Material* AssetManager::getMaterial(ResourceID id) const {
-		if (m_materials.count(id)) {
-			return m_materials.at(id);
-		}
-		return ResourceManager::get().get<Material>(id);
+		mesh.materialID = loadDefaultMaterial()->getID();
+		return pAsset;
 	}
 
 	const std::unordered_map<UUID, std::unique_ptr<IAsset>>& AssetManager::getAssets() const{
@@ -495,7 +423,7 @@ namespace sa {
 	}
 
 	void AssetManager::removeAsset(IAsset* asset) {
-		m_assets.erase(asset->getHeader().id);
+		m_assets.erase(asset->getID());
 	}
 
 	void AssetManager::removeAsset(UUID id) {
@@ -510,118 +438,13 @@ namespace sa {
 
 		m_nextTypeID = 0;
 
-		addAssetType<ModelAsset>();		// 0
-		addAssetType<MaterialAsset>();	// 1
-		addAssetType<TextureAsset>();	// 2
-	}
-
-	void AssetManager::loadAssimpModel(const std::filesystem::path& path, ModelData* pModel, ProgressView<ResourceID>& progress) {
-		/*
-		SA_PROFILE_FUNCTION();
-		Assimp::Importer importer;
-
-		unsigned int flags =
-			aiProcessPreset_TargetRealtime_Quality |
-			aiProcess_FlipUVs |
-			aiProcess_PreTransformVertices |
-			//aiProcess_MakeLeftHanded |
-			0;
-		if (!importer.ValidateFlags(flags)) {
-			SA_DEBUG_LOG_ERROR("Assimp Flag validation failed");
-		}
-
-		const aiScene* scene = importer.ReadFile(path.generic_string(), flags);
-
-		if (!scene || scene->mFlags & AI_SCENE_FLAGS_INCOMPLETE || !scene->mRootNode) {
-			SA_DEBUG_LOG_ERROR("Failed to read file ", path.generic_string(), " : ", importer.GetErrorString());
-			return;
-		}
-
-		SA_DEBUG_LOG_INFO(
-			"Loaded file", path.generic_string(),
-			"\nMeshes", scene->mNumMeshes,
-			"\nAnimations", scene->mNumAnimations,
-			"\nLights", scene->mNumLights);
-
-		progress.setMaxCompletionCount(scene->mNumMeshes + scene->mNumMaterials);
-
-		processNode(scene, scene->mRootNode, pModel, progress);
-
-		// Materials
-
-		SA_DEBUG_LOG_INFO("Material Count:", scene->mNumMaterials);
-		tf::Taskflow taskflow;
-		
-
-		std::vector<ResourceID> materials(scene->mNumMaterials);
-		
-		taskflow.for_each_index(0U, scene->mNumMaterials, 1U, [&](int i) {
-				aiMaterial* aMaterial = scene->mMaterials[i];
-				SA_PROFILE_SCOPE(path.generic_string() + ", Load material [" + std::to_string(i) + "] " + aMaterial->GetName().C_Str());
-				SA_DEBUG_LOG_INFO("Load material: ", path.generic_string(), "-", aMaterial->GetName().C_Str());
-
-				Material material;
-
-				// Diffuse Color
-				material.values.diffuseColor = getColor(aMaterial, AI_MATKEY_COLOR_DIFFUSE);
-				// Specular Color
-				material.values.specularColor = getColor(aMaterial, AI_MATKEY_COLOR_SPECULAR);
-
-				// Ambient Color
-				material.values.ambientColor = getColor(aMaterial, AI_MATKEY_COLOR_AMBIENT);
-				// Emissive Color
-				material.values.emissiveColor = getColor(aMaterial, AI_MATKEY_COLOR_EMISSIVE, SA_COLOR_BLACK);
-
-				aMaterial->Get(AI_MATKEY_OPACITY, material.values.opacity);
-				aMaterial->Get(AI_MATKEY_SHININESS, material.values.shininess);
-				aMaterial->Get(AI_MATKEY_METALLIC_FACTOR, material.values.metallic);
-				aMaterial->Get(AI_MATKEY_TWOSIDED, material.twoSided);
-				for (unsigned int j = aiTextureType::aiTextureType_NONE; j <= aiTextureType::aiTextureType_TRANSMISSION; j++) {
-					loadMaterialTexture(material, path.parent_path(), (aiTextureType)j, scene->mTextures, aMaterial);
-				}
-				material.update();
-				ResourceID matId = ResourceManager::get().insert<Material>(material);
-				materials[i] = matId;
-				progress.increment();
-			});
-		
-		m_taskExecutor.run_and_wait(taskflow);
-
-
-		for (auto& mesh : pModel->meshes) {
-			mesh.materialID = materials[mesh.materialID]; // swap index to material ID
-			m_materials[mesh.materialID] = ResourceManager::get().get<Material>(mesh.materialID);
-		}
-		*/
-	}
-
-	ResourceID AssetManager::loadModel(const std::filesystem::path& path, ProgressView<ResourceID>& progress) {
-		SA_PROFILE_SCOPE("AssetManager::LoadModel(), path = " + path.generic_string());
-
-		if (!std::filesystem::exists(path)) {
-			SA_DEBUG_LOG_ERROR("No such file: ", path);
-			return NULL_RESOURCE;
-		}
-		std::filesystem::path absolutePath(std::filesystem::absolute(path), path.generic_format);
-
-		m_mutex.lock();
-		ResourceID id = ResourceManager::get().keyToID<ModelData>(absolutePath.generic_string());
-		if (id != NULL_RESOURCE) {
-			m_mutex.unlock();
-			return id;
-		}
-		id = ResourceManager::get().insert<ModelData>(absolutePath.generic_string(), {});
-		m_mutex.unlock();
-		ModelData* model = ResourceManager::get().get<ModelData>(id);
-		m_models[id] = model;
-		loadAssimpModel(path, model, progress);
-		return id;
-		
+		registerAssetType<ModelAsset>();
+		registerAssetType<MaterialAsset>();
+		registerAssetType<TextureAsset>();
+		registerAssetType<Scene>();
 	}
 
 	AssetManager::~AssetManager() {
 		ResourceManager::get().clearContainer<Texture2D>();
-		ResourceManager::get().clearContainer<ModelData>();
-		ResourceManager::get().clearContainer<Material>();
 	}
 }

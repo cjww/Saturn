@@ -85,6 +85,7 @@ void DirectoryView::onImGui() {
 				}
 
 				label += "\t" + asset->getAssetPath().generic_string();
+				label += "\t" + std::to_string(asset->getReferenceCount());
 
 				if (ImGui::Selectable(label.c_str(), selected == asset.get())) {
 					selected = asset.get();
@@ -103,15 +104,18 @@ void DirectoryView::onImGui() {
 		}
 
 
-		if (ImGui::Button("Spawn") && selected) {
-			if (!selected->isLoaded()) {
-				SA_DEBUG_LOG_ERROR("Asset ", selected->getName(), " is not loaded!");
-			}
-			sa::Entity entity = m_pEngine->getCurrentScene()->createEntity();
-			entity.addComponent<comp::Transform>();
-			
+		if (selected && selected->isLoaded()) {
 			if (selected->getType() == sa::ModelAsset::type()) {
-				entity.addComponent<comp::Model>()->modelID = selected->getID();
+				if (ImGui::Button("Spawn")) {
+					sa::Entity entity = m_pEngine->getCurrentScene()->createEntity();
+					entity.addComponent<comp::Transform>();
+					entity.addComponent<comp::Model>()->modelID = selected->getID();
+				}
+			}
+			else if (selected->getType() == sa::Scene::type()) {
+				if (ImGui::Button("Set Scene")) {
+					m_pEngine->setScene(static_cast<sa::Scene*>(selected));
+				}
 			}
 		}
 

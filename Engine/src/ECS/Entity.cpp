@@ -66,7 +66,7 @@ namespace sa {
     Entity::Entity(Scene* pScene, entt::entity entity)
         : m_pScene(pScene)
         , m_entity(entity)
-        , m_pRegistry(pScene)
+        , m_pRegistry(&pScene->m_reg)
     {
     }
 
@@ -253,7 +253,7 @@ namespace sa {
 
     bool Entity::isNull() const {
         return m_pScene == nullptr
-            || !m_pScene->valid(m_entity);
+            || !m_pScene->m_reg.valid(m_entity);
     }
 
 }

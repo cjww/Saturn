@@ -5,12 +5,13 @@ namespace sa {
 	bool IAsset::dispatchLoad(std::function<bool(std::ifstream&)> loadFunction) {
 		if (m_isLoaded)
 			return false;
-
+		if (m_assetPath.empty())
+			return false;
 		auto future = m_taskExecutor.async([&, loadFunction]() {
 			std::lock_guard<std::mutex> lock(m_mutex);
 			if (m_isLoaded)
 				return false;
-
+			m_progress.reset();
 			std::ifstream file(m_assetPath, std::ios::binary);
 			if (!file.good()) {
 				file.close();
@@ -30,11 +31,13 @@ namespace sa {
 	bool IAsset::dispatchWrite(std::function<bool(std::ofstream&)> writeFunction) {
 		if (!m_isLoaded)
 			return false;
-
+		if (m_assetPath.empty())
+			return false;
 		auto future = m_taskExecutor.async([&, writeFunction]() {
 			std::lock_guard<std::mutex> lock(m_mutex);
 			if (!m_isLoaded)
 				return false;
+			m_progress.reset();
 
 			std::ofstream file(m_assetPath, std::ios::binary);
 			if (!file.good()) {
@@ -51,25 +54,13 @@ namespace sa {
 		return true;
 	}
 
-	IAsset::IAsset()
+	IAsset::IAsset(const AssetHeader& header)
 		: m_isLoaded(false)
 		, m_name("New Asset")
 		, m_refCount(0)
+		, m_header(header)
 	{
 
-	}
-
-	IAsset::IAsset(const AssetHeader& header)
-		: IAsset()
-	{
-		m_header = header;
-	}
-
-
-	IAsset::IAsset(const UUID& id) 
-		: IAsset() 
-	{
-		m_header.id = id;
 	}
 
 	IAsset::~IAsset() {
@@ -111,6 +102,10 @@ namespace sa {
 
 	const UUID& IAsset::getID() const {
 		return m_header.id;
+	}
+
+	uint32_t IAsset::getReferenceCount() const {
+		return m_refCount;
 	}
 
 	AssetHeader IAsset::readHeader(std::ifstream& file) {

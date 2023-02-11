@@ -14,7 +14,7 @@
 namespace sa {
 	void EngineEditor::makePopups() {
 		static std::string name;
-
+		
 		ImGui::SetNextWindowContentSize(ImVec2(300, 100));
 		if (ImGui::BeginPopupModal("Create New Scene", 0, ImGuiWindowFlags_NoResize | ImGuiWindowFlags_NoMove | ImGuiWindowFlags_NoSavedSettings)) {
 
@@ -29,7 +29,8 @@ namespace sa {
 			ImGui::Spacing();
 			if (ImGui::Button("Create") || pressedEnter) {
 				if (!name.empty()) {
-					m_pEngine->setScene(name);
+					Scene* scene = AssetManager::get().createAsset<Scene>(name, "Scenes/");
+					m_pEngine->setScene(scene);
 					ImGui::CloseCurrentPopup();
 					erromsg = "";
 					setFocus = true;
@@ -78,8 +79,6 @@ namespace sa {
 
 	bool EngineEditor::openProject(const std::filesystem::path& path) {
 		//unload project
-		m_savedScenes.clear();
-		m_pEngine->destroyScenes();
 		AssetManager::get().clear();
 		m_pEngine->publish<editor_event::EntityDeselected>();
 
@@ -102,16 +101,13 @@ namespace sa {
 
 		AssetManager::get().rescanAssets();
 
-		auto scenesArray = doc["scenes"];
-		for (const auto& scenePath : scenesArray) {
-			simdjson::ondemand::value s = scenePath.value_unsafe();
-			std::filesystem::path projectRealtiveScene(s.get_string().value());
-			Scene& scene = m_pEngine->loadSceneFromFile(projectRealtiveScene);
-			m_savedScenes[&scene] = projectRealtiveScene;
-		}
-
 		std::string_view startScene = doc["startScene"].get_string().value();
-		m_pEngine->setScene(std::string(startScene));
+		char* endStr;
+		UUID sceneID = strtoull(startScene.data(), &endStr, 10);
+		Scene* scene = AssetManager::get().getAsset<Scene>(sceneID);
+		if(scene)
+			scene->load();
+		m_pEngine->setScene(scene);
 
 		std::filesystem::path projectPath = path;
 		auto it = std::find(m_recentProjectPaths.begin(), m_recentProjectPaths.end(), projectPath);
@@ -170,18 +166,24 @@ namespace sa {
 		time_t t = time(NULL);
 		s.value("last_saved", t);
 
-		s.beginArray("scenes");
-		for (const auto& [pScene, scenePath] : m_savedScenes) {
-			s.value(scenePath.generic_string().c_str());
+		Scene* pCurrentScene = m_pEngine->getCurrentScene();
+		UUID id = 0;
+		if (pCurrentScene) {
+			id = pCurrentScene->getID();
+			if (pCurrentScene->write()) {
+				SA_DEBUG_LOG_INFO("Saving current scene...");
+			}
 		}
-		s.endArray();
 
-		s.value("startScene", m_pEngine->getCurrentScene()->getName().c_str());
+		s.value("startScene", std::to_string(id).c_str());
 
 		s.endObject();
 
 		projectFile << s.dump();
 		projectFile.close();
+
+		SA_DEBUG_LOG_INFO("Saaved Project to ", path);
+
 		return true;
 	}
 
@@ -229,7 +231,7 @@ namespace sa {
 
 	void EngineEditor::fileMenu() {
 
-		if (ImGui::MenuItem("Save Project")) {
+		if (ImGui::MenuItem("Save Project", "Ctrl + S")) {
 			saveProject(m_projectFile);
 		}
 
@@ -240,76 +242,36 @@ namespace sa {
 		if (ImGui::MenuItem("New Project")) {
 			createProject();
 		}
-
-		if (ImGui::MenuItem("Save Scene", "Ctrl + S")) {
-			saveScene(m_pEngine->getCurrentScene());
+		if (ImGui::MenuItem("New Scene")) {
+			m_enterSceneNamePopup = true;
 		}
 
 		if (ImGui::MenuItem("Reload Scene", "Ctrl + R")) {
-			loadScene(m_pEngine->getCurrentScene());
+			m_pEngine->getCurrentScene()->load();
 		}
-
-		if (ImGui::MenuItem("Open Scene")) {
-			openScene();
-		}
-
-
-	}
-
-	bool EngineEditor::saveScene(Scene* pScene) {
-		auto it = m_savedScenes.find(pScene);
-		if (it == m_savedScenes.end()) {
-			std::filesystem::path path;
-			if (!FileDialogs::SaveFile("Saturn Scene (*.json)\0*.json\0", path)) {
-				return false;
-			}
-			it = m_savedScenes.insert({ pScene, std::filesystem::proximate(path) }).first;
-		}
-
-		m_pEngine->storeSceneToFile(pScene, it->second);
-
-		saveProject(m_projectFile);
-		return true;
-	}
-
-	bool EngineEditor::loadScene(Scene* pScene) {
-		auto it = m_savedScenes.find(pScene);
-		if (it == m_savedScenes.end()) {
-			std::filesystem::path path;
-			if (!FileDialogs::OpenFile("Saturn Scene (*.json)\0*.json\0", path)) {
-				return false;
-			}
-			it = m_savedScenes.insert({ pScene, std::filesystem::proximate(path) }).first;
-		}
-
-		m_pEngine->loadSceneFromFile(it->second);
-		return true;
-	}
-
-	bool EngineEditor::openScene() {
-		std::filesystem::path path;
-		if (!FileDialogs::OpenFile("Saturn Scene (*.json)\0*.json\0", path)) {
-			return false;
-		}
-		openScene(path);
-		return true;
-	}
-
-	void EngineEditor::openScene(const std::filesystem::path& path) {
-		Scene& scene = m_pEngine->loadSceneFromFile(path);
-		m_pEngine->publish<editor_event::EntityDeselected>();
-		m_pEngine->setScene(scene);
 	}
 
 	void EngineEditor::startSimulation() {
 		m_state = State::PLAYING;
-		m_pEngine->storeSceneToFile(m_pEngine->getCurrentScene(), "sceneCache.json");
+		
+		Scene* pScene = m_pEngine->getCurrentScene();
+		auto path = pScene->getAssetPath();
+		pScene->setAssetPath("sceneCache.data");
+		pScene->write();
+		pScene->setAssetPath(path);
+
 		m_pEngine->getCurrentScene()->onRuntimeStart();
 	}
 
 	void EngineEditor::stopSimulation() {
 		m_pEngine->getCurrentScene()->onRuntimeStop();
-		m_pEngine->loadSceneFromFile("sceneCache.json");
+		
+		Scene* pScene = m_pEngine->getCurrentScene();
+		auto path = pScene->getAssetPath();
+		pScene->setAssetPath("sceneCache.data");
+		pScene->load();
+		pScene->setAssetPath(path);
+		
 		m_state = State::EDIT;
 	}
 
@@ -342,6 +304,7 @@ namespace sa {
 	void EngineEditor::onAttach(sa::Engine& engine, sa::RenderWindow& renderWindow) {
 		m_pEngine = &engine;
 		m_pWindow = &renderWindow;
+		
 
 		m_editorPath = std::filesystem::current_path();
 		
@@ -440,35 +403,24 @@ namespace sa {
 			if (m_state == State::EDIT) {
 				if (ImGui::IsKeyDown(ImGuiKey_LeftCtrl) || ImGui::IsKeyDown(ImGuiKey_RightCtrl)) {
 					if (ImGui::IsKeyPressed(ImGuiKey_S, false)) {
-						saveScene(m_pEngine->getCurrentScene());
+						saveProject(m_projectFile);
 					}
 				
 					if (ImGui::IsKeyPressed(ImGuiKey_R, false)) {
-						loadScene(m_pEngine->getCurrentScene());
+						m_pEngine->getCurrentScene()->load();
 					}
 
 				}
 			}
 
 			ImGui::BeginDisabled(isPlaying || isPaused);
+			m_enterSceneNamePopup = false;
 			if (ImGui::BeginMenu("File")) {
 				fileMenu();
-
 				ImGui::EndMenu();
 			}
-
-			if (ImGui::BeginMenu(m_pEngine->getCurrentScene()->getName().c_str())) {
-				for (auto& [pScene, path] : m_savedScenes) {
-					if (ImGui::MenuItem(pScene->getName().c_str())) {
-						openScene(path);
-					}
-				}
-
-				ImGui::Separator();
-				if (ImGui::MenuItem("New Scene + ")) {
-					enterSceneNamePopup = true;
-				}
-				ImGui::EndMenu();
+			if (m_enterSceneNamePopup) {
+				ImGui::OpenPopup("Create New Scene");
 			}
 
 			if (ImGui::BeginMenu("Windows")) {

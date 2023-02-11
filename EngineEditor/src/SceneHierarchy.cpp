@@ -34,14 +34,14 @@ void SceneHierarchy::makePopups() {
 			if (ImGui::MenuItem("Quad")) {
 				sa::Entity entity = m_pEngine->getCurrentScene()->createEntity("Quad");
 				entity.addComponent<comp::Transform>();
-				entity.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadQuad();
+				entity.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadQuad()->getID();
 				m_pEngine->publish<sa::editor_event::EntitySelected>(entity);
 			}
 			
 			if (ImGui::MenuItem("Box")) {
 				sa::Entity entity = m_pEngine->getCurrentScene()->createEntity("Box");
 				entity.addComponent<comp::Transform>();
-				entity.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadBox();
+				entity.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadBox()->getID();
 				m_pEngine->publish<sa::editor_event::EntitySelected>(entity);
 			}
 
@@ -177,9 +177,6 @@ SceneHierarchy::~SceneHierarchy() {
 void SceneHierarchy::onImGui() {
 	SA_PROFILE_FUNCTION();
 
-	//ImGui::ShowStyleEditor();
-
-
 	if (ImGui::Begin(m_name)) {
 
 		if(!m_isPopupMenuOpen)
@@ -192,8 +189,7 @@ void SceneHierarchy::onImGui() {
 
 
 		sa::Scene* pScene = m_pEngine->getCurrentScene();
-
-		if (ImGui::BeginListBox("##Entities", ImGui::GetContentRegionAvail())) {
+		if (pScene && ImGui::BeginListBox("##Entities", ImGui::GetContentRegionAvail())) {
 			pScene->forEach([&](sa::Entity e) {
 				if (pScene->getHierarchy().hasParent(e))
 					return;

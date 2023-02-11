@@ -29,11 +29,11 @@ namespace sa {
 
 		comp::Model* model = entity.addComponent<comp::Model>();
 
-		m_completions.insert({ entity, sa::AssetManager::get().loadModel(modelPath) });
+		m_completions.insert({ entity, sa::AssetManager::get().importAsset<ModelAsset>(modelPath) });
 		
 		//m_completions.at(entity).wait();
 
-		if (m_completions.at(entity).isDone()) {
+		if (m_completions.at(entity)->getProgress().isDone()) {
 			//entity.getComponent<comp::Model>()->modelID = m_completions.at(entity);
 			m_completions.erase(entity);
 		}
@@ -55,7 +55,7 @@ namespace sa {
 		box.addComponent<comp::Transform>()->position = position;
 		box.addComponent<comp::RigidBody>(false);
 		box.addComponent<comp::BoxCollider>(Vector3(scale, scale, scale));
-		box.addComponent<comp::Model>()->modelID = AssetManager::get().loadBox();
+		box.addComponent<comp::Model>()->modelID = AssetManager::get().loadBox()->getID();
 
 		return box;
 	}
@@ -155,21 +155,21 @@ namespace sa {
 	void TestLayer::onImGuiRender() {
 		if(ImGui::Begin("Test window")) {
 			std::queue<Entity> entitiesDone;
-			std::set<ProgressView<ResourceID>*> progressSet;
+			std::set<ModelAsset*> progressSet;
 			for (const auto& [entity, progress] : m_completions) {
 				if (entity.isNull()) {
 					entitiesDone.push(entity);
 					continue;
 				}
 				size_t size = progressSet.size();
-				progressSet.insert(&progress);
+				progressSet.insert(progress);
 				if (size != progressSet.size()) {
 					ImGui::Text("%s", entity.getComponent<comp::Name>()->name.c_str());
 					ImGui::SameLine();
-					ImGui::ProgressBar(progress.getProgress());
+					ImGui::ProgressBar(progress->getProgress().getProgress());
 				}
 
-				if (progress.isDone()) {
+				if (progress->getProgress().isDone()) {
 					//entity.getComponent<comp::Model>()->modelID = progress;
 					entitiesDone.push(entity);
 				}

@@ -36,10 +36,10 @@ namespace sa {
 	protected:
 		AssetHeader m_header;
 		std::atomic_bool m_isLoaded;
+		std::atomic_uint32_t m_refCount;
 		
 		// displayed in editor
 		std::string m_name; 
-		uint32_t m_refCount;
 
 		std::filesystem::path m_assetPath;
 
@@ -51,9 +51,7 @@ namespace sa {
 		bool dispatchWrite(std::function<bool(std::ofstream&)> writeFunction);
 
 	public:
-		IAsset();
 		IAsset(const AssetHeader& header);
-		IAsset(const UUID& id);
 
 		virtual ~IAsset();
 
@@ -82,6 +80,8 @@ namespace sa {
 		const AssetHeader& getHeader() const;
 		
 		const UUID& getID() const;
+
+		uint32_t getReferenceCount() const;
 
 		static AssetHeader readHeader(std::ifstream& file);
 		static void writeHeader(const AssetHeader& header, std::ofstream& file);

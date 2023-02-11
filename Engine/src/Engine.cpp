@@ -4,18 +4,9 @@
 namespace sa {
 	std::filesystem::path Engine::s_shaderDirectory = std::filesystem::current_path();
 
-	void Engine::registerComponentCallBacks(Scene& scene) {
-		registerComponentCallBack<comp::RigidBody>(scene);
-		registerComponentCallBack<comp::BoxCollider>(scene);
-		registerComponentCallBack<comp::SphereCollider>(scene);
-		registerComponentCallBack<comp::Transform>(scene);
-		registerComponentCallBack<comp::Model>(scene);
-		registerComponentCallBack<comp::Camera>(scene);
-	}
-
 	void Engine::registerMath() {
-		{
 
+		{
 			auto type = LuaAccessable::registerType<Vector3>("Vec3",
 				sol::constructors<Vector3(float, float, float), Vector3(float), Vector3()>(),
 				sol::meta_function::addition, &Vector3::operator+=,
@@ -163,6 +154,8 @@ namespace sa {
 		registerMath();
 
 		auto& lua = LuaAccessable::getState();
+		//TODO
+		/*
 		lua["setScene"] = [&](const sol::lua_value& scene) {
 			if (scene.is<std::string>()) {
 				setScene(scene.as<std::string>());
@@ -177,6 +170,7 @@ namespace sa {
 			}
 			return &getScene(sceneName.as<std::string>());
 		};
+		*/
 
 		lua["Serialize"] = [](sol::lua_value table, sol::this_environment thisEnv) {
 			if (!table.is<sol::table>()) {
@@ -291,8 +285,7 @@ namespace sa {
 	}
 
 	void Engine::cleanup() {
-		SA_PROFILE_FUNCTION();
-		m_scenes.clear();
+		AssetManager::get().clear();
 	}
 
 	void Engine::recordImGui() {
@@ -308,7 +301,8 @@ namespace sa {
 
 		RenderContext context = m_renderPipeline.beginScene(getCurrentScene());
 		if (context) {
-			publish<engine_event::OnRender>(&context, &m_renderPipeline);
+			if(m_currentScene)
+				publish<engine_event::OnRender>(&context, &m_renderPipeline);
 			m_renderPipeline.endScene();
 		}
 	}
@@ -320,19 +314,7 @@ namespace sa {
 	const RenderPipeline& Engine::getRenderPipeline() const {
 		return m_renderPipeline;
 	}
-
-	Scene& Engine::getScene(const std::string& name) {
-		auto [it, success] = m_scenes.emplace(name, name);
-		if (success) {
-			it->second.on<scene_event::SceneRequest>([&](const sa::scene_event::SceneRequest e, Scene&){
-				setScene(e.sceneName);
-			});
-			
-			registerComponentCallBacks(it->second);
-		}
-		return it->second;
-	}
-
+	/*
 	Scene& Engine::loadSceneFromFile(const std::filesystem::path& path) {
 		simdjson::ondemand::parser parser;
 		auto json = simdjson::padded_string::load(path.generic_string());
@@ -359,35 +341,16 @@ namespace sa {
 		file.close();
 		SA_DEBUG_LOG_INFO("Scene ", pScene->getName(), " stored to file ", path);
 	}
+	*/
 
 	Scene* Engine::getCurrentScene() const {
 		return m_currentScene;
 	}
 
-	void Engine::setScene(const std::string& name) {
-		setScene(getScene(name));
-	}
-
-	void Engine::setScene(Scene& scene) {
+	void Engine::setScene(Scene* scene) {
 		SA_PROFILE_FUNCTION();
-		publish<engine_event::SceneSet>(m_currentScene, &scene);
-		m_currentScene = &scene;	
-	}
-
-	std::unordered_map<std::string, Scene>& Engine::getScenes() {
-		return m_scenes;
-	}
-
-	void Engine::destroyScene(const std::string& name) {
-		if (m_currentScene->getName() == name) {
-			m_currentScene = nullptr;
-		}
-		m_scenes.erase(name);
-	}
-
-	void Engine::destroyScenes() {
-		m_scenes.clear();
-		m_currentScene = nullptr;
+		publish<engine_event::SceneSet>(m_currentScene, scene);
+		m_currentScene = scene;	
 	}
 }
 

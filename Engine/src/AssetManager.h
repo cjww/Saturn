@@ -31,18 +31,9 @@
 //--------------------------------------------------------------------------------------
 namespace sa {
 
-	struct Mesh {
-		std::vector<VertexNormalUV> vertices;
-		std::vector<uint32_t> indices;
+	class ModelAsset;
+	class MaterialAsset;
 
-		UUID materialID;
-	};
-
-	struct ModelData {
-		std::vector<Mesh> meshes;
-	};
-
-	
 	class AssetPackage {
 	public:
 		std::filesystem::path path;
@@ -55,24 +46,19 @@ namespace sa {
 	};
 
 	// Singelton class
-	class AssetManager
-	{
+	class AssetManager {
 	private:	
-		tf::Executor m_taskExecutor;
-
 		std::mutex m_mutex;
 
-		std::unordered_map<std::string, ProgressView<ResourceID>> m_loadingModels;
-
-		std::unordered_map<ResourceID, ModelData*> m_models;
 		std::unordered_map<ResourceID, Texture2D*> m_textures;
-		std::unordered_map<ResourceID, Material*> m_materials;
 
-
-		// Assets
 		std::unordered_map<std::filesystem::path, UUID> m_importedAssets;
 		std::unordered_map<UUID, std::unique_ptr<IAsset>> m_assets;
 		std::list<AssetPackage> m_assetPackages;
+
+		UUID m_quad;
+		UUID m_box;
+		UUID m_defaultMaterial;
 
 		AssetTypeID m_nextTypeID;
 		std::unordered_map<AssetTypeID, std::function<IAsset* (const AssetHeader&)>> m_assetAddConversions;
@@ -80,9 +66,6 @@ namespace sa {
 
 
 		AssetManager();
-
-		void loadAssimpModel(const std::filesystem::path& path, ModelData* pModel, ProgressView<ResourceID>& progress);
-		ResourceID loadModel(const std::filesystem::path& path, ProgressView<ResourceID>& progress);
 
 		void locateAssetPackages();
 		void locateStandaloneAssets();
@@ -104,24 +87,17 @@ namespace sa {
 
 		Texture2D* loadTexture(const std::filesystem::path& path, bool generateMipMaps);
 
-		std::tuple<ResourceID, ModelData*> newModel(const std::string& name = "");
+		MaterialAsset* loadDefaultMaterial();
 
-		ProgressView<ResourceID>& loadModel(const std::filesystem::path& path);
+		ModelAsset* loadQuad();
+		ModelAsset* loadBox();
 
-		ResourceID loadDefaultMaterial();
-
-		ResourceID loadQuad();
-		ResourceID loadBox();
-
-		ModelData* getModel(ResourceID id) const;
-		Material* getMaterial(ResourceID id) const;
-		
 		const std::unordered_map<UUID, std::unique_ptr<IAsset>>& getAssets() const;
 
 		void rescanAssets();
 
 		template<typename T>
-		AssetTypeID addAssetType();
+		AssetTypeID registerAssetType();
 
 		const std::string& getAssetTypeName(AssetTypeID typeID) const;
 
@@ -141,8 +117,9 @@ namespace sa {
 	};
 
 	template<typename T>
-	inline AssetTypeID AssetManager::addAssetType() {
+	inline AssetTypeID AssetManager::registerAssetType() {
 		AssetTypeID id = m_nextTypeID++;
+		
 		m_assetAddConversions[id] = [&](const AssetHeader& header) {
 			return m_assets.insert({ header.id, std::make_unique<T>(header) }).first->second.get();
 		};
@@ -164,15 +141,16 @@ namespace sa {
 
 	template<typename T>
 	inline T* AssetManager::importAsset(const std::filesystem::path& path, const std::filesystem::path& assetDirectory) {
-		UUID id;
+		AssetHeader header; // generates new UUID
+		header.type = T::type();
 		IAsset* asset;
 		{
 			std::lock_guard<std::mutex> lock(m_mutex);
 			if (m_importedAssets.count(path)) {
 				return dynamic_cast<T*>(m_assets.at(m_importedAssets.at(path)).get());
 			}
-			m_importedAssets[path] = id;
-			auto [it, success] = m_assets.insert({ id, std::make_unique<T>(id) });
+			m_importedAssets[path] = header.id;
+			auto [it, success] = m_assets.insert({ header.id, std::make_unique<T>(header) });
 			asset = it->second.get();
 		}
 		
@@ -191,14 +169,17 @@ namespace sa {
 	
 	template<typename T>
 	inline T* AssetManager::createAsset(const std::string& name, const std::filesystem::path& assetDirectory) {
-		UUID id;
+		AssetHeader header; // generates new UUID
+		header.type = T::type();
 		m_mutex.lock();
-		auto [it, success] = m_assets.insert({ id, std::make_unique<T>(id) });
+		auto [it, success] = m_assets.insert({ header.id, std::make_unique<T>(header) });
 		m_mutex.unlock();
 		IAsset* asset = it->second.get();
 
-		std::filesystem::path filename = name + ".asset";
-		asset->setAssetPath(assetDirectory / filename); // The path the asset will write to
+		if (!assetDirectory.empty()) {
+			std::filesystem::path filename = name + ".asset";
+			asset->setAssetPath(assetDirectory / filename); // The path the asset will write to
+		}
 
 		if (!asset->create(name)) {
 			removeAsset(asset);

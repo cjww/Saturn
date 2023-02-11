@@ -6,8 +6,6 @@
 namespace sa {
 	bool MaterialAsset::create(const std::string& name) {
 		m_name = name;
-
-		m_header.type = type();
 		m_isLoaded = true;
 		return true;
 	}

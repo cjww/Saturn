@@ -126,8 +126,7 @@ namespace sa {
 		uint32_t uniqueMeshCount = 0;
 
 		m_models.clear();
-
-		pScene->view<comp::Transform, comp::Model>().each([&](const comp::Transform& transform, const comp::Model& model) {
+		pScene->forEach<comp::Transform, comp::Model>([&](const comp::Transform& transform, const comp::Model& model) {
 			ModelAsset* modelAsset = AssetManager::get().getAsset<ModelAsset>(model.modelID);
 			if (!modelAsset || !modelAsset->isLoaded())
 				return;
@@ -418,12 +417,13 @@ namespace sa {
 		SA_PROFILE_FUNCTION();
 		
 		m_lights.clear();
-		pScene->view<comp::Transform, comp::Light>().each([](const comp::Transform& transform, comp::Light& light) {
+
+		pScene->forEach<comp::Transform, comp::Light>([](const comp::Transform& transform, comp::Light& light) {
 			light.values.position = glm::vec4(transform.position, light.values.position.w);
 			light.values.direction = glm::vec4(transform.rotation * glm::vec3(0, 0, 1), light.values.direction.w);
 		});
-		
-		pScene->view<comp::Light>().each([&](comp::Light& light) {
+
+		pScene->forEach<comp::Light>([&](const comp::Light& light) {
 			m_lights.push_back(light.values);
 		});
 		
