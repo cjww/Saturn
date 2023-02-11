@@ -80,6 +80,8 @@ namespace sa {
 	
 		static AssetManager& get();
 
+		static void makeDirectoryPath(const std::filesystem::path& path);
+
 		void clear();
 
 		Texture2D* loadDefaultTexture();

@@ -32,8 +32,10 @@ namespace sa {
 					UUID textureID;
 					file.read((char*)&textureID, sizeof(textureID));
 					TextureAsset* pTextureAsset = AssetManager::get().getAsset<TextureAsset>(textureID);
-					if (pTextureAsset)
+					if (pTextureAsset) {
 						pTextureAsset->load();
+						m_progress.addDependency(&pTextureAsset->getProgress());
+					}
 					data.m_textures[type][j] = textureID;
 				}
 

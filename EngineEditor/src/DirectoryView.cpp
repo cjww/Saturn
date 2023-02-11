@@ -68,20 +68,20 @@ void DirectoryView::onImGui() {
 		auto& assets = sa::AssetManager::get().getAssets();
 		
 		static sa::IAsset* selected = nullptr;
+
 		if (ImGui::BeginListBox("Assets")) {
 			for (auto& [id, asset] : assets) {
 				std::string label = asset->getName() + "\t"
 					+ sa::AssetManager::get().getAssetTypeName(asset->getType());
-				if (!asset->isLoaded()) {
-					if (!asset->getProgress().isDone()) {
-						label += "\t" + std::to_string(asset->getProgress().getProgress());
-					}
-					else {
-						label += "\tUnloaded";
-					}
+				if (asset->isLoaded()) {
+					label += "\tLoaded";
+				}
+				else if (!asset->getProgress().isAllDone()) {
+					ImGui::ProgressBar(asset->getProgress().getAllCompletion());
+					label += "\tUnloaded";
 				}
 				else {
-					label += "\tLoaded";
+					label += "\tUnloaded";
 				}
 
 				label += "\t" + asset->getAssetPath().generic_string();

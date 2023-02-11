@@ -166,7 +166,7 @@ namespace sa {
 				if (size != progressSet.size()) {
 					ImGui::Text("%s", entity.getComponent<comp::Name>()->name.c_str());
 					ImGui::SameLine();
-					ImGui::ProgressBar(progress->getProgress().getProgress());
+					ImGui::ProgressBar(progress->getProgress().getCompletion());
 				}
 
 				if (progress->getProgress().isDone()) {

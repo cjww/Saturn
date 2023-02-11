@@ -299,8 +299,10 @@ namespace sa {
 
 				file.read((char*)&mesh.materialID, sizeof(mesh.materialID));
 				MaterialAsset* pMaterialAsset = AssetManager::get().getAsset<MaterialAsset>(mesh.materialID);
-				if (pMaterialAsset) 
+				if (pMaterialAsset) {
 					pMaterialAsset->load();
+					m_progress.addDependency(&pMaterialAsset->getProgress());
+				}
 			}
 			return true;
 		});

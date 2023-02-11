@@ -100,7 +100,7 @@ namespace sa {
 		for (const auto& [entity, progress] : m_completions) {
 			if (m_infoClock.getElapsedTime() > 0.5f) {
 				m_infoClock.restart();
-				std::cout << "Entity " << entity.getComponent<comp::Name>()->name << " : " << progress.getProgress() * 100 << "%" << std::endl;
+				std::cout << "Entity " << entity.getComponent<comp::Name>()->name << " : " << progress.getCompletion() * 100 << "%" << std::endl;
 			}
 			if (progress.isDone()) {
 				entity.getComponent<comp::Model>()->modelID = progress;
