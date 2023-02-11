@@ -534,11 +534,10 @@ namespace ImGui {
 
 		ImVec2 buttonSize(GetWindowContentRegionWidth(), 50);
 		
-		ImVec2 sizeMin, sizeMax;
-		sizeMin = ImVec2(GetCursorPos().x + GetWindowPos().x, GetCursorPos().y + GetWindowPos().y);
-		sizeMax = ImVec2(sizeMin.x + buttonSize.x, sizeMin.y + buttonSize.y);
+		ImVec2 btnMin = GetCursorPos() + GetWindowPos();
+		ImVec2 btnMax = btnMin + buttonSize;
 
-		bool isHovered = IsMouseHoveringRect(sizeMin, sizeMax);
+		bool isHovered = IsMouseHoveringRect(btnMin, btnMax);
 		
 		PushStyleVar(ImGuiStyleVar_ChildRounding, ImGui::GetStyle().FrameRounding);
 		PushStyleVar(ImGuiStyleVar_ChildBorderSize, ImGui::GetStyle().FrameBorderSize);
@@ -556,19 +555,22 @@ namespace ImGui {
 
 		BeginChild(path, buttonSize, false);
 		
+		ImGuiID id = GetCurrentWindow()->GetID(path);
+		ImVec2 pos = GetItemRectMin();
+		auto closeBtnSize = ImVec2(GetFontSize(), GetFontSize()) + GetStyle().FramePadding * 2.0f;
+		pos.x = GetItemRectMax().x - closeBtnSize.x;
+		pos.x -= GetStyle().FramePadding.x;
+		pos.y += buttonSize.y * 0.5f - closeBtnSize.y * 0.5f;
+
+		if (CloseButton(id, pos)) {
+			*isOpen = false;
+		}
+		
 		SetCursorPosX(GetCursorPosX() + GetStyle().FramePadding.x);
 		SetCursorPosY(GetCursorPosY() + GetStyle().FramePadding.y);
 
 		Text(name);
 
-		//SameLine();
-		//SetCursorPosX(buttonSize.x - GetStyle().FramePadding.x - 50);
-		
-		ImGuiID id = GetCurrentWindow()->GetID(path);
-		if (CloseButton(id, GetCursorPos() + GetWindowPos())) {
-			*isOpen = false;
-		}
-		
 		SetCursorPosX(GetCursorPosX() + GetStyle().FramePadding.x);
 		SetCursorPosY(GetCursorPosY() + GetStyle().FramePadding.y);
 

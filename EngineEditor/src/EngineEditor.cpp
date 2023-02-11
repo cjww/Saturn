@@ -207,10 +207,16 @@ namespace sa {
 
 			if (ImGui::BeginChild("recent_projects", ImVec2(ImGui::GetWindowContentRegionWidth(), popupSize.y * 0.8f), true)) {
 				for (auto it = m_recentProjectPaths.rbegin(); it != m_recentProjectPaths.rend(); it++) {
-					if (ImGui::ProjectButton(it->filename().replace_extension().string().c_str(), it->string().c_str())) {
+					bool isOpen = true;
+					if (ImGui::ProjectButton(it->filename().replace_extension().string().c_str(), it->string().c_str(), &isOpen)) {
 						if (!openProject(*it)) {
 							SA_DEBUG_LOG_ERROR("Failed to open project");
 						}
+						break;
+					}
+					if (!isOpen) {
+						int i = std::distance(m_recentProjectPaths.rbegin(), it);
+						m_recentProjectPaths.erase(m_recentProjectPaths.end() - i - 1);
 						break;
 					}
 				}
