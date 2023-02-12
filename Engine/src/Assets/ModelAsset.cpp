@@ -332,4 +332,18 @@ namespace sa {
 			return true;
 		});
 	}
+
+	bool ModelAsset::unload() {
+
+		for (auto& mesh : data.meshes) {
+			IAsset* pMaterial = AssetManager::get().getAsset(mesh.materialID);
+			if (pMaterial)
+				pMaterial->release();
+		}
+
+		data.meshes.clear();
+		data.meshes.shrink_to_fit();
+		m_isLoaded = false;
+		return true;
+	}
 }

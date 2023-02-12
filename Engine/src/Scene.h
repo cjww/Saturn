@@ -23,8 +23,6 @@
 
 
 namespace sa {
-	typedef uint32_t SceneID;
-
 	class Scene : public entt::emitter<Scene>, public Serializable, public IAsset {
 	private:
 		friend class AssetManager;
@@ -73,6 +71,7 @@ namespace sa {
 
 		virtual bool load() override; // IAsset
 		virtual bool write() override; // IAsset
+		virtual bool unload() override; // IAsset
 
 		virtual void onRuntimeStart();
 		virtual void onRuntimeStop();

@@ -63,6 +63,14 @@ namespace sa {
         });
     }
 
+    bool TextureAsset::unload() {
+        m_dataBuffer.clear();
+        m_dataBuffer.shrink_to_fit();
+        m_texture.destroy();
+        m_isLoaded = false;
+        return true;
+    }
+
     const Texture& TextureAsset::getTexture() const {
         return m_texture;
     }

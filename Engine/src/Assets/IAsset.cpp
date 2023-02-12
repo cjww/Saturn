@@ -20,6 +20,7 @@ namespace sa {
 			m_header = readHeader(file);
 
 			m_isLoaded = loadFunction(file);
+			if (m_isLoaded) m_refCount++;
 		
 			file.close();
 			return m_isLoaded.load();
@@ -65,6 +66,15 @@ namespace sa {
 
 	IAsset::~IAsset() {
 
+	}
+
+	void IAsset::release() {
+		if (m_refCount > 0) {
+			m_refCount--;
+		}
+		if(m_refCount == 0) {
+			unload();
+		}
 	}
 
 	bool IAsset::isLoaded() const {

@@ -23,6 +23,7 @@ namespace sa {
 
 		void destroy(const Entity& entity);
 		void clear();
+		void freeMemory();
 
 		bool hasChildren(const Entity& parent) const;
 		bool hasParent(const Entity& child) const;

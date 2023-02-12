@@ -86,4 +86,25 @@ namespace sa {
 			return true;
 		});
 	}
+
+	bool MaterialAsset::unload() {
+		for (auto& [type, textures] : data.m_textures) {
+			for (auto& id : textures) {
+				IAsset* pTexture = AssetManager::get().getAsset(id);
+				if (pTexture)
+					pTexture->release();
+			}
+		}
+		data.m_allTextures.clear();
+		data.m_allTextures.shrink_to_fit();
+
+		std::unordered_map<MaterialTextureType, std::vector<std::pair<TextureBlendOp, float>>> tmpBlend;
+		data.m_blending.swap(tmpBlend);
+
+		std::unordered_map<MaterialTextureType, std::vector<UUID>> tmpTex;
+		data.m_textures.swap(tmpTex);
+
+		m_isLoaded = false;
+		return true;
+	}
 }

@@ -57,6 +57,7 @@ namespace sa {
 		EntityScript* getScript(const entt::entity& entity, const std::string& name);
 
 		void clearAll();
+		void freeMemory();
 
 		std::vector<EntityScript> getEntityScripts(const entt::entity& entity) const;
 

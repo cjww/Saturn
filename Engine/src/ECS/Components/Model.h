@@ -14,6 +14,7 @@ namespace comp {
 		virtual void serialize(sa::Serializer& s) override;
 		virtual void deserialize(void* pDoc) override;
 
+		virtual void onDestroy(sa::Entity* e) override;
 
 		static void reg();
 

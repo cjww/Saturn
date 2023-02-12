@@ -78,12 +78,6 @@ namespace sa {
 		return instance;
 	}
 
-	void AssetManager::makeDirectoryPath(const std::filesystem::path& path) {
-		if (!std::filesystem::exists(path)) {
-			
-		}
-	}
-
 	void AssetManager::clear() {
 		m_assets.clear();
 		m_assetPackages.clear();
@@ -145,7 +139,8 @@ namespace sa {
 		if (pAsset)
 			return pAsset;
 
-		pAsset = createAsset<MaterialAsset>("Default Material", "");
+		std::filesystem::create_directories(m_defaultPath);
+		pAsset = createAsset<MaterialAsset>("Default Material", m_defaultPath);
 		m_defaultMaterial = pAsset->getID();
 
 		Material& mat = pAsset->data;
@@ -165,7 +160,8 @@ namespace sa {
 		if (pAsset)
 			return pAsset;
 
-		pAsset = createAsset<ModelAsset>("Quad", "");
+		std::filesystem::create_directories(m_defaultPath);
+		pAsset = createAsset<ModelAsset>("Quad", m_defaultPath);
 		m_quad = pAsset->getID();
 
 		Mesh mesh = {};
@@ -189,15 +185,17 @@ namespace sa {
 		return pAsset;
 	}
 
-	ModelAsset* AssetManager::loadBox() {
+	ModelAsset* AssetManager::loadCube() {
 		SA_PROFILE_FUNCTION();
 
-		ModelAsset* pAsset = getAsset<ModelAsset>(m_box);
+		ModelAsset* pAsset = getAsset<ModelAsset>(m_cube);
 		if (pAsset)
 			return pAsset;
 
-		pAsset = createAsset<ModelAsset>("Box", "");
-		m_box = pAsset->getID();
+
+		std::filesystem::create_directories(m_defaultPath);
+		pAsset = createAsset<ModelAsset>("Cube", m_defaultPath);
+		m_cube = pAsset->getID();
 
 		Mesh& mesh = pAsset->data.meshes.emplace_back();
 
@@ -300,6 +298,7 @@ namespace sa {
 		});
 
 		m_nextTypeID = 0;
+		m_defaultPath = "Assets/Default/";
 
 		registerAssetType<ModelAsset>();
 		registerAssetType<MaterialAsset>();

@@ -59,6 +59,13 @@ namespace sa {
 		m_parents.clear();
 	}
 
+	void EntityHierarchy::freeMemory() {
+		std::unordered_map<Entity, std::unordered_set<Entity>> tmpChildren;
+		m_children.swap(tmpChildren);
+		std::unordered_map<Entity, Entity> tmpParents;
+		m_parents.swap(tmpParents);
+	}
+
 	bool EntityHierarchy::hasChildren(const Entity& parent) const {
 		return m_children.count(parent) && !m_children.at(parent).empty();
 	}

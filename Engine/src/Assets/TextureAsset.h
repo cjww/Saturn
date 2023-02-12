@@ -21,6 +21,7 @@ namespace sa {
 
 		virtual bool load() override;
 		virtual bool write() override;
+		virtual bool unload() override;
 
 		const Texture& getTexture() const;
 

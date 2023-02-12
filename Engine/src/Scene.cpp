@@ -57,13 +57,13 @@ namespace sa {
 	}
 
 	Scene::Scene(const AssetHeader& header) : IAsset(header) {
-		m_pPhysicsScene = PhysicsSystem::get().createScene();
+		m_pPhysicsScene = nullptr;
 		registerComponentCallBacks();
 	}
 
 	Scene::~Scene() {
-		clearEntities();
-		m_pPhysicsScene->release();
+		if(m_pPhysicsScene)
+			m_pPhysicsScene->release();
 	}
 
 	void Scene::reg() {
@@ -91,7 +91,9 @@ namespace sa {
 	}
 
 	bool Scene::load() {
-		return dispatchLoad([&](std::ifstream& file) {	
+		return dispatchLoad([&](std::ifstream& file) {
+			m_pPhysicsScene = PhysicsSystem::get().createScene();
+
 			simdjson::padded_string jsonStr(m_header.size);
 			file.read(jsonStr.data(), jsonStr.length());
 
@@ -123,6 +125,21 @@ namespace sa {
 		});
 	}
 
+	bool Scene::unload() {
+		m_reg.clear();
+		m_reg.shrink_to_fit();
+		m_scriptManager.freeMemory();
+		m_hierarchy.freeMemory();
+
+		if (m_pPhysicsScene) {
+			m_pPhysicsScene->release();
+			m_pPhysicsScene = nullptr;
+		}
+
+		m_isLoaded = false;
+		return true;
+	}
+
 	void Scene::onRuntimeStart() {
 		m_scriptManager.broadcast("onStart");
 	}
@@ -130,7 +147,6 @@ namespace sa {
 	void Scene::onRuntimeStop()	{
 		m_scriptManager.broadcast("onStop");
 	}
-
 
 	void Scene::runtimeUpdate(float dt) {
 		SA_PROFILE_FUNCTION();

@@ -66,7 +66,9 @@ namespace sa {
 
 		virtual bool load() = 0;
 		virtual bool write() = 0;
+		virtual bool unload() = 0;
 
+		void release();
 
 		bool isLoaded() const;
 		const ProgressView<bool>& getProgress() const;

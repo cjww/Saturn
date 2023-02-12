@@ -88,7 +88,7 @@ namespace sa {
 			box = m_pEngine->getCurrentScene()->createEntity();
 
 			box.addComponent<comp::Transform>()->position = {0, 0, 0};
-			box.addComponent<comp::Model>()->modelID = AssetManager::get().loadBox();
+			box.addComponent<comp::Model>()->modelID = AssetManager::get().loadCube();
 
 		}
 		

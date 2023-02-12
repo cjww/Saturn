@@ -98,11 +98,18 @@ void DirectoryView::onImGui() {
 		if (ImGui::Button("Load Asset") && selected) {
 			selected->load();
 		}
+		
+		if (ImGui::Button("Unload Asset") && selected) {
+			selected->unload();
+		}
+		
+		if (ImGui::Button("Release Asset") && selected) {
+			selected->release();
+		}
 
 		if (ImGui::Button("Write Asset") && selected) {
 			selected->write();
 		}
-
 
 		if (selected && selected->isLoaded()) {
 			if (selected->getType() == sa::ModelAsset::type()) {

@@ -57,8 +57,10 @@ namespace sa {
 		std::list<AssetPackage> m_assetPackages;
 
 		UUID m_quad;
-		UUID m_box;
+		UUID m_cube;
 		UUID m_defaultMaterial;
+		std::filesystem::path m_defaultPath;
+
 
 		AssetTypeID m_nextTypeID;
 		std::unordered_map<AssetTypeID, std::function<IAsset* (const AssetHeader&)>> m_assetAddConversions;
@@ -80,8 +82,6 @@ namespace sa {
 	
 		static AssetManager& get();
 
-		static void makeDirectoryPath(const std::filesystem::path& path);
-
 		void clear();
 
 		Texture2D* loadDefaultTexture();
@@ -92,7 +92,7 @@ namespace sa {
 		MaterialAsset* loadDefaultMaterial();
 
 		ModelAsset* loadQuad();
-		ModelAsset* loadBox();
+		ModelAsset* loadCube();
 
 		const std::unordered_map<UUID, std::unique_ptr<IAsset>>& getAssets() const;
 

@@ -195,6 +195,21 @@ namespace sa {
 		m_scripts.clear();
 	}
 
+	void ScriptManager::freeMemory() {
+		m_allScripts.clear();
+		m_allScripts.shrink_to_fit();
+
+		std::unordered_map<std::string, SystemScript> tmpSystemScripts;
+		m_systemScripts.swap(tmpSystemScripts);
+
+		std::unordered_map<size_t, sol::safe_function> tmpScripts;
+		m_scripts.swap(tmpScripts);
+
+		std::unordered_map<entt::entity, std::unordered_map<std::string, size_t>> tmpEntityScriptIndices;
+		m_entityScriptIndices.swap(tmpEntityScriptIndices);
+		
+	}
+
 	std::vector<EntityScript> ScriptManager::getEntityScripts(const entt::entity& entity) const {
 		if (!m_entityScriptIndices.count(entity))
 			return {};
