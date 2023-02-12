@@ -38,8 +38,8 @@ void SceneHierarchy::makePopups() {
 				m_pEngine->publish<sa::editor_event::EntitySelected>(entity);
 			}
 			
-			if (ImGui::MenuItem("Box")) {
-				sa::Entity entity = m_pEngine->getCurrentScene()->createEntity("Box");
+			if (ImGui::MenuItem("Cube")) {
+				sa::Entity entity = m_pEngine->getCurrentScene()->createEntity("Cube");
 				entity.addComponent<comp::Transform>();
 				entity.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadCube()->getID();
 				m_pEngine->publish<sa::editor_event::EntitySelected>(entity);

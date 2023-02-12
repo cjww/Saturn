@@ -26,6 +26,12 @@
 
 #define SA_ASSET_DIR "Assets/"
 
+#define SA_DEFAULT_MATERIAL_NAME "default_material"
+#define SA_DEFAULT_CUBE_NAME "default_cube"
+#define SA_DEFAULT_QUAD_NAME "default_quad"
+#define SA_DEFAULT_ASSET_DIR "Assets/default"
+
+
 //--------------------------------------------------------------------------------------
 // AssetManager is the class that will hold all assets. 
 //--------------------------------------------------------------------------------------
@@ -56,11 +62,7 @@ namespace sa {
 		std::unordered_map<UUID, std::unique_ptr<IAsset>> m_assets;
 		std::list<AssetPackage> m_assetPackages;
 
-		UUID m_quad;
-		UUID m_cube;
-		UUID m_defaultMaterial;
 		std::filesystem::path m_defaultPath;
-
 
 		AssetTypeID m_nextTypeID;
 		std::unordered_map<AssetTypeID, std::function<IAsset* (const AssetHeader&)>> m_assetAddConversions;
@@ -86,11 +88,9 @@ namespace sa {
 
 		Texture2D* loadDefaultTexture();
 		Texture2D* loadDefaultBlackTexture();
-
 		Texture2D* loadTexture(const std::filesystem::path& path, bool generateMipMaps);
 
 		MaterialAsset* loadDefaultMaterial();
-
 		ModelAsset* loadQuad();
 		ModelAsset* loadCube();
 
@@ -106,6 +106,10 @@ namespace sa {
 		template<typename T>
 		T* getAsset(UUID id) const;
 		IAsset* getAsset(UUID id) const;
+
+		template<typename T>
+		T* findAsset(const std::string& name) const;
+		IAsset* findAsset(const std::string& name) const;
 
 		template<typename T>
 		T* importAsset(const std::filesystem::path& path, const std::filesystem::path& assetDirectory = SA_ASSET_DIR);
@@ -140,6 +144,12 @@ namespace sa {
 			return nullptr;
 		return dynamic_cast<T*>(m_assets.at(id).get());
 	}
+
+	template<typename T>
+	inline T* AssetManager::findAsset(const std::string& name) const {
+		return dynamic_cast<T*>(findAsset(name));
+	}
+
 
 	template<typename T>
 	inline T* AssetManager::importAsset(const std::filesystem::path& path, const std::filesystem::path& assetDirectory) {

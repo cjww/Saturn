@@ -49,7 +49,7 @@ namespace sa {
 
 		bool dispatchLoad(std::function<bool(std::ifstream&)> loadFunction);
 		bool dispatchWrite(std::function<bool(std::ofstream&)> writeFunction);
-
+		virtual bool unload() = 0;
 	public:
 		IAsset(const AssetHeader& header);
 
@@ -66,7 +66,7 @@ namespace sa {
 
 		virtual bool load() = 0;
 		virtual bool write() = 0;
-		virtual bool unload() = 0;
+		
 
 		void release();
 

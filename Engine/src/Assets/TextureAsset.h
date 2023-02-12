@@ -12,6 +12,8 @@ namespace sa {
 		std::vector<unsigned char> m_dataBuffer;
 
 		Texture m_texture;
+		
+		virtual bool unload() override;
 	public:
 		using IAsset::IAsset;
 		static AssetTypeID type() { return s_typeID; }
@@ -21,7 +23,6 @@ namespace sa {
 
 		virtual bool load() override;
 		virtual bool write() override;
-		virtual bool unload() override;
 
 		const Texture& getTexture() const;
 

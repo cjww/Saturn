@@ -132,17 +132,17 @@ namespace sa {
 		return tex;
 	}
 
-	
 	MaterialAsset* AssetManager::loadDefaultMaterial() {
 		SA_PROFILE_FUNCTION();
-		MaterialAsset* pAsset = getAsset<MaterialAsset>(m_defaultMaterial);
-		if (pAsset)
+		
+		MaterialAsset* pAsset = findAsset<MaterialAsset>(SA_DEFAULT_MATERIAL_NAME);
+		if (pAsset) {
 			return pAsset;
+		}
 
 		std::filesystem::create_directories(m_defaultPath);
-		pAsset = createAsset<MaterialAsset>("Default Material", m_defaultPath);
-		m_defaultMaterial = pAsset->getID();
-
+		pAsset = createAsset<MaterialAsset>(SA_DEFAULT_MATERIAL_NAME, m_defaultPath);
+		
 		Material& mat = pAsset->data;
 		memset(&mat.values, 0, sizeof(mat.values));
 		mat.values.ambientColor = SA_COLOR_WHITE;
@@ -156,14 +156,15 @@ namespace sa {
 	}
 
 	ModelAsset* AssetManager::loadQuad() {
-		ModelAsset* pAsset = getAsset<ModelAsset>(m_quad);
-		if (pAsset)
+		
+		ModelAsset* pAsset = findAsset<ModelAsset>(SA_DEFAULT_QUAD_NAME);
+		if (pAsset) {
 			return pAsset;
+		}
 
 		std::filesystem::create_directories(m_defaultPath);
-		pAsset = createAsset<ModelAsset>("Quad", m_defaultPath);
-		m_quad = pAsset->getID();
-
+		pAsset = createAsset<ModelAsset>(SA_DEFAULT_QUAD_NAME, m_defaultPath);
+		
 		Mesh mesh = {};
 		
 		mesh.vertices = {
@@ -188,14 +189,13 @@ namespace sa {
 	ModelAsset* AssetManager::loadCube() {
 		SA_PROFILE_FUNCTION();
 
-		ModelAsset* pAsset = getAsset<ModelAsset>(m_cube);
-		if (pAsset)
+		ModelAsset* pAsset = findAsset<ModelAsset>(SA_DEFAULT_CUBE_NAME);
+		if (pAsset) {
 			return pAsset;
-
+		}
 
 		std::filesystem::create_directories(m_defaultPath);
-		pAsset = createAsset<ModelAsset>("Cube", m_defaultPath);
-		m_cube = pAsset->getID();
+		pAsset = createAsset<ModelAsset>(SA_DEFAULT_CUBE_NAME, m_defaultPath);
 
 		Mesh& mesh = pAsset->data.meshes.emplace_back();
 
@@ -253,6 +253,7 @@ namespace sa {
 			21, 22, 23,
 		};
 
+
 		mesh.materialID = loadDefaultMaterial()->getID();
 		return pAsset;
 	}
@@ -283,6 +284,14 @@ namespace sa {
 		return m_assets.at(id).get();
 	}
 
+	IAsset* AssetManager::findAsset(const std::string& name) const {
+		for (auto& [id, asset] : m_assets) {
+			if (asset->getName() == name)
+				return asset.get();
+		}
+		return nullptr;
+	}
+
 	void AssetManager::removeAsset(IAsset* asset) {
 		m_assets.erase(asset->getID());
 	}
@@ -298,7 +307,7 @@ namespace sa {
 		});
 
 		m_nextTypeID = 0;
-		m_defaultPath = "Assets/Default/";
+		m_defaultPath = SA_DEFAULT_ASSET_DIR;
 
 		registerAssetType<ModelAsset>();
 		registerAssetType<MaterialAsset>();

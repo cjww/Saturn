@@ -99,10 +99,6 @@ void DirectoryView::onImGui() {
 			selected->load();
 		}
 		
-		if (ImGui::Button("Unload Asset") && selected) {
-			selected->unload();
-		}
-		
 		if (ImGui::Button("Release Asset") && selected) {
 			selected->release();
 		}

@@ -22,6 +22,7 @@ namespace sa {
 		inline static AssetTypeID s_typeID;
 
 		bool loadAssimpModel(const std::filesystem::path& path);
+		virtual bool unload() override;
 
 	public:
 		using IAsset::IAsset;
@@ -36,7 +37,6 @@ namespace sa {
 		
 		virtual bool load() override;
 		virtual bool write() override;
-		virtual bool unload() override;
 
 
 
