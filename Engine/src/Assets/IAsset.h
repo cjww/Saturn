@@ -5,21 +5,17 @@
 
 #include "UUID.h"
 #include "ProgressView.h"
+
+#include "Core.h"
 namespace sa {
 
 	typedef uint32_t AssetTypeID;
 	struct AssetHeader {
-		/*
-			----Header----
-			ID: 1
-			Size: 256
-			Offset: 64
-			Type: "Model"
-		*/
 		UUID id;
 		size_t size = 0;
 		std::streampos offset = 0;
 		AssetTypeID type;
+		uint16_t version = SA_ASSET_VERSION;
 	};
 
 	/*
@@ -27,6 +23,7 @@ namespace sa {
 		All IAsset subclasses must fill following conditions:
 			* override bool load()
 			* override bool write()
+			* override private bool unload()
 			* friend class AssetManager
 			* have a private static AssetTypeID s_typeID
 			* have a public static AssetTypeID type() { return s_typeID; }

@@ -20,12 +20,13 @@ namespace sa {
 		for (uint32_t i = 0; i < count; i++) {
 			const BlendedTexture& blendedTex = textures[i];
 			targetMaps[i] = blendedTex.textureAssetID;
-			targetBlend[i] = { blendedTex.blendOp, blendedTex.blendFactor};
+			targetBlend[i] = { blendedTex.blendOp, blendedTex.blendFactor };
 		}
 	}
 
 	Material::Material()
 		: twoSided(false)
+		, m_allTexturesLoaded(false)
 	{
 	}
 
@@ -44,7 +45,6 @@ namespace sa {
 
 		values.lightMapCount = m_textures[MaterialTextureType::LIGHTMAP].size();
 		values.lightMapFirst = values.emissiveMapFirst + values.emissiveMapCount;
-		m_allTextures.clear();
 	}
 
 	void Material::setTextures(const std::vector<BlendedTexture>& textures, MaterialTextureType type) {
@@ -52,9 +52,11 @@ namespace sa {
 	}
 
 	const std::vector<Texture>& Material::fetchTextures() {
-		if (!m_allTextures.empty())
+		if (m_allTexturesLoaded)
 			return m_allTextures;
-
+		
+		m_allTextures.clear();
+		m_allTexturesLoaded = true;
 		for (auto& [type, textures] : m_textures) {
 			for (auto& id : textures) {
 				TextureAsset* asset = AssetManager::get().getAsset<TextureAsset>(id);
@@ -62,8 +64,8 @@ namespace sa {
 					m_allTextures.push_back(asset->getTexture());
 				}
 				else {
-					SA_DEBUG_LOG_WARNING("Texture asset invalid (UUID: ", asset->getHeader().id, "). Loaded default texture");
 					m_allTextures.push_back(*AssetManager::get().loadDefaultTexture());
+					m_allTexturesLoaded = false;
 				}
 			}
 		}

@@ -18,7 +18,11 @@ namespace sa {
 				return false;
 			}
 			m_header = readHeader(file);
-
+			if (m_header.version != SA_ASSET_VERSION) {
+				SA_DEBUG_LOG_WARNING("Asset versions do not match! ", m_assetPath, " (", m_header.version, " vs ", SA_ASSET_VERSION, ")");
+				m_header.version = SA_ASSET_VERSION;
+			}
+			
 			m_isLoaded = loadFunction(file);
 			if (m_isLoaded) m_refCount++;
 		

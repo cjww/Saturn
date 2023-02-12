@@ -17,6 +17,8 @@
 #include "Assets/TextureAsset.h"
 #include "Scene.h"
 
+#include "Core.h"
+
 namespace sa {
 	
 	void AssetManager::locateAssetPackages() {
@@ -40,11 +42,16 @@ namespace sa {
 		std::ifstream file(assetPath, std::ios::binary);
 		if (!file.good()) {
 			SA_DEBUG_LOG_ERROR("Failed to open persumed asset ", assetPath);
+			return nullptr;
 		}
 		AssetHeader header = IAsset::readHeader(file);
 		file.close();
+		if (header.version != SA_ASSET_VERSION) {
+			SA_DEBUG_LOG_WARNING("Asset versions do not match! ", assetPath, " (", header.version, " vs ", SA_ASSET_VERSION, ")");
+			header.version = SA_ASSET_VERSION;
+		}
 	
-		if (m_assets.count(header.id)) {
+		if (m_assets.count(header.id)) { // already loaded
 			return nullptr;
 		}
 		if (!m_assetAddConversions.count(header.type)) {
@@ -261,6 +268,23 @@ namespace sa {
 	const std::unordered_map<UUID, std::unique_ptr<IAsset>>& AssetManager::getAssets() const{
 		return m_assets;
 	}
+
+	void AssetManager::getAssets(std::vector<IAsset*>* assets, const std::string& filter) const {
+		for (auto& [id, asset] : m_assets) {
+			if (asset->getName().find(filter) != std::string::npos) {
+				assets->push_back(asset.get());
+			}
+		}
+	}
+
+	void AssetManager::getAssets(std::vector<IAsset*>* assets, AssetTypeID typeFilter) const {
+		for (auto& [id, asset] : m_assets) {
+			if (asset->getType() == typeFilter) {
+				assets->push_back(asset.get());
+			}
+		}
+	}
+
 
 	void AssetManager::rescanAssets() {
 		clear();

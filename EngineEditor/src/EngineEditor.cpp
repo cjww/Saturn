@@ -90,7 +90,7 @@ namespace sa {
 		}
 		ondemand::document doc = parser.iterate(json);
 		
-		auto version = doc["version"];
+		auto version = doc["version"].get_uint64().value();
 		if (version != SA_VERSION) {
 			SA_DEBUG_LOG_ERROR("Project version missmatch:\n\tProject: ", version, "\n\tEngine: ", SA_VERSION);
 		}

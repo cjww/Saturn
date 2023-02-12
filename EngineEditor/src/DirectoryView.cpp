@@ -84,6 +84,8 @@ void DirectoryView::onImGui() {
 					label += "\tUnloaded";
 				}
 
+				label += "\t" + std::to_string(asset->getHeader().version);
+
 				label += "\t" + asset->getAssetPath().generic_string();
 				label += "\t" + std::to_string(asset->getReferenceCount());
 

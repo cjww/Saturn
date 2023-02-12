@@ -24,6 +24,7 @@
 
 #include "Assets\IAsset.h"
 
+
 #define SA_ASSET_DIR "Assets/"
 
 #define SA_DEFAULT_MATERIAL_NAME "default_material"
@@ -95,6 +96,9 @@ namespace sa {
 		ModelAsset* loadCube();
 
 		const std::unordered_map<UUID, std::unique_ptr<IAsset>>& getAssets() const;
+		void getAssets(std::vector<IAsset*>* assets, const std::string& filter) const;
+		void getAssets(std::vector<IAsset*>* assets, AssetTypeID typeFilter) const;
+
 
 		void rescanAssets();
 

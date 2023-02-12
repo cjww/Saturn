@@ -205,6 +205,7 @@ namespace sa {
 		std::unordered_map<MaterialTextureType, std::vector<UUID>> m_textures;
 		std::unordered_map<MaterialTextureType, std::vector<std::pair<TextureBlendOp, float>>> m_blending;
 		std::vector<Texture> m_allTextures;
+		bool m_allTexturesLoaded;
 
 		void setTextures(const std::vector<BlendedTexture>& textures, MaterialTextureType type, uint32_t& count);
 
