@@ -314,34 +314,6 @@ namespace sa {
 	const RenderPipeline& Engine::getRenderPipeline() const {
 		return m_renderPipeline;
 	}
-	/*
-	Scene& Engine::loadSceneFromFile(const std::filesystem::path& path) {
-		simdjson::ondemand::parser parser;
-		auto json = simdjson::padded_string::load(path.generic_string());
-		if (json.error()) {
-			throw std::runtime_error("JSON load failed : " + std::string(simdjson::error_message(json.error())));
-		}
-		simdjson::ondemand::document doc = parser.iterate(json);
-		Scene& scene = getScene(std::string(doc["name"].get_string().value()));
-		scene.deserialize(&doc);
-		SA_DEBUG_LOG_INFO("Scene ", scene.getName(), " loaded from file ", path);
-		return scene;
-	}
-
-	void Engine::storeSceneToFile(Scene* pScene, const std::filesystem::path& path) {
-		Serializer s;
-		pScene->serialize(s);
-
-		std::ofstream file(path);
-		if (!file) {
-			SA_DEBUG_LOG_ERROR("Failed to open file ", path);
-			return;
-		}
-		file << s.dump();
-		file.close();
-		SA_DEBUG_LOG_INFO("Scene ", pScene->getName(), " stored to file ", path);
-	}
-	*/
 
 	Scene* Engine::getCurrentScene() const {
 		return m_currentScene;

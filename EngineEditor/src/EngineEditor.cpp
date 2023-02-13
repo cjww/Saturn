@@ -29,7 +29,7 @@ namespace sa {
 			ImGui::Spacing();
 			if (ImGui::Button("Create") || pressedEnter) {
 				if (!name.empty()) {
-					Scene* scene = AssetManager::get().createAsset<Scene>(name, "Scenes/");
+					Scene* scene = AssetManager::get().createAsset<Scene>(name);
 					m_pEngine->setScene(scene);
 					ImGui::CloseCurrentPopup();
 					erromsg = "";
@@ -182,7 +182,7 @@ namespace sa {
 		projectFile << s.dump();
 		projectFile.close();
 
-		SA_DEBUG_LOG_INFO("Saaved Project to ", path);
+		SA_DEBUG_LOG_INFO("Saved Project to ", path);
 
 		return true;
 	}
