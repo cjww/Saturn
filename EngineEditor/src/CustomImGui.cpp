@@ -7,6 +7,7 @@
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui_internal.h"
+#include "imgui_stdlib.h"
 
 namespace ImGui {
 
@@ -381,7 +382,7 @@ namespace ImGui {
 		ImGui::Selectable(filePath.filename().generic_string().c_str());
 	}
 
-	void viewDirectory(const std::filesystem::path& directory, std::filesystem::path& openDirectory) {
+	bool viewDirectory(const std::filesystem::path& directory, std::filesystem::path& openDirectory) {
 		//TODO: check permissions on directory before displaying
 		/*
 		auto status = std::filesystem::status(directory);
@@ -392,6 +393,10 @@ namespace ImGui {
 		bool opened = ImGui::TreeNodeEx(directory.filename().generic_string().c_str(), ImGuiTreeNodeFlags_OpenOnArrow);
 		if (ImGui::IsItemClicked()) {
 			openDirectory = directory;
+		}
+		bool doubleClicked = false;
+		if (ImGui::IsItemHovered() && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+			doubleClicked = true;
 		}
 		if (opened) {
 			for (const auto& entry : std::filesystem::directory_iterator(directory)) {
@@ -404,19 +409,22 @@ namespace ImGui {
 			}
 			ImGui::TreePop();
 		}
+		return doubleClicked;
 	}
 
-	void DirectoryHierarchy(const char* str_id, const std::filesystem::path& directory, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size) {
+	void DirectoryHierarchy(const char* str_id, std::filesystem::path& directory, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size) {
 
 		ImVec2 contentArea = size;
 		if (size.x == 0.f && size.y == 0.f) {
 			contentArea = ImGui::GetContentRegionAvail();
 		}
 
-		if (ImGui::BeginChild(str_id, contentArea)) {
+		if (ImGui::BeginChild(str_id, contentArea, true)) {
 			for (const auto& entry : std::filesystem::directory_iterator(directory)) {
 				if (entry.is_directory()) {
-					viewDirectory(entry.path(), openDirectory);
+					if (viewDirectory(entry.path(), openDirectory)) {
+						directory = entry.path();
+					}
 				}
 				else {
 					viewFile(entry.path());
@@ -427,7 +435,7 @@ namespace ImGui {
 
 	}
 
-	void DirectoryView(const char* str_id, const std::filesystem::path& directory, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size) {
+	void DirectoryView(const char* str_id, std::filesystem::path& directory, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size) {
 
 		ImVec2 contentArea = size;
 		if (size.x == 0.f && size.y == 0.f) {
@@ -435,35 +443,154 @@ namespace ImGui {
 		}
 		ImVec2 overviewArea = contentArea;
 		overviewArea.x /= 4;
-		
+
 		ImVec2 viewArea = contentArea;
 		viewArea.x -= overviewArea.x;
 
 		DirectoryHierarchy(str_id, directory, openDirectory, iconSize, overviewArea);
 
 		if (!openDirectory.empty()) {
-			ImGui::SameLine();
-			if (ImGui::BeginChild((std::string(str_id) + "1").c_str(), viewArea)) {
-				
-				ImGui::Text(openDirectory.generic_string().c_str());
-				ImGui::SameLine();
+			SameLine();
+			if (BeginChild((std::string(str_id) + "1").c_str(), viewArea)) {
 
-				ImGui::SetNextItemWidth(200);
-				ImGui::SliderInt("Icon size", &iconSize, 20, 200);
+				static std::filesystem::path lastSelected;
+				static std::set<std::filesystem::path> selectedItems;
+				static std::string editingName;
+				static std::filesystem::path isEditingName;
+				if (BeginPopupContextWindow()) {
 
-				ImVec2 vecSize;
-				vecSize.x = iconSize;
-				vecSize.y = iconSize;
-				
-				int i = 0;
-				for (const auto& entry : std::filesystem::directory_iterator(openDirectory)) {
-
-					ImGui::Button("B", vecSize);
-					ImGui::SameLine();
-					
-					if(ImGui::GetContentRegionMax().x - ImGui::GetCursorPosX() < vecSize.x) {
-						ImGui::NewLine();
+					if (MenuItem("+ New Folder")) {
+						auto newPath = openDirectory / "New Folder";
+						std::filesystem::create_directory(openDirectory / "New Folder");
+						isEditingName = newPath;
+						editingName = "New Folder";
 					}
+					EndPopup();
+				}
+
+
+				Text(openDirectory.generic_string().c_str());
+				SameLine();
+
+				SetNextItemWidth(200);
+				SliderInt("Icon size", &iconSize, 20, 200);
+
+				ImVec2 size(iconSize, iconSize);
+
+
+				/*
+				struct Item {
+					Item(const std::filesystem::path& path) {
+						this->path = path;
+						this->name = path.filename().generic_string();
+					}
+					std::filesystem::path path;
+					std::string name;
+					bool operator<(const Item& other) const {
+						return this->path < other.path;
+					}
+				};
+				*/
+
+				
+
+				if (IsMouseClicked(ImGuiMouseButton_Left)) {
+					if (!IsKeyDown(ImGuiKey_LeftShift) && !IsKeyDown(ImGuiKey_RightShift))
+						selectedItems.clear();
+				}
+				ImGuiInputTextFlags inputFlags = 0;
+				if (IsKeyPressed(ImGuiKey_F2)) {
+					isEditingName = lastSelected;
+					editingName = lastSelected.filename().generic_string();
+					inputFlags |= ImGuiInputTextFlags_AutoSelectAll;
+				}
+				if (IsKeyPressed(ImGuiKey_Enter) && !isEditingName.empty()) {
+					std::string newName = (isEditingName.parent_path() / editingName).generic_string();
+					std::rename(isEditingName.generic_string().c_str(), newName.c_str());
+					isEditingName.clear();
+				}
+				if (IsKeyPressed(ImGuiKey_Delete)) {
+					for (auto& path : selectedItems) {
+						std::filesystem::remove(path);
+					}
+					selectedItems.clear();
+					lastSelected.clear();
+				}
+
+				for (const auto& entry : std::filesystem::directory_iterator(openDirectory)) {
+					bool selected = selectedItems.count(entry.path());
+
+					int popCount = 0;
+					if (selected) {
+						ImVec4 selectedCol = GetStyleColorVec4(ImGuiCol_CheckMark);
+						ImVec4 hoveredCol = selectedCol + GetStyleColorVec4(ImGuiCol_ButtonHovered) * ImVec4(0.3f, 0.3f, 0.3f, 0.3f);
+						PushStyleColor(ImGuiCol_Button, selectedCol);
+						PushStyleColor(ImGuiCol_ButtonHovered, hoveredCol);
+						popCount = 2;
+					}
+
+
+					bool isHovered = false;
+					sa::Texture* icon = &g_otherFileIcon;
+					if (entry.is_directory()) {
+						icon = &g_directoryIcon;
+					}
+					if (isEditingName == entry.path()) {
+						bool hasFocus = true;
+						bool prev = hasFocus;
+						isHovered = ImageInputLabelButton(*icon, &editingName, size, hasFocus);
+						if (prev != hasFocus) {
+							isEditingName.clear();
+						}
+					}
+					else {
+						isHovered = ImageLabelButton(*icon, entry.path().filename().generic_string(), size);
+					}
+					if (BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
+						SetDragDropPayload("Asset", &entry, sizeof(entry));
+						SetTooltip(entry.path().filename().generic_string().c_str());
+						EndDragDropSource();
+					}
+
+					if(isHovered) {
+						if (IsMouseClicked(ImGuiMouseButton_Left)) {
+							if (!IsKeyDown(ImGuiKey_LeftShift) && !IsKeyDown(ImGuiKey_RightShift))
+								selectedItems.clear();
+							selectedItems.insert(entry.path());
+							lastSelected = entry.path();
+						}
+						if (IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+							
+							if (entry.is_directory()) {
+								selectedItems.clear();
+								lastSelected.clear();
+								openDirectory = entry.path();
+								PopStyleColor(popCount);
+								break;
+							}
+							else {
+								SA_DEBUG_LOG_INFO("File clicked");
+							}
+						}
+						
+					}
+					
+					PopStyleColor(popCount);
+					SameLine();
+
+					if (GetContentRegionMax().x - GetCursorPosX() < size.x) {
+						NewLine();
+					}
+
+					if (BeginPopupContextItem(("file_context" + entry.path().generic_string()).c_str())) {
+
+						if (MenuItem("Delete")) {
+							std::filesystem::remove(entry.path());
+						}
+
+						EndPopup();
+					}
+
 
 				}
 			}
@@ -477,6 +604,8 @@ namespace ImGui {
 			directory = std::filesystem::absolute(directory);
 			directory = directory.parent_path();
 		}
+		ImGui::SameLine();
+		ImGui::Text(directory.generic_string().c_str());
 		DirectoryView(str_id, directory, openDirectory, iconSize, size);
 	}
 
@@ -619,6 +748,96 @@ namespace ImGui {
 		ImGui::PopStyleVar();
 		ImGui::PopStyleColor(3);
 		return pressed;
+	}
+
+	bool ImageInputLabelButton(const sa::Texture& tex, std::string* label, const ImVec2& size, bool& hasFocus, ImGuiInputTextFlags textInputFlags, const ImVec2& uv0, const ImVec2& uv1) {
+
+		ImVec2 totalSize = size + GetStyle().ItemSpacing * 2.f;
+		totalSize.y += GetTextLineHeight();
+		bool hovered = false;
+		
+		ImVec2 min = GetWindowPos() + GetCursorPos() + GetWindowContentRegionMin();
+		ImVec2 max = min + totalSize;
+		if (IsMouseHoveringRect(min, max)) {
+			hovered = true;
+			PushStyleColor(ImGuiCol_ChildBg, GetStyleColorVec4(ImGuiCol_ButtonHovered));
+		}
+		else {
+			PushStyleColor(ImGuiCol_ChildBg, GetStyleColorVec4(ImGuiCol_Button));
+		}
+		
+		PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+		if (BeginChild("image_label_btn", totalSize, false, ImGuiWindowFlags_NoScrollbar)) {
+		
+			float cursorPosX = GetCursorPosX();
+			cursorPosX += (totalSize.x - size.x) * 0.5f;
+			SetCursorPosX(cursorPosX);
+
+			Image(tex, size, uv0, uv1);
+
+			
+			cursorPosX = GetCursorPosX();
+
+			PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+
+			SetNextItemWidth(totalSize.x - GetStyle().ItemInnerSpacing.x * 2.0f);
+			cursorPosX += GetStyle().ItemInnerSpacing.x;
+
+			SetCursorPosX(cursorPosX);
+			
+			InputText("##label_edit", label, textInputFlags);
+			if (IsMouseClicked(0) && !IsItemHovered()) {
+				hasFocus = false;
+			}
+			else {
+				hasFocus = true;
+				ImGui::SetKeyboardFocusHere(-1); // Auto focus previous widget
+			}
+
+			PopStyleVar();
+		}
+		EndChild();
+		PopStyleVar();	
+		PopStyleColor();
+		return hovered;
+	}
+
+	bool ImageLabelButton(const sa::Texture& tex, const std::string& label, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1) {
+
+		ImVec2 totalSize = size + GetStyle().ItemSpacing * 2.f;
+		ImVec2 textSize = CalcTextSize(label.c_str(), 0, false, totalSize.x);
+		totalSize.y += textSize.y;
+		bool hovered = false;
+
+		ImVec2 min = GetWindowPos() + GetCursorPos() + GetWindowContentRegionMin();
+		ImVec2 max = min + totalSize;
+		if (IsMouseHoveringRect(min, max)) {
+			hovered = true;
+			PushStyleColor(ImGuiCol_ChildBg, GetStyleColorVec4(ImGuiCol_ButtonHovered));
+		}
+		else {
+			PushStyleColor(ImGuiCol_ChildBg, GetStyleColorVec4(ImGuiCol_Button));
+		}
+
+		PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+		if (BeginChild(label.c_str(), totalSize, false, ImGuiWindowFlags_NoScrollbar)) {
+
+			float cursorPosX = GetCursorPosX();
+			cursorPosX += (totalSize.x - size.x) * 0.5f;
+			SetCursorPosX(cursorPosX);
+
+			Image(tex, size, uv0, uv1);
+
+
+			cursorPosX = GetCursorPosX();
+			cursorPosX += (totalSize.x - textSize.x) * 0.5f;
+			SetCursorPosX(cursorPosX);
+			TextWrapped(label.c_str());
+		}
+		EndChild();
+		PopStyleVar();
+		PopStyleColor();
+		return hovered;
 	}
 
 	bool TextButton(const char* label, bool center) {

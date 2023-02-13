@@ -28,6 +28,9 @@ namespace ImGui {
 
 	const int HandleSize = 5;
 
+	inline sa::Texture2D g_directoryIcon;
+	inline sa::Texture2D g_otherFileIcon;
+
 	void SetupImGuiStyle();
 
 	void displayLuaTable(std::string name, sol::table table);
@@ -49,15 +52,17 @@ namespace ImGui {
 
 
 	void DirectoryHierarchy(const char* str_id, const std::filesystem::path& directory, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size = ImVec2(0, 0));
-
 	void DirectoryView(const char* str_id, const std::filesystem::path& directory, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size = ImVec2(0, 0));
 	void DirectoryBrowser(const char* str_id, std::filesystem::path& directory, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size = ImVec2(0, 0));
+	
 
 	bool MakeEnterNameModalPopup(const char* name, const char* hint, std::string& output);
 
 	bool ProjectButton(const char* name, const char* path, bool* isOpen);
 
 	bool ImageButtonTinted(const sa::Texture& tex, const ImVec2& size, const ImVec2& uv0 = ImVec2(0, 0), const ImVec2& uv1 = ImVec2(1, 1));
+	bool ImageInputLabelButton(const sa::Texture& tex, std::string* label, const ImVec2& size, bool& hasFocus, ImGuiInputTextFlags textInputFlags = 0, const ImVec2& uv0 = ImVec2(0, 0), const ImVec2& uv1 = ImVec2(1, 1));
+	bool ImageLabelButton(const sa::Texture& tex, const std::string& label, const ImVec2& size, const ImVec2& uv0 = ImVec2(0, 0), const ImVec2& uv1 = ImVec2(1, 1));
 
 	bool TextButton(const char* label, bool center = false);
 

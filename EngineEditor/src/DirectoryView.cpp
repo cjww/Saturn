@@ -49,6 +49,14 @@ DirectoryView::DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor)
 			}
 		}
 	});
+
+	sa::Image img(m_pEditor->editorRelativePath("resources/folder-white.png").generic_string());
+	ImGui::g_directoryIcon = sa::Texture2D(img, true);
+
+	sa::Image img1(m_pEditor->editorRelativePath("resources/file-white.png").generic_string());
+	ImGui::g_otherFileIcon = sa::Texture2D(img1, true);
+
+
 }
 
 void DirectoryView::onImGui() {
@@ -56,14 +64,21 @@ void DirectoryView::onImGui() {
 		return;
 	if (ImGui::Begin(m_name, &m_isOpen)) {
 
-		static std::string assetName;
-		ImGui::InputText("Asset Name", &assetName);
+		{
+			static std::string path;
+			ImGui::InputText("Path", &path);
 		
-		if (ImGui::Button("Import Asset")) {
-			sa::ModelAsset* model = sa::AssetManager::get().importAsset<sa::ModelAsset>(SA_ASSET_DIR + assetName);
+			if (ImGui::Button("Import")) {
+				sa::AssetManager::get().importAsset<sa::ModelAsset>(path);
+			}
 		}
 
 		ImGui::Separator();
+
+		static auto openDirectory = std::filesystem::current_path();
+		static auto path = std::filesystem::current_path();
+		static int iconSize = 30;
+		ImGui::DirectoryBrowser("browser", path, openDirectory, iconSize);
 
 		auto& assets = sa::AssetManager::get().getAssets();
 		
