@@ -435,80 +435,118 @@ namespace ImGui {
 
 	}
 
-	void DirectoryView(const char* str_id, std::filesystem::path& directory, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size) {
-
+	void DirectoryIcons(const char* str_id, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size) {
+		
 		ImVec2 contentArea = size;
 		if (size.x == 0.f && size.y == 0.f) {
 			contentArea = ImGui::GetContentRegionAvail();
 		}
-		ImVec2 overviewArea = contentArea;
-		overviewArea.x /= 4;
-
-		ImVec2 viewArea = contentArea;
-		viewArea.x -= overviewArea.x;
-
-		DirectoryHierarchy(str_id, directory, openDirectory, iconSize, overviewArea);
 
 		if (!openDirectory.empty()) {
-			SameLine();
-			if (BeginChild((std::string(str_id) + "1").c_str(), viewArea)) {
+			if (BeginChild((std::string(str_id) + "1").c_str(), contentArea, false, ImGuiWindowFlags_MenuBar)) {
 
 				static std::filesystem::path lastSelected;
 				static std::set<std::filesystem::path> selectedItems;
 				static std::string editingName;
-				static std::filesystem::path isEditingName;
+				static std::filesystem::path editedFile;
+				
+				static std::set<std::filesystem::path> copiedFiles;
+
+
+				//Menu Bar
+				if (BeginMenuBar()) {
+
+					if (ImGui::ArrowButton((std::string("parentDir_") + str_id).c_str(), ImGuiDir_Left)) {
+						openDirectory = std::filesystem::absolute(openDirectory);
+						openDirectory = openDirectory.parent_path();
+					}
+					if (BeginDragDropTarget()) {
+						const ImGuiPayload* payload = AcceptDragDropPayload("Path");
+						if (payload && payload->IsDelivery()) {
+							auto path = (std::filesystem::path*)payload->Data;
+							auto newPath = openDirectory.parent_path() / path->filename();
+							try {
+								std::filesystem::rename(*path, newPath);
+							}
+							catch (std::exception e) {
+								SA_DEBUG_LOG_ERROR(e.what());
+							}
+						}
+						EndDragDropTarget();
+					}
+					SameLine();
+
+					Text(openDirectory.generic_string().c_str());
+					SameLine();
+
+					SetNextItemWidth(200);
+					SliderInt("Icon size", &iconSize, 20, 200);
+				}
+				EndMenuBar();
+
+
+				//Input Events
 				if (BeginPopupContextWindow()) {
 
-					if (MenuItem("+ New Folder")) {
-						auto newPath = openDirectory / "New Folder";
-						std::filesystem::create_directory(openDirectory / "New Folder");
-						isEditingName = newPath;
-						editingName = "New Folder";
+
+					if (BeginMenu("Create...")) {
+						if (MenuItem("New Folder")) {
+							auto newPath = openDirectory / "New Folder";
+							std::filesystem::create_directory(openDirectory / "New Folder");
+							editedFile = newPath;
+							editingName = "New Folder";
+						}
+						EndMenu();
 					}
+
+					if (MenuItem("Rename")) {
+						editedFile = lastSelected;
+						editingName = lastSelected.filename().generic_string();
+					}
+
+					if (MenuItem("Paste")) {
+						if (!copiedFiles.empty()) {
+							for (auto& file : copiedFiles) {
+								try {
+									std::filesystem::copy(file, openDirectory);
+								}
+								catch (std::exception e) {
+									SA_DEBUG_LOG_ERROR(e.what());
+								}
+							}
+						}
+					}
+					if (MenuItem("Copy")) {
+						copiedFiles.clear();
+						copiedFiles.insert(selectedItems.begin(), selectedItems.end());
+					}
+
+					if (MenuItem("Delete")) {
+						for (auto& file : selectedItems) {
+							try {
+								std::filesystem::remove(file);
+							}
+							catch (std::exception e) {
+								SA_DEBUG_LOG_ERROR(e.what());
+							}
+						}
+						selectedItems.clear();
+						lastSelected.clear();
+					}
+					
 					EndPopup();
 				}
-
-
-				Text(openDirectory.generic_string().c_str());
-				SameLine();
-
-				SetNextItemWidth(200);
-				SliderInt("Icon size", &iconSize, 20, 200);
-
-				ImVec2 size(iconSize, iconSize);
-
-
-				/*
-				struct Item {
-					Item(const std::filesystem::path& path) {
-						this->path = path;
-						this->name = path.filename().generic_string();
-					}
-					std::filesystem::path path;
-					std::string name;
-					bool operator<(const Item& other) const {
-						return this->path < other.path;
-					}
-				};
-				*/
-
-				
 
 				if (IsMouseClicked(ImGuiMouseButton_Left)) {
 					if (!IsKeyDown(ImGuiKey_LeftShift) && !IsKeyDown(ImGuiKey_RightShift))
 						selectedItems.clear();
 				}
-				ImGuiInputTextFlags inputFlags = 0;
-				if (IsKeyPressed(ImGuiKey_F2)) {
-					isEditingName = lastSelected;
+				
+				if (IsKeyPressed(ImGuiKey_F2) && !lastSelected.empty()) {
+					editedFile = lastSelected;
 					editingName = lastSelected.filename().generic_string();
-					inputFlags |= ImGuiInputTextFlags_AutoSelectAll;
 				}
-				if (IsKeyPressed(ImGuiKey_Enter) && !isEditingName.empty()) {
-					std::string newName = (isEditingName.parent_path() / editingName).generic_string();
-					std::rename(isEditingName.generic_string().c_str(), newName.c_str());
-					isEditingName.clear();
-				}
+				
 				if (IsKeyPressed(ImGuiKey_Delete)) {
 					for (auto& path : selectedItems) {
 						std::filesystem::remove(path);
@@ -517,96 +555,157 @@ namespace ImGui {
 					lastSelected.clear();
 				}
 
+				if (IsKeyPressed(ImGuiKey_C) && IsKeyDown(ImGuiKey_LeftCtrl)) {
+					copiedFiles.clear();
+					copiedFiles.insert(selectedItems.begin(), selectedItems.end());
+				}
+
+				if (IsKeyPressed(ImGuiKey_V) && IsKeyDown(ImGuiKey_LeftCtrl)) {
+					if (!copiedFiles.empty()) {
+						for (auto& file : copiedFiles) {
+							try {
+								std::filesystem::copy(file, openDirectory);
+							}
+							catch (std::exception e) {
+								SA_DEBUG_LOG_ERROR(e.what());
+							}
+						}
+					}
+				}
+
+
+				// Icon View Area
+				ImVec2 iconSizeVec((float)iconSize, (float)iconSize);
 				for (const auto& entry : std::filesystem::directory_iterator(openDirectory)) {
+					// Check if selected
 					bool selected = selectedItems.count(entry.path());
 
+					// Selected highlight color
 					int popCount = 0;
 					if (selected) {
 						ImVec4 selectedCol = GetStyleColorVec4(ImGuiCol_CheckMark);
 						ImVec4 hoveredCol = selectedCol + GetStyleColorVec4(ImGuiCol_ButtonHovered) * ImVec4(0.3f, 0.3f, 0.3f, 0.3f);
-						PushStyleColor(ImGuiCol_Button, selectedCol);
-						PushStyleColor(ImGuiCol_ButtonHovered, hoveredCol);
+						PushStyleColor(ImGuiCol_Header, selectedCol);
+						PushStyleColor(ImGuiCol_HeaderHovered, hoveredCol);
 						popCount = 2;
 					}
 
 
-					bool isHovered = false;
+					// Determine Icon
 					sa::Texture* icon = &g_otherFileIcon;
 					if (entry.is_directory()) {
 						icon = &g_directoryIcon;
 					}
-					if (isEditingName == entry.path()) {
-						bool hasFocus = true;
-						bool prev = hasFocus;
-						isHovered = ImageInputLabelButton(*icon, &editingName, size, hasFocus);
-						if (prev != hasFocus) {
-							isEditingName.clear();
-						}
+					
+					// Draw icon and label
+					
+					std::string label = entry.path().filename().generic_string();
+					ImVec2 totalSize = iconSizeVec + GetStyle().ItemSpacing * 2.f;
+					ImVec2 textSize = CalcTextSize(label.c_str(), 0, false, totalSize.x);
+					totalSize.y += textSize.y;
+					
+					BeginGroup();
+
+					ImVec2 cursorPos = GetCursorPos();
+					if (Selectable(("##directory_entry" + label).c_str(), selected, ImGuiSelectableFlags_NoPadWithHalfSpacing, totalSize)) {
+						if (!IsKeyDown(ImGuiKey_LeftShift) && !IsKeyDown(ImGuiKey_RightShift))
+							selectedItems.clear();
+						selectedItems.insert(entry.path());
+						lastSelected = entry.path();
 					}
-					else {
-						isHovered = ImageLabelButton(*icon, entry.path().filename().generic_string(), size);
-					}
-					if (BeginDragDropSource(ImGuiDragDropFlags_SourceAllowNullID)) {
-						SetDragDropPayload("Asset", &entry, sizeof(entry));
-						SetTooltip(entry.path().filename().generic_string().c_str());
+					// Drag drop source
+					static std::filesystem::path payloadPath;
+					if (BeginDragDropSource()) {
+						payloadPath = entry.path();
+
+						SetDragDropPayload("Path", &payloadPath, sizeof(payloadPath));
+						Image(*icon, iconSizeVec);
+						SameLine();
+						Text("%s", payloadPath.filename().generic_string().c_str());
 						EndDragDropSource();
 					}
+					// And possibly target
+					if (entry.is_directory()) {
+						if (BeginDragDropTarget()) {
+							const ImGuiPayload* payload = AcceptDragDropPayload("Path");
+							if (payload && payload->IsDelivery()) {
+								auto path = (std::filesystem::path*)payload->Data;
+								const auto& thisPath = entry.path();
+								auto newPath = thisPath / path->filename();
+								try {
+									std::filesystem::rename(*path, newPath);
+								}
+								catch (std::exception e) {
+									SA_DEBUG_LOG_ERROR(e.what());
+								}
+							}
+							EndDragDropTarget();
+						}
+					}
 
-					if(isHovered) {
-						if (IsMouseClicked(ImGuiMouseButton_Left)) {
-							if (!IsKeyDown(ImGuiKey_LeftShift) && !IsKeyDown(ImGuiKey_RightShift))
-								selectedItems.clear();
-							selectedItems.insert(entry.path());
-							lastSelected = entry.path();
+
+					cursorPos.x += GetStyle().ItemSpacing.x;
+					SetCursorPos(cursorPos);
+					// Icon
+					Image(*icon, iconSizeVec);
+
+					// Text field
+					cursorPos.x = GetCursorPosX();
+					if (editedFile == entry.path()) {
+						cursorPos.x += GetStyle().ItemInnerSpacing.x;
+						SetCursorPosX(cursorPos.x);
+						SetNextItemWidth(totalSize.x - GetStyle().ItemInnerSpacing.x * 2.0f);
+						PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+						if (InputText("##edit_name", &editingName, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
+							//rename
+							std::string newName = (editedFile.parent_path() / editingName).generic_string();
+							std::rename(editedFile.generic_string().c_str(), newName.c_str());
+							editedFile.clear();
 						}
-						if (IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-							
-							if (entry.is_directory()) {
-								selectedItems.clear();
-								lastSelected.clear();
-								openDirectory = entry.path();
-								PopStyleColor(popCount);
-								break;
-							}
-							else {
-								SA_DEBUG_LOG_INFO("File clicked");
-							}
+						if (IsMouseClicked(ImGuiMouseButton_Left) && !IsItemHovered()) {
+							editedFile.clear();
 						}
-						
+						else {
+							ImGui::SetKeyboardFocusHere(-1); // Auto focus previous widget
+						}
+						PopStyleVar();
+					}
+					else {
+						cursorPos.x += (totalSize.x - textSize.x) * 0.5f;
+						SetCursorPosX(cursorPos.x);
+						PushTextWrapPos(cursorPos.x + textSize.x);
+						TextWrapped("%s", label.c_str());
+						PopTextWrapPos();
+					}
+					
+					EndGroup();
+
+
+					
+					if(IsItemHovered(ImGuiHoveredFlags_AllowWhenOverlapped) && IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+						if (entry.is_directory()) {
+							selectedItems.clear();
+							lastSelected.clear();
+							openDirectory = entry.path();
+							PopStyleColor(popCount);
+							break;
+						}
+						else {
+							SA_DEBUG_LOG_INFO("File clicked");
+						}
 					}
 					
 					PopStyleColor(popCount);
 					SameLine();
 
-					if (GetContentRegionMax().x - GetCursorPosX() < size.x) {
+					if (GetContentRegionMax().x - GetCursorPosX() < iconSizeVec.x) {
 						NewLine();
 					}
-
-					if (BeginPopupContextItem(("file_context" + entry.path().generic_string()).c_str())) {
-
-						if (MenuItem("Delete")) {
-							std::filesystem::remove(entry.path());
-						}
-
-						EndPopup();
-					}
-
-
 				}
 			}
 			ImGui::EndChild();
 		}
 
-	}
-
-	void DirectoryBrowser(const char* str_id, std::filesystem::path& directory, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size) {
-		if (ImGui::ArrowButton((std::string("parentDir_") + str_id).c_str(), ImGuiDir_Left)) {
-			directory = std::filesystem::absolute(directory);
-			directory = directory.parent_path();
-		}
-		ImGui::SameLine();
-		ImGui::Text(directory.generic_string().c_str());
-		DirectoryView(str_id, directory, openDirectory, iconSize, size);
 	}
 
 	bool MakeEnterNameModalPopup(const char* name, const char* hint, std::string& output) {
@@ -750,13 +849,13 @@ namespace ImGui {
 		return pressed;
 	}
 
-	bool ImageInputLabelButton(const sa::Texture& tex, std::string* label, const ImVec2& size, bool& hasFocus, ImGuiInputTextFlags textInputFlags, const ImVec2& uv0, const ImVec2& uv1) {
+	bool ImageInputLabelButton(const sa::Texture& tex, std::string* label, const ImVec2& size, bool& hasFocus, const ImVec2& uv0, const ImVec2& uv1) {
 
 		ImVec2 totalSize = size + GetStyle().ItemSpacing * 2.f;
 		totalSize.y += GetTextLineHeight();
 		bool hovered = false;
 		
-		ImVec2 min = GetWindowPos() + GetCursorPos() + GetWindowContentRegionMin();
+		ImVec2 min = GetContentRegionMax() - GetContentRegionAvail() + GetWindowPos();
 		ImVec2 max = min + totalSize;
 		if (IsMouseHoveringRect(min, max)) {
 			hovered = true;
@@ -766,6 +865,7 @@ namespace ImGui {
 			PushStyleColor(ImGuiCol_ChildBg, GetStyleColorVec4(ImGuiCol_Button));
 		}
 		
+		ImVec2 prevCursorPos = GetCursorPos();
 		PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 		if (BeginChild("image_label_btn", totalSize, false, ImGuiWindowFlags_NoScrollbar)) {
 		
@@ -784,21 +884,18 @@ namespace ImGui {
 			cursorPosX += GetStyle().ItemInnerSpacing.x;
 
 			SetCursorPosX(cursorPosX);
-			
-			InputText("##label_edit", label, textInputFlags);
-			if (IsMouseClicked(0) && !IsItemHovered()) {
-				hasFocus = false;
-			}
-			else {
-				hasFocus = true;
-				ImGui::SetKeyboardFocusHere(-1); // Auto focus previous widget
-			}
 
+			hasFocus = TemporaryInputTextField(*label, ImGuiInputTextFlags_AutoSelectAll);
+			
 			PopStyleVar();
 		}
 		EndChild();
 		PopStyleVar();	
 		PopStyleColor();
+
+		SetCursorPos(prevCursorPos);
+		InvisibleButton("##invisible_btn", totalSize);
+
 		return hovered;
 	}
 
@@ -809,8 +906,9 @@ namespace ImGui {
 		totalSize.y += textSize.y;
 		bool hovered = false;
 
-		ImVec2 min = GetWindowPos() + GetCursorPos() + GetWindowContentRegionMin();
+		ImVec2 min = GetContentRegionMax() - GetContentRegionAvail() + GetWindowPos();
 		ImVec2 max = min + totalSize;
+		/*
 		if (IsMouseHoveringRect(min, max)) {
 			hovered = true;
 			PushStyleColor(ImGuiCol_ChildBg, GetStyleColorVec4(ImGuiCol_ButtonHovered));
@@ -818,7 +916,8 @@ namespace ImGui {
 		else {
 			PushStyleColor(ImGuiCol_ChildBg, GetStyleColorVec4(ImGuiCol_Button));
 		}
-
+		ImVec2 prevCursorPos = GetCursorPos();
+		
 		PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
 		if (BeginChild(label.c_str(), totalSize, false, ImGuiWindowFlags_NoScrollbar)) {
 
@@ -837,7 +936,85 @@ namespace ImGui {
 		EndChild();
 		PopStyleVar();
 		PopStyleColor();
-		return hovered;
+
+		SetCursorPos(prevCursorPos);
+		InvisibleButton("##invisible_btn", totalSize);
+		*/
+
+		PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+		if (BeginChild(label.c_str(), totalSize, false, ImGuiWindowFlags_NoScrollbar)) {
+	
+			ImVec2 prevCursorPos = GetCursorPos();
+			Selectable("##invisble_selectable", false, ImGuiSelectableFlags_AllowItemOverlap, totalSize);
+			SetCursorPos(prevCursorPos);
+	
+			float cursorPosX = GetCursorPosX();
+			cursorPosX += (totalSize.x - size.x) * 0.5f;
+			SetCursorPosX(cursorPosX);
+
+			Image(tex, size, uv0, uv1);
+
+
+			cursorPosX = GetCursorPosX();
+			cursorPosX += (totalSize.x - textSize.x) * 0.5f;
+			SetCursorPosX(cursorPosX);
+			TextWrapped(label.c_str());
+	
+		}
+		EndChild();
+		PopStyleVar();
+
+		return hovered && IsMouseClicked(ImGuiMouseButton_Left);
+	}
+
+	bool ImageLabelSelectable(const sa::Texture& tex, const std::string& label, bool& isSelected, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1) {
+
+		ImVec2 totalSize = size + GetStyle().ItemSpacing * 2.f;
+		ImVec2 textSize = CalcTextSize(label.c_str(), 0, false, totalSize.x);
+		totalSize.y += textSize.y;
+
+		bool doubleClicked = false;
+
+		PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+		if (BeginChild(label.c_str(), totalSize, false, ImGuiWindowFlags_NoScrollbar)) {
+
+			ImVec2 prevCursorPos = GetCursorPos();
+			Selectable("##invisble_selectable", &isSelected, ImGuiSelectableFlags_AllowItemOverlap, totalSize);
+			doubleClicked = IsItemHovered() && IsMouseDoubleClicked(ImGuiMouseButton_Left);
+
+			SetCursorPos(prevCursorPos);
+
+			float cursorPosX = GetCursorPosX();
+			cursorPosX += (totalSize.x - size.x) * 0.5f;
+			SetCursorPosX(cursorPosX);
+
+			Image(tex, size, uv0, uv1);
+
+			cursorPosX = GetCursorPosX();
+			cursorPosX += (totalSize.x - textSize.x) * 0.5f;
+			SetCursorPosX(cursorPosX);
+			TextWrapped(label.c_str());
+
+		}
+		EndChild();
+		PopStyleVar();
+
+		return doubleClicked;
+	}
+
+	bool TemporaryInputTextField(std::string& text, ImGuiInputTextFlags inputFlags) {
+		if (InputText("##TemporaryInputTextField", &text, ImGuiInputTextFlags_EnterReturnsTrue | inputFlags)) {
+			return false;
+		}
+
+		if (IsMouseClicked(0) && !IsItemHovered()) {
+			return false;
+		}
+		else {
+			ImGui::SetKeyboardFocusHere(-1); // Auto focus previous widget
+		}
+
+		return true;
 	}
 
 	bool TextButton(const char* label, bool center) {

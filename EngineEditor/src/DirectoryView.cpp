@@ -63,7 +63,7 @@ void DirectoryView::onImGui() {
 	if (!m_isOpen)
 		return;
 	if (ImGui::Begin(m_name, &m_isOpen)) {
-
+		/*
 		{
 			static std::string path;
 			ImGui::InputText("Path", &path);
@@ -74,14 +74,14 @@ void DirectoryView::onImGui() {
 		}
 
 		ImGui::Separator();
+		*/
 
 		static auto openDirectory = std::filesystem::current_path();
-		static auto path = std::filesystem::current_path();
 		static int iconSize = 30;
-		ImGui::DirectoryBrowser("browser", path, openDirectory, iconSize);
+		ImGui::DirectoryIcons("Explorer", openDirectory, iconSize);
 
+		/*
 		auto& assets = sa::AssetManager::get().getAssets();
-		
 		static sa::IAsset* selected = nullptr;
 
 		if (ImGui::BeginListBox("Assets")) {
@@ -138,6 +138,7 @@ void DirectoryView::onImGui() {
 				}
 			}
 		}
+		*/
 
 	}
 	ImGui::End();
