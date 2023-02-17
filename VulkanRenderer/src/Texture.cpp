@@ -206,6 +206,8 @@ namespace sa {
 				vk::ImageTiling::eOptimal);
 		}
 		extent = { std::max(extent.width, 1U), std::max(extent.height, 1U) };
+		mipLevels = std::min(mipLevels, (uint32_t)floor(log2(std::max(extent.width, extent.height))) + 1);
+
 		//SA_DEBUG_LOG_INFO("Created 2D texture\nExtent: { w:", extent.width, " h:", extent.height, "}\nFormat: ", vk::to_string(format), "\nSampleCount: ", sampleCount);
 		m_pImage = m_pCore->createImage2D(
 			extent,
@@ -265,6 +267,7 @@ namespace sa {
 			}
 		}
 		extent = { std::max(extent.width, 1U), std::max(extent.height, 1U) };
+		mipLevels = std::min(mipLevels, (uint32_t)floor(log2(std::max(extent.width, extent.height))) + 1);
 
 		SA_DEBUG_LOG_INFO("Created 2D texture\nExtent: { w:", extent.width, " h:", extent.height, "}\nFormat: ", vk::to_string(format), "\nSampleCount: ", sampleCount);
 		m_pImage = m_pCore->createImage2D(
@@ -293,10 +296,12 @@ namespace sa {
 		vk::ImageUsageFlags usage = (vk::ImageUsageFlags)type;
 		vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
 
+
 		if (type & TextureTypeFlagBits::DEPTH_ATTACHMENT) {
 			aspect = vk::ImageAspectFlagBits::eDepth;
 		}
 		extent = { std::max(extent.width, 1U), std::max(extent.height, 1U) };
+		mipLevels = std::min(mipLevels, (uint32_t)floor(log2(std::max(extent.width, extent.height))) + 1);
 
 		m_pImage = m_pCore->createImage2D(
 			extent,
@@ -361,6 +366,7 @@ namespace sa {
 
 		vk::Format format = m_pCore->getDefaultColorFormat();
 		extent = { std::max(extent.width, 1U), std::max(extent.height, 1U) };
+		mipLevels = std::min(mipLevels, (uint32_t)floor(log2(std::max(extent.width, extent.height))) + 1);
 
 		m_pImage = m_pCore->createImage2D(
 			extent,
@@ -496,7 +502,9 @@ namespace sa {
 			throw std::runtime_error("No supported image format found");
 		}
 
-		extent = { std::max(extent.width, 1U), std::max(extent.height, 1U) };
+		extent = { std::max(extent.width, 1U), std::max(extent.height, 1U), std::max(extent.depth, 1U) };
+		mipLevels = std::min(mipLevels, (uint32_t)floor(log2(std::max(extent.width, std::max(extent.height, extent.depth)))) + 1);
+
 		m_pImage = m_pCore->createImage3D(
 			extent, 
 			format, 

@@ -219,11 +219,13 @@ void SceneView::onImGui() {
 		}
 
 		if (availSize != m_displayedSize && !ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
-			m_camera.setViewport({ { 0, 0 }, { (uint32_t)availSize.x, (uint32_t)availSize.y } });
-			m_renderTarget.resize({ (uint32_t)availSize.x, (uint32_t)availSize.y });
-			m_displayedSize = availSize;
+			if (availSize.x >= 1.f && availSize.y >= 1.f) {
+				m_camera.setViewport({ { 0, 0 }, { (uint32_t)availSize.x, (uint32_t)availSize.y } });
+				m_renderTarget.resize({ (uint32_t)availSize.x, (uint32_t)availSize.y });
+				m_displayedSize = availSize;
+			}
 		}
-		else if (m_renderTarget.outputTexture && m_renderTarget.mainRenderData.isInitialized && m_renderTarget.outputTexture->isValid()) {
+		else if (m_renderTarget.isReady()) {
 			ImGui::Image((sa::Texture)*m_renderTarget.outputTexture, imAvailSize);
 		}
 		ImVec2 imageMin = ImGui::GetItemRectMin();

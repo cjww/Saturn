@@ -77,5 +77,7 @@ namespace sa {
 
 		void swap();
 
+		bool isReady() const;
+
 	};
 }

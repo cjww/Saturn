@@ -373,7 +373,7 @@ namespace sa {
 		m_imGuiImages.clear();
 	}
 
-	VkDescriptorSet VulkanCore::getImGuiImageDescriptoSet(vk::ImageView* imageView, vk::ImageLayout layout) {
+	VkDescriptorSet VulkanCore::getImGuiImageDescriptoSet(vk::ImageView imageView, vk::ImageLayout layout) {
 
 		if (layout != vk::ImageLayout::eShaderReadOnlyOptimal &&
 			layout != vk::ImageLayout::eReadOnlyOptimal &&
@@ -392,7 +392,7 @@ namespace sa {
 			texture = m_imGuiImages.at(imageView);
 		}
 		else {
-			texture = ImGui_ImplVulkan_AddTexture(m_imGuiImageSampler, *imageView, (VkImageLayout)layout);
+			texture = ImGui_ImplVulkan_AddTexture(m_imGuiImageSampler, imageView, (VkImageLayout)layout);
 			m_imGuiImages[imageView] = texture;
 		}
 		return texture;
@@ -488,7 +488,6 @@ namespace sa {
 				.layerCount = layers
 			}
 		};
-
 		return m_device.createImageView(info);
 	}
 

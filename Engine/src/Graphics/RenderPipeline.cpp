@@ -110,20 +110,20 @@ namespace sa {
 		return m_context;
 	}
 
-	void RenderPipeline::render(SceneCamera* pCamera, RenderTarget* pRendertarget) {
+	void RenderPipeline::render(SceneCamera* pCamera, RenderTarget* pRenderTarget) {
 		SA_PROFILE_FUNCTION();
 
 		for (auto& layer : m_layers) {
 			if(layer->isActive())
-				layer->preRender(m_context, pCamera, pRendertarget);
+				layer->preRender(m_context, pCamera, pRenderTarget);
 		}
 
 		for (auto& layer : m_layers) {
 			if(layer->isActive())
-				layer->render(m_context, pCamera, pRendertarget);
+				layer->render(m_context, pCamera, pRenderTarget);
 		}
 
-		pRendertarget->swap();
+		pRenderTarget->swap();
 	}
 
 	void RenderPipeline::endScene() {

@@ -171,6 +171,8 @@ namespace sa {
 
 		mainRenderData.isInitialized = false; // initialize main data in main render pass
 		bloomData.isInitialized = false; // initialize bloom data in bloom pass
+
+		this->outputTexture = nullptr;
 	}
 
 	void RenderTarget::swap() {
@@ -183,6 +185,13 @@ namespace sa {
 
 		bloomData.outputTexture.swap();
 
+	}
+
+	bool RenderTarget::isReady() const {
+		return
+			outputTexture != nullptr &&
+			outputTexture->isValid() &&
+			mainRenderData.isInitialized;
 	}
 
 }

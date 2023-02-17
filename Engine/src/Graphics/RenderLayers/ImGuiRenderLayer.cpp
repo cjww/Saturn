@@ -41,6 +41,7 @@ namespace sa {
 		context.endRenderProgram(m_imGuiRenderProgram);
 
 		m_outputTexture.swap();
+
 	}
 
 	void ImGuiRenderLayer::onWindowResize(Extent newExtent) {

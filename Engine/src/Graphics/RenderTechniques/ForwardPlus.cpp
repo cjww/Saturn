@@ -89,7 +89,6 @@ namespace sa {
 
 		data.sceneDescriptorSet = m_renderer.allocateDescriptorSet(data.colorPipeline, SET_PER_FRAME);
 
-
 		m_renderer.updateDescriptorSet(data.sceneDepthDescriptorSet, 0, m_objectBuffer);
 
 		m_renderer.updateDescriptorSet(data.lightCullingDescriptorSet, 0, data.depthTexture, m_linearSampler);	// read depth texture
@@ -303,7 +302,7 @@ namespace sa {
 		if (!data.isInitialized) {
 			pRenderTarget->cleanupMainRenderData();
 			initializeMainRenderData(data, pRenderTarget->extent);
-			data.isInitialized = true;
+			data.isInitialized = true;			
 		}
 
 
