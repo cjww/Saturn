@@ -9,6 +9,8 @@
 #include "imgui_internal.h"
 #include "imgui_stdlib.h"
 
+#include "EngineEditor.h"
+
 namespace ImGui {
 
 	void SetupImGuiStyle() {
@@ -412,6 +414,47 @@ namespace ImGui {
 		return doubleClicked;
 	}
 
+	void addEditorModuleSettingsHandler(sa::EngineEditor* pEditor) {
+		
+		ImGuiSettingsHandler ini_handler;
+		ini_handler.TypeName = "EditorModule";
+		ini_handler.TypeHash = ImHashStr("EditorModule");
+		ini_handler.ClearAllFn = NULL;
+		ini_handler.ReadOpenFn = [](ImGuiContext* ctx, ImGuiSettingsHandler* handler, const char* name) -> void* {
+			sa::EngineEditor* pEditor = (sa::EngineEditor*)handler->UserData;
+			//get module by name
+			EditorModule* pModule = pEditor->getModuleByName(name);
+			// return module pointer
+			return (void*)pModule;
+		};
+		ini_handler.ReadLineFn = [](ImGuiContext* ctx, ImGuiSettingsHandler* handler, void* editorModule, const char* line) {
+			// cast editorModule
+			EditorModule* pModule = (EditorModule*)editorModule;
+			// read open parameter
+			int isOpen = 0;
+			if (sscanf_s(line, "isOpen=%d", &isOpen) == 1) {
+				// set open
+				pModule->setOpen((bool)isOpen);
+			}
+		};
+		
+		ini_handler.ApplyAllFn = NULL;
+		ini_handler.WriteAllFn = [](ImGuiContext* ctx, ImGuiSettingsHandler* handler, ImGuiTextBuffer* outBuf) {
+			sa::EngineEditor* pEditor = (sa::EngineEditor*)handler->UserData;
+			const auto& modules = pEditor->getModules();
+			outBuf->reserve(outBuf->size() + modules.size() * sizeof(int));
+			for (auto& module : modules) {
+				outBuf->appendf("[%s][%s]\n", handler->TypeName, module->getName());
+				outBuf->appendf("isOpen=%d\n", module->isOpen());
+				outBuf->append("\n");
+			}
+		};
+		ini_handler.UserData = pEditor;
+
+		AddSettingsHandler(&ini_handler);
+		
+	}
+
 	void DirectoryHierarchy(const char* str_id, std::filesystem::path& directory, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size) {
 
 		ImVec2 contentArea = size;
@@ -499,12 +542,12 @@ namespace ImGui {
 						EndMenu();
 					}
 
-					if (MenuItem("Rename")) {
+					if (MenuItem("Rename", "F2")) {
 						editedFile = lastSelected;
 						editingName = lastSelected.filename().generic_string();
 					}
 
-					if (MenuItem("Paste")) {
+					if (MenuItem("Paste", "Ctrl + V")) {
 						if (!copiedFiles.empty()) {
 							for (auto& file : copiedFiles) {
 								try {
@@ -516,12 +559,12 @@ namespace ImGui {
 							}
 						}
 					}
-					if (MenuItem("Copy")) {
+					if (MenuItem("Copy", "Ctrl + C")) {
 						copiedFiles.clear();
 						copiedFiles.insert(selectedItems.begin(), selectedItems.end());
 					}
 
-					if (MenuItem("Delete")) {
+					if (MenuItem("Delete", "Del")) {
 						for (auto& file : selectedItems) {
 							try {
 								std::filesystem::remove(file);

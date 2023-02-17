@@ -11,6 +11,7 @@
 #include "GameView.h"
 #include "RenderPipelinePreferences.h"
 #include "DirectoryView.h"
+#include <imgui_internal.h>
 
 namespace sa {
 
@@ -52,7 +53,6 @@ namespace sa {
 		void startSimulation();
 		void stopSimulation();
 
-
 		void imGuiProfiler();
 
 	public:
@@ -67,6 +67,9 @@ namespace sa {
 		std::vector<std::filesystem::path> fetchAllScriptsInProject();
 
 		RenderWindow* getWindow() const;
+
+		EditorModule* getModuleByName(const char* name) const;
+		const std::vector<std::unique_ptr<EditorModule>>& getModules() const;
 
 	};
 }

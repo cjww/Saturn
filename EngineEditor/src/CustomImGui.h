@@ -20,6 +20,10 @@
 #define IMGUI_COLOR_ERROR_RED ImVec4(1.0f, 0.2f, 0.2f, 1.0f)
 
 
+namespace sa {
+	class EngineEditor;
+}
+
 namespace ImGui {
 	inline struct PopupPayload {
 		sa::ComponentType type;
@@ -47,6 +51,7 @@ namespace ImGui {
 	template<typename T>
 	void Component(const sa::Entity& entity);
 
+	void addEditorModuleSettingsHandler(sa::EngineEditor* pEditor);
 
 	void DirectoryHierarchy(const char* str_id, const std::filesystem::path& directory, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size = ImVec2(0, 0));
 	void DirectoryIcons(const char* str_id, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size = ImVec2(0, 0));

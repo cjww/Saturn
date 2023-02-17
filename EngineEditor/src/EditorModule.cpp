@@ -23,6 +23,14 @@ void EditorModule::close() {
 		m_isOpen = false;
 }
 
+bool EditorModule::isOpen() const {
+	return m_isOpen;
+}
+
+void EditorModule::setOpen(bool open) {
+	m_isOpen = open;
+}
+
 const char* EditorModule::getName() const {
 	return m_name;
 }

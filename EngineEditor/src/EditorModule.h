@@ -35,5 +35,8 @@ public:
 	void open();
 	void close();
 
+	bool isOpen() const;
+	void setOpen(bool open);
+
 	const char* getName() const;
 };

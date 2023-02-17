@@ -60,8 +60,10 @@ DirectoryView::DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor)
 }
 
 void DirectoryView::onImGui() {
+	
 	if (!m_isOpen)
 		return;
+	
 	if (ImGui::Begin(m_name, &m_isOpen)) {
 		/*
 		{

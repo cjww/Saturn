@@ -79,6 +79,11 @@ namespace sa {
 
 	bool EngineEditor::openProject(const std::filesystem::path& path) {
 		//unload project
+
+		if (!m_projectFile.empty()) {
+			ImGui::SaveIniSettingsToDisk("imgui.ini");
+		}
+
 		AssetManager::get().clear();
 		m_pEngine->publish<editor_event::EntityDeselected>();
 
@@ -98,6 +103,8 @@ namespace sa {
 		
 		m_projectFile = path.filename();
 		std::filesystem::current_path(path.parent_path());
+
+		ImGui::LoadIniSettingsFromDisk("imgui.ini");
 
 		AssetManager::get().rescanAssets();
 
@@ -310,7 +317,6 @@ namespace sa {
 	void EngineEditor::onAttach(sa::Engine& engine, sa::RenderWindow& renderWindow) {
 		m_pEngine = &engine;
 		m_pWindow = &renderWindow;
-		
 
 		m_editorPath = std::filesystem::current_path();
 		
@@ -322,6 +328,9 @@ namespace sa {
 		engine.on<engine_event::WindowResized>([](const engine_event::WindowResized& e, Engine& engine) {
 			ImGui::SetupImGuiStyle();
 		});
+
+		ImGui::addEditorModuleSettingsHandler(this);
+		ImGui::GetIO().IniFilename = NULL; // Handle loading and saving ImGui state manually
 
 		//hijack sceneSet event
 		engine.clear<engine_event::SceneSet>();
@@ -368,7 +377,9 @@ namespace sa {
 	}
 
 	void EngineEditor::onDetach() {
-		
+		if (!m_projectFile.empty())
+			ImGui::SaveIniSettingsToDisk("imgui.ini");
+
 		std::ofstream recentProjectsFile(m_editorPath / "recent_projects.txt");
 		for (const auto& path : m_recentProjectPaths) {
 			recentProjectsFile << path.generic_string() << "\n";
@@ -522,7 +533,21 @@ namespace sa {
 		}
 		return std::move(paths);
 	}
+	
 	RenderWindow* EngineEditor::getWindow() const {
 		return m_pWindow;
+	}
+	
+	EditorModule* EngineEditor::getModuleByName(const char* name) const {
+		for (auto& module : m_editorModules) {
+			if (strcmp(module->getName(), name) == 0) {
+				return module.get();
+			}
+		}
+		return nullptr;
+	}
+
+	const std::vector<std::unique_ptr<EditorModule>>& EngineEditor::getModules() const {
+		return m_editorModules;
 	}
 }
