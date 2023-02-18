@@ -9,7 +9,8 @@ DirectoryView::DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor)
 	: EditorModule(pEngine, pEditor, "Directory View", true)
 {
 	m_isOpen = false;
-	
+	m_isAssetListOpen = false;
+
 	m_pEngine->on<sa::editor_event::DragDropped>([&](const sa::editor_event::DragDropped& e, const sa::Engine& engine) {
 		for (uint32_t i = 0; i < e.count; i++) {
 			std::filesystem::path path = e.paths[i];
@@ -33,35 +34,31 @@ void DirectoryView::onImGui() {
 	if (!m_isOpen)
 		return;
 	
-	if (ImGui::Begin(m_name, &m_isOpen)) {
-		/*
-		{
-			static std::string path;
-			ImGui::InputText("Path", &path);
+	if (ImGui::Begin(m_name, &m_isOpen, ImGuiWindowFlags_MenuBar)) {
 		
-			if (ImGui::Button("Import")) {
-				sa::AssetManager::get().importAsset<sa::ModelAsset>(path);
-			}
-		}
+		if (ImGui::BeginMenuBar()) {
 
-		ImGui::Separator();
-		*/
+			if (ImGui::MenuItem("Assets Window")) {
+				m_isAssetListOpen = !m_isAssetListOpen;
+			}
 
-		float completion = 0.f;
-		for (auto it = m_loadingAssets.begin(); it != m_loadingAssets.end(); it++) {
-			sa::IAsset* asset = *it;
-			if (!asset->getProgress().isAllDone()) {
-				completion += asset->getProgress().getAllCompletion();
+			float completion = 0.f;
+			for (auto it = m_loadingAssets.begin(); it != m_loadingAssets.end(); it++) {
+				sa::IAsset* asset = *it;
+				if (!asset->getProgress().isAllDone()) {
+					completion += asset->getProgress().getAllCompletion();
+				}
+				else if (asset->isLoaded()) {
+					asset->write();
+					m_loadingAssets.erase(it);
+					break;
+				}
 			}
-			else if (asset->isLoaded()) {
-				asset->write();
-				m_loadingAssets.erase(it);
-				break;
+			if (!m_loadingAssets.empty()) {
+				completion /= m_loadingAssets.size();
+				ImGui::ProgressBar(completion);
 			}
-		}
-		if (!m_loadingAssets.empty()) {
-			completion /= m_loadingAssets.size();
-			ImGui::ProgressBar(completion);
+			ImGui::EndMenuBar();
 		}
 
 		static auto openDirectory = std::filesystem::current_path();
@@ -69,46 +66,34 @@ void DirectoryView::onImGui() {
 
 		ImGui::DirectoryIcons("Explorer", openDirectory, iconSize);
 
-		/*
+	}
+	ImGui::End();
+
+	if (!m_isAssetListOpen)
+		return;
+	if (ImGui::Begin("Assets", &m_isAssetListOpen)) {
+		{
+			static std::string path;
+			ImGui::InputText("Path", &path);
+
+			if (ImGui::Button("Import")) {
+				sa::AssetManager::get().importAsset<sa::ModelAsset>(path);
+			}
+		}
+
+		ImGui::Separator();
+
 		auto& assets = sa::AssetManager::get().getAssets();
 		static sa::IAsset* selected = nullptr;
-
-		if (ImGui::BeginListBox("Assets")) {
-			for (auto& [id, asset] : assets) {
-				std::string label = asset->getName() + "\t"
-					+ sa::AssetManager::get().getAssetTypeName(asset->getType());
-				if (asset->isLoaded()) {
-					label += "\tLoaded";
-				}
-				else if (!asset->getProgress().isAllDone()) {
-					ImGui::ProgressBar(asset->getProgress().getAllCompletion());
-					label += "\tUnloaded";
-				}
-				else {
-					label += "\tUnloaded";
-				}
-
-				label += "\t" + std::to_string(asset->getHeader().version);
-
-				label += "\t" + asset->getAssetPath().generic_string();
-				label += "\t" + std::to_string(asset->getReferenceCount());
-
-				if (ImGui::Selectable(label.c_str(), selected == asset.get())) {
-					selected = asset.get();
-				}
-			}
-
-			ImGui::EndListBox();
-		}
 
 		if (ImGui::Button("Load Asset") && selected) {
 			selected->load();
 		}
-		
+		ImGui::SameLine();
 		if (ImGui::Button("Release Asset") && selected) {
 			selected->release();
 		}
-
+		ImGui::SameLine();
 		if (ImGui::Button("Write Asset") && selected) {
 			selected->write();
 		}
@@ -127,8 +112,52 @@ void DirectoryView::onImGui() {
 				}
 			}
 		}
-		*/
 
+		if (ImGui::BeginChildFrame(ImGui::GetCurrentWindow()->GetID("asset_table"), ImGui::GetContentRegionAvail())) {
+			if (ImGui::BeginTable("Asset Table", 5, ImGuiTableFlags_SizingFixedFit)) {
+				ImGui::TableSetupColumn("Name");
+				ImGui::TableSetupColumn("Type");
+				ImGui::TableSetupColumn("Is Loaded");
+				ImGui::TableSetupColumn("Asset Path");
+				ImGui::TableSetupColumn("References");
+
+				ImGui::TableHeadersRow();
+
+				for (auto& [id, asset] : assets) {
+					ImGui::TableNextRow();
+
+					ImGui::TableNextColumn();
+					if (ImGui::Selectable(asset->getName().c_str(), selected == asset.get())) {
+						selected = asset.get();
+					}
+
+					ImGui::TableNextColumn();
+					ImGui::TextUnformatted(sa::AssetManager::get().getAssetTypeName(asset->getType()).c_str());
+
+					ImGui::TableNextColumn();
+					if (asset->isLoaded()) {
+						ImGui::Text("Loaded");
+					}
+					else {
+						ImGui::Text("Unloaded");
+					}
+
+					ImGui::TableNextColumn();
+					if (!asset->isLoaded() && !asset->getProgress().isAllDone()) {
+						ImGui::ProgressBar(asset->getProgress().getAllCompletion());
+					}
+					else {
+						ImGui::TextUnformatted(asset->getAssetPath().generic_string().c_str());
+					}
+
+					ImGui::TableNextColumn();
+					ImGui::Text("%d", asset->getReferenceCount());
+
+				}
+				ImGui::EndTable();
+			}
+			ImGui::EndChildFrame();
+		}
 	}
 	ImGui::End();
 

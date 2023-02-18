@@ -413,7 +413,7 @@ if (ImGui::DragFloat("Far", &far, 10.f, 1.0f)) {
 	bool AssetSlot(const char* label, sa::IAsset*& pAsset, sa::AssetTypeID typeID) {
 		std::string preview = "None";
 		if (pAsset) {
-			preview = pAsset->getName();
+			preview = pAsset->getName() + " (" + sa::AssetManager::get().getAssetTypeName(pAsset->getType()) + ")";
 		}
 		bool selected = false;
 		static std::string filter;
