@@ -155,7 +155,7 @@ namespace sa {
 	bool ModelAsset::loadAssimpModel(const std::filesystem::path& path) {
 		SA_PROFILE_FUNCTION();
 		Assimp::Importer importer;
-
+		
 		unsigned int flags =
 			aiProcessPreset_TargetRealtime_Quality |
 			aiProcess_FlipUVs |
@@ -251,6 +251,11 @@ namespace sa {
 		}
 	}
 
+	bool ModelAsset::isExtensionSupported(const std::string& extension) {
+		Assimp::Importer importer;
+		return importer.IsExtensionSupported(extension);
+	}
+
 	bool ModelAsset::create(const std::string& name) {
 		m_isLoaded = true;
 		m_name = name;
@@ -263,8 +268,6 @@ namespace sa {
 			return false;
 		}
 
-		m_refCount = 1;
-		
 		m_progress.reset();
 
 		auto future = m_taskExecutor.async([&, path]() {

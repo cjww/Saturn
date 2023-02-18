@@ -28,13 +28,14 @@ namespace sa {
 		using IAsset::IAsset;
 		static AssetTypeID type() { return s_typeID; }
 
+		static bool isExtensionSupported(const std::string& extension);
+
 		//Data
 		ModelData data;
 
 		virtual bool create(const std::string& name) override;
 		virtual bool importFromFile(const std::filesystem::path& path) override;
 
-		
 		virtual bool load() override;
 		virtual bool write() override;
 

@@ -112,8 +112,13 @@ namespace sa {
 		IAsset* getAsset(UUID id) const;
 
 		template<typename T>
-		T* findAsset(const std::string& name) const;
-		IAsset* findAsset(const std::string& name) const;
+		T* findAssetByName(const std::string& name) const;
+		IAsset* findAssetByName(const std::string& name) const;
+
+		template<typename T>
+		T* findAssetByPath(const std::filesystem::path& path) const;
+		IAsset* findAssetByPath(const std::filesystem::path& path) const;
+
 
 		template<typename T>
 		T* importAsset(const std::filesystem::path& path, const std::filesystem::path& assetDirectory = SA_ASSET_DIR);
@@ -150,10 +155,14 @@ namespace sa {
 	}
 
 	template<typename T>
-	inline T* AssetManager::findAsset(const std::string& name) const {
-		return dynamic_cast<T*>(findAsset(name));
+	inline T* AssetManager::findAssetByName(const std::string& name) const {
+		return dynamic_cast<T*>(findAssetByName(name));
 	}
 
+	template<typename T>
+	inline T* AssetManager::findAssetByPath(const std::filesystem::path& path) const {
+		return dynamic_cast<T*>(findAssetByPath(path));
+	}
 
 	template<typename T>
 	inline T* AssetManager::importAsset(const std::filesystem::path& path, const std::filesystem::path& assetDirectory) {
@@ -201,6 +210,7 @@ namespace sa {
 			removeAsset(asset);
 			return nullptr;
 		}
+
 		return static_cast<T*>(asset);
 	}
 }

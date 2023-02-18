@@ -97,6 +97,7 @@ namespace sa {
 		}
 		data.m_allTextures.clear();
 		data.m_allTextures.shrink_to_fit();
+		data.m_allTexturesLoaded = false;
 
 		std::unordered_map<MaterialTextureType, std::vector<std::pair<TextureBlendOp, float>>> tmpBlend;
 		data.m_blending.swap(tmpBlend);

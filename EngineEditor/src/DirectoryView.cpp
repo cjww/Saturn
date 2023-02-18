@@ -9,43 +9,12 @@ DirectoryView::DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor)
 	: EditorModule(pEngine, pEditor, "Directory View", true)
 {
 	m_isOpen = false;
-	/*
-	{
-
-		sa::ModelAsset* model = sa::AssetManager::get().importAsset<sa::ModelAsset>("resources/models/viking_room/scene.gltf");
-		auto& header = model->getHeader();
-		header.id = 1;
-		header.offset = 256;
-		header.size = 64;
-
-		model->writeToFile("MyModelAsset.asset");
-	}
-
 	
-	pEngine->on<sa::engine_event::SceneSet>([](sa::engine_event::SceneSet& e, sa::Engine& engine) {
-		sa::ModelAsset* model = sa::AssetManager::get().loadAsset<sa::ModelAsset>("MyModelAsset.asset");
-		sa::Entity entity = e.newScene->createEntity();
-		entity.addComponent<comp::Transform>();
-		entity.addComponent<comp::Model>()->modelID = model->getID();
-	});
-
-	sa::ModelAsset* model = sa::AssetManager::get().importAsset<sa::ModelAsset>("viking_room/scene.gltf");
-
-	sa::ModelAsset modelAsset;
-	modelAsset.importFromFile("viking_room/scene.gltf");
-	size_t id = modelAsset.getID();
-	sa::AssetManager::get().addAsset(modelAsset);
-
-
-
-	modelAsset = sa::AssetManager::get().getAsset(id);
-
-	*/
-	m_pEngine->on<sa::editor_event::DragDropped>([](const sa::editor_event::DragDropped& e, const sa::Engine& engine) {
+	m_pEngine->on<sa::editor_event::DragDropped>([&](const sa::editor_event::DragDropped& e, const sa::Engine& engine) {
 		for (uint32_t i = 0; i < e.count; i++) {
 			std::filesystem::path path = e.paths[i];
-			if (path.extension() == ".gltf") {
-				sa::AssetManager::get().importAsset<sa::ModelAsset>(path);
+			if (sa::ModelAsset::isExtensionSupported(path.extension().generic_string())) {
+				m_loadingAssets.push_back(sa::AssetManager::get().importAsset<sa::ModelAsset>(path));
 			}
 		}
 	});
@@ -78,8 +47,26 @@ void DirectoryView::onImGui() {
 		ImGui::Separator();
 		*/
 
+		float completion = 0.f;
+		for (auto it = m_loadingAssets.begin(); it != m_loadingAssets.end(); it++) {
+			sa::IAsset* asset = *it;
+			if (!asset->getProgress().isAllDone()) {
+				completion += asset->getProgress().getAllCompletion();
+			}
+			else if (asset->isLoaded()) {
+				asset->write();
+				m_loadingAssets.erase(it);
+				break;
+			}
+		}
+		if (!m_loadingAssets.empty()) {
+			completion /= m_loadingAssets.size();
+			ImGui::ProgressBar(completion);
+		}
+
 		static auto openDirectory = std::filesystem::current_path();
 		static int iconSize = 30;
+
 		ImGui::DirectoryIcons("Explorer", openDirectory, iconSize);
 
 		/*

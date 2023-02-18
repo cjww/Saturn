@@ -142,8 +142,9 @@ namespace sa {
 	MaterialAsset* AssetManager::loadDefaultMaterial() {
 		SA_PROFILE_FUNCTION();
 		
-		MaterialAsset* pAsset = findAsset<MaterialAsset>(SA_DEFAULT_MATERIAL_NAME);
+		MaterialAsset* pAsset = findAssetByName<MaterialAsset>(SA_DEFAULT_MATERIAL_NAME);
 		if (pAsset) {
+			pAsset->load();
 			return pAsset;
 		}
 
@@ -164,8 +165,9 @@ namespace sa {
 
 	ModelAsset* AssetManager::loadQuad() {
 		
-		ModelAsset* pAsset = findAsset<ModelAsset>(SA_DEFAULT_QUAD_NAME);
+		ModelAsset* pAsset = findAssetByName<ModelAsset>(SA_DEFAULT_QUAD_NAME);
 		if (pAsset) {
+			pAsset->load();
 			return pAsset;
 		}
 
@@ -196,8 +198,9 @@ namespace sa {
 	ModelAsset* AssetManager::loadCube() {
 		SA_PROFILE_FUNCTION();
 
-		ModelAsset* pAsset = findAsset<ModelAsset>(SA_DEFAULT_CUBE_NAME);
+		ModelAsset* pAsset = findAssetByName<ModelAsset>(SA_DEFAULT_CUBE_NAME);
 		if (pAsset) {
+			pAsset->load();
 			return pAsset;
 		}
 
@@ -308,13 +311,22 @@ namespace sa {
 		return m_assets.at(id).get();
 	}
 
-	IAsset* AssetManager::findAsset(const std::string& name) const {
+	IAsset* AssetManager::findAssetByName(const std::string& name) const {
 		for (auto& [id, asset] : m_assets) {
 			if (asset->getName() == name)
 				return asset.get();
 		}
 		return nullptr;
 	}
+
+	IAsset* AssetManager::findAssetByPath(const std::filesystem::path& path) const {
+		for (auto& [id, asset] : m_assets) {
+			if (std::filesystem::equivalent(asset->getAssetPath(), path))
+				return asset.get();
+		}
+		return nullptr;
+	}
+
 
 	void AssetManager::removeAsset(IAsset* asset) {
 		m_assets.erase(asset->getID());

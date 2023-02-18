@@ -3,7 +3,8 @@
 #include "CustomImgui.h"
 
 class DirectoryView : public EditorModule {
-
+private:
+	std::list<sa::IAsset*> m_loadingAssets;
 public:
 	DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor);
 

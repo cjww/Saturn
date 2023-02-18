@@ -237,21 +237,17 @@ namespace ImGui {
 	}
 
 	void Component(sa::Entity entity, comp::Model* model) {
-		sa::ModelAsset* pAsset = sa::AssetManager::get().getAsset<sa::ModelAsset>(model->modelID);
-		ImGui::Text("ModelID: %llu", model->modelID);
-		ImGui::SameLine();
-		ImGui::Text("Name: %s", pAsset->getName().c_str());
+		
+		sa::IAsset* pAsset = sa::AssetManager::get().getAsset(model->modelID);
+		sa::IAsset* pPrevAsset = pAsset;
+		if (AssetSlot(("Model##" + entity.getComponent<comp::Name>()->name).c_str(), pAsset, sa::ModelAsset::type())) {
+			pPrevAsset->release();
+			pAsset->load();
+			model->modelID = pAsset->getID();
+		}
 
-		if (model->modelID != NULL_RESOURCE) {
-			/*
-			sa::ModelData* data = sa::AssetManager::get().getModel(model->modelID);
-			for (const auto& mesh : data->meshes) {
-				ImGui::Spacing();
-				ImGui::Text("Material");
-				ImGui::ColorEdit4("Diffuse Color", (float*)&mesh.material.diffuseColor);
-			}
-			*/
-
+		if (!pAsset->getProgress().isAllDone()) {
+			ProgressBar(pAsset->getProgress().getAllCompletion());
 		}
 
 	}
@@ -319,64 +315,64 @@ namespace ImGui {
 	void Component(sa::Entity entity, comp::Camera* camera) {
 		ImGui::Checkbox("Is Primary", &camera->isPrimary);
 
-		sa::Rect rect = camera->camera.getViewport();
-		ImGui::Text("Viewport");
-		ImGui::Indent();
-		if (ImGui::DragInt2("Offset##Camera", (int32_t*)&rect.offset)) {
-			camera->camera.setViewport(rect);
-		}
+sa::Rect rect = camera->camera.getViewport();
+ImGui::Text("Viewport");
+ImGui::Indent();
+if (ImGui::DragInt2("Offset##Camera", (int32_t*)&rect.offset)) {
+	camera->camera.setViewport(rect);
+}
 
-		glm::ivec2 extent(rect.extent.width, rect.extent.height);
-		if (ImGui::DragInt2("Extent##Camera", (int32_t*)&extent)) {
-			rect.extent = { (uint32_t)extent.x, (uint32_t)extent.y };
-			camera->camera.setViewport(rect);
-		}
-		ImGui::Unindent();
+glm::ivec2 extent(rect.extent.width, rect.extent.height);
+if (ImGui::DragInt2("Extent##Camera", (int32_t*)&extent)) {
+	rect.extent = { (uint32_t)extent.x, (uint32_t)extent.y };
+	camera->camera.setViewport(rect);
+}
+ImGui::Unindent();
 
-		const char* items[] = { "Perspective", "Orthographic" };
-		const char* currentItem = items[(int)camera->camera.getProjectionMode()];
-		if (ImGui::BeginCombo("Projection", currentItem)) {
-			bool isSelected = currentItem == items[0];
-			if (ImGui::Selectable(items[0], &isSelected)) {
-				currentItem = items[0];
-				camera->camera.setProjectionMode(sa::ProjectionMode::ePerspective);
+const char* items[] = { "Perspective", "Orthographic" };
+const char* currentItem = items[(int)camera->camera.getProjectionMode()];
+if (ImGui::BeginCombo("Projection", currentItem)) {
+	bool isSelected = currentItem == items[0];
+	if (ImGui::Selectable(items[0], &isSelected)) {
+		currentItem = items[0];
+		camera->camera.setProjectionMode(sa::ProjectionMode::ePerspective);
 
-			}
-			isSelected = currentItem == items[1];
-			if (ImGui::Selectable(items[1], &isSelected)) {
-				currentItem = items[1];
-				camera->camera.setProjectionMode(sa::ProjectionMode::eOrthographic);
-			}
+	}
+	isSelected = currentItem == items[1];
+	if (ImGui::Selectable(items[1], &isSelected)) {
+		currentItem = items[1];
+		camera->camera.setProjectionMode(sa::ProjectionMode::eOrthographic);
+	}
 
-			ImGui::EndCombo();
-		}
-		
-		if (currentItem == items[0]) {
-			float fov = camera->camera.getFOVRadians();
-			if (ImGui::SliderAngle("Fov", &fov, 10.f, 180.f)) {
-				camera->camera.setFOVRadians(fov);
-			}
-		}
-		else if (currentItem == items[1]) {
-			
-			float orthoSize = camera->camera.getOrthoWidth();
-			if (ImGui::DragFloat("View Width", &orthoSize, 1.0f)) {
-				camera->camera.setOrthoWidth(orthoSize);
-			}
-		}
+	ImGui::EndCombo();
+}
 
-		ImGui::Spacing();
-		
-		float near = camera->camera.getNear();
-		if (ImGui::DragFloat("Near", &near, 0.1f, 0.0f)) {
-			near = std::max(near, 0.f);
-			camera->camera.setNear(near);
-		}
+if (currentItem == items[0]) {
+	float fov = camera->camera.getFOVRadians();
+	if (ImGui::SliderAngle("Fov", &fov, 10.f, 180.f)) {
+		camera->camera.setFOVRadians(fov);
+	}
+}
+else if (currentItem == items[1]) {
 
-		float far = camera->camera.getFar();
-		if (ImGui::DragFloat("Far", &far, 10.f, 1.0f)) {
-			camera->camera.setFar(far);
-		}
+	float orthoSize = camera->camera.getOrthoWidth();
+	if (ImGui::DragFloat("View Width", &orthoSize, 1.0f)) {
+		camera->camera.setOrthoWidth(orthoSize);
+	}
+}
+
+ImGui::Spacing();
+
+float near = camera->camera.getNear();
+if (ImGui::DragFloat("Near", &near, 0.1f, 0.0f)) {
+	near = std::max(near, 0.f);
+	camera->camera.setNear(near);
+}
+
+float far = camera->camera.getFar();
+if (ImGui::DragFloat("Far", &far, 10.f, 1.0f)) {
+	camera->camera.setFar(far);
+}
 
 	}
 
@@ -391,7 +387,7 @@ namespace ImGui {
 		std::filesystem::perms perm = status.permissions();
 		std::filesystem::perms flags = std::filesystem::perms::owner_write | std::filesystem::perms::owner_read;
 		*/
-		
+
 		bool opened = ImGui::TreeNodeEx(directory.filename().generic_string().c_str(), ImGuiTreeNodeFlags_OpenOnArrow);
 		if (ImGui::IsItemClicked()) {
 			openDirectory = directory;
@@ -412,6 +408,60 @@ namespace ImGui {
 			ImGui::TreePop();
 		}
 		return doubleClicked;
+	}
+
+	bool AssetSlot(const char* label, sa::IAsset*& pAsset, sa::AssetTypeID typeID) {
+		std::string preview = "None";
+		if (pAsset) {
+			preview = pAsset->getName();
+		}
+		bool selected = false;
+		static std::string filter;
+		if(BeginCombo(label, preview.c_str())) {
+			std::vector<sa::IAsset*> assets;
+			sa::AssetManager::get().getAssets(&assets, typeID);
+			PushID(label);
+			InputText("Filter", &filter, ImGuiInputTextFlags_AutoSelectAll);
+			
+			float width = GetItemRectSize().x;
+			if (BeginChild("##asset_list", ImVec2(width, 100))) {
+				for (auto asset : assets) {
+					if (!filter.empty()) {
+						auto lowerName = sa::utils::toLower(asset->getName());
+						auto lowerFilter = sa::utils::toLower(filter);
+						if (lowerName.find(lowerFilter) == std::string::npos) {
+							continue;
+						}
+					}
+
+					if (Selectable(asset->getName().c_str(), asset == pAsset)) {
+						pAsset = asset;
+						selected = true;
+						filter.clear();
+						CloseCurrentPopup();
+					}
+				}
+				EndChild();
+			}
+			PopID();
+			EndCombo();
+		}
+
+		if (BeginDragDropTarget()) {
+			const ImGuiPayload* payload = AcceptDragDropPayload("Path");
+			if (payload && payload->IsDelivery()) {
+				std::filesystem::path* pPath = (std::filesystem::path*)payload->Data;
+				if (pPath->extension() == ".asset") {
+					sa::IAsset* asset = sa::AssetManager::get().findAssetByPath(*pPath);
+					if (asset && asset != pAsset && asset->getType() == typeID) {
+						pAsset = asset;
+						selected = true;
+					}
+				}
+			}
+			EndDragDropTarget();
+		}
+		return selected;
 	}
 
 	void addEditorModuleSettingsHandler(sa::EngineEditor* pEditor) {
@@ -890,174 +940,6 @@ namespace ImGui {
 		ImGui::PopStyleVar();
 		ImGui::PopStyleColor(3);
 		return pressed;
-	}
-
-	bool ImageInputLabelButton(const sa::Texture& tex, std::string* label, const ImVec2& size, bool& hasFocus, const ImVec2& uv0, const ImVec2& uv1) {
-
-		ImVec2 totalSize = size + GetStyle().ItemSpacing * 2.f;
-		totalSize.y += GetTextLineHeight();
-		bool hovered = false;
-		
-		ImVec2 min = GetContentRegionMax() - GetContentRegionAvail() + GetWindowPos();
-		ImVec2 max = min + totalSize;
-		if (IsMouseHoveringRect(min, max)) {
-			hovered = true;
-			PushStyleColor(ImGuiCol_ChildBg, GetStyleColorVec4(ImGuiCol_ButtonHovered));
-		}
-		else {
-			PushStyleColor(ImGuiCol_ChildBg, GetStyleColorVec4(ImGuiCol_Button));
-		}
-		
-		ImVec2 prevCursorPos = GetCursorPos();
-		PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-		if (BeginChild("image_label_btn", totalSize, false, ImGuiWindowFlags_NoScrollbar)) {
-		
-			float cursorPosX = GetCursorPosX();
-			cursorPosX += (totalSize.x - size.x) * 0.5f;
-			SetCursorPosX(cursorPosX);
-
-			Image(tex, size, uv0, uv1);
-
-			
-			cursorPosX = GetCursorPosX();
-
-			PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-
-			SetNextItemWidth(totalSize.x - GetStyle().ItemInnerSpacing.x * 2.0f);
-			cursorPosX += GetStyle().ItemInnerSpacing.x;
-
-			SetCursorPosX(cursorPosX);
-
-			hasFocus = TemporaryInputTextField(*label, ImGuiInputTextFlags_AutoSelectAll);
-			
-			PopStyleVar();
-		}
-		EndChild();
-		PopStyleVar();	
-		PopStyleColor();
-
-		SetCursorPos(prevCursorPos);
-		InvisibleButton("##invisible_btn", totalSize);
-
-		return hovered;
-	}
-
-	bool ImageLabelButton(const sa::Texture& tex, const std::string& label, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1) {
-
-		ImVec2 totalSize = size + GetStyle().ItemSpacing * 2.f;
-		ImVec2 textSize = CalcTextSize(label.c_str(), 0, false, totalSize.x);
-		totalSize.y += textSize.y;
-		bool hovered = false;
-
-		ImVec2 min = GetContentRegionMax() - GetContentRegionAvail() + GetWindowPos();
-		ImVec2 max = min + totalSize;
-		/*
-		if (IsMouseHoveringRect(min, max)) {
-			hovered = true;
-			PushStyleColor(ImGuiCol_ChildBg, GetStyleColorVec4(ImGuiCol_ButtonHovered));
-		}
-		else {
-			PushStyleColor(ImGuiCol_ChildBg, GetStyleColorVec4(ImGuiCol_Button));
-		}
-		ImVec2 prevCursorPos = GetCursorPos();
-		
-		PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-		if (BeginChild(label.c_str(), totalSize, false, ImGuiWindowFlags_NoScrollbar)) {
-
-			float cursorPosX = GetCursorPosX();
-			cursorPosX += (totalSize.x - size.x) * 0.5f;
-			SetCursorPosX(cursorPosX);
-
-			Image(tex, size, uv0, uv1);
-
-
-			cursorPosX = GetCursorPosX();
-			cursorPosX += (totalSize.x - textSize.x) * 0.5f;
-			SetCursorPosX(cursorPosX);
-			TextWrapped(label.c_str());
-		}
-		EndChild();
-		PopStyleVar();
-		PopStyleColor();
-
-		SetCursorPos(prevCursorPos);
-		InvisibleButton("##invisible_btn", totalSize);
-		*/
-
-		PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-		if (BeginChild(label.c_str(), totalSize, false, ImGuiWindowFlags_NoScrollbar)) {
-	
-			ImVec2 prevCursorPos = GetCursorPos();
-			Selectable("##invisble_selectable", false, ImGuiSelectableFlags_AllowItemOverlap, totalSize);
-			SetCursorPos(prevCursorPos);
-	
-			float cursorPosX = GetCursorPosX();
-			cursorPosX += (totalSize.x - size.x) * 0.5f;
-			SetCursorPosX(cursorPosX);
-
-			Image(tex, size, uv0, uv1);
-
-
-			cursorPosX = GetCursorPosX();
-			cursorPosX += (totalSize.x - textSize.x) * 0.5f;
-			SetCursorPosX(cursorPosX);
-			TextWrapped(label.c_str());
-	
-		}
-		EndChild();
-		PopStyleVar();
-
-		return hovered && IsMouseClicked(ImGuiMouseButton_Left);
-	}
-
-	bool ImageLabelSelectable(const sa::Texture& tex, const std::string& label, bool& isSelected, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1) {
-
-		ImVec2 totalSize = size + GetStyle().ItemSpacing * 2.f;
-		ImVec2 textSize = CalcTextSize(label.c_str(), 0, false, totalSize.x);
-		totalSize.y += textSize.y;
-
-		bool doubleClicked = false;
-
-		PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
-		if (BeginChild(label.c_str(), totalSize, false, ImGuiWindowFlags_NoScrollbar)) {
-
-			ImVec2 prevCursorPos = GetCursorPos();
-			Selectable("##invisble_selectable", &isSelected, ImGuiSelectableFlags_AllowItemOverlap, totalSize);
-			doubleClicked = IsItemHovered() && IsMouseDoubleClicked(ImGuiMouseButton_Left);
-
-			SetCursorPos(prevCursorPos);
-
-			float cursorPosX = GetCursorPosX();
-			cursorPosX += (totalSize.x - size.x) * 0.5f;
-			SetCursorPosX(cursorPosX);
-
-			Image(tex, size, uv0, uv1);
-
-			cursorPosX = GetCursorPosX();
-			cursorPosX += (totalSize.x - textSize.x) * 0.5f;
-			SetCursorPosX(cursorPosX);
-			TextWrapped(label.c_str());
-
-		}
-		EndChild();
-		PopStyleVar();
-
-		return doubleClicked;
-	}
-
-	bool TemporaryInputTextField(std::string& text, ImGuiInputTextFlags inputFlags) {
-		if (InputText("##TemporaryInputTextField", &text, ImGuiInputTextFlags_EnterReturnsTrue | inputFlags)) {
-			return false;
-		}
-
-		if (IsMouseClicked(0) && !IsItemHovered()) {
-			return false;
-		}
-		else {
-			ImGui::SetKeyboardFocusHere(-1); // Auto focus previous widget
-		}
-
-		return true;
 	}
 
 	bool TextButton(const char* label, bool center) {

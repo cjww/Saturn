@@ -3,6 +3,7 @@
 
 namespace sa {
 	bool IAsset::dispatchLoad(std::function<bool(std::ifstream&)> loadFunction) {
+		m_refCount++;
 		if (m_isLoaded)
 			return false;
 		if (m_assetPath.empty())
@@ -24,7 +25,6 @@ namespace sa {
 			}
 			
 			m_isLoaded = loadFunction(file);
-			if (m_isLoaded) m_refCount++;
 		
 			file.close();
 			return m_isLoaded.load();
