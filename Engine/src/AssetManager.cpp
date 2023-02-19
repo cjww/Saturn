@@ -160,6 +160,7 @@ namespace sa {
 		mat.values.shininess = 1.0f;
 		mat.twoSided = false;
 
+		pAsset->write();
 		return pAsset;
 	}
 
@@ -191,7 +192,7 @@ namespace sa {
 		mesh.materialID = loadDefaultMaterial()->getID();
 
 		pAsset->data.meshes.push_back(mesh);
-
+		pAsset->write();
 		return pAsset;
 	}
 
@@ -265,6 +266,7 @@ namespace sa {
 
 
 		mesh.materialID = loadDefaultMaterial()->getID();
+		pAsset->write();
 		return pAsset;
 	}
 

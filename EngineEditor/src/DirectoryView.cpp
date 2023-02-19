@@ -156,8 +156,8 @@ void DirectoryView::onImGui() {
 				}
 				ImGui::EndTable();
 			}
-			ImGui::EndChildFrame();
 		}
+		ImGui::EndChildFrame();
 	}
 	ImGui::End();
 

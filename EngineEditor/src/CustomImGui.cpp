@@ -241,12 +241,13 @@ namespace ImGui {
 		sa::IAsset* pAsset = sa::AssetManager::get().getAsset(model->modelID);
 		sa::IAsset* pPrevAsset = pAsset;
 		if (AssetSlot(("Model##" + entity.getComponent<comp::Name>()->name).c_str(), pAsset, sa::ModelAsset::type())) {
-			pPrevAsset->release();
+			if(pPrevAsset)
+				pPrevAsset->release();
 			pAsset->load();
 			model->modelID = pAsset->getID();
 		}
 
-		if (!pAsset->getProgress().isAllDone()) {
+		if (pAsset && !pAsset->getProgress().isAllDone()) {
 			ProgressBar(pAsset->getProgress().getAllCompletion());
 		}
 
@@ -315,64 +316,64 @@ namespace ImGui {
 	void Component(sa::Entity entity, comp::Camera* camera) {
 		ImGui::Checkbox("Is Primary", &camera->isPrimary);
 
-sa::Rect rect = camera->camera.getViewport();
-ImGui::Text("Viewport");
-ImGui::Indent();
-if (ImGui::DragInt2("Offset##Camera", (int32_t*)&rect.offset)) {
-	camera->camera.setViewport(rect);
-}
+		sa::Rect rect = camera->camera.getViewport();
+		ImGui::Text("Viewport");
+		ImGui::Indent();
+		if (ImGui::DragInt2("Offset##Camera", (int32_t*)&rect.offset)) {
+			camera->camera.setViewport(rect);
+		}
 
-glm::ivec2 extent(rect.extent.width, rect.extent.height);
-if (ImGui::DragInt2("Extent##Camera", (int32_t*)&extent)) {
-	rect.extent = { (uint32_t)extent.x, (uint32_t)extent.y };
-	camera->camera.setViewport(rect);
-}
-ImGui::Unindent();
+		glm::ivec2 extent(rect.extent.width, rect.extent.height);
+		if (ImGui::DragInt2("Extent##Camera", (int32_t*)&extent)) {
+			rect.extent = { (uint32_t)extent.x, (uint32_t)extent.y };
+			camera->camera.setViewport(rect);
+		}
+		ImGui::Unindent();
 
-const char* items[] = { "Perspective", "Orthographic" };
-const char* currentItem = items[(int)camera->camera.getProjectionMode()];
-if (ImGui::BeginCombo("Projection", currentItem)) {
-	bool isSelected = currentItem == items[0];
-	if (ImGui::Selectable(items[0], &isSelected)) {
-		currentItem = items[0];
-		camera->camera.setProjectionMode(sa::ProjectionMode::ePerspective);
+		const char* items[] = { "Perspective", "Orthographic" };
+		const char* currentItem = items[(int)camera->camera.getProjectionMode()];
+		if (ImGui::BeginCombo("Projection", currentItem)) {
+			bool isSelected = currentItem == items[0];
+			if (ImGui::Selectable(items[0], &isSelected)) {
+				currentItem = items[0];
+				camera->camera.setProjectionMode(sa::ProjectionMode::ePerspective);
 
-	}
-	isSelected = currentItem == items[1];
-	if (ImGui::Selectable(items[1], &isSelected)) {
-		currentItem = items[1];
-		camera->camera.setProjectionMode(sa::ProjectionMode::eOrthographic);
-	}
+			}
+			isSelected = currentItem == items[1];
+			if (ImGui::Selectable(items[1], &isSelected)) {
+				currentItem = items[1];
+				camera->camera.setProjectionMode(sa::ProjectionMode::eOrthographic);
+			}
 
-	ImGui::EndCombo();
-}
+			ImGui::EndCombo();
+		}
 
-if (currentItem == items[0]) {
-	float fov = camera->camera.getFOVRadians();
-	if (ImGui::SliderAngle("Fov", &fov, 10.f, 180.f)) {
-		camera->camera.setFOVRadians(fov);
-	}
-}
-else if (currentItem == items[1]) {
+		if (currentItem == items[0]) {
+			float fov = camera->camera.getFOVRadians();
+			if (ImGui::SliderAngle("Fov", &fov, 10.f, 180.f)) {
+				camera->camera.setFOVRadians(fov);
+			}
+		}
+		else if (currentItem == items[1]) {
 
-	float orthoSize = camera->camera.getOrthoWidth();
-	if (ImGui::DragFloat("View Width", &orthoSize, 1.0f)) {
-		camera->camera.setOrthoWidth(orthoSize);
-	}
-}
+			float orthoSize = camera->camera.getOrthoWidth();
+			if (ImGui::DragFloat("View Width", &orthoSize, 1.0f)) {
+				camera->camera.setOrthoWidth(orthoSize);
+			}
+		}
 
-ImGui::Spacing();
+		ImGui::Spacing();
 
-float near = camera->camera.getNear();
-if (ImGui::DragFloat("Near", &near, 0.1f, 0.0f)) {
-	near = std::max(near, 0.f);
-	camera->camera.setNear(near);
-}
+		float near = camera->camera.getNear();
+		if (ImGui::DragFloat("Near", &near, 0.1f, 0.0f)) {
+			near = std::max(near, 0.f);
+			camera->camera.setNear(near);
+		}
 
-float far = camera->camera.getFar();
-if (ImGui::DragFloat("Far", &far, 10.f, 1.0f)) {
-	camera->camera.setFar(far);
-}
+		float far = camera->camera.getFar();
+		if (ImGui::DragFloat("Far", &far, 10.f, 1.0f)) {
+			camera->camera.setFar(far);
+		}
 
 	}
 
@@ -413,7 +414,7 @@ if (ImGui::DragFloat("Far", &far, 10.f, 1.0f)) {
 	bool AssetSlot(const char* label, sa::IAsset*& pAsset, sa::AssetTypeID typeID) {
 		std::string preview = "None";
 		if (pAsset) {
-			preview = pAsset->getName() + " (" + sa::AssetManager::get().getAssetTypeName(pAsset->getType()) + ")";
+			preview = pAsset->getName();
 		}
 		bool selected = false;
 		static std::string filter;
@@ -642,7 +643,12 @@ if (ImGui::DragFloat("Far", &far, 10.f, 1.0f)) {
 				
 				if (IsKeyPressed(ImGuiKey_Delete)) {
 					for (auto& path : selectedItems) {
-						std::filesystem::remove(path);
+						try {
+							std::filesystem::remove(path);
+						}
+						catch (std::exception e) {
+							SA_DEBUG_LOG_ERROR(e.what());
+						}
 					}
 					selectedItems.clear();
 					lastSelected.clear();

@@ -112,7 +112,8 @@ namespace sa {
 
 	template<typename T>
 	inline void ProgressView<T>::wait() {
-		m_future.wait();
+		if(m_future.valid())
+			m_future.wait();
 	}
 
 	template<typename T>

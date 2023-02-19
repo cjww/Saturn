@@ -8,7 +8,7 @@ namespace sa {
 			return false;
 		if (m_assetPath.empty())
 			return false;
-		auto future = m_taskExecutor.async([&, loadFunction]() {
+		auto future = s_taskExecutor.async([&, loadFunction]() {
 			std::lock_guard<std::mutex> lock(m_mutex);
 			if (m_isLoaded)
 				return false;
@@ -38,7 +38,7 @@ namespace sa {
 			return false;
 		if (m_assetPath.empty())
 			return false;
-		auto future = m_taskExecutor.async([&, writeFunction]() {
+		auto future = s_taskExecutor.async([&, writeFunction]() {
 			std::lock_guard<std::mutex> lock(m_mutex);
 			if (!m_isLoaded)
 				return false;
@@ -69,7 +69,7 @@ namespace sa {
 	}
 
 	IAsset::~IAsset() {
-
+		m_progress.wait();
 	}
 
 	void IAsset::release() {

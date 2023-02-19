@@ -8,6 +8,7 @@
 #include <string>
 #include <mutex>
 
+
 typedef size_t ResourceType;
 typedef uint32_t ResourceID;
 
@@ -40,7 +41,7 @@ namespace sa {
 			std::unordered_map<std::string, ResourceID> m_keys;
 			std::function<void(T* value)> m_cleanupFunction;
 
-			std::mutex m_containerMutex;
+			mutable std::mutex m_containerMutex;
 
 		public:
 			virtual ~ResourceContainer();
@@ -259,28 +260,27 @@ namespace sa {
 
 		template<typename T>
 		inline ResourceID ResourceContainer<T>::insert(const T& value) {
-			m_containerMutex.lock();
+			const std::lock_guard<std::mutex> lock(m_containerMutex);
 			ResourceID id = getUniqueID();
 			m_resources[id] = std::make_unique<T>(value);
-			m_containerMutex.unlock();
 			return id;
 		}
 
 		template<typename T>
 		inline ResourceID ResourceContainer<T>::insert(const char* key, const T& value) {
-			ResourceID id = insert(value);
-			m_containerMutex.lock();
+			const std::lock_guard<std::mutex> lock(m_containerMutex);
+			ResourceID id = getUniqueID();
+			m_resources[id] = std::make_unique<T>(value);
 			m_keys[key] = id;
-			m_containerMutex.unlock();
 			return id;
 		}
 
 		template<typename T>
 		inline ResourceID ResourceContainer<T>::insert(const std::string& key, const T& value) {
-			ResourceID id = insert(value);
-			m_containerMutex.lock();
+			const std::lock_guard<std::mutex> lock(m_containerMutex);
+			ResourceID id = getUniqueID();
+			m_resources[id] = std::make_unique<T>(value);
 			m_keys[key] = id;
-			m_containerMutex.unlock();
 			return id;
 		}
 
@@ -288,56 +288,61 @@ namespace sa {
 		inline T* ResourceContainer<T>::get(ResourceID id) const {
 			if (id == NULL_RESOURCE)
 				return nullptr;
-
+			const std::lock_guard<std::mutex> lock(m_containerMutex);
 			return m_resources.at(id).get();
 		}
 		
 		template<typename T>
 		inline T* ResourceContainer<T>::get(const char* key) const {
+			const std::lock_guard<std::mutex> lock(m_containerMutex);
 			if (!m_keys.count(key)) {
 				return nullptr;
-			}
-			return get(m_keys.at(key));
+			}			
+			return m_resources.at(m_keys.at(key)).get();
 		}
 
 		template<typename T>
 		inline T* ResourceContainer<T>::get(const std::string& key) const {
+			const std::lock_guard<std::mutex> lock(m_containerMutex);
 			if (!m_keys.count(key)) {
 				return nullptr;
 			}
-			return get(m_keys.at(key));
+			return m_resources.at(m_keys.at(key)).get();
 		}
 
 		template<typename T>
 		inline void ResourceContainer<T>::remove(ResourceID id) {
 			if (id == NULL_RESOURCE)
 				return;
-			if (m_cleanupFunction) {
-				m_cleanupFunction(m_resources.at(id).get());
+			{
+				const std::lock_guard<std::mutex> lock(m_containerMutex);
+				if (m_cleanupFunction) {
+					m_cleanupFunction(m_resources.at(id).get());
+				}
+				m_resources.erase(id);
 			}
-			m_containerMutex.lock();
-			m_resources.erase(id);
 			auto key = idToKey(id);
-			if (!key.empty()) {
-				m_keys.erase(key);
+			{
+				const std::lock_guard<std::mutex> lock(m_containerMutex);
+				if (!key.empty()) {
+					m_keys.erase(key);
+				}
+				m_freeIDs.push(id);
 			}
-			m_freeIDs.push(id);
-			m_containerMutex.unlock();
 		}
 
 		template<typename T>
 		inline void ResourceContainer<T>::clear() {
+			const std::lock_guard<std::mutex> lock(m_containerMutex);
 			if (m_cleanupFunction) {
 				for (auto& resPair : m_resources) {
 					m_cleanupFunction(resPair.second.get());
 				}
 			}
-			m_containerMutex.lock();
 			m_resources.clear();
 			m_keys.clear();
 			m_nextID = 0;
 			while (!m_freeIDs.empty()) m_freeIDs.pop();
-			m_containerMutex.unlock();
 		}
 
 		template<typename T>
@@ -352,11 +357,13 @@ namespace sa {
 
 		template<typename T>
 		inline void ResourceContainer<T>::setCleanupFunction(std::function<void(T*)> function) {
+			const std::lock_guard<std::mutex> lock(m_containerMutex);
 			m_cleanupFunction = function;
 		}
 
 		template<typename T>
 		inline ResourceID ResourceContainer<T>::keyToID(const char* key) const {
+			const std::lock_guard<std::mutex> lock(m_containerMutex);
 			if (!m_keys.count(key)) {
 				return NULL_RESOURCE;
 			}
@@ -365,6 +372,7 @@ namespace sa {
 
 		template<typename T>
 		inline ResourceID ResourceContainer<T>::keyToID(const std::string& key) const {
+			const std::lock_guard<std::mutex> lock(m_containerMutex);
 			if (!m_keys.count(key)) {
 				return NULL_RESOURCE;
 			}

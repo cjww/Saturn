@@ -68,9 +68,6 @@ namespace sa {
 				uint32_t textureCount = assets.size();
 				file.write((char*)&textureCount, sizeof(textureCount));
 				for (auto& textureID : assets) {
-					TextureAsset* pTextureAsset = AssetManager::get().getAsset<TextureAsset>(textureID);
-					if (pTextureAsset)
-						pTextureAsset->write();
 					file.write((char*)&textureID, sizeof(UUID));
 				}
 			}

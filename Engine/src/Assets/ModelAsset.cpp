@@ -186,7 +186,6 @@ namespace sa {
 
 		// Materials
 		SA_DEBUG_LOG_INFO("Material Count:", scene->mNumMaterials);
-		tf::Taskflow taskflow;
 
 
 		std::vector<MaterialAsset*> materials(scene->mNumMaterials);
@@ -214,7 +213,9 @@ namespace sa {
 			std::filesystem::create_directory(textureDir);
 		}
 
-		taskflow.for_each_index(0U, scene->mNumMaterials, 1U, [&](int i) {
+		//tf::Taskflow taskflow;
+		//taskflow.for_each_index(0U, scene->mNumMaterials, 1U, [&](int i) {
+		for (uint32_t i = 0; i < scene->mNumMaterials; i++) {
 			aiMaterial* aMaterial = scene->mMaterials[i];
 			SA_PROFILE_SCOPE(path.generic_string() + ", Load material [" + std::to_string(i) + "] " + aMaterial->GetName().C_Str());
 			SA_DEBUG_LOG_INFO("Load material: ", path.generic_string(), "-", aMaterial->GetName().C_Str());
@@ -242,13 +243,15 @@ namespace sa {
 			material.update();
 			materials[i] = materialAsset;
 			m_progress.increment();
-		});
+		}
+		//});
 
-		m_taskExecutor.run_and_wait(taskflow);
+		//s_taskExecutor.run_and_wait(taskflow);
 
 		for (auto& mesh : data.meshes) {
 			mesh.materialID = materials[mesh.materialID]->getHeader().id; // swap index to material ID
 		}
+		return true;
 	}
 
 	bool ModelAsset::isExtensionSupported(const std::string& extension) {
@@ -267,20 +270,18 @@ namespace sa {
 		if (!std::filesystem::exists(path)) {
 			return false;
 		}
-
+		/*
 		m_progress.reset();
-
-		auto future = m_taskExecutor.async([&, path]() {
-			if (loadAssimpModel(path)) {
-				m_isLoaded = true;
-				return true;
-			}
-			return false;
+		auto future = s_taskExecutor.async([&]() {
+			m_isLoaded = loadAssimpModel(path);
+			return m_isLoaded.load();
 		});
-
 		m_progress.setFuture(future.share());
-		
-		return true;
+
+		*/
+
+		m_isLoaded = loadAssimpModel(path);
+		return m_isLoaded;
 	}
 
 	bool ModelAsset::load() {
@@ -328,9 +329,6 @@ namespace sa {
 					file.write((char*)mesh.indices.data(), sizeof(uint32_t) * indexCount);
 				
 				file.write((char*)&mesh.materialID, sizeof(mesh.materialID));
-				MaterialAsset* pMaterialAsset = AssetManager::get().getAsset<MaterialAsset>(mesh.materialID);
-				if (pMaterialAsset)
-					pMaterialAsset->write();
 			}
 			return true;
 		});

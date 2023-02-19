@@ -31,6 +31,8 @@ namespace sa {
 	*/
 	class IAsset {
 	protected:
+		inline static tf::Executor s_taskExecutor;
+
 		AssetHeader m_header;
 		std::atomic_bool m_isLoaded;
 		std::atomic_uint32_t m_refCount;
@@ -41,7 +43,6 @@ namespace sa {
 		std::filesystem::path m_assetPath;
 
 		ProgressView<bool> m_progress;
-		tf::Executor m_taskExecutor;
 		std::mutex m_mutex;
 
 		bool dispatchLoad(std::function<bool(std::ifstream&)> loadFunction);

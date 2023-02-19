@@ -5,13 +5,12 @@ namespace comp {
 
 	void Model::serialize(sa::Serializer& s) {
 		sa::IAsset* pAsset = sa::AssetManager::get().getAsset(modelID);
-		s.value("ID", std::to_string(pAsset->getID()).c_str());
-		sa::IAsset* pModelAsset = sa::AssetManager::get().getAsset(modelID);
-		if (!pModelAsset) {
-			SA_DEBUG_LOG_ERROR("Invalid model ID: ", modelID);
-			return;
+		sa::UUID id = 0;
+		if (pAsset) {
+			id = pAsset->getID();
 		}
-		pModelAsset->write();
+		s.value("ID", std::to_string(id).c_str());
+		//pAsset->write();
 	}
 
 	void Model::deserialize(void* pDoc) {
@@ -31,11 +30,9 @@ namespace comp {
 
 	void Model::onDestroy(sa::Entity* e) {
 		sa::IAsset* pModelAsset = sa::AssetManager::get().getAsset(modelID);
-		if (!pModelAsset) {
-			SA_DEBUG_LOG_ERROR("Invalid model ID: ", modelID);
-			return;
+		if (pModelAsset) {
+			pModelAsset->release();
 		}
-		pModelAsset->release();
 	}
 
 

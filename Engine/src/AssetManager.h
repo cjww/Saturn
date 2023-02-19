@@ -189,6 +189,8 @@ namespace sa {
 			return nullptr;
 		}
 		
+		asset->write();
+
 		return static_cast<T*>(asset);
 	}
 	
@@ -210,6 +212,8 @@ namespace sa {
 			removeAsset(asset);
 			return nullptr;
 		}
+
+		asset->write();
 
 		return static_cast<T*>(asset);
 	}
