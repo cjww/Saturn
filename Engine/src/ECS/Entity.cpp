@@ -239,7 +239,7 @@ namespace sa {
 
     Entity Entity::clone() {
         std::string name = getComponent<comp::Name>()->name;
-        Entity e = m_pScene->createEntity(name + " Copy");
+        Entity e = m_pScene->createEntity(name);
         m_pScene->forEachComponentType([&](ComponentType type) {
             if (type == getComponentType<comp::Name>())
                 return;

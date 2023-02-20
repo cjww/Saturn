@@ -108,23 +108,27 @@ namespace sa {
 	void ForwardPlus::collectMeshes(Scene* pScene) {
 		SA_PROFILE_FUNCTION();
 		
+		// Clear Dynamic buffers
 		m_objectBuffer.clear();
 		m_indirectIndexedBuffer.clear();
 		m_vertexBuffer.clear();
 		m_indexBuffer.clear();
+		m_materialBuffer.clear();
+		m_materialIndicesBuffer.clear();
 
-
+		// Clear vectors
+		m_models.clear();
+		m_objects.clear();
+		m_textures.clear();
+		m_materials.clear();
 		m_materialData.clear();
 		m_materialIndices.clear();
-
-		m_textures.clear();
 
 		uint32_t objectCount = 0;
 		uint32_t vertexCount = 0;
 		uint32_t indexCount = 0;
 		uint32_t uniqueMeshCount = 0;
 
-		m_models.clear();
 		pScene->forEach<comp::Transform, comp::Model>([&](const comp::Transform& transform, const comp::Model& model) {
 			ModelAsset* modelAsset = AssetManager::get().getAsset<ModelAsset>(model.modelID);
 			if (!modelAsset || !modelAsset->isLoaded())
@@ -155,18 +159,18 @@ namespace sa {
 			}
 			objectCount++;
 		});
-
+		// reserve dynamic buffers
 		m_objectBuffer.reserve(				objectCount * sizeof(ObjectData),						IGNORE_CONTENT);
+		m_indirectIndexedBuffer.reserve(	uniqueMeshCount * sizeof(DrawIndexedIndirectCommand),	IGNORE_CONTENT);
 		m_vertexBuffer.reserve(				vertexCount * sizeof(VertexNormalUV),					IGNORE_CONTENT);
 		m_indexBuffer.reserve(				indexCount * sizeof(uint32_t),							IGNORE_CONTENT);
-		m_indirectIndexedBuffer.reserve(	uniqueMeshCount * sizeof(DrawIndexedIndirectCommand),	IGNORE_CONTENT);
+		m_materialBuffer.reserve(			uniqueMeshCount * sizeof(Material::Values),				IGNORE_CONTENT);
+		m_materialIndicesBuffer.reserve(	uniqueMeshCount * sizeof(int32_t),						IGNORE_CONTENT);
 
 		uint32_t firstInstance = 0;
 
-		uint32_t materialCount = 0;
+		int32_t materialCount = 0;
 		uint32_t meshCount = 0;
-
-		m_materials.clear();
 
 		for (size_t i = 0; i < m_models.size(); i++) {
 			for (const auto& objectBuffer : m_objects[i]) {
@@ -197,6 +201,7 @@ namespace sa {
 				Material* pMaterial = nullptr;
 				if(materialAsset)
 					pMaterial = &materialAsset->data;
+				
 				if (pMaterial && materialAsset->isLoaded()) {
 					auto it = std::find(m_materials.begin(), m_materials.end(), pMaterial);
 					if (it == m_materials.end()) {
@@ -220,9 +225,10 @@ namespace sa {
 						m_materialIndices.push_back(std::distance(m_materials.begin(), it));
 					}
 				}
+				else {
+					m_materialIndices.push_back(-1); // Default Material in shader
+				}
 				meshCount++;
-				
-
 			}
 			firstInstance += m_objects[i].size();
 		}

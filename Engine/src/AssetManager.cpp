@@ -139,31 +139,6 @@ namespace sa {
 		return tex;
 	}
 
-	MaterialAsset* AssetManager::loadDefaultMaterial() {
-		SA_PROFILE_FUNCTION();
-		
-		MaterialAsset* pAsset = findAssetByName<MaterialAsset>(SA_DEFAULT_MATERIAL_NAME);
-		if (pAsset) {
-			pAsset->load();
-			return pAsset;
-		}
-
-		std::filesystem::create_directories(m_defaultPath);
-		pAsset = createAsset<MaterialAsset>(SA_DEFAULT_MATERIAL_NAME, m_defaultPath);
-		
-		Material& mat = pAsset->data;
-		memset(&mat.values, 0, sizeof(mat.values));
-		mat.values.ambientColor = SA_COLOR_WHITE;
-		mat.values.diffuseColor = SA_COLOR_WHITE;
-		mat.values.specularColor = SA_COLOR_WHITE;
-		mat.values.opacity = 1.0f;
-		mat.values.shininess = 1.0f;
-		mat.twoSided = false;
-
-		pAsset->write();
-		return pAsset;
-	}
-
 	ModelAsset* AssetManager::loadQuad() {
 		
 		ModelAsset* pAsset = findAssetByName<ModelAsset>(SA_DEFAULT_QUAD_NAME);
@@ -189,9 +164,11 @@ namespace sa {
 			1, 2, 3
 		};
 		
-		mesh.materialID = loadDefaultMaterial()->getID();
+		mesh.materialID = 0;
 
 		pAsset->data.meshes.push_back(mesh);
+
+		pAsset->load();
 		pAsset->write();
 		return pAsset;
 	}
@@ -265,7 +242,8 @@ namespace sa {
 		};
 
 
-		mesh.materialID = loadDefaultMaterial()->getID();
+		mesh.materialID = 0;
+		pAsset->load();
 		pAsset->write();
 		return pAsset;
 	}

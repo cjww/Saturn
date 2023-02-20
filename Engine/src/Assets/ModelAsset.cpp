@@ -242,6 +242,7 @@ namespace sa {
 			}
 			material.update();
 			materials[i] = materialAsset;
+			materialAsset->write();
 			m_progress.increment();
 		}
 		//});

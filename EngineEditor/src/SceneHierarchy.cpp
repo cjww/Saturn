@@ -61,8 +61,6 @@ void SceneHierarchy::makePopups() {
 
 			ImGui::EndMenu();
 		}
-
-		ImGui::Text("Nr of entities: %d", m_pEngine->getCurrentScene()->getEntityCount());
 		ImGui::EndPopup();
 	}
 }

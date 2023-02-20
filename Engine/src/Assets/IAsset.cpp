@@ -12,6 +12,7 @@ namespace sa {
 			std::lock_guard<std::mutex> lock(m_mutex);
 			if (m_isLoaded)
 				return false;
+			SA_DEBUG_LOG_INFO("Began Loading ", m_name, " from ", m_assetPath);
 			m_progress.reset();
 			std::ifstream file(m_assetPath, std::ios::binary);
 			if (!file.good()) {
@@ -27,6 +28,7 @@ namespace sa {
 			m_isLoaded = loadFunction(file);
 		
 			file.close();
+			SA_DEBUG_LOG_INFO("Finished Loading ", m_name, " from ", m_assetPath);
 			return m_isLoaded.load();
 		});
 		m_progress.setFuture(future.share());
@@ -38,6 +40,7 @@ namespace sa {
 			return false;
 		if (m_assetPath.empty())
 			return false;
+		SA_DEBUG_LOG_INFO("Began Writing ", m_name, " to ", m_assetPath);
 		auto future = s_taskExecutor.async([&, writeFunction]() {
 			std::lock_guard<std::mutex> lock(m_mutex);
 			if (!m_isLoaded)
@@ -53,6 +56,7 @@ namespace sa {
 
 			bool success = writeFunction(file);
 			file.close();
+			SA_DEBUG_LOG_INFO("Finished Writing ", m_name, " to ", m_assetPath);
 			return success;
 		});
 		m_progress.setFuture(future.share());
@@ -77,6 +81,7 @@ namespace sa {
 			m_refCount--;
 		}
 		if(m_refCount == 0) {
+			m_progress.wait();
 			unload();
 		}
 	}

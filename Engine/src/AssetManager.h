@@ -91,7 +91,6 @@ namespace sa {
 		Texture2D* loadDefaultBlackTexture();
 		Texture2D* loadTexture(const std::filesystem::path& path, bool generateMipMaps);
 
-		MaterialAsset* loadDefaultMaterial();
 		ModelAsset* loadQuad();
 		ModelAsset* loadCube();
 
@@ -166,6 +165,7 @@ namespace sa {
 
 	template<typename T>
 	inline T* AssetManager::importAsset(const std::filesystem::path& path, const std::filesystem::path& assetDirectory) {
+		SA_DEBUG_LOG_INFO("Importing Asset", path);
 		AssetHeader header; // generates new UUID
 		header.type = T::type();
 		IAsset* asset;
@@ -188,7 +188,8 @@ namespace sa {
 			removeAsset(asset);
 			return nullptr;
 		}
-		
+		SA_DEBUG_LOG_INFO("Finished Importing Asset", path);
+
 		asset->write();
 
 		return static_cast<T*>(asset);
@@ -196,6 +197,8 @@ namespace sa {
 	
 	template<typename T>
 	inline T* AssetManager::createAsset(const std::string& name, const std::filesystem::path& assetDirectory) {
+		SA_DEBUG_LOG_INFO("Creating Asset ", name);
+
 		AssetHeader header; // generates new UUID
 		header.type = T::type();
 		m_mutex.lock();
@@ -212,6 +215,7 @@ namespace sa {
 			removeAsset(asset);
 			return nullptr;
 		}
+		SA_DEBUG_LOG_INFO("Finished Creating Asset ", name);
 
 		asset->write();
 

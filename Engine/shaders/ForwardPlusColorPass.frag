@@ -38,6 +38,21 @@ struct Material {
     float metallic;
 };
 
+const Material defaultMaterial = {
+    vec4(1, 1, 1, 1),
+    vec4(1, 1, 1, 1),
+    vec4(1, 1, 1, 1),
+    vec4(0, 0, 0, 0),
+    0, 0,
+    0, 0,
+    0, 0,
+    0, 0,
+    0, 0,
+    1.0,
+    1.0,
+    0.0
+};
+
 struct Light {
     vec4 color;
     vec4 position; //vec3 position, float intensity
@@ -56,7 +71,7 @@ layout(set = 0, binding = 2, std140) readonly buffer Materials {
 } materialBuffer;
 
 layout(set = 0, binding = 3) readonly buffer MaterialIndices {
-	uint data[];
+	int data[];
 } materialIndices;
 
 
@@ -83,10 +98,14 @@ void main() {
     ivec2 tileID = pos / ivec2(TILE_SIZE, TILE_SIZE);
     uint index = tileID.y * pc.tileCountX + tileID.x;
 
-    uint materialIndex = materialIndices.data[in_meshIndex];
-
-    Material material = materialBuffer.materials[materialIndex];
-
+    int materialIndex = materialIndices.data[in_meshIndex];
+    Material material;
+    if (materialIndex == -1) {
+        material = defaultMaterial;
+    }
+    else {
+        material = materialBuffer.materials[materialIndex];
+    }
     vec4 ambientColor = material.ambientColor * 0.01;
     vec4 diffuseColor = vec4(0, 0, 0, 1);
     vec4 specularColor = vec4(0, 0, 0, 1);
