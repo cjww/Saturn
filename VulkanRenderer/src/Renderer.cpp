@@ -397,10 +397,20 @@ namespace sa {
 		return std::move(m_pCore->getGPUMemoryUsage());
 	}
 	
-	void Renderer::queueTransfer(const DataTransfer& transfer) {
-		m_transferMutex.lock();
-		m_transferQueue.push(transfer);
-		m_transferMutex.unlock();
+	DataTransfer* Renderer::queueTransfer(const DataTransfer& transfer) {
+		const std::lock_guard<std::mutex> lock(m_transferMutex);
+		return &m_transferQueue.emplace_back(transfer);
+	}
+
+	bool Renderer::cancelTransfer(DataTransfer* pTransfer) {
+		const std::lock_guard<std::mutex> lock(m_transferMutex);
+		for (auto it = m_transferQueue.begin(); it != m_transferQueue.end(); it++) {
+			if (pTransfer == &(*it)) {
+				m_transferQueue.erase(it);
+				return true;
+			}
+		}
+		return false;
 	}
 
 	ResourceID Renderer::createSampler(FilterMode filterMode) {
@@ -483,7 +493,8 @@ namespace sa {
 				break;
 			}
 
-			m_transferQueue.pop();
+			
+			m_transferQueue.pop_front();
 		}
 		m_transferMutex.unlock();
 

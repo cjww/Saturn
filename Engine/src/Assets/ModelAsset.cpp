@@ -278,10 +278,12 @@ namespace sa {
 			return m_isLoaded.load();
 		});
 		m_progress.setFuture(future.share());
-
+		
+		return true;
 		*/
 
 		m_isLoaded = loadAssimpModel(path);
+
 		return m_isLoaded;
 	}
 

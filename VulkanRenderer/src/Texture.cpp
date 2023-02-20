@@ -16,6 +16,7 @@ namespace sa {
 		, m_pStagingBuffer(nullptr)
 		, m_view(NULL_RESOURCE)
 		, m_type(0)
+		, m_pDataTransfer(nullptr)
 	{
 	}
 
@@ -53,6 +54,11 @@ namespace sa {
 
 	void Texture::destroy() {
 		m_pCore->getDevice().waitIdle();
+		if (m_pDataTransfer) {
+			if (sa::Renderer::get().cancelTransfer(m_pDataTransfer)) {
+				SA_DEBUG_LOG_INFO("Canceled image transfer");
+			}
+		}
 		if (isValidView()) {
 			ResourceManager::get().remove<vk::ImageView>(m_view);
 			m_view = NULL_RESOURCE;
@@ -135,7 +141,7 @@ namespace sa {
 			.srcBuffer = m_pStagingBuffer,
 			.dstImage = m_pImage,
 		};
-		Renderer::get().queueTransfer(transfer);
+		m_pDataTransfer = Renderer::get().queueTransfer(transfer);
 	}
 
 	Texture2D::Texture2D(ResourceID imageView) : Texture() {
@@ -433,7 +439,7 @@ namespace sa {
 			.srcBuffer = m_pStagingBuffer,
 			.dstImage = m_pImage,
 		};
-		Renderer::get().queueTransfer(transfer);
+		m_pDataTransfer = Renderer::get().queueTransfer(transfer);
 	}
 
 	TextureCube::TextureCube(const std::vector<Image>& images, bool generateMipmaps) : Texture() {
@@ -467,7 +473,7 @@ namespace sa {
 			.srcBuffer = m_pStagingBuffer,
 			.dstImage = m_pImage,
 		};
-		Renderer::get().queueTransfer(transfer);
+		m_pDataTransfer = Renderer::get().queueTransfer(transfer);
 	}
 
 	TextureCube::TextureCube() : Texture() {

@@ -12,8 +12,9 @@ namespace vk {
 namespace sa {
 	struct DeviceImage;
 	struct DeviceBuffer;
-	class Swapchain;
+	struct DataTransfer;
 
+	class Swapchain;
 	class VulkanCore;
 
 	typedef uint32_t TextureTypeFlags;
@@ -33,6 +34,8 @@ namespace sa {
 		DeviceImage* m_pImage;
 		DeviceBuffer* m_pStagingBuffer;
 		ResourceID m_view;
+
+		DataTransfer* m_pDataTransfer;
 
 		TextureTypeFlags m_type;
 		

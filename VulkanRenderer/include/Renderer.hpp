@@ -107,7 +107,7 @@ namespace sa {
 
 		std::unique_ptr<VulkanCore> m_pCore;
 		
-		std::queue<DataTransfer> m_transferQueue;
+		std::list<DataTransfer> m_transferQueue;
 		std::mutex m_transferMutex;
 
 		const bool c_useVaildationLayers =
@@ -188,7 +188,9 @@ namespace sa {
 		DeviceMemoryStats getGPUMemoryUsage() const;
 
 
-		void queueTransfer(const DataTransfer& transfer);
+		DataTransfer* queueTransfer(const DataTransfer& transfer);
+		bool cancelTransfer(DataTransfer* pTransfer);
+
 
 		ResourceID createSampler(FilterMode filterMode = FilterMode::NEAREST);
 		ResourceID createSampler(const SamplerInfo& samplerInfo);

@@ -137,4 +137,8 @@ namespace sa {
 		file.write((char*)&header, sizeof(AssetHeader));
 	}
 
+	void IAsset::waitAllAssets() {
+		s_taskExecutor.wait_for_all();
+	}
+
 }

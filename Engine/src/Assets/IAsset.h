@@ -86,6 +86,7 @@ namespace sa {
 		static AssetHeader readHeader(std::ifstream& file);
 		static void writeHeader(const AssetHeader& header, std::ofstream& file);
 
+		static void waitAllAssets();
 
 	};
 }

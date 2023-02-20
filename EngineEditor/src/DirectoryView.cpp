@@ -62,7 +62,7 @@ void DirectoryView::onImGui() {
 		}
 
 		static auto openDirectory = std::filesystem::current_path();
-		static int iconSize = 30;
+		static int iconSize = 45;
 
 		ImGui::DirectoryIcons("Explorer", openDirectory, iconSize);
 
