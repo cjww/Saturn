@@ -157,10 +157,13 @@ void SceneView::update(float dt) {
 void SceneView::onImGui() {
 	SA_PROFILE_FUNCTION();
 	
-
-	bool isOpen = ImGui::Begin(m_name, 0, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoTitleBar | ImGuiWindowFlags_NoMove);
+	ImGui::PushStyleVar(ImGuiStyleVar_WindowPadding, ImVec2(0, 0));
+	bool isOpen = ImGui::Begin(m_name, 0, ImGuiWindowFlags_MenuBar | ImGuiWindowFlags_NoCollapse);
+	ImGui::PopStyleVar();
 	if (isOpen) {
-
+		auto node = ImGui::GetWindowDockNode();
+		node->LocalFlags |= ImGuiDockNodeFlags_NoTabBar;
+			
 		static ImGuizmo::OPERATION operation = ImGuizmo::TRANSLATE;
 		static float snapDistance = 0.5f;
 		static float snapAngle = 45.0f;

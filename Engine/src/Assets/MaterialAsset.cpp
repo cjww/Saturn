@@ -10,7 +10,7 @@ namespace sa {
 		return true;
 	}
 
-	bool MaterialAsset::load() {
+	bool MaterialAsset::load(AssetLoadFlags flags) {
 		return dispatchLoad([&](std::ifstream& file) {
 			data.m_textures.clear();
 			data.m_blending.clear();
@@ -51,10 +51,10 @@ namespace sa {
 			}
 
 			return true;
-		});
+		}, flags);
 	}
 
-	bool MaterialAsset::write() {
+	bool MaterialAsset::write(AssetWriteFlags flags) {
 		return dispatchWrite([&](std::ofstream& file) {
 			// Values
 			file.write((char*)&data.values, sizeof(data.values));
@@ -81,7 +81,7 @@ namespace sa {
 			}
 
 			return true;
-		});
+		}, flags);
 	}
 
 	bool MaterialAsset::unload() {

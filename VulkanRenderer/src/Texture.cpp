@@ -41,7 +41,7 @@ namespace sa {
 	}
 
 	bool Texture::isValid() const {
-		return isValidImage() || isValidView();
+		return isValidImage() && isValidView();
 	}
 
 	bool Texture::isValidImage() const {

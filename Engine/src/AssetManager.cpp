@@ -87,6 +87,9 @@ namespace sa {
 
 	void AssetManager::clear() {
 		IAsset::waitAllAssets();
+		for (auto& [id, pAsset] : m_assets) {
+			pAsset->unload();
+		}
 		m_assets.clear();
 		m_assetPackages.clear();
 	}

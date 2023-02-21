@@ -269,7 +269,7 @@ namespace sa {
 		
 		Scene* pScene = m_pEngine->getCurrentScene();
 		auto path = pScene->getAssetPath();
-		pScene->setAssetPath("sceneCache.data");
+		pScene->setAssetPath(editorRelativePath("sceneCache.data"));
 		pScene->write();
 		pScene->setAssetPath(path);
 
@@ -281,9 +281,10 @@ namespace sa {
 		
 		Scene* pScene = m_pEngine->getCurrentScene();
 		auto path = pScene->getAssetPath();
-		pScene->setAssetPath("sceneCache.data");
-		pScene->load();
+		pScene->setAssetPath(editorRelativePath("sceneCache.data"));
+		pScene->load(sa::AssetLoadFlagBits::FORCE);
 		pScene->setAssetPath(path);
+		pScene->release(); // since loading will increase refCount, we decrease it again
 		
 		m_state = State::EDIT;
 	}

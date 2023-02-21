@@ -18,6 +18,16 @@ namespace sa {
 		uint16_t version = SA_ASSET_VERSION;
 	};
 
+	typedef uint32_t AssetLoadFlags;
+	enum AssetLoadFlagBits : AssetLoadFlags {
+		FORCE = 1, // not going to care if asset is already loaded
+	};
+
+	typedef uint32_t AssetWriteFlags;
+	enum AssetWriteFlagBits : AssetWriteFlags {
+
+	};
+
 	/*
 		Base class interface for Assets
 		All IAsset subclasses must fill following conditions:
@@ -45,8 +55,9 @@ namespace sa {
 		ProgressView<bool> m_progress;
 		std::mutex m_mutex;
 
-		bool dispatchLoad(std::function<bool(std::ifstream&)> loadFunction);
-		bool dispatchWrite(std::function<bool(std::ofstream&)> writeFunction);
+		bool dispatchLoad(std::function<bool(std::ifstream&)> loadFunction, AssetLoadFlags flags);
+		bool dispatchWrite(std::function<bool(std::ofstream&)> writeFunction, AssetWriteFlags flags);
+		friend class AssetManager;
 		virtual bool unload() = 0;
 	public:
 		IAsset(const AssetHeader& header);
@@ -62,8 +73,8 @@ namespace sa {
 		//virtual bool writeToPackage(std::ofstream& file) = 0;
 		//virtual bool writeToFile(const std::filesystem::path& path) = 0;
 
-		virtual bool load() = 0;
-		virtual bool write() = 0;
+		virtual bool load(AssetLoadFlags flags = 0) = 0;
+		virtual bool write(AssetWriteFlags flags = 0) = 0;
 		
 
 		void release();

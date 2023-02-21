@@ -289,6 +289,8 @@ namespace sa {
 			if (id == NULL_RESOURCE)
 				return nullptr;
 			const std::lock_guard<std::mutex> lock(m_containerMutex);
+			if (!m_resources.count(id))
+				return nullptr;
 			return m_resources.at(id).get();
 		}
 		

@@ -2,52 +2,55 @@
 #include "IAsset.h"
 
 namespace sa {
-	bool IAsset::dispatchLoad(std::function<bool(std::ifstream&)> loadFunction) {
+	bool IAsset::dispatchLoad(std::function<bool(std::ifstream&)> loadFunction, AssetLoadFlags flags) {
+		bool force = (flags & AssetLoadFlagBits::FORCE)  == AssetLoadFlagBits::FORCE;
 		m_refCount++;
-		if (m_isLoaded)
+		if (m_isLoaded && !force)
 			return false;
 		if (m_assetPath.empty())
 			return false;
-		auto future = s_taskExecutor.async([&, loadFunction]() {
+		auto path = m_assetPath;
+		auto future = s_taskExecutor.async([=]() {
 			std::lock_guard<std::mutex> lock(m_mutex);
-			if (m_isLoaded)
+			if (m_isLoaded && !force)
 				return false;
-			SA_DEBUG_LOG_INFO("Began Loading ", m_name, " from ", m_assetPath);
+			SA_DEBUG_LOG_INFO("Began Loading ", m_name, " from ", path);
 			m_progress.reset();
-			std::ifstream file(m_assetPath, std::ios::binary);
+			std::ifstream file(path, std::ios::binary);
 			if (!file.good()) {
 				file.close();
 				return false;
 			}
 			m_header = readHeader(file);
 			if (m_header.version != SA_ASSET_VERSION) {
-				SA_DEBUG_LOG_WARNING("Asset versions do not match! ", m_assetPath, " (", m_header.version, " vs ", SA_ASSET_VERSION, ")");
+				SA_DEBUG_LOG_WARNING("Asset versions do not match! ", path, " (", m_header.version, " vs ", SA_ASSET_VERSION, ")");
 				m_header.version = SA_ASSET_VERSION;
 			}
 			
 			m_isLoaded = loadFunction(file);
 		
 			file.close();
-			SA_DEBUG_LOG_INFO("Finished Loading ", m_name, " from ", m_assetPath);
+			SA_DEBUG_LOG_INFO("Finished Loading ", m_name, " from ", path);
 			return m_isLoaded.load();
 		});
 		m_progress.setFuture(future.share());
 		return true;
 	}
 
-	bool IAsset::dispatchWrite(std::function<bool(std::ofstream&)> writeFunction) {
+	bool IAsset::dispatchWrite(std::function<bool(std::ofstream&)> writeFunction, AssetWriteFlags flags) {
 		if (!m_isLoaded)
 			return false;
 		if (m_assetPath.empty())
 			return false;
-		SA_DEBUG_LOG_INFO("Began Writing ", m_name, " to ", m_assetPath);
-		auto future = s_taskExecutor.async([&, writeFunction]() {
+		auto path = m_assetPath;
+		auto future = s_taskExecutor.async([=]() {
 			std::lock_guard<std::mutex> lock(m_mutex);
 			if (!m_isLoaded)
 				return false;
+			SA_DEBUG_LOG_INFO("Began Writing ", m_name, " to ", path);
 			m_progress.reset();
 
-			std::ofstream file(m_assetPath, std::ios::binary);
+			std::ofstream file(path, std::ios::binary);
 			if (!file.good()) {
 				file.close();
 				return false;
@@ -56,7 +59,7 @@ namespace sa {
 
 			bool success = writeFunction(file);
 			file.close();
-			SA_DEBUG_LOG_INFO("Finished Writing ", m_name, " to ", m_assetPath);
+			SA_DEBUG_LOG_INFO("Finished Writing ", m_name, " to ", path);
 			return success;
 		});
 		m_progress.setFuture(future.share());

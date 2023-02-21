@@ -57,7 +57,7 @@ namespace sa {
 	}
 
 	Scene::Scene(const AssetHeader& header) : IAsset(header) {
-		m_pPhysicsScene = nullptr;
+		m_pPhysicsScene = PhysicsSystem::get().createScene();
 		registerComponentCallBacks();
 	}
 
@@ -90,9 +90,8 @@ namespace sa {
 		return true;
 	}
 
-	bool Scene::load() {
+	bool Scene::load(AssetLoadFlags flags) {
 		return dispatchLoad([&](std::ifstream& file) {
-			m_pPhysicsScene = PhysicsSystem::get().createScene();
 
 			simdjson::padded_string jsonStr(m_header.size);
 			file.read(jsonStr.data(), jsonStr.length());
@@ -106,10 +105,10 @@ namespace sa {
 			deserialize(&doc);
 
 			return true;
-		});
+		}, flags);
 	}
 	
-	bool Scene::write() {
+	bool Scene::write(AssetWriteFlags flags) {
 		return dispatchWrite([&](std::ofstream& file) {
 			Serializer s;
 			serialize(s);
@@ -122,7 +121,7 @@ namespace sa {
 			file << s.dump();
 
 			return true;
-		});
+		}, flags);
 	}
 
 	bool Scene::unload() {
@@ -130,11 +129,6 @@ namespace sa {
 		m_reg.shrink_to_fit();
 		m_scriptManager.freeMemory();
 		m_hierarchy.freeMemory();
-
-		if (m_pPhysicsScene) {
-			m_pPhysicsScene->release();
-			m_pPhysicsScene = nullptr;
-		}
 
 		m_isLoaded = false;
 		return true;
@@ -181,7 +175,6 @@ namespace sa {
 	}
 
 	void Scene::deserialize(void* pDoc) {
-		clearEntities();
 		using namespace simdjson;
 		ondemand::document& doc = *(ondemand::document*)pDoc;
 		
@@ -195,9 +188,12 @@ namespace sa {
 				continue;
 			}
 			ondemand::object obj = e.value_unsafe().get_object();
-			uint32_t id = obj["id"].get_uint64();
-			
-			Entity entity(this, m_reg.create((entt::entity)id));
+			uint32_t id = (uint32_t)obj["id"].get_uint64();
+			entt::entity entityID = (entt::entity)id;
+			if (!m_reg.valid(entityID)) {
+				entityID = m_reg.create(entityID);
+			}
+			Entity entity(this, entityID);
 			entity.deserialize(&obj);
 		}
 	}

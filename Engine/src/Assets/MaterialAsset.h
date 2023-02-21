@@ -16,8 +16,8 @@ namespace sa {
 
 		virtual bool create(const std::string& name) override;
 
-		virtual bool load() override;
-		virtual bool write() override;
+		virtual bool load(AssetLoadFlags flags = 0) override;
+		virtual bool write(AssetWriteFlags flags = 0) override;
 
 	};
 }

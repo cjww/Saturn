@@ -131,7 +131,15 @@ namespace sa {
 		if (this->isNull()) {
 			throw std::runtime_error("Entity was a null entity");
 		}
-		return &m_pRegistry->emplace_or_replace<T>(m_entity, args...);
+		T* pComponent = nullptr;
+		if (m_pRegistry->all_of<T>(m_entity)) {
+			pComponent = &m_pRegistry->get<T>(m_entity);
+			pComponent->onUpdate(this);
+		}
+		else {
+			pComponent = &m_pRegistry->emplace<T>(m_entity, args...);
+		}
+		return pComponent;
 	}
 
 	template<typename T>

@@ -31,7 +31,7 @@ namespace sa {
         return true;
     }
 
-    bool TextureAsset::load() {
+    bool TextureAsset::load(AssetLoadFlags flags) {
         return dispatchLoad([&](std::ifstream& file) {
             m_progress.setMaxCompletionCount(3);
             m_dataBuffer.resize(m_header.size);
@@ -48,10 +48,10 @@ namespace sa {
             m_progress.increment();
 
             return true;
-        });
+        }, flags);
     }
 
-    bool TextureAsset::write() {
+    bool TextureAsset::write(AssetWriteFlags flags) {
         std::lock_guard<std::mutex> lock(m_mutex);
         m_header.size = m_dataBuffer.size();
         return dispatchWrite([&](std::ofstream& file) {
@@ -60,7 +60,7 @@ namespace sa {
                 file.write((char*)m_dataBuffer.data(), m_dataBuffer.size());
             m_progress.increment();
             return true;
-        });
+        }, flags);
     }
 
     bool TextureAsset::unload() {

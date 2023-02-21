@@ -24,6 +24,10 @@ namespace comp {
 		if (!transform)
 			transform = e->addComponent<comp::Transform>();
 		pActor = sa::PhysicsSystem::get().createRigidBody(isStatic, *transform);
+		if (!pActor) {
+			SA_DEBUG_LOG_ERROR("Failed to create rigidbody actor");
+			return;
+		}
 		pActor->userData = new sa::Entity(*e);
 		e->getScene()->m_pPhysicsScene->addActor(*pActor);
 	}
