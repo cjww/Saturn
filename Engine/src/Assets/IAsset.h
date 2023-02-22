@@ -21,6 +21,9 @@ namespace sa {
 	typedef uint32_t AssetLoadFlags;
 	enum AssetLoadFlagBits : AssetLoadFlags {
 		FORCE = 1, // not going to care if asset is already loaded
+		FORCE_SHALLOW = 2, // Force only first load in tree
+		NO_REF = 4, // ignore this load call
+		
 	};
 
 	typedef uint32_t AssetWriteFlags;

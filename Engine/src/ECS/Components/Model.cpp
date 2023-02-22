@@ -18,14 +18,22 @@ namespace comp {
 
 		std::string_view strID = obj["ID"].get_string().value();
 		char* stopString = NULL;
-		modelID = strtoull(strID.data(), &stopString, 10);
 
+		sa::IAsset* pPreviousAsset = sa::AssetManager::get().getAsset(modelID);
+		
+		modelID = strtoull(strID.data(), &stopString, 10);
 		sa::IAsset* pModelAsset = sa::AssetManager::get().getAsset(modelID);
-		if (!pModelAsset) {
-			SA_DEBUG_LOG_ERROR("Invalid model ID: ", modelID);
+
+		if (pPreviousAsset == pModelAsset) {
 			return;
 		}
-		pModelAsset->load();
+		
+		if(pModelAsset)
+			pModelAsset->load();
+
+		if (pPreviousAsset)
+			pPreviousAsset->release();
+
 	}
 
 	void Model::onDestroy(sa::Entity* e) {

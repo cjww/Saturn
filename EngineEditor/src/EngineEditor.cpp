@@ -53,9 +53,10 @@ namespace sa {
 
 		if (ImGui::BeginPopupModal("About")) {
 			ImVec2 windowSize = ImGui::GetContentRegionAvail();
-			ImVec2 imageSize = ImVec2(windowSize.x * 0.5f, windowSize.y * 0.5f);
+			float smallestDim = std::min(windowSize.x, windowSize.y);
+			ImVec2 imageSize = ImVec2(smallestDim * 0.5f, smallestDim * 0.5f);
 			ImVec2 cursorStartPos = ImGui::GetCursorStartPos();
-			ImGui::SetCursorPos(ImVec2(cursorStartPos.x + imageSize.x * 0.5f, cursorStartPos.y + imageSize.y * 0.5f));
+			ImGui::SetCursorPos(ImVec2(cursorStartPos.x + (windowSize.x * 0.5f) - imageSize.x * 0.5f, cursorStartPos.y + (windowSize.y * 0.5f) - imageSize.y * 0.5f));
 			ImGui::Image(m_logoTex, imageSize, ImVec2(0, 0), ImVec2(1, 1), ImVec4(1.f, 1.f, 1.f, 0.2f));
 
 			ImGui::SetCursorPos(cursorStartPos);
@@ -65,7 +66,7 @@ namespace sa {
 
 			ImGui::Spacing();
 
-			ImGui::Text("Version: %s", SA_VERSION);
+			ImGui::Text("Version: %s", SA_VERSION_STR);
 			ImGui::Text("Backend Graphics API: Vulkan 1.3");
 			ImGui::Text("Physics engine: NVIDIA PhysX");
 
@@ -282,9 +283,9 @@ namespace sa {
 		Scene* pScene = m_pEngine->getCurrentScene();
 		auto path = pScene->getAssetPath();
 		pScene->setAssetPath(editorRelativePath("sceneCache.data"));
-		pScene->load(sa::AssetLoadFlagBits::FORCE);
+		pScene->load(sa::AssetLoadFlagBits::FORCE_SHALLOW | sa::AssetLoadFlagBits::NO_REF);
 		pScene->setAssetPath(path);
-		pScene->release(); // since loading will increase refCount, we decrease it again
+		//pScene->release(); // since loading will increase refCount, we decrease it again
 		
 		m_state = State::EDIT;
 	}

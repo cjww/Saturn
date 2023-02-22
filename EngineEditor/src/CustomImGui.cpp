@@ -528,12 +528,14 @@ namespace ImGui {
 
 	}
 
-	void DirectoryIcons(const char* str_id, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size) {
+	bool DirectoryIcons(const char* str_id, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size) {
 		
 		ImVec2 contentArea = size;
 		if (size.x == 0.f && size.y == 0.f) {
 			contentArea = ImGui::GetContentRegionAvail();
 		}
+
+		bool wasChanged = false;
 
 		if (!openDirectory.empty()) {
 			if (BeginChild((std::string(str_id) + "1").c_str(), contentArea, false, ImGuiWindowFlags_MenuBar)) {
@@ -560,6 +562,7 @@ namespace ImGui {
 							auto newPath = openDirectory.parent_path() / path->filename();
 							try {
 								std::filesystem::rename(*path, newPath);
+								wasChanged = true;
 							}
 							catch (std::exception e) {
 								SA_DEBUG_LOG_ERROR(e.what());
@@ -588,6 +591,7 @@ namespace ImGui {
 							std::filesystem::create_directory(openDirectory / "New Folder");
 							editedFile = newPath;
 							editingName = "New Folder";
+							wasChanged = true;
 						}
 						EndMenu();
 					}
@@ -602,6 +606,7 @@ namespace ImGui {
 							for (auto& file : copiedFiles) {
 								try {
 									std::filesystem::copy(file, openDirectory);
+									wasChanged = true;
 								}
 								catch (std::exception e) {
 									SA_DEBUG_LOG_ERROR(e.what());
@@ -618,6 +623,7 @@ namespace ImGui {
 						for (auto& file : selectedItems) {
 							try {
 								std::filesystem::remove(file);
+								wasChanged = true;
 							}
 							catch (std::exception e) {
 								SA_DEBUG_LOG_ERROR(e.what());
@@ -644,6 +650,8 @@ namespace ImGui {
 					for (auto& path : selectedItems) {
 						try {
 							std::filesystem::remove(path);
+							wasChanged = true;
+
 						}
 						catch (std::exception e) {
 							SA_DEBUG_LOG_ERROR(e.what());
@@ -663,6 +671,7 @@ namespace ImGui {
 						for (auto& file : copiedFiles) {
 							try {
 								std::filesystem::copy(file, openDirectory);
+								wasChanged = true;
 							}
 							catch (std::exception e) {
 								SA_DEBUG_LOG_ERROR(e.what());
@@ -732,6 +741,7 @@ namespace ImGui {
 								auto newPath = thisPath / path->filename();
 								try {
 									std::filesystem::rename(*path, newPath);
+									wasChanged = true;
 								}
 								catch (std::exception e) {
 									SA_DEBUG_LOG_ERROR(e.what());
@@ -758,6 +768,7 @@ namespace ImGui {
 							//rename
 							std::string newName = (editedFile.parent_path() / editingName).generic_string();
 							std::rename(editedFile.generic_string().c_str(), newName.c_str());
+							wasChanged = true;
 							editedFile.clear();
 						}
 						if (IsMouseClicked(ImGuiMouseButton_Left) && !IsItemHovered()) {
@@ -804,6 +815,7 @@ namespace ImGui {
 			ImGui::EndChild();
 		}
 
+		return wasChanged;
 	}
 
 	bool MakeEnterNameModalPopup(const char* name, const char* hint, std::string& output) {

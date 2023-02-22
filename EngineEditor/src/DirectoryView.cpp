@@ -47,7 +47,9 @@ void DirectoryView::onImGui() {
 		static auto openDirectory = std::filesystem::current_path();
 		static int iconSize = 45;
 
-		ImGui::DirectoryIcons("Explorer", openDirectory, iconSize);
+		if (ImGui::DirectoryIcons("Explorer", openDirectory, iconSize)) {
+			sa::AssetManager::get().rescanAssets();
+		}
 
 	}
 	ImGui::End();

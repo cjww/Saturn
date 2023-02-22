@@ -59,8 +59,13 @@ namespace sa {
 	}
 
 	bool IAsset::load(AssetLoadFlags flags) {
-		bool force = (flags & AssetLoadFlagBits::FORCE) == AssetLoadFlagBits::FORCE;
-		m_refCount++;
+		bool shallowForce = (flags & AssetLoadFlagBits::FORCE_SHALLOW) == AssetLoadFlagBits::FORCE_SHALLOW;
+		bool force = shallowForce || (flags & AssetLoadFlagBits::FORCE) == AssetLoadFlagBits::FORCE;
+		bool noRef = (flags & AssetLoadFlagBits::NO_REF) == AssetLoadFlagBits::NO_REF;
+		if (shallowForce)
+			flags &= ~(AssetLoadFlagBits::FORCE_SHALLOW | AssetLoadFlagBits::FORCE); // Remove Force flags
+		if(!noRef)
+			m_refCount++; 
 
 		if (m_isLoaded && !force)
 			return false;
