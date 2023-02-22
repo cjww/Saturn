@@ -67,7 +67,8 @@ namespace sa {
 
 		AssetTypeID m_nextTypeID;
 		std::unordered_map<AssetTypeID, std::function<IAsset* (const AssetHeader&)>> m_assetAddConversions;
-		std::unordered_map<AssetTypeID, std::string> m_typeStrings;
+		std::unordered_map<AssetTypeID, std::string> m_typeToString;
+		std::unordered_map<std::string, AssetTypeID> m_stringToType;
 
 
 		AssetManager();
@@ -107,6 +108,9 @@ namespace sa {
 		const std::string& getAssetTypeName(AssetTypeID typeID) const;
 
 		template<typename T>
+		AssetTypeID getAssetTypeID() const;
+
+		template<typename T>
 		T* getAsset(UUID id) const;
 		IAsset* getAsset(UUID id) const;
 
@@ -137,13 +141,23 @@ namespace sa {
 		m_assetAddConversions[id] = [&](const AssetHeader& header) {
 			return m_assets.insert({ header.id, std::make_unique<T>(header) }).first->second.get();
 		};
-		T::s_typeID = id;
 
 		std::string str = typeid(T).name();
 		utils::stripTypeName(str);
-		m_typeStrings[id] = str;
+		m_typeToString[id] = str;
+		m_stringToType[str] = id;
 
 		return id;
+	}
+
+	template<typename T>
+	inline AssetTypeID AssetManager::getAssetTypeID() const {
+		std::string str = typeid(T).name();
+		utils::stripTypeName(str);
+		if (!m_stringToType.count(str)) {
+			return -1;
+		}
+		return m_stringToType.at(str);
 	}
 
 	template<typename T>
@@ -167,7 +181,8 @@ namespace sa {
 	inline T* AssetManager::importAsset(const std::filesystem::path& path, const std::filesystem::path& assetDirectory) {
 		SA_DEBUG_LOG_INFO("Importing Asset", path);
 		AssetHeader header; // generates new UUID
-		header.type = T::type();
+		header.type = getAssetTypeID<T>();
+		assert(header.type == -1 && "Can not use unregistered type!");
 		IAsset* asset;
 		{
 			std::lock_guard<std::mutex> lock(m_mutex);
@@ -179,10 +194,7 @@ namespace sa {
 			asset = it->second.get();
 		}
 		
-		auto filename = path.filename().replace_extension(".asset");
-		asset->setAssetPath(assetDirectory / filename); // The path the asset will write to
-
-		if (!asset->importFromFile(path)) {
+		if (!asset->importFromFile(path, assetDirectory)) {
 			std::lock_guard<std::mutex> lock(m_mutex);
 			m_importedAssets.erase(path);
 			removeAsset(asset);
@@ -200,23 +212,17 @@ namespace sa {
 		SA_DEBUG_LOG_INFO("Creating Asset ", name);
 
 		AssetHeader header; // generates new UUID
-		header.type = T::type();
+		header.type = getAssetTypeID<T>();
+		assert(header.type == -1 && "Can not use unregistered type!");
+
 		m_mutex.lock();
 		auto [it, success] = m_assets.insert({ header.id, std::make_unique<T>(header) });
 		m_mutex.unlock();
+
 		IAsset* asset = it->second.get();
 
-		if (!assetDirectory.empty()) {
-			std::filesystem::path filename = name + ".asset";
-			asset->setAssetPath(assetDirectory / filename); // The path the asset will write to
-		}
-
-		if (!asset->create(name)) {
-			removeAsset(asset);
-			return nullptr;
-		}
+		asset->create(name, assetDirectory);
 		SA_DEBUG_LOG_INFO("Finished Creating Asset ", name);
-
 		asset->write();
 
 		return static_cast<T*>(asset);

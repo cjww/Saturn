@@ -99,7 +99,7 @@ void DirectoryView::onImGui() {
 		}
 
 		if (selected && selected->isLoaded()) {
-			if (selected->getType() == sa::ModelAsset::type()) {
+			if (selected->getType() == sa::AssetManager::get().getAssetTypeID<sa::ModelAsset>()) {
 				if (ImGui::Button("Spawn")) {
 					sa::Entity entity = m_pEngine->getCurrentScene()->createEntity();
 					entity.addComponent<comp::Transform>();

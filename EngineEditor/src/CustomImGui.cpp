@@ -240,7 +240,7 @@ namespace ImGui {
 		
 		sa::IAsset* pAsset = sa::AssetManager::get().getAsset(model->modelID);
 		sa::IAsset* pPrevAsset = pAsset;
-		if (AssetSlot(("Model##" + entity.getComponent<comp::Name>()->name).c_str(), pAsset, sa::ModelAsset::type())) {
+		if (AssetSlot(("Model##" + entity.getComponent<comp::Name>()->name).c_str(), pAsset, sa::AssetManager::get().getAssetTypeID<sa::ModelAsset>())) {
 			pAsset->load();
 			if(pPrevAsset)
 				pPrevAsset->release();

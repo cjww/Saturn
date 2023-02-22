@@ -31,12 +31,9 @@ namespace sa {
 	/*
 		Base class interface for Assets
 		All IAsset subclasses must fill following conditions:
-			* override bool load()
-			* override bool write()
-			* override private bool unload()
-			* friend class AssetManager
-			* have a private static AssetTypeID s_typeID
-			* have a public static AssetTypeID type() { return s_typeID; }
+			* override bool onLoad(std::ifstream& file, AssetLoadFlags flags)
+			* override bool onWrite(std::ofstream& file, AssetWriteFlags flags)
+			* override bool onUnload()
 			* use IAsset constructors or using IAsset::IAsset
 	*/
 	class IAsset {
@@ -67,8 +64,8 @@ namespace sa {
 
 		virtual ~IAsset();
 
-		bool create(const std::string& name);
-		bool importFromFile(const std::filesystem::path& path);
+		bool create(const std::string& name, const std::filesystem::path& assetDirectory);
+		bool importFromFile(const std::filesystem::path& path, const std::filesystem::path& assetDirectory);
 
 		//virtual bool loadFromPackage(std::ifstream& file) = 0;
 		//virtual bool loadFromFile(const std::filesystem::path& path) = 0;

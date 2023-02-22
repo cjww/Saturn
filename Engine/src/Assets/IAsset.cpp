@@ -31,13 +31,25 @@ namespace sa {
 		m_progress.wait();
 	}
 
-	bool IAsset::create(const std::string& name) {
+	bool IAsset::create(const std::string& name, const std::filesystem::path& assetDirectory) {
 		m_name = name;
+		m_assetPath.clear();
+		if (!assetDirectory.empty()) {
+			m_assetPath = assetDirectory / (name + ".asset"); // The path the asset will write to
+		}
 		m_isLoaded = true;
 		return true;
 	}
 
-	bool IAsset::importFromFile(const std::filesystem::path& path) {
+	bool IAsset::importFromFile(const std::filesystem::path& path, const std::filesystem::path& assetDirectory) {
+		m_name = path.stem().generic_string();
+
+		m_assetPath.clear();
+		if (!assetDirectory.empty()) {	
+			auto filename = path.filename().replace_extension(".asset");
+			m_assetPath = assetDirectory / filename; // The path the asset will write to
+		}
+
 		if (!std::filesystem::exists(path)) {
 			SA_DEBUG_LOG_ERROR("File path does not exist ", path);
 			return false;

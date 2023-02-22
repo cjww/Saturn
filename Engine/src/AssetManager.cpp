@@ -284,9 +284,9 @@ namespace sa {
 	}
 
 	const std::string& AssetManager::getAssetTypeName(AssetTypeID typeID) const {
-		if (!m_typeStrings.count(typeID))
+		if (!m_typeToString.count(typeID))
 			return "Unknown";
-		return m_typeStrings.at(typeID);
+		return m_typeToString.at(typeID);
 	}
 
 	IAsset* AssetManager::getAsset(UUID id) const {
