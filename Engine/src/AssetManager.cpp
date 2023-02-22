@@ -49,8 +49,9 @@ namespace sa {
 			SA_DEBUG_LOG_WARNING("Asset versions do not match! ", assetPath, " (", header.version, " vs ", SA_ASSET_VERSION, ")");
 			header.version = SA_ASSET_VERSION;
 		}
-	
+		
 		if (m_assets.count(header.id)) { // already loaded
+			m_assets.at(header.id)->setAssetPath(assetPath); // Update Asset Path 
 			return nullptr;
 		}
 		if (!m_assetAddConversions.count(header.type)) {
@@ -273,8 +274,6 @@ namespace sa {
 
 
 	void AssetManager::rescanAssets() {
-		clear();
-
 		locateStandaloneAssets();
 		locateAssetPackages();
 		for (auto& pkg : m_assetPackages) {

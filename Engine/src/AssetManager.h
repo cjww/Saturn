@@ -99,7 +99,6 @@ namespace sa {
 		void getAssets(std::vector<IAsset*>* assets, const std::string& filter) const;
 		void getAssets(std::vector<IAsset*>* assets, AssetTypeID typeFilter) const;
 
-
 		void rescanAssets();
 
 		template<typename T>

@@ -4,8 +4,6 @@
 
 class DirectoryView : public EditorModule {
 private:
-	std::list<sa::IAsset*> m_loadingAssets;
-
 	bool m_isAssetListOpen;
 
 public:

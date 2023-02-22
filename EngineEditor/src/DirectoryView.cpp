@@ -15,7 +15,7 @@ DirectoryView::DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor)
 		for (uint32_t i = 0; i < e.count; i++) {
 			std::filesystem::path path = e.paths[i];
 			if (sa::ModelAsset::isExtensionSupported(path.extension().generic_string())) {
-				m_loadingAssets.push_back(sa::AssetManager::get().importAsset<sa::ModelAsset>(path));
+				sa::AssetManager::get().importAsset<sa::ModelAsset>(path);
 			}
 		}
 	});
@@ -40,23 +40,6 @@ void DirectoryView::onImGui() {
 
 			if (ImGui::MenuItem("Assets Window")) {
 				m_isAssetListOpen = !m_isAssetListOpen;
-			}
-
-			float completion = 0.f;
-			for (auto it = m_loadingAssets.begin(); it != m_loadingAssets.end(); it++) {
-				sa::IAsset* asset = *it;
-				if (!asset->getProgress().isAllDone()) {
-					completion += asset->getProgress().getAllCompletion();
-				}
-				else if (asset->isLoaded()) {
-					asset->write();
-					m_loadingAssets.erase(it);
-					break;
-				}
-			}
-			if (!m_loadingAssets.empty()) {
-				completion /= m_loadingAssets.size();
-				ImGui::ProgressBar(completion);
 			}
 			ImGui::EndMenuBar();
 		}
