@@ -51,7 +51,10 @@ namespace sa {
 		return false;
 	}
 
-	void processNode(const aiScene* scene, const aiNode* node, ModelData* pModelData, ProgressView<bool>* pProgress) {
+	void ModelAsset::processNode(const void* pScene, const void* pNode) {
+		const aiScene* scene = (const aiScene*)pScene;
+		const aiNode* node = (const aiNode*)pNode;
+
 		SA_PROFILE_FUNCTION();
 		for (int i = 0; i < node->mNumMeshes; i++) {
 			Mesh mesh = {};
@@ -92,12 +95,12 @@ namespace sa {
 				}
 			}
 			mesh.materialID = aMesh->mMaterialIndex;
-			pModelData->meshes.push_back(mesh);
-			pProgress->increment();
+			data.meshes.push_back(mesh);
+			incrementProgress();
 		}
 
 		for (int i = 0; i < node->mNumChildren; i++) {
-			processNode(scene, node->mChildren[i], pModelData, pProgress);
+			processNode(scene, node->mChildren[i]);
 		}
 	}
 
@@ -180,9 +183,8 @@ namespace sa {
 			"\nAnimations", scene->mNumAnimations,
 			"\nLights", scene->mNumLights);
 
-		m_progress.setMaxCompletionCount(scene->mNumMeshes + scene->mNumMaterials);
-
-		processNode(scene, scene->mRootNode, &data, &m_progress);
+		setCompletionCount(scene->mNumMeshes + scene->mNumMaterials);
+		processNode(scene, scene->mRootNode);
 
 		// Materials
 		SA_DEBUG_LOG_INFO("Material Count:", scene->mNumMaterials);
@@ -190,8 +192,8 @@ namespace sa {
 
 		std::vector<MaterialAsset*> materials(scene->mNumMaterials);
 		if (scene->mNumMaterials > 0 || scene->mNumTextures > 0) {
-			auto filename = m_assetPath.filename();
-			auto dirname = m_assetPath.parent_path() / filename;
+			auto filename = getAssetPath().filename();
+			auto dirname = getAssetPath().parent_path() / filename;
 			dirname.replace_extension();
 			
 			int i = 1;
@@ -200,15 +202,15 @@ namespace sa {
 				i++;
 			}
 			std::filesystem::create_directory(dirname);
-			m_assetPath = dirname / filename;
+			setAssetPath(dirname / filename);
 		}
 
-		auto materialDir = m_assetPath.parent_path() / "Materials";
+		auto materialDir = getAssetPath().parent_path() / "Materials";
 		if (!std::filesystem::exists(materialDir)) {
 			std::filesystem::create_directory(materialDir);
 		}
 
-		auto textureDir = m_assetPath.parent_path() / "Textures";
+		auto textureDir = getAssetPath().parent_path() / "Textures";
 		if (!std::filesystem::exists(textureDir)) {
 			std::filesystem::create_directory(textureDir);
 		}
@@ -243,11 +245,11 @@ namespace sa {
 			material.update();
 			materials[i] = materialAsset;
 			materialAsset->write();
-			m_progress.increment();
+			incrementProgress();
 		//}
 		});
 
-		s_taskExecutor.run(taskflow).wait();
+		runTaskflow(taskflow).wait();
 
 		for (auto& mesh : data.meshes) {
 			mesh.materialID = materials[mesh.materialID]->getHeader().id; // swap index to material ID
@@ -260,87 +262,60 @@ namespace sa {
 		return importer.IsExtensionSupported(extension);
 	}
 
-	bool ModelAsset::create(const std::string& name) {
-		m_isLoaded = true;
-		m_name = name;
-		return true;
-	}
-
-
-	bool ModelAsset::importFromFile(const std::filesystem::path& path) {
-		if (!std::filesystem::exists(path)) {
-			return false;
-		}
-
-		/*
-		m_progress.reset();
-		auto future = s_taskExecutor.async([&]() {
-			m_isLoaded = loadAssimpModel(path);
-			return m_isLoaded.load();
-		});
-		m_progress.setFuture(future.share());
-		
-		return true;
-		*/
-
+	bool ModelAsset::onImport(const std::filesystem::path& path) {
 		sa::Clock clock;
-		m_isLoaded = loadAssimpModel(path);
+		bool sucess = loadAssimpModel(path);
 		SA_DEBUG_LOG_INFO("Finished importing ", path, ": ", clock.getElapsedTime<std::chrono::milliseconds>(), "ms");
-		return m_isLoaded;
+		return sucess;
 	}
 
-	bool ModelAsset::load(AssetLoadFlags flags) {
-		return dispatchLoad([&](std::ifstream& file) {
-			uint32_t meshCount = 0;
-			file.read((char*)&meshCount, sizeof(meshCount));
+	bool ModelAsset::onLoad(std::ifstream& file, AssetLoadFlags flags) {
+		uint32_t meshCount = 0;
+		file.read((char*)&meshCount, sizeof(meshCount));
 
-			data.meshes.resize(meshCount);
-			for (auto& mesh : data.meshes) {
-				uint32_t vertexCount = 0;
-				file.read((char*)&vertexCount, sizeof(vertexCount));
-				mesh.vertices.resize(vertexCount);
-				file.read((char*)mesh.vertices.data(), sizeof(sa::VertexNormalUV) * vertexCount);
+		data.meshes.resize(meshCount);
+		for (auto& mesh : data.meshes) {
+			uint32_t vertexCount = 0;
+			file.read((char*)&vertexCount, sizeof(vertexCount));
+			mesh.vertices.resize(vertexCount);
+			file.read((char*)mesh.vertices.data(), sizeof(sa::VertexNormalUV) * vertexCount);
 
-				uint32_t indexCount = 0;
-				file.read((char*)&indexCount, sizeof(indexCount));
-				mesh.indices.resize(indexCount);
-				file.read((char*)mesh.indices.data(), sizeof(uint32_t) * indexCount);
+			uint32_t indexCount = 0;
+			file.read((char*)&indexCount, sizeof(indexCount));
+			mesh.indices.resize(indexCount);
+			file.read((char*)mesh.indices.data(), sizeof(uint32_t) * indexCount);
 
-				file.read((char*)&mesh.materialID, sizeof(mesh.materialID));
-				MaterialAsset* pMaterialAsset = AssetManager::get().getAsset<MaterialAsset>(mesh.materialID);
-				if (pMaterialAsset) {
-					pMaterialAsset->load();
-					m_progress.addDependency(&pMaterialAsset->getProgress());
-				}
+			file.read((char*)&mesh.materialID, sizeof(mesh.materialID));
+			MaterialAsset* pMaterialAsset = AssetManager::get().getAsset<MaterialAsset>(mesh.materialID);
+			if (pMaterialAsset) {
+				pMaterialAsset->load();
+				addDependency(pMaterialAsset->getProgress());
 			}
-			return true;
-		}, flags);
+		}
+		return true;
 	}
 
-	bool ModelAsset::write(AssetWriteFlags flags) {
-		return dispatchWrite([&](std::ofstream& file) {
-			uint32_t meshCount = data.meshes.size();
-			file.write((char*)&meshCount, sizeof(meshCount));
+	bool ModelAsset::onWrite(std::ofstream& file, AssetWriteFlags flags) {
+		uint32_t meshCount = data.meshes.size();
+		file.write((char*)&meshCount, sizeof(meshCount));
 
-			for (auto& mesh : data.meshes) {
-				uint32_t vertexCount = mesh.vertices.size();
-				file.write((char*)&vertexCount, sizeof(vertexCount));
-				if(vertexCount > 0)
-					file.write((char*)mesh.vertices.data(), sizeof(sa::VertexNormalUV) * vertexCount);
-			
-				uint32_t indexCount = mesh.indices.size();
-				file.write((char*)&indexCount, sizeof(indexCount));
-				if(indexCount > 0) 
-					file.write((char*)mesh.indices.data(), sizeof(uint32_t) * indexCount);
-				
-				file.write((char*)&mesh.materialID, sizeof(mesh.materialID));
-			}
-			return true;
-		}, flags);
+		for (auto& mesh : data.meshes) {
+			uint32_t vertexCount = mesh.vertices.size();
+			file.write((char*)&vertexCount, sizeof(vertexCount));
+			if (vertexCount > 0)
+				file.write((char*)mesh.vertices.data(), sizeof(sa::VertexNormalUV) * vertexCount);
+
+			uint32_t indexCount = mesh.indices.size();
+			file.write((char*)&indexCount, sizeof(indexCount));
+			if (indexCount > 0)
+				file.write((char*)mesh.indices.data(), sizeof(uint32_t) * indexCount);
+
+			file.write((char*)&mesh.materialID, sizeof(mesh.materialID));
+		}
+		return true;
 	}
 
-	bool ModelAsset::unload() {
-
+	bool ModelAsset::onUnload() {
 		for (auto& mesh : data.meshes) {
 			IAsset* pMaterial = AssetManager::get().getAsset(mesh.materialID);
 			if (pMaterial)
@@ -349,7 +324,6 @@ namespace sa {
 
 		data.meshes.clear();
 		data.meshes.shrink_to_fit();
-		m_isLoaded = false;
 		return true;
 	}
 }

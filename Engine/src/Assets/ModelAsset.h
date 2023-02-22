@@ -21,8 +21,9 @@ namespace sa {
 		friend class AssetManager;
 		inline static AssetTypeID s_typeID;
 
+		void processNode(const void* scene, const void* node);
 		bool loadAssimpModel(const std::filesystem::path& path);
-		virtual bool unload() override;
+
 
 	public:
 		using IAsset::IAsset;
@@ -33,11 +34,13 @@ namespace sa {
 		//Data
 		ModelData data;
 
-		virtual bool create(const std::string& name) override;
-		virtual bool importFromFile(const std::filesystem::path& path) override;
+		virtual bool onImport(const std::filesystem::path& path) override;
 
-		virtual bool load(AssetLoadFlags flags = 0) override;
-		virtual bool write(AssetWriteFlags flags = 0) override;
+
+		virtual bool onLoad(std::ifstream& file, AssetLoadFlags flags) override;
+		virtual bool onWrite(std::ofstream& file, AssetWriteFlags flags) override;
+		virtual bool onUnload() override;
+
 
 
 

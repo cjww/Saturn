@@ -40,7 +40,7 @@ namespace sa {
 			* use IAsset constructors or using IAsset::IAsset
 	*/
 	class IAsset {
-	protected:
+	private:
 		inline static tf::Executor s_taskExecutor;
 
 		AssetHeader m_header;
@@ -54,30 +54,41 @@ namespace sa {
 
 		ProgressView<bool> m_progress;
 		std::mutex m_mutex;
+	protected:
+		void addDependency(const sa::ProgressView<bool>& progress);
+		
+		void setCompletionCount(unsigned int count);
+		void incrementProgress();
 
-		bool dispatchLoad(std::function<bool(std::ifstream&)> loadFunction, AssetLoadFlags flags);
-		bool dispatchWrite(std::function<bool(std::ofstream&)> writeFunction, AssetWriteFlags flags);
-		friend class AssetManager;
-		virtual bool unload() = 0;
+		tf::Future<void> runTaskflow(tf::Taskflow& tf);
+
 	public:
 		IAsset(const AssetHeader& header);
 
 		virtual ~IAsset();
 
-		virtual bool create(const std::string& name) { return false; }
-		virtual bool importFromFile(const std::filesystem::path& path) { return false; }
+		bool create(const std::string& name);
+		bool importFromFile(const std::filesystem::path& path);
 
 		//virtual bool loadFromPackage(std::ifstream& file) = 0;
 		//virtual bool loadFromFile(const std::filesystem::path& path) = 0;
 
 		//virtual bool writeToPackage(std::ofstream& file) = 0;
 		//virtual bool writeToFile(const std::filesystem::path& path) = 0;
-
-		virtual bool load(AssetLoadFlags flags = 0) = 0;
-		virtual bool write(AssetWriteFlags flags = 0) = 0;
 		
+		virtual bool onImport(const std::filesystem::path& path) { return false; }
 
-		void release();
+		// [DO NOT USE] Called by load. Do not call directly
+		virtual bool onLoad(std::ifstream& file, AssetLoadFlags flags) = 0;
+		// [DO NOT USE] Called by load. Do not call directly
+		virtual bool onWrite(std::ofstream& file, AssetWriteFlags flags) = 0;
+		// [DO NOT USE] Called by load. Do not call directly
+		virtual bool onUnload() = 0;
+
+
+		bool load(AssetLoadFlags flags = 0);
+		bool write(AssetWriteFlags flags = 0);
+		bool release();
 
 		bool isLoaded() const;
 		const ProgressView<bool>& getProgress() const;

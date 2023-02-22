@@ -67,11 +67,9 @@ namespace sa {
 		static void reg();
 		static AssetTypeID type() { return s_typeID; }
 
-		virtual bool create(const std::string& name) override;
-
-		virtual bool load(AssetLoadFlags flags = 0) override; // IAsset
-		virtual bool write(AssetWriteFlags flags = 0) override; // IAsset
-		virtual bool unload() override; // IAsset
+		virtual bool onLoad(std::ifstream& file, AssetLoadFlags flags) override; // IAsset
+		virtual bool onWrite(std::ofstream& file, AssetWriteFlags flags) override; // IAsset
+		virtual bool onUnload() override; // IAsset
 
 		virtual void onRuntimeStart();
 		virtual void onRuntimeStop();
@@ -95,8 +93,6 @@ namespace sa {
 
 		// Hierarchy
 		EntityHierarchy& getHierarchy();
-
-		const std::string& getName() const;
 
 		template<typename ...T, typename F>
 		void forEach(F func);

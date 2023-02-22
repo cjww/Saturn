@@ -83,54 +83,43 @@ namespace sa {
 
 	}
 
-	bool Scene::create(const std::string& name) {
-		m_name = name;
-		m_isLoaded = true;
-		
+	bool Scene::onLoad(std::ifstream& file, AssetLoadFlags flags) {
+		simdjson::padded_string jsonStr(getHeader().size);
+		file.read(jsonStr.data(), jsonStr.length());
+
+		simdjson::ondemand::parser parser;
+		auto doc = parser.iterate(jsonStr);
+		if (doc.error() != simdjson::error_code::SUCCESS) {
+			SA_DEBUG_LOG_ERROR("Json error: ", simdjson::error_message(doc.error()));
+			return false;
+		}
+		deserialize(&doc);
+
 		return true;
 	}
 
-	bool Scene::load(AssetLoadFlags flags) {
-		return dispatchLoad([&](std::ifstream& file) {
+	bool Scene::onWrite(std::ofstream& file, AssetWriteFlags flags) {
+		Serializer s;
+		serialize(s);
+		std::string jsonStr = s.dump();
 
-			simdjson::padded_string jsonStr(m_header.size);
-			file.read(jsonStr.data(), jsonStr.length());
+		AssetHeader header = getHeader();
+		header.size = jsonStr.size();
+		// TODO this is not going to work in a asset package
+		file.seekp((size_t)file.tellp() - sizeof(AssetHeader));
+		setHeader(header);
+		writeHeader(header, file);
 
-			simdjson::ondemand::parser parser;
-			auto doc = parser.iterate(jsonStr);
-			if (doc.error() != simdjson::error_code::SUCCESS) {
-				SA_DEBUG_LOG_ERROR("Json error: ", simdjson::error_message(doc.error()));
-				return false;
-			}
-			deserialize(&doc);
+		file << s.dump();
 
-			return true;
-		}, flags);
-	}
-	
-	bool Scene::write(AssetWriteFlags flags) {
-		return dispatchWrite([&](std::ofstream& file) {
-			Serializer s;
-			serialize(s);
-			std::string jsonStr = s.dump();
-
-			m_header.size = jsonStr.size();
-			file.seekp((size_t)file.tellp() - sizeof(m_header));
-			writeHeader(m_header, file);
-			
-			file << s.dump();
-
-			return true;
-		}, flags);
+		return true;
 	}
 
-	bool Scene::unload() {
+	bool Scene::onUnload() {
 		m_reg.clear();
 		m_reg.shrink_to_fit();
 		m_scriptManager.freeMemory();
 		m_hierarchy.freeMemory();
-
-		m_isLoaded = false;
 		return true;
 	}
 
@@ -161,8 +150,6 @@ namespace sa {
 
 	void Scene::serialize(Serializer& s) {
 		s.beginObject();
-		s.value("name", m_name.c_str());
-
 		s.beginArray("entities");
 
 		forEach([&](Entity entity) {
@@ -177,8 +164,6 @@ namespace sa {
 	void Scene::deserialize(void* pDoc) {
 		using namespace simdjson;
 		ondemand::document& doc = *(ondemand::document*)pDoc;
-		
-		m_name = doc["name"].get_string().value();
 		ondemand::array entities = doc["entities"];
 		
 		m_reg.reserve(entities.count_elements());
@@ -246,10 +231,6 @@ namespace sa {
 
 	EntityHierarchy& Scene::getHierarchy() {
 		return m_hierarchy;
-	}
-
-	const std::string& Scene::getName() const {
-		return m_name;
 	}
 
 	void Scene::forEachComponentType(std::function<void(ComponentType)> function) {

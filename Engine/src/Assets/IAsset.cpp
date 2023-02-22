@@ -2,13 +2,59 @@
 #include "IAsset.h"
 
 namespace sa {
-	bool IAsset::dispatchLoad(std::function<bool(std::ifstream&)> loadFunction, AssetLoadFlags flags) {
-		bool force = (flags & AssetLoadFlagBits::FORCE)  == AssetLoadFlagBits::FORCE;
+	void IAsset::addDependency(const sa::ProgressView<bool>& progress) {
+		m_progress.addDependency(&progress);
+	}
+
+	void IAsset::setCompletionCount(unsigned int count) {
+		m_progress.setMaxCompletionCount(count);
+	}
+
+	void IAsset::incrementProgress() {
+		m_progress.increment();
+	}
+
+	tf::Future<void> IAsset::runTaskflow(tf::Taskflow& tf) {
+		return s_taskExecutor.run(tf);
+	}
+
+	IAsset::IAsset(const AssetHeader& header)
+		: m_isLoaded(false)
+		, m_name("New Asset")
+		, m_refCount(0)
+		, m_header(header)
+	{
+
+	}
+
+	IAsset::~IAsset() {
+		m_progress.wait();
+	}
+
+	bool IAsset::create(const std::string& name) {
+		m_name = name;
+		m_isLoaded = true;
+		return true;
+	}
+
+	bool IAsset::importFromFile(const std::filesystem::path& path) {
+		if (!std::filesystem::exists(path)) {
+			SA_DEBUG_LOG_ERROR("File path does not exist ", path);
+			return false;
+		}
+		m_isLoaded = onImport(path);
+		return m_isLoaded;
+	}
+
+	bool IAsset::load(AssetLoadFlags flags) {
+		bool force = (flags & AssetLoadFlagBits::FORCE) == AssetLoadFlagBits::FORCE;
 		m_refCount++;
+
 		if (m_isLoaded && !force)
 			return false;
 		if (m_assetPath.empty())
 			return false;
+		
 		auto path = m_assetPath;
 		auto future = s_taskExecutor.async([=]() {
 			std::lock_guard<std::mutex> lock(m_mutex);
@@ -26,9 +72,9 @@ namespace sa {
 				SA_DEBUG_LOG_WARNING("Asset versions do not match! ", path, " (", m_header.version, " vs ", SA_ASSET_VERSION, ")");
 				m_header.version = SA_ASSET_VERSION;
 			}
-			
-			m_isLoaded = loadFunction(file);
-		
+
+			m_isLoaded = onLoad(file, flags);
+
 			file.close();
 			SA_DEBUG_LOG_INFO("Finished Loading ", m_name, " from ", path);
 			return m_isLoaded.load();
@@ -37,7 +83,7 @@ namespace sa {
 		return true;
 	}
 
-	bool IAsset::dispatchWrite(std::function<bool(std::ofstream&)> writeFunction, AssetWriteFlags flags) {
+	bool IAsset::write(AssetWriteFlags flags) {
 		if (!m_isLoaded)
 			return false;
 		if (m_assetPath.empty())
@@ -57,7 +103,7 @@ namespace sa {
 			}
 			writeHeader(m_header, file);
 
-			bool success = writeFunction(file);
+			bool success = onWrite(file, flags);
 			file.close();
 			SA_DEBUG_LOG_INFO("Finished Writing ", m_name, " to ", path);
 			return success;
@@ -66,27 +112,18 @@ namespace sa {
 		return true;
 	}
 
-	IAsset::IAsset(const AssetHeader& header)
-		: m_isLoaded(false)
-		, m_name("New Asset")
-		, m_refCount(0)
-		, m_header(header)
-	{
-
-	}
-
-	IAsset::~IAsset() {
-		m_progress.wait();
-	}
-
-	void IAsset::release() {
+	bool IAsset::release() {
+		if (!m_isLoaded)
+			return true;
 		if (m_refCount > 0) {
 			m_refCount--;
 		}
 		if(m_refCount == 0) {
 			m_progress.wait();
-			unload();
+			m_isLoaded = !onUnload();
+			return true;
 		}
+		return false;
 	}
 
 	bool IAsset::isLoaded() const {

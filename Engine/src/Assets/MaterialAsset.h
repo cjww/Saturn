@@ -7,17 +7,15 @@ namespace sa {
 	private:
 		friend class AssetManager;
 		inline static AssetTypeID s_typeID;
-		virtual bool unload() override;
 	public:
 		using IAsset::IAsset;
 		static AssetTypeID type() { return s_typeID; }
 
 		Material data;
 
-		virtual bool create(const std::string& name) override;
-
-		virtual bool load(AssetLoadFlags flags = 0) override;
-		virtual bool write(AssetWriteFlags flags = 0) override;
+		virtual bool onLoad(std::ifstream& file, AssetLoadFlags flags) override;
+		virtual bool onWrite(std::ofstream& file, AssetWriteFlags flags) override;
+		virtual bool onUnload() override;
 
 	};
 }
