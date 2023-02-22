@@ -9,7 +9,6 @@
 #include "assimp/ProgressHandler.hpp"
 
 #include "TextureAsset.h"
-#include "MaterialAsset.h"
 
 namespace sa {
 	bool searchForFile(const std::filesystem::path& directory, const std::filesystem::path& filename, std::filesystem::path& outPath) {
@@ -190,7 +189,7 @@ namespace sa {
 		SA_DEBUG_LOG_INFO("Material Count:", scene->mNumMaterials);
 
 
-		std::vector<MaterialAsset*> materials(scene->mNumMaterials);
+		std::vector<Material*> materials(scene->mNumMaterials);
 		if (scene->mNumMaterials > 0 || scene->mNumTextures > 0) {
 			auto filename = getAssetPath().filename();
 			auto dirname = getAssetPath().parent_path() / filename;
@@ -222,29 +221,28 @@ namespace sa {
 			SA_PROFILE_SCOPE(path.generic_string() + ", Load material [" + std::to_string(i) + "] " + aMaterial->GetName().C_Str());
 			SA_DEBUG_LOG_INFO("Load material: ", path.generic_string(), "-", aMaterial->GetName().C_Str());
 
-			MaterialAsset* materialAsset = AssetManager::get().createAsset<MaterialAsset>(aMaterial->GetName().C_Str(), materialDir);
-			Material& material = materialAsset->data;
+			Material* pMaterial = AssetManager::get().createAsset<Material>(aMaterial->GetName().C_Str(), materialDir);
 			// Diffuse Color
-			material.values.diffuseColor = getColor(aMaterial, AI_MATKEY_COLOR_DIFFUSE);
+			pMaterial->values.diffuseColor = getColor(aMaterial, AI_MATKEY_COLOR_DIFFUSE);
 			// Specular Color
-			material.values.specularColor = getColor(aMaterial, AI_MATKEY_COLOR_SPECULAR);
+			pMaterial->values.specularColor = getColor(aMaterial, AI_MATKEY_COLOR_SPECULAR);
 
 			// Ambient Color
-			material.values.ambientColor = getColor(aMaterial, AI_MATKEY_COLOR_AMBIENT);
+			pMaterial->values.ambientColor = getColor(aMaterial, AI_MATKEY_COLOR_AMBIENT);
 			// Emissive Color
-			material.values.emissiveColor = getColor(aMaterial, AI_MATKEY_COLOR_EMISSIVE, SA_COLOR_BLACK);
+			pMaterial->values.emissiveColor = getColor(aMaterial, AI_MATKEY_COLOR_EMISSIVE, SA_COLOR_BLACK);
 
-			aMaterial->Get(AI_MATKEY_OPACITY, material.values.opacity);
-			aMaterial->Get(AI_MATKEY_SHININESS, material.values.shininess);
-			aMaterial->Get(AI_MATKEY_METALLIC_FACTOR, material.values.metallic);
-			aMaterial->Get(AI_MATKEY_TWOSIDED, material.twoSided);
+			aMaterial->Get(AI_MATKEY_OPACITY, pMaterial->values.opacity);
+			aMaterial->Get(AI_MATKEY_SHININESS, pMaterial->values.shininess);
+			aMaterial->Get(AI_MATKEY_METALLIC_FACTOR, pMaterial->values.metallic);
+			aMaterial->Get(AI_MATKEY_TWOSIDED, pMaterial->twoSided);
 
 			for (unsigned int j = aiTextureType::aiTextureType_NONE; j <= aiTextureType::aiTextureType_TRANSMISSION; j++) {
-				loadMaterialTexture(material, path.parent_path(), (aiTextureType)j, scene->mTextures, aMaterial, textureDir);
+				loadMaterialTexture(*pMaterial, path.parent_path(), (aiTextureType)j, scene->mTextures, aMaterial, textureDir);
 			}
-			material.update();
-			materials[i] = materialAsset;
-			materialAsset->write();
+			pMaterial->update();
+			materials[i] = pMaterial;
+			pMaterial->write();
 			incrementProgress();
 		//}
 		});
@@ -286,10 +284,10 @@ namespace sa {
 			file.read((char*)mesh.indices.data(), sizeof(uint32_t) * indexCount);
 
 			file.read((char*)&mesh.materialID, sizeof(mesh.materialID));
-			MaterialAsset* pMaterialAsset = AssetManager::get().getAsset<MaterialAsset>(mesh.materialID);
-			if (pMaterialAsset) {
-				pMaterialAsset->load();
-				addDependency(pMaterialAsset->getProgress());
+			IAsset* pMaterial = AssetManager::get().getAsset(mesh.materialID);
+			if (pMaterial) {
+				pMaterial->load();
+				addDependency(pMaterial->getProgress());
 			}
 		}
 		return true;

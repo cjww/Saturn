@@ -198,10 +198,8 @@ namespace sa {
 		TextureBlendOp blendOp;
 	};
 
-	class Material {
+	class Material : public IAsset{
 	private:
-		friend class MaterialAsset;
-
 		std::unordered_map<MaterialTextureType, std::vector<UUID>> m_textures;
 		std::unordered_map<MaterialTextureType, std::vector<std::pair<TextureBlendOp, float>>> m_blending;
 		std::vector<Texture> m_allTextures;
@@ -238,7 +236,7 @@ namespace sa {
 
 		bool twoSided;
 
-		Material();
+		Material(const AssetHeader& header);
 
 		void update();
 	
@@ -246,6 +244,11 @@ namespace sa {
 		
 		// Gathers all textures into an array, unless already gathered since last update
 		const std::vector<Texture>& fetchTextures();
+
+		virtual bool onLoad(std::ifstream& file, AssetLoadFlags flags) override;
+		virtual bool onWrite(std::ofstream& file, AssetWriteFlags flags) override;
+		virtual bool onUnload() override;
+
 
 	};
 }

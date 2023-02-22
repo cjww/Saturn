@@ -13,7 +13,6 @@
 
 
 #include "Assets/ModelAsset.h"
-#include "Assets/MaterialAsset.h"
 #include "Assets/TextureAsset.h"
 #include "Scene.h"
 
@@ -330,7 +329,7 @@ namespace sa {
 		m_defaultPath = SA_DEFAULT_ASSET_DIR;
 
 		registerAssetType<ModelAsset>();
-		registerAssetType<MaterialAsset>();
+		registerAssetType<Material>();
 		registerAssetType<TextureAsset>();
 		registerAssetType<Scene>();
 	}

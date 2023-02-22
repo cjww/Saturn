@@ -197,12 +197,8 @@ namespace sa {
 				m_indirectIndexedBuffer << cmd;
 
 				//Material
-				MaterialAsset* materialAsset = AssetManager::get().getAsset<MaterialAsset>(mesh.materialID);
-				Material* pMaterial = nullptr;
-				if(materialAsset)
-					pMaterial = &materialAsset->data;
-				
-				if (pMaterial && materialAsset->isLoaded()) {
+				Material* pMaterial = AssetManager::get().getAsset<Material>(mesh.materialID);
+				if (pMaterial && pMaterial->isLoaded()) {
 					auto it = std::find(m_materials.begin(), m_materials.end(), pMaterial);
 					if (it == m_materials.end()) {
 						uint32_t textureOffset = m_textures.size();
