@@ -181,7 +181,7 @@ namespace sa {
 		SA_DEBUG_LOG_INFO("Importing Asset", path);
 		AssetHeader header; // generates new UUID
 		header.type = getAssetTypeID<T>();
-		assert(header.type == -1 && "Can not use unregistered type!");
+		assert(header.type != -1 && "Can not use unregistered type!");
 		IAsset* asset;
 		{
 			std::lock_guard<std::mutex> lock(m_mutex);
@@ -212,7 +212,7 @@ namespace sa {
 
 		AssetHeader header; // generates new UUID
 		header.type = getAssetTypeID<T>();
-		assert(header.type == -1 && "Can not use unregistered type!");
+		assert(header.type != -1 && "Can not use unregistered type!");
 
 		m_mutex.lock();
 		auto [it, success] = m_assets.insert({ header.id, std::make_unique<T>(header) });

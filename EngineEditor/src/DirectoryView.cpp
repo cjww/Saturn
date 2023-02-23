@@ -21,10 +21,10 @@ DirectoryView::DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor)
 	});
 
 	sa::Image img(m_pEditor->editorRelativePath("resources/folder-white.png").generic_string());
-	ImGui::g_directoryIcon = sa::Texture2D(img, true);
+	m_directoryIcon = sa::Texture2D(img, true);
 
 	sa::Image img1(m_pEditor->editorRelativePath("resources/file-white.png").generic_string());
-	ImGui::g_otherFileIcon = sa::Texture2D(img1, true);
+	m_otherFileIcon = sa::Texture2D(img1, true);
 
 
 }
@@ -46,8 +46,65 @@ void DirectoryView::onImGui() {
 
 		static auto openDirectory = std::filesystem::current_path();
 		static int iconSize = 45;
-
+		/*
 		if (ImGui::DirectoryIcons("Explorer", openDirectory, iconSize)) {
+			sa::AssetManager::get().rescanAssets();
+		}
+		*/
+
+		static std::filesystem::path lastSelected;
+		static std::set<std::filesystem::path> selectedItems;
+		static std::string editingName;
+		static std::filesystem::path editedFile;
+
+		bool wasChanged = false;
+
+		auto menuItemsFn = [&]() {
+			if (ImGui::MenuItem("Material")) {
+				sa::IAsset* pAsset = sa::AssetManager::get().createAsset<sa::Material>("New Material", openDirectory);
+				editingName = pAsset->getName();
+				editedFile = pAsset->getAssetPath();
+			}
+		};
+
+		if (ImGui::BeginDirectoryIcons("Explorer", openDirectory, iconSize, wasChanged, editedFile, editingName, lastSelected, selectedItems, menuItemsFn)) {
+			
+			// Icon View Area
+			ImVec2 iconSizeVec((float)iconSize, (float)iconSize);
+			for (const auto& entry : std::filesystem::directory_iterator(openDirectory)) {
+
+
+				// Determine Icon
+				sa::Texture* icon = &m_otherFileIcon;
+				if (entry.is_directory()) {
+					icon = &m_directoryIcon;
+				}
+
+				ImGui::DirectoryEntry(entry, iconSize, selectedItems, lastSelected, wasChanged, editedFile, editingName, *icon);
+
+				if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenOverlapped) && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+					if (entry.is_directory()) {
+						selectedItems.clear();
+						lastSelected.clear();
+						openDirectory = entry.path();
+						break;
+					}
+					else {
+						SA_DEBUG_LOG_INFO("File clicked");
+					}
+				}
+
+				ImGui::SameLine();
+
+				if (ImGui::GetContentRegionMax().x - ImGui::GetCursorPosX() < iconSizeVec.x) {
+					ImGui::NewLine();
+				}
+			}
+
+			ImGui::EndChild();
+		}
+
+		if (wasChanged) {
 			sa::AssetManager::get().rescanAssets();
 		}
 

@@ -33,9 +33,6 @@ namespace ImGui {
 
 	const int HandleSize = 5;
 
-	inline sa::Texture2D g_directoryIcon;
-	inline sa::Texture2D g_otherFileIcon;
-
 	void SetupImGuiStyle();
 
 	void displayLuaTable(std::string name, sol::table table);
@@ -57,7 +54,14 @@ namespace ImGui {
 	void addEditorModuleSettingsHandler(sa::EngineEditor* pEditor);
 
 	void DirectoryHierarchy(const char* str_id, const std::filesystem::path& directory, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size = ImVec2(0, 0));
-	bool DirectoryIcons(const char* str_id, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size = ImVec2(0, 0));
+	
+	bool BeginDirectoryIcons(const char* str_id, std::filesystem::path& openDirectory,
+		int& iconSize, bool& wasChanged, std::filesystem::path& editedFile, std::string& editingName, 
+		std::filesystem::path& lastSelected, std::set<std::filesystem::path>& selectedItems, std::function<void()> createMenu, const ImVec2& size = ImVec2(0, 0));
+
+	bool DirectoryEntry(const std::filesystem::directory_entry& entry, int iconSize,
+		std::set<std::filesystem::path>& selectedItems, std::filesystem::path& lastSelected,
+		bool& wasChanged, std::filesystem::path& editedFile, std::string& editingName, const sa::Texture& icon);
 
 	bool MakeEnterNameModalPopup(const char* name, const char* hint, std::string& output);
 

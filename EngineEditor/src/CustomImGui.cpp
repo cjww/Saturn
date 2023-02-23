@@ -528,145 +528,76 @@ namespace ImGui {
 
 	}
 
-	bool DirectoryIcons(const char* str_id, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size) {
-		
+	bool BeginDirectoryIcons(const char* str_id, std::filesystem::path& openDirectory, 
+		int& iconSize, bool& wasChanged, std::filesystem::path& editedFile, std::string& editingName, 
+		std::filesystem::path& lastSelected, std::set<std::filesystem::path>& selectedItems, std::function<void()> createMenu, const ImVec2& size)
+	{
 		ImVec2 contentArea = size;
 		if (size.x == 0.f && size.y == 0.f) {
 			contentArea = ImGui::GetContentRegionAvail();
 		}
 
-		bool wasChanged = false;
+		bool began = BeginChild((std::string(str_id) + "1").c_str(), contentArea, false, ImGuiWindowFlags_MenuBar);
+		if(began) {
+			static std::set<std::filesystem::path> copiedFiles;
 
-		if (!openDirectory.empty()) {
-			if (BeginChild((std::string(str_id) + "1").c_str(), contentArea, false, ImGuiWindowFlags_MenuBar)) {
+			//Menu Bar
+			if (BeginMenuBar()) {
 
-				static std::filesystem::path lastSelected;
-				static std::set<std::filesystem::path> selectedItems;
-				static std::string editingName;
-				static std::filesystem::path editedFile;
-				
-				static std::set<std::filesystem::path> copiedFiles;
-
-
-				//Menu Bar
-				if (BeginMenuBar()) {
-
-					if (ImGui::ArrowButton((std::string("parentDir_") + str_id).c_str(), ImGuiDir_Left)) {
-						openDirectory = std::filesystem::absolute(openDirectory);
-						openDirectory = openDirectory.parent_path();
-					}
-					if (BeginDragDropTarget()) {
-						const ImGuiPayload* payload = AcceptDragDropPayload("Path");
-						if (payload && payload->IsDelivery()) {
-							auto path = (std::filesystem::path*)payload->Data;
-							auto newPath = openDirectory.parent_path() / path->filename();
-							try {
-								std::filesystem::rename(*path, newPath);
-								wasChanged = true;
-							}
-							catch (std::exception e) {
-								SA_DEBUG_LOG_ERROR(e.what());
-							}
-						}
-						EndDragDropTarget();
-					}
-					SameLine();
-
-					Text(openDirectory.generic_string().c_str());
-					SameLine();
-
-					SetNextItemWidth(200);
-					SliderInt("Icon size", &iconSize, 20, 200);
+				if (ImGui::ArrowButton((std::string("parentDir_") + str_id).c_str(), ImGuiDir_Left)) {
+					openDirectory = std::filesystem::absolute(openDirectory);
+					openDirectory = openDirectory.parent_path();
 				}
-				EndMenuBar();
-
-
-				//Input Events
-				if (BeginPopupContextWindow()) {
-
-
-					if (BeginMenu("Create...")) {
-						if (MenuItem("New Folder")) {
-							auto newPath = openDirectory / "New Folder";
-							std::filesystem::create_directory(openDirectory / "New Folder");
-							editedFile = newPath;
-							editingName = "New Folder";
-							wasChanged = true;
-						}
-						EndMenu();
-					}
-
-					if (MenuItem("Rename", "F2")) {
-						editedFile = lastSelected;
-						editingName = lastSelected.filename().generic_string();
-					}
-
-					if (MenuItem("Paste", "Ctrl + V")) {
-						if (!copiedFiles.empty()) {
-							for (auto& file : copiedFiles) {
-								try {
-									std::filesystem::copy(file, openDirectory);
-									wasChanged = true;
-								}
-								catch (std::exception e) {
-									SA_DEBUG_LOG_ERROR(e.what());
-								}
-							}
-						}
-					}
-					if (MenuItem("Copy", "Ctrl + C")) {
-						copiedFiles.clear();
-						copiedFiles.insert(selectedItems.begin(), selectedItems.end());
-					}
-
-					if (MenuItem("Delete", "Del")) {
-						for (auto& file : selectedItems) {
-							try {
-								std::filesystem::remove(file);
-								wasChanged = true;
-							}
-							catch (std::exception e) {
-								SA_DEBUG_LOG_ERROR(e.what());
-							}
-						}
-						selectedItems.clear();
-						lastSelected.clear();
-					}
-					
-					EndPopup();
-				}
-
-				if (IsMouseClicked(ImGuiMouseButton_Left)) {
-					if (!IsKeyDown(ImGuiKey_LeftShift) && !IsKeyDown(ImGuiKey_RightShift))
-						selectedItems.clear();
-				}
-				
-				if (IsKeyPressed(ImGuiKey_F2) && !lastSelected.empty()) {
-					editedFile = lastSelected;
-					editingName = lastSelected.filename().generic_string();
-				}
-				
-				if (IsKeyPressed(ImGuiKey_Delete)) {
-					for (auto& path : selectedItems) {
+				if (BeginDragDropTarget()) {
+					const ImGuiPayload* payload = AcceptDragDropPayload("Path");
+					if (payload && payload->IsDelivery()) {
+						auto path = (std::filesystem::path*)payload->Data;
+						auto newPath = openDirectory.parent_path() / path->filename();
 						try {
-							std::filesystem::remove(path);
+							std::filesystem::rename(*path, newPath);
 							wasChanged = true;
-
 						}
 						catch (std::exception e) {
 							SA_DEBUG_LOG_ERROR(e.what());
 						}
 					}
-					selectedItems.clear();
-					lastSelected.clear();
+					EndDragDropTarget();
+				}
+				SameLine();
+
+				Text(openDirectory.generic_string().c_str());
+				SameLine();
+
+				SetNextItemWidth(200);
+				SliderInt("Icon size", &iconSize, 20, 200);
+			}
+			EndMenuBar();
+
+
+			//Input Events
+			if (BeginPopupContextWindow()) {
+
+
+				if (BeginMenu("Create...")) {
+					if (MenuItem("New Folder")) {
+						auto newPath = openDirectory / "New Folder";
+						std::filesystem::create_directory(openDirectory / "New Folder");
+						editedFile = newPath;
+						editingName = "New Folder";
+						wasChanged = true;
+					}
+
+					createMenu();
+
+					EndMenu();
 				}
 
-				if (IsKeyPressed(ImGuiKey_C) && IsKeyDown(ImGuiKey_LeftCtrl)) {
-					copiedFiles.clear();
-					copiedFiles.insert(selectedItems.begin(), selectedItems.end());
+				if (MenuItem("Rename", "F2")) {
+					editedFile = lastSelected;
+					editingName = lastSelected.filename().generic_string();
 				}
 
-				if (IsKeyPressed(ImGuiKey_V) && IsKeyDown(ImGuiKey_LeftCtrl)) {
+				if (MenuItem("Paste", "Ctrl + V")) {
 					if (!copiedFiles.empty()) {
 						for (auto& file : copiedFiles) {
 							try {
@@ -679,143 +610,182 @@ namespace ImGui {
 						}
 					}
 				}
+				if (MenuItem("Copy", "Ctrl + C")) {
+					copiedFiles.clear();
+					copiedFiles.insert(selectedItems.begin(), selectedItems.end());
+				}
 
-
-				// Icon View Area
-				ImVec2 iconSizeVec((float)iconSize, (float)iconSize);
-				for (const auto& entry : std::filesystem::directory_iterator(openDirectory)) {
-					// Check if selected
-					bool selected = selectedItems.count(entry.path());
-
-					// Selected highlight color
-					int popCount = 0;
-					if (selected) {
-						ImVec4 selectedCol = GetStyleColorVec4(ImGuiCol_CheckMark);
-						ImVec4 hoveredCol = selectedCol + GetStyleColorVec4(ImGuiCol_ButtonHovered) * ImVec4(0.3f, 0.3f, 0.3f, 0.3f);
-						PushStyleColor(ImGuiCol_Header, selectedCol);
-						PushStyleColor(ImGuiCol_HeaderHovered, hoveredCol);
-						popCount = 2;
-					}
-
-
-					// Determine Icon
-					sa::Texture* icon = &g_otherFileIcon;
-					if (entry.is_directory()) {
-						icon = &g_directoryIcon;
-					}
-					
-					// Draw icon and label
-					
-					std::string label = entry.path().filename().generic_string();
-					ImVec2 totalSize = iconSizeVec + GetStyle().ItemSpacing * 2.f;
-					ImVec2 textSize = CalcTextSize(label.c_str(), 0, false, totalSize.x);
-					totalSize.y += textSize.y;
-					
-					BeginGroup();
-
-					ImVec2 cursorPos = GetCursorPos();
-					if (Selectable(("##directory_entry" + label).c_str(), selected, ImGuiSelectableFlags_NoPadWithHalfSpacing, totalSize)) {
-						if (!IsKeyDown(ImGuiKey_LeftShift) && !IsKeyDown(ImGuiKey_RightShift))
-							selectedItems.clear();
-						selectedItems.insert(entry.path());
-						lastSelected = entry.path();
-					}
-					// Drag drop source
-					static std::filesystem::path payloadPath;
-					if (BeginDragDropSource()) {
-						payloadPath = entry.path();
-
-						SetDragDropPayload("Path", &payloadPath, sizeof(payloadPath));
-						Image(*icon, iconSizeVec);
-						SameLine();
-						Text("%s", payloadPath.filename().generic_string().c_str());
-						EndDragDropSource();
-					}
-					// And possibly target
-					if (entry.is_directory()) {
-						if (BeginDragDropTarget()) {
-							const ImGuiPayload* payload = AcceptDragDropPayload("Path");
-							if (payload && payload->IsDelivery()) {
-								auto path = (std::filesystem::path*)payload->Data;
-								const auto& thisPath = entry.path();
-								auto newPath = thisPath / path->filename();
-								try {
-									std::filesystem::rename(*path, newPath);
-									wasChanged = true;
-								}
-								catch (std::exception e) {
-									SA_DEBUG_LOG_ERROR(e.what());
-								}
-							}
-							EndDragDropTarget();
-						}
-					}
-
-
-					cursorPos.x += GetStyle().ItemSpacing.x;
-					SetCursorPos(cursorPos);
-					// Icon
-					Image(*icon, iconSizeVec);
-
-					// Text field
-					cursorPos.x = GetCursorPosX();
-					if (editedFile == entry.path()) {
-						cursorPos.x += GetStyle().ItemInnerSpacing.x;
-						SetCursorPosX(cursorPos.x);
-						SetNextItemWidth(totalSize.x - GetStyle().ItemInnerSpacing.x * 2.0f);
-						PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
-						if (InputText("##edit_name", &editingName, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
-							//rename
-							std::string newName = (editedFile.parent_path() / editingName).generic_string();
-							std::rename(editedFile.generic_string().c_str(), newName.c_str());
+				if (MenuItem("Delete", "Del")) {
+					for (auto& file : selectedItems) {
+						try {
+							std::filesystem::remove(file);
 							wasChanged = true;
-							editedFile.clear();
 						}
-						if (IsMouseClicked(ImGuiMouseButton_Left) && !IsItemHovered()) {
-							editedFile.clear();
-						}
-						else {
-							ImGui::SetKeyboardFocusHere(-1); // Auto focus previous widget
-						}
-						PopStyleVar();
-					}
-					else {
-						cursorPos.x += (totalSize.x - textSize.x) * 0.5f;
-						SetCursorPosX(cursorPos.x);
-						PushTextWrapPos(cursorPos.x + textSize.x);
-						TextWrapped("%s", label.c_str());
-						PopTextWrapPos();
-					}
-					
-					EndGroup();
-
-
-					
-					if(IsItemHovered(ImGuiHoveredFlags_AllowWhenOverlapped) && IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-						if (entry.is_directory()) {
-							selectedItems.clear();
-							lastSelected.clear();
-							openDirectory = entry.path();
-							PopStyleColor(popCount);
-							break;
-						}
-						else {
-							SA_DEBUG_LOG_INFO("File clicked");
+						catch (std::exception e) {
+							SA_DEBUG_LOG_ERROR(e.what());
 						}
 					}
-					
-					PopStyleColor(popCount);
-					SameLine();
+					selectedItems.clear();
+					lastSelected.clear();
+				}
 
-					if (GetContentRegionMax().x - GetCursorPosX() < iconSizeVec.x) {
-						NewLine();
+				EndPopup();
+			}
+
+			if (IsMouseClicked(ImGuiMouseButton_Left)) {
+				if (!IsKeyDown(ImGuiKey_LeftShift) && !IsKeyDown(ImGuiKey_RightShift))
+					selectedItems.clear();
+			}
+
+			if (IsKeyPressed(ImGuiKey_F2) && !lastSelected.empty()) {
+				editedFile = lastSelected;
+				editingName = lastSelected.filename().generic_string();
+			}
+
+			if (IsKeyPressed(ImGuiKey_Delete)) {
+				for (auto& path : selectedItems) {
+					try {
+						std::filesystem::remove(path);
+						wasChanged = true;
+
+					}
+					catch (std::exception e) {
+						SA_DEBUG_LOG_ERROR(e.what());
+					}
+				}
+				selectedItems.clear();
+				lastSelected.clear();
+			}
+
+			if (IsKeyPressed(ImGuiKey_C) && IsKeyDown(ImGuiKey_LeftCtrl)) {
+				copiedFiles.clear();
+				copiedFiles.insert(selectedItems.begin(), selectedItems.end());
+			}
+
+			if (IsKeyPressed(ImGuiKey_V) && IsKeyDown(ImGuiKey_LeftCtrl)) {
+				if (!copiedFiles.empty()) {
+					for (auto& file : copiedFiles) {
+						try {
+							std::filesystem::copy(file, openDirectory);
+							wasChanged = true;
+						}
+						catch (std::exception e) {
+							SA_DEBUG_LOG_ERROR(e.what());
+						}
 					}
 				}
 			}
-			ImGui::EndChild();
+		}
+		return began;
+	}
+
+	bool DirectoryEntry(const std::filesystem::directory_entry& entry, int iconSize,
+		std::set<std::filesystem::path>& selectedItems, std::filesystem::path& lastSelected,
+		bool& wasChanged, std::filesystem::path& editedFile, std::string& editingName, const sa::Texture& icon)
+	{
+		// Check if selected
+		bool selected = selectedItems.count(entry.path());
+		ImVec2 iconSizeVec = ImVec2(iconSize, iconSize);
+		// Selected highlight color
+		int popCount = 0;
+		if (selected) {
+			ImVec4 selectedCol = GetStyleColorVec4(ImGuiCol_CheckMark);
+			ImVec4 hoveredCol = selectedCol + GetStyleColorVec4(ImGuiCol_ButtonHovered) * ImVec4(0.3f, 0.3f, 0.3f, 0.3f);
+			PushStyleColor(ImGuiCol_Header, selectedCol);
+			PushStyleColor(ImGuiCol_HeaderHovered, hoveredCol);
+			popCount = 2;
 		}
 
-		return wasChanged;
+
+
+		// Draw icon and label
+
+		std::string label = entry.path().filename().generic_string();
+		ImVec2 totalSize = iconSizeVec + GetStyle().ItemSpacing * 2.f;
+		ImVec2 textSize = CalcTextSize(label.c_str(), 0, false, totalSize.x);
+		totalSize.y += textSize.y;
+
+		BeginGroup();
+
+		ImVec2 cursorPos = GetCursorPos();
+		if (Selectable(("##directory_entry" + label).c_str(), selected, ImGuiSelectableFlags_NoPadWithHalfSpacing, totalSize)) {
+			if (!IsKeyDown(ImGuiKey_LeftShift) && !IsKeyDown(ImGuiKey_RightShift))
+				selectedItems.clear();
+			selectedItems.insert(entry.path());
+			lastSelected = entry.path();
+		}
+		// Drag drop source
+		static std::filesystem::path payloadPath;
+		if (BeginDragDropSource()) {
+			payloadPath = entry.path();
+
+			SetDragDropPayload("Path", &payloadPath, sizeof(payloadPath));
+			Image(icon, iconSizeVec);
+			SameLine();
+			Text("%s", payloadPath.filename().generic_string().c_str());
+			EndDragDropSource();
+		}
+		// And possibly target
+		if (entry.is_directory()) {
+			if (BeginDragDropTarget()) {
+				const ImGuiPayload* payload = AcceptDragDropPayload("Path");
+				if (payload && payload->IsDelivery()) {
+					auto path = (std::filesystem::path*)payload->Data;
+					const auto& thisPath = entry.path();
+					auto newPath = thisPath / path->filename();
+					try {
+						std::filesystem::rename(*path, newPath);
+						wasChanged = true;
+					}
+					catch (std::exception e) {
+						SA_DEBUG_LOG_ERROR(e.what());
+					}
+				}
+				EndDragDropTarget();
+			}
+		}
+
+
+		cursorPos.x += GetStyle().ItemSpacing.x;
+		SetCursorPos(cursorPos);
+		// Icon
+		Image(icon, iconSizeVec);
+
+		// Text field
+		cursorPos.x = GetCursorPosX();
+		if (editedFile == entry.path()) {
+			cursorPos.x += GetStyle().ItemInnerSpacing.x;
+			SetCursorPosX(cursorPos.x);
+			SetNextItemWidth(totalSize.x - GetStyle().ItemInnerSpacing.x * 2.0f);
+			PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+			if (InputText("##edit_name", &editingName, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
+				//rename
+				std::string newName = (editedFile.parent_path() / editingName).generic_string();
+				std::rename(editedFile.generic_string().c_str(), newName.c_str());
+				wasChanged = true;
+				editedFile.clear();
+			}
+			if (IsMouseClicked(ImGuiMouseButton_Left) && !IsItemHovered()) {
+				editedFile.clear();
+			}
+			else {
+				ImGui::SetKeyboardFocusHere(-1); // Auto focus previous widget
+			}
+			PopStyleVar();
+		}
+		else {
+			cursorPos.x += (totalSize.x - textSize.x) * 0.5f;
+			SetCursorPosX(cursorPos.x);
+			PushTextWrapPos(cursorPos.x + textSize.x);
+			TextWrapped("%s", label.c_str());
+			PopTextWrapPos();
+		}
+
+		EndGroup();
+
+		PopStyleColor(popCount);
+
+		return false;
 	}
 
 	bool MakeEnterNameModalPopup(const char* name, const char* hint, std::string& output) {
