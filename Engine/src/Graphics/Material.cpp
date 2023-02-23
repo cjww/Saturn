@@ -46,6 +46,7 @@ namespace sa {
 
 		values.lightMapCount = m_textures[MaterialTextureType::LIGHTMAP].size();
 		values.lightMapFirst = values.emissiveMapFirst + values.emissiveMapCount;
+		m_allTexturesLoaded = false;
 	}
 
 	void Material::setTextures(const std::vector<BlendedTexture>& textures, MaterialTextureType type) {
@@ -73,6 +74,9 @@ namespace sa {
 		return m_allTextures;
 	}
 
+	std::unordered_map<MaterialTextureType, std::vector<UUID>>& Material::getTextures() {
+		return m_textures;
+	}
 
 	bool Material::onLoad(std::ifstream& file, AssetLoadFlags flags) {
 		m_textures.clear();
@@ -96,7 +100,7 @@ namespace sa {
 				file.read((char*)&textureID, sizeof(textureID));
 				TextureAsset* pTextureAsset = AssetManager::get().getAsset<TextureAsset>(textureID);
 				if (pTextureAsset) {
-					pTextureAsset->load();
+					pTextureAsset->load(flags);
 					addDependency(pTextureAsset->getProgress());
 				}
 				m_textures[type][j] = textureID;
@@ -164,52 +168,52 @@ namespace sa {
 		return true;
 	}
 	
-	std::string toString(MaterialTextureType type) {
+	std::string Material::TextureTypeToString(MaterialTextureType type) {
 		switch (type) {
 		case MaterialTextureType::AMBIENT:
-			return "AMBIENT";
+			return "Ambient";
 		case MaterialTextureType::AMBIENT_OCCLUSION:
-			return "AMBIENT_OCCLUSION";
+			return "Ambient Occlusion";
 		case MaterialTextureType::BASE_COLOR:
-			return "BASE_COLOR";
+			return "Base Color";
 		case MaterialTextureType::CLEARCOAT:
-			return "CLEARCOAT";
+			return "Clearcoat";
 		case MaterialTextureType::DIFFUSE:
-			return "DIFFUSE";
+			return "Diffuse";
 		case MaterialTextureType::DIFFUSE_ROUGHNESS:
-			return "DIFFUSE_ROUGHNESS";
+			return "Diffuse Roughness";
 		case MaterialTextureType::DISPLACEMENT:
-			return "DISPLACEMENT";
+			return "Displacement";
 		case MaterialTextureType::EMISSION_COLOR:
-			return "EMISSION_COLOR";
+			return "Emmision Color";
 		case MaterialTextureType::EMISSIVE:
-			return "EMISSIVE";
+			return "Emissive";
 		case MaterialTextureType::HEIGHT:
-			return "HEIGHT";
+			return "Height";
 		case MaterialTextureType::LIGHTMAP:
-			return "LIGHTMAP";
+			return "Lightmap";
 		case MaterialTextureType::METALNESS:
-			return "METALNESS";
+			return "Metalness";
 		case MaterialTextureType::NONE:
-			return "NONE";
+			return "None";
 		case MaterialTextureType::NORMALS:
-			return "NORMALS";
+			return "Normals";
 		case MaterialTextureType::NORMAL_CAMERA:
-			return "NORMAL_CAMERA";
+			return "Normal Camera";
 		case MaterialTextureType::OPACITY:
-			return "OPACITY";
+			return "Opacity";
 		case MaterialTextureType::REFLECTION:
-			return "REFLECTION";
+			return "Reflection";
 		case MaterialTextureType::SHEEN:
-			return "SHEEN";
+			return "Sheen";
 		case MaterialTextureType::SHININESS:
-			return "SHININESS";
+			return "Shininess";
 		case MaterialTextureType::SPECULAR:
-			return "SPECULAR";
+			return "Specular";
 		case MaterialTextureType::TRANSMISSION:
-			return "TRANSMISSION";
+			return "Transmission";
 		case MaterialTextureType::UNKNOWN:
-			return "UNKNOWN";
+			return "Unknown";
 		default:
 			return "-";
 		}

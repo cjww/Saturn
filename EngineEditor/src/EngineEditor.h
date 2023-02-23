@@ -17,6 +17,8 @@ namespace sa {
 
 	class EngineEditor : public IApplicationLayer {
 	private:
+		inline static std::filesystem::path s_editorPath;
+		
 		enum class State {
 			PLAYING,
 			PAUSED,
@@ -29,7 +31,6 @@ namespace sa {
 		std::vector<std::unique_ptr<EditorModule>> m_editorModules;
 
 		std::filesystem::path m_projectFile;
-		std::filesystem::path m_editorPath;
 
 		std::vector<std::filesystem::path> m_recentProjectPaths;
 		
@@ -56,6 +57,8 @@ namespace sa {
 		void imGuiProfiler();
 
 	public:
+		static std::filesystem::path MakeEditorRelative(const std::filesystem::path& editorRelativePath);
+		
 		EngineEditor() = default;
 		
 		void onAttach(sa::Engine& engine, sa::RenderWindow& renderWindow) override;
@@ -63,7 +66,6 @@ namespace sa {
 		void onImGuiRender() override;
 		void onUpdate(float dt) override;
 		
-		std::filesystem::path editorRelativePath(const std::filesystem::path& editorRelativePath);
 		std::vector<std::filesystem::path> fetchAllScriptsInProject();
 
 		RenderWindow* getWindow() const;

@@ -140,7 +140,7 @@ namespace sa {
 			textures[i].blendFactor = blending;
 			textures[i].blendOp = (TextureBlendOp)op;
 
-			SA_DEBUG_LOG_INFO("Loaded texture: ", finalPath.filename(), ", type:", toString((MaterialTextureType)type), ", Material: ", &pAiMaterial);
+			SA_DEBUG_LOG_INFO("Loaded texture: ", finalPath.filename(), ", type:", sa::Material::TextureTypeToString((MaterialTextureType)type), ", Material: ", &pAiMaterial);
 		}
 
 		material.setTextures(textures, (MaterialTextureType)type);
@@ -286,7 +286,7 @@ namespace sa {
 			file.read((char*)&mesh.materialID, sizeof(mesh.materialID));
 			IAsset* pMaterial = AssetManager::get().getAsset(mesh.materialID);
 			if (pMaterial) {
-				pMaterial->load();
+				pMaterial->load(flags);
 				addDependency(pMaterial->getProgress());
 			}
 		}

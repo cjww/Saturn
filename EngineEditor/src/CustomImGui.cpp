@@ -410,33 +410,75 @@ namespace ImGui {
 		return doubleClicked;
 	}
 
-
-	bool AssetProperties(sa::IAsset* pAsset) {
+	AssetEditorInfo GetAssetInfo(sa::AssetTypeID type) {
 		sa::AssetManager& am = sa::AssetManager::get();
-		if (pAsset->getType() == am.getAssetTypeID<sa::Material>()) {
-			sa::Material* pMaterial = static_cast<sa::Material*>(pAsset);
-			return AssetProperties(pMaterial);
+		if (type == am.getAssetTypeID<sa::Material>()) {
+			static AssetEditorInfo info{
+				.inCreateMenu = true,
+				.icon = LoadEditorIcon("resources/sphere-white.png"),
+				.imGuiPropertiesFn = MaterialProperties,
+			};
+			return info;
 		}
-		else if (pAsset->getType() == am.getAssetTypeID<sa::ModelAsset>()) {
-			sa::ModelAsset* pModel = static_cast<sa::ModelAsset*>(pAsset);
-			return AssetProperties(pModel);
+		else if (type == am.getAssetTypeID<sa::ModelAsset>()) {
+			static AssetEditorInfo info{
+				.inCreateMenu = false,
+				.icon = LoadEditorIcon("resources/sphere-white.png"),
+				.imGuiPropertiesFn = ModelProperties,
+			};
+			return info;
 		}
 
+		static AssetEditorInfo info{
+			.inCreateMenu = false,
+			.icon = LoadEditorIcon("resources/file-white.png"),
+			.imGuiPropertiesFn = [](sa::IAsset*) { return false; },
+		};
+		return info;
 	}
 
-	bool AssetProperties(sa::Material* pMaterial) {
+	sa::Texture2D LoadEditorIcon(const std::filesystem::path& path) {
+		return sa::Texture2D(sa::Image(sa::EngineEditor::MakeEditorRelative(path).generic_string().c_str()), true);
+	}
+
+	bool MaterialProperties(sa::IAsset* pAsset) {
+		sa::Material* pMaterial = static_cast<sa::Material*>(pAsset);
+		ColorEdit3("Ambient Color", (float*)&pMaterial->values.ambientColor);
 		ColorEdit3("Diffuse Color", (float*)&pMaterial->values.diffuseColor);
 		ColorEdit3("Specular Color", (float*)&pMaterial->values.specularColor);
+		ColorEdit3("Emissive Color", (float*)&pMaterial->values.emissiveColor);
+		SliderFloat("Opacity", &pMaterial->values.opacity, 0.0f, 1.0f);
+		SliderFloat("Metallic", &pMaterial->values.metallic, 0.0f, 1.0f);
 		DragFloat("Shininess", &pMaterial->values.shininess);
+
+		Checkbox("Two Sided", &pMaterial->twoSided);
+
+		auto& textures = pMaterial->getTextures();
+		sa::AssetTypeID textureAssetType = sa::AssetManager::get().getAssetTypeID<sa::TextureAsset>();
 		if (BeginListBox("Textures")) {
 			int i = 0;
-			
+			for (auto& [type, textures] : textures) {
+				std::string textureTypeName = sa::Material::TextureTypeToString(type);
+				for (auto& texID : textures) {
+					sa::TextureAsset* pTexture = sa::AssetManager::get().getAsset<sa::TextureAsset>(texID);
+					sa::IAsset* texAsset = pTexture;
+					if (AssetSlot((textureTypeName + " Texture").c_str(), texAsset, textureAssetType)) {
+						if (texAsset)
+							texID = texAsset->getID();
+						else
+							texID = 0;
+
+						pMaterial->update();
+					}
+				}
+			}
+			EndListBox();
 		}
-		EndListBox();
 		return false;
 	}
 
-	bool AssetProperties(sa::ModelAsset* pModel) {
+	bool ModelProperties(sa::IAsset* pAsset) {
+		sa::ModelAsset* pModel = static_cast<sa::ModelAsset*>(pAsset);
 		if (BeginListBox("Meshes")) {
 			int i = 0;
 			for (auto& mesh : pModel->data.meshes) {
@@ -444,13 +486,16 @@ namespace ImGui {
 				sa::Material* pMaterial = sa::AssetManager::get().getAsset<sa::Material>(mesh.materialID);
 				sa::IAsset* pAsset = pMaterial;
 				if (AssetSlot("Material", pAsset, sa::AssetManager::get().getAssetTypeID<sa::Material>())) {
-					mesh.materialID = pAsset->getID();
+					if(pAsset)
+						mesh.materialID = pAsset->getID();
+					else 
+						mesh.materialID = 0;
 				}
 				PopID();
 				i++;
 			}
+			EndListBox();
 		}
-		EndListBox();
 		return false;
 	}
 
@@ -477,6 +522,13 @@ namespace ImGui {
 			
 			float width = GetItemRectSize().x;
 			if (BeginChild("##asset_list", ImVec2(width, 100))) {
+				if (Selectable("None", pAsset == nullptr)) {
+					if (pAsset) pAsset->release();
+					pAsset = nullptr;
+					selected = true;
+					filter.clear();
+					CloseCurrentPopup();
+				}
 				for (auto asset : assets) {
 					if (!filter.empty()) {
 						auto lowerName = sa::utils::toLower(asset->getName());
@@ -487,7 +539,12 @@ namespace ImGui {
 					}
 
 					if (Selectable(asset->getName().c_str(), asset == pAsset)) {
+						sa::IAsset* pOldAsset = pAsset;
 						pAsset = asset;
+						
+						pAsset->load();
+						if(pOldAsset) pOldAsset->release();
+
 						selected = true;
 						filter.clear();
 						CloseCurrentPopup();
@@ -506,7 +563,12 @@ namespace ImGui {
 				if (pPath->extension() == ".asset") {
 					sa::IAsset* asset = sa::AssetManager::get().findAssetByPath(*pPath);
 					if (asset && asset != pAsset && asset->getType() == typeID) {
+						sa::IAsset* pOldAsset = pAsset;
 						pAsset = asset;
+
+						pAsset->load();
+						if (pOldAsset) pOldAsset->release();
+
 						selected = true;
 					}
 				}

@@ -5,9 +5,7 @@
 
 #include "EngineEditor.h"
 
-#include "AssetEditorInfo.h"
-
-DirectoryView::DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor) 
+DirectoryView::DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor)
 	: EditorModule(pEngine, pEditor, "Directory View", true)
 {
 	m_isOpen = false;
@@ -22,14 +20,11 @@ DirectoryView::DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor)
 		}
 	});
 
-	sa::Image img(m_pEditor->editorRelativePath("resources/folder-white.png").generic_string());
+	sa::Image img(m_pEditor->MakeEditorRelative("resources/folder-white.png").generic_string());
 	m_directoryIcon = sa::Texture2D(img, true);
 
-	sa::Image img1(m_pEditor->editorRelativePath("resources/file-white.png").generic_string());
+	sa::Image img1(m_pEditor->MakeEditorRelative("resources/file-white.png").generic_string());
 	m_otherFileIcon = sa::Texture2D(img1, true);
-
-	sa::Image materialIcon(m_pEditor->editorRelativePath("resources/file-white.png").generic_string());
-	
 
 }
 
@@ -38,7 +33,14 @@ void DirectoryView::onImGui() {
 		sa::IAsset* pAsset = *it;
 		bool isOpen = true;
 		if(ImGui::Begin((pAsset->getName() + " Properties").c_str(), &isOpen)) {
-			ImGui::AssetProperties(pAsset);
+			ImGui::GetAssetInfo(pAsset->getType()).imGuiPropertiesFn(pAsset);
+			if (ImGui::Button("Apply")) {
+				pAsset->write();
+			}
+			ImGui::SameLine();
+			if (ImGui::Button("Revert")) {
+				pAsset->load(sa::AssetLoadFlagBits::FORCE_SHALLOW | sa::AssetLoadFlagBits::NO_REF);
+			}
 		}
 		ImGui::End();
 		if (!isOpen) {
@@ -72,10 +74,17 @@ void DirectoryView::onImGui() {
 
 		auto menuItemsFn = [&]() {
 			ImGui::Separator();
-			if (ImGui::MenuItem("Material")) {
-				sa::IAsset* pAsset = sa::AssetManager::get().createAsset<sa::Material>("New Material", openDirectory);
-				editingName = pAsset->getName();
-				editedFile = pAsset->getAssetPath();
+			static std::vector<sa::AssetTypeID> types;
+			sa::AssetManager::get().getRegisteredAssetTypes(types);
+			for (auto type : types) {
+				if (ImGui::GetAssetInfo(type).inCreateMenu) {
+					std::string typeName = sa::AssetManager::get().getAssetTypeName(type);
+					if (ImGui::MenuItem(typeName.c_str())) {
+						sa::IAsset* pAsset = sa::AssetManager::get().createAsset<sa::Material>("New " + typeName, openDirectory);
+						editingName = pAsset->getName();
+						editedFile = pAsset->getAssetPath();
+					}
+				}
 			}
 		};
 
@@ -87,12 +96,17 @@ void DirectoryView::onImGui() {
 
 
 				// Determine Icon
-				sa::Texture* icon = &m_otherFileIcon;
+				sa::Texture2D icon = m_otherFileIcon;
 				if (entry.is_directory()) {
-					icon = &m_directoryIcon;
+					icon = m_directoryIcon;
 				}
 
-				ImGui::DirectoryEntry(entry, iconSize, selectedItems, lastSelected, wasChanged, editedFile, editingName, *icon);
+				sa::IAsset* pAsset = sa::AssetManager::get().findAssetByPath(entry.path());
+				if (pAsset) {
+					icon = ImGui::GetAssetInfo(pAsset->getType()).icon;
+				}
+
+				ImGui::DirectoryEntry(entry, iconSize, selectedItems, lastSelected, wasChanged, editedFile, editingName, icon);
 
 				if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenOverlapped) && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
 					if (entry.is_directory()) {

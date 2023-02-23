@@ -282,6 +282,7 @@ namespace sa {
 	}
 
 	void AssetManager::getRegisteredAssetTypes(std::vector<AssetTypeID>& types) {
+		types.clear();
 		for (const auto& [id, _] : m_typeToString) {
 			types.push_back(id);
 		}

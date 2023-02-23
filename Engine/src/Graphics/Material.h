@@ -170,8 +170,6 @@ namespace sa {
 		UNKNOWN = 18,
 	};
 
-	std::string toString(MaterialTextureType type);
-
 	enum class TextureBlendOp {
 		/** T = T1 * T2 */
 		MULTIPLY = 0x0,
@@ -236,6 +234,9 @@ namespace sa {
 
 		bool twoSided;
 
+		static std::string TextureTypeToString(MaterialTextureType type);
+
+
 		Material(const AssetHeader& header);
 
 		void update();
@@ -244,6 +245,8 @@ namespace sa {
 		
 		// Gathers all textures into an array, unless already gathered since last update
 		const std::vector<Texture>& fetchTextures();
+		
+		std::unordered_map<MaterialTextureType, std::vector<UUID>>& getTextures();
 
 		virtual bool onLoad(std::ifstream& file, AssetLoadFlags flags) override;
 		virtual bool onWrite(std::ofstream& file, AssetWriteFlags flags) override;

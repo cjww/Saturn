@@ -270,7 +270,7 @@ namespace sa {
 		
 		Scene* pScene = m_pEngine->getCurrentScene();
 		auto path = pScene->getAssetPath();
-		pScene->setAssetPath(editorRelativePath("sceneCache.data"));
+		pScene->setAssetPath(MakeEditorRelative("sceneCache.data"));
 		pScene->write();
 		pScene->setAssetPath(path);
 
@@ -282,7 +282,7 @@ namespace sa {
 		
 		Scene* pScene = m_pEngine->getCurrentScene();
 		auto path = pScene->getAssetPath();
-		pScene->setAssetPath(editorRelativePath("sceneCache.data"));
+		pScene->setAssetPath(MakeEditorRelative("sceneCache.data"));
 		pScene->load(sa::AssetLoadFlagBits::FORCE_SHALLOW | sa::AssetLoadFlagBits::NO_REF);
 		pScene->setAssetPath(path);
 		//pScene->release(); // since loading will increase refCount, we decrease it again
@@ -320,7 +320,7 @@ namespace sa {
 		m_pEngine = &engine;
 		m_pWindow = &renderWindow;
 
-		m_editorPath = std::filesystem::current_path();
+		s_editorPath = std::filesystem::current_path();
 		
 		renderWindow.addDragDropCallback([&](int count, const char** paths) {
 			m_pEngine->publish<editor_event::DragDropped>(count, paths);
@@ -366,7 +366,7 @@ namespace sa {
 		m_playPauseTex = Texture2D(playPauseButtons, true);
 
 		// read recent projects
-		std::ifstream recentProjectsFile(m_editorPath / "recent_projects.txt");
+		std::ifstream recentProjectsFile(MakeEditorRelative("recent_projects.txt"));
 		std::string line;
 		if (recentProjectsFile) {
 			while (!recentProjectsFile.eof()) {
@@ -382,7 +382,7 @@ namespace sa {
 		if (!m_projectFile.empty())
 			ImGui::SaveIniSettingsToDisk("imgui.ini");
 
-		std::ofstream recentProjectsFile(m_editorPath / "recent_projects.txt");
+		std::ofstream recentProjectsFile(MakeEditorRelative("recent_projects.txt"));
 		for (const auto& path : m_recentProjectPaths) {
 			recentProjectsFile << path.generic_string() << "\n";
 		}
@@ -519,8 +519,8 @@ namespace sa {
 		}
 	}
 
-	std::filesystem::path EngineEditor::editorRelativePath(const std::filesystem::path& editorRelativePath) {
-		return m_editorPath / editorRelativePath;
+	std::filesystem::path EngineEditor::MakeEditorRelative(const std::filesystem::path& editorRelativePath) {
+		return s_editorPath / editorRelativePath;
 	}
 
 	std::vector<std::filesystem::path> EngineEditor::fetchAllScriptsInProject() {

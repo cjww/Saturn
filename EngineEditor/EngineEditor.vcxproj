@@ -263,7 +263,6 @@
   <ItemGroup>
     <ClCompile Include="deps\ImGuizmo\ImGuizmo.cpp" />
     <ClCompile Include="deps\simdjson\src\simdjson.cpp" />
-    <ClCompile Include="src\AssetPropertiesWindow.cpp" />
     <ClCompile Include="src\CustomImGui.cpp" />
     <ClCompile Include="src\DirectoryView.cpp" />
     <ClCompile Include="src\EditorModule.cpp" />
@@ -278,15 +277,12 @@
     <ClCompile Include="src\Tools\FileDialogs.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\AssetEditorInfo.h" />
-    <ClInclude Include="src\AssetPropertiesWindow.h" />
     <ClInclude Include="src\CustomImGui.h" />
     <ClInclude Include="src\EditorModule.h" />
     <ClInclude Include="src\EngineEditor.h" />
     <ClInclude Include="src\EntityInspector.h" />
     <ClInclude Include="src\Events.h" />
     <ClInclude Include="src\GameView.h" />
-    <ClInclude Include="src\IWindow.h" />
     <ClInclude Include="src\RenderPipelinePreferences.h" />
     <ClInclude Include="src\SceneHierarchy.h" />
     <ClInclude Include="src\SceneView.h" />

@@ -23,7 +23,14 @@
 
 namespace sa {
 	class EngineEditor;
+
 }
+
+struct AssetEditorInfo {
+	bool inCreateMenu;
+	sa::Texture2D icon;
+	std::function<bool(sa::IAsset*)> imGuiPropertiesFn;
+};
 
 namespace ImGui {
 	inline struct PopupPayload {
@@ -49,12 +56,11 @@ namespace ImGui {
 	template<typename T>
 	void Component(const sa::Entity& entity);
 
+	AssetEditorInfo GetAssetInfo(sa::AssetTypeID type);
+	sa::Texture2D LoadEditorIcon(const std::filesystem::path& path);
 
-	bool AssetProperties(sa::IAsset* pAsset);
-
-	bool AssetProperties(sa::Material* pMaterial);
-	bool AssetProperties(sa::ModelAsset* pModel);
-
+	bool MaterialProperties(sa::IAsset* pAsset);
+	bool ModelProperties(sa::IAsset* pAsset);
 
 
 	void AssetPreview(sa::Material* pMaterial);
