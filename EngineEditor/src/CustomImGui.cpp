@@ -238,12 +238,11 @@ namespace ImGui {
 	void Component(sa::Entity entity, comp::Model* model) {
 		
 		sa::IAsset* pAsset = sa::AssetManager::get().getAsset(model->modelID);
-		sa::IAsset* pPrevAsset = pAsset;
-		if (AssetSlot(("Model##" + entity.getComponent<comp::Name>()->name).c_str(), pAsset, sa::AssetManager::get().getAssetTypeID<sa::ModelAsset>())) {
-			pAsset->load();
-			if(pPrevAsset)
-				pPrevAsset->release();
-			model->modelID = pAsset->getID();
+		if (AssetSlot(("Model##" + entity.getComponent<comp::Name>()->name).c_str(), pAsset, sa::AssetManager::get().getAssetTypeID<sa::ModelAsset>())) {	
+			if (pAsset)
+				model->modelID = pAsset->getID();
+			else
+				model->modelID = 0;
 		}
 
 		if (pAsset && !pAsset->getProgress().isAllDone()) {
@@ -423,12 +422,19 @@ namespace ImGui {
 		else if (type == am.getAssetTypeID<sa::ModelAsset>()) {
 			static AssetEditorInfo info{
 				.inCreateMenu = false,
-				.icon = LoadEditorIcon("resources/sphere-white.png"),
+				.icon = LoadEditorIcon("resources/mesh_cube.png"),
 				.imGuiPropertiesFn = ModelProperties,
 			};
 			return info;
 		}
-
+		else if (type == am.getAssetTypeID<sa::TextureAsset>()) {
+			static AssetEditorInfo info{
+				.inCreateMenu = false,
+				.icon = LoadEditorIcon("resources/image.png"),
+				.imGuiPropertiesFn = TextureProperties,
+			};
+			return info;
+		}
 		static AssetEditorInfo info{
 			.inCreateMenu = false,
 			.icon = LoadEditorIcon("resources/file-white.png"),
@@ -496,6 +502,13 @@ namespace ImGui {
 			}
 			EndListBox();
 		}
+		return false;
+	}
+
+	bool TextureProperties(sa::IAsset* pAsset) {
+		sa::TextureAsset* pTexture = static_cast<sa::TextureAsset*>(pAsset);
+		ImVec2 size = GetContentRegionAvail();
+		Image(pTexture->getTexture(), size);
 		return false;
 	}
 

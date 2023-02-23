@@ -85,6 +85,8 @@ namespace sa {
 		~AssetManager();
 	
 		static AssetManager& get();
+		
+		static bool IsAsset(const std::filesystem::directory_entry& entry);
 
 		void clear();
 

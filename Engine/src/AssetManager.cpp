@@ -27,13 +27,10 @@ namespace sa {
 	void AssetManager::locateStandaloneAssets() {
 		std::filesystem::path path = std::filesystem::current_path();
 		for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) {
-			if (entry.is_regular_file()) {
-				if (entry.path().extension() == ".asset") {
-					addAsset(std::filesystem::proximate(entry.path()));
-				}
+			if (IsAsset(entry)) {
+				addAsset(std::filesystem::proximate(entry.path()));
 			}
 		}
-
 	}
 
 	IAsset* AssetManager::addAsset(const std::filesystem::path& assetPath) {
@@ -84,6 +81,11 @@ namespace sa {
 		static AssetManager instance;
 		return instance;
 	}
+
+	bool AssetManager::IsAsset(const std::filesystem::directory_entry& entry) {
+		return entry.is_regular_file() && entry.path().extension() == ".asset";
+	}
+
 
 	void AssetManager::clear() {
 		IAsset::waitAllAssets();
