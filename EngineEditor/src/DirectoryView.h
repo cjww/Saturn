@@ -8,12 +8,7 @@ private:
 	sa::Texture2D m_directoryIcon;
 	sa::Texture2D m_otherFileIcon;
 
-	// Asset icons
-	sa::Texture2D m_modelIcon;
-	sa::Texture2D m_materialIcon;
-	sa::Texture2D m_textureIcon;
-
-
+	std::unordered_set<sa::IAsset*> m_openAssetProperties;
 
 public:
 	DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor);

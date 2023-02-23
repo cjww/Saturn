@@ -410,6 +410,58 @@ namespace ImGui {
 		return doubleClicked;
 	}
 
+
+	bool AssetProperties(sa::IAsset* pAsset) {
+		sa::AssetManager& am = sa::AssetManager::get();
+		if (pAsset->getType() == am.getAssetTypeID<sa::Material>()) {
+			sa::Material* pMaterial = static_cast<sa::Material*>(pAsset);
+			return AssetProperties(pMaterial);
+		}
+		else if (pAsset->getType() == am.getAssetTypeID<sa::ModelAsset>()) {
+			sa::ModelAsset* pModel = static_cast<sa::ModelAsset*>(pAsset);
+			return AssetProperties(pModel);
+		}
+
+	}
+
+	bool AssetProperties(sa::Material* pMaterial) {
+		ColorEdit3("Diffuse Color", (float*)&pMaterial->values.diffuseColor);
+		ColorEdit3("Specular Color", (float*)&pMaterial->values.specularColor);
+		DragFloat("Shininess", &pMaterial->values.shininess);
+		if (BeginListBox("Textures")) {
+			int i = 0;
+			
+		}
+		EndListBox();
+		return false;
+	}
+
+	bool AssetProperties(sa::ModelAsset* pModel) {
+		if (BeginListBox("Meshes")) {
+			int i = 0;
+			for (auto& mesh : pModel->data.meshes) {
+				PushID(i);
+				sa::Material* pMaterial = sa::AssetManager::get().getAsset<sa::Material>(mesh.materialID);
+				sa::IAsset* pAsset = pMaterial;
+				if (AssetSlot("Material", pAsset, sa::AssetManager::get().getAssetTypeID<sa::Material>())) {
+					mesh.materialID = pAsset->getID();
+				}
+				PopID();
+				i++;
+			}
+		}
+		EndListBox();
+		return false;
+	}
+
+	void AssetPreview(sa::Material* pMaterial) {
+
+	}
+
+	void AssetPreview(sa::ModelAsset* pModel) {
+
+	}
+
 	bool AssetSlot(const char* label, sa::IAsset*& pAsset, sa::AssetTypeID typeID) {
 		std::string preview = "None";
 		if (pAsset) {
@@ -464,7 +516,7 @@ namespace ImGui {
 		return selected;
 	}
 
-	void addEditorModuleSettingsHandler(sa::EngineEditor* pEditor) {
+	void AddEditorModuleSettingsHandler(sa::EngineEditor* pEditor) {
 		
 		ImGuiSettingsHandler ini_handler;
 		ini_handler.TypeName = "EditorModule";

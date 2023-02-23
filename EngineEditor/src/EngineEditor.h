@@ -27,7 +27,7 @@ namespace sa {
 		sa::RenderWindow* m_pWindow;
 
 		std::vector<std::unique_ptr<EditorModule>> m_editorModules;
-		
+
 		std::filesystem::path m_projectFile;
 		std::filesystem::path m_editorPath;
 

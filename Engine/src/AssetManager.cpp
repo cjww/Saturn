@@ -281,6 +281,12 @@ namespace sa {
 		}
 	}
 
+	void AssetManager::getRegisteredAssetTypes(std::vector<AssetTypeID>& types) {
+		for (const auto& [id, _] : m_typeToString) {
+			types.push_back(id);
+		}
+	}
+
 	const std::string& AssetManager::getAssetTypeName(AssetTypeID typeID) const {
 		if (!m_typeToString.count(typeID))
 			return "Unknown";
@@ -307,6 +313,54 @@ namespace sa {
 				return asset.get();
 		}
 		return nullptr;
+	}
+
+	IAsset* AssetManager::importAsset(AssetTypeID type, const std::filesystem::path& path, const std::filesystem::path& assetDirectory) {
+		SA_DEBUG_LOG_INFO("Importing ", getAssetTypeName(type), " ", path);
+		AssetHeader header; // generates new UUID
+		header.type = type;
+		assert(header.type != -1 && "Can not use unregistered type!");
+		IAsset* asset;
+		{
+			std::lock_guard<std::mutex> lock(m_mutex);
+			if (m_importedAssets.count(path)) {
+				return m_assets.at(m_importedAssets.at(path)).get();
+			}
+			m_importedAssets[path] = header.id;
+			asset = m_assetAddConversions[type](header);
+		}
+
+		if (!asset->importFromFile(path, assetDirectory)) {
+			std::lock_guard<std::mutex> lock(m_mutex);
+			m_importedAssets.erase(path);
+			removeAsset(asset);
+			return nullptr;
+		}
+		SA_DEBUG_LOG_INFO("Finished Importing ", getAssetTypeName(type), " ", path);
+
+		asset->write();
+
+		return asset;
+	}
+
+
+	IAsset* AssetManager::createAsset(AssetTypeID type, const std::string& name, const std::filesystem::path& assetDirectory) {
+		SA_DEBUG_LOG_INFO("Creating ", getAssetTypeName(type), " ", name);
+
+		AssetHeader header; // generates new UUID
+		header.type = type;
+		assert(header.type != -1 && "Can not use unregistered type!");
+
+		m_mutex.lock();
+		IAsset* asset = m_assetAddConversions[type](header);
+		m_mutex.unlock();
+
+
+		asset->create(name, assetDirectory);
+		SA_DEBUG_LOG_INFO("Finished Creating ", getAssetTypeName(type), " ", name);
+		asset->write();
+
+		return asset;
 	}
 
 

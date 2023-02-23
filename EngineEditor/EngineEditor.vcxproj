@@ -191,7 +191,7 @@
       <PreprocessorDefinitions>_DEBUG;_CONSOLE;SA_DEBUG_LOG_ENABLE;SA_PROFILER_ENABLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)/Engine/src;$(SolutionDir)/VulkanRenderer/include;$(ProjectDir)deps/ImGuizmo;$(ProjectDir)deps/simdjson/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
       <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
       <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
     </ClCompile>
@@ -215,7 +215,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)/Engine/src;$(SolutionDir)/VulkanRenderer/include;$(ProjectDir)deps/ImGuizmo;$(ProjectDir)deps/simdjson/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -240,7 +240,7 @@
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;SA_DEBUG_LOG_ENABLE;SA_PROFILER_ENABLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
       <AdditionalIncludeDirectories>$(SolutionDir)/Engine/src;$(SolutionDir)/VulkanRenderer/include;$(ProjectDir)deps/ImGuizmo;$(ProjectDir)deps/simdjson/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <LanguageStandard>stdcpp17</LanguageStandard>
+      <LanguageStandard>stdcpp20</LanguageStandard>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -263,6 +263,7 @@
   <ItemGroup>
     <ClCompile Include="deps\ImGuizmo\ImGuizmo.cpp" />
     <ClCompile Include="deps\simdjson\src\simdjson.cpp" />
+    <ClCompile Include="src\AssetPropertiesWindow.cpp" />
     <ClCompile Include="src\CustomImGui.cpp" />
     <ClCompile Include="src\DirectoryView.cpp" />
     <ClCompile Include="src\EditorModule.cpp" />
@@ -277,12 +278,15 @@
     <ClCompile Include="src\Tools\FileDialogs.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\AssetEditorInfo.h" />
+    <ClInclude Include="src\AssetPropertiesWindow.h" />
     <ClInclude Include="src\CustomImGui.h" />
     <ClInclude Include="src\EditorModule.h" />
     <ClInclude Include="src\EngineEditor.h" />
     <ClInclude Include="src\EntityInspector.h" />
     <ClInclude Include="src\Events.h" />
     <ClInclude Include="src\GameView.h" />
+    <ClInclude Include="src\IWindow.h" />
     <ClInclude Include="src\RenderPipelinePreferences.h" />
     <ClInclude Include="src\SceneHierarchy.h" />
     <ClInclude Include="src\SceneView.h" />

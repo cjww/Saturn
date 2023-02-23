@@ -5,6 +5,8 @@
 
 #include "EngineEditor.h"
 
+#include "AssetEditorInfo.h"
+
 DirectoryView::DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor) 
 	: EditorModule(pEngine, pEditor, "Directory View", true)
 {
@@ -26,18 +28,32 @@ DirectoryView::DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor)
 	sa::Image img1(m_pEditor->editorRelativePath("resources/file-white.png").generic_string());
 	m_otherFileIcon = sa::Texture2D(img1, true);
 
+	sa::Image materialIcon(m_pEditor->editorRelativePath("resources/file-white.png").generic_string());
+	
 
 }
 
 void DirectoryView::onImGui() {
-	
+	for (auto it = m_openAssetProperties.begin(); it != m_openAssetProperties.end(); it++) {
+		sa::IAsset* pAsset = *it;
+		bool isOpen = true;
+		if(ImGui::Begin((pAsset->getName() + " Properties").c_str(), &isOpen)) {
+			ImGui::AssetProperties(pAsset);
+		}
+		ImGui::End();
+		if (!isOpen) {
+			m_openAssetProperties.erase(it);
+			break;
+		}
+	}
+
+
 	if (!m_isOpen)
 		return;
 	
 	if (ImGui::Begin(m_name, &m_isOpen, ImGuiWindowFlags_MenuBar)) {
 		
 		if (ImGui::BeginMenuBar()) {
-
 			if (ImGui::MenuItem("Assets Window")) {
 				m_isAssetListOpen = !m_isAssetListOpen;
 			}
@@ -46,12 +62,7 @@ void DirectoryView::onImGui() {
 
 		static auto openDirectory = std::filesystem::current_path();
 		static int iconSize = 45;
-		/*
-		if (ImGui::DirectoryIcons("Explorer", openDirectory, iconSize)) {
-			sa::AssetManager::get().rescanAssets();
-		}
-		*/
-
+		
 		static std::filesystem::path lastSelected;
 		static std::set<std::filesystem::path> selectedItems;
 		static std::string editingName;
@@ -60,6 +71,7 @@ void DirectoryView::onImGui() {
 		bool wasChanged = false;
 
 		auto menuItemsFn = [&]() {
+			ImGui::Separator();
 			if (ImGui::MenuItem("Material")) {
 				sa::IAsset* pAsset = sa::AssetManager::get().createAsset<sa::Material>("New Material", openDirectory);
 				editingName = pAsset->getName();
@@ -89,8 +101,9 @@ void DirectoryView::onImGui() {
 						openDirectory = entry.path();
 						break;
 					}
-					else {
-						SA_DEBUG_LOG_INFO("File clicked");
+					sa::IAsset* pAsset = sa::AssetManager::get().findAssetByPath(entry.path());
+					if (pAsset) {
+						m_openAssetProperties.insert(pAsset);
 					}
 				}
 

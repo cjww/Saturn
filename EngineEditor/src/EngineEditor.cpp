@@ -331,7 +331,7 @@ namespace sa {
 			ImGui::SetupImGuiStyle();
 		});
 
-		ImGui::addEditorModuleSettingsHandler(this);
+		ImGui::AddEditorModuleSettingsHandler(this);
 		ImGui::GetIO().IniFilename = NULL; // Handle loading and saving ImGui state manually
 
 		//hijack sceneSet event

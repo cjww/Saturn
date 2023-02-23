@@ -103,6 +103,7 @@ namespace sa {
 
 		template<typename T>
 		AssetTypeID registerAssetType();
+		void getRegisteredAssetTypes(std::vector<AssetTypeID>& types);
 
 		const std::string& getAssetTypeName(AssetTypeID typeID) const;
 
@@ -127,6 +128,10 @@ namespace sa {
 
 		template<typename T>
 		T* createAsset(const std::string& name, const std::filesystem::path& assetDirectory = SA_ASSET_DIR);
+
+		IAsset* importAsset(AssetTypeID type, const std::filesystem::path& path, const std::filesystem::path& assetDirectory = SA_ASSET_DIR);
+		IAsset* createAsset(AssetTypeID type, const std::string& name, const std::filesystem::path& assetDirectory = SA_ASSET_DIR);
+
 
 		void removeAsset(IAsset* asset);
 		void removeAsset(UUID id);
@@ -208,10 +213,10 @@ namespace sa {
 	
 	template<typename T>
 	inline T* AssetManager::createAsset(const std::string& name, const std::filesystem::path& assetDirectory) {
-		SA_DEBUG_LOG_INFO("Creating Asset ", name);
-
 		AssetHeader header; // generates new UUID
 		header.type = getAssetTypeID<T>();
+		SA_DEBUG_LOG_INFO("Creating ", getAssetTypeName(header.type), " ", name);
+
 		assert(header.type != -1 && "Can not use unregistered type!");
 
 		m_mutex.lock();
@@ -221,7 +226,7 @@ namespace sa {
 		IAsset* asset = it->second.get();
 
 		asset->create(name, assetDirectory);
-		SA_DEBUG_LOG_INFO("Finished Creating Asset ", name);
+		SA_DEBUG_LOG_INFO("Finished Creating ", getAssetTypeName(header.type), " ", name);
 		asset->write();
 
 		return static_cast<T*>(asset);

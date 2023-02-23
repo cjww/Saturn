@@ -49,9 +49,21 @@ namespace ImGui {
 	template<typename T>
 	void Component(const sa::Entity& entity);
 
+
+	bool AssetProperties(sa::IAsset* pAsset);
+
+	bool AssetProperties(sa::Material* pMaterial);
+	bool AssetProperties(sa::ModelAsset* pModel);
+
+
+
+	void AssetPreview(sa::Material* pMaterial);
+	void AssetPreview(sa::ModelAsset* pModel);
+
+
 	bool AssetSlot(const char* label, sa::IAsset*& pAsset, sa::AssetTypeID typeID);
 
-	void addEditorModuleSettingsHandler(sa::EngineEditor* pEditor);
+	void AddEditorModuleSettingsHandler(sa::EngineEditor* pEditor);
 
 	void DirectoryHierarchy(const char* str_id, const std::filesystem::path& directory, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size = ImVec2(0, 0));
 	
@@ -110,3 +122,4 @@ void ImGui::Component(const sa::Entity& entity) {
 		visable = true;
 	}
 }
+
