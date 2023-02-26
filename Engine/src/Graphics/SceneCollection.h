@@ -46,7 +46,8 @@ namespace sa {
 		void addLight(const LightData& light);
 
 		void makeRenderReady();
-	
+		void swap();
+
 		const Buffer& getLightBuffer() const;
 		const Buffer& getVertexBuffer() const;
 		const Buffer& getIndexBuffer() const;

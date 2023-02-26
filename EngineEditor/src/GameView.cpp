@@ -43,6 +43,7 @@ GameView::GameView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWin
 				m_renderedCamera = true;
 			}
 		});
+		m_sceneCollection.swap();
 		
 	});
 }

@@ -63,6 +63,7 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 			});
 			m_sceneCollection.makeRenderReady();
 			e.pRenderPipeline->render(&m_camera, &m_renderTarget, m_sceneCollection);
+			m_sceneCollection.swap();
 		}
 	});
 }

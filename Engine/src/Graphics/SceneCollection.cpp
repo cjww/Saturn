@@ -77,13 +77,7 @@ namespace sa {
 	void SceneCollection::makeRenderReady() {
 		SA_PROFILE_FUNCTION();
 
-		m_lightBuffer.swap();
-		m_vertexBuffer.swap();
-		m_indexBuffer.swap();
-		m_indirectIndexedBuffer.swap();
-		m_objectBuffer.swap();
-		m_materialBuffer.swap();
-		m_materialIndicesBuffer.swap();
+	
 
 		//Ligths
 		m_lightBuffer.write(static_cast<uint32_t>(m_lights.size()));
@@ -170,6 +164,16 @@ namespace sa {
 
 		m_materialBuffer.write(m_materialData);
 		m_materialIndicesBuffer.write(m_materialIndices);
+	}
+
+	void SceneCollection::swap() {
+		m_lightBuffer.swap();
+		m_vertexBuffer.swap();
+		m_indexBuffer.swap();
+		m_indirectIndexedBuffer.swap();
+		m_objectBuffer.swap();
+		m_materialBuffer.swap();
+		m_materialIndicesBuffer.swap();
 	}
 	
 	const Buffer& SceneCollection::getLightBuffer() const {
