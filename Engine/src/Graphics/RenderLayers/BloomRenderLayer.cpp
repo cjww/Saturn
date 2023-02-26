@@ -3,7 +3,7 @@
 #include "Engine.h"
 namespace sa {
 
-	void BloomRenderLayer::init(RenderWindow* pWindow, IRenderTechnique* pRenderTechnique) {
+	void BloomRenderLayer::init(IRenderTechnique* pRenderTechnique) {
 
 		m_pRenderTechnique = pRenderTechnique;
 		

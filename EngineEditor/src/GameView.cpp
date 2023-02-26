@@ -11,7 +11,7 @@ GameView::GameView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWin
 	
 	m_resolutionIndex = 0;
 
-	m_renderTarget.initialize(pEngine, m_Resolutions[0]);
+	m_renderTarget.initialize(m_Resolutions[0]);
 	
 
 	m_isWindowOpen = false;
@@ -39,7 +39,7 @@ GameView::GameView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWin
 				if (camera.camera.getViewport().extent != m_renderTarget.extent) {
 					camera.camera.setViewport({ { 0, 0 }, m_renderTarget.extent });
 				}
-				e.pRenderPipeline->render(&camera.camera, &m_renderTarget, m_sceneCollection);
+				e.pRenderPipeline->render(*e.pContext, &camera.camera, &m_renderTarget, m_sceneCollection);
 				m_renderedCamera = true;
 			}
 		});

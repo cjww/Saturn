@@ -39,7 +39,7 @@ namespace sa {
 		bool m_wasResized;
 		
 	public:
-		virtual void init(RenderWindow* pWindow, IRenderTechnique* pRenderTechnique = nullptr) override;
+		virtual void init(IRenderTechnique* pRenderTechnique = nullptr) override;
 	
 		virtual void cleanup() override;
 		virtual void onWindowResize(Extent newExtent) override;

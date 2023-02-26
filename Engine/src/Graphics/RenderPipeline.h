@@ -11,19 +11,11 @@ namespace sa {
 	private:
 		RenderWindow* m_pWindow;
 		IRenderTechnique* m_pRenderTechnique;
-		RenderContext m_context;
-
+		
 		std::vector<IRenderLayer*> m_layers;
 		std::vector<IRenderLayer*> m_overlays;
 
 		tf::Executor m_executor;
-
-		ResourceID m_swapchainFramebuffer;
-		ResourceID m_swapchainPipeline;
-		ResourceID m_swapchainRenderProgram;
-		ResourceID m_swapchainDescriptorSet;
-		ResourceID m_sampler;
-
 		
 	public:
 		RenderPipeline();
@@ -38,9 +30,9 @@ namespace sa {
 
 		void beginFrameImGUI();
 
-		RenderContext beginScene(Scene* pScene);
-		void render(SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection);
-		void endScene();
+		
+		void render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection);
+		const Texture& endScene(RenderContext& context);
 
 		IRenderTechnique* getRenderTechnique() const;
 

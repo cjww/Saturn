@@ -222,6 +222,8 @@ namespace sa {
 
 	void Engine::onWindowResize(Extent newExtent) {
 		m_renderPipeline.onWindowResize(newExtent);
+		m_windowRenderer.onWindowResize(newExtent);
+
 		publish<sa::engine_event::WindowResized>(m_windowExtent, newExtent);
 		m_windowExtent = newExtent;
 	}
@@ -248,13 +250,14 @@ namespace sa {
 		
 		if (pWindow) {
 			m_renderPipeline.create(pWindow, new ForwardPlus);
-			
+
 			m_renderPipeline.pushLayer(new MainRenderLayer);
 			m_renderPipeline.pushLayer(new BloomRenderLayer);
 			if (enableImgui) {
-				m_renderPipeline.pushOverlay(new ImGuiRenderLayer);
+				m_renderPipeline.pushOverlay(new ImGuiRenderLayer(m_pWindow));
 			}
 			
+			m_windowRenderer.create(pWindow);
 
 			pWindow->setResizeCallback(std::bind(&Engine::onWindowResize, this, std::placeholders::_1));
 			m_windowExtent = pWindow->getCurrentExtent();
@@ -352,11 +355,18 @@ namespace sa {
 		if (!m_pWindow)
 			return;
 
-		RenderContext context = m_renderPipeline.beginScene(getCurrentScene());
-		if (context) {
-			if(m_currentScene)
-				publish<engine_event::OnRender>(&context, &m_renderPipeline);
-			m_renderPipeline.endScene();
+		RenderContext context = m_pWindow->beginFrame();
+		if (!context)
+			return;
+
+		if(m_currentScene)
+			publish<engine_event::OnRender>(&context, &m_renderPipeline);
+
+		const Texture& tex = m_renderPipeline.endScene(context);
+		m_windowRenderer.render(context, tex);
+		{
+			SA_PROFILE_SCOPE("Display");
+			m_pWindow->display();
 		}
 	}
 

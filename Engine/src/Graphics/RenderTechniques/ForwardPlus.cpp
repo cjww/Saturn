@@ -253,11 +253,6 @@ namespace sa {
 
 	}
 
-	void ForwardPlus::endRender(RenderContext& context) {
-		
-	}
-
-
 	const Texture2D& ForwardPlus::getLightHeatmap() const {
 		return m_debugLightHeatmap;
 	}

@@ -135,7 +135,6 @@ namespace sa {
 
 	RenderTarget::RenderTarget()
 		: m_renderer(Renderer::get())
-		, m_pEngine(nullptr)
 	{
 
 	}
@@ -144,8 +143,7 @@ namespace sa {
 		destroy();
 	}
 
-	void RenderTarget::initialize(Engine* pEngine, Extent extent) {
-		m_pEngine = pEngine;
+	void RenderTarget::initialize(Extent extent) {
 		this->extent = extent;
 		
 		mainRenderData.isInitialized = false; // initialize main data in main render pass
@@ -158,7 +156,7 @@ namespace sa {
 			this->extent = e.newExtent;
 		});
 		
-		initialize(pEngine, pWindow->getCurrentExtent());
+		initialize(pWindow->getCurrentExtent());
 	}
 
 	void RenderTarget::destroy() {

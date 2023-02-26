@@ -5,13 +5,12 @@ namespace sa {
 
 	class MainRenderLayer : public IRenderLayer {
 	private:
-		RenderWindow* m_pWindow;
 		IRenderTechnique* m_pRenderTechnique;
 
 	public:
 		MainRenderLayer();
 
-		virtual void init(RenderWindow* pWindow, IRenderTechnique* pRenderTechnique) override;
+		virtual void init(IRenderTechnique* pRenderTechnique) override;
 		virtual void cleanup() override;
 
 		virtual void preRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) override;

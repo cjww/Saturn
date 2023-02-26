@@ -18,6 +18,8 @@
 
 #include <RenderWindow.hpp>
 
+#include "Graphics/WindowRenderer.h"
+
 namespace sa {
 
 
@@ -26,6 +28,7 @@ namespace sa {
 		static std::filesystem::path s_shaderDirectory;
 		
 		RenderPipeline m_renderPipeline;
+		WindowRenderer m_windowRenderer;
 
 		Extent m_windowExtent;
 		RenderWindow* m_pWindow;
@@ -60,10 +63,6 @@ namespace sa {
 		std::chrono::duration<double, std::milli> getCPUFrameTime() const;
 
 		const RenderPipeline& getRenderPipeline() const;
-		/*
-		Scene& loadSceneFromFile(const std::filesystem::path& sceneFile);
-		void storeSceneToFile(Scene* pScene, const std::filesystem::path& path);
-		*/
 
 		Scene* getCurrentScene() const;
 

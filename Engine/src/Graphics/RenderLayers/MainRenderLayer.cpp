@@ -6,8 +6,7 @@ namespace sa {
 
 	}
 
-	void MainRenderLayer::init(RenderWindow* pWindow, IRenderTechnique* pRenderTechnique) {
-		m_pWindow = pWindow;
+	void MainRenderLayer::init(IRenderTechnique* pRenderTechnique) {
 		m_pRenderTechnique = pRenderTechnique;
 	}
 

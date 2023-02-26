@@ -49,8 +49,7 @@ namespace sa {
 		virtual void updateData(RenderContext& context) override;
 		virtual bool prepareRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) override;
 		virtual void render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) override;
-		virtual void endRender(RenderContext& context) override;
-
+		
 		const Texture2D& getLightHeatmap() const;
 		void setShowHeatmap(bool value);
 

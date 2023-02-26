@@ -1,20 +1,16 @@
 #pragma once
 
-//#include <Resources\DynamicTexture.hpp>
-
 #include <Renderer.hpp>
 #include <RenderWindow.hpp>
 
 namespace sa {
 
 	class Engine;
-	class IRenderTechnique;
 
 	class RenderTarget {
 	private:
 		Renderer& m_renderer;
-		Engine* m_pEngine;
-		
+
 		friend class BloomRenderLayer;
 		void initializeBloomData(RenderContext& context, Extent extent, DynamicTexture* colorTexture, ResourceID bloomPipeline, ResourceID sampler);
 		void cleanupBloomData();
@@ -69,7 +65,7 @@ namespace sa {
 		RenderTarget();
 		virtual ~RenderTarget();
 
-		void initialize(Engine* pEngine, Extent extent);
+		void initialize(Extent extent);
 		void initialize(Engine* pEngine, RenderWindow* pWindow);
 		void destroy();
 

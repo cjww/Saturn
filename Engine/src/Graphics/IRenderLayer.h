@@ -17,7 +17,7 @@ namespace sa {
 		IRenderLayer();
 		virtual ~IRenderLayer() = default;
 
-		virtual void init(RenderWindow* pWindow, IRenderTechnique* pRenderTechnique = nullptr) = 0;
+		virtual void init(IRenderTechnique* pRenderTechnique = nullptr) = 0;
 		virtual void cleanup() = 0;
 
 		virtual void preRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* rendertarget, SceneCollection& sceneCollection) {};

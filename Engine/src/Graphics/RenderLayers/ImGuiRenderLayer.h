@@ -9,12 +9,17 @@ namespace sa {
 		ResourceID m_imGuiFramebuffer = NULL_RESOURCE;
 		
 		RenderWindow* m_pWindow;
+
 		IRenderTechnique* m_pRenderTechnique;
 
 		DynamicTexture2D m_outputTexture;
 
+		RenderTarget m_renderTarget;
+
 	public:
-		virtual void init(RenderWindow* pWindow, IRenderTechnique* pRenderTechnique) override;
+		ImGuiRenderLayer(RenderWindow* pWindow);
+
+		virtual void init(IRenderTechnique* pRenderTechnique) override;
 		virtual void cleanup();
 
 		virtual void postRender(RenderContext& context) override;

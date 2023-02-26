@@ -2,11 +2,16 @@
 #include "ImGuiRenderLayer.h"
 namespace sa {
 
-	void ImGuiRenderLayer::init(RenderWindow* pWindow, IRenderTechnique* pRenderTechnique) {
-		m_pWindow = pWindow;
+	ImGuiRenderLayer::ImGuiRenderLayer(RenderWindow* pWindow)
+		: m_pWindow(pWindow)
+	{
+	}
+
+	void ImGuiRenderLayer::init(IRenderTechnique* pRenderTechnique) {
+		
 		m_pRenderTechnique = pRenderTechnique;
 
-		m_outputTexture = DynamicTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, pWindow->getCurrentExtent());
+		m_outputTexture = DynamicTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, m_pWindow->getCurrentExtent());
 
 		
 		m_imGuiRenderProgram = m_renderer.createRenderProgram()
@@ -17,7 +22,7 @@ namespace sa {
 			.end();
 
 		m_imGuiFramebuffer = m_renderer.createFramebuffer(m_imGuiRenderProgram, { m_outputTexture });
-		m_renderer.initImGui(*pWindow, m_imGuiRenderProgram, 0);
+		m_renderer.initImGui(*m_pWindow, m_imGuiRenderProgram, 0);
 
 
 	}
@@ -47,7 +52,7 @@ namespace sa {
 	void ImGuiRenderLayer::onWindowResize(Extent newExtent) {
 		Renderer::get().cleanupImGui();
 		cleanup();
-		init(m_pWindow, m_pRenderTechnique);
+		init(m_pRenderTechnique);
 	}
 	
 	const Texture2D& ImGuiRenderLayer::getOutputTexture() const {

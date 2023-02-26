@@ -27,7 +27,7 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 	m_statsUpdateTime = 0.1f;
 	m_statsTimer = m_statsUpdateTime;
 
-	m_renderTarget.initialize(pEngine, pWindow->getCurrentExtent());
+	m_renderTarget.initialize(pWindow->getCurrentExtent());
 
 	pEngine->on<sa::engine_event::SceneSet>([&](const sa::engine_event::SceneSet& sceneSetEvent, sa::Engine& engine) {
 		m_selectedEntity = {};
@@ -62,7 +62,7 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 				m_sceneCollection.addLight(light.values);
 			});
 			m_sceneCollection.makeRenderReady();
-			e.pRenderPipeline->render(&m_camera, &m_renderTarget, m_sceneCollection);
+			e.pRenderPipeline->render(*e.pContext, &m_camera, &m_renderTarget, m_sceneCollection);
 			m_sceneCollection.swap();
 		}
 	});
