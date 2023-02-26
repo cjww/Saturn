@@ -52,8 +52,18 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 	m_camera.setViewport(sa::Rect{ { 0, 0 }, m_renderTarget.extent });
 
 	pEngine->on<sa::engine_event::OnRender>([&](sa::engine_event::OnRender& e, sa::Engine& engine) {
-		if(m_isOpen)
-			e.pRenderPipeline->render(&m_camera, &m_renderTarget);
+		if (m_isOpen) {
+			m_sceneCollection.clear();
+			engine.getCurrentScene()->forEach<comp::Transform, comp::Model>([&](const comp::Transform& transform, const comp::Model& model) {
+				sa::ModelAsset* pModel = sa::AssetManager::get().getAsset<sa::ModelAsset>(model.modelID);
+				m_sceneCollection.addObject(transform.getMatrix(), pModel);
+			});
+			engine.getCurrentScene()->forEach<comp::Light>([&](const comp::Light& light) {
+				m_sceneCollection.addLight(light.values);
+			});
+			m_sceneCollection.makeRenderReady();
+			e.pRenderPipeline->render(&m_camera, &m_renderTarget, m_sceneCollection);
+		}
 	});
 }
 

@@ -15,14 +15,14 @@ namespace sa {
 
 	}
 
-	void MainRenderLayer::preRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget) {
-		m_pRenderTechnique->prepareRender(context, pCamera, pRenderTarget);
+	void MainRenderLayer::preRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) {
+		m_pRenderTechnique->prepareRender(context, pCamera, pRenderTarget, sceneCollection);
 	}
 
-	void MainRenderLayer::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget) {
+	void MainRenderLayer::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) {
 		Renderer& renderer = Renderer::get();
 		
-		m_pRenderTechnique->render(context, pCamera, pRenderTarget);
+		m_pRenderTechnique->render(context, pCamera, pRenderTarget, sceneCollection);
 
 		pRenderTarget->outputTexture = &pRenderTarget->mainRenderData.colorTexture;
 

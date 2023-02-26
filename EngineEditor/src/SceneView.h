@@ -17,6 +17,7 @@ private:
 	sa::RenderWindow* m_pWindow;
 	
 	sa::RenderTarget m_renderTarget;
+	sa::SceneCollection m_sceneCollection;
 
 	bool m_isFocused;
 	sa::Vector2 m_lastMousePos;

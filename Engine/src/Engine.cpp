@@ -268,6 +268,73 @@ namespace sa {
 			e.newScene->onRuntimeStart();
 		});
 		
+		/*
+		// Initialization
+		RenderPipelineSettings settings = {};
+		settings.isBloomEnabled  = true;
+		RenderPipeline rp;
+		rp.create(settings);
+
+		// main
+		ObjectCollection mainObjectCollection;
+		// material preview
+		ObjectCollection materialPreviewOC;
+		materialPreviewOC.addObject(previewSphere);
+
+		WindowRenderer wr(window);
+		
+		RenderTarget* mainRenderTarget= rp.createRenderTarget(extent);
+		RenderTarget* previewRenderTarget = rp.createRenderTarget(extent);
+
+		ImGuiRenderer imGuiRenderer;
+
+		DynamicTexture* sceneViewTexture;
+		DynamicTexture* previewTexture;
+		// in loop
+		mainObjectCollection.clear();
+		m_currentScene->forEach<comp::Transform, comp::Model>([](comp::Transform& transform, comp::Model& model) {
+			ModelAsset* pAsset = sa::AssetManager::get().getAsset<ModelAsset>(model.modelID);
+			if (pAsset)
+				mainObjectCollection.addObject(pAsset, transform.getMatrix());
+		});
+		m_currentScene->forEach<comp::Light>([](comp::Light& light) {
+			mainObjectCollection.addLight(light.values);
+		});
+
+		//record imgui
+		if (sceneViewTexture.isValid())
+			ImGui::Image(sceneViewTexture);
+		if (previewTexture.isValid())
+			ImGui::Image(previewTexture);
+
+		RenderContext context = window.beginFrame();
+
+		sceneViewTexture = rp.render(context, mainRenderTarget, mainObjectCollection);
+		previewTexture = rp.render(context, previewRenderTarget, materialPreviewOC);
+		{
+			oc.makeRenderReady(context)
+
+			if(m_isShadowEnabled) {
+				m_shadowPass.render(context, renderTarget.shadowData)
+				m_forwardPlusRenderer.bindShadowMaps(context, renderTarget.shadwowData)
+			}
+			m_forwardPlusRenderer.render(context, oc, renderTarget.forwardPlusData)
+			DynamicTexture* outputTexture = renderTarget.forwardPlusData.colorTexture
+			if(m_isBloomEnabled) {
+				outputTexture = m_bloomPass.render(m_outputTexture, renderTarget.bloomData)
+				
+			}
+
+			return outputTexture;
+		}
+		
+		DynamicTexture imguiTex = imGuiRenderer.render(context);
+		
+		wr.render(context, imguiTex);
+		window.display();
+		*/
+
+		
 	}
 
 	void Engine::cleanup() {

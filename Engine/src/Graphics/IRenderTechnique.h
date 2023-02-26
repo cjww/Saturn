@@ -6,6 +6,7 @@
 #include "Resources\Texture.hpp"
 
 #include "Graphics\RenderTarget.h"
+#include "SceneCollection.h"
 
 namespace sa {
 
@@ -33,12 +34,9 @@ namespace sa {
 
 		virtual void updateData(RenderContext& context) = 0;
 		
-		virtual bool prepareRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget) { return true; };
-		virtual void render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget) = 0;
+		virtual bool prepareRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) { return true; };
+		virtual void render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) = 0;
 		virtual void endRender(RenderContext& context) {};
-
-		virtual void updateLights(Scene* pScene) = 0;
-		virtual void collectMeshes(Scene* pScene) = 0;
 
 	};
 }

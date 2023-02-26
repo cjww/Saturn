@@ -58,6 +58,7 @@ namespace sa {
 		void updatePhysics(float dt);
 		void updateChildPositions();
 		void updateCameraPositions();
+		void updateLightPositions();
 
 
 	public:

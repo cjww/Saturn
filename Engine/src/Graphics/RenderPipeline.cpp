@@ -99,28 +99,22 @@ namespace sa {
 			if (!m_context)
 				return {};
 		}
-		if (pScene) {
-			m_pRenderTechnique->updateLights(pScene);
-			// collect meshes
-			m_pRenderTechnique->collectMeshes(pScene);
-		}
-	
 		m_pRenderTechnique->updateData(m_context);
 		
 		return m_context;
 	}
 
-	void RenderPipeline::render(SceneCamera* pCamera, RenderTarget* pRenderTarget) {
+	void RenderPipeline::render(SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) {
 		SA_PROFILE_FUNCTION();
 
 		for (auto& layer : m_layers) {
 			if(layer->isActive())
-				layer->preRender(m_context, pCamera, pRenderTarget);
+				layer->preRender(m_context, pCamera, pRenderTarget, sceneCollection);
 		}
 
 		for (auto& layer : m_layers) {
 			if(layer->isActive())
-				layer->render(m_context, pCamera, pRenderTarget);
+				layer->render(m_context, pCamera, pRenderTarget, sceneCollection);
 		}
 
 		pRenderTarget->swap();

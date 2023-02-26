@@ -56,6 +56,14 @@ namespace sa {
 		});
 	}
 
+	void Scene::updateLightPositions() {
+		m_reg.view<comp::Transform, comp::Light>().each([](comp::Transform& transform, comp::Light& light) {
+			light.values.position = glm::vec4(transform.position, light.values.position.w);
+			light.values.direction = glm::vec4(transform.rotation * glm::vec3(0, 0, 1), light.values.direction.w);
+		});
+	}
+
+
 	Scene::Scene(const AssetHeader& header) : IAsset(header) {
 		m_pPhysicsScene = PhysicsSystem::get().createScene();
 		registerComponentCallBacks();
@@ -141,11 +149,13 @@ namespace sa {
 		
 		updateChildPositions();
 		updateCameraPositions();
+		updateLightPositions();
 	}
 
 	void Scene::inEditorUpdate(float dt) {
 		updateChildPositions();
 		updateCameraPositions();
+		updateLightPositions();
 	}
 
 	void Scene::serialize(Serializer& s) {

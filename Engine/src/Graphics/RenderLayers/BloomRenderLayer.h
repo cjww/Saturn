@@ -44,7 +44,7 @@ namespace sa {
 		virtual void cleanup() override;
 		virtual void onWindowResize(Extent newExtent) override;
 
-		virtual void render(RenderContext& context, SceneCamera* pCamera, RenderTarget* rendertarget) override;
+		virtual void render(RenderContext& context, SceneCamera* pCamera, RenderTarget* rendertarget, SceneCollection& sceneCollection) override;
 		
 		virtual const Texture2D& getOutputTexture() const override;
 

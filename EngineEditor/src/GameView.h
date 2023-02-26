@@ -11,6 +11,8 @@ private:
 	bool m_renderedCamera;
 	bool m_isWindowOpen;
 
+	sa::SceneCollection m_sceneCollection;
+
 	int m_resolutionIndex;
 
 	std::array<sa::Extent, 6> m_Resolutions {

@@ -77,7 +77,7 @@ namespace sa {
 		Buffer& operator<<(std::array<T, Size>& values);
 
 		operator const Buffer& ();
-
+		
 		template<typename T>
 		T& at(uint32_t index) const;
 

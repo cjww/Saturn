@@ -23,13 +23,23 @@ GameView::GameView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWin
 		m_renderedCamera = false;
 		if (!m_isWindowOpen || !m_isOpen)
 			return;
+		m_sceneCollection.clear();
+		engine.getCurrentScene()->forEach<comp::Transform, comp::Model>([&](const comp::Transform& transform, const comp::Model& model) {
+			sa::ModelAsset* pModel = sa::AssetManager::get().getAsset<sa::ModelAsset>(model.modelID);
+			m_sceneCollection.addObject(transform.getMatrix(), pModel);
+		});
+		engine.getCurrentScene()->forEach<comp::Light>([&](const comp::Light& light) {	
+			m_sceneCollection.addLight(light.values);
+		});
+
+		m_sceneCollection.makeRenderReady();
 
 		engine.getCurrentScene()->forEach<comp::Camera>([&](comp::Camera& camera) {
 			if (camera.isPrimary) {
 				if (camera.camera.getViewport().extent != m_renderTarget.extent) {
 					camera.camera.setViewport({ { 0, 0 }, m_renderTarget.extent });
 				}
-				e.pRenderPipeline->render(&camera.camera, &m_renderTarget);
+				e.pRenderPipeline->render(&camera.camera, &m_renderTarget, m_sceneCollection);
 				m_renderedCamera = true;
 			}
 		});

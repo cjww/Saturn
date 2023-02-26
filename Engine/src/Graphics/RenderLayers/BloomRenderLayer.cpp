@@ -37,7 +37,7 @@ namespace sa {
 		
 	}
 
-	void BloomRenderLayer::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget) {
+	void BloomRenderLayer::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) {
 		SA_PROFILE_FUNCTION();
 
 		DynamicTexture* tex = &pRenderTarget->mainRenderData.colorTexture; //m_renderer.getFramebufferDynamicTexturePtr(pRenderTarget->framebuffer, 0);

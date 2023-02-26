@@ -89,152 +89,14 @@ namespace sa {
 
 		data.sceneDescriptorSet = m_renderer.allocateDescriptorSet(data.colorPipeline, SET_PER_FRAME);
 
-		m_renderer.updateDescriptorSet(data.sceneDepthDescriptorSet, 0, m_objectBuffer);
 
 		m_renderer.updateDescriptorSet(data.lightCullingDescriptorSet, 0, data.depthTexture, m_linearSampler);	// read depth texture
 		m_renderer.updateDescriptorSet(data.lightCullingDescriptorSet, 1, data.lightIndexBuffer);				// write what lights are in what tiles
-		m_renderer.updateDescriptorSet(data.lightCullingDescriptorSet, 2, m_lightBuffer);						// light data
-
-		m_renderer.updateDescriptorSet(data.sceneDescriptorSet, 0, m_objectBuffer);
-		m_renderer.updateDescriptorSet(data.sceneDescriptorSet, 1, m_lightBuffer);
-		m_renderer.updateDescriptorSet(data.sceneDescriptorSet, 2, m_materialBuffer);
-		m_renderer.updateDescriptorSet(data.sceneDescriptorSet, 3, m_materialIndicesBuffer);
-		m_renderer.updateDescriptorSet(data.sceneDescriptorSet, 4, data.lightIndexBuffer);
 		m_renderer.updateDescriptorSet(data.sceneDescriptorSet, 5, m_linearSampler);
 
 	}
 
 	
-	void ForwardPlus::collectMeshes(Scene* pScene) {
-		SA_PROFILE_FUNCTION();
-		
-		// Clear Dynamic buffers
-		m_objectBuffer.clear();
-		m_indirectIndexedBuffer.clear();
-		m_vertexBuffer.clear();
-		m_indexBuffer.clear();
-		m_materialBuffer.clear();
-		m_materialIndicesBuffer.clear();
-
-		// Clear vectors
-		m_models.clear();
-		m_objects.clear();
-		m_textures.clear();
-		m_materials.clear();
-		m_materialData.clear();
-		m_materialIndices.clear();
-
-		uint32_t objectCount = 0;
-		uint32_t vertexCount = 0;
-		uint32_t indexCount = 0;
-		uint32_t uniqueMeshCount = 0;
-
-		pScene->forEach<comp::Transform, comp::Model>([&](const comp::Transform& transform, const comp::Model& model) {
-			ModelAsset* modelAsset = AssetManager::get().getAsset<ModelAsset>(model.modelID);
-			if (!modelAsset || !modelAsset->isLoaded())
-				return;
-			ModelData* pModel = &modelAsset->data;
-
-			ObjectData objectBuffer = {};
-			objectBuffer.worldMat = transform.getMatrix();
-			
-			auto it = std::find(m_models.begin(), m_models.end(), pModel);
-			if (it == m_models.end()) {
-				m_models.push_back(pModel);
-				if (m_objects.size() >= m_models.size()) {
-					m_objects[m_models.size() - 1].clear();
-					m_objects[m_models.size() - 1].push_back(objectBuffer);
-				}
-				else {
-					m_objects.push_back({ objectBuffer });
-				}
-				for (const auto& mesh : pModel->meshes) {
-					vertexCount += mesh.vertices.size();
-					indexCount += mesh.indices.size();
-					uniqueMeshCount++;
-				}
-			}
-			else {
-				m_objects[std::distance(m_models.begin(), it)].push_back(objectBuffer);
-			}
-			objectCount++;
-		});
-		// reserve dynamic buffers
-		m_objectBuffer.reserve(				objectCount * sizeof(ObjectData),						IGNORE_CONTENT);
-		m_indirectIndexedBuffer.reserve(	uniqueMeshCount * sizeof(DrawIndexedIndirectCommand),	IGNORE_CONTENT);
-		m_vertexBuffer.reserve(				vertexCount * sizeof(VertexNormalUV),					IGNORE_CONTENT);
-		m_indexBuffer.reserve(				indexCount * sizeof(uint32_t),							IGNORE_CONTENT);
-		m_materialBuffer.reserve(			uniqueMeshCount * sizeof(Material::Values),				IGNORE_CONTENT);
-		m_materialIndicesBuffer.reserve(	uniqueMeshCount * sizeof(int32_t),						IGNORE_CONTENT);
-
-		uint32_t firstInstance = 0;
-
-		int32_t materialCount = 0;
-		uint32_t meshCount = 0;
-
-		for (size_t i = 0; i < m_models.size(); i++) {
-			for (const auto& objectBuffer : m_objects[i]) {
-				m_objectBuffer << objectBuffer;
-			}
-			ModelData* pModel = m_models[i];
-
-			for (const auto& mesh : pModel->meshes) {
-
-				// Push mesh into buffers
-				uint32_t vertexOffset = m_vertexBuffer.getElementCount<VertexNormalUV>();
-				m_vertexBuffer << mesh.vertices;
-
-				uint32_t firstIndex = m_indexBuffer.getElementCount<uint32_t>();
-				m_indexBuffer << mesh.indices;
-
-				// Create a draw command for this mesh
-				DrawIndexedIndirectCommand cmd = {};
-				cmd.firstIndex = firstIndex;
-				cmd.indexCount = mesh.indices.size();
-				cmd.firstInstance = firstInstance;
-				cmd.instanceCount = m_objects[i].size();
-				cmd.vertexOffset = vertexOffset;
-				m_indirectIndexedBuffer << cmd;
-
-				//Material
-				Material* pMaterial = AssetManager::get().getAsset<Material>(mesh.materialID);
-				if (pMaterial && pMaterial->isLoaded()) {
-					auto it = std::find(m_materials.begin(), m_materials.end(), pMaterial);
-					if (it == m_materials.end()) {
-						uint32_t textureOffset = m_textures.size();
-						const std::vector<Texture>& matTextures = pMaterial->fetchTextures();
-						m_textures.insert(m_textures.end(), matTextures.begin(), matTextures.end());
-					
-						Material::Values values = pMaterial->values;
-						values.diffuseMapFirst = values.diffuseMapFirst + textureOffset;
-						values.emissiveMapFirst = values.emissiveMapFirst + textureOffset;
-						values.lightMapFirst = values.lightMapFirst + textureOffset;
-						values.normalMapFirst = values.normalMapFirst + textureOffset;
-						values.specularMapFirst = values.specularMapFirst + textureOffset;
-						
-						m_materials.push_back(pMaterial);
-						m_materialData.push_back(values);
-						m_materialIndices.push_back(materialCount);
-						materialCount++;
-					}
-					else {
-						m_materialIndices.push_back(std::distance(m_materials.begin(), it));
-					}
-				}
-				else {
-					m_materialIndices.push_back(-1); // Default Material in shader
-				}
-				meshCount++;
-			}
-			firstInstance += m_objects[i].size();
-		}
-		
-		m_materialBuffer.write(m_materialData);
-		m_materialIndicesBuffer.write(m_materialIndices);
-
-		
-	}
-
 	void ForwardPlus::onWindowResize(Extent extent) {
 		
 	}
@@ -248,18 +110,6 @@ namespace sa {
 		// Samplers
 		m_linearSampler = m_renderer.createSampler(FilterMode::LINEAR);
 		m_nearestSampler = m_renderer.createSampler(FilterMode::NEAREST);
-
-		// Create buffers
-		uint32_t lightCount = 0U;
-		m_lightBuffer = m_renderer.createDynamicBuffer(BufferType::STORAGE, sizeof(uint32_t), &lightCount);
-
-		m_indirectIndexedBuffer = m_renderer.createDynamicBuffer(BufferType::INDIRECT);
-		m_vertexBuffer = m_renderer.createDynamicBuffer(BufferType::VERTEX);
-		m_indexBuffer = m_renderer.createDynamicBuffer(BufferType::INDEX);
-		m_objectBuffer = m_renderer.createDynamicBuffer(BufferType::STORAGE);
-
-		m_materialBuffer = m_renderer.createDynamicBuffer(BufferType::STORAGE);
-		m_materialIndicesBuffer = m_renderer.createDynamicBuffer(BufferType::STORAGE);
 
 		
 		//DEBUG
@@ -295,7 +145,7 @@ namespace sa {
 		
 	}
 
-	bool ForwardPlus::prepareRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget) {
+	bool ForwardPlus::prepareRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sc) {
 		if (!pCamera)
 			return false;
 
@@ -308,21 +158,22 @@ namespace sa {
 		}
 
 
-		context.updateDescriptorSet(data.sceneDepthDescriptorSet, 0, m_objectBuffer);
-		context.updateDescriptorSet(data.sceneDescriptorSet, 0, m_objectBuffer);
-		context.updateDescriptorSet(data.sceneDescriptorSet, 1, m_lightBuffer);
-		context.updateDescriptorSet(data.sceneDescriptorSet, 2, m_materialBuffer);
-		context.updateDescriptorSet(data.sceneDescriptorSet, 3, m_materialIndicesBuffer);
+		context.updateDescriptorSet(data.sceneDepthDescriptorSet, 0, sc.getObjectBuffer());
+
+		context.updateDescriptorSet(data.sceneDescriptorSet, 0, sc.getObjectBuffer());
+		context.updateDescriptorSet(data.sceneDescriptorSet, 1, sc.getLightBuffer());
+		context.updateDescriptorSet(data.sceneDescriptorSet, 2, sc.getMaterialBuffer());
+		context.updateDescriptorSet(data.sceneDescriptorSet, 3, sc.getMaterialIndicesBuffer());
 		context.updateDescriptorSet(data.sceneDescriptorSet, 4, data.lightIndexBuffer);
-		context.updateDescriptorSet(data.sceneDescriptorSet, 6, m_textures);
+		context.updateDescriptorSet(data.sceneDescriptorSet, 6, sc.getTextures());
 
 		context.updateDescriptorSet(data.lightCullingDescriptorSet, 1, data.lightIndexBuffer);
-		context.updateDescriptorSet(data.lightCullingDescriptorSet, 2, m_lightBuffer);
+		context.updateDescriptorSet(data.lightCullingDescriptorSet, 2, sc.getLightBuffer());
 
 
 
-		context.bindVertexBuffers(0, { m_vertexBuffer });
-		context.bindIndexBuffer(m_indexBuffer);
+		context.bindVertexBuffers(0, { sc.getVertexBuffer()});
+		context.bindIndexBuffer(sc.getIndexBuffer());
 
 		Matrix4x4 projViewMat = pCamera->getProjectionMatrix() * pCamera->getViewMatrix();
 
@@ -339,9 +190,9 @@ namespace sa {
 		context.bindDescriptorSet(data.sceneDepthDescriptorSet, data.depthPipeline);
 
 
-		if (m_indirectIndexedBuffer.getElementCount<DrawIndexedIndirectCommand>() > 0) {
+		if (sc.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>() > 0) {
 			context.pushConstant(data.depthPipeline, ShaderStageFlagBits::VERTEX, perFrame);
-			context.drawIndexedIndirect(m_indirectIndexedBuffer, 0, m_indirectIndexedBuffer.getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
+			context.drawIndexedIndirect(sc.getDrawCommandBuffer(), 0, sc.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
 		}
 
 		context.endRenderProgram(m_depthPreRenderProgram);
@@ -363,7 +214,7 @@ namespace sa {
 		return true;
 	}
 
-	void ForwardPlus::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget) {
+	void ForwardPlus::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sc) {
 		if (!pCamera)
 			return;
 		RenderTarget::MainRenderData& data = pRenderTarget->mainRenderData;
@@ -381,11 +232,11 @@ namespace sa {
 
 		context.setViewport(pCamera->getViewport());
 
-		if (m_indirectIndexedBuffer.getElementCount<DrawIndexedIndirectCommand>() > 0) {
+		if (sc.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>() > 0) {
 			context.pushConstant(data.colorPipeline, ShaderStageFlagBits::VERTEX | ShaderStageFlagBits::FRAGMENT, perFrame);
 			context.pushConstant(data.colorPipeline, ShaderStageFlagBits::FRAGMENT, data.tileCount.x, sizeof(perFrame));
 
-			context.drawIndexedIndirect(m_indirectIndexedBuffer, 0, m_indirectIndexedBuffer.getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
+			context.drawIndexedIndirect(sc.getDrawCommandBuffer(), 0, sc.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
 		}
 
 		context.endRenderProgram(m_colorRenderProgram);
@@ -404,33 +255,8 @@ namespace sa {
 
 	void ForwardPlus::endRender(RenderContext& context) {
 		
-		m_lightBuffer.swap();
-		m_vertexBuffer.swap();
-		m_indexBuffer.swap();
-		m_indirectIndexedBuffer.swap();
-		m_objectBuffer.swap();
-		m_materialBuffer.swap();
-		m_materialIndicesBuffer.swap();
-	
 	}
 
-	void ForwardPlus::updateLights(Scene* pScene) {
-		SA_PROFILE_FUNCTION();
-		
-		m_lights.clear();
-
-		pScene->forEach<comp::Transform, comp::Light>([](const comp::Transform& transform, comp::Light& light) {
-			light.values.position = glm::vec4(transform.position, light.values.position.w);
-			light.values.direction = glm::vec4(transform.rotation * glm::vec3(0, 0, 1), light.values.direction.w);
-		});
-
-		pScene->forEach<comp::Light>([&](const comp::Light& light) {
-			m_lights.push_back(light.values);
-		});
-		
-		m_lightBuffer.write(static_cast<uint32_t>(m_lights.size()));
-		m_lightBuffer.append(m_lights, 16);
-	}
 
 	const Texture2D& ForwardPlus::getLightHeatmap() const {
 		return m_debugLightHeatmap;

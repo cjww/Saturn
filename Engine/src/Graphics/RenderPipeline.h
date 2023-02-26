@@ -39,7 +39,7 @@ namespace sa {
 		void beginFrameImGUI();
 
 		RenderContext beginScene(Scene* pScene);
-		void render(SceneCamera* pCamera, RenderTarget* pRenderTarget = nullptr);
+		void render(SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection);
 		void endScene();
 
 		IRenderTechnique* getRenderTechnique() const;
