@@ -1,11 +1,11 @@
 #pragma once
-#include "structs.hpp"
-#include "Resources/ResourceManager.hpp"
-#include "Resources/Texture.hpp"
-#include "Resources/Buffer.hpp"
-#include "RenderContext.hpp"
+#include <structs.hpp>
+#include <Resources/ResourceManager.hpp>
+#include <Resources/Texture.hpp>
+#include <Resources/Buffer.hpp>
+#include <RenderContext.hpp>
 
-#include "Tools/Logger.hpp"
+#include <Tools/Logger.hpp>
 
 #include "Assets/TextureAsset.h"
 

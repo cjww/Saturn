@@ -11,6 +11,8 @@
 #include "AssetManager.h"
 #include "Assets\ModelAsset.h"
 
+#include "ImGuiRenderLayer.h"
+
 namespace sa {
 	void EngineEditor::makePopups() {
 		static std::string name;
@@ -326,6 +328,8 @@ namespace sa {
 			m_pEngine->publish<editor_event::DragDropped>(count, paths);
 		});
 
+		m_pEngine->setWindowRenderer(new ImGuiRenderLayer(m_pWindow));
+
 		ImGui::SetupImGuiStyle();
 		engine.on<engine_event::WindowResized>([](const engine_event::WindowResized& e, Engine& engine) {
 			ImGui::SetupImGuiStyle();
@@ -376,6 +380,7 @@ namespace sa {
 			}
 			recentProjectsFile.close();
 		}
+
 	}
 
 	void EngineEditor::onDetach() {

@@ -1,28 +1,22 @@
 #pragma once
 
+#include <filesystem>
+
 #include <glm/vec4.hpp>
 #include <glm/vec2.hpp>
 
-#include <filesystem>
-
-#include <Vertex.h>
-
 #include "Renderer.hpp"
-
 #include "structs.h"
-
-#include "Graphics/Material.h"
-
-#include "taskflow\taskflow.hpp"
 
 #include "ProgressView.h"
 
-#include "ECS\Entity.h"
-#include "ECS/Components.h"
-
 #include "Tools/Profiler.h"
 
+#include <Tools\utils.h>
+
 #include "Assets\IAsset.h"
+#include "Graphics/Material.h"
+#include "Graphics\RenderTarget.h"
 
 
 #define SA_ASSET_DIR "Assets/"
@@ -39,8 +33,7 @@
 namespace sa {
 
 	class ModelAsset;
-	class MaterialAsset;
-
+	
 	class AssetPackage {
 	public:
 		std::filesystem::path path;
@@ -217,9 +210,9 @@ namespace sa {
 	inline T* AssetManager::createAsset(const std::string& name, const std::filesystem::path& assetDirectory) {
 		AssetHeader header; // generates new UUID
 		header.type = getAssetTypeID<T>();
+		assert(header.type != -1 && "Can not use unregistered type!");
 		SA_DEBUG_LOG_INFO("Creating ", getAssetTypeName(header.type), " ", name);
 
-		assert(header.type != -1 && "Can not use unregistered type!");
 
 		m_mutex.lock();
 		auto [it, success] = m_assets.insert({ header.id, std::make_unique<T>(header) });

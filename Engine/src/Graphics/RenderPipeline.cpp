@@ -1,86 +1,50 @@
 #include "pch.h"
 #include "RenderPipeline.h"
-#include "Engine.h"
 
 namespace sa {
 
 	RenderPipeline::RenderPipeline() {
-
+		m_pBloomPass = std::make_unique<BloomRenderLayer>();
+		m_pBloomPass->init();
 	}
 
 	RenderPipeline::~RenderPipeline() {
 		delete m_pRenderTechnique;
-		for (auto& layer : m_layers) {
-			delete layer;
-		}
-		for (auto& layer : m_overlays) {
-			delete layer;
-		}
 	}
 
-	void RenderPipeline::onWindowResize(Extent newExtent) {
-		m_pRenderTechnique->onWindowResize(newExtent);
-		for (auto& layer : m_layers) {
-			layer->onWindowResize(newExtent);
-		}
-
-		for (auto& layer : m_overlays) {
-			layer->onWindowResize(newExtent);
-		}
-	}
-
-	void RenderPipeline::create(RenderWindow* pWindow, IRenderTechnique* pRenderTechnique) {
+	void RenderPipeline::create(IRenderTechnique* pRenderTechnique) {
 		m_pRenderTechnique = pRenderTechnique;
-		m_pWindow = pWindow;
-
 		m_pRenderTechnique->init();
-	}
-
-	void RenderPipeline::pushLayer(IRenderLayer* pLayer) {
-		m_layers.push_back(pLayer);
-		pLayer->init(m_pRenderTechnique);
-	}
-
-	void RenderPipeline::pushOverlay(IRenderLayer* pLayer) {
-		m_overlays.push_back(pLayer);
-		pLayer->init(m_pRenderTechnique);
 	}
 
 	void RenderPipeline::beginFrameImGUI() {
 		Renderer::get().newImGuiFrame();
 	}
 
-	void RenderPipeline::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) {
+	const Texture& RenderPipeline::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) {
 		SA_PROFILE_FUNCTION();
 
-		for (auto& layer : m_layers) {
-			if(layer->isActive())
-				layer->preRender(context, pCamera, pRenderTarget, sceneCollection);
-		}
+		sceneCollection.makeRenderReady();
 
-		for (auto& layer : m_layers) {
-			if(layer->isActive())
-				layer->render(context, pCamera, pRenderTarget, sceneCollection);
-		}
+		Texture tex;
+		m_pRenderTechnique->preRender(context, pCamera, pRenderTarget, sceneCollection);
+		tex = m_pRenderTechnique->render(context, pCamera, pRenderTarget, sceneCollection);
+
+		if(m_pBloomPass->isActive())
+			tex = m_pBloomPass->render(context, pCamera, pRenderTarget, sceneCollection);
 
 		pRenderTarget->swap();
-	}
-
-	const Texture& RenderPipeline::endScene(RenderContext& context) {
-		SA_PROFILE_FUNCTION();
-
-		for (auto& layer : m_layers) {
-			if (layer->isActive())
-				layer->postRender(context);
-		}
-		for (auto& layer : m_overlays) {
-			if (layer->isActive())
-				layer->postRender(context);
-		}
-		return m_pRenderTechnique->drawData.finalTexture;
+		sceneCollection.swap();
+		return tex;
 	}
 
 	IRenderTechnique* RenderPipeline::getRenderTechnique() const {
 		return m_pRenderTechnique;
 	}
+
+	BloomRenderLayer* RenderPipeline::getBloomPass() const {
+		return m_pBloomPass.get();
+	}
+
+
 }

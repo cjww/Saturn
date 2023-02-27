@@ -80,5 +80,7 @@ namespace sa {
 
 		ProjectionMode getProjectionMode() const;
 		void setProjectionMode(ProjectionMode projectionMode);
+
+		
 	};
 }

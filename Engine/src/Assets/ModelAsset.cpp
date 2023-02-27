@@ -10,6 +10,8 @@
 
 #include "TextureAsset.h"
 
+#include "AssetManager.h"
+
 namespace sa {
 	bool searchForFile(const std::filesystem::path& directory, const std::filesystem::path& filename, std::filesystem::path& outPath) {
 		outPath = directory / filename;

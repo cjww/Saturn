@@ -7,6 +7,7 @@
 #include "ProgressView.h"
 
 #include "Core.h"
+
 namespace sa {
 
 	typedef uint32_t AssetTypeID;

@@ -1,7 +1,7 @@
 #pragma once
 
+#include <Resources/Texture.hpp>
 #include "IAsset.h"
-#include "Resources/Texture.hpp"
 
 namespace sa {
 	class TextureAsset : public IAsset {

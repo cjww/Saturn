@@ -2,12 +2,13 @@
 
 #include <Renderer.hpp>
 #include <RenderWindow.hpp>
+#include "Assets\IAsset.h"
 
 namespace sa {
 
 	class Engine;
 
-	class RenderTarget {
+	class RenderTarget : public IAsset {
 	private:
 		Renderer& m_renderer;
 
@@ -63,6 +64,8 @@ namespace sa {
 		DynamicTexture* outputTexture = nullptr;
 
 		RenderTarget();
+		RenderTarget(const AssetHeader& header);
+
 		virtual ~RenderTarget();
 
 		void initialize(Extent extent);
@@ -74,6 +77,11 @@ namespace sa {
 		void swap();
 
 		bool isReady() const;
+
+		virtual bool onLoad(std::ifstream& file, AssetLoadFlags flags) override;
+		virtual bool onWrite(std::ofstream& file, AssetWriteFlags flags) override;
+		virtual bool onUnload() override;
+
 
 	};
 }

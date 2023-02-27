@@ -13,12 +13,12 @@
 
 class SceneView : public EditorModule {
 private:
-	sa::SceneCamera m_camera;
-	sa::RenderWindow* m_pWindow;
-	
 	sa::RenderTarget m_renderTarget;
 	sa::SceneCollection m_sceneCollection;
+	sa::SceneCamera m_camera;
 
+	sa::RenderWindow* m_pWindow;
+	
 	bool m_isFocused;
 	sa::Vector2 m_lastMousePos;
 	float m_mouseSensitivity;

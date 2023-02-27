@@ -1,9 +1,18 @@
 #pragma once
 
+#include <Renderer.hpp>
+#include <structs.hpp>
+#include <Resources\Texture.hpp>
 #include <RenderWindow.hpp>
 
 namespace sa {
-	class WindowRenderer {
+	class IWindowRenderer {
+	public:
+		virtual void render(RenderContext& context, const Texture& texture) = 0;		
+		virtual void onWindowResize(Extent newExtent) = 0;
+	};
+
+	class WindowRenderer : public IWindowRenderer {
 	private:
 		RenderWindow* m_pWindow;
 
@@ -13,12 +22,11 @@ namespace sa {
 		ResourceID m_swapchainDescriptorSet;
 		ResourceID m_sampler;
 
-	public:
-		WindowRenderer();
-		void create(RenderWindow* pTargetWindow);
+	public:		
+		WindowRenderer(RenderWindow* pWindow);
 
-		void onWindowResize(Extent newExtent);
-		void render(RenderContext& context, const Texture& texture);
+		virtual void render(RenderContext& context, const Texture& texture) override;
+		void onWindowResize(Extent newExtent) override;
 
 	};
 

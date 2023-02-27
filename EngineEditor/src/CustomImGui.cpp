@@ -312,7 +312,6 @@ namespace ImGui {
 	}
 
 	void Component(sa::Entity entity, comp::Camera* camera) {
-		ImGui::Checkbox("Is Primary", &camera->isPrimary);
 
 		sa::Rect rect = camera->camera.getViewport();
 		ImGui::Text("Viewport");

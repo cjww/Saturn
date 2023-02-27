@@ -4,14 +4,11 @@
 
 class GameView : public EditorModule {
 private:
-	sa::RenderTarget m_renderTarget;
-
 	int m_mipLevel;
 
 	bool m_renderedCamera;
 	bool m_isWindowOpen;
 
-	sa::SceneCollection m_sceneCollection;
 
 	int m_resolutionIndex;
 

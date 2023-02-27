@@ -3,10 +3,8 @@
 #include "Engine.h"
 namespace sa {
 
-	void BloomRenderLayer::init(IRenderTechnique* pRenderTechnique) {
+	void BloomRenderLayer::init() {
 
-		m_pRenderTechnique = pRenderTechnique;
-		
 		m_bloomPipeline = m_renderer.createComputePipeline((Engine::getShaderDirectory() / "BloomShader.comp.spv").generic_string());
 
 
@@ -33,11 +31,8 @@ namespace sa {
 
 	}
 
-	void BloomRenderLayer::onWindowResize(Extent newExtent) {
-		
-	}
 
-	void BloomRenderLayer::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) {
+	const Texture& BloomRenderLayer::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) {
 		SA_PROFILE_FUNCTION();
 
 		DynamicTexture* tex = &pRenderTarget->mainRenderData.colorTexture; //m_renderer.getFramebufferDynamicTexturePtr(pRenderTarget->framebuffer, 0);
@@ -110,13 +105,9 @@ namespace sa {
 		context.pushConstant(m_bloomPipeline, ShaderStageFlagBits::COMPUTE, 3);
 		context.dispatch(threadX, threadY, 1);
 
-		m_pRenderTechnique->drawData.finalTexture = bd.outputTexture;
 		pRenderTarget->outputTexture = &bd.outputTexture;
-		
-	}
 
-	const Texture2D& BloomRenderLayer::getOutputTexture() const {
-		return {};
+		return bd.outputTexture.getTexture();
 	}
 
 	const BloomPreferences& BloomRenderLayer::getBloomPreferences() const {

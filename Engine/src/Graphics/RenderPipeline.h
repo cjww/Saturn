@@ -1,62 +1,32 @@
 #pragma once
 
 #include "IRenderTechnique.h"
-#include "RenderWindow.hpp"
 #include "IRenderLayer.h"
 #include "Tools/Profiler.h"
+#include "RenderLayers\BloomRenderLayer.h"
 
 namespace sa {
 
 	class RenderPipeline {
 	private:
-		RenderWindow* m_pWindow;
 		IRenderTechnique* m_pRenderTechnique;
 		
-		std::vector<IRenderLayer*> m_layers;
-		std::vector<IRenderLayer*> m_overlays;
+		std::unique_ptr<BloomRenderLayer> m_pBloomPass;
 
-		tf::Executor m_executor;
-		
 	public:
 		RenderPipeline();
 		virtual ~RenderPipeline();
 
-		void onWindowResize(Extent newExtent);
-
-		void create(RenderWindow* pWindow, IRenderTechnique* pRenderTechnique);
+		void create(IRenderTechnique* pRenderTechnique);
 		
-		void pushLayer(IRenderLayer* pLayer);
-		void pushOverlay(IRenderLayer* pLayer);
-
 		void beginFrameImGUI();
-
 		
-		void render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection);
-		const Texture& endScene(RenderContext& context);
+		const Texture& render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection);
 
 		IRenderTechnique* getRenderTechnique() const;
 
-		template<typename T>
-		T* getLayer() const;
+		BloomRenderLayer* getBloomPass() const;
 
 	};
-
-	template<typename T>
-	inline T* RenderPipeline::getLayer() const {
-		for (auto layer : m_layers) {
-			T* l = dynamic_cast<T*>(layer);
-			if (l)
-				return l;
-		}
-
-		for (auto layer : m_overlays) {
-			T* l = dynamic_cast<T*>(layer);
-			if (l)
-				return l;
-		}
-
-		return nullptr;
-	}
-
 
 }

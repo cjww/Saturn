@@ -221,8 +221,7 @@ namespace sa {
 	}
 
 	void Engine::onWindowResize(Extent newExtent) {
-		m_renderPipeline.onWindowResize(newExtent);
-		m_windowRenderer.onWindowResize(newExtent);
+		m_pWindowRenderer->onWindowResize(newExtent);
 
 		publish<sa::engine_event::WindowResized>(m_windowExtent, newExtent);
 		m_windowExtent = newExtent;
@@ -249,19 +248,13 @@ namespace sa {
 		Entity::reg();
 		
 		if (pWindow) {
-			m_renderPipeline.create(pWindow, new ForwardPlus);
+			m_renderPipeline.create(new ForwardPlus);
 
-			m_renderPipeline.pushLayer(new MainRenderLayer);
-			m_renderPipeline.pushLayer(new BloomRenderLayer);
-			if (enableImgui) {
-				m_renderPipeline.pushOverlay(new ImGuiRenderLayer(m_pWindow));
-			}
-			
-			m_windowRenderer.create(pWindow);
+			setWindowRenderer(new WindowRenderer(m_pWindow));
 
 			pWindow->setResizeCallback(std::bind(&Engine::onWindowResize, this, std::placeholders::_1));
 			m_windowExtent = pWindow->getCurrentExtent();
-
+			m_mainRenderTarget.initialize(this, m_pWindow);
 		}
 		
 		on<engine_event::SceneSet>([](engine_event::SceneSet& e, Engine&) {
@@ -270,77 +263,11 @@ namespace sa {
 			}
 			e.newScene->onRuntimeStart();
 		});
-		
-		/*
-		// Initialization
-		RenderPipelineSettings settings = {};
-		settings.isBloomEnabled  = true;
-		RenderPipeline rp;
-		rp.create(settings);
-
-		// main
-		ObjectCollection mainObjectCollection;
-		// material preview
-		ObjectCollection materialPreviewOC;
-		materialPreviewOC.addObject(previewSphere);
-
-		WindowRenderer wr(window);
-		
-		RenderTarget* mainRenderTarget= rp.createRenderTarget(extent);
-		RenderTarget* previewRenderTarget = rp.createRenderTarget(extent);
-
-		ImGuiRenderer imGuiRenderer;
-
-		DynamicTexture* sceneViewTexture;
-		DynamicTexture* previewTexture;
-		// in loop
-		mainObjectCollection.clear();
-		m_currentScene->forEach<comp::Transform, comp::Model>([](comp::Transform& transform, comp::Model& model) {
-			ModelAsset* pAsset = sa::AssetManager::get().getAsset<ModelAsset>(model.modelID);
-			if (pAsset)
-				mainObjectCollection.addObject(pAsset, transform.getMatrix());
-		});
-		m_currentScene->forEach<comp::Light>([](comp::Light& light) {
-			mainObjectCollection.addLight(light.values);
-		});
-
-		//record imgui
-		if (sceneViewTexture.isValid())
-			ImGui::Image(sceneViewTexture);
-		if (previewTexture.isValid())
-			ImGui::Image(previewTexture);
-
-		RenderContext context = window.beginFrame();
-
-		sceneViewTexture = rp.render(context, mainRenderTarget, mainObjectCollection);
-		previewTexture = rp.render(context, previewRenderTarget, materialPreviewOC);
-		{
-			oc.makeRenderReady(context)
-
-			if(m_isShadowEnabled) {
-				m_shadowPass.render(context, renderTarget.shadowData)
-				m_forwardPlusRenderer.bindShadowMaps(context, renderTarget.shadwowData)
-			}
-			m_forwardPlusRenderer.render(context, oc, renderTarget.forwardPlusData)
-			DynamicTexture* outputTexture = renderTarget.forwardPlusData.colorTexture
-			if(m_isBloomEnabled) {
-				outputTexture = m_bloomPass.render(m_outputTexture, renderTarget.bloomData)
-				
-			}
-
-			return outputTexture;
-		}
-		
-		DynamicTexture imguiTex = imGuiRenderer.render(context);
-		
-		wr.render(context, imguiTex);
-		window.display();
-		*/
-
-		
 	}
 
 	void Engine::cleanup() {
+		if (m_pWindowRenderer)
+			delete m_pWindowRenderer;
 		AssetManager::get().clear();
 	}
 
@@ -358,12 +285,28 @@ namespace sa {
 		RenderContext context = m_pWindow->beginFrame();
 		if (!context)
 			return;
+		
+		if (m_currentScene) {
+			
+			m_currentScene->forEach<comp::Camera>([&](comp::Camera& camera) {
+				RenderTarget* pRenderTarget = camera.getRenderTarget();
+				if (pRenderTarget) {
+					m_renderPipeline.render(context, &camera.camera, pRenderTarget, camera.getSceneCollection());
+				}
+				else {
+					m_renderPipeline.render(context, &camera.camera, &m_mainRenderTarget, camera.getSceneCollection());
+				}
+				camera.getSceneCollection().swap();
+			});
+			
+		}
+		publish<engine_event::OnRender>(&context, &m_renderPipeline);
 
-		if(m_currentScene)
-			publish<engine_event::OnRender>(&context, &m_renderPipeline);
-
-		const Texture& tex = m_renderPipeline.endScene(context);
-		m_windowRenderer.render(context, tex);
+		Texture finalTexture = *AssetManager::get().loadDefaultBlackTexture();
+		if (m_mainRenderTarget.outputTexture) {
+			finalTexture = m_mainRenderTarget.outputTexture->getTexture();
+		}
+		m_pWindowRenderer->render(context, finalTexture);
 		{
 			SA_PROFILE_SCOPE("Display");
 			m_pWindow->display();
@@ -376,6 +319,16 @@ namespace sa {
 	
 	const RenderPipeline& Engine::getRenderPipeline() const {
 		return m_renderPipeline;
+	}
+
+	const RenderTarget& Engine::getMainRenderTarget() const {
+		return m_mainRenderTarget;
+	}
+
+	void Engine::setWindowRenderer(IWindowRenderer* pWindowRenderer) {
+		if (m_pWindowRenderer)
+			delete m_pWindowRenderer;
+		m_pWindowRenderer = pWindowRenderer;
 	}
 
 	Scene* Engine::getCurrentScene() const {

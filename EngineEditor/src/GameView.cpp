@@ -11,7 +11,7 @@ GameView::GameView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWin
 	
 	m_resolutionIndex = 0;
 
-	m_renderTarget.initialize(m_Resolutions[0]);
+	//m_renderTarget.initialize(m_Resolutions[0]);
 	
 
 	m_isWindowOpen = false;
@@ -23,28 +23,22 @@ GameView::GameView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWin
 		m_renderedCamera = false;
 		if (!m_isWindowOpen || !m_isOpen)
 			return;
+		/*
 		m_sceneCollection.clear();
-		engine.getCurrentScene()->forEach<comp::Transform, comp::Model>([&](const comp::Transform& transform, const comp::Model& model) {
-			sa::ModelAsset* pModel = sa::AssetManager::get().getAsset<sa::ModelAsset>(model.modelID);
-			m_sceneCollection.addObject(transform.getMatrix(), pModel);
-		});
-		engine.getCurrentScene()->forEach<comp::Light>([&](const comp::Light& light) {	
-			m_sceneCollection.addLight(light.values);
-		});
-
+		m_sceneCollection.collect(engine.getCurrentScene());
 		m_sceneCollection.makeRenderReady();
 
 		engine.getCurrentScene()->forEach<comp::Camera>([&](comp::Camera& camera) {
-			if (camera.isPrimary) {
-				if (camera.camera.getViewport().extent != m_renderTarget.extent) {
-					camera.camera.setViewport({ { 0, 0 }, m_renderTarget.extent });
-				}
-				e.pRenderPipeline->render(*e.pContext, &camera.camera, &m_renderTarget, m_sceneCollection);
-				m_renderedCamera = true;
+			if (camera.camera.getViewport().extent != m_renderTarget.extent) {
+				camera.camera.setViewport({ { 0, 0 }, m_renderTarget.extent });
 			}
+			e.pRenderPipeline->render(*e.pContext, &camera.camera, &m_renderTarget, m_sceneCollection);
 		});
 		m_sceneCollection.swap();
+		*/
+			m_renderedCamera = true;
 		
+
 	});
 }
 
@@ -65,7 +59,7 @@ void GameView::onImGui() {
 					s = std::to_string(m_Resolutions[i].width) + "x" + std::to_string(m_Resolutions[i].height);
 					if (ImGui::RadioButton(s.c_str(), &m_resolutionIndex, i)) {
 						SA_DEBUG_LOG_INFO("Changed game resolution: ", m_Resolutions[i].width, "x", m_Resolutions[i].height);
-						m_renderTarget.resize(m_Resolutions[i]);
+						//m_renderTarget.resize(m_Resolutions[i]);
 					}
 				}
 				
@@ -75,9 +69,9 @@ void GameView::onImGui() {
 			ImGui::EndMenuBar();
 		}
 
-		if (m_renderedCamera && m_renderTarget.outputTexture && m_renderTarget.mainRenderData.isInitialized && m_renderTarget.outputTexture->isValid()) {
+		if (m_renderedCamera && m_pEngine->getMainRenderTarget().isReady()) {
 			// render outputTexture with constant aspect ratio
-			sa::Extent extent = m_renderTarget.extent;
+			sa::Extent extent = m_pEngine->getMainRenderTarget().extent;
 			float aspect = (float)extent.height / extent.width;
 			
 			ImVec2 imAvailSize = ImGui::GetContentRegionAvail();
@@ -94,7 +88,7 @@ void GameView::onImGui() {
 			pos -= imageSize * 0.5f;
 			
 			ImGui::SetCursorPos({ pos.x, pos.y });
-			ImGui::Image((sa::Texture)*m_renderTarget.outputTexture, { imageSize.x, imageSize.y });
+			ImGui::Image((sa::Texture)*m_pEngine->getMainRenderTarget().outputTexture, {imageSize.x, imageSize.y});
 			
 		}
 	}

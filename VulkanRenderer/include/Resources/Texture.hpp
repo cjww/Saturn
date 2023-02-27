@@ -4,6 +4,7 @@
 #include "Image.hpp"
 #include "FormatFlags.hpp"
 #include "Format.hpp"
+#include "ResourceManager.hpp"
 
 namespace vk {
 	class ImageView;

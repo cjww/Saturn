@@ -132,12 +132,18 @@ namespace sa {
 		}
 	}
 
-
-	RenderTarget::RenderTarget()
-		: m_renderer(Renderer::get())
+	RenderTarget::RenderTarget(const AssetHeader& header) 
+		: IAsset(header)
+		, m_renderer(Renderer::get())
 	{
 
 	}
+
+	RenderTarget::RenderTarget() 
+		: RenderTarget(AssetHeader{})
+	{
+	}
+
 
 	RenderTarget::~RenderTarget() {
 		destroy();
@@ -190,6 +196,18 @@ namespace sa {
 			outputTexture != nullptr &&
 			outputTexture->isValid() &&
 			mainRenderData.isInitialized;
+	}
+
+	bool RenderTarget::onLoad(std::ifstream& file, AssetLoadFlags flags) {
+		return true;
+	}
+	
+	bool RenderTarget::onWrite(std::ofstream& file, AssetWriteFlags flags) {
+		return true;
+	}
+
+	bool RenderTarget::onUnload() {
+		return true;
 	}
 
 }

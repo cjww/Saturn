@@ -2,12 +2,13 @@
 
 #include "Material.h"
 #include "Assets/ModelAsset.h"
-
-
+#include "ECS\Components\Light.h"
 
 namespace sa {
+	class Scene;
+
 	struct alignas(16) ObjectData {
-		Matrix4x4 worldMat;
+		glm::mat4 worldMat;
 	};
 	
 	class SceneCollection {
@@ -41,6 +42,8 @@ namespace sa {
 		SceneCollection();
 
 		void clear();
+
+		void collect(Scene* pScene);
 
 		void addObject(glm::mat4 transformation, ModelAsset* pModel);
 		void addLight(const LightData& light);

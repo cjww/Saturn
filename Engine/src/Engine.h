@@ -1,10 +1,9 @@
 #pragma once
 
 #include "Graphics/RenderPipeline.h"
+#include "Graphics/WindowRenderer.h"
+
 #include "Graphics/RenderTechniques/ForwardPlus.h"
-#include "Graphics/RenderLayers/ImGuiRenderLayer.h"
-#include "Graphics/RenderLayers/MainRenderLayer.h"
-#include "Graphics/RenderLayers/BloomRenderLayer.h"
 
 #include "AssetManager.h"
 #include "Scene.h"
@@ -18,7 +17,6 @@
 
 #include <RenderWindow.hpp>
 
-#include "Graphics/WindowRenderer.h"
 
 namespace sa {
 
@@ -28,8 +26,10 @@ namespace sa {
 		static std::filesystem::path s_shaderDirectory;
 		
 		RenderPipeline m_renderPipeline;
-		WindowRenderer m_windowRenderer;
+		IWindowRenderer* m_pWindowRenderer;
 
+		RenderTarget m_mainRenderTarget;
+		
 		Extent m_windowExtent;
 		RenderWindow* m_pWindow;
 
@@ -63,6 +63,10 @@ namespace sa {
 		std::chrono::duration<double, std::milli> getCPUFrameTime() const;
 
 		const RenderPipeline& getRenderPipeline() const;
+
+		const RenderTarget& getMainRenderTarget() const;
+
+		void setWindowRenderer(IWindowRenderer* pWindowRenderer);
 
 		Scene* getCurrentScene() const;
 

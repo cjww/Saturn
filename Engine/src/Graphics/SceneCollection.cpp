@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "SceneCollection.h"
 
+#include "Scene.h"
+
 namespace sa {
 	SceneCollection::SceneCollection() {
 		m_objectCount = 0;
@@ -36,6 +38,17 @@ namespace sa {
 		m_vertexCount = 0;
 		m_indexCount = 0;
 		m_uniqueMeshCount = 0;
+	}
+
+	void SceneCollection::collect(Scene* pScene) {
+		pScene->forEach<comp::Transform, comp::Model>([&](const comp::Transform& transform, const comp::Model& model) {
+			sa::ModelAsset* pModel = sa::AssetManager::get().getAsset<sa::ModelAsset>(model.modelID);
+			if(pModel)
+				addObject(transform.getMatrix(), pModel);
+		});
+		pScene->forEach<comp::Light>([&](const comp::Light& light) {
+			addLight(light.values);
+		});
 	}
 
 	void SceneCollection::addObject(glm::mat4 transformation, ModelAsset* pModelAsset) {

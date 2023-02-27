@@ -4,29 +4,22 @@
 #include "Engine.h"
 
 namespace sa {
-
-	WindowRenderer::WindowRenderer()
-		: m_pWindow(nullptr)
+	
+	WindowRenderer::WindowRenderer(RenderWindow* pWindow)
+		: m_pWindow(pWindow)
 		, m_swapchainFramebuffer(NULL_RESOURCE)
 		, m_swapchainPipeline(NULL_RESOURCE)
 		, m_swapchainRenderProgram(NULL_RESOURCE)
 		, m_swapchainDescriptorSet(NULL_RESOURCE)
 		, m_sampler(NULL_RESOURCE)
 	{
-	}
-
-	void WindowRenderer::create(RenderWindow* pTargetWindow) {
-		m_pWindow = pTargetWindow;
 		onWindowResize(m_pWindow->getCurrentExtent());
 		m_sampler = sa::Renderer::get().createSampler(FilterMode::LINEAR);
 	}
 
-
 	void WindowRenderer::onWindowResize(Extent extent) {
-		assert(m_pWindow != nullptr && "Create was not called");
-
 		auto& renderer = Renderer::get();
-		if(m_swapchainDescriptorSet != NULL_RESOURCE)
+		if (m_swapchainDescriptorSet != NULL_RESOURCE)
 			renderer.freeDescriptorSet(m_swapchainDescriptorSet);
 		if (m_swapchainPipeline != NULL_RESOURCE)
 			renderer.destroyPipeline(m_swapchainPipeline);
@@ -54,7 +47,8 @@ namespace sa {
 
 	void WindowRenderer::render(RenderContext& context, const Texture& texture) {
 		SA_PROFILE_FUNCTION();
-		
+		assert(texture.isValid() && "Texture must be valid");
+
 		// render texture to swapchain
 		context.updateDescriptorSet(m_swapchainDescriptorSet, 0, texture, m_sampler);
 		context.beginRenderProgram(m_swapchainRenderProgram, m_swapchainFramebuffer, SubpassContents::DIRECT);
@@ -62,6 +56,5 @@ namespace sa {
 		context.bindDescriptorSet(m_swapchainDescriptorSet, m_swapchainPipeline);
 		context.draw(6, 1);
 		context.endRenderProgram(m_swapchainRenderProgram);
-		
 	}
 }

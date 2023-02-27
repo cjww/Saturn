@@ -388,6 +388,7 @@ namespace sa {
 		registerAssetType<Material>();
 		registerAssetType<TextureAsset>();
 		registerAssetType<Scene>();
+		registerAssetType<RenderTarget>();
 	}
 
 	AssetManager::~AssetManager() {

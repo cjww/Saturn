@@ -54,6 +54,15 @@ namespace sa {
 			glm::vec3 forward = transform.rotation * glm::vec3(0, 0, 1);
 			camera.camera.lookAt(transform.position + forward);
 		});
+
+		m_reg.view<comp::Camera>().each([this](comp::Camera& camera) {
+			if (camera.autoCollectScene) {
+				camera.getSceneCollection().clear();
+				camera.getSceneCollection().collect(this);
+			}
+		});
+
+
 	}
 
 	void Scene::updateLightPositions() {

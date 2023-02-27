@@ -2,19 +2,21 @@
 #include "ECS\ComponentBase.h"
 
 #include "SceneCamera.h"
+//#include "Graphics\RenderTarget.h"
+#include "Graphics\SceneCollection.h"
 
 namespace sa {
-	struct RenderTarget;
+	class RenderTarget;
 }
+
 namespace comp {
 	class Camera : public sa::ComponentBase {
+	private:
+		sa::RenderTarget* m_pRenderTarget = nullptr;
+		sa::SceneCollection m_sceneCollection;
 	public:
 		sa::SceneCamera camera;
-		sa::RenderTarget* pRenderTarget;
-
-		bool isPrimary = false;
-
-		void* windowCallbackConnection;
+		bool autoCollectScene = true;
 
 		Camera() = default;
 
@@ -22,13 +24,16 @@ namespace comp {
 		Camera& operator=(const Camera& other) = default;
 		Camera& operator=(Camera&&) = default;
 
-		void setRenderTarget(sa::RenderTarget* pRenderTarget);
-
 		virtual void serialize(sa::Serializer& s) override;
 		virtual void deserialize(void* pDoc) override;
 
 		virtual void onConstruct(sa::Entity* entity) override;
 		virtual void onDestroy(sa::Entity* entity) override;
+
+		sa::RenderTarget* getRenderTarget() const;
+		void setRenderTarget(sa::RenderTarget* pRenderTarget);
+
+		sa::SceneCollection& getSceneCollection();
 
 	};
 }

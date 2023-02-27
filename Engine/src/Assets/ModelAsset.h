@@ -1,7 +1,7 @@
 #pragma once
 
 #include "IAsset.h"
-#include "AssetManager.h"
+#include "Vertex.h"
 
 namespace sa {
 

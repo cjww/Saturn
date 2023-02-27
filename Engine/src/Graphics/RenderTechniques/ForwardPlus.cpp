@@ -96,9 +96,10 @@ namespace sa {
 
 	}
 
-	
-	void ForwardPlus::onWindowResize(Extent extent) {
-		
+	ForwardPlus::ForwardPlus() 
+		: m_renderer(sa::Renderer::get())
+	{
+
 	}
 
 	void ForwardPlus::init() {
@@ -141,20 +142,16 @@ namespace sa {
 	
 	}
 
-	void ForwardPlus::updateData(RenderContext& context) {
-		
-	}
-
-	bool ForwardPlus::prepareRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sc) {
+	bool ForwardPlus::preRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sc) {
 		if (!pCamera)
 			return false;
 
 		RenderTarget::MainRenderData& data = pRenderTarget->mainRenderData;
-		
+
 		if (!data.isInitialized) {
 			pRenderTarget->cleanupMainRenderData();
 			initializeMainRenderData(data, pRenderTarget->extent);
-			data.isInitialized = true;			
+			data.isInitialized = true;
 		}
 
 
@@ -172,7 +169,7 @@ namespace sa {
 
 
 
-		context.bindVertexBuffers(0, { sc.getVertexBuffer()});
+		context.bindVertexBuffers(0, { sc.getVertexBuffer() });
 		context.bindIndexBuffer(sc.getIndexBuffer());
 
 		Matrix4x4 projViewMat = pCamera->getProjectionMatrix() * pCamera->getViewMatrix();
@@ -184,7 +181,7 @@ namespace sa {
 		// Depth prepass
 		context.beginRenderProgram(m_depthPreRenderProgram, data.depthFramebuffer, SubpassContents::DIRECT);
 		context.bindPipeline(data.depthPipeline);
-		
+
 		context.setViewport(pCamera->getViewport());
 
 		context.bindDescriptorSet(data.sceneDepthDescriptorSet, data.depthPipeline);
@@ -209,14 +206,13 @@ namespace sa {
 
 		//context.barrierColorCompute(m_lightBuffer);
 		// TODO generate shadowMaps
-
-
 		return true;
 	}
 
-	void ForwardPlus::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sc) {
+
+	const Texture& ForwardPlus::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sc) {
 		if (!pCamera)
-			return;
+			return {};
 		RenderTarget::MainRenderData& data = pRenderTarget->mainRenderData;
 
 		Matrix4x4 projViewMat = pCamera->getProjectionMatrix() * pCamera->getViewMatrix();
@@ -224,6 +220,7 @@ namespace sa {
 		PerFrameBuffer perFrame;
 		perFrame.projViewMatrix = projViewMat;
 		perFrame.viewPos = pCamera->getPosition();
+
 
 		// Main color pass
 		context.beginRenderProgram(m_colorRenderProgram, data.colorFramebuffer, SubpassContents::DIRECT);
@@ -250,7 +247,7 @@ namespace sa {
 		context.draw(6, 1);
 		context.endRenderProgram(m_debugLightHeatmapRenderProgram);
 		*/
-
+		return data.colorTexture.getTexture();
 	}
 
 	const Texture2D& ForwardPlus::getLightHeatmap() const {

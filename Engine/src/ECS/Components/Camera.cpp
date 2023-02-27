@@ -2,23 +2,18 @@
 #include "Camera.h"
 
 #include "Application.h"
+#include "Graphics\RenderTarget.h"
 
 
 namespace comp {
 
-	void Camera::setRenderTarget(sa::RenderTarget* pRenderTarget) {
-		this->pRenderTarget = pRenderTarget;
-		isPrimary = false;
-	}
-
 	void Camera::serialize(sa::Serializer& s) {
-		s.value("isPrimary", isPrimary);
+
 	}
 
 	void Camera::deserialize(void* pDoc) {
 		using namespace simdjson::ondemand;
 		object& obj = *(object*)pDoc;
-		isPrimary = obj["isPrimary"];
 	}
 
 	void Camera::onConstruct(sa::Entity* entity) {
@@ -32,6 +27,16 @@ namespace comp {
 
 	}
 
+	sa::RenderTarget* Camera::getRenderTarget() const {
+		return m_pRenderTarget;
+	}
 
+	void Camera::setRenderTarget(sa::RenderTarget* pRenderTarget) {
+		m_pRenderTarget = pRenderTarget;
+	}
+
+	sa::SceneCollection& Camera::getSceneCollection() {
+		return m_sceneCollection;
+	}
 
 }

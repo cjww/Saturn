@@ -1,5 +1,5 @@
 #pragma once
-#include "Graphics/IRenderTechnique.h"
+#include "Graphics\IRenderTechnique.h"
 
 #include "Assets/ModelAsset.h"
 
@@ -16,7 +16,7 @@ namespace sa {
 
 	class ForwardPlus : public IRenderTechnique {
 	private:
-
+		Renderer& m_renderer;
 
 		ResourceID m_colorRenderProgram = NULL_RESOURCE;
 		
@@ -39,17 +39,16 @@ namespace sa {
 		void initializeMainRenderData(RenderTarget::MainRenderData& data, Extent extent);
 		
 	public:
-		using IRenderTechnique::IRenderTechnique;
 
-		virtual void onWindowResize(Extent extent) override;
+
+		ForwardPlus();
 
 		virtual void init() override;
 		virtual void cleanup() override;
 
-		virtual void updateData(RenderContext& context) override;
-		virtual bool prepareRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) override;
-		virtual void render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) override;
-		
+		virtual bool preRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) override;
+		virtual const Texture& render(RenderContext& context, SceneCamera* pCamera, RenderTarget* rendertarget, SceneCollection& sceneCollection) override;
+
 		const Texture2D& getLightHeatmap() const;
 		void setShowHeatmap(bool value);
 

@@ -29,8 +29,6 @@ namespace sa {
 		BloomPreferences m_bloomPreferences = {};
 		ResourceID m_bloomPreferencesDescriptorSet;
 		
-		IRenderTechnique* m_pRenderTechnique;
-
 		ResourceID m_sampler;
 
 		Extent m_threadCountStack[7];
@@ -39,15 +37,12 @@ namespace sa {
 		bool m_wasResized;
 		
 	public:
-		virtual void init(IRenderTechnique* pRenderTechnique = nullptr) override;
+		virtual void init() override;
 	
 		virtual void cleanup() override;
-		virtual void onWindowResize(Extent newExtent) override;
-
-		virtual void render(RenderContext& context, SceneCamera* pCamera, RenderTarget* rendertarget, SceneCollection& sceneCollection) override;
 		
-		virtual const Texture2D& getOutputTexture() const override;
-
+		virtual const Texture& render(RenderContext& context, SceneCamera* pCamera, RenderTarget* rendertarget, SceneCollection& sceneCollection) override;
+		
 		const BloomPreferences& getBloomPreferences() const;
 		void setBloomPreferences(const BloomPreferences& bloomPreferences);
 
