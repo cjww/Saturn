@@ -288,13 +288,16 @@ namespace sa {
 		
 		if (m_currentScene) {
 			
+			bool renderedToMainRenderTarget = false;
 			m_currentScene->forEach<comp::Camera>([&](comp::Camera& camera) {
 				RenderTarget* pRenderTarget = camera.getRenderTarget();
 				if (pRenderTarget) {
 					m_renderPipeline.render(context, &camera.camera, pRenderTarget, camera.getSceneCollection());
 				}
 				else {
-					m_renderPipeline.render(context, &camera.camera, &m_mainRenderTarget, camera.getSceneCollection());
+					if(!renderedToMainRenderTarget)
+						m_renderPipeline.render(context, &camera.camera, &m_mainRenderTarget, camera.getSceneCollection());
+					renderedToMainRenderTarget = true;
 				}
 			});
 			
