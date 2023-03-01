@@ -311,7 +311,11 @@ namespace sa {
 	}
 
 	IAsset* AssetManager::findAssetByPath(const std::filesystem::path& path) const {
+		if (!std::filesystem::exists(path))
+			return nullptr;
 		for (auto& [id, asset] : m_assets) {
+			if (!std::filesystem::exists(asset->getAssetPath()))
+				continue;
 			if (std::filesystem::equivalent(asset->getAssetPath(), path))
 				return asset.get();
 		}

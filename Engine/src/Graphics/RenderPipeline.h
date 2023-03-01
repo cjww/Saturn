@@ -21,7 +21,7 @@ namespace sa {
 		
 		void beginFrameImGUI();
 		
-		const Texture& render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection);
+		void render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection);
 
 		IRenderTechnique* getRenderTechnique() const;
 

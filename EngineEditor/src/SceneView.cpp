@@ -231,20 +231,15 @@ void SceneView::onImGui() {
 		// render outputTexture with variable aspect ratio
 		ImVec2 imAvailSize = ImGui::GetContentRegionAvail();
 		glm::vec2 availSize(imAvailSize.x, imAvailSize.y);
-		
-		if (availSize != m_displayedSize) {
-			camera.setAspectRatio(availSize.x / availSize.y);
-		}
 
 		if (availSize != m_displayedSize && !ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
 			if (availSize.x >= 1.f && availSize.y >= 1.f) {
-				camera.setViewport({ { 0, 0 }, { (uint32_t)availSize.x, (uint32_t)availSize.y } });
 				m_renderTarget.resize({ (uint32_t)availSize.x, (uint32_t)availSize.y });
 				m_displayedSize = availSize;
 			}
 		}
 		else if (m_renderTarget.isReady()) {
-			ImGui::Image((sa::Texture)*m_renderTarget.outputTexture, imAvailSize);
+			ImGui::Image(m_renderTarget.getOutputTexture(), imAvailSize);
 		}
 		ImVec2 imageMin = ImGui::GetItemRectMin();
 		ImVec2 imageSize = ImGui::GetItemRectSize();
@@ -307,7 +302,7 @@ void SceneView::onImGui() {
 			
 			tex = sa::AssetManager::get().loadTexture(m_pEditor->MakeEditorRelative("resources/camera-transparent.png"), true);
 			m_pEngine->getCurrentScene()->forEach<comp::Camera>([&](const comp::Camera& camera) {
-				ImGui::GizmoIcon(tex, m_camera.getPosition(), &m_camera, screenPos, screenSize, iconSize, ImColor(1.f, 1.f, 1.f, 1.f));
+				ImGui::GizmoIcon(tex, camera.camera.getPosition(), &m_camera, screenPos, screenSize, iconSize, ImColor(1.f, 1.f, 1.f, 1.f));
 			});
 		}
 
@@ -465,7 +460,7 @@ void SceneView::onImGui() {
 		if (showStats) {
 			ImGui::SetCursorPosY(ImGui::GetCursorStartPos().y);
 			ImGui::Indent(ImGui::GetWindowWidth() - 400);
-			ImGui::Text("Camera Pos: %f.2, %f.2, %f.2", camera.getPosition().x, camera.getPosition().y, camera.getPosition().z);
+			ImGui::Text("Camera Pos: %.2f, %.2f, %.2f", camera.getPosition().x, camera.getPosition().y, camera.getPosition().z);
 
 			ImGui::Text("Entity Count: %llu", m_pEngine->getCurrentScene()->getEntityCount());
 

@@ -296,27 +296,18 @@ namespace sa {
 				else {
 					m_renderPipeline.render(context, &camera.camera, &m_mainRenderTarget, camera.getSceneCollection());
 				}
-				camera.getSceneCollection().swap();
 			});
 			
 		}
 		publish<engine_event::OnRender>(&context, &m_renderPipeline);
 
-		Texture finalTexture = *AssetManager::get().loadDefaultBlackTexture();
-		if (m_mainRenderTarget.outputTexture) {
-			finalTexture = m_mainRenderTarget.outputTexture->getTexture();
-		}
-		m_pWindowRenderer->render(context, finalTexture);
+		m_pWindowRenderer->render(context, m_mainRenderTarget.getOutputTexture());
 		{
 			SA_PROFILE_SCOPE("Display");
 			m_pWindow->display();
 		}
 	}
 
-	std::chrono::duration<double, std::milli> Engine::getCPUFrameTime() const {
-		return m_frameTime.cpu;
-	}
-	
 	const RenderPipeline& Engine::getRenderPipeline() const {
 		return m_renderPipeline;
 	}

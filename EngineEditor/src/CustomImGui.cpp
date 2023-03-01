@@ -313,16 +313,14 @@ namespace ImGui {
 
 	void Component(sa::Entity entity, comp::Camera* camera) {
 
-		sa::Rect rect = camera->camera.getViewport();
+		sa::Rectf rect = camera->camera.getViewport();
 		ImGui::Text("Viewport");
 		ImGui::Indent();
-		if (ImGui::DragInt2("Offset##Camera", (int32_t*)&rect.offset)) {
+		if (ImGui::SliderFloat2("Offset##Camera", (float*)&rect.offset, 0.0f, 1.0f)) {
 			camera->camera.setViewport(rect);
 		}
 
-		glm::ivec2 extent(rect.extent.width, rect.extent.height);
-		if (ImGui::DragInt2("Extent##Camera", (int32_t*)&extent)) {
-			rect.extent = { (uint32_t)extent.x, (uint32_t)extent.y };
+		if (ImGui::SliderFloat2("Extent##Camera", (float*)&rect.extent, 0.0f, 1.0f)) {
 			camera->camera.setViewport(rect);
 		}
 		ImGui::Unindent();
@@ -370,6 +368,12 @@ namespace ImGui {
 		float far = camera->camera.getFar();
 		if (ImGui::DragFloat("Far", &far, 10.f, 1.0f)) {
 			camera->camera.setFar(far);
+		}
+
+		sa::IAsset* renderTarget = camera->getRenderTarget();
+		if (AssetSlot("RenderTarget", renderTarget, sa::AssetManager::get().getAssetTypeID<sa::RenderTarget>())) {
+			if (renderTarget)
+				camera->setRenderTarget(static_cast<sa::RenderTarget*>(renderTarget));
 		}
 
 	}
@@ -434,6 +438,25 @@ namespace ImGui {
 			};
 			return info;
 		}
+		else if (type == am.getAssetTypeID<sa::Scene>()) {
+			static AssetEditorInfo info{
+				.inCreateMenu = true,
+				.icon = LoadEditorIcon("resources/file-white.png"),
+				.imGuiPropertiesFn = [](sa::IAsset* pAsset) { 
+					return false;
+				}
+			};
+			return info;
+		}
+		else if (type == am.getAssetTypeID<sa::RenderTarget>()) {
+			static AssetEditorInfo info{
+				.inCreateMenu = true,
+				.icon = LoadEditorIcon("resources/image.png"),
+				.imGuiPropertiesFn = RenderTargetProperties,
+			};
+			return info;
+		}
+		
 		static AssetEditorInfo info{
 			.inCreateMenu = false,
 			.icon = LoadEditorIcon("resources/file-white.png"),
@@ -508,8 +531,18 @@ namespace ImGui {
 		sa::TextureAsset* pTexture = static_cast<sa::TextureAsset*>(pAsset);
 		ImVec2 size = GetContentRegionAvail();
 		Image(pTexture->getTexture(), size);
+		Text("Extent: %d, %d", pTexture->getTexture().getExtent().width, pTexture->getTexture().getExtent().height);
 		return false;
 	}
+
+	bool RenderTargetProperties(sa::IAsset* pAsset) {
+		sa::RenderTarget* pRenderTarget = static_cast<sa::RenderTarget*>(pAsset);
+		ImVec2 size = GetContentRegionAvail();
+		Image(pRenderTarget->getOutputTexture(), size);
+		Text("Extent: %d, %d", pRenderTarget->getExtent().width, pRenderTarget->getExtent().height);
+		return false;
+	}
+
 
 	void AssetPreview(sa::Material* pMaterial) {
 

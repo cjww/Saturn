@@ -12,16 +12,9 @@ namespace sa {
 	private:
 		Renderer& m_renderer;
 
-		friend class BloomRenderLayer;
-		void initializeBloomData(RenderContext& context, Extent extent, DynamicTexture* colorTexture, ResourceID bloomPipeline, ResourceID sampler);
-		void cleanupBloomData();
+		bool m_isActive;
 
-		friend class ForwardPlus;
-		void cleanupMainRenderData();
-
-	public:
-
-		Extent extent;
+		Extent m_extent;
 
 		struct MainRenderData {
 			DynamicTexture colorTexture;
@@ -41,7 +34,7 @@ namespace sa {
 			ResourceID lightCullingDescriptorSet = NULL_RESOURCE;
 
 			bool isInitialized = false;
-		} mainRenderData;
+		} m_mainRenderData;
 		
 		struct BloomData {
 			bool isInitialized = false;
@@ -59,9 +52,22 @@ namespace sa {
 
 			DynamicTexture2D outputTexture;
 
-		} bloomData;
+		} m_bloomData;
 
-		DynamicTexture* outputTexture = nullptr;
+		DynamicTexture* m_pOutputTexture = nullptr;
+
+
+		friend class BloomRenderLayer;
+		void initializeBloomData(RenderContext& context, Extent extent, const DynamicTexture* colorTexture, ResourceID bloomPipeline, ResourceID sampler);
+		void cleanupBloomData();
+
+		friend class ForwardPlus;
+		void initializeMainRenderData(ResourceID colorRenderProgram, ResourceID depthPreRenderProgram, ResourceID lightCullingPipeline, ResourceID sampler, Extent extent);
+		void cleanupMainRenderData();
+
+		void setOutputTexture(const DynamicTexture& dynamicTexture);
+
+	public:
 
 		RenderTarget();
 		RenderTarget(const AssetHeader& header);
@@ -78,10 +84,19 @@ namespace sa {
 
 		bool isReady() const;
 
+		const MainRenderData& getMainRenderData() const;
+		const BloomData& getBloomData() const;
+
+		const Extent& getExtent() const;
+
+		const Texture& getOutputTexture() const;
+
+		void setActive(bool isActive);
+		bool isActive() const;
+
 		virtual bool onLoad(std::ifstream& file, AssetLoadFlags flags) override;
 		virtual bool onWrite(std::ofstream& file, AssetWriteFlags flags) override;
 		virtual bool onUnload() override;
-
 
 	};
 }

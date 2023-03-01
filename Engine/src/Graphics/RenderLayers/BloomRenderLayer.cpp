@@ -35,23 +35,16 @@ namespace sa {
 	const Texture& BloomRenderLayer::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) {
 		SA_PROFILE_FUNCTION();
 
-		DynamicTexture* tex = &pRenderTarget->mainRenderData.colorTexture; //m_renderer.getFramebufferDynamicTexturePtr(pRenderTarget->framebuffer, 0);
+		const DynamicTexture* tex = &pRenderTarget->getMainRenderData().colorTexture;
 		Extent extent = { std::ceil(tex->getExtent().width * 0.5f), std::ceil(tex->getExtent().height * 0.5f) };
 		
-		RenderTarget::BloomData& bd = pRenderTarget->bloomData;
+		const RenderTarget::BloomData& bd = pRenderTarget->getBloomData();
 		
 		if (!bd.isInitialized) {
-		/*
 			// Free old data
-			cleanupBloomData(bd);
-			
-			// Initialize
-			initializeBloomData(context, extent, tex, bd);
-		*/
 			pRenderTarget->cleanupBloomData();
+			// Initialize
 			pRenderTarget->initializeBloomData(context, extent, tex, m_bloomPipeline, m_sampler);
-			bd.isInitialized = true;
-
 		}
 		
 
@@ -105,7 +98,7 @@ namespace sa {
 		context.pushConstant(m_bloomPipeline, ShaderStageFlagBits::COMPUTE, 3);
 		context.dispatch(threadX, threadY, 1);
 
-		pRenderTarget->outputTexture = &bd.outputTexture;
+		pRenderTarget->setOutputTexture(bd.outputTexture);
 
 		return bd.outputTexture.getTexture();
 	}

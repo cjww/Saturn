@@ -80,7 +80,7 @@ void DirectoryView::onImGui() {
 				if (ImGui::GetAssetInfo(type).inCreateMenu) {
 					std::string typeName = sa::AssetManager::get().getAssetTypeName(type);
 					if (ImGui::MenuItem(typeName.c_str())) {
-						sa::IAsset* pAsset = sa::AssetManager::get().createAsset<sa::Material>("New " + typeName, openDirectory);
+						sa::IAsset* pAsset = sa::AssetManager::get().createAsset(type, "New " + typeName, openDirectory);
 						editingName = pAsset->getName();
 						editedFile = pAsset->getAssetPath();
 					}

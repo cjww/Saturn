@@ -5,6 +5,11 @@
 
 namespace sa {
 
+	struct Rectf {
+		glm::vec2 offset;
+		glm::vec2 extent;
+	};
+
 	enum ProjectionMode {
 		ePerspective,
 		eOrthographic
@@ -12,7 +17,7 @@ namespace sa {
 
 	class SceneCamera {
 	private:
-		Rect m_viewport;
+		Rectf m_viewport;
 		Matrix4x4 m_projMat;
 
 		Vector3 m_position;
@@ -32,8 +37,6 @@ namespace sa {
 
 	public:
 		SceneCamera();
-		SceneCamera(const Window* pWindow);
-		SceneCamera(Extent windowExtent);
 		
 		SceneCamera(const SceneCamera&) = default;
 		SceneCamera& operator=(const SceneCamera&) = default;
@@ -44,8 +47,8 @@ namespace sa {
 		void setFOVDegrees(float fovDegrees);
 
 
-		Rect getViewport() const;
-		void setViewport(Rect viewport);
+		Rectf getViewport() const;
+		void setViewport(Rectf viewport);
 		
 		void setAspectRatio(float aspectRatio);
 

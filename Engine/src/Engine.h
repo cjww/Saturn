@@ -29,18 +29,11 @@ namespace sa {
 		IWindowRenderer* m_pWindowRenderer;
 
 		RenderTarget m_mainRenderTarget;
-		
+
 		Extent m_windowExtent;
 		RenderWindow* m_pWindow;
 
 		Scene* m_currentScene;
-
-		struct FrameTime {
-			std::chrono::high_resolution_clock::time_point start;
-			std::chrono::duration<double, std::milli> cpu;
-			std::chrono::duration<double, std::milli> gpu;
-		} m_frameTime;
-
 		
 		void registerMath();
 
@@ -59,8 +52,6 @@ namespace sa {
 
 		void recordImGui();
 		void draw();
-
-		std::chrono::duration<double, std::milli> getCPUFrameTime() const;
 
 		const RenderPipeline& getRenderPipeline() const;
 

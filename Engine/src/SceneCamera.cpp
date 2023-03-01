@@ -24,26 +24,11 @@ namespace sa {
         , m_up(0, 1, 0)
         , m_fov(glm::radians(60.0f))
         , m_apectRatio(1)
-        , m_viewport({ {0, 0}, { 128, 128 } })
+        , m_viewport({ {0, 0}, { 1.f, 1.f} })
         , m_projectionMode(ePerspective)
         , m_orthoBounds({-10, 10, -10, 10})
     {
         updateProjection();
-    }
-
-    SceneCamera::SceneCamera(const Window* pWindow)
-        : SceneCamera(pWindow->getCurrentExtent())
-    {
-    }
-
-    SceneCamera::SceneCamera(Extent windowExtent)
-        : SceneCamera()
-    {
-        m_viewport.offset = { 0, 0 };
-        m_viewport.extent = windowExtent;
-        m_apectRatio = (float)m_viewport.extent.width / m_viewport.extent.height;
-        updateProjection();
-
     }
 
     float SceneCamera::getFOVRadians() const {
@@ -64,13 +49,12 @@ namespace sa {
         updateProjection();
     }
 
-    Rect SceneCamera::getViewport() const {
+    Rectf SceneCamera::getViewport() const {
         return m_viewport;
     }
 
-    void SceneCamera::setViewport(Rect viewport) {
+    void SceneCamera::setViewport(Rectf viewport) {
         m_viewport = viewport;
-        m_apectRatio = (float)m_viewport.extent.width / m_viewport.extent.height;
         updateProjection();
     }
 

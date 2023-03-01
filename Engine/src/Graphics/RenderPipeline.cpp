@@ -21,21 +21,22 @@ namespace sa {
 		Renderer::get().newImGuiFrame();
 	}
 
-	const Texture& RenderPipeline::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) {
+	void RenderPipeline::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) {
 		SA_PROFILE_FUNCTION();
+		if (!pRenderTarget->isActive())
+			return;
 
 		sceneCollection.makeRenderReady();
 
-		Texture tex;
+		
 		m_pRenderTechnique->preRender(context, pCamera, pRenderTarget, sceneCollection);
-		tex = m_pRenderTechnique->render(context, pCamera, pRenderTarget, sceneCollection);
+		m_pRenderTechnique->render(context, pCamera, pRenderTarget, sceneCollection);
 
 		if(m_pBloomPass->isActive())
-			tex = m_pBloomPass->render(context, pCamera, pRenderTarget, sceneCollection);
+			m_pBloomPass->render(context, pCamera, pRenderTarget, sceneCollection);
 
-		pRenderTarget->swap();
 		sceneCollection.swap();
-		return tex;
+		pRenderTarget->swap();
 	}
 
 	IRenderTechnique* RenderPipeline::getRenderTechnique() const {

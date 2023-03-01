@@ -1,8 +1,9 @@
 #include "pch.h"
 #include "Camera.h"
 
-#include "Application.h"
 #include "Graphics\RenderTarget.h"
+#include "ECS/Entity.h"
+#include "ECS\Components\Transform.h"
 
 
 namespace comp {
@@ -17,7 +18,6 @@ namespace comp {
 	}
 
 	void Camera::onConstruct(sa::Entity* entity) {
-		camera.setViewport({ { 0, 0 }, sa::Application::get()->getWindow()->getCurrentExtent() });
 		if (!entity->hasComponent<comp::Transform>()) {
 			entity->addComponent<comp::Transform>();
 		}

@@ -36,8 +36,6 @@ namespace sa {
 		void createLightCullingShader();
 		void createColorPass();
 
-		void initializeMainRenderData(RenderTarget::MainRenderData& data, Extent extent);
-		
 	public:
 
 
