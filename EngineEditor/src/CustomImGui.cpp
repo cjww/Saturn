@@ -530,6 +530,8 @@ namespace ImGui {
 	bool TextureProperties(sa::IAsset* pAsset) {
 		sa::TextureAsset* pTexture = static_cast<sa::TextureAsset*>(pAsset);
 		ImVec2 size = GetContentRegionAvail();
+		float aspect = (float)pTexture->getTexture().getExtent().height / pTexture->getTexture().getExtent().width;
+		size.y = size.x * aspect;
 		Image(pTexture->getTexture(), size);
 		Text("Extent: %d, %d", pTexture->getTexture().getExtent().width, pTexture->getTexture().getExtent().height);
 		return false;
@@ -537,9 +539,17 @@ namespace ImGui {
 
 	bool RenderTargetProperties(sa::IAsset* pAsset) {
 		sa::RenderTarget* pRenderTarget = static_cast<sa::RenderTarget*>(pAsset);
+		sa::Extent extent = pRenderTarget->getExtent();
+		if (InputScalarN("Extent", ImGuiDataType_U32, (uint32_t*)&extent, 2, NULL, NULL, "%d", ImGuiInputTextFlags_EnterReturnsTrue)) {
+			pRenderTarget->resize(extent);
+			return true;
+		}
 		ImVec2 size = GetContentRegionAvail();
+		float aspect = (float)pRenderTarget->getExtent().height / pRenderTarget->getExtent().width;
+		size.y = size.x * aspect;
+		
 		Image(pRenderTarget->getOutputTexture(), size);
-		Text("Extent: %d, %d", pRenderTarget->getExtent().width, pRenderTarget->getExtent().height);
+
 		return false;
 	}
 
