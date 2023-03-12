@@ -41,7 +41,7 @@
 
 
 // simdjson - JSON parser
-#include <simdjson.h>
+#include <simdjson/simdjson.h>
 
 // glm
 #include <glm/glm.hpp>

@@ -152,11 +152,11 @@ namespace sa {
 						m_textures.insert(m_textures.end(), matTextures.begin(), matTextures.end());
 
 						Material::Values values = pMaterial->values;
-						values.diffuseMapFirst = values.diffuseMapFirst + textureOffset;
+						values.albedoMapFirst = values.albedoMapFirst + textureOffset;
 						values.emissiveMapFirst = values.emissiveMapFirst + textureOffset;
-						values.lightMapFirst = values.lightMapFirst + textureOffset;
+						values.occlusionMapFirst = values.occlusionMapFirst + textureOffset;
 						values.normalMapFirst = values.normalMapFirst + textureOffset;
-						values.specularMapFirst = values.specularMapFirst + textureOffset;
+						values.metalnessMapFirst = values.metalnessMapFirst + textureOffset;
 
 						m_materials.push_back(pMaterial);
 						m_materialData.push_back(values);

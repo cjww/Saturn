@@ -262,7 +262,6 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="deps\ImGuizmo\ImGuizmo.cpp" />
-    <ClCompile Include="deps\simdjson\src\simdjson.cpp" />
     <ClCompile Include="src\CustomImGui.cpp" />
     <ClCompile Include="src\DirectoryView.cpp" />
     <ClCompile Include="src\EditorModule.cpp" />

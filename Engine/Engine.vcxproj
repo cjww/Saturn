@@ -201,7 +201,7 @@
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)deps\PhysX\include;$(ProjectDir)deps\include\;$(ProjectDir)src\;$(SolutionDir)\VulkanRenderer\include;$(ProjectDir)deps\simdjson\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)deps\PhysX\include;$(ProjectDir)deps\include\;$(ProjectDir)src\;$(SolutionDir)\VulkanRenderer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -236,7 +236,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)deps\PhysX\include;$(ProjectDir)deps\include\;$(ProjectDir)src\;$(SolutionDir)\VulkanRenderer\include;$(ProjectDir)deps\simdjson\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)deps\PhysX\include;$(ProjectDir)deps\include\;$(ProjectDir)src\;$(SolutionDir)\VulkanRenderer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -270,7 +270,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;SA_DEBUG_LOG_ENABLE;SA_PROFILER_ENABLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)deps\PhysX\include;$(ProjectDir)deps\include\;$(ProjectDir)src\;$(SolutionDir)\VulkanRenderer\include;$(ProjectDir)deps\simdjson\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)deps\PhysX\include;$(ProjectDir)deps\include\;$(ProjectDir)src\;$(SolutionDir)\VulkanRenderer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
@@ -301,11 +301,6 @@
     <ClCompile Include="src\Assets\ModelAsset.cpp" />
     <ClCompile Include="src\Assets\TextureAsset.cpp" />
     <ClCompile Include="src\ECS\Components\BoxCollider.cpp" />
-    <ClCompile Include="deps\simdjson\src\simdjson.cpp">
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
-      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Optimized|x64'">NotUsing</PrecompiledHeader>
-    </ClCompile>
     <ClCompile Include="src\ECS\Components.cpp" />
     <ClCompile Include="src\ECS\Components\Camera.cpp" />
     <ClCompile Include="src\ECS\Components\Light.cpp" />
@@ -323,6 +318,7 @@
     <ClCompile Include="src\Graphics\WindowRenderer.cpp" />
     <ClCompile Include="src\PhysicsSystem.cpp" />
     <ClCompile Include="src\Serializable.cpp" />
+    <ClCompile Include="src\simdjson\simdjson.cpp" />
     <ClCompile Include="src\Tools\MemoryChecker.cpp" />
     <ClCompile Include="src\Application.cpp" />
     <ClCompile Include="src\ECS\ComponentBase.cpp" />

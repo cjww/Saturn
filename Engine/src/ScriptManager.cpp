@@ -3,8 +3,6 @@
 #include "ECS/Components.h"
 #include "Scene.h"
 
-#include <simdjson.h>
-
 namespace sa {
 
 	void ScriptManager::setComponents(const entt::entity& entity, sol::environment& env, std::vector<ComponentType>& components) {

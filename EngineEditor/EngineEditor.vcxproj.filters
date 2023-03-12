@@ -45,9 +45,6 @@
     <ClCompile Include="deps\ImGuizmo\ImGuizmo.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="deps\simdjson\src\simdjson.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
     <ClCompile Include="src\GameView.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>

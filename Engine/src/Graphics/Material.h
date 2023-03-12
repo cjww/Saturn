@@ -212,20 +212,20 @@ namespace sa {
 			Color ambientColor = { 1, 1, 1, 1 };
 			Color emissiveColor = { 1, 1, 1, 1 };
 
-			uint32_t diffuseMapFirst = 0;
-			uint32_t diffuseMapCount = 0;
+			uint32_t albedoMapFirst = 0;
+			uint32_t albedoMapCount = 0;
 
 			uint32_t normalMapFirst = 0;
 			uint32_t normalMapCount = 0;
 
-			uint32_t specularMapFirst = 0;
-			uint32_t specularMapCount = 0;
+			uint32_t metalnessMapFirst = 0;
+			uint32_t metalnessMapCount = 0;
 			
 			uint32_t emissiveMapFirst = 0;
 			uint32_t emissiveMapCount = 0;
 
-			uint32_t lightMapFirst = 0;
-			uint32_t lightMapCount = 0;
+			uint32_t occlusionMapFirst = 0;
+			uint32_t occlusionMapCount = 0;
 
 			float opacity = 1.0f;
 			float shininess = 1.0f;

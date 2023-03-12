@@ -32,25 +32,25 @@ namespace sa {
 	}
 
 	void Material::update() {
-		values.diffuseMapCount = m_textures[MaterialTextureType::DIFFUSE].size();
-		values.diffuseMapFirst = 0;
+		values.albedoMapCount = m_textures[MaterialTextureType::BASE_COLOR].size();
+		values.albedoMapFirst = 0;
 		
 		values.normalMapCount = m_textures[MaterialTextureType::NORMALS].size();
-		values.normalMapFirst = values.diffuseMapCount;
+		values.normalMapFirst = values.albedoMapCount;
 		
-		values.specularMapCount = m_textures[MaterialTextureType::SPECULAR].size();
-		values.specularMapFirst = values.normalMapFirst + values.normalMapCount;
+		values.metalnessMapCount = m_textures[MaterialTextureType::METALNESS].size();
+		values.metalnessMapFirst = values.normalMapFirst + values.normalMapCount;
 		
 		values.emissiveMapCount = m_textures[MaterialTextureType::EMISSIVE].size();
-		values.emissiveMapFirst = values.specularMapFirst + values.specularMapCount;
+		values.emissiveMapFirst = values.metalnessMapFirst + values.metalnessMapCount;
 
-		values.lightMapCount = m_textures[MaterialTextureType::LIGHTMAP].size();
-		values.lightMapFirst = values.emissiveMapFirst + values.emissiveMapCount;
+		values.occlusionMapCount = m_textures[MaterialTextureType::LIGHTMAP].size();
+		values.occlusionMapFirst = values.emissiveMapFirst + values.emissiveMapCount;
 		m_allTexturesLoaded = false;
 	}
 
 	void Material::setTextures(const std::vector<BlendedTexture>& textures, MaterialTextureType type) {
-		setTextures(textures, type, values.diffuseMapCount);
+		setTextures(textures, type, values.albedoMapCount);
 	}
 
 	const std::vector<Texture>& Material::fetchTextures() {

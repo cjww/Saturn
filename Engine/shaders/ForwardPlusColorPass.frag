@@ -17,17 +17,17 @@ layout(location = 0) out vec4 out_color;
 
 
 struct Material {
-    vec4 diffuseColor;
+    vec4 albedoColor;
     vec4 specularColor;
     vec4 ambientColor;
     vec4 emissiveColor;
     
-    uint diffuseMapFirst;
-    uint diffuseMapCount;
+    uint albedoMapFirst;
+    uint albedoMapCount;
     uint normalMapFirst;
     uint normalMapCount;
-    uint specularMapFirst;
-    uint specularMapCount;
+    uint metalnessMapFirst;
+    uint metalnessMapCount;
     uint emissiveMapFirst;
     uint emissiveMapCount;
     uint lightMapFirst;
@@ -92,6 +92,19 @@ vec3 invertGammaCorrect(vec3 color, float gamma) {
     return pow(color, vec3(gamma));
 }
 
+Material getMaterial(int index) {
+    if (index == -1) {
+        return defaultMaterial;
+    }
+    return materialBuffer.materials[index];
+}
+
+vec4 getPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float smoothness, float occlusion, float alpha, float alphaClipThreshold) {
+
+    return vec4(albedo, alpha);
+}
+
+
 void main() {
 
     ivec2 pos = ivec2(gl_FragCoord.xy);
@@ -99,34 +112,29 @@ void main() {
     uint index = tileID.y * pc.tileCountX + tileID.x;
 
     int materialIndex = materialIndices.data[in_meshIndex];
-    Material material;
-    if (materialIndex == -1) {
-        material = defaultMaterial;
-    }
-    else {
-        material = materialBuffer.materials[materialIndex];
-    }
+    Material material = getMaterial(materialIndex);
+
     vec4 ambientColor = material.ambientColor * 0.01;
-    vec4 diffuseColor = vec4(0, 0, 0, 1);
+    vec4 albedoColor = vec4(0, 0, 0, 1);
     vec4 specularColor = vec4(0, 0, 0, 1);
 
-    vec4 objectColor = material.diffuseColor;
-    if(material.diffuseMapCount > 0) {
-        vec4 diffuseColor = texture(sampler2D(textures[material.diffuseMapFirst], samp), in_vertexUV);
+    vec4 objectColor = material.albedoColor;
+    if(material.albedoMapCount > 0) {
+        vec4 albedoColor = texture(sampler2D(textures[material.albedoMapFirst], samp), in_vertexUV);
         
         //TODO send value to shader
         float gamma = 2.2;
-        diffuseColor.rgb = invertGammaCorrect(diffuseColor.rgb, gamma);
-        objectColor *= diffuseColor;
+        albedoColor.rgb = invertGammaCorrect(albedoColor.rgb, gamma);
+        objectColor *= albedoColor;
     }
     
-    if(material.specularMapCount > 0) {
-        specularColor += texture(sampler2D(textures[material.specularMapFirst], samp), in_vertexUV);
+    if(material.metalnessMapCount > 0) {
+        specularColor += texture(sampler2D(textures[material.metalnessMapFirst], samp), in_vertexUV);
     }
 
     if(material.emissiveMapCount > 0) {
         objectColor = material.emissiveColor;
-        diffuseColor = vec4(1, 1, 1, 1);
+        albedoColor = vec4(1, 1, 1, 1);
         objectColor *= texture(sampler2D(textures[material.emissiveMapFirst], samp), in_vertexUV);
     }
     else {
@@ -153,7 +161,7 @@ void main() {
                 attenuation = clamp(attenuation, 0.0, 1.0);
                 vec3 radiance = light.color.rgb * attenuation * light.color.a; 
 
-                diffuseColor += vec4(radiance, 0.0) * diffuseFactor;
+                albedoColor += vec4(radiance, 0.0) * diffuseFactor;
                 
                 vec3 reflectDir = reflect(-toLight, in_vertexWorldNormal);
                 float spec = pow(max(dot(viewDir, reflectDir), 0.0), shininess);
@@ -164,7 +172,7 @@ void main() {
 
                 float diffuseFactor = max(dot(in_vertexWorldNormal, -light.direction.xyz), 0.0);
                 vec3 radiance = light.color.rgb * light.color.a;
-                diffuseColor += vec4(radiance, 0.0) * diffuseFactor;
+                albedoColor += vec4(radiance, 0.0) * diffuseFactor;
 
                 vec3 reflectDir = reflect(light.direction.xyz, in_vertexWorldNormal);
                 
@@ -186,7 +194,7 @@ void main() {
         occlusion = color.r;
     }
   
-    vec4 finalColor = (ambientColor + diffuseColor + specularColor) * occlusion * objectColor;
+    vec4 finalColor = (ambientColor + albedoColor + specularColor) * occlusion * objectColor;
         
     out_color = vec4(finalColor.xyz, material.opacity);
 

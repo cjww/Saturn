@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "Serializable.h"
 
-#include "simdjson.h"
 
 namespace sa {
 	Serializer::Serializer()
