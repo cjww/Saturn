@@ -1,42 +1,29 @@
 #pragma once
 
-#include "Camera.h"
-#include "Scene.h"
+#include "Renderer.hpp"
+#include "Resources\Texture.hpp"
 
-
-#include "IRenderLayer.h"
-
+#include "SceneCamera.h"
+#include "RenderTarget.h"
+#include "SceneCollection.h"
 
 namespace sa {
-	class IRenderTechnique : public IRenderLayer {
-	protected:
-		bool m_isRenderingToSwapchain;
 
-		sa::RenderWindow* m_pWindow;
+	struct DrawData {
+		Texture colorTexture;
+		Texture finalTexture;
+	};
 
-
+	class IRenderTechnique {
 	public:
-		IRenderTechnique(bool renderToSwapchain = true);
-		virtual ~IRenderTechnique() = default;
+		DrawData drawData;
 
-		//virtual void onWindowResize(Extent extent) = 0;
-
-		//virtual void init(sa::RenderWindow* pWindow) = 0;
+		virtual void init() = 0;
 		virtual void cleanup() = 0;
 
-		virtual void updateData(RenderContext& context) = 0;
-		/*
-		virtual void preRender(RenderContext& context, Camera* pCamera) = 0;
-		virtual void render(RenderContext& context, Camera* pCamera) = 0;
-		virtual void postRender(RenderContext& context) = 0;
-		*/
+		virtual bool preRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) = 0;
+		virtual const Texture& render(RenderContext& context, SceneCamera* pCamera, RenderTarget* rendertarget, SceneCollection& sceneCollection) = 0;
 
 
-		virtual void updateLights(Scene* pScene) = 0;
-		virtual void collectMeshes(Scene* pScene) = 0;
-
-
-		sa::Extent getCurrentExtent() const;
-		
 	};
 }

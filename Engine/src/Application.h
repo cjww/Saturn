@@ -6,12 +6,10 @@
 int main(int argc, char** argv);
 
 namespace sa {
-	class Appliction;
 
 	class IApplicationLayer {
 	private:
-		friend class Application;
-		Application* m_pAppInstance;
+
 	public:
 		IApplicationLayer() = default;
 		virtual ~IApplicationLayer() = default;
@@ -20,9 +18,6 @@ namespace sa {
 		virtual void onUpdate(float dt) {}
 		virtual void onImGuiRender() {}
 		virtual void onDetach() {}
-	
-		Application* getApp() const { return m_pAppInstance; }
-
 	};
 
 	class Application {
@@ -37,16 +32,25 @@ namespace sa {
 	
 		friend int ::main(int argc, char** argv);
 		
+		inline static Application* m_thisInstance = nullptr;
 
 	public:
+
 		Application(bool enableImGui);
 		virtual ~Application();
+
+		static Application* get();
 
 		void pushLayer(IApplicationLayer* layer);
 		void pushOverlay(IApplicationLayer* overlay);
 
 
 		void run();
+
+		sa::RenderWindow* getWindow() const;
+		const sa::Engine& getEngine() const;
+		sa::Engine& getEngine();
+
 
 	};
 	

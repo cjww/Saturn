@@ -22,6 +22,8 @@ namespace sa {
 		const Entity& getParent(const Entity& child) const;
 
 		void destroy(const Entity& entity);
+		void clear();
+		void freeMemory();
 
 		bool hasChildren(const Entity& parent) const;
 		bool hasParent(const Entity& child) const;
@@ -30,6 +32,8 @@ namespace sa {
 
 		void forEachChild(const Entity& rootParent, std::function<void(const Entity&, const Entity&)> func);
 		void forEachDirectChild(const Entity& rootParent, std::function<void(const Entity&)> func);
+
+		void forEachParent(std::function<void(const Entity&)> func);
 
 	};
 

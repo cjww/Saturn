@@ -4,6 +4,8 @@
 
 #include "Resources\Texture.hpp"
 
+#define SA_SUBPASS_EXTERNAL (~0U)
+
 namespace sa {
 	class RenderProgram;
 	class Subpass;
@@ -16,6 +18,14 @@ namespace sa {
 		DepthTarget,
 		Input,
 		Resolve,
+	};
+
+	typedef uint32_t AttachmentFlags;
+	enum AttachmentFlagBits : AttachmentFlags {
+		eClear = 1 << 0,
+		eStore = 1 << 1,
+		eSampled = 1 << 2,
+		eLoad = 1 << 3
 	};
 
 	class RenderProgramFactory {
@@ -54,17 +64,20 @@ namespace sa {
 
 		RenderProgramFactory(VulkanCore* pCore);
 		
-		RenderProgramFactory& addColorAttachment(bool store);
-		RenderProgramFactory& addColorAttachment(bool store, const Texture2D& framebufferTexture);
-		
+		RenderProgramFactory& addColorAttachment(AttachmentFlags flags, uint32_t sampleCount = 1U);
+		RenderProgramFactory& addColorAttachment(AttachmentFlags flags, const Texture2D& framebufferTexture);
+		RenderProgramFactory& addColorAttachment(AttachmentFlags flags, Format format, uint32_t sampleCount = 1U);
+
+
 		RenderProgramFactory& addSwapchainAttachment(ResourceID swapchain);
-		RenderProgramFactory& addDepthAttachment();
-		RenderProgramFactory& addDepthAttachment(const Texture2D& framebufferTexture, bool store = false);
+		RenderProgramFactory& addDepthAttachment(AttachmentFlags flags, uint32_t sampleCount = 1U);
+		RenderProgramFactory& addDepthAttachment(AttachmentFlags flags, const Texture2D& framebufferTexture);
+		RenderProgramFactory& addDepthAttachment(AttachmentFlags flags, Format format, uint32_t sampleCount = 1U);
 
 
 
 		SubpassFactory beginSubpass();
-		RenderProgramFactory& addSubpassDependency();
+		RenderProgramFactory& addColorDependency(uint32_t srcSubpass = SA_SUBPASS_EXTERNAL, uint32_t dstSubpass = SA_SUBPASS_EXTERNAL);
 		
 
 		ResourceID end();

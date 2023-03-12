@@ -8,6 +8,8 @@ private:
 	sa::Entity m_selectedEntity;
 	sa::Entity m_hoveredEntity;
 
+	bool m_isPopupMenuOpen;
+
 	std::queue<std::pair<sa::Entity, sa::Entity>> m_parentChanges;
 
 	void makePopups();
@@ -16,7 +18,7 @@ private:
 	void makeTree(sa::Entity e);
 public:
 	
-	SceneHierarchy(sa::Engine* pEngine);
+	SceneHierarchy(sa::Engine* pEngine, sa::EngineEditor* pEditor);
 	virtual ~SceneHierarchy();
 	virtual void onImGui() override;
 	virtual void update(float dt) override;

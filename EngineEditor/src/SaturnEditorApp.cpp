@@ -1,4 +1,3 @@
-
 #include <EntryPoint.h>
 #include "EngineEditor.h"
 
@@ -14,6 +13,7 @@ namespace sa {
 	};
 
 	Application* createApplication() {
+		Engine::setShaderDirectory("../Engine/shaders");
 		return new EditorApp;
 	}
 

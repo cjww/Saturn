@@ -1,0 +1,70 @@
+@startuml
+
+title Saturn
+
+class Renderer <<Singelton>> {
+    - VkDevice m_device
+    ...
+}
+
+class Engine {
+    - RenderTechnique renderTech
+    - ECSCoordaintor coordinator
+    - StateMachine sceneManager
+    - update()
+    - draw()
+ 
+    + initialize(RenderWindow* window, Rect renderArea)
+    + void start()
+    
+}
+Engine *-up- RenderTechnique
+Engine *- SceneManager
+
+class RenderTechnique {
+    + virtual bool beginFrame() = 0
+    + virtual void endFrame() = 0
+}
+class ForwardRenderer 
+ForwardRenderer --|> RenderTechnique
+class DeferedRenderer
+DeferedRenderer --|> RenderTechnique
+
+class EngineEditor {
+    RenderWindow window
+}
+EngineEditor *- RenderWindow
+Engine --* EngineEditor
+MeshRenderSystem *- Engine
+
+class RenderWindow
+
+class SceneManager {
+    + SceneID newScene(string name)
+    + void saveScene(SceneID, string filename)
+}
+
+class Scene {
+    + onStart()
+    + onExit()
+    + update()
+    + draw()
+    + serialize()
+} 
+SceneManager *-"*" Scene
+
+package ECS <<Frame>> {
+
+class ECSCoordinator
+
+class MeshRenderSystem 
+
+package Components <<Folder>> {
+    class Transform
+    class Model
+}
+
+
+}
+
+@enduml

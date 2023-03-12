@@ -1,11 +1,13 @@
 #pragma once
-#include "structs.hpp"
-#include "Resources/ResourceManager.hpp"
-#include "Resources/Texture.hpp"
-#include "Resources/Buffer.hpp"
-#include "RenderContext.hpp"
+#include <structs.hpp>
+#include <Resources/ResourceManager.hpp>
+#include <Resources/Texture.hpp>
+#include <Resources/Buffer.hpp>
+#include <RenderContext.hpp>
 
-#include "Tools/Logger.hpp"
+#include <Tools/Logger.hpp>
+
+#include "Assets/TextureAsset.h"
 
 #define MAX_TEXTURE_MAP_COUNT 4U
 
@@ -168,8 +170,6 @@ namespace sa {
 		UNKNOWN = 18,
 	};
 
-	std::string toString(MaterialTextureType type);
-
 	enum class TextureBlendOp {
 		/** T = T1 * T2 */
 		MULTIPLY = 0x0,
@@ -191,22 +191,17 @@ namespace sa {
 	};
 
 	struct BlendedTexture {
-		Texture texture;
+		UUID textureAssetID;
 		float blendFactor;
 		TextureBlendOp blendOp;
 	};
 
-	class Material {
+	class Material : public IAsset{
 	private:
-		ResourceID m_pipeline;
-		ResourceID m_sampler;
-
-		std::unordered_map<MaterialTextureType, std::vector<Texture>> m_textures;
+		std::unordered_map<MaterialTextureType, std::vector<UUID>> m_textures;
 		std::unordered_map<MaterialTextureType, std::vector<std::pair<TextureBlendOp, float>>> m_blending;
 		std::vector<Texture> m_allTextures;
-
-		Buffer m_valueBuffer;
-		ResourceID m_descriptorSet;
+		bool m_allTexturesLoaded;
 
 		void setTextures(const std::vector<BlendedTexture>& textures, MaterialTextureType type, uint32_t& count);
 
@@ -239,16 +234,24 @@ namespace sa {
 
 		bool twoSided;
 
-		Material();
+		static std::string TextureTypeToString(MaterialTextureType type);
 
-		void init(ResourceID pipeline, ResourceID sampler);
 
-		bool isInitialized() const;
+		Material(const AssetHeader& header);
 
 		void update();
-		void bind(RenderContext& context, ResourceID pipeline, ResourceID sampler);
 	
 		void setTextures(const std::vector<BlendedTexture>& textures, MaterialTextureType type);
-		const std::vector<Texture>& getTextures() const;
+		
+		// Gathers all textures into an array, unless already gathered since last update
+		const std::vector<Texture>& fetchTextures();
+		
+		std::unordered_map<MaterialTextureType, std::vector<UUID>>& getTextures();
+
+		virtual bool onLoad(std::ifstream& file, AssetLoadFlags flags) override;
+		virtual bool onWrite(std::ofstream& file, AssetWriteFlags flags) override;
+		virtual bool onUnload() override;
+
+
 	};
 }

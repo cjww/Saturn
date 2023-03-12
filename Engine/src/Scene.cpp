@@ -1,30 +1,95 @@
 #include "pch.h"
 #include "Scene.h"
-
-#include "ECS\Components.h"
+#include "ECS/Components.h"
 
 namespace sa {
-
-	Scene::Scene(const std::string& name)
-		: m_isLoaded(false)
-		, m_name(name)
-
-	{
+	void Scene::registerComponentCallBacks() {
+		registerComponentCallBack<comp::Name>();
+		registerComponentCallBack<comp::Transform>();
+		registerComponentCallBack<comp::Light>();
+		registerComponentCallBack<comp::Model>();
+		registerComponentCallBack<comp::RigidBody>();
+		registerComponentCallBack<comp::BoxCollider>();
+		registerComponentCallBack<comp::SphereCollider>();
+		registerComponentCallBack<comp::Camera>();
 	}
 
 
-	Scene::~Scene() {
-		for (auto& cam : m_cameras) {
-			delete cam;
+	void Scene::updatePhysics(float dt) {
+		// Physics
+		m_reg.view<comp::RigidBody, comp::Transform>().each([&](const comp::RigidBody& rb, const comp::Transform& transform) {
+			rb.pActor->setGlobalPose(transform, false);
+		});
+
+		m_pPhysicsScene->simulate(dt);
+		m_pPhysicsScene->fetchResults(true);
+
+		uint32_t actorCount = -1;
+		physx::PxActor** ppActors = m_pPhysicsScene->getActiveActors(actorCount);
+		for (uint32_t i = 0U; i < actorCount; i++) {
+			physx::PxActor* pActor = ppActors[i];
+			if (physx::PxRigidActor* rigidActor = pActor->is<physx::PxRigidActor>()) {
+				comp::Transform* transform = ((Entity*)pActor->userData)->getComponent<comp::Transform>();
+				*transform = rigidActor->getGlobalPose();
+			}
 		}
 	}
 
+	void Scene::updateChildPositions() {
+		m_hierarchy.forEachParent([&](const sa::Entity& parent) {
+			m_hierarchy.forEachChild(parent, [](const Entity& child, const Entity& parent) {
+				comp::Transform* transform = child.getComponent<comp::Transform>();
+				comp::Transform* parentTransform = parent.getComponent<comp::Transform>();
+				if (!transform || !parentTransform)
+					return;
+
+				transform->position = parentTransform->position + transform->relativePosition;
+			});
+		});
+	}
+
+	void Scene::updateCameraPositions() {
+		m_reg.view<comp::Camera, comp::Transform>().each([](comp::Camera& camera, comp::Transform& transform) {
+			camera.camera.setPosition(transform.position);
+			glm::vec3 forward = transform.rotation * glm::vec3(0, 0, 1);
+			camera.camera.lookAt(transform.position + forward);
+		});
+
+		m_reg.view<comp::Camera>().each([this](comp::Camera& camera) {
+			if (camera.autoCollectScene) {
+				camera.getSceneCollection().clear();
+				camera.getSceneCollection().collect(this);
+			}
+		});
+
+
+	}
+
+	void Scene::updateLightPositions() {
+		m_reg.view<comp::Transform, comp::Light>().each([](comp::Transform& transform, comp::Light& light) {
+			light.values.position = glm::vec4(transform.position, light.values.position.w);
+			light.values.direction = glm::vec4(transform.rotation * glm::vec3(0, 0, 1), light.values.direction.w);
+		});
+	}
+
+
+	Scene::Scene(const AssetHeader& header) : IAsset(header) {
+		m_pPhysicsScene = PhysicsSystem::get().createScene();
+		registerComponentCallBacks();
+	}
+
+	Scene::~Scene() {
+		if(m_pPhysicsScene)
+			m_pPhysicsScene->release();
+	}
+
 	void Scene::reg() {
+
 		auto type = LuaAccessable::registerType<Scene>();
 		type["findEntitiesByName"] = [](Scene& self, const std::string& name) {
 			std::vector<Entity> entities;
-			self.each([&](entt::entity e) {
-				if (self.get<comp::Name>(e).name == name) {
+			self.m_reg.each([&](entt::entity e) {
+				if (self.m_reg.get<comp::Name>(e).name == name) {
 					entities.emplace_back(&self, e);
 				}
 			});
@@ -35,74 +100,106 @@ namespace sa {
 
 	}
 
-	void Scene::load() {
-		m_scriptManager.init(this);
-		m_isLoaded = true;
+	bool Scene::onLoad(std::ifstream& file, AssetLoadFlags flags) {
+		simdjson::padded_string jsonStr(getHeader().size);
+		file.read(jsonStr.data(), jsonStr.length());
+
+		simdjson::ondemand::parser parser;
+		auto doc = parser.iterate(jsonStr);
+		if (doc.error() != simdjson::error_code::SUCCESS) {
+			SA_DEBUG_LOG_ERROR("Json error: ", simdjson::error_message(doc.error()));
+			return false;
+		}
+		deserialize(&doc);
+
+		return true;
 	}
 
-	void Scene::unload() {
-		m_isLoaded = false;
+	bool Scene::onWrite(std::ofstream& file, AssetWriteFlags flags) {
+		Serializer s;
+		serialize(s);
+		std::string jsonStr = s.dump();
+
+		AssetHeader header = getHeader();
+		header.size = jsonStr.size();
+		// TODO this is not going to work in a asset package
+		file.seekp((size_t)file.tellp() - sizeof(AssetHeader));
+		setHeader(header);
+		writeHeader(header, file);
+
+		file << s.dump();
+
+		return true;
 	}
 
-	void Scene::update(float dt) {
+	bool Scene::onUnload() {
+		m_reg.clear();
+		m_reg.shrink_to_fit();
+		m_scriptManager.freeMemory();
+		m_hierarchy.freeMemory();
+		return true;
+	}
+
+	void Scene::onRuntimeStart() {
+		m_scriptManager.broadcast("onStart");
+	}
+
+	void Scene::onRuntimeStop()	{
+		m_scriptManager.broadcast("onStop");
+	}
+
+	void Scene::runtimeUpdate(float dt) {
 		SA_PROFILE_FUNCTION();
-		publish<scene_event::UpdatedScene>(dt);
-		m_scriptManager.update(dt, this);
+
+		updatePhysics(dt);
 		
-		/*
-		view<comp::Light, comp::Transform>().each([](comp::Light& light, const comp::Transform& transform) {
-			light.values.position
+		// Scripts
+		m_scriptManager.broadcast("onUpdate", dt);
+		
+		updateChildPositions();
+		updateCameraPositions();
+		updateLightPositions();
+	}
+
+	void Scene::inEditorUpdate(float dt) {
+		updateChildPositions();
+		updateCameraPositions();
+		updateLightPositions();
+	}
+
+	void Scene::serialize(Serializer& s) {
+		s.beginObject();
+		s.beginArray("entities");
+
+		forEach([&](Entity entity) {
+			entity.serialize(s);
 		});
 
-		*/
-		view<comp::Transform>().each([&](const entt::entity& e, comp::Transform& transform) {
-			Entity entity(this, e);
-			if (!m_hierarchy.hasChildren(entity)) { 
-				return;
+		s.endArray();
+
+		s.endObject();
+	}
+
+	void Scene::deserialize(void* pDoc) {
+		using namespace simdjson;
+		ondemand::document& doc = *(ondemand::document*)pDoc;
+		ondemand::array entities = doc["entities"];
+		
+		m_reg.reserve(entities.count_elements());
+		for (auto e : entities) {
+			if (e.error()) {
+				SA_DEBUG_LOG_WARNING("Failed to get entity from file");
+				continue;
 			}
-			m_hierarchy.forEachChild(entity, [](const Entity& child, const Entity& parent) {
-				comp::Transform* transform = child.getComponent<comp::Transform>();
-				comp::Transform* parentTransform = parent.getComponent<comp::Transform>();
-				if (!transform || !parentTransform)
-					return;
-
-				transform->position = parentTransform->position + transform->relativePosition;
-			});
-			
-		});
-
-
-
-
-	}
-
-	Camera* Scene::newCamera() {
-		m_cameras.push_back(new Camera());
-		return m_cameras.back();
-	}
-
-	Camera* Scene::newCamera(const Window* pWindow) {
-		m_cameras.push_back(new Camera(pWindow));
-		return m_cameras.back();
-	}
-
-
-	void Scene::addActiveCamera(Camera* camera) {
-		size_t s = m_activeCameras.size();
-		m_activeCameras.insert(camera);
-		if(s != m_activeCameras.size())
-			publish<scene_event::AddedCamera>(camera);
-	}
-
-	void Scene::removeActiveCamera(Camera* camera) {
-		size_t s = m_activeCameras.size();
-		m_activeCameras.erase(camera);
-		if (s != m_activeCameras.size())
-			publish<scene_event::RemovedCamera>(camera);
-	}
-
-	std::set<Camera*> Scene::getActiveCameras() const {
-		return m_activeCameras;
+			ondemand::object obj = e.value_unsafe().get_object();
+			uint32_t id = (uint32_t)obj["id"].get_uint64();
+			entt::entity entityID = (entt::entity)id;
+			if (!m_reg.valid(entityID)) {
+				entityID = m_reg.create(entityID);
+			}
+			Entity entity(this, entityID);
+			entity.deserialize(&obj);
+		}
 	}
 
 	void Scene::setScene(const std::string& name) {
@@ -110,7 +207,7 @@ namespace sa {
 	}
 
 	Entity Scene::createEntity(const std::string& name) {
-		Entity e(this, create());
+		Entity e(this, m_reg.create());
 		e.addComponent<comp::Name>(name);
 		publish<scene_event::EntityCreated>(e);
 		return e;
@@ -120,37 +217,32 @@ namespace sa {
 		publish<scene_event::EntityDestroyed>(entity);
 		m_scriptManager.clearEntity(entity);
 		m_hierarchy.destroy(entity);
-		destroy(entity);
+		m_reg.destroy(entity);
 	}
 
 	size_t Scene::getEntityCount() const {
-		return size();
+		return m_reg.alive();
 	}
 
-	std::optional<EntityScript> Scene::addScript(const Entity& entity, const std::filesystem::path& path) {
-		std::optional<EntityScript> scriptOpt = m_scriptManager.addScript(entity, path);
-		if (!scriptOpt.has_value())
-			return scriptOpt;
-
-		EntityScript& script = scriptOpt.value();
-		script.env["scene"] = this;
-		script.env["entity"] = entity;
-		
-		if (!m_isLoaded)
-			return scriptOpt;
-
-		m_scriptManager.tryCall(script.env, "init");
-
-		return scriptOpt;
+	EntityScript* Scene::addScript(const Entity& entity, const std::filesystem::path& path) {
+		return m_scriptManager.addScript(entity, path);
 	}
+
+	void Scene::clearEntities() {
+		m_reg.clear();
+		m_scriptManager.clearAll();
+		m_hierarchy.clear();
+	}
+
 
 	void Scene::removeScript(const Entity& entity, const std::string& name) {
 		m_scriptManager.removeScript(entity, name);
 	}
 
-	std::optional<EntityScript> Scene::getScript(const Entity& entity, const std::string& name) const {
+	EntityScript* Scene::getScript(const Entity& entity, const std::string& name) {
 		return m_scriptManager.getScript(entity, name);
 	}
+
 
 	std::vector<EntityScript> Scene::getAssignedScripts(const Entity& entity) const {
 		return m_scriptManager.getEntityScripts(entity);
@@ -160,8 +252,10 @@ namespace sa {
 		return m_hierarchy;
 	}
 
-	const std::string& Scene::getName() const {
-		return m_name;
+	void Scene::forEachComponentType(std::function<void(ComponentType)> function) {
+		m_reg.visit([&](const entt::type_info& info) {
+			function(entt::resolve(info));
+		});
 	}
 
 }

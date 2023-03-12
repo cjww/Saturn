@@ -1,35 +1,32 @@
 #pragma once
 
 #include "IRenderTechnique.h"
+#include "IRenderLayer.h"
+#include "Tools/Profiler.h"
+#include "RenderLayers\BloomRenderLayer.h"
+
 namespace sa {
 
 	class RenderPipeline {
 	private:
-		RenderWindow* m_pWindow;
 		IRenderTechnique* m_pRenderTechnique;
-		RenderContext m_context;
-
-		std::vector<IRenderLayer*> m_layers;
-
-		tf::Executor m_executor;
-
-		std::set<Camera*> m_cameras;
+		
+		std::unique_ptr<BloomRenderLayer> m_pBloomPass;
 
 	public:
 		RenderPipeline();
 		virtual ~RenderPipeline();
 
-		void onWindowResize(Extent newExtent);
-
-		void create(RenderWindow* pWindow, IRenderTechnique* pRenderTechnique);
-
-		void pushLayer(IRenderLayer* pLayer);
-
+		void create(IRenderTechnique* pRenderTechnique);
+		
 		void beginFrameImGUI();
-
-		bool render(Scene* pScene);
+		
+		void render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection);
 
 		IRenderTechnique* getRenderTechnique() const;
+
+		BloomRenderLayer* getBloomPass() const;
+
 	};
 
 }

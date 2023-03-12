@@ -8,8 +8,6 @@
 #define __FILENAME__ (strrchr(__FILE__, '/') ? strrchr(__FILE__, '/') + 1 : __FILE__)
 #endif
 
-#define SA_DEBUG_LOG_OSTREAM std::cout
-
 enum class FGColor {
 	Black           = 30,
 	Red             = 31,
@@ -54,9 +52,13 @@ private:
 	template<typename Arg>
 	static void PrintOneArgument(Arg arg);
 
+	inline static std::ostream* s_outStream = &std::cout;
+	inline static std::mutex s_loggerMutex;
+
 public:
 	
 	static void SetColor(FGColor foreground, BGColor background = (BGColor)0);
+	static void SetOutStream(std::ostream& outStream);
 
 	template<typename ...Args>
 	static void Print(Args&&... args);
@@ -64,28 +66,22 @@ public:
 	template<typename ...Args>
 	static void PrintInColor(FGColor foreground, Args&&... args);
 	
+	template<typename ...Args>
+	static void PrintInfo(const char* filename, int line, Args&&... args);
+
+	template<typename ...Args>
+	static void PrintWarning(const char* filename, int line, Args&&... args);
+
+	template<typename ...Args>
+	static void PrintError(const char* filename, int line, Args&&... args);
+
 
 };
 
-#ifdef SA_DEBUG_LOG
-#define SA_DEBUG_LOG_INFO(...) \
-	Logger::SetColor(FGColor::BrightGreen); \
-	SA_DEBUG_LOG_OSTREAM << "[INFO: " << __FILENAME__ << ":" << __LINE__ << "] "; \
-	Logger::SetColor(FGColor::BrightWhite); \
-	Logger::Print(__VA_ARGS__); SA_DEBUG_LOG_OSTREAM
-
-#define SA_DEBUG_LOG_WARNING(...) \
-	Logger::SetColor(FGColor::BrightYellow); \
-	SA_DEBUG_LOG_OSTREAM << "[WARNING: " << __FILENAME__ << ":" << __LINE__ << "] "; \
-	Logger::SetColor(FGColor::BrightWhite); \
-	Logger::Print(__VA_ARGS__); SA_DEBUG_LOG_OSTREAM
-
-#define SA_DEBUG_LOG_ERROR(...) \
-	Logger::SetColor(FGColor::BrightRed); \
-	SA_DEBUG_LOG_OSTREAM << "[ERROR: " << __FILENAME__ << ":" << __LINE__ << "] "; \
-	Logger::SetColor(FGColor::BrightWhite); \
-	Logger::Print(__VA_ARGS__); SA_DEBUG_LOG_OSTREAM
-
+#if SA_DEBUG_LOG_ENABLE
+#define SA_DEBUG_LOG_INFO(...) Logger::PrintInfo(__FILENAME__, __LINE__, __VA_ARGS__)
+#define SA_DEBUG_LOG_WARNING(...) Logger::PrintWarning(__FILENAME__, __LINE__, __VA_ARGS__)
+#define SA_DEBUG_LOG_ERROR(...) Logger::PrintError(__FILENAME__, __LINE__, __VA_ARGS__)
 #else
 #define SA_DEBUG_LOG_INFO(...)
 #define SA_DEBUG_LOG_WARNING(...)
@@ -94,13 +90,13 @@ public:
 
 template<typename Arg>
 inline void Logger::PrintOneArgument(Arg arg) {
-	SA_DEBUG_LOG_OSTREAM << arg << ' ';
+	(*s_outStream) << arg;
 }
 
 template<typename ...Args>
 inline void Logger::Print(Args&& ...args) {
 	int dummy[] = { 0, ( (void)PrintOneArgument(std::forward<Args>(args)), 0) ... };
-	SA_DEBUG_LOG_OSTREAM << std::endl;
+	(*s_outStream) << std::endl;
 }
 
 template<typename ...Args>
@@ -108,4 +104,32 @@ inline void Logger::PrintInColor(FGColor color, Args&&... args) {
 	SetColor(color);
 	Print(args...);
 	SetColor((FGColor)0);
+}
+
+
+template<typename ...Args>
+inline static void Logger::PrintInfo(const char* filename, int line, Args&&... args) {
+	const std::lock_guard<std::mutex> lock(s_loggerMutex);
+	SetColor(FGColor::BrightGreen);
+	(*s_outStream) << "[INFO: " << filename << ":" << line << "] ";
+	SetColor(FGColor::BrightWhite);
+	Print(args...);
+}
+
+template<typename ...Args>
+inline static void Logger::PrintWarning(const char* filename, int line, Args&&... args) {
+	const std::lock_guard<std::mutex> lock(s_loggerMutex);
+	SetColor(FGColor::BrightYellow);
+	(*s_outStream) << "[WARNING: " << filename << ":" << line << "] ";
+	SetColor(FGColor::BrightWhite);
+	Print(args...);
+}
+
+template<typename ...Args>
+inline static void Logger::PrintError(const char* filename, int line, Args&&... args) {
+	const std::lock_guard<std::mutex> lock(s_loggerMutex);
+	Logger::SetColor(FGColor::BrightRed);
+	(*s_outStream) << "[ERROR: " << filename << ":" << line << "] ";
+	Logger::SetColor(FGColor::BrightWhite);
+	Logger::Print(args...);
 }

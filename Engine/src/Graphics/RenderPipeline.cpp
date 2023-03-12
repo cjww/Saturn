@@ -4,90 +4,48 @@
 namespace sa {
 
 	RenderPipeline::RenderPipeline() {
-
+		m_pBloomPass = std::make_unique<BloomRenderLayer>();
+		m_pBloomPass->init();
 	}
 
 	RenderPipeline::~RenderPipeline() {
 		delete m_pRenderTechnique;
-		for (auto& layer : m_layers) {
-			delete layer;
-		}
 	}
 
-	void RenderPipeline::onWindowResize(Extent newExtent) {
-		m_pRenderTechnique->onWindowResize(newExtent);
-		for (auto& layer : m_layers) {
-			layer->onWindowResize(newExtent);
-		}
-	}
-
-	void RenderPipeline::create(RenderWindow* pWindow, IRenderTechnique* pRenderTechnique) {
+	void RenderPipeline::create(IRenderTechnique* pRenderTechnique) {
 		m_pRenderTechnique = pRenderTechnique;
-		m_pWindow = pWindow;
-
-		m_pRenderTechnique->init(pWindow);
-	}
-
-	void RenderPipeline::pushLayer(IRenderLayer* pLayer) {
-		m_layers.push_back(pLayer);
-		pLayer->init(m_pWindow, m_pRenderTechnique);
+		m_pRenderTechnique->init();
 	}
 
 	void RenderPipeline::beginFrameImGUI() {
 		Renderer::get().newImGuiFrame();
 	}
 
-	bool RenderPipeline::render(Scene* pScene) {
+	void RenderPipeline::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) {
+		SA_PROFILE_FUNCTION();
+		if (!pRenderTarget->isActive())
+			return;
+
+		sceneCollection.makeRenderReady();
+
 		
-		//m_executor.wait_for_all();
-		// collect meshes
-		//m_taskflow.clear();
-		
-		m_pRenderTechnique->updateLights(pScene);
-		m_pRenderTechnique->collectMeshes(pScene);
-		m_cameras = pScene->getActiveCameras();
+		m_pRenderTechnique->preRender(context, pCamera, pRenderTarget, sceneCollection);
+		m_pRenderTechnique->render(context, pCamera, pRenderTarget, sceneCollection);
 
-		//m_executor.async([&]() {
-		m_context = m_pWindow->beginFrame();
-		if (!m_context)
-			return false;
-		
-		m_pRenderTechnique->updateData(m_context);
+		if(m_pBloomPass->isActive())
+			m_pBloomPass->render(context, pCamera, pRenderTarget, sceneCollection);
 
-		for (auto cam : m_cameras) {
-			m_pRenderTechnique->preRender(m_context, cam);
-			for (auto& layer : m_layers) {
-				layer->preRender(m_context, cam);
-			}
-			m_pRenderTechnique->render(m_context, cam);
-			for (auto& layer : m_layers) {
-				layer->render(m_context, cam);
-			}
-		}
-
-		m_pRenderTechnique->postRender(m_context);
-		for (auto& layer : m_layers) {
-			layer->postRender(m_context);
-		}
-
-		m_pWindow->display();
-		//});
-
-		return true;
+		sceneCollection.swap();
+		pRenderTarget->swap();
 	}
 
 	IRenderTechnique* RenderPipeline::getRenderTechnique() const {
 		return m_pRenderTechnique;
 	}
 
-
-	IRenderLayer::IRenderLayer()
-		: m_renderer(Renderer::get())
-	{
+	BloomRenderLayer* RenderPipeline::getBloomPass() const {
+		return m_pBloomPass.get();
 	}
 
-	const Texture2D& IRenderLayer::getOutputTexture() const {
-		return m_outputTexture;
-	}
 
 }

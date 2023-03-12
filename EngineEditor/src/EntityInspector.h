@@ -1,6 +1,6 @@
 #pragma once
 #include "EditorModule.h"
-#include <Tools\CustomImGui.h>
+#include "CustomImGui.h"
 
 
 class EntityInspector : public EditorModule {
@@ -11,13 +11,9 @@ class EntityInspector : public EditorModule {
 	void makePopups();
 
 public:
-	EntityInspector(sa::Engine* pEngine);
+	EntityInspector(sa::Engine* pEngine, sa::EngineEditor* pEditor);
 	virtual ~EntityInspector();
 	virtual void onImGui() override;
 	virtual void update(float dt) override;
-
-	sa::Entity getEntity() const;
-	void setEntity(const sa::Entity& entity);
-
 
 };

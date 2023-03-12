@@ -7,8 +7,13 @@
 
 #include <sol/sol.hpp>
 
+#include "Tools/Profiler.h"
+
 #include <Tools/Logger.hpp>
 #include <filesystem>
+
+#include "ECS/Entity.h"
+#include "EntityScript.h"
 
 namespace sa {
 
@@ -20,16 +25,7 @@ namespace sa {
 		std::vector<ComponentType> components;
 	};
 
-	struct EntityScript {
-		std::string name;
-		sol::environment env;
-		entt::entity owner;
-		EntityScript(std::string name, sol::environment env, entt::entity owner)
-			: name(name)
-			, env(env) 
-			, owner(owner)
-		{}
-	};
+	
 
 	class ScriptManager {
 	public:
@@ -55,19 +51,22 @@ namespace sa {
 
 		void loadSystemScript(const std::string& path);
 
-		std::optional<EntityScript> addScript(const entt::entity& entity, const std::filesystem::path& path);
+		EntityScript* addScript(const Entity& entity, const std::filesystem::path& path);
 		void removeScript(const entt::entity& entity, const std::string& name);
 		void clearEntity(const entt::entity& entity);
-		std::optional<EntityScript> getScript(const entt::entity& entity, const std::string& name) const;
+		EntityScript* getScript(const entt::entity& entity, const std::string& name);
 
+		void clearAll();
+		void freeMemory();
 
 		std::vector<EntityScript> getEntityScripts(const entt::entity& entity) const;
 
-		void init(Scene* pScene);
-		void update(float dt, Scene* pScene);
-
 		template<typename ...Args>
 		static void tryCall(const sol::environment& env, const std::string& functionName, Args&& ...args);
+		
+		template<typename ...Args>
+		void broadcast(const std::string& functionName, Args&& ...args);
+
 	};
 
 	template<typename ...Args>
@@ -80,6 +79,14 @@ namespace sa {
 		auto r = func(args...);
 		if (!r.valid()) {
 			SA_DEBUG_LOG_ERROR(lua_tostring(LuaAccessable::getState(), -1));
+		}
+	}
+
+	template<typename ...Args>
+	inline void ScriptManager::broadcast(const std::string& functionName, Args&& ...args) {
+		// Scripts
+		for (const auto& script : m_allScripts) {
+			tryCall<Args...>(script.env, functionName, args...);
 		}
 	}
 

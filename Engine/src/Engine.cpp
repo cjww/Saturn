@@ -1,56 +1,11 @@
 #include "pch.h"
 #include "Engine.h"
 
-#include "Graphics\RenderTechniques\ForwardPlus.h"
-#include "Graphics\RenderLayers\ImGuiRenderLayer.h"
-
-
-#include "Tools\MemoryChecker.h"
-
 namespace sa {
-	void Engine::loadXML(const std::filesystem::path& path, rapidxml::xml_document<>& xml, std::string& xmlStr) {
-		std::ifstream file(path);
-		if (!file.is_open()) {
-			throw std::runtime_error("Failed to open file " + path.string());
-		}
-		xmlStr.assign(std::istreambuf_iterator<char>(file), std::istreambuf_iterator<char>());
-		xmlStr.push_back('\0');
-		file.close();
-		xml.parse<0>(xmlStr.data());
-	}
-
-	void Engine::loadFromFile(const std::filesystem::path& configPath) {
-		using namespace rapidxml;
-		xml_document<> doc;
-		std::string docStr;
-		loadXML(configPath, doc, docStr);
-		xml_node<>* root = doc.first_node();
-		xml_node<>* rendererNode = root->first_node("Renderer");
-		if (rendererNode) {
-			xml_attribute<>* api = rendererNode->first_attribute("API", 0, false);
-
-			xml_attribute<>* renderTechnique = rendererNode->first_attribute("RenderTechnique", 0, false);
-			if (strcmp(renderTechnique->value(), "Forward") == 0) {
-				if (strcmp(api->value(), "Vulkan") == 0) {
-					//m_pRenderTechnique = std::make_unique<ForwardRenderer>();
-				}
-				else {
-					throw std::runtime_error("API not supported : " + std::string(api->value()));
-				}
-			}
-			else if (renderTechnique->value() == "Deferred") {
-				throw std::runtime_error("RenderTechnique not implemented : " + std::string(renderTechnique->value()));
-			}
-			else if (renderTechnique->value() == "Raytracing") {
-				throw std::runtime_error("RenderTechnique not implemented : " + std::string(renderTechnique->value()));
-			}
-			else {
-				throw std::runtime_error("RenderTechnique not supported : " + std::string(renderTechnique->value()));
-			}
-		}
-	}
+	std::filesystem::path Engine::s_shaderDirectory = std::filesystem::current_path();
 
 	void Engine::registerMath() {
+
 		{
 			auto type = LuaAccessable::registerType<Vector3>("Vec3",
 				sol::constructors<Vector3(float, float, float), Vector3(float), Vector3()>(),
@@ -74,10 +29,10 @@ namespace sa {
 					}
 					throw std::runtime_error("Vec3 __div: Unmatched type");
 				},
-
-					sol::meta_function::length, &Vector3::length,
-					sol::meta_function::to_string, &Vector3::toString
-					);
+				sol::meta_function::length, &Vector3::length,
+				sol::meta_function::to_string, &Vector3::toString
+			);
+			
 			type["x"] = &Vector3::x;
 			type["y"] = &Vector3::y;
 			type["z"] = &Vector3::z;
@@ -196,10 +151,11 @@ namespace sa {
 	}
 
 	void Engine::reg() {
-		
 		registerMath();
 
 		auto& lua = LuaAccessable::getState();
+		//TODO
+		/*
 		lua["setScene"] = [&](const sol::lua_value& scene) {
 			if (scene.is<std::string>()) {
 				setScene(scene.as<std::string>());
@@ -214,8 +170,42 @@ namespace sa {
 			}
 			return &getScene(sceneName.as<std::string>());
 		};
-		
+		*/
 
+		lua["Serialize"] = [](sol::lua_value table, sol::this_environment thisEnv) {
+			if (!table.is<sol::table>()) {
+				SA_DEBUG_LOG_ERROR("First argument is not a table");
+				return;
+			}
+			sol::table t = table.as<sol::table>();
+			sol::environment& env = thisEnv;
+			sa::Entity entity = env["entity"];
+			std::string scriptName = env["scriptName"];
+			
+			EntityScript* pScript = entity.getScript(scriptName);
+			if (!pScript) {
+				SA_DEBUG_LOG_ERROR("No such script! ", scriptName);
+				return;
+			}
+			
+			for (auto& [key, value] : t) {
+				sol::object v = value;
+				std::string variableName = key.as<std::string>();
+				// if stored load stored value
+				if (pScript->serializedData.count(variableName)) {
+					value = pScript->serializedData[variableName];
+				}
+				else {
+					// else store this value
+					pScript->serializedData[variableName] = value;
+				}
+				// initialize variable with appropriate value
+				env[variableName] = value;
+			}
+			
+			
+			//SA_DEBUG_LOG_INFO("Serialize");
+		};
 
 		/*
 		{
@@ -231,84 +221,59 @@ namespace sa {
 	}
 
 	void Engine::onWindowResize(Extent newExtent) {
-		publish<sa::engine_event::WindowResized>(newExtent);
+		m_pWindowRenderer->onWindowResize(newExtent);
+
+		publish<sa::engine_event::WindowResized>(m_windowExtent, newExtent);
 		m_windowExtent = newExtent;
+	}
+
+	const std::filesystem::path& Engine::getShaderDirectory() {
+		return s_shaderDirectory;
+	}
+
+	void Engine::setShaderDirectory(const std::filesystem::path& path) {
+		s_shaderDirectory = std::filesystem::absolute(path);
 	}
 
 	void Engine::setup(sa::RenderWindow* pWindow, bool enableImgui) {
 		SA_PROFILE_FUNCTION();
-
+		
 		m_currentScene = nullptr;
 		m_pWindow = pWindow;
-		m_isImGuiRecording = false;
+		
+		registerAllComponents();
 
 		reg();
 		Scene::reg();
 		Entity::reg();
 		
 		if (pWindow) {
-			m_renderPipeline.create(pWindow, new ForwardPlus(!enableImgui));
-			if (enableImgui)
-				m_renderPipeline.pushLayer(new ImGuiRenderLayer);
+			m_renderPipeline.create(new ForwardPlus);
+
+			setWindowRenderer(new WindowRenderer(m_pWindow));
 
 			pWindow->setResizeCallback(std::bind(&Engine::onWindowResize, this, std::placeholders::_1));
 			m_windowExtent = pWindow->getCurrentExtent();
-
-			on<engine_event::WindowResized>([&](engine_event::WindowResized& e, Engine& emitter) {
-				m_renderPipeline.onWindowResize(e.newExtent);
-
-				for (const auto& [id, scene] : m_scenes) {
-					for (auto& cam : scene.getActiveCameras()) {
-						Rect viewport = cam->getViewport();
-						// resize viewport but keep relative size to window size
-						viewport.extent.width = e.newExtent.width * viewport.extent.width / m_windowExtent.width;
-						viewport.extent.height = e.newExtent.height * viewport.extent.height / m_windowExtent.height;
-
-						cam->setViewport(viewport);
-					}
-				}
-
-
-			});
+			m_mainRenderTarget.initialize(this, m_pWindow);
 		}
-		// set scene silently
-		m_currentScene = &getScene("MainScene");
-	
-		m_isSetup = true;
-	}
-
-	
-	void Engine::init() {
-		SA_PROFILE_FUNCTION();
-
-		if (m_currentScene) {
-			// inform about scene set
-			publish<engine_event::SceneSet>(m_currentScene);
-			publish<engine_event::SceneLoad>(m_currentScene);
-			m_currentScene->load();
-		}
-
-	}
-
-	void Engine::update(float dt) {
-		SA_PROFILE_FUNCTION();
-
-		if (m_currentScene) {
-			m_currentScene->update(dt);
-		}
-
+		
+		on<engine_event::SceneSet>([](engine_event::SceneSet& e, Engine&) {
+			if (e.oldScene) {
+				e.oldScene->onRuntimeStop();
+			}
+			e.newScene->onRuntimeStart();
+		});
 	}
 
 	void Engine::cleanup() {
-		SA_PROFILE_FUNCTION();
-		
-		m_scenes.clear();
+		if (m_pWindowRenderer)
+			delete m_pWindowRenderer;
+		AssetManager::get().clear();
 	}
 
 	void Engine::recordImGui() {
 		SA_PROFILE_FUNCTION();
 		m_renderPipeline.beginFrameImGUI();
-		m_isImGuiRecording = true;
 	}
 
 	void Engine::draw() {
@@ -317,52 +282,57 @@ namespace sa {
 		if (!m_pWindow)
 			return;
 
-		m_renderPipeline.render(getCurrentScene());
-		m_isImGuiRecording = false;
+		RenderContext context = m_pWindow->beginFrame();
+		if (!context)
+			return;
+		
+		if (m_currentScene) {
+			
+			bool renderedToMainRenderTarget = false;
+			m_currentScene->forEach<comp::Camera>([&](comp::Camera& camera) {
+				RenderTarget* pRenderTarget = camera.getRenderTarget();
+				if (pRenderTarget) {
+					m_renderPipeline.render(context, &camera.camera, pRenderTarget, camera.getSceneCollection());
+				}
+				else {
+					if(!renderedToMainRenderTarget)
+						m_renderPipeline.render(context, &camera.camera, &m_mainRenderTarget, camera.getSceneCollection());
+					renderedToMainRenderTarget = true;
+				}
+			});
+			
+		}
+		publish<engine_event::OnRender>(&context, &m_renderPipeline);
+
+		m_pWindowRenderer->render(context, m_mainRenderTarget.getOutputTexture());
+		{
+			SA_PROFILE_SCOPE("Display");
+			m_pWindow->display();
+		}
 	}
 
-	std::chrono::duration<double, std::milli> Engine::getCPUFrameTime() const {
-		return m_frameTime.cpu;
-	}
-	
 	const RenderPipeline& Engine::getRenderPipeline() const {
 		return m_renderPipeline;
 	}
 
-	Scene& Engine::getScene(const std::string& name) {
-		auto [it, success] = m_scenes.emplace(name, name);
-		if (success) {
-			it->second.on<scene_event::SceneRequest>([&](const sa::scene_event::SceneRequest e, Scene&){
-				setScene(e.sceneName);
-			});
-		}
-		return it->second;
+	const RenderTarget& Engine::getMainRenderTarget() const {
+		return m_mainRenderTarget;
+	}
+
+	void Engine::setWindowRenderer(IWindowRenderer* pWindowRenderer) {
+		if (m_pWindowRenderer)
+			delete m_pWindowRenderer;
+		m_pWindowRenderer = pWindowRenderer;
 	}
 
 	Scene* Engine::getCurrentScene() const {
 		return m_currentScene;
 	}
 
-	void Engine::setScene(const std::string& name) {
-		setScene(getScene(name));
-	}
-
-	void Engine::setScene(Scene& scene) {
+	void Engine::setScene(Scene* scene) {
 		SA_PROFILE_FUNCTION();
-		if (m_currentScene) {
-			m_currentScene->unload();
-		}
-		m_currentScene = &scene;
-		publish<engine_event::SceneSet>(m_currentScene);
-		if (m_isSetup) {
-			publish<engine_event::SceneLoad>(m_currentScene);
-			m_currentScene->load();
-		}
+		publish<engine_event::SceneSet>(m_currentScene, scene);
+		m_currentScene = scene;	
 	}
-
-	std::unordered_map<std::string, Scene>& Engine::getScenes() {
-		return m_scenes;
-	}
-
 }
 

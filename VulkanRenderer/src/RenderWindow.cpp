@@ -12,6 +12,10 @@ namespace sa {
 	}
 
 
+	void RenderWindow::waitForFrame() {
+		Renderer::get().waitForFrame(m_swapchain);
+	}
+
 	RenderContext RenderWindow::beginFrame() {
 		while (isIconified()) {
 			waitEvents();

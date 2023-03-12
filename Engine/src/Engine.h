@@ -1,6 +1,9 @@
 #pragma once
 
 #include "Graphics/RenderPipeline.h"
+#include "Graphics/WindowRenderer.h"
+
+#include "Graphics/RenderTechniques/ForwardPlus.h"
 
 #include "AssetManager.h"
 #include "Scene.h"
@@ -10,65 +13,55 @@
 #include "Tools\utils.h"
 #include "ScriptManager.h"
 
-#include <RenderWindow.hpp>
+#include "Tools/Profiler.h"
 
-#include <rapidxml\rapidxml.hpp>
+#include <RenderWindow.hpp>
 
 
 namespace sa {
 
+
 	class Engine : public entt::emitter<Engine> {
 	private:
+		static std::filesystem::path s_shaderDirectory;
 		
 		RenderPipeline m_renderPipeline;
-		bool m_isImGuiRecording;
+		IWindowRenderer* m_pWindowRenderer;
+
+		RenderTarget m_mainRenderTarget;
 
 		Extent m_windowExtent;
 		RenderWindow* m_pWindow;
 
-		std::unordered_map<std::string, Scene> m_scenes;
 		Scene* m_currentScene;
-
-		struct FrameTime {
-			std::chrono::high_resolution_clock::time_point start;
-			std::chrono::duration<double, std::milli> cpu;
-			std::chrono::duration<double, std::milli> gpu;
-		} m_frameTime;
-
-		bool m_isSetup = false;
-
-		void loadXML(const std::filesystem::path& path, rapidxml::xml_document<>& xml, std::string& xmlStr);
-		void loadFromFile(const std::filesystem::path& configPath);
-
+		
 		void registerMath();
 
 		void reg();
 		void onWindowResize(Extent newExtent);
 
 	public:
+		static const std::filesystem::path& getShaderDirectory();
+		static void setShaderDirectory(const std::filesystem::path& path);
+
+
 		// Call this to set up engine
 		void setup(sa::RenderWindow* pWindow = nullptr, bool enableImgui = false);
-
-		// Call this reight before the main loop
-		void init();
-
-		void update(float dt);
 
 		void cleanup();
 
 		void recordImGui();
 		void draw();
 
-		std::chrono::duration<double, std::milli> getCPUFrameTime() const;
-
 		const RenderPipeline& getRenderPipeline() const;
 
-		Scene& getScene(const std::string& name);
+		const RenderTarget& getMainRenderTarget() const;
+
+		void setWindowRenderer(IWindowRenderer* pWindowRenderer);
+
 		Scene* getCurrentScene() const;
-		void setScene(const std::string& name);
-		void setScene(Scene& scene);
 
-		std::unordered_map<std::string, Scene>& getScenes();
-
+		void setScene(Scene* scene);
 	};
+	
 }

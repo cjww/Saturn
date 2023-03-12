@@ -3,8 +3,10 @@
 #include "ECS/Components.h"
 #include "Scene.h"
 
+#include <simdjson.h>
+
 namespace sa {
-	
+
 	void ScriptManager::setComponents(const entt::entity& entity, sol::environment& env, std::vector<ComponentType>& components) {
 		for (auto& type : components) {
 			/*
@@ -104,14 +106,14 @@ namespace sa {
 		lua.stack_clear();
 	}
 
-	std::optional<EntityScript> ScriptManager::addScript(const entt::entity& entity, const std::filesystem::path& path) {
+	EntityScript* ScriptManager::addScript(const Entity& entity, const std::filesystem::path& path) {
 		if (!std::filesystem::exists(path)) {
-			SA_DEBUG_LOG_ERROR("File does not exist:", path);
+			SA_DEBUG_LOG_ERROR("File does not exist: ", path);
 			return {};
 		}
 
 
-		std::string scriptName = path.filename().replace_extension().string();
+		std::string scriptName = path.filename().replace_extension().generic_string();
 		if (m_entityScriptIndices[entity].count(scriptName)) {
 			return {}; // don't add same script again
 		}
@@ -121,12 +123,19 @@ namespace sa {
 
 		if (!m_scripts.count(hashedString)) {
 			// load file as function
-			m_scripts[hashedString] = lua.load_file(path.string());
+			m_scripts[hashedString] = lua.load_file(path.generic_string());
 		}
 
 		sol::environment env = sol::environment(lua, sol::create, lua.globals());
 		sol::safe_function& func = m_scripts[hashedString];
 		env.set_on(func);
+
+		env["entity"] = entity;
+		env["scriptName"] = scriptName;
+		env["scene"] = entity.getScene();
+
+		m_allScripts.emplace_back(scriptName, path, env, entity);
+		m_entityScriptIndices[entity][scriptName] = m_allScripts.size() - 1;
 
 		// fill environment with contents of script
 		auto ret = func();
@@ -134,11 +143,7 @@ namespace sa {
 			SA_DEBUG_LOG_ERROR(lua_tostring(lua, -1));
 		}
 
-		//env["entity"] = entity;
-		m_allScripts.emplace_back(scriptName, env, entity);
-		m_entityScriptIndices[entity][scriptName] = m_allScripts.size() - 1;
-
-		return m_allScripts.back();
+		return &m_allScripts.back();
 	}
 
 	void ScriptManager::removeScript(const entt::entity& entity, const std::string& name) {
@@ -174,14 +179,35 @@ namespace sa {
 		m_entityScriptIndices.erase(entity);
 	}
 
-	std::optional<EntityScript> ScriptManager::getScript(const entt::entity& entity, const std::string& name) const {
+	EntityScript* ScriptManager::getScript(const entt::entity& entity, const std::string& name) {
 		if (!m_entityScriptIndices.count(entity))
-			return {};
+			return nullptr;
 		auto& entityScripts = m_entityScriptIndices.at(entity);
 		if (!entityScripts.count(name))
-			return {};
+			return nullptr;
 
-		return m_allScripts.at(entityScripts.at(name));
+		return &m_allScripts.at(entityScripts.at(name));
+	}
+
+	void ScriptManager::clearAll() {
+		m_allScripts.clear();
+		m_entityScriptIndices.clear();
+		m_scripts.clear();
+	}
+
+	void ScriptManager::freeMemory() {
+		m_allScripts.clear();
+		m_allScripts.shrink_to_fit();
+
+		std::unordered_map<std::string, SystemScript> tmpSystemScripts;
+		m_systemScripts.swap(tmpSystemScripts);
+
+		std::unordered_map<size_t, sol::safe_function> tmpScripts;
+		m_scripts.swap(tmpScripts);
+
+		std::unordered_map<entt::entity, std::unordered_map<std::string, size_t>> tmpEntityScriptIndices;
+		m_entityScriptIndices.swap(tmpEntityScriptIndices);
+		
 	}
 
 	std::vector<EntityScript> ScriptManager::getEntityScripts(const entt::entity& entity) const {
@@ -194,65 +220,4 @@ namespace sa {
 		}
 		return scripts;
 	}
-	
-	void ScriptManager::init(Scene* pScene) {
-		SA_PROFILE_FUNCTION();
-		sol::state& lua = LuaAccessable::getState();
-		// System scripts
-		for (auto& pair : m_systemScripts) {
-			SystemScript& script = pair.second;
-
-			pScene->forEach(script.components, [&](const Entity& entity)
-				{
-					comp::Script* scriptComp = entity.getComponent<comp::Script>();
-					if(!scriptComp->env.valid()) {
-						scriptComp->env = sol::environment(lua, sol::create, lua.globals());
-					}
-					setComponents(entity, scriptComp->env, script.components);
-					scriptComp->env["entity"] = entity;
-
-					sol::safe_function f = script.env["init"];
-					tryCall(scriptComp->env, f);
-				});
-			
-		}
-
-		// Scripts
-		for (auto& script : m_allScripts) {
-			tryCall(script.env, "init");
-		}
-	}
-
-	void ScriptManager::update(float dt, Scene* pScene) {
-		SA_PROFILE_FUNCTION();
-		// System scripts
-		for (auto& pair : m_systemScripts) {
-			SystemScript& script = pair.second;
-
-			pScene->forEach(script.components, [&](const Entity& entity)
-				{
-					comp::Script* scriptComp = entity.getComponent<comp::Script>();
-					if (!scriptComp->env.valid()) {
-						sol::state& lua = LuaAccessable::getState();
-						scriptComp->env = sol::environment(lua, sol::create, lua.globals());
-						
-						setComponents(entity, scriptComp->env, script.components);
-						scriptComp->env["entity"] = entity;
-						sol::safe_function f = script.env["init"];
-						tryCall(scriptComp->env, f);
-					}
-
-					tryCall(scriptComp->env, "update", dt);
-				});
-			
-		}
-
-		// Scripts
-		for (auto& script : m_allScripts) {
-			tryCall(script.env, "update", dt);
-		}
-	}
-
-
-	
 }

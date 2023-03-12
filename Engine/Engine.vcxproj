@@ -5,6 +5,14 @@
       <Configuration>Debug</Configuration>
       <Platform>Win32</Platform>
     </ProjectConfiguration>
+    <ProjectConfiguration Include="Optimized|Win32">
+      <Configuration>Optimized</Configuration>
+      <Platform>Win32</Platform>
+    </ProjectConfiguration>
+    <ProjectConfiguration Include="Optimized|x64">
+      <Configuration>Optimized</Configuration>
+      <Platform>x64</Platform>
+    </ProjectConfiguration>
     <ProjectConfiguration Include="Release|Win32">
       <Configuration>Release</Configuration>
       <Platform>Win32</Platform>
@@ -39,6 +47,13 @@
     <WholeProgramOptimization>true</WholeProgramOptimization>
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Optimized|Win32'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>true</UseDebugLibraries>
@@ -46,6 +61,13 @@
     <CharacterSet>Unicode</CharacterSet>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
+    <ConfigurationType>StaticLibrary</ConfigurationType>
+    <UseDebugLibraries>false</UseDebugLibraries>
+    <PlatformToolset>v143</PlatformToolset>
+    <WholeProgramOptimization>true</WholeProgramOptimization>
+    <CharacterSet>Unicode</CharacterSet>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Optimized|x64'" Label="Configuration">
     <ConfigurationType>StaticLibrary</ConfigurationType>
     <UseDebugLibraries>false</UseDebugLibraries>
     <PlatformToolset>v143</PlatformToolset>
@@ -63,10 +85,16 @@
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Optimized|Win32'" Label="PropertySheets">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <ImportGroup Label="PropertySheets" Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
+  </ImportGroup>
+  <ImportGroup Condition="'$(Configuration)|$(Platform)'=='Optimized|x64'" Label="PropertySheets">
     <Import Project="$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props" Condition="exists('$(UserRootDir)\Microsoft.Cpp.$(Platform).user.props')" Label="LocalAppDataPlatform" />
   </ImportGroup>
   <PropertyGroup Label="UserMacros" />
@@ -80,12 +108,22 @@
     <OutDir>$(ProjectDir)lib</OutDir>
     <TargetName>$(ProjectName)$(Platform)$(Configuration)</TargetName>
   </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Optimized|Win32'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(ProjectDir)lib</OutDir>
+    <TargetName>$(ProjectName)$(Platform)$(Configuration)</TargetName>
+  </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <LinkIncremental>true</LinkIncremental>
     <OutDir>$(ProjectDir)lib\</OutDir>
     <TargetName>$(SolutionName)_$(Platform)$(Configuration)</TargetName>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
+    <LinkIncremental>false</LinkIncremental>
+    <OutDir>$(ProjectDir)lib\</OutDir>
+    <TargetName>$(SolutionName)_$(Platform)$(Configuration)</TargetName>
+  </PropertyGroup>
+  <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Optimized|x64'">
     <LinkIncremental>false</LinkIncremental>
     <OutDir>$(ProjectDir)lib\</OutDir>
     <TargetName>$(SolutionName)_$(Platform)$(Configuration)</TargetName>
@@ -134,16 +172,44 @@
       </Command>
     </PreBuildEvent>
   </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Optimized|Win32'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>WIN32;NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir)/src;$(SolutionDir)/RenderWindow/include;$(SolutionDir)/VulkanRenderer/include;$(SolutionDir)/DX11Renderer/include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)/RenderWindow/lib;$(SolutionDir)/VulkanRenderer/lib;$(SolutionDir)/DX11Renderer/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>VulkanRenderer$(Platform)$(Configuration).lib;RenderWindow$(Platform)$(Configuration).lib;DX11Renderer$(Platform)$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
+  </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <WarningLevel>Level3</WarningLevel>
       <SDLCheck>true</SDLCheck>
-      <PreprocessorDefinitions>_DEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)deps\include\;$(ProjectDir)src\;$(SolutionDir)\VulkanRenderer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)deps\PhysX\include;$(ProjectDir)deps\include\;$(ProjectDir)src\;$(SolutionDir)\VulkanRenderer\include;$(ProjectDir)deps\simdjson\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <RuntimeLibrary>MultiThreadedDebugDLL</RuntimeLibrary>
+      <PreprocessToFile>false</PreprocessToFile>
+      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+      <PreprocessorDefinitions>_DEBUG;_CONSOLE;SA_DEBUG_LOG_ENABLE;SA_PROFILER_ENABLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <UndefinePreprocessorDefinitions>%(UndefinePreprocessorDefinitions)</UndefinePreprocessorDefinitions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -156,10 +222,10 @@
       </Command>
     </PreBuildEvent>
     <Lib>
-      <AdditionalDependencies>VulkanRenderer_$(Platform)$(Configuration).lib;lua51.lib;assimp-vc143-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>VulkanRenderer_$(Platform)$(Configuration).lib;lua51.lib;PhysXExtensions_static_64.lib;PhysX_64.lib;PhysXCommon_64.lib;PhysXFoundation_64.lib;PhysXCooking_64.lib;PhysXPvdSDK_static_64.lib;assimp-vc143-mtd.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
-      <AdditionalLibraryDirectories>$(ProjectDir)deps\lua\;$(SolutionDir)VulkanRenderer\lib;$(ProjectDir)deps\assimp-5.2.4\lib\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)deps\lua\;$(SolutionDir)VulkanRenderer\lib;$(ProjectDir)deps\assimp-5.2.4\lib\$(Configuration);$(ProjectDir)deps\PhysX\bin\debug;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'">
@@ -170,10 +236,12 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>NDEBUG;_CONSOLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ConformanceMode>true</ConformanceMode>
-      <AdditionalIncludeDirectories>$(ProjectDir)deps\include\;$(ProjectDir)src\;$(SolutionDir)\VulkanRenderer\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <AdditionalIncludeDirectories>$(ProjectDir)deps\PhysX\include;$(ProjectDir)deps\include\;$(ProjectDir)src\;$(SolutionDir)\VulkanRenderer\include;$(ProjectDir)deps\simdjson\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
       <LanguageStandard>stdcpp17</LanguageStandard>
       <PrecompiledHeader>Use</PrecompiledHeader>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <PreprocessToFile>false</PreprocessToFile>
+      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
     </ClCompile>
     <Link>
       <SubSystem>Console</SubSystem>
@@ -188,18 +256,73 @@
       </Command>
     </PreBuildEvent>
     <Lib>
-      <AdditionalDependencies>VulkanRenderer_$(Platform)$(Configuration).lib;lua51.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+      <AdditionalDependencies>VulkanRenderer_$(Platform)$(Configuration).lib;lua51.lib;PhysXExtensions_static_64.lib;PhysX_64.lib;PhysXCommon_64.lib;PhysXFoundation_64.lib;PhysXCooking_64.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
     </Lib>
     <Lib>
-      <AdditionalLibraryDirectories>$(ProjectDir)deps\lua\;$(SolutionDir)VulkanRenderer\lib;$(ProjectDir)deps\assimp-5.2.4\lib\$(Configuration);%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalLibraryDirectories>$(ProjectDir)deps\lua\;$(SolutionDir)VulkanRenderer\lib;$(ProjectDir)deps\assimp-5.2.4\lib\$(Configuration);$(ProjectDir)deps\PhysX\bin\release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+    </Lib>
+  </ItemDefinitionGroup>
+  <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Optimized|x64'">
+    <ClCompile>
+      <WarningLevel>Level3</WarningLevel>
+      <FunctionLevelLinking>true</FunctionLevelLinking>
+      <IntrinsicFunctions>true</IntrinsicFunctions>
+      <SDLCheck>true</SDLCheck>
+      <PreprocessorDefinitions>NDEBUG;_CONSOLE;SA_DEBUG_LOG_ENABLE;SA_PROFILER_ENABLE;%(PreprocessorDefinitions)</PreprocessorDefinitions>
+      <ConformanceMode>true</ConformanceMode>
+      <AdditionalIncludeDirectories>$(ProjectDir)deps\PhysX\include;$(ProjectDir)deps\include\;$(ProjectDir)src\;$(SolutionDir)\VulkanRenderer\include;$(ProjectDir)deps\simdjson\include;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <LanguageStandard>stdcpp17</LanguageStandard>
+      <PrecompiledHeader>Use</PrecompiledHeader>
+      <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <PreprocessToFile>false</PreprocessToFile>
+      <AdditionalOptions>/bigobj %(AdditionalOptions)</AdditionalOptions>
+    </ClCompile>
+    <Link>
+      <SubSystem>Console</SubSystem>
+      <EnableCOMDATFolding>true</EnableCOMDATFolding>
+      <OptimizeReferences>true</OptimizeReferences>
+      <GenerateDebugInformation>true</GenerateDebugInformation>
+      <AdditionalLibraryDirectories>$(SolutionDir)/RenderWindow/lib;$(SolutionDir)/VulkanRenderer/lib;$(SolutionDir)/DX11Renderer/lib;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
+      <AdditionalDependencies>VulkanRenderer$(Platform)$(Configuration).lib;RenderWindow$(Platform)$(Configuration).lib;DX11Renderer$(Platform)$(Configuration).lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Link>
+    <PreBuildEvent>
+      <Command>
+      </Command>
+    </PreBuildEvent>
+    <Lib>
+      <AdditionalDependencies>VulkanRenderer_$(Platform)$(Configuration).lib;lua51.lib;PhysXExtensions_static_64.lib;PhysX_64.lib;PhysXCommon_64.lib;PhysXFoundation_64.lib;PhysXCooking_64.lib;assimp-vc143-mt.lib;%(AdditionalDependencies)</AdditionalDependencies>
+    </Lib>
+    <Lib>
+      <AdditionalLibraryDirectories>$(ProjectDir)deps\lua\;$(SolutionDir)VulkanRenderer\lib;$(ProjectDir)deps\assimp-5.2.4\lib\Release;$(ProjectDir)deps\PhysX\bin\release;%(AdditionalLibraryDirectories)</AdditionalLibraryDirectories>
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="src\Assets\IAsset.cpp" />
+    <ClCompile Include="src\Assets\ModelAsset.cpp" />
+    <ClCompile Include="src\Assets\TextureAsset.cpp" />
+    <ClCompile Include="src\ECS\Components\BoxCollider.cpp" />
+    <ClCompile Include="deps\simdjson\src\simdjson.cpp">
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">NotUsing</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Optimized|x64'">NotUsing</PrecompiledHeader>
+    </ClCompile>
     <ClCompile Include="src\ECS\Components.cpp" />
+    <ClCompile Include="src\ECS\Components\Camera.cpp" />
+    <ClCompile Include="src\ECS\Components\Light.cpp" />
+    <ClCompile Include="src\ECS\Components\Model.cpp" />
+    <ClCompile Include="src\ECS\Components\Name.cpp" />
+    <ClCompile Include="src\ECS\Components\RigidBody.cpp" />
+    <ClCompile Include="src\ECS\Components\SphereCollider.cpp" />
+    <ClCompile Include="src\ECS\Components\Transform.cpp" />
+    <ClCompile Include="src\EntityScript.cpp" />
     <ClCompile Include="src\Graphics\IRenderLayer.cpp" />
     <ClCompile Include="src\Graphics\RenderLayers\BloomRenderLayer.cpp" />
-    <ClCompile Include="src\Graphics\RenderLayers\ImGuiRenderLayer.cpp" />
     <ClCompile Include="src\Graphics\RenderPipeline.cpp" />
+    <ClCompile Include="src\Graphics\RenderTarget.cpp" />
+    <ClCompile Include="src\Graphics\SceneCollection.cpp" />
+    <ClCompile Include="src\Graphics\WindowRenderer.cpp" />
+    <ClCompile Include="src\PhysicsSystem.cpp" />
+    <ClCompile Include="src\Serializable.cpp" />
     <ClCompile Include="src\Tools\MemoryChecker.cpp" />
     <ClCompile Include="src\Application.cpp" />
     <ClCompile Include="src\ECS\ComponentBase.cpp" />
@@ -211,16 +334,15 @@
     <ClCompile Include="src\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
+      <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Optimized|x64'">Create</PrecompiledHeader>
     </ClCompile>
     <ClCompile Include="src\Scene.cpp" />
-    <ClCompile Include="src\Camera.cpp" />
-    <ClCompile Include="src\Tools\CustomImGui.cpp" />
+    <ClCompile Include="src\SceneCamera.cpp" />
     <ClCompile Include="src\ECS\Entity.cpp" />
     <ClCompile Include="src\Engine.cpp" />
     <ClCompile Include="src\Graphics\IRenderTechnique.cpp" />
     <ClCompile Include="src\AssetManager.cpp" />
     <ClCompile Include="src\Tools\Clock.cpp" />
-    <ClCompile Include="src\Tools\Logger.cpp" />
     <ClCompile Include="src\Tools\Math.cpp" />
     <ClCompile Include="src\Tools\Matrix.cpp" />
     <ClCompile Include="src\Tools\Profiler.cpp" />
@@ -229,19 +351,35 @@
     <ClCompile Include="src\Tools\utils.cpp" />
     <ClCompile Include="src\Tools\Vector.cpp" />
     <ClCompile Include="src\EntityHierarchy.cpp" />
+    <ClCompile Include="src\UUID.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="src\Assets\IAsset.h" />
+    <ClInclude Include="src\Assets\ModelAsset.h" />
+    <ClInclude Include="src\Assets\TextureAsset.h" />
+    <ClInclude Include="src\ECS\Components\BoxCollider.h" />
+    <ClInclude Include="src\ECS\Components\Camera.h" />
+    <ClInclude Include="src\ECS\Components\Light.h" />
+    <ClInclude Include="src\ECS\Components\Model.h" />
+    <ClInclude Include="src\ECS\Components\Name.h" />
+    <ClInclude Include="src\ECS\Components\RigidBody.h" />
+    <ClInclude Include="src\ECS\Components\SphereCollider.h" />
+    <ClInclude Include="src\ECS\Components\Transform.h" />
+    <ClInclude Include="src\EntityScript.h" />
+    <ClInclude Include="src\Graphics\RenderTarget.h" />
+    <ClInclude Include="src\Graphics\SceneCollection.h" />
+    <ClInclude Include="src\Graphics\WindowRenderer.h" />
+    <ClInclude Include="src\Serializable.h" />
     <ClInclude Include="src\Graphics\IRenderLayer.h" />
     <ClInclude Include="src\Graphics\RenderLayers\BloomRenderLayer.h" />
-    <ClInclude Include="src\Graphics\RenderLayers\ImGuiRenderLayer.h" />
     <ClInclude Include="src\Graphics\RenderPipeline.h" />
     <ClInclude Include="src\Graphics\RenderTechniques\ForwardPlus.h" />
+    <ClInclude Include="src\PhysicsSystem.h" />
     <ClInclude Include="src\Tools\MemoryChecker.h" />
     <ClInclude Include="src\Application.h" />
     <ClInclude Include="src\Core.h" />
     <ClInclude Include="src\ECS\ComponentBase.h" />
     <ClInclude Include="src\ECS\ComponentType.h" />
-    <ClInclude Include="src\CameraController.h" />
     <ClInclude Include="src\EntryPoint.h" />
     <ClInclude Include="src\Graphics\ForwardPlus.h" />
     <ClInclude Include="src\Graphics\Material.h" />
@@ -254,20 +392,19 @@
     <ClInclude Include="src\pch.h" />
     <ClInclude Include="src\Scene.h" />
     <ClInclude Include="src\ThreadManager.h" />
-    <ClInclude Include="src\Tools\CustomImGui.h" />
-    <ClInclude Include="src\Camera.h" />
+    <ClInclude Include="src\SceneCamera.h" />
     <ClInclude Include="src\ECS\Components.h" />
     <ClInclude Include="src\Engine.h" />
     <ClInclude Include="src\Graphics\IRenderTechnique.h" />
     <ClInclude Include="src\structs.h" />
     <ClInclude Include="src\Tools\Clock.h" />
-    <ClInclude Include="src\Tools\Logger.hpp" />
     <ClInclude Include="src\Tools\Math.h" />
     <ClInclude Include="src\Tools\Matrix.h" />
     <ClInclude Include="src\Tools\Profiler.h" />
     <ClInclude Include="src\Tools\utils.h" />
     <ClInclude Include="src\Tools\Vector.h" />
     <ClInclude Include="src\EntityHierarchy.h" />
+    <ClInclude Include="src\UUID.h" />
     <ClInclude Include="src\Vertex.h" />
     <ClInclude Include="src\ECS\Entity.h" />
     <ClInclude Include="src\AssetManager.h" />

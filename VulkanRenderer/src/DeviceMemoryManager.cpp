@@ -144,6 +144,7 @@ namespace sa {
 		delete texture;
 		texture = nullptr;
 		m_memoryMutex.unlock();
+
 	}
 
 	void DeviceMemoryManager::setCurrentFrameIndex(uint32_t frameIndex) {

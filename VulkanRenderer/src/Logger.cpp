@@ -5,3 +5,7 @@ void Logger::SetColor(FGColor foreground, BGColor background) {
 	std::string str = "\033[" + std::to_string((int)background) + ";" + std::to_string((int)foreground) + "m";
 	printf(str.c_str());
 }
+
+void Logger::SetOutStream(std::ostream& outStream) {
+	s_outStream = &outStream;
+}
