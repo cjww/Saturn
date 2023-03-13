@@ -18,7 +18,7 @@
     <ClInclude Include="include\Tools\Logger.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\debugFunctions.hpp">
+    <ClInclude Include="include\internal\debugFunctions.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\Renderer.hpp">
@@ -27,7 +27,7 @@
     <ClInclude Include="include\pch.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\VulkanCore.hpp">
+    <ClInclude Include="include\internal\VulkanCore.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\Window.hpp">
@@ -36,46 +36,43 @@
     <ClInclude Include="include\structs.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\CommandPool.hpp">
+    <ClInclude Include="include\internal\CommandPool.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\Resources\ResourceManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Resources\Swapchain.hpp">
+    <ClInclude Include="include\internal\Swapchain.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Resources\DeviceMemoryManager.hpp">
+    <ClInclude Include="include\internal\DeviceMemoryManager.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\RenderWindow.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Resources\RenderProgram.hpp">
+    <ClInclude Include="include\internal\RenderProgram.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\RenderProgramFactory.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Resources\FramebufferSet.hpp">
+    <ClInclude Include="include\internal\FramebufferSet.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\Resources\Texture.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Resources\Shader.hpp">
+    <ClInclude Include="include\internal\ShaderModule.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Resources\ShaderSet.hpp">
-      <Filter>Header Files</Filter>
-    </ClInclude>
-    <ClInclude Include="include\Resources\Pipeline.hpp">
+    <ClInclude Include="include\internal\ShaderSet.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\RenderContext.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\Resources\DescriptorSet.hpp">
+    <ClInclude Include="include\internal\DescriptorSet.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\Resources\Buffer.hpp">
@@ -106,6 +103,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\Format.hpp">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="include\internal\Pipeline.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>
@@ -152,7 +152,7 @@
     <ClCompile Include="src\Texture.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Shader.cpp">
+    <ClCompile Include="src\ShaderModule.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\ShaderSet.cpp">

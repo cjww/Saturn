@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "Resources/RenderProgram.hpp"
+#include "internal/RenderProgram.hpp"
 
 namespace sa {
 

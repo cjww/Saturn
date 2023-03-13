@@ -1,8 +1,8 @@
 #include "pch.h"
-#include "Resources/FramebufferSet.hpp"
+#include "internal/FramebufferSet.hpp"
 
-#include "VulkanCore.hpp"
-#include "Resources\Swapchain.hpp"
+#include "internal/VulkanCore.hpp"
+#include "internal/Swapchain.hpp"
 
 namespace sa{
 	FramebufferSet::FramebufferSet() 

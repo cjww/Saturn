@@ -1,15 +1,15 @@
 #include "pch.h"
 #include "Renderer.hpp"
 
-#include "VulkanCore.hpp"
-#include "debugFunctions.hpp"
+#include "internal/VulkanCore.hpp"
+#include "internal/debugFunctions.hpp"
 
 
-#include "Resources/Swapchain.hpp"
-#include "Resources\RenderProgram.hpp"
-#include "Resources/FramebufferSet.hpp"
-#include "Resources/Pipeline.hpp"
-#include "Resources/DescriptorSet.hpp"
+#include "internal/Swapchain.hpp"
+#include "internal/RenderProgram.hpp"
+#include "internal/FramebufferSet.hpp"
+#include "internal/Pipeline.hpp"
+#include "internal/DescriptorSet.hpp"
 
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
@@ -252,7 +252,7 @@ namespace sa {
 
 	ResourceID Renderer::createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, PipelineSettings settings) {
 		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
-		Shader vShader(m_pCore->getDevice(), vertexShader.c_str(), vk::ShaderStageFlagBits::eVertex);
+		ShaderModule vShader(m_pCore->getDevice(), vertexShader.c_str(), vk::ShaderStageFlagBits::eVertex);
 		ShaderSet set(m_pCore->getDevice(), vShader);
 
 		PipelineConfig config = toConfig(settings);
@@ -262,8 +262,8 @@ namespace sa {
 
 	ResourceID Renderer::createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& fragmentShader, PipelineSettings settings) {
 		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
-		Shader vShader(m_pCore->getDevice(), vertexShader.c_str(), vk::ShaderStageFlagBits::eVertex);
-		Shader fShader(m_pCore->getDevice(), fragmentShader.c_str(), vk::ShaderStageFlagBits::eFragment);
+		ShaderModule vShader(m_pCore->getDevice(), vertexShader.c_str(), vk::ShaderStageFlagBits::eVertex);
+		ShaderModule fShader(m_pCore->getDevice(), fragmentShader.c_str(), vk::ShaderStageFlagBits::eFragment);
 		ShaderSet set(m_pCore->getDevice(), vShader, fShader);
 
 		PipelineConfig config = toConfig(settings);
@@ -273,9 +273,9 @@ namespace sa {
 	
 	ResourceID Renderer::createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& geometryShader, const std::string& fragmentShader, PipelineSettings settings) {
 		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
-		Shader vShader(m_pCore->getDevice(), vertexShader.c_str(), vk::ShaderStageFlagBits::eVertex);
-		Shader gShader(m_pCore->getDevice(), geometryShader.c_str(), vk::ShaderStageFlagBits::eGeometry);
-		Shader fShader(m_pCore->getDevice(), fragmentShader.c_str(), vk::ShaderStageFlagBits::eFragment);
+		ShaderModule vShader(m_pCore->getDevice(), vertexShader.c_str(), vk::ShaderStageFlagBits::eVertex);
+		ShaderModule gShader(m_pCore->getDevice(), geometryShader.c_str(), vk::ShaderStageFlagBits::eGeometry);
+		ShaderModule fShader(m_pCore->getDevice(), fragmentShader.c_str(), vk::ShaderStageFlagBits::eFragment);
 		ShaderSet set(m_pCore->getDevice(), vShader, gShader, fShader);
 
 		PipelineConfig config = toConfig(settings);
@@ -284,7 +284,7 @@ namespace sa {
 	}
 
 	ResourceID Renderer::createComputePipeline(const std::string& computeShader) {
-		Shader cShader(m_pCore->getDevice(), computeShader.c_str(), vk::ShaderStageFlagBits::eCompute);
+		ShaderModule cShader(m_pCore->getDevice(), computeShader.c_str(), vk::ShaderStageFlagBits::eCompute);
 		ShaderSet set(m_pCore->getDevice(), cShader);
 		PipelineConfig config = {};
 		return ResourceManager::get().insert<Pipeline>(m_pCore.get(), set, config);

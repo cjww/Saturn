@@ -10,8 +10,8 @@
 #include "structs.hpp"
 
 #include "CommandPool.hpp"
-#include "Resources\ShaderSet.hpp"
-#include "Resources/DeviceMemoryManager.hpp"
+#include "internal/ShaderSet.hpp"
+#include "internal/DeviceMemoryManager.hpp"
 
 #include "FormatFlags.hpp"
 

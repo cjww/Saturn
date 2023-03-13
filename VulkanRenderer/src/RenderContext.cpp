@@ -1,10 +1,10 @@
 #include "pch.h"
 #include "RenderContext.hpp"
 
-#include "Resources/RenderProgram.hpp"
-#include "Resources/FramebufferSet.hpp"
-#include "Resources/Pipeline.hpp"
-#include "Resources/Swapchain.hpp"
+#include "internal/RenderProgram.hpp"
+#include "internal/FramebufferSet.hpp"
+#include "internal/Pipeline.hpp"
+#include "internal/Swapchain.hpp"
 
 #include "imgui_impl_vulkan.h"
 #include "imgui_impl_glfw.h"

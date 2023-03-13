@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "Resources/Swapchain.hpp"
+#include "internal/Swapchain.hpp"
 
 namespace sa {
 

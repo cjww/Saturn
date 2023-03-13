@@ -1,8 +1,8 @@
 #include "pch.h"
-#include "Resources/Shader.hpp"
+#include "internal/ShaderModule.hpp"
 
 namespace sa {
-	void Shader::addResources(const spirv_cross::Compiler& compiler, const spirv_cross::SmallVector<spirv_cross::Resource>& resources, vk::DescriptorType type, vk::Sampler* immutableSamplers) {
+	void ShaderModule::addResources(const spirv_cross::Compiler& compiler, const spirv_cross::SmallVector<spirv_cross::Resource>& resources, vk::DescriptorType type, vk::Sampler* immutableSamplers) {
 		for (auto& b : resources) {
 			const auto& t = compiler.get_type(b.type_id);
 			if ((type == vk::DescriptorType::eSampledImage || type == vk::DescriptorType::eCombinedImageSampler || type == vk::DescriptorType::eStorageImage) && t.image.dim == spv::Dim::DimBuffer) {
@@ -59,7 +59,7 @@ namespace sa {
 		}
 	}
 
-	void Shader::getVertexInput(const spirv_cross::Compiler& compiler, const spirv_cross::SmallVector<spirv_cross::Resource>& resources) {
+	void ShaderModule::getVertexInput(const spirv_cross::Compiler& compiler, const spirv_cross::SmallVector<spirv_cross::Resource>& resources) {
 
 		uint32_t size = 0;
 		std::unordered_map<uint32_t, uint32_t> sizes;
@@ -135,11 +135,11 @@ namespace sa {
 		}
 	}
 	
-	Shader::Shader(vk::Device device, const char* path, vk::ShaderStageFlagBits stage) {
+	ShaderModule::ShaderModule(vk::Device device, const char* path, vk::ShaderStageFlagBits stage) {
 		create(device, path, stage);
 	}
 
-	void Shader::create(vk::Device device, const char* path, vk::ShaderStageFlagBits stage)
+	void ShaderModule::create(vk::Device device, const char* path, vk::ShaderStageFlagBits stage)
 	{
 		m_device = device;
 		m_stage = stage;
@@ -147,11 +147,11 @@ namespace sa {
 		load(path);
 	}
 
-	void Shader::destroy() {
+	void ShaderModule::destroy() {
 		m_device.destroyShaderModule(m_info.module);
 	}
 
-	std::vector<uint32_t> Shader::readCode(const char* path) {
+	std::vector<uint32_t> ShaderModule::readCode(const char* path) {
 		std::ifstream file(path, std::ios::ate | std::ios::binary);
 		if (!file.is_open()) {
 			throw std::runtime_error("Failed to open file " + std::string(path));
@@ -165,7 +165,7 @@ namespace sa {
 		return std::move(buffer);
 	}
 
-	void Shader::load(const char* path) {
+	void ShaderModule::load(const char* path) {
 
 		auto code = readCode(path);
 
@@ -216,7 +216,6 @@ namespace sa {
 		if (m_stage == vk::ShaderStageFlagBits::eCompute) {
 			spirv_cross::SpecializationConstant x, y, z;
 			compiler.get_work_group_size_specialization_constants(x, y, z);
-			//auto workGoupX = compiler.get_constant(x.);
 		}
 
 		m_pushConstantRanges.clear();
@@ -239,27 +238,27 @@ namespace sa {
 		}
 	}
 
-	vk::ShaderStageFlagBits Shader::getStage() const {
+	vk::ShaderStageFlagBits ShaderModule::getStage() const {
 		return m_stage;
 	}
 
-	const std::vector<DescriptorSetLayout>& Shader::getDescriptorSetLayouts() const {
+	const std::vector<DescriptorSetLayout>& ShaderModule::getDescriptorSetLayouts() const {
 		return m_descriptorSets;
 	}
 
-	const std::vector<vk::PushConstantRange>& Shader::getPushConstantRanges() const {
+	const std::vector<vk::PushConstantRange>& ShaderModule::getPushConstantRanges() const {
 		return m_pushConstantRanges;
 	}
 
-	vk::PipelineShaderStageCreateInfo Shader::getInfo() const {
+	vk::PipelineShaderStageCreateInfo ShaderModule::getInfo() const {
 		return m_info;
 	}
 
-	const std::vector<vk::VertexInputAttributeDescription>& Shader::getVertexAttributes() const {
+	const std::vector<vk::VertexInputAttributeDescription>& ShaderModule::getVertexAttributes() const {
 		return m_vertexAttributes;
 	}
 
-	const std::vector<vk::VertexInputBindingDescription>& Shader::getVertexBindings() const {
+	const std::vector<vk::VertexInputBindingDescription>& ShaderModule::getVertexBindings() const {
 		return m_vertexBindings;
 	}
 	

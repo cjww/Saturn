@@ -1,8 +1,8 @@
 #include "pch.h"
 #include "RenderProgramFactory.hpp"
 
-#include "Resources/RenderProgram.hpp"
-#include "Resources/Swapchain.hpp"
+#include "internal/RenderProgram.hpp"
+#include "internal/Swapchain.hpp"
 
 #include "Renderer.hpp"
 

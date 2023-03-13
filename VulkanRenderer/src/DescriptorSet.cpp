@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "Resources/DescriptorSet.hpp"
+#include "internal/DescriptorSet.hpp"
 
 namespace sa {
 	

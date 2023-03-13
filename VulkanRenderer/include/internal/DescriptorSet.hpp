@@ -1,7 +1,7 @@
 #pragma once
 
-#include "Texture.hpp"
-#include "Buffer.hpp"
+#include "Resources\Texture.hpp"
+#include "Resources\Buffer.hpp"
 #include "DeviceMemoryManager.hpp"
 
 #define MAX_VARIABLE_DESCRIPTOR_COUNT 1024

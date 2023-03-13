@@ -1,7 +1,7 @@
 #include "pch.h"
 #include "Resources/Buffer.hpp"
 
-#include "VulkanCore.hpp"
+#include "internal/VulkanCore.hpp"
 
 namespace sa {
 	

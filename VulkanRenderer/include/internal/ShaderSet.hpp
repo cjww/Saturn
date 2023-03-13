@@ -1,6 +1,6 @@
 #pragma once
-#include "Resources/Shader.hpp"
-#include "Resources\DescriptorSet.hpp"
+#include "internal/ShaderModule.hpp"
+#include "internal/DescriptorSet.hpp"
 
 
 namespace sa {
@@ -23,18 +23,18 @@ namespace sa {
 
 		bool m_isGraphicsSet;
 
-		std::optional<Shader> m_vertexShader, m_geometryShader, m_fragmentShader, m_computeShader;
+		std::optional<ShaderModule> m_vertexShader, m_geometryShader, m_fragmentShader, m_computeShader;
 
-		void init(const std::vector<Shader>& shaders);
+		void init(const std::vector<ShaderModule>& shaders);
 
 	public:
 		ShaderSet() = default;
 		ShaderSet(const ShaderSet&) = default;
 		ShaderSet& operator=(const ShaderSet&) = default;
 
-		ShaderSet(vk::Device device, const Shader& vertexShader, const Shader& fragmentShader);
-		ShaderSet(vk::Device device, const Shader& vertexShader, const Shader& geometryShader, const Shader& fragmentShader);
-		ShaderSet(vk::Device device, const Shader& computeShader);
+		ShaderSet(vk::Device device, const ShaderModule& vertexShader, const ShaderModule& fragmentShader);
+		ShaderSet(vk::Device device, const ShaderModule& vertexShader, const ShaderModule& geometryShader, const ShaderModule& fragmentShader);
+		ShaderSet(vk::Device device, const ShaderModule& computeShader);
 
 		void destroy();
 

@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Resources/ShaderSet.hpp"
+#include "internal/ShaderSet.hpp"
 #include "VulkanCore.hpp"
 
 namespace sa {

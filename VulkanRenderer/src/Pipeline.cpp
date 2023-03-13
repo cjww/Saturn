@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "Resources/Pipeline.hpp"
+#include "internal/Pipeline.hpp"
 
 namespace sa {
 	Pipeline::Pipeline(VulkanCore* pCore, vk::RenderPass renderPass, const ShaderSet& shaderSet, uint32_t subpassIndex, Extent extent, PipelineConfig config) {

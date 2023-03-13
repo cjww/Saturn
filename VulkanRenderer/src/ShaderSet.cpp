@@ -1,8 +1,8 @@
 #include "pch.h"
-#include "Resources/ShaderSet.hpp"
+#include "internal/ShaderSet.hpp"
 
 namespace sa {
-	void ShaderSet::init(const std::vector<Shader>& shaders) {
+	void ShaderSet::init(const std::vector<ShaderModule>& shaders) {
 		size_t descriptorSetLayoutSize = 0;
 		for (const auto& shader : shaders) {
 			if (descriptorSetLayoutSize < shader.getDescriptorSetLayouts().size()) {
@@ -95,7 +95,7 @@ namespace sa {
 		}
 	}
 
-	ShaderSet::ShaderSet(vk::Device device, const Shader& vertexShader, const Shader& fragmentShader)
+	ShaderSet::ShaderSet(vk::Device device, const ShaderModule& vertexShader, const ShaderModule& fragmentShader)
 		: m_device(device)
 		, m_isGraphicsSet(true)
 		, m_vertexShader(vertexShader)
@@ -113,7 +113,7 @@ namespace sa {
 
 	}
 
-	ShaderSet::ShaderSet(vk::Device device, const Shader& vertexShader, const Shader& geometryShader, const Shader& fragmentShader)
+	ShaderSet::ShaderSet(vk::Device device, const ShaderModule& vertexShader, const ShaderModule& geometryShader, const ShaderModule& fragmentShader)
 		: m_device(device)
 		, m_isGraphicsSet(true)
 		, m_vertexShader(vertexShader)
@@ -131,7 +131,7 @@ namespace sa {
 
 	}
 
-	ShaderSet::ShaderSet(vk::Device device, const Shader& shader)
+	ShaderSet::ShaderSet(vk::Device device, const ShaderModule& shader)
 		: m_device(device)
 	{
 		init({ shader });

@@ -2,9 +2,9 @@
 
 #include "VulkanCore.hpp"
 
-#include "Resources\Pipeline.hpp"
-#include "Resources\FramebufferSet.hpp"
-#include "Resources/Swapchain.hpp"
+#include "internal\Pipeline.hpp"
+#include "internal\FramebufferSet.hpp"
+#include "internal/Swapchain.hpp"
 
 #include "structs.hpp"
 

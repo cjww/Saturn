@@ -1,6 +1,6 @@
 #pragma once
 
-#include "Resources\DescriptorSet.hpp"
+#include "internal\DescriptorSet.hpp"
 
 #define NOMINMAX
 #include <spirv_cross/spirv_cross.hpp>
@@ -8,7 +8,7 @@
 
 namespace sa {
 
-	class Shader {
+	class ShaderModule {
 	private:
 		vk::PipelineShaderStageCreateInfo m_info;
 		vk::Device m_device;
@@ -20,18 +20,17 @@ namespace sa {
 		std::vector<vk::VertexInputAttributeDescription> m_vertexAttributes;
 		std::vector<vk::VertexInputBindingDescription> m_vertexBindings;
 
-
 		void addResources(const spirv_cross::Compiler& compiler, const spirv_cross::SmallVector<spirv_cross::Resource>& resources, vk::DescriptorType type, vk::Sampler* immutableSamplers);
 
 		void getVertexInput(const spirv_cross::Compiler& compiler, const spirv_cross::SmallVector<spirv_cross::Resource>& resources);
 
 	public:
 		
-		Shader() = default;
-		Shader(const Shader& shader) = default;
-		Shader& operator=(const Shader&) = default;
+		ShaderModule() = default;
+		ShaderModule(const ShaderModule& shader) = default;
+		ShaderModule& operator=(const ShaderModule&) = default;
 
-		Shader(vk::Device device, const char* path, vk::ShaderStageFlagBits stage);
+		ShaderModule(vk::Device device, const char* path, vk::ShaderStageFlagBits stage);
 		
 		void create(vk::Device device, const char* path, vk::ShaderStageFlagBits stage);
 		void destroy();
