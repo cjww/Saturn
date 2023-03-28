@@ -42,11 +42,10 @@ int main() {
     auto& renderer = Renderer::get();
 
     DynamicTexture2D depthTexture = DynamicTexture2D(TextureTypeFlagBits::DEPTH_ATTACHMENT, window.getCurrentExtent());
-    DynamicTexture2D colorTexture = DynamicTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, window.getCurrentExtent());
-
+    
     ResourceID renderProgram = renderer.createRenderProgram()
-        .addColorAttachment(true, colorTexture)
-        .addDepthAttachment(depthTexture)
+        .addSwapchainAttachment(window.getSwapchainID())
+        .addDepthAttachment(sa::AttachmentFlagBits::eClear, depthTexture)
         .beginSubpass()
         .addAttachmentReference(0, SubpassAttachmentUsage::ColorTarget)
         .addAttachmentReference(1, SubpassAttachmentUsage::DepthTarget)
@@ -56,43 +55,12 @@ int main() {
         .endSubpass()
         .end();
 
-
-
-
-    ResourceID imguiRenderProgram = renderer.createRenderProgram()
-        .addColorAttachment(true, colorTexture)
-        .beginSubpass()
-        .addAttachmentReference(0, SubpassAttachmentUsage::ColorTarget)
-        .endSubpass()
-        .end();
-
-    
-    ResourceID swapchainRenderProgram = renderer.createRenderProgram()
-        .addSwapchainAttachment(window.getSwapchainID())
-        .beginSubpass()
-        .addAttachmentReference(0, SubpassAttachmentUsage::ColorTarget)
-        .endSubpass()
-        .addColorDependency(SA_SUBPASS_EXTERNAL, 0) // wait for color attachment write of previous renderprogram before starting this subpass 0
-        .end();
-
     renderer.initImGui(window, renderProgram, 1);
-    ResourceID imGuiFramebuffer = renderer.createFramebuffer(imguiRenderProgram, { colorTexture });
-
-
-    ResourceID framebuffer = renderer.createFramebuffer(renderProgram, { colorTexture, depthTexture });
-    std::vector<sa::Texture> textures = {};
-    ResourceID framebuffer2 = renderer.createSwapchainFramebuffer(swapchainRenderProgram, window.getSwapchainID(), textures);
+    ResourceID swapchainFramebuffer = renderer.createSwapchainFramebuffer(renderProgram, window.getSwapchainID(), { (Texture)depthTexture });
 
 
     ResourceID pipeline = renderer.createGraphicsPipeline(renderProgram, 0, window.getCurrentExtent(), 
         "BareBones.vert.spv", "BareBones.frag.spv");
-    //ResourceID pipeline = renderer.createGraphicsPipeline(renderProgram, 0, window.getCurrentExtent(), "BareBones.vert.spv", "BareBones.frag.spv");
-    ResourceID pipeline2 = renderer.createGraphicsPipeline(swapchainRenderProgram, 0, window.getCurrentExtent(), 
-        "PostProcess.vert.spv", "PostProcess.frag.spv");
-
-    ResourceID descriptorSet2 = renderer.allocateDescriptorSet(pipeline2, 0);
-    ResourceID sampler = renderer.createSampler(FilterMode::LINEAR);
-    //renderer.updateDescriptorSet(descriptorSet2, 0, colorTexture, sampler);
     
 
     Buffer vertexBuffer = renderer.createBuffer(BufferType::VERTEX);
@@ -126,13 +94,7 @@ int main() {
 
         float dt = std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - now).count();
         now = std::chrono::high_resolution_clock::now();
-        
-        static float timer = 0.0f;
-        timer += dt;
-        if (timer > 0.5f) {
-            SA_DEBUG_LOG_INFO("FPS: ", 1.f / dt, ", Frame Time: ", dt * 1000);
-            timer = 0.f;
-        }
+                   
 
         //window.setWindowTitle("FPS:" + std::to_string(1.f / dt));
         scene.view = glm::translate(scene.view, glm::vec3(0, 0, 1) * dt);
@@ -140,13 +102,7 @@ int main() {
             scene.view[3].z = 0;
         }
         uniformbuffer.write(scene);
-        /*
-        */
         
-
-        RenderContext context = window.beginFrame();
-        
-
         /*
         context = renderer.createContext()
 
@@ -165,12 +121,12 @@ int main() {
 
         */
         
+        RenderContext context = window.beginFrame();
         if (context) {
 
-            context.updateDescriptorSet(descriptorSet2, 0, colorTexture.getTexture(), sampler);
             context.updateDescriptorSet(descriptorSet, 0, uniformbuffer);
             
-            context.beginRenderProgram(renderProgram, framebuffer, SubpassContents::DIRECT);
+            context.beginRenderProgram(renderProgram, swapchainFramebuffer, SubpassContents::DIRECT);
             
             context.bindVertexBuffers(0, { vertexBuffer });
             context.bindPipeline(pipeline);
@@ -178,8 +134,7 @@ int main() {
             for (auto& mat : objects) {
                 context.pushConstant(pipeline, ShaderStageFlagBits::VERTEX, mat);
 
-                //context.draw(10000000, 1);
-                context.draw(10000000, 1);
+                context.draw(3, 1);
 
             }
             
@@ -189,20 +144,9 @@ int main() {
 
             context.endRenderProgram(renderProgram);
             
-            //context.barrierColorAttachment(colorTexture);
-            context.beginRenderProgram(swapchainRenderProgram, framebuffer2, SubpassContents::DIRECT);
-
-            context.bindPipeline(pipeline2);
-            context.bindDescriptorSet(descriptorSet2, pipeline2);
-            context.draw(6, 1);
-
-            context.endRenderProgram(swapchainRenderProgram);
-
             window.display();
 
             depthTexture.swap();
-            colorTexture.swap();
-        
         }
 
     }

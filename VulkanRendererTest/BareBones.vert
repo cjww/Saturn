@@ -7,6 +7,18 @@ layout(set = 0, binding = 0) uniform Scene {
     mat4 projection;
 } scene;
 
+struct MyStruct {
+    int i;
+    vec4 v;
+};
+
+layout(set = 0, binding = 1) uniform Other {
+    vec3 v;
+    MyStruct s;
+} other;
+
+layout(set = 0, binding = 2) uniform sampler2D tex;
+
 layout(push_constant) uniform Pc {
     mat4 model;
 }pc;

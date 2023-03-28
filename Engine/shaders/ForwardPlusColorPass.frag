@@ -1,5 +1,6 @@
 #version 460
 #extension GL_EXT_nonuniform_qualifier : enable
+#extension GL_GOOGLE_include_directive : enable
 
 #define MAX_LIGHTS_PER_TILE 1024
 #define TILE_SIZE 16
