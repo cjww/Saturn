@@ -22,10 +22,11 @@ namespace sa {
 		config.rasterizer.cullMode = (vk::CullModeFlags)userSettings.cullMode;
 		config.rasterizer.polygonMode = (vk::PolygonMode)userSettings.polygonMode;
 		config.depthStencil.depthTestEnable = userSettings.depthTestEnabled;
-		
+		config.tessellation.pathControlPoints = userSettings.tessellationPathControllPoints;
+
 		config.dynamicStates.resize(userSettings.dynamicStates.size());
 		memcpy(config.dynamicStates.data(), userSettings.dynamicStates.data(), userSettings.dynamicStates.size() * sizeof(vk::DynamicState));
-		
+
 		return std::move(config);
 	}
 
@@ -250,6 +251,10 @@ namespace sa {
 		pFramebufferSet->swap();
 	}
 
+	ResourceID Renderer::createShaderModule(const std::string& shaderSpvPath, ShaderStage stage) {
+		return ResourceManager::get().insert<ShaderModule>(m_pCore->getDevice(), shaderSpvPath.c_str(), (vk::ShaderStageFlagBits)stage);
+	}
+
 	ResourceID Renderer::createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, PipelineSettings settings) {
 		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
 		ShaderModule vShader(m_pCore->getDevice(), vertexShader.c_str(), vk::ShaderStageFlagBits::eVertex);
@@ -277,6 +282,22 @@ namespace sa {
 		ShaderModule gShader(m_pCore->getDevice(), geometryShader.c_str(), vk::ShaderStageFlagBits::eGeometry);
 		ShaderModule fShader(m_pCore->getDevice(), fragmentShader.c_str(), vk::ShaderStageFlagBits::eFragment);
 		ShaderSet set(m_pCore->getDevice(), vShader, gShader, fShader);
+
+		PipelineConfig config = toConfig(settings);
+
+		return pRenderProgram->createPipeline(set, subpassIndex, extent, config);
+	}
+
+	ResourceID Renderer::createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::vector<ResourceID>& shaderModules, PipelineSettings settings) {
+		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
+
+		std::vector<ShaderModule> shaders;
+		shaders.reserve(shaderModules.size());
+		for (auto& id : shaderModules) {
+			ShaderModule* pShaderModule = RenderContext::getShaderModule(id);
+			shaders.push_back(*pShaderModule);
+		}
+		ShaderSet set(m_pCore->getDevice(), shaders);
 
 		PipelineConfig config = toConfig(settings);
 

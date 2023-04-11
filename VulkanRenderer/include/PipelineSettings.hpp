@@ -77,6 +77,7 @@ namespace sa {
 		CullModeFlags cullMode = CullModeFlagBits::BACK;
 		PolygonMode polygonMode = PolygonMode::FILL;
 		bool depthTestEnabled = true;
+        uint32_t tessellationPathControllPoints = 3;
         std::vector<DynamicState> dynamicStates;
 	};
 }

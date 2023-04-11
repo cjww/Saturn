@@ -22,8 +22,11 @@ namespace sa {
 		std::vector<vk::VertexInputBindingDescription> m_vertexBindings;
 
 		bool m_isGraphicsSet;
+		bool m_hasTessellationStage;
 
 		std::optional<ShaderModule> m_vertexShader, m_geometryShader, m_fragmentShader, m_computeShader;
+
+		std::vector<ShaderModule> m_shaders;
 
 		void init(const std::vector<ShaderModule>& shaders);
 
@@ -36,6 +39,8 @@ namespace sa {
 		ShaderSet(vk::Device device, const ShaderModule& vertexShader, const ShaderModule& geometryShader, const ShaderModule& fragmentShader);
 		ShaderSet(vk::Device device, const ShaderModule& computeShader);
 
+		ShaderSet(vk::Device device, const std::vector<ShaderModule>& shaders);
+
 		void destroy();
 
 		const std::vector<vk::DescriptorSetLayout>& getDescriptorSetLayouts() const;
@@ -47,6 +52,7 @@ namespace sa {
 		const std::vector<vk::VertexInputBindingDescription>& getVertexBindings() const;
 
 		bool isGraphicsSet() const;
+		bool hasTessellationStage() const;
 
 		DescriptorSet allocateDescriptorSet(uint32_t setIndex, uint32_t count);
 	};

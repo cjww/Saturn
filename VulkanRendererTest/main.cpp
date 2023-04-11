@@ -26,23 +26,34 @@ struct Vertex {
     glm::vec4 pos;
 };
 
+struct VertexNUV {
+    glm::vec3 pos;
+    glm::vec3 normal;
+    glm::vec2 uv;
+};
+
 struct Scene {
     glm::mat4 view;
     glm::mat4 projection;
 };
 
+struct UBO {
+    glm::mat4 projection;
+    glm::mat4 view;
+    float tessAlpha;
+};
 
-int main() {
+struct ControlUBO {
+    float tessLevel;
+};
+
+void triangles(sa::RenderWindow& window) {
     using namespace sa;
-
-    srand(time(NULL));
-
-    RenderWindow window(500, 500, "Test");
-
+    
     auto& renderer = Renderer::get();
 
     DynamicTexture2D depthTexture = DynamicTexture2D(TextureTypeFlagBits::DEPTH_ATTACHMENT, window.getCurrentExtent());
-    
+
     ResourceID renderProgram = renderer.createRenderProgram()
         .addSwapchainAttachment(window.getSwapchainID())
         .addDepthAttachment(sa::AttachmentFlagBits::eClear, depthTexture)
@@ -59,22 +70,22 @@ int main() {
     ResourceID swapchainFramebuffer = renderer.createSwapchainFramebuffer(renderProgram, window.getSwapchainID(), { (Texture)depthTexture });
 
 
-    ResourceID pipeline = renderer.createGraphicsPipeline(renderProgram, 0, window.getCurrentExtent(), 
+    ResourceID pipeline = renderer.createGraphicsPipeline(renderProgram, 0, window.getCurrentExtent(),
         "BareBones.vert.spv", "BareBones.frag.spv");
-    
+
 
     Buffer vertexBuffer = renderer.createBuffer(BufferType::VERTEX);
     std::vector<Vertex> vertices = {
-        {glm::vec4(0.0f, -0.5f, 0.0f, 1.0f)},
-        {glm::vec4(0.5f, 0.5f, 0.0f, 1.0f)},
-        {glm::vec4(-0.5f, 0.5f, 0.0f, 1.0f)},
+       {glm::vec4(0.0f, -0.5f, 0.0f, 1.0f)},
+       {glm::vec4(0.5f, 0.5f, 0.0f, 1.0f)},
+       {glm::vec4(-0.5f, 0.5f, 0.0f, 1.0f)},
     };
     vertexBuffer.write(vertices);
 
 
     Scene scene = {};
-    scene.view = glm::lookAt(glm::vec3( 0.f, 0.f, 1.f ), glm::vec3( 0.f, 0.f, 0.f ), glm::vec3( 0.f, 1.f, 0.f ));
     scene.projection = glm::perspective(glm::radians(120.f), window.getCurrentExtent().width / (float)window.getCurrentExtent().height, 0.1f, 1000.f);
+    scene.view = glm::lookAt(glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1.f, 0.f));
     Buffer uniformbuffer = renderer.createBuffer(BufferType::UNIFORM, sizeof(Scene), &scene);
 
     ResourceID descriptorSet = renderer.allocateDescriptorSet(pipeline, 0);
@@ -86,15 +97,15 @@ int main() {
     }
 
     auto now = std::chrono::high_resolution_clock::now();
-    
+
     while (window.isOpen()) {
         window.pollEvents();
-      
+
         renderer.newImGuiFrame();
 
         float dt = std::chrono::duration<float>(std::chrono::high_resolution_clock::now() - now).count();
         now = std::chrono::high_resolution_clock::now();
-                   
+
 
         //window.setWindowTitle("FPS:" + std::to_string(1.f / dt));
         scene.view = glm::translate(scene.view, glm::vec3(0, 0, 1) * dt);
@@ -102,7 +113,7 @@ int main() {
             scene.view[3].z = 0;
         }
         uniformbuffer.write(scene);
-        
+
         /*
         context = renderer.createContext()
 
@@ -114,20 +125,20 @@ int main() {
 
         //context.copyImage(colorTexture, target)
         //context.copyImage(colorTexture, window.getSwapchainID());
-        
+
         //context.submit(); // submit recorded comandbuffer , increments buffer index
 
-        window.display(context) // get next swapchain image, calls submit, present and synchronize 
+        window.display(context) // get next swapchain image, calls submit, present and synchronize
 
         */
-        
+
         RenderContext context = window.beginFrame();
         if (context) {
 
             context.updateDescriptorSet(descriptorSet, 0, uniformbuffer);
-            
+
             context.beginRenderProgram(renderProgram, swapchainFramebuffer, SubpassContents::DIRECT);
-            
+
             context.bindVertexBuffers(0, { vertexBuffer });
             context.bindPipeline(pipeline);
             context.bindDescriptorSet(descriptorSet, pipeline);
@@ -137,20 +148,125 @@ int main() {
                 context.draw(3, 1);
 
             }
-            
+
             context.nextSubpass(SubpassContents::DIRECT);
-            
+
             context.renderImGuiFrame();
 
             context.endRenderProgram(renderProgram);
-            
+
             window.display();
 
             depthTexture.swap();
         }
 
     }
+
+}
+
+void tessellation(sa::RenderWindow& window) {
+    using namespace sa;
+
+    Renderer& renderer = Renderer::get();
+
+    DynamicTexture2D depthTexture = DynamicTexture2D(TextureTypeFlagBits::DEPTH_ATTACHMENT, window.getCurrentExtent());
+
+    ResourceID renderProgram = renderer.createRenderProgram()
+        .addSwapchainAttachment(window.getSwapchainID())
+        .addDepthAttachment(AttachmentFlagBits::eClear, depthTexture)
+        .beginSubpass()
+        .addAttachmentReference(0, SubpassAttachmentUsage::ColorTarget)
+        .addAttachmentReference(1, SubpassAttachmentUsage::DepthTarget)
+        .endSubpass()
+        .beginSubpass()
+        .addAttachmentReference(0, SubpassAttachmentUsage::ColorTarget)
+        .endSubpass()
+        .end();
+
+    ResourceID vertexShader = renderer.createShaderModule("base.vert.spv", ShaderStage::VERTEX);
+    ResourceID fragmentShader = renderer.createShaderModule("base.frag.spv", ShaderStage::FRAGMENT);
+
+    ResourceID tessellationControllShader = renderer.createShaderModule("pntriangles.tesc.spv", ShaderStage::TESSELLATION_CONTROL);
+    ResourceID tessellationEvaluationShader = renderer.createShaderModule("pntriangles.tese.spv", ShaderStage::TESSELLATION_EVALUATION);
+
+    PipelineSettings settings = {};
+    settings.polygonMode = PolygonMode::LINE;
+    settings.tessellationPathControllPoints = 3;
+
+    std::vector<ResourceID> shaders = { vertexShader, fragmentShader, tessellationControllShader, tessellationEvaluationShader };
+    ResourceID pipeline = renderer.createGraphicsPipeline(renderProgram, 0, window.getCurrentExtent(), shaders, settings);
+
+    ResourceID framebuffer = renderer.createSwapchainFramebuffer(renderProgram, window.getSwapchainID(), { (Texture)depthTexture });
+
+    renderer.initImGui(window, renderProgram, 1);
+
+    Buffer vertexBuffer = renderer.createBuffer(BufferType::VERTEX);
+    std::vector<VertexNUV> vertices = {
+       {glm::vec3(0.0f, -0.5f, 0.0f), glm::vec3(0, 0, 1), glm::vec2(0, 0) },
+       {glm::vec3(0.5f, 0.5f, 0.0f), glm::vec3(0, 0, 1), glm::vec2(0, 0) },
+       {glm::vec3(-0.5f, 0.5f, 0.0f), glm::vec3(0, 0, 1), glm::vec2(0, 0) },
+    };
+    vertexBuffer.write(vertices);
+
+
+    UBO ubo = {};
+    ubo.projection = glm::perspective(glm::radians(120.f), window.getCurrentExtent().width / (float)window.getCurrentExtent().height, 0.1f, 1000.f);
+    ubo.view = glm::lookAt(glm::vec3(0.f, 0.f, 1.f), glm::vec3(0.f, 0.f, 0.f), glm::vec3(0.f, 1, 0.f));
+    ubo.tessAlpha = 3.0;
+    Buffer evaluationUBO = renderer.createBuffer(BufferType::UNIFORM, sizeof(ubo), &ubo);
+
+    ControlUBO control = {};
+    control.tessLevel = 3.0;
+
+    Buffer controlUBO = renderer.createBuffer(BufferType::UNIFORM, sizeof(control), &control);
+
+    ResourceID descriptorSet = renderer.allocateDescriptorSet(pipeline, 0);
+    renderer.updateDescriptorSet(descriptorSet, 0, controlUBO);
+    renderer.updateDescriptorSet(descriptorSet, 1, evaluationUBO);
+
+    while (window.isOpen()) {
+        window.pollEvents();
+        renderer.newImGuiFrame();
+
+        if (ImGui::Begin("Settings")) {
+            if (ImGui::DragFloat("Tess Level", &control.tessLevel, 0.25f)) {
+                controlUBO.write(control);
+                renderer.updateDescriptorSet(descriptorSet, 0, controlUBO);
+            }
+
+            ImGui::End();
+        }
+
+        RenderContext context = window.beginFrame();
+        if (context) {
+            context.beginRenderProgram(renderProgram, framebuffer, SubpassContents::DIRECT);
+            context.bindPipeline(pipeline);
+            context.bindDescriptorSet(descriptorSet, pipeline);
+            context.bindVertexBuffers(0, { vertexBuffer });
+            
+            context.draw(3, 1);
+
+            context.nextSubpass(SubpassContents::DIRECT);
+
+            context.renderImGuiFrame();
+
+            context.endRenderProgram(renderProgram);
+
+            window.display();
+        }
+    }
+
+}
+
+
+int main() {
+    using namespace sa;
+
+    srand(time(NULL));
+
+    RenderWindow window(500, 500, "Test");
     
+    tessellation(window);
 
 	return 0;
 }

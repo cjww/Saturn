@@ -69,6 +69,15 @@ namespace sa {
 		MAX_ENUM = 0x7FFFFFFF
 	};
 
+	enum class ShaderStage {
+		VERTEX = 1,
+		TESSELLATION_CONTROL = 2,
+		TESSELLATION_EVALUATION = 4,
+		GEOMETRY = 8,
+		FRAGMENT = 16,
+		COMPUTE = 32
+	};
+
 	struct SamplerInfo {
 		FilterMode				magFilter = FilterMode::LINEAR;
 		FilterMode				minFilter = FilterMode::LINEAR;
@@ -163,9 +172,12 @@ namespace sa {
 		Extent getFramebufferExtent(ResourceID framebuffer) const;
 		void swapFramebuffer(ResourceID framebuffer);
 
+		ResourceID createShaderModule(const std::string& shaderSpvPath, ShaderStage stage);
+
 		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, PipelineSettings settings = {});
 		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& fragmentShader, PipelineSettings settings = {});
 		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& geometryShader, const std::string& fragmentShader, PipelineSettings settings = {});
+		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::vector<ResourceID>& shaderModules, PipelineSettings settings = {});
 
 		ResourceID createComputePipeline(const std::string& computeShader);
 		void destroyPipeline(ResourceID pipeline);

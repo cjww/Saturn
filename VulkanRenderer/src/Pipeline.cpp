@@ -25,6 +25,9 @@ namespace sa {
 			.setVertexAttributeDescriptions(shaderSet.getVertexAttributes())
 			.setVertexBindingDescriptions(shaderSet.getVertexBindings());
 
+		if (shaderSet.hasTessellationStage())
+			config.tessellation.enabled = true;
+
 		m_pipeline = m_pCore->createGraphicsPipeline(
 			m_layout,
 			renderPass,

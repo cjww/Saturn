@@ -21,6 +21,7 @@ namespace sa {
 	class FramebufferSet;
 	class Pipeline;
 	class DescriptorSet;
+	class ShaderModule;
 
 
 	typedef uint32_t ShaderStageFlags;
@@ -84,6 +85,7 @@ namespace sa {
 		friend class Renderer;
 		static Swapchain* getSwapchain(ResourceID id);
 		static RenderProgram* getRenderProgram(ResourceID id);
+		static ShaderModule* getShaderModule(ResourceID id);
 		static FramebufferSet* getFramebufferSet(ResourceID id);
 		static Pipeline* getPipeline(ResourceID id);
 		static DescriptorSet* getDescriptorSet(ResourceID id);

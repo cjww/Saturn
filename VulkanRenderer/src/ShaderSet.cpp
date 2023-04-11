@@ -153,7 +153,61 @@ namespace sa {
 		}
 	}
 
+	ShaderSet::ShaderSet(vk::Device device, const std::vector<ShaderModule>& shaders) {
+		m_shaders = shaders;
+		m_isGraphicsSet = true;
+		m_hasTessellationStage = false;
+		m_device = device;
+		bool foundVertexShader = false;
+		bool foundTescShader = false;
+		bool foundTeseShader = false;
+
+		for (const auto& s : shaders) {
+			switch (s.getStage()) {
+			case vk::ShaderStageFlagBits::eVertex:
+				m_vertexAttributes = s.getVertexAttributes();
+				m_vertexBindings = s.getVertexBindings();
+				foundVertexShader = true;
+				break;
+			case vk::ShaderStageFlagBits::eGeometry:
+				break;
+			case vk::ShaderStageFlagBits::eFragment:
+				break;
+			case vk::ShaderStageFlagBits::eTessellationControl:
+				m_hasTessellationStage = true;
+				foundTescShader = true;
+				break;
+			case vk::ShaderStageFlagBits::eTessellationEvaluation:
+				m_hasTessellationStage = true;
+				foundTeseShader = true;
+				break;
+
+			case vk::ShaderStageFlagBits::eCompute:
+				m_isGraphicsSet = false;
+				break;
+			default:
+				throw std::runtime_error("Unsupported shader stage");
+				break;
+			}
+		}
+
+		if (m_isGraphicsSet && !foundVertexShader) {
+			throw std::runtime_error("Vertex shader required for graphics ShaderSet");
+		}
+
+		if (foundTescShader xor foundTeseShader) {
+			throw std::runtime_error("If using tessellation, both tessellation control shader and tessellation evaluation shader must be present");
+		}
+
+		init(shaders);
+
+	}
+
 	void ShaderSet::destroy() {
+
+		for (auto& shader : m_shaders) {
+			shader.destroy();
+		}
 
 		if (m_vertexShader.has_value())
 			m_vertexShader->destroy();
@@ -198,6 +252,10 @@ namespace sa {
 
 	bool ShaderSet::isGraphicsSet() const {
 		return m_isGraphicsSet;
+	}
+
+	bool ShaderSet::hasTessellationStage() const {
+		return m_hasTessellationStage;
 	}
 
 	DescriptorSet ShaderSet::allocateDescriptorSet(uint32_t setIndex, uint32_t count) {

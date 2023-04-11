@@ -2,6 +2,7 @@
 #include "RenderContext.hpp"
 
 #include "internal/RenderProgram.hpp"
+#include "internal\ShaderModule.hpp"
 #include "internal/FramebufferSet.hpp"
 #include "internal/Pipeline.hpp"
 #include "internal/Swapchain.hpp"
@@ -23,6 +24,13 @@ namespace sa {
 		if (!pRenderProgram)
 			throw std::runtime_error("Nonexistent render program: " + id);
 		return pRenderProgram;
+	}
+
+	ShaderModule* RenderContext::getShaderModule(ResourceID id) {
+		ShaderModule* pShaderModule = ResourceManager::get().get<ShaderModule>(id);
+		if (!pShaderModule)
+			throw std::runtime_error("Nonexistent shader module: " + id);
+		return pShaderModule;
 	}
 
 	FramebufferSet* RenderContext::getFramebufferSet(ResourceID id) {

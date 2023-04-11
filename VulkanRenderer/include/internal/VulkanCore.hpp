@@ -58,6 +58,11 @@ namespace sa {
 			vk::Bool32 stencilTestEnable = false;
 		} depthStencil;
 
+		struct TessellationState {
+			bool enabled = false;
+			uint32_t pathControlPoints = 3;
+		} tessellation;
+
 		std::vector<vk::DynamicState> dynamicStates;
 
 	};
