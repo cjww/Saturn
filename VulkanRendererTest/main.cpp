@@ -70,8 +70,10 @@ void triangles(sa::RenderWindow& window) {
     ResourceID swapchainFramebuffer = renderer.createSwapchainFramebuffer(renderProgram, window.getSwapchainID(), { (Texture)depthTexture });
 
 
+    ResourceID vertexShader = renderer.createShaderModule("BareBones.vert.spv", sa::ShaderStage::VERTEX);
+    ResourceID fragmentShader = renderer.createShaderModule("BareBones.frag.spv", sa::ShaderStage::FRAGMENT);
     ResourceID pipeline = renderer.createGraphicsPipeline(renderProgram, 0, window.getCurrentExtent(),
-        "BareBones.vert.spv", "BareBones.frag.spv");
+        { vertexShader, fragmentShader });
 
 
     Buffer vertexBuffer = renderer.createBuffer(BufferType::VERTEX);

@@ -174,9 +174,6 @@ namespace sa {
 
 		ResourceID createShaderModule(const std::string& shaderSpvPath, ShaderStage stage);
 
-		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, PipelineSettings settings = {});
-		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& fragmentShader, PipelineSettings settings = {});
-		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& geometryShader, const std::string& fragmentShader, PipelineSettings settings = {});
 		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::vector<ResourceID>& shaderModules, PipelineSettings settings = {});
 
 		ResourceID createComputePipeline(const std::string& computeShader);

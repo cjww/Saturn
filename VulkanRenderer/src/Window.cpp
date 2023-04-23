@@ -15,7 +15,11 @@ namespace sa {
 
 	void Window::onResize(GLFWwindow* window, int width, int height) {
 		Window* thisWindow = (Window*)glfwGetWindowUserPointer(window);
-		if (thisWindow->m_isIconified) {
+		if (thisWindow->isIconified()) {
+			return;
+		}
+
+		if (!thisWindow->isResizable()) {
 			return;
 		}
 
@@ -92,6 +96,10 @@ namespace sa {
 	void Window::create(uint32_t width, uint32_t height, const char* title, GLFWmonitor* monitor) {
 		glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
 		m_monitor = monitor;
+		if (m_monitor) {
+			int refreshrate = glfwGetVideoMode(m_monitor)->refreshRate;
+			glfwWindowHint(GLFW_REFRESH_RATE, refreshrate);
+		}
 		m_window = glfwCreateWindow(width, height, title, m_monitor, nullptr);
 		if (!m_window) {
 			throw std::runtime_error("Failed to create GLFW window");
@@ -265,6 +273,18 @@ namespace sa {
 		glfwSetWindowMonitor(m_window, m_monitor, xpos, ypos, width, height, rate);
 	}
 
+	int Window::getRefreshRate() const {
+		GLFWmonitor* monitor = m_monitor;
+		if (!monitor) {
+			int count;
+			GLFWmonitor** monitors = glfwGetMonitors(&count);
+			monitor = monitors[getCurrentMonitor()];
+		}
+		const GLFWvidmode* vidmode = glfwGetVideoMode(monitor);
+		return vidmode->refreshRate;
+
+	}
+
 
 	void Window::setMonitor(int monitorIndex) {
 		int count;
@@ -290,13 +310,58 @@ namespace sa {
 		m_wasResized = true;
 	}
 
-	void Window::toggleFullscreen() {
-		if (m_monitor == nullptr) {
-			setMonitor(0);
+	int Window::getCurrentMonitor() const {
+		int count;
+		GLFWmonitor** monitors = glfwGetMonitors(&count);
+		
+		int window_xpos, window_ypos;
+		glfwGetWindowPos(m_window, &window_xpos, &window_ypos);
+
+		for (int i = 0; i < count; i++) {
+			int xpos, ypos, width, height;
+			glfwGetMonitorWorkarea(monitors[i], &xpos, &ypos, &width, &height);
+
+			if (window_xpos > xpos && window_xpos < xpos + width) {	
+				if (window_ypos > ypos && window_ypos < ypos + height) {
+					return i;
+				}
+			}
+		}
+		return -1;
+	}
+
+	int Window::getPrimaryMonitor() const {
+		int count;
+		GLFWmonitor** pMonitors = glfwGetMonitors(&count);
+		GLFWmonitor* pMonitor = glfwGetPrimaryMonitor();
+		for (int i = 0; i < count; i++) {
+			if (pMonitor == pMonitors[i]) {
+				return i;
+			}
+		}
+		return -1;
+	}
+
+	int Window::getMonitorCount() const {
+		int count;
+		glfwGetMonitors(&count);
+		return count;
+	}
+
+	void Window::setFullscreen(bool fullscreen) {
+		if (!isResizable())
+			return;
+
+		if (fullscreen) {
+			setMonitor(getCurrentMonitor());
 		}
 		else {
 			setMonitor(-1);
 		}
+	}
+
+	void Window::toggleFullscreen() {
+		setFullscreen(!isFullscreen());
 	}
 
 	bool Window::isFullscreen() const {
@@ -316,14 +381,19 @@ namespace sa {
 	}
 
 	void Window::setBorderlessFullscreen(bool value) {
+		if (!isResizable())
+			return;
 		setBorderless(value);
 		if (value) {
 			int count;
 			GLFWmonitor** monitors = glfwGetMonitors(&count);
-			int xpos = 100, ypos = 100, width, height;
+			GLFWmonitor* monitor = monitors[getCurrentMonitor()];
+
+			int xpos, ypos, width, height;
 		
-			glfwGetMonitorWorkarea(monitors[0], &xpos, &ypos, &width, &height);
-			glfwSetWindowMonitor(m_window, nullptr, xpos, ypos, width, height, GLFW_DONT_CARE);
+			glfwGetMonitorWorkarea(monitor, &xpos, &ypos, &width, &height);
+			const GLFWvidmode* vidmode = glfwGetVideoMode(monitor);
+			glfwSetWindowMonitor(m_window, nullptr, xpos, ypos, width, height, vidmode->refreshRate);
 		}
 		else {
 			glfwSetWindowMonitor(m_window, nullptr, 0, 0, m_windowedExtent.width, m_windowedExtent.height, GLFW_DONT_CARE);
@@ -332,6 +402,14 @@ namespace sa {
 
 	void Window::toggleBorderlessFullscreen() {
 		setBorderlessFullscreen(!isBorderless());
+	}
+
+	void Window::setResizable(bool isResizable) {
+		glfwSetWindowAttrib(m_window, GLFW_RESIZABLE, isResizable);
+	}
+
+	bool Window::isResizable() const {
+		return glfwGetWindowAttrib(m_window, GLFW_RESIZABLE);
 	}
 
 	void Window::setWindowTitle(const char* title) {

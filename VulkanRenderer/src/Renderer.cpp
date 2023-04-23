@@ -255,39 +255,6 @@ namespace sa {
 		return ResourceManager::get().insert<ShaderModule>(m_pCore->getDevice(), shaderSpvPath.c_str(), (vk::ShaderStageFlagBits)stage);
 	}
 
-	ResourceID Renderer::createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, PipelineSettings settings) {
-		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
-		ShaderModule vShader(m_pCore->getDevice(), vertexShader.c_str(), vk::ShaderStageFlagBits::eVertex);
-		ShaderSet set(m_pCore->getDevice(), vShader);
-
-		PipelineConfig config = toConfig(settings);
-		
-		return pRenderProgram->createPipeline(set, subpassIndex, extent, config);
-	}
-
-	ResourceID Renderer::createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& fragmentShader, PipelineSettings settings) {
-		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
-		ShaderModule vShader(m_pCore->getDevice(), vertexShader.c_str(), vk::ShaderStageFlagBits::eVertex);
-		ShaderModule fShader(m_pCore->getDevice(), fragmentShader.c_str(), vk::ShaderStageFlagBits::eFragment);
-		ShaderSet set(m_pCore->getDevice(), vShader, fShader);
-
-		PipelineConfig config = toConfig(settings);
-
-		return pRenderProgram->createPipeline(set, subpassIndex, extent, config);
-	}
-	
-	ResourceID Renderer::createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& geometryShader, const std::string& fragmentShader, PipelineSettings settings) {
-		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
-		ShaderModule vShader(m_pCore->getDevice(), vertexShader.c_str(), vk::ShaderStageFlagBits::eVertex);
-		ShaderModule gShader(m_pCore->getDevice(), geometryShader.c_str(), vk::ShaderStageFlagBits::eGeometry);
-		ShaderModule fShader(m_pCore->getDevice(), fragmentShader.c_str(), vk::ShaderStageFlagBits::eFragment);
-		ShaderSet set(m_pCore->getDevice(), vShader, gShader, fShader);
-
-		PipelineConfig config = toConfig(settings);
-
-		return pRenderProgram->createPipeline(set, subpassIndex, extent, config);
-	}
-
 	ResourceID Renderer::createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::vector<ResourceID>& shaderModules, PipelineSettings settings) {
 		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
 

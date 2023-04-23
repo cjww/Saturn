@@ -109,10 +109,11 @@ namespace sa {
 		//Depth pre pass
 		data.depthFramebuffer = m_renderer.createFramebuffer(depthPreRenderProgram, { (DynamicTexture)data.depthTexture });
 
+		ResourceID vertexShader = m_renderer.createShaderModule((Engine::getShaderDirectory() / "ForwardPlusColorPass.vert.spv").generic_string(), sa::ShaderStage::VERTEX);
+
 		PipelineSettings settings = {};
 		settings.dynamicStates.push_back(DynamicState::VIEWPORT);
-		data.depthPipeline = m_renderer.createGraphicsPipeline(depthPreRenderProgram, 0, extent,
-			(Engine::getShaderDirectory() / "ForwardPlusColorPass.vert.spv").generic_string(), settings);
+		data.depthPipeline = m_renderer.createGraphicsPipeline(depthPreRenderProgram, 0, extent, { vertexShader }, settings);
 
 		data.sceneDepthDescriptorSet = m_renderer.allocateDescriptorSet(data.depthPipeline, 0);
 
@@ -127,11 +128,11 @@ namespace sa {
 
 		data.lightIndexBuffer = m_renderer.createDynamicBuffer(BufferType::STORAGE, sizeof(uint32_t) * MAX_LIGHTS_PER_TILE * totalTileCount);
 
+		ResourceID fragmentShader = m_renderer.createShaderModule((Engine::getShaderDirectory() / "ForwardPlusColorPass.frag.spv").generic_string(), sa::ShaderStage::FRAGMENT);
 
 		// Color pass
 		data.colorFramebuffer = m_renderer.createFramebuffer(colorRenderProgram, { (DynamicTexture)data.colorTexture, data.depthTexture });
-		data.colorPipeline = m_renderer.createGraphicsPipeline(colorRenderProgram, 0, extent,
-			(Engine::getShaderDirectory() / "ForwardPlusColorPass.vert.spv").generic_string(), (Engine::getShaderDirectory() / "ForwardPlusColorPass.frag.spv").generic_string(), settings);
+		data.colorPipeline = m_renderer.createGraphicsPipeline(colorRenderProgram, 0, extent, { vertexShader, fragmentShader }, settings);
 
 		data.sceneDescriptorSet = m_renderer.allocateDescriptorSet(data.colorPipeline, SET_PER_FRAME);
 

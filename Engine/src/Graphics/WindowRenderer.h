@@ -22,6 +22,11 @@ namespace sa {
 		ResourceID m_swapchainDescriptorSet;
 		ResourceID m_sampler;
 
+
+		ResourceID m_vertexShader;
+		ResourceID m_fragmentShader;
+
+
 	public:		
 		WindowRenderer(RenderWindow* pWindow);
 
