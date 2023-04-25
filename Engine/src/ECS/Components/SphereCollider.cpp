@@ -40,7 +40,7 @@ namespace comp {
 			pShape = sa::PhysicsSystem::get().createShape(&sphere);
 		}
 
-		rb->pActor->attachShape(*pShape);
+		rb->m_pActor->attachShape(*pShape);
 	}
 	
 	void SphereCollider::onUpdate(sa::Entity* e) {
@@ -48,7 +48,7 @@ namespace comp {
 		comp::RigidBody* rb = e->getComponent<comp::RigidBody>();
 		if (!rb)
 			rb = e->addComponent<comp::RigidBody>();
-		rb->pActor->detachShape(*pShape);
+		rb->m_pActor->detachShape(*pShape);
 
 		radius = std::max(radius, 0.01f);
 
@@ -62,14 +62,14 @@ namespace comp {
 			pShape = sa::PhysicsSystem::get().createShape(&sphere);
 		}
 
-		rb->pActor->attachShape(*pShape);
+		rb->m_pActor->attachShape(*pShape);
 	}
 	
 	void SphereCollider::onDestroy(sa::Entity* e) {
 		using namespace physx;
 		comp::RigidBody* rb = e->getComponent<comp::RigidBody>();
 		if (rb) 
-			rb->pActor->detachShape(*pShape);
+			rb->m_pActor->detachShape(*pShape);
 	}
 
 

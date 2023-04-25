@@ -45,7 +45,7 @@ namespace comp {
 			pShape = sa::PhysicsSystem::get().createShape(&box);
 		}
 
-		rb->pActor->attachShape(*pShape);
+		rb->m_pActor->attachShape(*pShape);
 	}
 	
 	void BoxCollider::onUpdate(sa::Entity* e) {
@@ -53,7 +53,7 @@ namespace comp {
 		comp::RigidBody* rb = e->getComponent<comp::RigidBody>();
 		if (!rb)
 			rb = e->addComponent<comp::RigidBody>();
-		rb->pActor->detachShape(*pShape);
+		rb->m_pActor->detachShape(*pShape);
 		
 		halfLengths = glm::max(halfLengths, 0.01f);
 
@@ -66,14 +66,14 @@ namespace comp {
 		else {
 			pShape = sa::PhysicsSystem::get().createShape(&box);
 		}
-		rb->pActor->attachShape(*pShape);
+		rb->m_pActor->attachShape(*pShape);
 
 	}
 	
 	void BoxCollider::onDestroy(sa::Entity* e) {
 		comp::RigidBody* rb = e->getComponent<comp::RigidBody>();
 		if (rb)
-			rb->pActor->detachShape(*pShape);
+			rb->m_pActor->detachShape(*pShape);
 	}
 
 }

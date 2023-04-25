@@ -8,6 +8,7 @@ namespace comp {
 
 	class BoxCollider : public sa::ComponentBase {
 	public:
+
 		sa::Vector3 halfLengths = sa::Vector3(1.0f);
 		sa::Vector3 offset = sa::Vector3(0.0f);
 

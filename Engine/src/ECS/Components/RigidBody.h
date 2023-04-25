@@ -2,15 +2,30 @@
 #include "ECS/ComponentBase.h"
 #include "PhysicsSystem.h"
 
+#include "ECS/Components/Transform.h"
+
 namespace comp {
 	class RigidBody : public sa::ComponentBase {
+	private:
+		friend class SphereCollider;
+		friend class BoxCollider;
+
+		physx::PxRigidActor* m_pActor = nullptr;
+		bool m_isStatic = true;
 	public:
-		physx::PxRigidActor* pActor = nullptr;
-		bool isStatic = true;
 
 		RigidBody() = default;
 		RigidBody(bool isStatic);
 		RigidBody(const RigidBody& other) = default;
+
+		void setMass(float mass);
+		float getMass() const;
+
+		void setStatic(bool isStatic);
+		bool isStatic() const;
+
+		void setGlobalPose(const comp::Transform& transform);
+
 
 		virtual void serialize(sa::Serializer& s) override;
 		virtual void deserialize(void* pDoc) override;
