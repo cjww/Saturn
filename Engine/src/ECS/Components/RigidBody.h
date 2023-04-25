@@ -21,6 +21,12 @@ namespace comp {
 		void setMass(float mass);
 		float getMass() const;
 
+		void setKinematic(bool isKinematic);
+		bool isKinematic() const;
+
+		void setGravityEnabled(bool isGravityEnabled);
+		bool isGravityEnabled() const;
+
 		void setStatic(bool isStatic);
 		bool isStatic() const;
 

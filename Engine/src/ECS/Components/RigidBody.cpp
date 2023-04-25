@@ -24,6 +24,29 @@ namespace comp {
 		return 0.0f;
 	}
 
+	void RigidBody::setKinematic(bool isKinematic) {
+		auto pDynamic = m_pActor->is<physx::PxRigidBody>();
+		if (pDynamic) {
+			pDynamic->setRigidBodyFlag(physx::PxRigidBodyFlag::Enum::eKINEMATIC, isKinematic);
+		}
+	}
+
+	bool RigidBody::isKinematic() const {
+		auto pDynamic = m_pActor->is<physx::PxRigidBody>();
+		if (pDynamic) {
+			return (pDynamic->getRigidBodyFlags() & physx::PxRigidBodyFlag::Enum::eKINEMATIC) == physx::PxRigidBodyFlag::Enum::eKINEMATIC;
+		}
+		return false;
+	}
+
+	void RigidBody::setGravityEnabled(bool isGravityEnabled) {
+		m_pActor->setActorFlag(physx::PxActorFlag::eDISABLE_GRAVITY, !isGravityEnabled);
+	}
+
+	bool RigidBody::isGravityEnabled() const {
+		return (m_pActor->getActorFlags() & physx::PxActorFlag::eDISABLE_GRAVITY) != physx::PxActorFlag::eDISABLE_GRAVITY;
+	}
+
 	void RigidBody::setStatic(bool isStatic) {
 		if (m_isStatic == isStatic)
 			return;
@@ -66,12 +89,22 @@ namespace comp {
 	}
 
 	void RigidBody::setGlobalPose(const comp::Transform& transform) {
+		if (isKinematic()) {
+			auto pDynamic = m_pActor->is<physx::PxRigidDynamic>();
+			if (pDynamic) {
+				pDynamic->setKinematicTarget(transform);
+			}
+			return;
+		}
 		m_pActor->setGlobalPose(transform, false);
 	}
 
 	void RigidBody::serialize(sa::Serializer& s) {
 		s.value("isStatic", isStatic());
 		s.value("mass", getMass());
+		s.value("isKinematic", isKinematic());
+		s.value("isGravityEnabled", isGravityEnabled());
+
 	}
 	
 	void RigidBody::deserialize(void* pDoc) {
