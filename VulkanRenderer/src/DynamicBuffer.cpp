@@ -97,5 +97,9 @@ namespace sa{
 		return getBuffer();
 	}
 
+	DynamicBuffer::operator Buffer& () {
+		return m_buffers.at(m_currentBufferIndex);
+	}
+
 
 }
