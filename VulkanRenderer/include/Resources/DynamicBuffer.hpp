@@ -20,7 +20,9 @@ namespace sa {
 
 		//bool setFormat(FormatPrecisionFlags precision, FormatDimensionFlags dimensions, FormatTypeFlags type);
 
-		const sa::Buffer& getBuffer(uint32_t index = -1) const;
+		const sa::Buffer& getBuffer() const;
+		sa::Buffer& getBuffer(uint32_t index);
+
 		
 		uint32_t getBufferIndex() const;
 		uint32_t getPreviousBufferIndex() const;

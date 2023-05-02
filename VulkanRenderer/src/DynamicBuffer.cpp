@@ -31,10 +31,11 @@ namespace sa{
 	}
 
 	
-	const Buffer& DynamicBuffer::getBuffer(uint32_t index) const {
-		if (index == -1) {
-			index = m_currentBufferIndex;
-		}
+	const sa::Buffer& DynamicBuffer::getBuffer() const {
+		return m_buffers.at(m_currentBufferIndex);
+	}
+
+	Buffer& DynamicBuffer::getBuffer(uint32_t index) {
 		return m_buffers.at(index);
 	}
 
