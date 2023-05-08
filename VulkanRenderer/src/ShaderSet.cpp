@@ -6,10 +6,24 @@
 #define NOMINMAX
 #include <spirv_cross/spirv_cross.hpp>
 
+#include <shaderc\shaderc.hpp>
 
 namespace sa {
+	
+	shaderc_shader_kind ToShadercKind(ShaderStageFlagBits shaderStage) {
+		static const std::unordered_map<ShaderStageFlagBits, shaderc_shader_kind> map = {
+			{ShaderStageFlagBits::VERTEX, shaderc_glsl_default_vertex_shader },
+			{ShaderStageFlagBits::FRAGMENT, shaderc_glsl_default_fragment_shader},
+			{ShaderStageFlagBits::COMPUTE, shaderc_glsl_default_compute_shader},
+			{ShaderStageFlagBits::GEOMETRY, shaderc_glsl_default_geometry_shader},
+			{ShaderStageFlagBits::TESSELATION_CONTROL, shaderc_glsl_default_tess_control_shader},
+			{ShaderStageFlagBits::TESSELATION_EVALUATION, shaderc_glsl_default_tess_evaluation_shader},
+		};
+		return map.at(shaderStage);
+	}
+
 	void addResources(
-		const spirv_cross::Compiler& compiler,
+		const spirv_cross::Compiler* pCompiler,
 		const spirv_cross::SmallVector<spirv_cross::Resource>& resources,
 		DescriptorType type,
 		vk::Sampler* immutableSamplers,
@@ -17,7 +31,7 @@ namespace sa {
 		std::unordered_map<uint32_t, DescriptorSetLayoutInfo>& descriptorSets)
 	{
 		for (auto& b : resources) {
-			const auto& t = compiler.get_type(b.type_id);
+			const auto& t = pCompiler->get_type(b.type_id);
 			if ((type == DescriptorType::SAMPLED_IMAGE|| type == DescriptorType::COMBINED_IMAGE_SAMPLER|| type == DescriptorType::STORAGE_IMAGE) && t.image.dim == spv::Dim::DimBuffer) {
 				continue; // this is not a sampled image
 			}
@@ -26,12 +40,12 @@ namespace sa {
 			}
 
 			DescriptorSetLayoutBinding layoutBinding = {};
-			uint32_t set = compiler.get_decoration(b.id, spv::Decoration::DecorationDescriptorSet);
-			layoutBinding.binding = compiler.get_decoration(b.id, spv::Decoration::DecorationBinding);
+			uint32_t set = pCompiler->get_decoration(b.id, spv::Decoration::DecorationDescriptorSet);
+			layoutBinding.binding = pCompiler->get_decoration(b.id, spv::Decoration::DecorationBinding);
 			size_t size = 0;
 
 			if (t.basetype == spirv_cross::SPIRType::BaseType::Struct) {
-				size = compiler.get_declared_struct_size(t);
+				size = pCompiler->get_declared_struct_size(t);
 			}
 			layoutBinding.stageFlags = stage;
 
@@ -55,7 +69,7 @@ namespace sa {
 	}
 
 	void getVertexInput(
-		const spirv_cross::Compiler& compiler,
+		const spirv_cross::Compiler* pCompiler,
 		const spirv_cross::SmallVector<spirv_cross::Resource>& resources,
 		std::vector<VertexInputAttributeDescription>& vertexAttributes,
 		std::vector<VertexInputBindingDescription>& vertexBindings) {
@@ -65,9 +79,9 @@ namespace sa {
 		std::unordered_map<uint32_t, VertexInputAttributeDescription> attribs;
 
 		for (auto& input : resources) {
-			auto type = compiler.get_type(input.type_id);
-			uint32_t location = compiler.get_decoration(input.id, spv::Decoration::DecorationLocation);
-			uint32_t binding = compiler.get_decoration(input.id, spv::Decoration::DecorationBinding);
+			auto type = pCompiler->get_type(input.type_id);
+			uint32_t location = pCompiler->get_decoration(input.id, spv::Decoration::DecorationLocation);
+			uint32_t binding = pCompiler->get_decoration(input.id, spv::Decoration::DecorationBinding);
 			Format format = Format::UNDEFINED;
 			if (type.basetype == spirv_cross::SPIRType::BaseType::UInt) {
 				format = Format::R32_UINT;
@@ -112,7 +126,7 @@ namespace sa {
 		}
 
 		for (auto& input : resources) {
-			uint32_t location = compiler.get_decoration(input.id, spv::Decoration::DecorationLocation);
+			uint32_t location = pCompiler->get_decoration(input.id, spv::Decoration::DecorationLocation);
 			uint32_t offset = 0;
 			for (uint32_t i = 0; i < location; i++) {
 				offset += sizes[i];
@@ -132,120 +146,47 @@ namespace sa {
 			vertexBindings = { b };
 		}
 	}
-	/*
-	void ShaderSet::init(const std::vector<ShaderModule>& shaders) {
-		size_t descriptorSetLayoutSize = 0;
-		for (const auto& shader : shaders) {
-			if (descriptorSetLayoutSize < shader.getDescriptorSetLayouts().size()) {
-				descriptorSetLayoutSize = shader.getDescriptorSetLayouts().size();
-			}
+	
+	std::vector<uint32_t> CompileGLSLFromFile(const char* glslPath, ShaderStageFlagBits shaderStage, const char* entryPointName, const char* tag) {
+		std::ifstream file(glslPath, std::ios::in);
+		if (!file.is_open()) {
+			throw std::runtime_error("Failed to open file " + std::string(glslPath));
 		}
 
-		m_descriptorSetLayouts.resize(descriptorSetLayoutSize);
-		m_descriptorSets.resize(m_descriptorSetLayouts.size());
-		for (uint32_t setIndex = 0; setIndex < m_descriptorSetLayouts.size(); setIndex++) {
-			// merge all shaders bindings
-			for (const auto& shader : shaders) {
-				if (shader.getDescriptorSetLayouts().size() > setIndex) {
-					const auto& set = shader.getDescriptorSetLayouts()[setIndex];
+		file.ignore(std::numeric_limits<std::streamsize>::max());
+		std::streamsize length = file.gcount();
+		file.clear();   //  Since ignore will have set eof.
+		file.seekg(0, std::ios_base::beg);
 
-					m_descriptorSets[setIndex].bindings.insert(m_descriptorSets[setIndex].bindings.end(), set.bindings.begin(), set.bindings.end());
-					m_descriptorSets[setIndex].sizes.insert(m_descriptorSets[setIndex].sizes.end(), set.sizes.begin(), set.sizes.end());
-					m_descriptorSets[setIndex].writes.insert(m_descriptorSets[setIndex].writes.end(), set.writes.begin(), set.writes.end());
-				}
-
-			
-			}
-
-			// erase duplicate bindings
-			for (int i = 0; i < m_descriptorSets[setIndex].bindings.size() - 1; i++) {
-				for (int j = i + 1; j < m_descriptorSets[setIndex].bindings.size(); j++) {
-					if (m_descriptorSets[setIndex].bindings[i].binding == m_descriptorSets[setIndex].bindings[j].binding) {
-						m_descriptorSets[setIndex].bindings.erase(m_descriptorSets[setIndex].bindings.begin() + j);
-						m_descriptorSets[setIndex].writes.erase(m_descriptorSets[setIndex].writes.begin() + j);
-						m_descriptorSets[setIndex].sizes.erase(m_descriptorSets[setIndex].sizes.begin() + j);
-						j--;
-					}
-				}
-			}
-
-
-			// to support variable descriptor counts
-			vk::DescriptorSetLayoutBindingFlagsCreateInfo flagCreateInfo;
-			
-			std::vector<vk::DescriptorBindingFlags> flags(m_descriptorSets[setIndex].bindings.size(), (vk::DescriptorBindingFlags)0);
-
-			for (size_t i = 0; i < flags.size(); i++) {
-				if (m_descriptorSets[setIndex].bindings[i].descriptorCount == 0) {
-					m_descriptorSets[setIndex].bindings[i].descriptorCount = MAX_VARIABLE_DESCRIPTOR_COUNT;
-					flags[i] = vk::DescriptorBindingFlagBits::eVariableDescriptorCount | vk::DescriptorBindingFlagBits::ePartiallyBound;
-					if (m_descriptorSets[setIndex].bindings[i].binding != m_descriptorSets[setIndex].bindings.size() - 1) {
-						throw std::runtime_error("Variable count descriptors has to be on the last binding");
-					}
-				}
-			}
-			flagCreateInfo.setBindingFlags(flags);
-
-
-			// Create descriptorSet layout create info
-			vk::DescriptorSetLayoutCreateInfo layoutInfo;
-			layoutInfo.setPNext(&flagCreateInfo);
-
-			layoutInfo.setBindings(m_descriptorSets[setIndex].bindings);
-			m_descriptorSetLayouts[setIndex] = m_device.createDescriptorSetLayout(layoutInfo);
-		}
-
-		std::set<vk::DescriptorType> descriptorTypes;
-		std::vector<vk::DescriptorPoolSize> poolSizes;
-		for (const auto& shader : shaders) {
-			m_pushConstantRanges.insert(m_pushConstantRanges.end(), shader.getPushConstantRanges().begin(), shader.getPushConstantRanges().end());
-			m_shaderInfos.push_back(shader.getInfo());
-
-			for (const auto& set : shader.getDescriptorSetLayouts()) {
-				for (const auto& binding : set.bindings) {
-					if (descriptorTypes.find(binding.descriptorType) == descriptorTypes.end()) {
-						vk::DescriptorPoolSize poolSize = {};
-						poolSize.descriptorCount = UINT16_MAX;
-						poolSize.type = binding.descriptorType;
-						poolSizes.push_back(poolSize);
-						descriptorTypes.insert(binding.descriptorType);
-					}
-				}
-			}
-		}
+		std::string buffer;
+		buffer.resize(length);
+		file.read(buffer.data(), buffer.size());
 		
-
-		m_descriptorPool = nullptr;
-		if (poolSizes.size() > 0) {
-			vk::DescriptorPoolCreateInfo poolInfo{
-				.flags = vk::DescriptorPoolCreateFlagBits::eFreeDescriptorSet,
-				.maxSets = UINT16_MAX,
-			};
-			poolInfo.setPoolSizes(poolSizes);
-			m_descriptorPool = m_device.createDescriptorPool(poolInfo);
-		}
+		file.close();
+		
+		return CompileGLSLFromMemory(buffer.c_str(), shaderStage, entryPointName, tag);
 	}
 
-	ShaderSet::ShaderSet(vk::Device device, const ShaderModule& vertexShader, const ShaderModule& fragmentShader)
-		: m_device(device)
-		, m_isGraphicsSet(true)
-		, m_vertexShader(vertexShader)
-		, m_fragmentShader(fragmentShader)
-	{
-		if ((vertexShader.getStage() | fragmentShader.getStage()) != (vk::ShaderStageFlagBits::eVertex | vk::ShaderStageFlagBits::eFragment)) {
-			throw std::runtime_error("Missing stages");
+	std::vector<uint32_t> CompileGLSLFromMemory(const char* glslCode, ShaderStageFlagBits shaderStage, const char* entryPointName, const char* tag) {
+		shaderc::CompileOptions options;
+		options.SetAutoBindUniforms(true);
+		options.SetAutoMapLocations(true);
+		options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
+
+		shaderc::Compiler compiler;
+		shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(glslCode, ToShadercKind(shaderStage), tag, entryPointName, options);
+
+		if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
+			SA_DEBUG_LOG_ERROR(result.GetErrorMessage());
+			return {};
 		}
 
-
-		init({ vertexShader, fragmentShader });
-
-		m_vertexAttributes = vertexShader.getVertexAttributes();
-		m_vertexBindings = vertexShader.getVertexBindings();
-
+		std::vector<uint32_t> output;
+		std::copy(result.begin(), result.end(), std::back_inserter(output));
+		return output;
 	}
-	*/
 
-	std::vector<uint32_t> readSpvFile(const char* spvPath) {
+	std::vector<uint32_t> ReadSPVFile(const char* spvPath) {
 		std::ifstream file(spvPath, std::ios::ate | std::ios::binary);
 		if (!file.is_open()) {
 			throw std::runtime_error("Failed to open file " + std::string(spvPath));
@@ -259,70 +200,65 @@ namespace sa {
 		return std::move(buffer);
 	}
 
-	ShaderSet::ShaderSet(VulkanCore* pCore, const ShaderStageInfo* pStageInfos, uint32_t stageCount) {
-		m_pCore = pCore;
-		m_isGraphicsSet = true;
-		m_hasTessellationStage = false;
 
-		for (int i = 0; i < stageCount; i++) {
-			if ((pStageInfos[i].stage & sa::ShaderStageFlagBits::COMPUTE) != 0)
-				m_isGraphicsSet = false;
-			if ((pStageInfos[i].stage & (sa::ShaderStageFlagBits::TESSELATION_CONTROL | sa::ShaderStageFlagBits::TESSELATION_EVALUATION)) != 0)
-				m_hasTessellationStage = true;
-			
-			ShaderModuleInfo moduleInfo = {};
-			moduleInfo.entryPointName = pStageInfos[i].pName;
-			moduleInfo.stage = pStageInfos[i].stage;
+	void ShaderSet::initializeStage(spirv_cross::Compiler* pCompiler, const ShaderStageInfo& stageInfo) {
+		if ((stageInfo.stage & sa::ShaderStageFlagBits::COMPUTE) != 0)
+			m_isGraphicsSet = false;
+		if ((stageInfo.stage & (sa::ShaderStageFlagBits::TESSELATION_CONTROL | sa::ShaderStageFlagBits::TESSELATION_EVALUATION)) != 0)
+			m_hasTessellationStage = true;
 
-			vk::ShaderModuleCreateInfo shaderInfo = {};
-			shaderInfo.pCode = pStageInfos[i].pCode;
-			shaderInfo.codeSize = pStageInfos[i].codeLength;
+		ShaderModuleInfo moduleInfo = {};
+		moduleInfo.entryPointName = stageInfo.pName;
+		moduleInfo.stage = stageInfo.stage;
 
-			moduleInfo.moduleID = ResourceManager::get().insert<vk::ShaderModule>(m_pCore->getDevice().createShaderModule(shaderInfo));
+		vk::ShaderModuleCreateInfo shaderInfo = {};
+		shaderInfo.pCode = stageInfo.pCode;
+		shaderInfo.codeSize = stageInfo.codeLength * sizeof(uint32_t);
 
-			m_shaderModules.push_back(moduleInfo);
+		moduleInfo.moduleID = ResourceManager::get().insert<vk::ShaderModule>(m_pCore->getDevice().createShaderModule(shaderInfo));
 
-			spirv_cross::Compiler compiler(pStageInfos[i].pCode, pStageInfos[i].codeLength / sizeof(uint32_t));
-			
-			SA_DEBUG_LOG_INFO("Shader stage ", (uint32_t)pStageInfos[i].stage, ", Entry point: ", pStageInfos[i].pName);
-			for (auto ext : compiler.get_declared_extensions()) {
-				SA_DEBUG_LOG_INFO("\tShader uses vulkan extension: ", ext);
-			}
+		m_shaderModules.push_back(moduleInfo);
 
-			ShaderStageFlagBits stage = pStageInfos[i].stage;
 
-			auto resources = compiler.get_shader_resources();
-			addResources(compiler, resources.uniform_buffers, DescriptorType::UNIFORM_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos);
-			addResources(compiler, resources.separate_samplers, DescriptorType::SAMPLER, nullptr, stage, m_descriptorSetLayoutInfos); // sampler / samplerShadow
-			addResources(compiler, resources.separate_images, DescriptorType::SAMPLED_IMAGE, nullptr, stage, m_descriptorSetLayoutInfos); // texture2D
-			addResources(compiler, resources.separate_images, DescriptorType::UNIFORM_TEXEL_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos); // textureBuffer
-			addResources(compiler, resources.sampled_images, DescriptorType::COMBINED_IMAGE_SAMPLER, nullptr, stage, m_descriptorSetLayoutInfos); // sampler2D
-			addResources(compiler, resources.sampled_images, DescriptorType::UNIFORM_TEXEL_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos); // samplerBuffer
-			addResources(compiler, resources.storage_images, DescriptorType::STORAGE_IMAGE, nullptr, stage, m_descriptorSetLayoutInfos); // image2D
-			addResources(compiler, resources.storage_images, DescriptorType::STORAGE_TEXEL_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos); // 
-			addResources(compiler, resources.storage_buffers, DescriptorType::STORAGE_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos); // buffer SSBO 
-			addResources(compiler, resources.subpass_inputs, DescriptorType::INPUT_ATTACHMENT, nullptr, stage, m_descriptorSetLayoutInfos); // subpassInput
-
-			for (auto& p : resources.push_constant_buffers) {
-				size_t size = compiler.get_declared_struct_size(compiler.get_type(p.type_id));
-				uint32_t offset = compiler.type_struct_member_offset(compiler.get_type(p.base_type_id), 0);
-
-				PushConstantRange range = {
-					.stageFlags = stage,
-					.offset = offset, // Modify when merged with other shader stage
-					.size = static_cast<uint32_t>(size),
-				};
-				m_pushConstantRanges.push_back(range);
-			}
-
-			if (stage == ShaderStageFlagBits::VERTEX) {
-				m_vertexAttributes.clear();
-				m_vertexBindings.clear();
-				getVertexInput(compiler, resources.stage_inputs, m_vertexAttributes, m_vertexBindings);
-			}
-
+		SA_DEBUG_LOG_INFO("Shader stage ", (uint32_t)stageInfo.stage, ", Entry point: ", stageInfo.pName);
+		for (auto ext : pCompiler->get_declared_extensions()) {
+			SA_DEBUG_LOG_INFO("\tShader uses vulkan extension: ", ext);
 		}
-		
+
+		ShaderStageFlagBits stage = stageInfo.stage;
+
+		auto resources = pCompiler->get_shader_resources();
+		addResources(pCompiler, resources.uniform_buffers, DescriptorType::UNIFORM_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos);
+		addResources(pCompiler, resources.separate_samplers, DescriptorType::SAMPLER, nullptr, stage, m_descriptorSetLayoutInfos); // sampler / samplerShadow
+		addResources(pCompiler, resources.separate_images, DescriptorType::SAMPLED_IMAGE, nullptr, stage, m_descriptorSetLayoutInfos); // texture2D
+		addResources(pCompiler, resources.separate_images, DescriptorType::UNIFORM_TEXEL_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos); // textureBuffer
+		addResources(pCompiler, resources.sampled_images, DescriptorType::COMBINED_IMAGE_SAMPLER, nullptr, stage, m_descriptorSetLayoutInfos); // sampler2D
+		addResources(pCompiler, resources.sampled_images, DescriptorType::UNIFORM_TEXEL_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos); // samplerBuffer
+		addResources(pCompiler, resources.storage_images, DescriptorType::STORAGE_IMAGE, nullptr, stage, m_descriptorSetLayoutInfos); // image2D
+		addResources(pCompiler, resources.storage_images, DescriptorType::STORAGE_TEXEL_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos); // 
+		addResources(pCompiler, resources.storage_buffers, DescriptorType::STORAGE_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos); // buffer SSBO 
+		addResources(pCompiler, resources.subpass_inputs, DescriptorType::INPUT_ATTACHMENT, nullptr, stage, m_descriptorSetLayoutInfos); // subpassInput
+
+		for (auto& p : resources.push_constant_buffers) {
+			size_t size = pCompiler->get_declared_struct_size(pCompiler->get_type(p.type_id));
+			uint32_t offset = pCompiler->type_struct_member_offset(pCompiler->get_type(p.base_type_id), 0);
+
+			PushConstantRange range = {
+				.stageFlags = stage,
+				.offset = offset, // Modify when merged with other shader stage
+				.size = static_cast<uint32_t>(size),
+			};
+			m_pushConstantRanges.push_back(range);
+		}
+
+		if (stage & ShaderStageFlagBits::VERTEX) {
+			m_vertexAttributes.clear();
+			m_vertexBindings.clear();
+			getVertexInput(pCompiler, resources.stage_inputs, m_vertexAttributes, m_vertexBindings);
+		}
+	}
+
+	void ShaderSet::createDescriptorPoolAndLayouts() {
 		std::set<vk::DescriptorType> descriptorTypes;
 		std::vector<vk::DescriptorPoolSize> poolSizes;
 		for (auto& [set, info] : m_descriptorSetLayoutInfos) {
@@ -347,7 +283,7 @@ namespace sa {
 			// Create descriptorSet layout create info
 			vk::DescriptorSetLayoutCreateInfo layoutInfo;
 			layoutInfo.setPNext(&flagCreateInfo);
-			
+
 			std::vector<vk::DescriptorSetLayoutBinding> layoutBindings(info.bindings.size());
 			for (int i = 0; i < layoutBindings.size(); i++) {
 				layoutBindings[i].binding = info.bindings[i].binding;
@@ -370,7 +306,7 @@ namespace sa {
 				}
 			}
 		}
-		
+
 		m_descriptorPool = NULL_RESOURCE;
 		if (poolSizes.size() > 0) {
 			vk::DescriptorPoolCreateInfo poolInfo{
@@ -380,6 +316,44 @@ namespace sa {
 			poolInfo.setPoolSizes(poolSizes);
 			m_descriptorPool = ResourceManager::get().insert<vk::DescriptorPool>(m_pCore->getDevice().createDescriptorPool(poolInfo));
 		}
+	}
+	
+
+	ShaderSet::ShaderSet(VulkanCore* pCore, const ShaderStageInfo* pStageInfos, uint32_t stageCount) {
+		m_pCore = pCore;
+		m_isGraphicsSet = true;
+		m_hasTessellationStage = false;
+
+
+		for (int i = 0; i < stageCount; i++) {
+			spirv_cross::Compiler compiler(pStageInfos[i].pCode, pStageInfos[i].codeLength);
+			initializeStage(&compiler, pStageInfos[i]);
+		}
+		
+		createDescriptorPoolAndLayouts();
+	}
+
+	ShaderSet::ShaderSet(VulkanCore* pCore, const std::vector<std::vector<uint32_t>>& shaderCode) {
+		m_pCore = pCore;
+		m_isGraphicsSet = true;
+		m_hasTessellationStage = false; 
+
+
+		for (auto& code : shaderCode) {
+			spirv_cross::Compiler compiler(code);
+			const auto& entryPoints = compiler.get_entry_points_and_stages();
+
+			ShaderStageFlagBits stage = ShaderStageFlagBits(1U << (uint32_t)entryPoints[0].execution_model);
+
+			ShaderStageInfo stageInfo = {};
+			stageInfo.pCode = (uint32_t*)code.data();
+			stageInfo.codeLength = code.size();
+			stageInfo.pName = (char*)entryPoints[0].name.c_str();
+			stageInfo.stage = stage;
+			initializeStage(&compiler, stageInfo);
+		}
+
+		createDescriptorPoolAndLayouts();
 	}
 
 	void ShaderSet::destroy() {

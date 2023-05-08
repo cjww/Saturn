@@ -2,10 +2,17 @@
 #include "DescriptorSetStructs.h"
 #include <map>
 
+namespace spirv_cross {
+	class Compiler;
+}
+
 namespace sa {
 	class VulkanCore;
 
-	std::vector<uint32_t> readSpvFile(const char* spvPath);
+	std::vector<uint32_t> CompileGLSLFromFile(const char* glslPath, ShaderStageFlagBits shaderStage, const char* entryPointName = "main", const char* tag = "Unamned Source");
+	std::vector<uint32_t> CompileGLSLFromMemory(const char* glslCode, ShaderStageFlagBits shaderStage, const char* entryPointName = "main", const char* tag = "Unamned Source");
+
+	std::vector<uint32_t> ReadSPVFile(const char* spvPath);
 
 	class ShaderSet {
 	private:
@@ -26,12 +33,17 @@ namespace sa {
 		bool m_isGraphicsSet;
 		bool m_hasTessellationStage;
 
+		void initializeStage(spirv_cross::Compiler* pCompiler, const ShaderStageInfo& stageInfo);
+		void createDescriptorPoolAndLayouts();
+
 	public:
 		ShaderSet() = default;
 		ShaderSet(const ShaderSet&) = default;
 		ShaderSet& operator=(const ShaderSet&) = default;
 
 		ShaderSet(VulkanCore* pCore, const ShaderStageInfo* pStageInfos, uint32_t stageCount);
+		ShaderSet(VulkanCore* pCore, const std::vector<std::vector<uint32_t>>& shaderCode);
+
 
 		void destroy();
 

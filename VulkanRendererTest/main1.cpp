@@ -217,22 +217,12 @@ int main() {
 		std::vector<sa::DynamicTexture> attachments;
 		ResourceID framebuffer = renderer.createSwapchainFramebuffer(renderProgram, window.getSwapchainID(), attachments);
 
-		auto vshaderCode = sa::readSpvFile("Passthrough.vert.spv");
-		auto fshaderCode = sa::readSpvFile("Passthrough.frag.spv");
+		auto vshaderCode = sa::CompileGLSLFromFile("Passthrough.vert", sa::VERTEX);
 
-		std::vector<sa::ShaderStageInfo> shaders(2);
-		shaders[0].pName = (char*)"main";
-		shaders[0].pCode = vshaderCode.data();
-		shaders[0].codeLength = vshaderCode.size() * sizeof(uint32_t);
-		shaders[0].stage = sa::ShaderStageFlagBits::VERTEX;
+		//auto vshaderCode = sa::ReadSPVFile("Passthrough.vert.spv");
+		auto fshaderCode = sa::ReadSPVFile("Passthrough.frag.spv");
 
-		shaders[1].pName = (char*)"main";
-		shaders[1].pCode = fshaderCode.data();
-		shaders[1].codeLength = fshaderCode.size() * sizeof(uint32_t);
-		shaders[1].stage = sa::ShaderStageFlagBits::FRAGMENT;
-
-
-		sa::ShaderSet shaderSet = renderer.createShaderSet(shaders.data(), shaders.size());
+		sa::ShaderSet shaderSet = renderer.createShaderSet({ vshaderCode, fshaderCode });
 		ResourceID pipeline = renderer.createGraphicsPipeline(renderProgram, 0, window.getCurrentExtent(), shaderSet);
 
 		sa::Buffer vertexBuffer = renderer.createBuffer(sa::BufferType::VERTEX);

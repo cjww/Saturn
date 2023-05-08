@@ -15,13 +15,11 @@ layout (set = 1, binding = 0) uniform Object {
     mat4 model;
 } object;
 
-
 layout(push_constant) uniform PC {
     float timer;
 } pc;
 
-
-void main(void) {
+void main() {
     mat4 vp = scene.projection * scene.view;
 	
     vec4 vertexWorldPos = object.model * in_vertexPosition;

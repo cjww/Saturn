@@ -259,6 +259,10 @@ namespace sa {
 		return std::move(ShaderSet(m_pCore.get(), pStageInfos, stageCount));
 	}
 
+	ShaderSet Renderer::createShaderSet(const std::vector<std::vector<uint32_t>>& shaderCode) {
+		return std::move(ShaderSet(m_pCore.get(), shaderCode));
+	}
+
 	ResourceID Renderer::createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const ShaderSet& shaderSet, PipelineSettings settings) {
 		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
 		PipelineConfig config = toConfig(settings);

@@ -166,6 +166,7 @@ namespace sa {
 		void swapFramebuffer(ResourceID framebuffer);
 
 		ShaderSet createShaderSet(const ShaderStageInfo* pStageInfos, uint32_t stageCount);
+		ShaderSet createShaderSet(const std::vector<std::vector<uint32_t>>& shaderCode);
 
 		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const ShaderSet& shaderSet, PipelineSettings settings = {});
 
