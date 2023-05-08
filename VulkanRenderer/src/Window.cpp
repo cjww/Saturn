@@ -430,6 +430,12 @@ namespace sa {
 		return { (uint32_t)width, (uint32_t)height };
 	}
 
+	Offset Window::getWindowPosition() const {
+		Offset offset;
+		glfwGetWindowPos(m_window, &offset.x, &offset.y);
+		return offset;
+	}
+
 	GLFWwindow* Window::getWindowHandle() const {
 		return m_window;
 	}

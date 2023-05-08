@@ -136,8 +136,18 @@ namespace sa {
         }
 
         for (object script : obj["scripts"]) {
-            EntityScript* pScript = addScript(script["path"].get_string().value());
-            pScript->deserialize(&script);
+            std::filesystem::path scriptPath = script["path"].get_string().value();
+
+            EntityScript* pScript = addScript(scriptPath);
+            if (!pScript) {
+                std::string scriptName = scriptPath.filename().replace_extension().generic_string();
+                pScript = getScript(scriptName);
+            }
+            if (pScript)
+                pScript->deserialize(&script);
+            else
+                SA_DEBUG_LOG_ERROR("No such script ", scriptPath);
+            
         }
     }
 

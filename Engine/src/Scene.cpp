@@ -17,8 +17,8 @@ namespace sa {
 
 	void Scene::updatePhysics(float dt) {
 		// Physics
-		m_reg.view<comp::RigidBody, comp::Transform>().each([&](const comp::RigidBody& rb, const comp::Transform& transform) {
-			rb.pActor->setGlobalPose(transform, false);
+		m_reg.view<comp::RigidBody, comp::Transform>().each([&](comp::RigidBody& rb, const comp::Transform& transform) {
+			rb.setGlobalPose(transform);
 		});
 
 		m_pPhysicsScene->simulate(dt);

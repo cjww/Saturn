@@ -10,6 +10,9 @@
 
 #include "EngineEditor.h"
 
+
+#include <PhysicsSystem.h>
+
 namespace ImGui {
 
 	void SetupImGuiStyle() {
@@ -285,10 +288,25 @@ namespace ImGui {
 	}
 
 	void Component(sa::Entity entity, comp::RigidBody* rb) {
-		if (ImGui::Checkbox("Static", &rb->isStatic)) {
-			entity.update<comp::RigidBody>();
+		bool isStatic = rb->isStatic();
+		if (ImGui::Checkbox("Static", &isStatic)) {
+			rb->setStatic(isStatic);
 		}
-
+		bool isKinematic = rb->isKinematic();
+		if (ImGui::Checkbox("Is Kinematic", &isKinematic)) {
+			rb->setKinematic(isKinematic);
+		}
+		
+		ImGui::BeginDisabled(isKinematic);
+		float mass = rb->getMass();
+		if (ImGui::InputFloat("Mass", &mass, 0.0f, 0.0f, "%.3f kg")) {
+			rb->setMass(mass);
+		}
+		bool gravity = rb->isGravityEnabled();
+		if (ImGui::Checkbox("Use Gravity", &gravity)) {
+			rb->setGravityEnabled(gravity);
+		}
+		ImGui::EndDisabled();
 
 	}
 
