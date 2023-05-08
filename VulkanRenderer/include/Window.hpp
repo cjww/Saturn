@@ -133,6 +133,7 @@ namespace sa {
 		void setWindowTitle(std::string&& title);
 
 		Extent getCurrentExtent() const;
+		Offset getWindowPosition() const;
 
 		GLFWwindow* getWindowHandle() const;
 		void* getWin32WindowHandle() const;
