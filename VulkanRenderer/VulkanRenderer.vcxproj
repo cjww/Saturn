@@ -266,7 +266,9 @@
     <ClInclude Include="include\FormatFlags.hpp" />
     <ClInclude Include="include\Image.hpp" />
     <ClInclude Include="include\InputEnums.hpp" />
+    <ClInclude Include="include\internal\DescriptorSetStructs.h" />
     <ClInclude Include="include\internal\Pipeline.hpp" />
+    <ClInclude Include="include\internal\ShaderInfoStructs.h" />
     <ClInclude Include="include\PipelineSettings.hpp" />
     <ClInclude Include="include\Resources\Buffer.hpp" />
     <ClInclude Include="include\internal\DescriptorSet.hpp" />
@@ -280,7 +282,6 @@
     <ClInclude Include="include\internal\DeviceMemoryManager.hpp" />
     <ClInclude Include="include\Resources\ResourceManager.hpp" />
     <ClInclude Include="include\internal\CommandPool.hpp" />
-    <ClInclude Include="include\internal\ShaderModule.hpp" />
     <ClInclude Include="include\internal\ShaderSet.hpp" />
     <ClInclude Include="include\structs.hpp" />
     <ClInclude Include="include\pch.h" />
@@ -311,7 +312,6 @@
     <ClCompile Include="src\DescriptorSet.cpp" />
     <ClCompile Include="src\Image.cpp" />
     <ClCompile Include="src\Pipeline.cpp" />
-    <ClCompile Include="src\ShaderModule.cpp" />
     <ClCompile Include="src\ShaderSet.cpp" />
     <ClCompile Include="src\FramebufferSet.cpp" />
     <ClCompile Include="src\RenderProgramFactory.cpp" />

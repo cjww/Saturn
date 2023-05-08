@@ -1,60 +1,52 @@
 #pragma once
-#include "internal/ShaderModule.hpp"
-#include "internal/DescriptorSet.hpp"
-
+#include "DescriptorSetStructs.h"
+#include <map>
 
 namespace sa {
+	class VulkanCore;
 
-	
+	std::vector<uint32_t> readSpvFile(const char* spvPath);
+
 	class ShaderSet {
 	private:
-		vk::Device m_device;
+		VulkanCore* m_pCore;
+
+		std::vector<ShaderModuleInfo> m_shaderModules;
+
+		std::map<uint32_t, ResourceID> m_descriptorSetLayouts;
+
+		std::unordered_map<uint32_t, DescriptorSetLayoutInfo> m_descriptorSetLayoutInfos;
+		std::vector<PushConstantRange> m_pushConstantRanges;
 		
-		std::vector<vk::DescriptorSetLayout> m_descriptorSetLayouts;
-		std::vector<vk::PushConstantRange> m_pushConstantRanges;
-		std::vector<vk::PipelineShaderStageCreateInfo> m_shaderInfos;
+		std::vector<VertexInputAttributeDescription> m_vertexAttributes;
+		std::vector<VertexInputBindingDescription> m_vertexBindings;
 
-		std::vector<DescriptorSetLayout> m_descriptorSets;
-
-		vk::DescriptorPool m_descriptorPool;
-
-		std::vector<vk::VertexInputAttributeDescription> m_vertexAttributes;
-		std::vector<vk::VertexInputBindingDescription> m_vertexBindings;
+		ResourceID m_descriptorPool;
 
 		bool m_isGraphicsSet;
 		bool m_hasTessellationStage;
-
-		std::optional<ShaderModule> m_vertexShader, m_geometryShader, m_fragmentShader, m_computeShader;
-
-		std::vector<ShaderModule> m_shaders;
-
-		void init(const std::vector<ShaderModule>& shaders);
 
 	public:
 		ShaderSet() = default;
 		ShaderSet(const ShaderSet&) = default;
 		ShaderSet& operator=(const ShaderSet&) = default;
 
-		ShaderSet(vk::Device device, const ShaderModule& vertexShader, const ShaderModule& fragmentShader);
-		ShaderSet(vk::Device device, const ShaderModule& vertexShader, const ShaderModule& geometryShader, const ShaderModule& fragmentShader);
-		ShaderSet(vk::Device device, const ShaderModule& computeShader);
-
-		ShaderSet(vk::Device device, const std::vector<ShaderModule>& shaders);
+		ShaderSet(VulkanCore* pCore, const ShaderStageInfo* pStageInfos, uint32_t stageCount);
 
 		void destroy();
 
-		const std::vector<vk::DescriptorSetLayout>& getDescriptorSetLayouts() const;
-		const std::vector<vk::PushConstantRange>& getPushConstantRanges() const;
+		const std::map<uint32_t, ResourceID>& getDescriptorSetLayouts() const;
+		const std::vector<PushConstantRange>& getPushConstantRanges() const;
 
-		const std::vector<vk::PipelineShaderStageCreateInfo>& getShaderInfos() const;
+		const std::vector<ShaderModuleInfo>& getShaderModules() const;
 
-		const std::vector<vk::VertexInputAttributeDescription>& getVertexAttributes() const;
-		const std::vector<vk::VertexInputBindingDescription>& getVertexBindings() const;
+		const std::vector<VertexInputAttributeDescription>& getVertexAttributes() const;
+		const std::vector<VertexInputBindingDescription>& getVertexBindings() const;
 
 		bool isGraphicsSet() const;
 		bool hasTessellationStage() const;
 
-		DescriptorSet allocateDescriptorSet(uint32_t setIndex, uint32_t count);
+		ResourceID allocateDescriptorSet(uint32_t setIndex);
 	};
 
 }

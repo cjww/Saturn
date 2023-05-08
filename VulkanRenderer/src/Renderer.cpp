@@ -54,6 +54,10 @@ namespace sa {
 			ResourceManager::get().setCleanupFunction<vk::ImageView>([&](vk::ImageView* p) { m_pCore->getDevice().destroyImageView(*p); });
 			ResourceManager::get().setCleanupFunction<vk::BufferView>([&](vk::BufferView* p) { m_pCore->getDevice().destroyBufferView(*p); });
 			ResourceManager::get().setCleanupFunction<CommandPool>([](CommandPool* p) { p->destroy(); });
+			ResourceManager::get().setCleanupFunction<vk::ShaderModule>([&](vk::ShaderModule* p) { m_pCore->getDevice().destroyShaderModule(*p); });
+			ResourceManager::get().setCleanupFunction<vk::DescriptorSetLayout>([&](vk::DescriptorSetLayout* p) { m_pCore->getDevice().destroyDescriptorSetLayout(*p); });
+			ResourceManager::get().setCleanupFunction<vk::DescriptorPool>([&](vk::DescriptorPool* p) { m_pCore->getDevice().destroyDescriptorPool(*p); });
+
 
 		}
 		catch (const std::exception& e) {
@@ -251,40 +255,23 @@ namespace sa {
 		pFramebufferSet->swap();
 	}
 
-	ResourceID Renderer::createShaderModule(const std::string& shaderSpvPath, ShaderStage stage) {
-		return ResourceManager::get().insert<ShaderModule>(m_pCore->getDevice(), shaderSpvPath.c_str(), (vk::ShaderStageFlagBits)stage);
+	ShaderSet Renderer::createShaderSet(const ShaderStageInfo* pStageInfos, uint32_t stageCount) {
+		return std::move(ShaderSet(m_pCore.get(), pStageInfos, stageCount));
 	}
 
-	ResourceID Renderer::createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::vector<ResourceID>& shaderModules, PipelineSettings settings) {
+	ResourceID Renderer::createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const ShaderSet& shaderSet, PipelineSettings settings) {
 		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
-
-		std::vector<ShaderModule> shaders;
-		shaders.reserve(shaderModules.size());
-		for (auto& id : shaderModules) {
-			ShaderModule* pShaderModule = RenderContext::getShaderModule(id);
-			shaders.push_back(*pShaderModule);
-		}
-		ShaderSet set(m_pCore->getDevice(), shaders);
-
 		PipelineConfig config = toConfig(settings);
-
-		return pRenderProgram->createPipeline(set, subpassIndex, extent, config);
+		return pRenderProgram->createPipeline(shaderSet, subpassIndex, extent, config);
 	}
 
-	ResourceID Renderer::createComputePipeline(const std::string& computeShader) {
-		ShaderModule cShader(m_pCore->getDevice(), computeShader.c_str(), vk::ShaderStageFlagBits::eCompute);
-		ShaderSet set(m_pCore->getDevice(), cShader);
+	ResourceID Renderer::createComputePipeline(const ShaderSet& shaderSet) {
 		PipelineConfig config = {};
-		return ResourceManager::get().insert<Pipeline>(m_pCore.get(), set, config);
+		return ResourceManager::get().insert<Pipeline>(m_pCore.get(), shaderSet, config);
 	}
 
 	void Renderer::destroyPipeline(ResourceID pipeline) {
 		ResourceManager::get().remove<Pipeline>(pipeline);
-	}
-
-	ResourceID Renderer::allocateDescriptorSet(ResourceID pipeline, uint32_t setIndex) {
-		Pipeline* pPipeline = RenderContext::getPipeline(pipeline);
-		return ResourceManager::get().insert<DescriptorSet>(pPipeline->allocateDescriptSet(setIndex));
 	}
 
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Buffer& buffer) {
@@ -362,6 +349,13 @@ namespace sa {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		pDescriptorSet->update(binding, firstElement, textures, nullptr, UINT32_MAX);
 	}
+
+	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, ResourceID sampler, uint32_t firstElement) {
+		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
+		pDescriptorSet->update(binding, firstElement, textures, pSampler, UINT32_MAX);
+	}
+
 
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, ResourceID sampler) {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);

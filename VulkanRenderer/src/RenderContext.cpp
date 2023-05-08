@@ -168,6 +168,12 @@ namespace sa {
 		pDescriptorSet->update(binding, firstElement, textures, nullptr, m_pCommandBufferSet->getBufferIndex());
 	}
 
+	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, ResourceID sampler, uint32_t firstElement) {
+		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
+		pDescriptorSet->update(binding, firstElement, textures, pSampler, m_pCommandBufferSet->getBufferIndex());
+	}
+
 	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, ResourceID sampler) {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		vk::Sampler* pSampler = RenderContext::getSampler(sampler);

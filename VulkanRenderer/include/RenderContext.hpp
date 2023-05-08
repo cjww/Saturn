@@ -5,6 +5,7 @@
 #include "Resources/Buffer.hpp"
 #include "Resources/Texture.hpp"
 #include "Resources/DynamicBuffer.hpp"
+#include "internal/ShaderSet.hpp"
 
 namespace vk {
 	class Sampler;
@@ -24,19 +25,8 @@ namespace sa {
 	class ShaderModule;
 
 
-	typedef uint32_t ShaderStageFlags;
-
-	enum ShaderStageFlagBits : ShaderStageFlags {
-		VERTEX = 1,
-		TESSELATION_CONTROL = 2,
-		TESSELATION_EVALUATION = 4,
-		GEOMETRY = 8,
-		FRAGMENT = 16,
-		COMPUTE = 32,
-	};
-
+	
 	typedef uint32_t ContextUsageFlags;
-
 	enum ContextUsageFlagBits : ContextUsageFlags {
 		ONE_TIME_SUBMIT = 1,
 		RENDER_PROGRAM_CONTINUE = 2,
@@ -114,7 +104,9 @@ namespace sa {
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture, ResourceID sampler);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture);
 
-		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement = 0);
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement);
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, ResourceID sampler, uint32_t firstElement);
+
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, ResourceID sampler);
 
 

@@ -14,7 +14,7 @@ namespace sa {
 		vk::Device m_device;
 		vk::ShaderStageFlagBits m_stage;
 
-		std::vector<DescriptorSetLayout> m_descriptorSets;
+		std::vector<DescriptorSetLayoutInfo> m_descriptorSets;
 		std::vector<vk::PushConstantRange> m_pushConstantRanges;
 
 		std::vector<vk::VertexInputAttributeDescription> m_vertexAttributes;
@@ -40,7 +40,7 @@ namespace sa {
 		void load(const char* path);
 
 		vk::ShaderStageFlagBits getStage() const;
-		const std::vector<DescriptorSetLayout>& getDescriptorSetLayouts() const;
+		const std::vector<DescriptorSetLayoutInfo>& getDescriptorSetLayouts() const;
 		const std::vector<vk::PushConstantRange>& getPushConstantRanges() const;
 
 		vk::PipelineShaderStageCreateInfo getInfo() const;

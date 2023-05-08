@@ -11,6 +11,8 @@
 #include "PipelineSettings.hpp"
 #include "DeviceMemoryStats.hpp"
 
+#include "internal/ShaderSet.hpp"
+
 #include "Window.hpp"
 
 #include "imgui.h"
@@ -67,15 +69,6 @@ namespace sa {
 		FLOAT_CUSTOM_EXT = 1000287003,
 		INT_CUSTOM_EXT = 1000287004,
 		MAX_ENUM = 0x7FFFFFFF
-	};
-
-	enum class ShaderStage {
-		VERTEX = 1,
-		TESSELLATION_CONTROL = 2,
-		TESSELLATION_EVALUATION = 4,
-		GEOMETRY = 8,
-		FRAGMENT = 16,
-		COMPUTE = 32
 	};
 
 	struct SamplerInfo {
@@ -172,21 +165,21 @@ namespace sa {
 		Extent getFramebufferExtent(ResourceID framebuffer) const;
 		void swapFramebuffer(ResourceID framebuffer);
 
-		ResourceID createShaderModule(const std::string& shaderSpvPath, ShaderStage stage);
+		ShaderSet createShaderSet(const ShaderStageInfo* pStageInfos, uint32_t stageCount);
 
-		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::vector<ResourceID>& shaderModules, PipelineSettings settings = {});
+		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const ShaderSet& shaderSet, PipelineSettings settings = {});
 
-		ResourceID createComputePipeline(const std::string& computeShader);
+		ResourceID createComputePipeline(const ShaderSet& computeShader);
 		void destroyPipeline(ResourceID pipeline);
 
-		ResourceID allocateDescriptorSet(ResourceID pipeline, uint32_t setIndex);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Buffer& buffer);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, DynamicBuffer& buffer);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture, ResourceID sampler);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const DynamicTexture& texture, ResourceID sampler);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const DynamicTexture& texture);
-		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement = 0);
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement);
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, ResourceID sampler, uint32_t firstElement);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, ResourceID sampler);
 
 		void freeDescriptorSet(ResourceID descriptorSet);

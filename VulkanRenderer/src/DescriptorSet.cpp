@@ -3,7 +3,7 @@
 
 namespace sa {
 	
-	void DescriptorSet::create(vk::Device device, vk::DescriptorPool descriptorPool, uint32_t count, DescriptorSetLayout info, vk::DescriptorSetLayout layout, uint32_t setIndex) {
+	void DescriptorSet::create(vk::Device device, vk::DescriptorPool descriptorPool, uint32_t count, DescriptorSetLayoutInfo info, vk::DescriptorSetLayout layout, uint32_t setIndex) {
 		m_device = device;
 		m_descriptorPool = descriptorPool;
 		vk::DescriptorSetVariableDescriptorCountAllocateInfo varDescCountAllocInfo;
@@ -29,14 +29,12 @@ namespace sa {
 
 		m_setIndex = setIndex;
 
-		m_writes.resize(info.bindings.size());
 		for (uint32_t i = 0; i < (uint32_t)info.bindings.size(); i++) {
 			uint32_t binding = info.bindings[i].binding;
-			if (m_writes.size() <= binding) {
-				int diff = binding - (m_writes.size() - 1);
-				m_writes.resize(m_writes.size() + diff);
-			}
-			m_writes[binding] = info.writes[i];
+			
+			m_writes[binding].dstBinding = binding;
+			m_writes[binding].descriptorType = (vk::DescriptorType)info.bindings[i].type;
+			m_writes[binding].descriptorCount = info.bindings[i].descriptorCount;
 		}
 
 	}
@@ -66,9 +64,9 @@ namespace sa {
 
 	void DescriptorSet::update(uint32_t binding, vk::Buffer buffer, vk::DeviceSize bufferSize, vk::DeviceSize bufferOffset, vk::BufferView* pView, uint32_t indexToUpdate) {
 
-		if (m_writes.size() <= binding) {
-			SA_DEBUG_LOG_ERROR("Binding ", binding, " out of bounds!");
-			throw std::runtime_error("Binding " + std::to_string(binding) + " out of bounds!");
+		if (!m_writes.count(binding)) {
+			SA_DEBUG_LOG_ERROR("Binding ", binding, " does not exist!");
+			throw std::runtime_error("Binding " + std::to_string(binding) + " does not exist!");
 		}
 
 		vk::DescriptorBufferInfo bufferInfo = {
@@ -86,9 +84,9 @@ namespace sa {
 	}
 
 	void DescriptorSet::update(uint32_t binding, vk::ImageView imageView, vk::ImageLayout layout, vk::Sampler* pSampler, uint32_t indexToUpdate) {
-		if (m_writes.size() <= binding) {
-			SA_DEBUG_LOG_ERROR("Binding ", binding, " out of bounds!");
-			throw std::runtime_error("Binding " + std::to_string(binding) + " out of bounds!");
+		if (!m_writes.count(binding)) {
+			SA_DEBUG_LOG_ERROR("Binding ", binding, " does not exist!");
+			throw std::runtime_error("Binding " + std::to_string(binding) + " does not exist!");
 		}
 
 		vk::DescriptorImageInfo imageInfo{
@@ -107,9 +105,9 @@ namespace sa {
 		if (textures.empty()) 
 			return;
 
-		if (m_writes.size() <= binding) {
-			SA_DEBUG_LOG_ERROR("Binding ", binding, " out of bounds!");
-			throw std::runtime_error("Binding " + std::to_string(binding) + " out of bounds!");
+		if (!m_writes.count(binding)) {
+			SA_DEBUG_LOG_ERROR("Binding ", binding, " does not exist!");
+			throw std::runtime_error("Binding " + std::to_string(binding) + " does not exist!");
 		}
 
 		vk::ImageLayout imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
@@ -138,9 +136,9 @@ namespace sa {
 		if (buffers.empty())
 			return;
 
-		if (m_writes.size() <= binding) {
-			SA_DEBUG_LOG_ERROR("Binding ", binding, " out of bounds!");
-			throw std::runtime_error("Binding " + std::to_string(binding) + " out of bounds!");
+		if (!m_writes.count(binding)) {
+			SA_DEBUG_LOG_ERROR("Binding ", binding, " does not exist!");
+			throw std::runtime_error("Binding " + std::to_string(binding) + " does not exist!");
 		}
 
 
@@ -173,8 +171,8 @@ namespace sa {
 		return m_setIndex;
 	}
 
-	vk::DescriptorType DescriptorSet::getDescriptorType(int binding) const {
-		return m_writes[binding].descriptorType;
+	vk::DescriptorType DescriptorSet::getDescriptorType(uint32_t binding) const {
+		return m_writes.at(binding).descriptorType;
 	}
 
 }

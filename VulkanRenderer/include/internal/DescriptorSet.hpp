@@ -3,23 +3,18 @@
 #include "Resources\Texture.hpp"
 #include "Resources\Buffer.hpp"
 #include "DeviceMemoryManager.hpp"
+#include "DescriptorSetStructs.h"
 
 #define MAX_VARIABLE_DESCRIPTOR_COUNT 1024
 
 namespace sa {
-
-	struct DescriptorSetLayout {
-		std::vector<vk::DescriptorSetLayoutBinding> bindings;
-		std::vector<vk::WriteDescriptorSet> writes;
-		std::vector<size_t> sizes;
-	};
 
 	class DescriptorSet {
 	private:
 		vk::Device m_device;
 		vk::DescriptorPool m_descriptorPool;
 		std::vector<vk::DescriptorSet> m_descriptorSets;
-		std::vector<vk::WriteDescriptorSet> m_writes;
+		std::unordered_map<uint32_t, vk::WriteDescriptorSet> m_writes;
 		uint32_t m_setIndex;
 
 		void update(uint32_t binding, uint32_t arrayIndex, uint32_t indexToUpdate);
@@ -29,7 +24,7 @@ namespace sa {
 			vk::Device device,
 			vk::DescriptorPool descriptorPool,
 			uint32_t count,
-			DescriptorSetLayout info,
+			DescriptorSetLayoutInfo info,
 			vk::DescriptorSetLayout layout,
 			uint32_t setIndex);
 		void destroy();
@@ -43,7 +38,7 @@ namespace sa {
 
 		uint32_t getSetIndex() const;
 
-		vk::DescriptorType getDescriptorType(int binding) const;
+		vk::DescriptorType getDescriptorType(uint32_t binding) const;
 
 	};
 }
