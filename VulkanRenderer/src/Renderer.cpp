@@ -38,7 +38,7 @@ namespace sa {
 				.applicationVersion = 0,
 				.pEngineName = "Saturn",
 				.engineVersion = 0,
-				.apiVersion = VK_API_VERSION_1_3
+				.apiVersion = SA_VK_API_VERSION
 			}; 
 
 			m_pCore = std::make_unique<VulkanCore>();

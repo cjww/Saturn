@@ -171,7 +171,7 @@ namespace sa {
 		shaderc::CompileOptions options;
 		options.SetAutoBindUniforms(true);
 		options.SetAutoMapLocations(true);
-		options.SetTargetEnvironment(shaderc_target_env_vulkan, shaderc_env_version_vulkan_1_3);
+		options.SetTargetEnvironment(shaderc_target_env_vulkan, SA_VK_API_VERSION);
 
 		shaderc::Compiler compiler;
 		shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(glslCode, ToShadercKind(shaderStage), tag, entryPointName, options);
@@ -183,30 +183,28 @@ namespace sa {
 
 		std::vector<uint32_t> output;
 		std::copy(result.begin(), result.end(), std::back_inserter(output));
-		return output;
+		return std::move(output);
 	}
 
 	std::vector<uint32_t> ReadSPVFile(const char* spvPath) {
-		std::ifstream file(spvPath, std::ios::ate | std::ios::binary);
+		std::ifstream file(spvPath, std::ios::binary);
 		if (!file.is_open()) {
 			throw std::runtime_error("Failed to open file " + std::string(spvPath));
 		}
-		const size_t fileSize = file.tellg();
-		file.seekg(0);
-		std::vector<uint32_t> buffer(fileSize / sizeof(uint32_t));
-		file.read((char*)buffer.data(), fileSize);
+		file.ignore(std::numeric_limits<std::streamsize>::max());
+		std::streamsize length = file.gcount();
+		file.clear();
+		file.seekg(0, std::ios_base::beg);
+
+		std::vector<uint32_t> buffer(length / sizeof(uint32_t));
+		file.read((char*)buffer.data(), length);
+		
 		file.close();
 
 		return std::move(buffer);
 	}
 
-
-	void ShaderSet::initializeStage(spirv_cross::Compiler* pCompiler, const ShaderStageInfo& stageInfo) {
-		if ((stageInfo.stage & sa::ShaderStageFlagBits::COMPUTE) != 0)
-			m_isGraphicsSet = false;
-		if ((stageInfo.stage & (sa::ShaderStageFlagBits::TESSELATION_CONTROL | sa::ShaderStageFlagBits::TESSELATION_EVALUATION)) != 0)
-			m_hasTessellationStage = true;
-
+	void ShaderSet::createShaderModule(const ShaderStageInfo& stageInfo) {
 		ShaderModuleInfo moduleInfo = {};
 		moduleInfo.entryPointName = stageInfo.pName;
 		moduleInfo.stage = stageInfo.stage;
@@ -218,14 +216,17 @@ namespace sa {
 		moduleInfo.moduleID = ResourceManager::get().insert<vk::ShaderModule>(m_pCore->getDevice().createShaderModule(shaderInfo));
 
 		m_shaderModules.push_back(moduleInfo);
+	}
 
+	void ShaderSet::initializeStage(spirv_cross::Compiler* pCompiler, ShaderStageFlagBits stage) {
+		if ((stage & sa::ShaderStageFlagBits::COMPUTE) != 0)
+			m_isGraphicsSet = false;
+		if ((stage & (sa::ShaderStageFlagBits::TESSELATION_CONTROL | sa::ShaderStageFlagBits::TESSELATION_EVALUATION)) != 0)
+			m_hasTessellationStage = true;
 
-		SA_DEBUG_LOG_INFO("Shader stage ", (uint32_t)stageInfo.stage, ", Entry point: ", stageInfo.pName);
 		for (auto ext : pCompiler->get_declared_extensions()) {
 			SA_DEBUG_LOG_INFO("\tShader uses vulkan extension: ", ext);
 		}
-
-		ShaderStageFlagBits stage = stageInfo.stage;
 
 		auto resources = pCompiler->get_shader_resources();
 		addResources(pCompiler, resources.uniform_buffers, DescriptorType::UNIFORM_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos);
@@ -318,26 +319,35 @@ namespace sa {
 		}
 	}
 	
+	ShaderSet::ShaderSet() 
+		: m_isGraphicsSet(true)
+		, m_hasTessellationStage(false)
+	{
+	}
 
-	ShaderSet::ShaderSet(VulkanCore* pCore, const ShaderStageInfo* pStageInfos, uint32_t stageCount) {
+	ShaderSet::ShaderSet(VulkanCore* pCore, const ShaderStageInfo* pStageInfos, uint32_t stageCount)
+		: ShaderSet()
+	{
 		m_pCore = pCore;
-		m_isGraphicsSet = true;
-		m_hasTessellationStage = false;
-
 
 		for (int i = 0; i < stageCount; i++) {
 			spirv_cross::Compiler compiler(pStageInfos[i].pCode, pStageInfos[i].codeLength);
-			initializeStage(&compiler, pStageInfos[i]);
+			createShaderModule(pStageInfos[i]);
+			initializeStage(&compiler, pStageInfos[i].stage);
 		}
 		
 		createDescriptorPoolAndLayouts();
 	}
 
-	ShaderSet::ShaderSet(VulkanCore* pCore, const std::vector<std::vector<uint32_t>>& shaderCode) {
-		m_pCore = pCore;
-		m_isGraphicsSet = true;
-		m_hasTessellationStage = false; 
+	ShaderSet::ShaderSet(VulkanCore* pCore, const std::vector<ShaderStageInfo>& stageInfos) 
+		: ShaderSet(pCore, stageInfos.data(), stageInfos.size())
+	{
+	}
 
+	ShaderSet::ShaderSet(VulkanCore* pCore, const std::vector<std::vector<uint32_t>>& shaderCode)
+		: ShaderSet()
+	{
+		m_pCore = pCore;
 
 		for (auto& code : shaderCode) {
 			spirv_cross::Compiler compiler(code);
@@ -350,7 +360,9 @@ namespace sa {
 			stageInfo.codeLength = code.size();
 			stageInfo.pName = (char*)entryPoints[0].name.c_str();
 			stageInfo.stage = stage;
-			initializeStage(&compiler, stageInfo);
+			createShaderModule(stageInfo);
+
+			initializeStage(&compiler, stage);
 		}
 
 		createDescriptorPoolAndLayouts();

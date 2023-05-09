@@ -217,12 +217,10 @@ int main() {
 		std::vector<sa::DynamicTexture> attachments;
 		ResourceID framebuffer = renderer.createSwapchainFramebuffer(renderProgram, window.getSwapchainID(), attachments);
 
-		auto vshaderCode = sa::CompileGLSLFromFile("Passthrough.vert", sa::VERTEX);
-
-		//auto vshaderCode = sa::ReadSPVFile("Passthrough.vert.spv");
+		auto vshaderCode = sa::ReadSPVFile("Passthrough.vert.spv");
 		auto fshaderCode = sa::ReadSPVFile("Passthrough.frag.spv");
-
 		sa::ShaderSet shaderSet = renderer.createShaderSet({ vshaderCode, fshaderCode });
+		
 		ResourceID pipeline = renderer.createGraphicsPipeline(renderProgram, 0, window.getCurrentExtent(), shaderSet);
 
 		sa::Buffer vertexBuffer = renderer.createBuffer(sa::BufferType::VERTEX);

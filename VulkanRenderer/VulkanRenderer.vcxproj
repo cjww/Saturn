@@ -266,6 +266,7 @@
     <ClInclude Include="include\FormatFlags.hpp" />
     <ClInclude Include="include\Image.hpp" />
     <ClInclude Include="include\InputEnums.hpp" />
+    <ClInclude Include="include\ApiBuildOptions.h" />
     <ClInclude Include="include\internal\DescriptorSetStructs.h" />
     <ClInclude Include="include\internal\Pipeline.hpp" />
     <ClInclude Include="include\internal\ShaderInfoStructs.h" />
