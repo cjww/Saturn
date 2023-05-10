@@ -83,6 +83,10 @@ namespace sa{
 		return getBuffer(m_currentBufferIndex).data();
 	}
 
+	void* DynamicBuffer::data(uint32_t offset) {
+		return getBuffer(m_currentBufferIndex).data(offset);
+	}
+
 	void DynamicBuffer::clear() {
 		m_buffers[m_currentBufferIndex].clear();
 	}

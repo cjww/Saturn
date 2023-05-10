@@ -201,6 +201,10 @@ namespace sa {
 		return m_pBuffer->mappedData;
 	}
 
+	void* Buffer::data(uint32_t offset) const {
+		return (char*)m_pBuffer->mappedData + offset;
+	}
+
 	bool Buffer::isValid() const {
 		return m_pBuffer != nullptr;
 	}

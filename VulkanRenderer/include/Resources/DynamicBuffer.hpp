@@ -59,6 +59,7 @@ namespace sa {
 		void reserve(size_t capacity, BufferResizeFlags resizeFlags = PRESERVE_CONTENT);
 
 		void* data();
+		void* data(uint32_t offset);
 
 		void clear();
 

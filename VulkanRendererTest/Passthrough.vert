@@ -5,8 +5,10 @@ layout (location = 1) in vec4 in_vertexColor;
 layout (location = 2) in vec2 in_vertexUV;
 
 layout (location = 0) out vec2 out_vertexUV;
+layout (location = 1) out vec4 out_vertexColor;
 
 struct Material {
+    float time;
     vec4 color;
 };
 
@@ -29,7 +31,11 @@ void main() {
 	
     vec4 vertexWorldPos = object.model * in_vertexPosition;
 
-    //vertexWorldPos.x += sin(pc.timer);
+    vec4 color = object.material.color * in_vertexColor;
+
+    vertexWorldPos.x += sin(pc.timer * object.material.time);
+
+    out_vertexColor = object.material.color;
 
     out_vertexUV = in_vertexUV;
     gl_Position = vp * vertexWorldPos;

@@ -102,6 +102,9 @@ namespace sa {
 
 		const ShaderAttribute& getShaderAttribute(const std::string& attributePath) const;
 
+		const std::unordered_map<std::string, ShaderAttribute>& getShaderAttributes() const;
+
+
 		bool isGraphicsSet() const;
 		bool hasTessellationStage() const;
 

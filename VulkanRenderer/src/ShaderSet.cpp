@@ -22,123 +22,112 @@ namespace sa {
 		return map.at(shaderStage);
 	}
 
-	void gatherMemberNames(
-		const spirv_cross::Compiler* pCompiler, 
-		const spirv_cross::SPIRType& structType,
-		const spirv_cross::SPIRType& memberType,
-		int index, 
-		DescriptorType descriptorType, 
-		uint32_t set, 
-		uint32_t binding,
-		std::unordered_map<std::string, ShaderAttribute>& outAttributes,
-		std::string attributePath) 
-	{
+	ShaderAttribute createAttribute(const std::string& name, const spirv_cross::SPIRType& type) {
 		ShaderAttribute attrib = {};
-		attrib.name = pCompiler->get_member_name(structType.self, index);
-		
-		std::copy(memberType.array.begin(), memberType.array.end(), std::back_inserter(attrib.arraySize));
-		attrib.vecSize = memberType.vecsize;
-		attrib.columns = memberType.columns;
+		attrib.name = name;
+		std::copy(type.array.begin(), type.array.end(), std::back_inserter(attrib.arraySize));
+		attrib.vecSize = type.vecsize;
+		attrib.columns = type.columns;
+		attrib.type = (ShaderAttributeType)type.basetype;
+		return attrib;
+	}
+
+	void addStructMember(
+		const spirv_cross::Compiler* pCompiler,
+		const spirv_cross::SPIRType& parentType,
+		int index,
+		DescriptorType descriptorType,
+		uint32_t set,
+		uint32_t binding,
+		uint32_t offset,
+		std::unordered_map<std::string, ShaderAttribute>& outAttributes,
+		const std::string& attributePath) 
+	{
+		const auto& type = pCompiler->get_type(parentType.member_types[index]);
+
+		ShaderAttribute attrib = createAttribute(pCompiler->get_member_name(parentType.self, index), type);
+
 		attrib.descriptorType = descriptorType;
-		attrib.type = (ShaderAttributeType)memberType.basetype;
-	
 		attrib.set = set;
 		attrib.binding = binding;
-		
-		attrib.offset = pCompiler->get_member_decoration(structType.self, index, spv::Decoration::DecorationOffset);
-		SA_DEBUG_LOG_INFO(attrib.name, " offset: ", attrib.offset);
 
-		
+		attrib.offset = pCompiler->type_struct_member_offset(parentType, index) + offset;
+		attrib.size = pCompiler->get_declared_struct_member_size(parentType, index);
 
-		attributePath += attrib.name;
-		if (memberType.basetype != spirv_cross::SPIRType::Struct) {
-			attrib.size = pCompiler->get_declared_struct_member_size(structType, index);
-			outAttributes[attributePath] = attrib;
+		if (outAttributes.count(attributePath + attrib.name)) // already added
 			return;
+
+		outAttributes[attributePath + attrib.name] = attrib;
+
+		int i = 0;
+		for (spirv_cross::TypeID memberTypeID : type.member_types) {
+			addStructMember(pCompiler, type, i, descriptorType, set, binding, attrib.offset, outAttributes, (attrib.name.empty() ? attributePath : attributePath + attrib.name + "."));
+			i++;
 		}
-		attrib.size = pCompiler->get_declared_struct_size(memberType);
-		outAttributes[attributePath] = attrib;
+	}
+
+	void addBlockMember(
+		const spirv_cross::Compiler* pCompiler, 
+		const spirv_cross::SPIRType& baseType,
+		const spirv_cross::SPIRType& parentType,
+		const spirv_cross::BufferRange& range,
+		DescriptorType descriptorType,
+		uint32_t set,
+		uint32_t binding,
+		std::unordered_map<std::string, ShaderAttribute>& outAttributes,
+		const std::string& attributePath)
+	{
+		const auto& type = pCompiler->get_type(parentType.member_types[range.index]);
+
+		ShaderAttribute attrib = createAttribute(pCompiler->get_member_name(baseType.self, range.index), type);
+		attrib.descriptorType = descriptorType;
+		attrib.set = set;
+		attrib.binding = binding;
+		attrib.offset = range.offset;
+		attrib.size = range.range;
+
+		if (outAttributes.count(attributePath + attrib.name)) // already added
+			return;
+
+		outAttributes[attributePath + attrib.name] = attrib;
 		
 		int i = 0;
-		for (spirv_cross::TypeID type : memberType.member_types) {
-			const spirv_cross::SPIRType& memberMemberType = pCompiler->get_type(type);
-				
-			if (!attributePath.empty())
-				attributePath += ".";
-
-			gatherMemberNames(pCompiler, memberType, memberMemberType, i, descriptorType, set, binding, outAttributes, attributePath);
+		for (spirv_cross::TypeID memberTypeID : type.member_types) {
+			addStructMember(pCompiler, type, i, descriptorType, set, binding, attrib.offset, outAttributes, (attrib.name.empty() ? attributePath : attributePath + attrib.name + "."));
 			i++;
 		}
 		
-
 	}
 
-	void gatherNames(
+	void addResourceAttribute(
 		const spirv_cross::Compiler* pCompiler,
 		const spirv_cross::Resource& resource,
 		DescriptorType descriptorType,
-		std::unordered_map<std::string, ShaderAttribute>& outAttributes) {
-		const spirv_cross::SPIRType& spirType = pCompiler->get_type(resource.type_id);
+		std::unordered_map<std::string, ShaderAttribute>& outAttributes) 
+	{
+		const spirv_cross::SPIRType& type = pCompiler->get_type(resource.type_id);
+		const spirv_cross::SPIRType& baseType = pCompiler->get_type(resource.base_type_id);
 
-		ShaderAttribute attrib = {};
-		attrib.name = pCompiler->get_name(resource.id);
-
-		std::copy(spirType.array.begin(), spirType.array.end(), std::back_inserter(attrib.arraySize));
-		attrib.vecSize = spirType.vecsize;
-		attrib.columns = spirType.columns;
+		ShaderAttribute attrib = createAttribute(pCompiler->get_name(resource.id), type);
 		attrib.descriptorType = descriptorType;
-		attrib.type = (ShaderAttributeType)spirType.basetype;
-		
 		attrib.set = pCompiler->get_decoration(resource.id, spv::Decoration::DecorationDescriptorSet);
 		attrib.binding = pCompiler->get_decoration(resource.id, spv::Decoration::DecorationBinding);
-
 		attrib.offset = pCompiler->get_decoration(resource.id, spv::Decoration::DecorationOffset);
-		SA_DEBUG_LOG_INFO(attrib.name, " offset: ", attrib.offset);
 
+		bool isBlock = pCompiler->get_decoration_bitset(type.self).get(spv::Decoration::DecorationBlock) ||
+			pCompiler->get_decoration_bitset(type.self).get(spv::Decoration::DecorationBufferBlock);
+		
 		std::string attributePath = attrib.name;
-		outAttributes[attributePath] = attrib;
 
-		if (spirType.basetype == spirv_cross::SPIRType::Struct) {
-			attrib.size = pCompiler->get_declared_struct_size(spirType);
-			if (!attributePath.empty())
-				attributePath += ".";
-
+		if (isBlock) {
+			attrib.size = pCompiler->get_declared_struct_size(type);
 			const auto& bufferRanges = pCompiler->get_active_buffer_ranges(resource.id);
 			for (const auto& range : bufferRanges) {
-				ShaderAttribute memberAttrib = {};
-				memberAttrib.name = pCompiler->get_member_name(resource.base_type_id, range.index);
-				memberAttrib.size = range.range;
-				memberAttrib.offset = range.offset;
-
-				const auto& memberType = pCompiler->get_type(spirType.member_types[range.index]);
-				std::copy(memberType.array.begin(), memberType.array.end(), std::back_inserter(memberAttrib.arraySize));
-				memberAttrib.vecSize = memberType.vecsize;
-				memberAttrib.columns = memberType.columns;
-				memberAttrib.descriptorType = descriptorType;
-				memberAttrib.type = (ShaderAttributeType)memberType.basetype;
-
-				memberAttrib.set = pCompiler->get_decoration(resource.id, spv::Decoration::DecorationDescriptorSet);
-				memberAttrib.binding = pCompiler->get_decoration(resource.id, spv::Decoration::DecorationBinding);
-
-				outAttributes[attributePath + memberAttrib.name] = memberAttrib;
-
-				bool isBlock = pCompiler->get_decoration_bitset(spirType.self).get(spv::Decoration::DecorationBlock) ||
-					pCompiler->get_decoration_bitset(spirType.self).get(spv::Decoration::DecorationBufferBlock);
-				bool isSizedBlock = isBlock && (pCompiler->get_storage_class(resource.id) == spv::StorageClass::StorageClassUniform ||
-					pCompiler->get_storage_class(resource.id) == spv::StorageClass::StorageClassUniformConstant);
+				addBlockMember(pCompiler, baseType, type, range, descriptorType, attrib.set, attrib.binding, outAttributes, attributePath.empty() ? "" : attributePath + ".");
 			}
-			int i = 0;
-			for (spirv_cross::TypeID type : spirType.member_types) {
-				std::string name = pCompiler->get_member_name(resource.base_type_id, i);
-				ShaderAttribute& memberAttrib = outAttributes[attributePath + name];
-				
-				const spirv_cross::SPIRType& memberType = pCompiler->get_type(type);
-				gatherMemberNames(pCompiler, spirType, memberType, i, descriptorType, attrib.set, attrib.binding, outAttributes, attributePath);
-				i++;
-			}
-			/*
-			*/
 		}
+		if(!attributePath.empty())
+			outAttributes[attributePath] = attrib;
 	}
 
 	void addResources(
@@ -185,7 +174,7 @@ namespace sa {
 			descriptorSets[set].bindings.push_back(layoutBinding);
 			descriptorSets[set].sizes.push_back(size);
 
-			gatherNames(pCompiler, resource, type, outAttributes);
+			addResourceAttribute(pCompiler, resource, type, outAttributes);
 		}
 	}
 
@@ -346,7 +335,7 @@ namespace sa {
 			m_hasTessellationStage = true;
 
 		for (auto ext : pCompiler->get_declared_extensions()) {
-			SA_DEBUG_LOG_INFO("\tShader uses vulkan extension: ", ext);
+			SA_DEBUG_LOG_INFO("Shader uses vulkan extension: ", ext);
 		}
 
 		auto resources = pCompiler->get_shader_resources();
@@ -371,7 +360,7 @@ namespace sa {
 				.size = static_cast<uint32_t>(size),
 			};
 			m_pushConstantRanges.push_back(range);
-			gatherNames(pCompiler, p, DescriptorType::PUSH_CONSTANT, m_attributes);
+			addResourceAttribute(pCompiler, p, DescriptorType::PUSH_CONSTANT, m_attributes);
 		}
 
 		if (stage & ShaderStageFlagBits::VERTEX) {
@@ -485,14 +474,10 @@ namespace sa {
 			createShaderModule(stageInfo);
 
 			initializeStage(&compiler, stage);
+		
 		}
 
 		createDescriptorPoolAndLayouts();
-
-		for (const auto& [path, attrib] : m_attributes) {
-			SA_DEBUG_LOG_INFO(path, " -> set: ", attrib.set, ", binding: ", attrib.binding, ", offset: ", attrib.offset, ", size: ", attrib.size);
-		}
-
 	}
 
 	void ShaderSet::destroy() {
@@ -539,6 +524,10 @@ namespace sa {
 
 	const ShaderAttribute& ShaderSet::getShaderAttribute(const std::string& attributePath) const {
 		return m_attributes.at(attributePath);
+	}
+
+	const std::unordered_map<std::string, ShaderAttribute>& ShaderSet::getShaderAttributes() const {
+		return m_attributes;
 	}
 
 	bool ShaderSet::isGraphicsSet() const {

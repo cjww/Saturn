@@ -72,13 +72,13 @@ namespace sa {
 		size_t getElementCount() const;
 
 		template<typename T>
-		void write(const T& data);
-
-		template<typename T>
-		void write(const std::vector<T>& data);
+		void write(const T& data, uint32_t offset = 0);
 		
+		template<typename T>
+		void write(const std::vector<T>& data, uint32_t offset = 0);
+
 		template<typename T, size_t Size>
-		void write(const std::array<T, Size>& data);
+		void write(const std::array<T, Size>& data, uint32_t offset = 0);
 
 		template<typename T>
 		void append(const T& data, int alignment = 0);
@@ -92,6 +92,7 @@ namespace sa {
 
 
 		void* data() const;
+		void* data(uint32_t offset) const;
 
 		template<typename T>
 		std::vector<T> getContent() const;
@@ -123,18 +124,18 @@ namespace sa {
 
 
 	template<typename T>
-	inline void Buffer::write(const T& data) {
-		write((void*)&data, sizeof(T));
+	inline void Buffer::write(const T& data, uint32_t offset) {
+		write((void*)&data, sizeof(T), offset);
 	}
 
 	template<typename T>
-	inline void Buffer::write(const std::vector<T>& data) {
-		write((void*)data.data(), data.size() * sizeof(T));
+	inline void Buffer::write(const std::vector<T>& data, uint32_t offset) {
+		write((void*)data.data(), data.size() * sizeof(T), offset);
 	}
 
 	template<typename T, size_t Size>
-	inline void Buffer::write(const std::array<T, Size>& data) {
-		write((void*)data.data(), Size * sizeof(T));
+	inline void Buffer::write(const std::array<T, Size>& data, uint32_t offset) {
+		write((void*)data.data(), Size * sizeof(T), offset);
 	}
 
 	template<typename T>

@@ -207,12 +207,15 @@ int main() {
 
 		sa::Renderer& renderer = sa::Renderer::get();
 
+
 		ResourceID renderProgram = renderer.createRenderProgram()
 			.addSwapchainAttachment(window.getSwapchainID())
 			.beginSubpass()
 			.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
 			.endSubpass()
 			.end();
+
+		renderer.initImGui(window, renderProgram, 0);
 
 		std::vector<sa::DynamicTexture> attachments;
 		ResourceID framebuffer = renderer.createSwapchainFramebuffer(renderProgram, window.getSwapchainID(), attachments);
@@ -245,11 +248,14 @@ int main() {
 			<< glm::lookAt(glm::vec3(0, 0, 5), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0))
 			<< projection;
 		
-		sa::ShaderAttribute projectionAttrib = shaderSet.getShaderAttribute("scene.projection");
-		
-
 		glm::mat4 boxTransform(1);
+
+		sa::ShaderAttribute timeAttrib = shaderSet.getShaderAttribute("object.material.time");
+		sa::ShaderAttribute colorAttrib = shaderSet.getShaderAttribute("object.material.color");
+
 		objectUniformBuffer << boxTransform;
+		objectUniformBuffer.write(glm::vec4(1, 1, 1, 1), colorAttrib.offset);
+		objectUniformBuffer.write(0.0f, timeAttrib.offset);
 
 		renderer.updateDescriptorSet(sceneDescriptorSet, 0, sceneUniformBuffer);
 		renderer.updateDescriptorSet(objectDescriptorSet, 0, objectUniformBuffer);
@@ -267,13 +273,60 @@ int main() {
 
 		float timer = 0.f;
 
+		static const std::unordered_map<uint32_t, bool (*)(const char*, float*, float, float, float, const char*, float)> dragFloatMap = {
+			{1, ImGui::DragFloat},
+			{2, ImGui::DragFloat2},
+			{3, ImGui::DragFloat3},
+			{4, ImGui::DragFloat4},
+		};
+
+		static const std::unordered_map<uint32_t, sa::Buffer*> uniformBufferMap = {
+			{0, &sceneUniformBuffer},
+			{1, &objectUniformBuffer}
+		};
+
+		static const std::unordered_map<uint32_t, ResourceID> descriptorSetMap = {
+			{0, sceneDescriptorSet},
+			{1, objectDescriptorSet}
+		};
+
+		auto lastTime = std::chrono::high_resolution_clock::now();
+
 		while (window.isOpen()) {
 			window.pollEvents();
 
-			boxTransform = glm::rotate(boxTransform, glm::radians(1.f), glm::vec3(0, 1, 0));
+			renderer.newImGuiFrame();
+
+			auto now = std::chrono::high_resolution_clock::now();
+			float dt = std::chrono::duration<float>(now - lastTime).count();
+			lastTime = now;
+
+			if (ImGui::Begin("Attributes")) {
+				
+				/*
+				sa::ShaderAttribute time = shaderSet.getShaderAttribute("object.material.time");
+				float* timeValue = (float*)uniformBufferMap.at(time.set)->data(time.offset);
+				*timeValue += dt;
+				*/
+
+				static float time = 0.0f;
+				if (ImGui::DragFloat("Time", &time)) {
+					objectUniformBuffer.write(time, timeAttrib.offset);
+				}
+
+				sa::ShaderAttribute color = shaderSet.getShaderAttribute("object.material.color");
+
+				float* colorValue = (float*)uniformBufferMap.at(color.set)->data(color.offset);
+				ImGui::ColorEdit3(color.name.c_str(), colorValue);
+
+				ImGui::End();
+			}
+
+
+			boxTransform = glm::rotate(boxTransform, glm::radians(1.f * dt), glm::vec3(0, 1, 0));
 			objectUniformBuffer.write(&boxTransform, sizeof(glm::mat4), 0);
 
-			timer += 1.0f;
+			timer += 1.0f * dt;
 
 			sa::RenderContext context = window.beginFrame();
 			if (context) {
@@ -291,10 +344,12 @@ int main() {
 
 				context.pushConstant(pipeline, sa::ShaderStageFlagBits::VERTEX, timer);
 				context.pushConstant(pipeline, sa::ShaderStageFlagBits::FRAGMENT, glm::vec4(1.f, 0.f, 0.5f, 1.f));
-				context.pushConstant(pipeline, sa::ShaderStageFlagBits::FRAGMENT, 1, 32);
+				context.pushConstant(pipeline, sa::ShaderStageFlagBits::FRAGMENT, 0, 32);
 
 
 				context.drawIndexed(indexBuffer.getElementCount<uint32_t>(), 1);
+
+				context.renderImGuiFrame();
 
 				context.endRenderProgram(renderProgram);
 
