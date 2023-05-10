@@ -6,6 +6,10 @@ layout (location = 2) in vec2 in_vertexUV;
 
 layout (location = 0) out vec2 out_vertexUV;
 
+struct Material {
+    vec4 color;
+};
+
 layout (set = 0, binding = 0) uniform Scene {
     mat4 view;
     mat4 projection;
@@ -13,6 +17,7 @@ layout (set = 0, binding = 0) uniform Scene {
 
 layout (set = 1, binding = 0) uniform Object {
     mat4 model;
+    Material material;
 } object;
 
 layout(push_constant) uniform PC {

@@ -22,16 +22,136 @@ namespace sa {
 		return map.at(shaderStage);
 	}
 
+	void gatherMemberNames(
+		const spirv_cross::Compiler* pCompiler, 
+		const spirv_cross::SPIRType& structType,
+		const spirv_cross::SPIRType& memberType,
+		int index, 
+		DescriptorType descriptorType, 
+		uint32_t set, 
+		uint32_t binding,
+		std::unordered_map<std::string, ShaderAttribute>& outAttributes,
+		std::string attributePath) 
+	{
+		ShaderAttribute attrib = {};
+		attrib.name = pCompiler->get_member_name(structType.self, index);
+		
+		std::copy(memberType.array.begin(), memberType.array.end(), std::back_inserter(attrib.arraySize));
+		attrib.vecSize = memberType.vecsize;
+		attrib.columns = memberType.columns;
+		attrib.descriptorType = descriptorType;
+		attrib.type = (ShaderAttributeType)memberType.basetype;
+	
+		attrib.set = set;
+		attrib.binding = binding;
+		
+		attrib.offset = pCompiler->get_member_decoration(structType.self, index, spv::Decoration::DecorationOffset);
+		SA_DEBUG_LOG_INFO(attrib.name, " offset: ", attrib.offset);
+
+		
+
+		attributePath += attrib.name;
+		if (memberType.basetype != spirv_cross::SPIRType::Struct) {
+			attrib.size = pCompiler->get_declared_struct_member_size(structType, index);
+			outAttributes[attributePath] = attrib;
+			return;
+		}
+		attrib.size = pCompiler->get_declared_struct_size(memberType);
+		outAttributes[attributePath] = attrib;
+		
+		int i = 0;
+		for (spirv_cross::TypeID type : memberType.member_types) {
+			const spirv_cross::SPIRType& memberMemberType = pCompiler->get_type(type);
+				
+			if (!attributePath.empty())
+				attributePath += ".";
+
+			gatherMemberNames(pCompiler, memberType, memberMemberType, i, descriptorType, set, binding, outAttributes, attributePath);
+			i++;
+		}
+		
+
+	}
+
+	void gatherNames(
+		const spirv_cross::Compiler* pCompiler,
+		const spirv_cross::Resource& resource,
+		DescriptorType descriptorType,
+		std::unordered_map<std::string, ShaderAttribute>& outAttributes) {
+		const spirv_cross::SPIRType& spirType = pCompiler->get_type(resource.type_id);
+
+		ShaderAttribute attrib = {};
+		attrib.name = pCompiler->get_name(resource.id);
+
+		std::copy(spirType.array.begin(), spirType.array.end(), std::back_inserter(attrib.arraySize));
+		attrib.vecSize = spirType.vecsize;
+		attrib.columns = spirType.columns;
+		attrib.descriptorType = descriptorType;
+		attrib.type = (ShaderAttributeType)spirType.basetype;
+		
+		attrib.set = pCompiler->get_decoration(resource.id, spv::Decoration::DecorationDescriptorSet);
+		attrib.binding = pCompiler->get_decoration(resource.id, spv::Decoration::DecorationBinding);
+
+		attrib.offset = pCompiler->get_decoration(resource.id, spv::Decoration::DecorationOffset);
+		SA_DEBUG_LOG_INFO(attrib.name, " offset: ", attrib.offset);
+
+		std::string attributePath = attrib.name;
+		outAttributes[attributePath] = attrib;
+
+		if (spirType.basetype == spirv_cross::SPIRType::Struct) {
+			attrib.size = pCompiler->get_declared_struct_size(spirType);
+			if (!attributePath.empty())
+				attributePath += ".";
+
+			const auto& bufferRanges = pCompiler->get_active_buffer_ranges(resource.id);
+			for (const auto& range : bufferRanges) {
+				ShaderAttribute memberAttrib = {};
+				memberAttrib.name = pCompiler->get_member_name(resource.base_type_id, range.index);
+				memberAttrib.size = range.range;
+				memberAttrib.offset = range.offset;
+
+				const auto& memberType = pCompiler->get_type(spirType.member_types[range.index]);
+				std::copy(memberType.array.begin(), memberType.array.end(), std::back_inserter(memberAttrib.arraySize));
+				memberAttrib.vecSize = memberType.vecsize;
+				memberAttrib.columns = memberType.columns;
+				memberAttrib.descriptorType = descriptorType;
+				memberAttrib.type = (ShaderAttributeType)memberType.basetype;
+
+				memberAttrib.set = pCompiler->get_decoration(resource.id, spv::Decoration::DecorationDescriptorSet);
+				memberAttrib.binding = pCompiler->get_decoration(resource.id, spv::Decoration::DecorationBinding);
+
+				outAttributes[attributePath + memberAttrib.name] = memberAttrib;
+
+				bool isBlock = pCompiler->get_decoration_bitset(spirType.self).get(spv::Decoration::DecorationBlock) ||
+					pCompiler->get_decoration_bitset(spirType.self).get(spv::Decoration::DecorationBufferBlock);
+				bool isSizedBlock = isBlock && (pCompiler->get_storage_class(resource.id) == spv::StorageClass::StorageClassUniform ||
+					pCompiler->get_storage_class(resource.id) == spv::StorageClass::StorageClassUniformConstant);
+			}
+			int i = 0;
+			for (spirv_cross::TypeID type : spirType.member_types) {
+				std::string name = pCompiler->get_member_name(resource.base_type_id, i);
+				ShaderAttribute& memberAttrib = outAttributes[attributePath + name];
+				
+				const spirv_cross::SPIRType& memberType = pCompiler->get_type(type);
+				gatherMemberNames(pCompiler, spirType, memberType, i, descriptorType, attrib.set, attrib.binding, outAttributes, attributePath);
+				i++;
+			}
+			/*
+			*/
+		}
+	}
+
 	void addResources(
 		const spirv_cross::Compiler* pCompiler,
 		const spirv_cross::SmallVector<spirv_cross::Resource>& resources,
 		DescriptorType type,
 		vk::Sampler* immutableSamplers,
 		ShaderStageFlagBits stage,
-		std::unordered_map<uint32_t, DescriptorSetLayoutInfo>& descriptorSets)
+		std::unordered_map<uint32_t, DescriptorSetLayoutInfo>& descriptorSets,
+		std::unordered_map<std::string, ShaderAttribute>& outAttributes)
 	{
-		for (auto& b : resources) {
-			const auto& t = pCompiler->get_type(b.type_id);
+		for (auto& resource : resources) {
+			const auto& t = pCompiler->get_type(resource.type_id);
 			if ((type == DescriptorType::SAMPLED_IMAGE|| type == DescriptorType::COMBINED_IMAGE_SAMPLER|| type == DescriptorType::STORAGE_IMAGE) && t.image.dim == spv::Dim::DimBuffer) {
 				continue; // this is not a sampled image
 			}
@@ -40,8 +160,8 @@ namespace sa {
 			}
 
 			DescriptorSetLayoutBinding layoutBinding = {};
-			uint32_t set = pCompiler->get_decoration(b.id, spv::Decoration::DecorationDescriptorSet);
-			layoutBinding.binding = pCompiler->get_decoration(b.id, spv::Decoration::DecorationBinding);
+			uint32_t set = pCompiler->get_decoration(resource.id, spv::Decoration::DecorationDescriptorSet);
+			layoutBinding.binding = pCompiler->get_decoration(resource.id, spv::Decoration::DecorationBinding);
 			size_t size = 0;
 
 			if (t.basetype == spirv_cross::SPIRType::BaseType::Struct) {
@@ -65,6 +185,7 @@ namespace sa {
 			descriptorSets[set].bindings.push_back(layoutBinding);
 			descriptorSets[set].sizes.push_back(size);
 
+			gatherNames(pCompiler, resource, type, outAttributes);
 		}
 	}
 
@@ -229,16 +350,16 @@ namespace sa {
 		}
 
 		auto resources = pCompiler->get_shader_resources();
-		addResources(pCompiler, resources.uniform_buffers, DescriptorType::UNIFORM_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos);
-		addResources(pCompiler, resources.separate_samplers, DescriptorType::SAMPLER, nullptr, stage, m_descriptorSetLayoutInfos); // sampler / samplerShadow
-		addResources(pCompiler, resources.separate_images, DescriptorType::SAMPLED_IMAGE, nullptr, stage, m_descriptorSetLayoutInfos); // texture2D
-		addResources(pCompiler, resources.separate_images, DescriptorType::UNIFORM_TEXEL_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos); // textureBuffer
-		addResources(pCompiler, resources.sampled_images, DescriptorType::COMBINED_IMAGE_SAMPLER, nullptr, stage, m_descriptorSetLayoutInfos); // sampler2D
-		addResources(pCompiler, resources.sampled_images, DescriptorType::UNIFORM_TEXEL_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos); // samplerBuffer
-		addResources(pCompiler, resources.storage_images, DescriptorType::STORAGE_IMAGE, nullptr, stage, m_descriptorSetLayoutInfos); // image2D
-		addResources(pCompiler, resources.storage_images, DescriptorType::STORAGE_TEXEL_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos); // 
-		addResources(pCompiler, resources.storage_buffers, DescriptorType::STORAGE_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos); // buffer SSBO 
-		addResources(pCompiler, resources.subpass_inputs, DescriptorType::INPUT_ATTACHMENT, nullptr, stage, m_descriptorSetLayoutInfos); // subpassInput
+		addResources(pCompiler, resources.uniform_buffers, DescriptorType::UNIFORM_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos, m_attributes);
+		addResources(pCompiler, resources.separate_samplers, DescriptorType::SAMPLER, nullptr, stage, m_descriptorSetLayoutInfos, m_attributes); // sampler / samplerShadow
+		addResources(pCompiler, resources.separate_images, DescriptorType::SAMPLED_IMAGE, nullptr, stage, m_descriptorSetLayoutInfos, m_attributes); // texture2D
+		addResources(pCompiler, resources.separate_images, DescriptorType::UNIFORM_TEXEL_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos, m_attributes); // textureBuffer
+		addResources(pCompiler, resources.sampled_images, DescriptorType::COMBINED_IMAGE_SAMPLER, nullptr, stage, m_descriptorSetLayoutInfos, m_attributes); // sampler2D
+		addResources(pCompiler, resources.sampled_images, DescriptorType::UNIFORM_TEXEL_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos, m_attributes); // samplerBuffer
+		addResources(pCompiler, resources.storage_images, DescriptorType::STORAGE_IMAGE, nullptr, stage, m_descriptorSetLayoutInfos, m_attributes); // image2D
+		addResources(pCompiler, resources.storage_images, DescriptorType::STORAGE_TEXEL_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos, m_attributes); // 
+		addResources(pCompiler, resources.storage_buffers, DescriptorType::STORAGE_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos, m_attributes); // buffer SSBO 
+		addResources(pCompiler, resources.subpass_inputs, DescriptorType::INPUT_ATTACHMENT, nullptr, stage, m_descriptorSetLayoutInfos, m_attributes); // subpassInput
 
 		for (auto& p : resources.push_constant_buffers) {
 			size_t size = pCompiler->get_declared_struct_size(pCompiler->get_type(p.type_id));
@@ -250,6 +371,7 @@ namespace sa {
 				.size = static_cast<uint32_t>(size),
 			};
 			m_pushConstantRanges.push_back(range);
+			gatherNames(pCompiler, p, DescriptorType::PUSH_CONSTANT, m_attributes);
 		}
 
 		if (stage & ShaderStageFlagBits::VERTEX) {
@@ -366,6 +488,11 @@ namespace sa {
 		}
 
 		createDescriptorPoolAndLayouts();
+
+		for (const auto& [path, attrib] : m_attributes) {
+			SA_DEBUG_LOG_INFO(path, " -> set: ", attrib.set, ", binding: ", attrib.binding, ", offset: ", attrib.offset, ", size: ", attrib.size);
+		}
+
 	}
 
 	void ShaderSet::destroy() {
@@ -408,6 +535,10 @@ namespace sa {
 
 	const std::vector<VertexInputBindingDescription>& ShaderSet::getVertexBindings() const {
 		return m_vertexBindings;
+	}
+
+	const ShaderAttribute& ShaderSet::getShaderAttribute(const std::string& attributePath) const {
+		return m_attributes.at(attributePath);
 	}
 
 	bool ShaderSet::isGraphicsSet() const {

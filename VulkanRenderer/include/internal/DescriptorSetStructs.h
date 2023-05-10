@@ -24,6 +24,9 @@ namespace sa {
 		ACCELERATION_STRUCTURE_KHR = 1000150000,
 		ACCELERATION_STRUCTURE_NV = 1000165000,
 		MUTABLE_VALVE = 1000351000,
+		
+		// Not actually a descriptor type
+		PUSH_CONSTANT = -1
 	};
 
 

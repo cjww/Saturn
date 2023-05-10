@@ -221,6 +221,7 @@ int main() {
 		auto fshaderCode = sa::ReadSPVFile("Passthrough.frag.spv");
 		sa::ShaderSet shaderSet = renderer.createShaderSet({ vshaderCode, fshaderCode });
 		
+
 		ResourceID pipeline = renderer.createGraphicsPipeline(renderProgram, 0, window.getCurrentExtent(), shaderSet);
 
 		sa::Buffer vertexBuffer = renderer.createBuffer(sa::BufferType::VERTEX);
@@ -243,7 +244,9 @@ int main() {
 		sceneUniformBuffer
 			<< glm::lookAt(glm::vec3(0, 0, 5), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0))
 			<< projection;
-
+		
+		sa::ShaderAttribute projectionAttrib = shaderSet.getShaderAttribute("scene.projection");
+		
 
 		glm::mat4 boxTransform(1);
 		objectUniformBuffer << boxTransform;

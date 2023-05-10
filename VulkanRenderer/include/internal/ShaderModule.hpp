@@ -21,7 +21,6 @@ namespace sa {
 		std::vector<vk::VertexInputBindingDescription> m_vertexBindings;
 
 		void addResources(const spirv_cross::Compiler& compiler, const spirv_cross::SmallVector<spirv_cross::Resource>& resources, vk::DescriptorType type, vk::Sampler* immutableSamplers);
-
 		void getVertexInput(const spirv_cross::Compiler& compiler, const spirv_cross::SmallVector<spirv_cross::Resource>& resources);
 
 	public:

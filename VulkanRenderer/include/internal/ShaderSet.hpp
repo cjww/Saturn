@@ -17,6 +17,45 @@ namespace sa {
 
 	[[nodiscard]] std::vector<uint32_t> ReadSPVFile(const char* spvPath);
 
+
+	enum class ShaderAttributeType {
+		UNKNOWN,
+		VOID,
+		BOOLEAN,
+		SBYTE,
+		UBYTE,
+		SHORT,
+		USHORT,
+		INT,
+		UINT,
+		INT64,
+		UINT64,
+		ATOMIC_COUNTER,
+		HALF,
+		FLOAT,
+		DOUBLE,
+		STRUCT,
+		IMAGE,
+		SAMPLED_IMAGE,
+		SAMPLER,
+		ACCELERATION_STRUCTURE,
+		RAY_QUERY
+	};
+
+	struct ShaderAttribute {
+		DescriptorType descriptorType;
+		ShaderAttributeType type;
+		std::vector<uint32_t> arraySize;
+		uint32_t vecSize;
+		uint32_t columns;
+		size_t size;
+		uint32_t offset;
+		std::string name;
+
+		uint32_t set;
+		uint32_t binding;
+	};
+
 	class ShaderSet {
 	private:
 		VulkanCore* m_pCore;
@@ -30,6 +69,8 @@ namespace sa {
 		
 		std::vector<VertexInputAttributeDescription> m_vertexAttributes;
 		std::vector<VertexInputBindingDescription> m_vertexBindings;
+
+		std::unordered_map<std::string, ShaderAttribute> m_attributes;
 
 		ResourceID m_descriptorPool;
 
@@ -58,6 +99,8 @@ namespace sa {
 
 		const std::vector<VertexInputAttributeDescription>& getVertexAttributes() const;
 		const std::vector<VertexInputBindingDescription>& getVertexBindings() const;
+
+		const ShaderAttribute& getShaderAttribute(const std::string& attributePath) const;
 
 		bool isGraphicsSet() const;
 		bool hasTessellationStage() const;
