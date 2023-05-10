@@ -538,13 +538,13 @@ namespace sa {
 		return m_hasTessellationStage;
 	}
 
-	ResourceID ShaderSet::allocateDescriptorSet(uint32_t setIndex) {
+	ResourceID ShaderSet::allocateDescriptorSet(uint32_t setIndex) const {
 		if (!m_descriptorSetLayouts.count(setIndex)) {
 			throw std::runtime_error("Invalid set index!");
 		}
 		
 		vk::DescriptorPool* pDescriptorPool = ResourceManager::get().get<vk::DescriptorPool>(m_descriptorPool);
-		vk::DescriptorSetLayout* pLayout = ResourceManager::get().get<vk::DescriptorSetLayout>(m_descriptorSetLayouts[setIndex]);
+		vk::DescriptorSetLayout* pLayout = ResourceManager::get().get<vk::DescriptorSetLayout>(m_descriptorSetLayouts.at(setIndex));
 		
 		if (!pDescriptorPool) {
 			SA_DEBUG_LOG_ERROR("Invalid descriptor pool ID", m_descriptorPool);
@@ -552,12 +552,12 @@ namespace sa {
 		}
 
 		if (!pLayout) {
-			SA_DEBUG_LOG_ERROR("Invalid descriptor layout ID", m_descriptorSetLayouts[setIndex]);
+			SA_DEBUG_LOG_ERROR("Invalid descriptor layout ID", m_descriptorSetLayouts.at(setIndex));
 			throw std::runtime_error("Invalid descriptor layout ID!");
 		}
 
 		DescriptorSet descriptorSet;
-		descriptorSet.create(m_pCore->getDevice(), *pDescriptorPool, m_pCore->getQueueCount(), m_descriptorSetLayoutInfos[setIndex], *pLayout, setIndex);
+		descriptorSet.create(m_pCore->getDevice(), *pDescriptorPool, m_pCore->getQueueCount(), m_descriptorSetLayoutInfos.at(setIndex), *pLayout, setIndex);
 
 		return ResourceManager::get().insert<DescriptorSet>(descriptorSet);
 	}

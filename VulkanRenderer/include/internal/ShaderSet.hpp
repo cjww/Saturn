@@ -108,7 +108,7 @@ namespace sa {
 		bool isGraphicsSet() const;
 		bool hasTessellationStage() const;
 
-		ResourceID allocateDescriptorSet(uint32_t setIndex);
+		ResourceID allocateDescriptorSet(uint32_t setIndex) const;
 	};
 
 }

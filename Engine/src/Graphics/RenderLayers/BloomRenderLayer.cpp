@@ -5,10 +5,13 @@ namespace sa {
 
 	void BloomRenderLayer::init() {
 
-		m_bloomPipeline = m_renderer.createComputePipeline((Engine::getShaderDirectory() / "BloomShader.comp.spv").generic_string());
+		auto code = ReadSPVFile((Engine::getShaderDirectory() / "BloomShader.comp.spv").generic_string().c_str());
 
+		m_bloomShader = m_renderer.createShaderSet({ code });
 
-		m_bloomPreferencesDescriptorSet = m_renderer.allocateDescriptorSet(m_bloomPipeline, 1);
+		m_bloomPipeline = m_renderer.createComputePipeline(m_bloomShader);
+
+		m_bloomPreferencesDescriptorSet = m_bloomShader.allocateDescriptorSet(1);
 
 		m_bloomPreferencesBuffer = m_renderer.createBuffer(BufferType::UNIFORM, sizeof(BloomPreferences), &m_bloomPreferences);
 		m_renderer.updateDescriptorSet(m_bloomPreferencesDescriptorSet, 0, m_bloomPreferencesBuffer);
@@ -44,7 +47,7 @@ namespace sa {
 			// Free old data
 			pRenderTarget->cleanupBloomData();
 			// Initialize
-			pRenderTarget->initializeBloomData(context, extent, tex, m_bloomPipeline, m_sampler);
+			pRenderTarget->initializeBloomData(context, extent, tex, m_bloomShader, m_sampler);
 		}
 		
 

@@ -292,6 +292,8 @@ int main() {
 
 		auto lastTime = std::chrono::high_resolution_clock::now();
 
+		int textureIndex = 0;
+
 		while (window.isOpen()) {
 			window.pollEvents();
 
@@ -303,16 +305,14 @@ int main() {
 
 			if (ImGui::Begin("Attributes")) {
 				
-				/*
-				sa::ShaderAttribute time = shaderSet.getShaderAttribute("object.material.time");
-				float* timeValue = (float*)uniformBufferMap.at(time.set)->data(time.offset);
-				*timeValue += dt;
-				*/
-
+				
 				static float time = 0.0f;
 				if (ImGui::DragFloat("Time", &time)) {
 					objectUniformBuffer.write(time, timeAttrib.offset);
 				}
+
+				ImGui::RadioButton("Box", &textureIndex, 0);
+				ImGui::RadioButton("Character", &textureIndex, 1);
 
 				sa::ShaderAttribute color = shaderSet.getShaderAttribute("object.material.color");
 
@@ -344,7 +344,7 @@ int main() {
 
 				context.pushConstant(pipeline, sa::ShaderStageFlagBits::VERTEX, timer);
 				context.pushConstant(pipeline, sa::ShaderStageFlagBits::FRAGMENT, glm::vec4(1.f, 0.f, 0.5f, 1.f));
-				context.pushConstant(pipeline, sa::ShaderStageFlagBits::FRAGMENT, 0, 32);
+				context.pushConstant(pipeline, sa::ShaderStageFlagBits::FRAGMENT, textureIndex, 32);
 
 
 				context.drawIndexed(indexBuffer.getElementCount<uint32_t>(), 1);

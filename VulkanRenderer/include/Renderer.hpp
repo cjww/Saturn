@@ -191,10 +191,8 @@ namespace sa {
 
 		DeviceMemoryStats getGPUMemoryUsage() const;
 
-
 		DataTransfer* queueTransfer(const DataTransfer& transfer);
 		bool cancelTransfer(DataTransfer* pTransfer);
-
 
 		ResourceID createSampler(FilterMode filterMode = FilterMode::NEAREST);
 		ResourceID createSampler(const SamplerInfo& samplerInfo);

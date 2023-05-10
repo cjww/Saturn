@@ -23,6 +23,7 @@ namespace sa {
 	class BloomRenderLayer : public IRenderLayer {
 	private:
 		
+		ShaderSet m_bloomShader;
 		ResourceID m_bloomPipeline;
 
 		Buffer m_bloomPreferencesBuffer;

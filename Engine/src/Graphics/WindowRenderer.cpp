@@ -14,8 +14,9 @@ namespace sa {
 		, m_sampler(NULL_RESOURCE)
 	{
 		auto& renderer = sa::Renderer::get();
-		m_vertexShader = renderer.createShaderModule((Engine::getShaderDirectory() / "TransferToSwapchain.vert.spv").generic_string(), sa::ShaderStage::VERTEX);
-		m_fragmentShader = renderer.createShaderModule((Engine::getShaderDirectory() / "TransferToSwapchain.frag.spv").generic_string(), sa::ShaderStage::FRAGMENT);
+		auto vertexCode = ReadSPVFile((Engine::getShaderDirectory() / "TransferToSwapchain.vert.spv").generic_string().c_str());
+		auto fragmentCode = ReadSPVFile((Engine::getShaderDirectory() / "TransferToSwapchain.frag.spv").generic_string().c_str());
+		m_swapchainShader = renderer.createShaderSet({ vertexCode, fragmentCode });
 
 		onWindowResize(m_pWindow->getCurrentExtent());
 		m_sampler = renderer.createSampler(FilterMode::LINEAR);
@@ -42,12 +43,13 @@ namespace sa {
 			.addColorDependency(SA_SUBPASS_EXTERNAL, 0)
 			.end();
 
-		m_swapchainPipeline = renderer.createGraphicsPipeline(m_swapchainRenderProgram, 0, extent, { m_vertexShader, m_fragmentShader });
+
+		m_swapchainPipeline = renderer.createGraphicsPipeline(m_swapchainRenderProgram, 0, extent, m_swapchainShader);
 
 
 		std::vector<Texture> textures;
 		m_swapchainFramebuffer = renderer.createSwapchainFramebuffer(m_swapchainRenderProgram, m_pWindow->getSwapchainID(), textures);
-		m_swapchainDescriptorSet = renderer.allocateDescriptorSet(m_swapchainPipeline, 0);
+		m_swapchainDescriptorSet = m_swapchainShader.allocateDescriptorSet(0);
 	}
 
 	void WindowRenderer::render(RenderContext& context, const Texture& texture) {

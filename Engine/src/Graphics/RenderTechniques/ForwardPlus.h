@@ -32,6 +32,8 @@ namespace sa {
 		Texture2D m_debugLightHeatmap;
 		ResourceID m_debugLightHeatmapDescriptorSet = NULL_RESOURCE;
 		
+		ShaderSet m_lightCullingShader;
+
 		void createPreDepthPass();
 		void createLightCullingShader();
 		void createColorPass();

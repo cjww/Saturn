@@ -6,7 +6,7 @@
 
 namespace sa {
 
-	void RenderTarget::initializeBloomData(RenderContext& context, Extent extent, const DynamicTexture* colorTexture, ResourceID bloomPipeline, ResourceID sampler) {
+	void RenderTarget::initializeBloomData(RenderContext& context, Extent extent, const DynamicTexture* colorTexture, const ShaderSet& bloomShader, ResourceID sampler) {
 		//Textures
 		m_bloomData.bloomTexture = DynamicTexture2D(TextureTypeFlagBits::STORAGE | TextureTypeFlagBits::SAMPLED, extent, 1U, 6U);
 		m_bloomData.bloomMipTextures = m_bloomData.bloomTexture.createMipLevelTextures();
@@ -19,24 +19,24 @@ namespace sa {
 
 		// DescriptorSets
 		if (m_bloomData.filterDescriptorSet == NULL_RESOURCE)
-			m_bloomData.filterDescriptorSet = m_renderer.allocateDescriptorSet(bloomPipeline, 0);
+			m_bloomData.filterDescriptorSet = bloomShader.allocateDescriptorSet(0);
 
 		if (m_bloomData.blurDescriptorSets.empty()) {
 			m_bloomData.blurDescriptorSets.resize(m_bloomData.bloomMipTextures.size() - 1);
 			for (size_t i = 0; i < m_bloomData.blurDescriptorSets.size(); i++) {
-				m_bloomData.blurDescriptorSets[i] = m_renderer.allocateDescriptorSet(bloomPipeline, 0);
+				m_bloomData.blurDescriptorSets[i] = bloomShader.allocateDescriptorSet(0);
 			}
 		}
 
 		if (m_bloomData.upsampleDescriptorSets.empty()) {
 			m_bloomData.upsampleDescriptorSets.resize(m_bloomData.bloomMipTextures.size() - 1);
 			for (size_t i = 0; i < m_bloomData.upsampleDescriptorSets.size(); i++) {
-				m_bloomData.upsampleDescriptorSets[i] = m_renderer.allocateDescriptorSet(bloomPipeline, 0);
+				m_bloomData.upsampleDescriptorSets[i] = bloomShader.allocateDescriptorSet(0);
 			}
 		}
 
 		if (m_bloomData.compositeDescriptorSet == NULL_RESOURCE)
-			m_bloomData.compositeDescriptorSet = m_renderer.allocateDescriptorSet(bloomPipeline, 0);
+			m_bloomData.compositeDescriptorSet = bloomShader.allocateDescriptorSet(0);
 
 
 
@@ -95,7 +95,7 @@ namespace sa {
 			m_bloomData.outputTexture.destroy();
 	}
 
-	void RenderTarget::initializeMainRenderData(ResourceID colorRenderProgram, ResourceID depthPreRenderProgram, ResourceID lightCullingPipeline, ResourceID sampler, Extent extent) {
+	void RenderTarget::initializeMainRenderData(ResourceID colorRenderProgram, ResourceID depthPreRenderProgram, const ShaderSet& lightCullingShader, ResourceID sampler, Extent extent) {
 		MainRenderData& data = m_mainRenderData;
 
 		Format colorFormat = m_renderer.getAttachmentFormat(colorRenderProgram, 0);
@@ -109,13 +109,15 @@ namespace sa {
 		//Depth pre pass
 		data.depthFramebuffer = m_renderer.createFramebuffer(depthPreRenderProgram, { (DynamicTexture)data.depthTexture });
 
-		ResourceID vertexShader = m_renderer.createShaderModule((Engine::getShaderDirectory() / "ForwardPlusColorPass.vert.spv").generic_string(), sa::ShaderStage::VERTEX);
+		auto vertexCode = ReadSPVFile((Engine::getShaderDirectory() / "ForwardPlusColorPass.vert.spv").generic_string().c_str());
+
+		ShaderSet shaderSet = m_renderer.createShaderSet({ vertexCode });
 
 		PipelineSettings settings = {};
 		settings.dynamicStates.push_back(DynamicState::VIEWPORT);
-		data.depthPipeline = m_renderer.createGraphicsPipeline(depthPreRenderProgram, 0, extent, { vertexShader }, settings);
+		data.depthPipeline = m_renderer.createGraphicsPipeline(depthPreRenderProgram, 0, extent, { shaderSet }, settings);
 
-		data.sceneDepthDescriptorSet = m_renderer.allocateDescriptorSet(data.depthPipeline, 0);
+		data.sceneDepthDescriptorSet = shaderSet.allocateDescriptorSet(SET_PER_FRAME);
 
 		// Light culling pass
 		data.tileCount = { extent.width, extent.height };
@@ -124,17 +126,19 @@ namespace sa {
 
 		size_t totalTileCount = data.tileCount.x * data.tileCount.y;
 		if (data.lightCullingDescriptorSet == NULL_RESOURCE)
-			data.lightCullingDescriptorSet = m_renderer.allocateDescriptorSet(lightCullingPipeline, 0);
+			data.lightCullingDescriptorSet = lightCullingShader.allocateDescriptorSet(0);
 
 		data.lightIndexBuffer = m_renderer.createDynamicBuffer(BufferType::STORAGE, sizeof(uint32_t) * MAX_LIGHTS_PER_TILE * totalTileCount);
 
-		ResourceID fragmentShader = m_renderer.createShaderModule((Engine::getShaderDirectory() / "ForwardPlusColorPass.frag.spv").generic_string(), sa::ShaderStage::FRAGMENT);
+		auto fragmentCode = ReadSPVFile((Engine::getShaderDirectory() / "ForwardPlusColorPass.frag.spv").generic_string().c_str());
+
+		shaderSet = m_renderer.createShaderSet({ vertexCode, fragmentCode });
 
 		// Color pass
 		data.colorFramebuffer = m_renderer.createFramebuffer(colorRenderProgram, { (DynamicTexture)data.colorTexture, data.depthTexture });
-		data.colorPipeline = m_renderer.createGraphicsPipeline(colorRenderProgram, 0, extent, { vertexShader, fragmentShader }, settings);
+		data.colorPipeline = m_renderer.createGraphicsPipeline(colorRenderProgram, 0, extent, shaderSet, settings);
 
-		data.sceneDescriptorSet = m_renderer.allocateDescriptorSet(data.colorPipeline, SET_PER_FRAME);
+		data.sceneDescriptorSet = shaderSet.allocateDescriptorSet(SET_PER_FRAME);
 
 
 		m_renderer.updateDescriptorSet(data.lightCullingDescriptorSet, 0, data.depthTexture, sampler);	// read depth texture

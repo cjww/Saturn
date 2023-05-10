@@ -17,15 +17,16 @@ namespace sa {
 		RenderWindow* m_pWindow;
 
 		ResourceID m_swapchainFramebuffer;
+		
+		ShaderSet m_swapchainShader;
 		ResourceID m_swapchainPipeline;
+		
 		ResourceID m_swapchainRenderProgram;
 		ResourceID m_swapchainDescriptorSet;
 		ResourceID m_sampler;
 
 
-		ResourceID m_vertexShader;
-		ResourceID m_fragmentShader;
-
+		
 
 	public:		
 		WindowRenderer(RenderWindow* pWindow);

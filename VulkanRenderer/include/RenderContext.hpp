@@ -75,7 +75,6 @@ namespace sa {
 		friend class Renderer;
 		static Swapchain* getSwapchain(ResourceID id);
 		static RenderProgram* getRenderProgram(ResourceID id);
-		static ShaderModule* getShaderModule(ResourceID id);
 		static FramebufferSet* getFramebufferSet(ResourceID id);
 		static Pipeline* getPipeline(ResourceID id);
 		static DescriptorSet* getDescriptorSet(ResourceID id);
@@ -137,7 +136,6 @@ namespace sa {
 
 		void barrierColorCompute(const Texture& texture);
 		void barrierColorCompute(const Buffer& buffer);
-		
 
 		void transitionTexture(const Texture& texture, Transition src, Transition dst);
 

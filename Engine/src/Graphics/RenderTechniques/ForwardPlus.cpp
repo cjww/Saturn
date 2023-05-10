@@ -26,7 +26,9 @@ namespace sa {
 			m_lightCullingPipeline = NULL_RESOURCE;
 		}
 
-		m_lightCullingPipeline = m_renderer.createComputePipeline((Engine::getShaderDirectory() / "LightCulling.comp.spv").generic_string());
+		auto code = ReadSPVFile((Engine::getShaderDirectory() / "LightCulling.comp.spv").generic_string().c_str());
+		m_lightCullingShader = m_renderer.createShaderSet({ code });
+		m_lightCullingPipeline = m_renderer.createComputePipeline(m_lightCullingShader);
 		
 	}
 
@@ -104,9 +106,8 @@ namespace sa {
 
 		if (!data.isInitialized) {
 			pRenderTarget->cleanupMainRenderData();
-			pRenderTarget->initializeMainRenderData(m_colorRenderProgram, m_depthPreRenderProgram, m_lightCullingPipeline, m_linearSampler, pRenderTarget->getExtent());
+			pRenderTarget->initializeMainRenderData(m_colorRenderProgram, m_depthPreRenderProgram, m_lightCullingShader, m_linearSampler, pRenderTarget->getExtent());
 		}
-
 
 		context.updateDescriptorSet(data.sceneDepthDescriptorSet, 0, sc.getObjectBuffer());
 
@@ -115,12 +116,10 @@ namespace sa {
 		context.updateDescriptorSet(data.sceneDescriptorSet, 2, sc.getMaterialBuffer());
 		context.updateDescriptorSet(data.sceneDescriptorSet, 3, sc.getMaterialIndicesBuffer());
 		context.updateDescriptorSet(data.sceneDescriptorSet, 4, data.lightIndexBuffer.getBuffer());
-		context.updateDescriptorSet(data.sceneDescriptorSet, 6, sc.getTextures());
+		context.updateDescriptorSet(data.sceneDescriptorSet, 6, sc.getTextures(), 0);
 
 		context.updateDescriptorSet(data.lightCullingDescriptorSet, 1, data.lightIndexBuffer.getBuffer());
 		context.updateDescriptorSet(data.lightCullingDescriptorSet, 2, sc.getLightBuffer());
-
-
 
 		context.bindVertexBuffers(0, { sc.getVertexBuffer() });
 		context.bindIndexBuffer(sc.getIndexBuffer());
