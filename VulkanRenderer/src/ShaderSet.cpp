@@ -437,7 +437,6 @@ namespace sa {
 	}
 
 	ShaderSet::~ShaderSet() {
-		SA_DEBUG_LOG_INFO("Destroyed ShaderSet - ", (m_isGraphicsSet) ? "Graphics set " : "Compute set ", "Attribute Count: ", m_attributes.size());
 	}
 
 	ShaderSet::ShaderSet() 
@@ -599,9 +598,4 @@ namespace sa {
 
 		return ResourceManager::get().insert<DescriptorSet>(descriptorSet);
 	}
-
-	ShaderAttribute::~ShaderAttribute() {
-		SA_DEBUG_LOG_INFO("Destroyed attribute ", name);
-	}
-
 }

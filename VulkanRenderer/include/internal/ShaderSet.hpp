@@ -54,8 +54,6 @@ namespace sa {
 
 		uint32_t set;
 		uint32_t binding;
-
-		~ShaderAttribute();
 	};
 
 	class ShaderSet {
