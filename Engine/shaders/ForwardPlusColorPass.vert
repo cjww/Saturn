@@ -1,9 +1,7 @@
 #version 460
-#extension GL_ARB_shader_draw_parameters : enable
+#extension GL_GOOGLE_include_directive : enable
 
-layout(location = 0) in vec4 in_vertexPosition;
-layout(location = 1) in vec4 in_vertexNormal;
-layout(location = 2) in vec2 in_vertexUV;
+#include "DefaultVertexInputs.glsl"
 
 layout(location = 0) out vec2 out_vertexUV;
 layout(location = 1) out vec3 out_vertexWorldPos;
@@ -11,22 +9,10 @@ layout(location = 2) out vec3 out_vertexWorldNormal;
 layout(location = 3) out flat vec3 out_viewPos;
 layout(location = 4) out flat uint out_meshIndex;
 
-struct Object {
-    mat4 worldMat;
-};
-
-layout(set = 0, binding = 0) readonly buffer Objects {
-    Object objects[];
-} objectBuffer;
-
-layout(push_constant) uniform Camera {
-    mat4 projView;
-    vec3 viewPos;
-} camera;
 
 void main() {
 
-    Object object = objectBuffer.objects[gl_InstanceIndex];
+    Object object = GetObject();
 
     mat4 worldMat = object.worldMat;
     
