@@ -3,13 +3,15 @@
 #include "internal/VulkanCore.hpp"
 #include "internal/DescriptorSet.hpp"
 
+#include "Renderer.hpp"
+
 #define NOMINMAX
 #include <spirv_cross/spirv_cross.hpp>
 
 #include <shaderc\shaderc.hpp>
 
 namespace sa {
-	
+
 	shaderc_shader_kind ToShadercKind(ShaderStageFlagBits shaderStage) {
 		static const std::unordered_map<ShaderStageFlagBits, shaderc_shader_kind> map = {
 			{ShaderStageFlagBits::VERTEX, shaderc_glsl_default_vertex_shader },
@@ -22,14 +24,12 @@ namespace sa {
 		return map.at(shaderStage);
 	}
 
-	ShaderAttribute createAttribute(const std::string& name, const spirv_cross::SPIRType& type) {
-		ShaderAttribute attrib = {};
+	void createAttribute(const std::string& name, const spirv_cross::SPIRType& type, ShaderAttribute& attrib) {
 		attrib.name = name;
 		std::copy(type.array.begin(), type.array.end(), std::back_inserter(attrib.arraySize));
 		attrib.vecSize = type.vecsize;
 		attrib.columns = type.columns;
 		attrib.type = (ShaderAttributeType)type.basetype;
-		return attrib;
 	}
 
 	void addStructMember(
@@ -41,11 +41,17 @@ namespace sa {
 		uint32_t binding,
 		uint32_t offset,
 		std::unordered_map<std::string, ShaderAttribute>& outAttributes,
-		const std::string& attributePath) 
+		const std::string& attributePath)
 	{
 		const auto& type = pCompiler->get_type(parentType.member_types[index]);
 
-		ShaderAttribute attrib = createAttribute(pCompiler->get_member_name(parentType.self, index), type);
+		std::string name = pCompiler->get_member_name(parentType.self, index);
+
+		if (outAttributes.count(attributePath + name)) // already added
+			return;
+
+		ShaderAttribute& attrib = outAttributes[attributePath + name];
+		createAttribute(name, type, attrib);
 
 		attrib.descriptorType = descriptorType;
 		attrib.set = set;
@@ -54,10 +60,6 @@ namespace sa {
 		attrib.offset = pCompiler->type_struct_member_offset(parentType, index) + offset;
 		attrib.size = pCompiler->get_declared_struct_member_size(parentType, index);
 
-		if (outAttributes.count(attributePath + attrib.name)) // already added
-			return;
-
-		outAttributes[attributePath + attrib.name] = attrib;
 
 		int i = 0;
 		for (spirv_cross::TypeID memberTypeID : type.member_types) {
@@ -79,18 +81,20 @@ namespace sa {
 	{
 		const auto& type = pCompiler->get_type(parentType.member_types[range.index]);
 
-		ShaderAttribute attrib = createAttribute(pCompiler->get_member_name(baseType.self, range.index), type);
+		std::string name = pCompiler->get_member_name(parentType.self, range.index);
+
+		if (outAttributes.count(attributePath + name)) // already added
+			return;
+
+		ShaderAttribute& attrib = outAttributes[attributePath + name];
+		createAttribute(name, type, attrib);
+
 		attrib.descriptorType = descriptorType;
 		attrib.set = set;
 		attrib.binding = binding;
 		attrib.offset = range.offset;
 		attrib.size = range.range;
 
-		if (outAttributes.count(attributePath + attrib.name)) // already added
-			return;
-
-		outAttributes[attributePath + attrib.name] = attrib;
-		
 		int i = 0;
 		for (spirv_cross::TypeID memberTypeID : type.member_types) {
 			addStructMember(pCompiler, type, i, descriptorType, set, binding, attrib.offset, outAttributes, (attrib.name.empty() ? attributePath : attributePath + attrib.name + "."));
@@ -108,7 +112,9 @@ namespace sa {
 		const spirv_cross::SPIRType& type = pCompiler->get_type(resource.type_id);
 		const spirv_cross::SPIRType& baseType = pCompiler->get_type(resource.base_type_id);
 
-		ShaderAttribute attrib = createAttribute(pCompiler->get_name(resource.id), type);
+		std::string name = pCompiler->get_name(resource.id);
+		ShaderAttribute& attrib = outAttributes[name];
+		createAttribute(name, type, attrib);
 		attrib.descriptorType = descriptorType;
 		attrib.set = pCompiler->get_decoration(resource.id, spv::Decoration::DecorationDescriptorSet);
 		attrib.binding = pCompiler->get_decoration(resource.id, spv::Decoration::DecorationBinding);
@@ -356,7 +362,7 @@ namespace sa {
 
 			PushConstantRange range = {
 				.stageFlags = stage,
-				.offset = offset, // Modify when merged with other shader stage
+				.offset = offset,
 				.size = static_cast<uint32_t>(size),
 			};
 			m_pushConstantRanges.push_back(range);
@@ -429,37 +435,66 @@ namespace sa {
 			m_descriptorPool = ResourceManager::get().insert<vk::DescriptorPool>(m_pCore->getDevice().createDescriptorPool(poolInfo));
 		}
 	}
-	
+
+	ShaderSet::~ShaderSet() {
+		SA_DEBUG_LOG_INFO("Destroyed ShaderSet - ", (m_isGraphicsSet) ? "Graphics set " : "Compute set ", "Attribute Count: ", m_attributes.size());
+	}
+
 	ShaderSet::ShaderSet() 
 		: m_isGraphicsSet(true)
 		, m_hasTessellationStage(false)
+		, m_pCore(Renderer::get().getCore())
 	{
 	}
 
-	ShaderSet::ShaderSet(VulkanCore* pCore, const ShaderStageInfo* pStageInfos, uint32_t stageCount)
+
+	ShaderSet::ShaderSet(const ShaderStageInfo* pStageInfos, uint32_t stageCount) 
 		: ShaderSet()
 	{
-		m_pCore = pCore;
+		create(pStageInfos, stageCount);
+	}
+
+	ShaderSet::ShaderSet(const std::vector<ShaderStageInfo>& stageInfos) 
+		: ShaderSet()
+	{
+		create(stageInfos);
+	}
+	
+	ShaderSet::ShaderSet(const std::vector<std::vector<uint32_t>>& shaderCode) 
+		: ShaderSet()
+	{
+		create(shaderCode);
+	}
+
+	bool ShaderSet::isValid() const {
+		return !m_shaderModules.empty();
+	}
+	
+	void ShaderSet::create(const ShaderStageInfo* pStageInfos, uint32_t stageCount) {
+		if (isValid()) {
+			throw std::runtime_error("Shader already created!");
+			return;
+		}
 
 		for (int i = 0; i < stageCount; i++) {
 			spirv_cross::Compiler compiler(pStageInfos[i].pCode, pStageInfos[i].codeLength);
 			createShaderModule(pStageInfos[i]);
 			initializeStage(&compiler, pStageInfos[i].stage);
 		}
-		
+
 		createDescriptorPoolAndLayouts();
 	}
 
-	ShaderSet::ShaderSet(VulkanCore* pCore, const std::vector<ShaderStageInfo>& stageInfos) 
-		: ShaderSet(pCore, stageInfos.data(), stageInfos.size())
-	{
+	void ShaderSet::create(const std::vector<ShaderStageInfo>& stageInfos) {
+		create(stageInfos.data(), stageInfos.size());
 	}
 
-	ShaderSet::ShaderSet(VulkanCore* pCore, const std::vector<std::vector<uint32_t>>& shaderCode)
-		: ShaderSet()
-	{
-		m_pCore = pCore;
 
+	void ShaderSet::create(const std::vector<std::vector<uint32_t>>& shaderCode) {
+		if (isValid()) {
+			throw std::runtime_error("Shader already created!");
+			return;
+		}
 		for (auto& code : shaderCode) {
 			spirv_cross::Compiler compiler(code);
 			const auto& entryPoints = compiler.get_entry_points_and_stages();
@@ -474,7 +509,7 @@ namespace sa {
 			createShaderModule(stageInfo);
 
 			initializeStage(&compiler, stage);
-		
+
 		}
 
 		createDescriptorPoolAndLayouts();
@@ -500,6 +535,9 @@ namespace sa {
 		m_descriptorSetLayouts.clear();
 		m_shaderModules.clear();
 		m_pushConstantRanges.clear();
+		m_attributes.clear();
+		m_vertexAttributes.clear();
+		m_vertexBindings.clear();
 	}
 
 	const std::map<uint32_t, ResourceID>& ShaderSet::getDescriptorSetLayouts() const {
@@ -560,6 +598,10 @@ namespace sa {
 		descriptorSet.create(m_pCore->getDevice(), *pDescriptorPool, m_pCore->getQueueCount(), m_descriptorSetLayoutInfos.at(setIndex), *pLayout, setIndex);
 
 		return ResourceManager::get().insert<DescriptorSet>(descriptorSet);
+	}
+
+	ShaderAttribute::~ShaderAttribute() {
+		SA_DEBUG_LOG_INFO("Destroyed attribute ", name);
 	}
 
 }

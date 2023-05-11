@@ -249,7 +249,7 @@ namespace sa {
 		
 		if (pWindow) {
 			m_renderPipeline.create(new ForwardPlus);
-
+			
 			setWindowRenderer(new WindowRenderer(m_pWindow));
 
 			pWindow->setResizeCallback(std::bind(&Engine::onWindowResize, this, std::placeholders::_1));

@@ -18,6 +18,8 @@ namespace sa {
 	public:
 		DrawData drawData;
 
+		virtual ~IRenderTechnique();
+
 		virtual void init() = 0;
 		virtual void cleanup() = 0;
 

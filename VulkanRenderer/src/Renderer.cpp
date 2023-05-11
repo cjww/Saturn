@@ -49,14 +49,14 @@ namespace sa {
 			ResourceManager::get().setCleanupFunction<FramebufferSet>([](FramebufferSet* p) { p->destroy(); });
 			ResourceManager::get().setCleanupFunction<RenderProgram>([](RenderProgram* p) { p->destroy(); });
 			ResourceManager::get().setCleanupFunction<Pipeline>([](Pipeline* p) { p->destroy(); });
+			ResourceManager::get().setCleanupFunction<vk::ShaderModule>([&](vk::ShaderModule* p) { m_pCore->getDevice().destroyShaderModule(*p); });
+			ResourceManager::get().setCleanupFunction<vk::DescriptorSetLayout>([&](vk::DescriptorSetLayout* p) { m_pCore->getDevice().destroyDescriptorSetLayout(*p); });
+			ResourceManager::get().setCleanupFunction<vk::DescriptorPool>([&](vk::DescriptorPool* p) { m_pCore->getDevice().destroyDescriptorPool(*p); });
 			ResourceManager::get().setCleanupFunction<DescriptorSet>([](DescriptorSet* p) { p->destroy(); });
 			ResourceManager::get().setCleanupFunction<vk::Sampler>([&](vk::Sampler* p) { m_pCore->getDevice().destroySampler(*p); });
 			ResourceManager::get().setCleanupFunction<vk::ImageView>([&](vk::ImageView* p) { m_pCore->getDevice().destroyImageView(*p); });
 			ResourceManager::get().setCleanupFunction<vk::BufferView>([&](vk::BufferView* p) { m_pCore->getDevice().destroyBufferView(*p); });
 			ResourceManager::get().setCleanupFunction<CommandPool>([](CommandPool* p) { p->destroy(); });
-			ResourceManager::get().setCleanupFunction<vk::ShaderModule>([&](vk::ShaderModule* p) { m_pCore->getDevice().destroyShaderModule(*p); });
-			ResourceManager::get().setCleanupFunction<vk::DescriptorSetLayout>([&](vk::DescriptorSetLayout* p) { m_pCore->getDevice().destroyDescriptorSetLayout(*p); });
-			ResourceManager::get().setCleanupFunction<vk::DescriptorPool>([&](vk::DescriptorPool* p) { m_pCore->getDevice().destroyDescriptorPool(*p); });
 
 
 		}
@@ -84,12 +84,19 @@ namespace sa {
 		ResourceManager::get().clearContainer<vk::ImageView>();
 		ResourceManager::get().clearContainer<vk::Sampler>();
 		ResourceManager::get().clearContainer<DescriptorSet>();
+		ResourceManager::get().clearContainer<vk::DescriptorPool>();
+		ResourceManager::get().clearContainer<vk::DescriptorSetLayout>();
+		ResourceManager::get().clearContainer<vk::ShaderModule>();
 		ResourceManager::get().clearContainer<Pipeline>();
-		ResourceManager::get().clearContainer<FramebufferSet>();
 		ResourceManager::get().clearContainer<RenderProgram>();
+		ResourceManager::get().clearContainer<FramebufferSet>();
 		ResourceManager::get().clearContainer<Swapchain>();
 
 		m_pCore->cleanup();
+	}
+
+	VulkanCore* Renderer::getCore() const {
+		return m_pCore.get();
 	}
 
 #ifndef IMGUI_DISABLE
@@ -253,14 +260,6 @@ namespace sa {
 	void Renderer::swapFramebuffer(ResourceID framebuffer) {
 		FramebufferSet* pFramebufferSet = RenderContext::getFramebufferSet(framebuffer);
 		pFramebufferSet->swap();
-	}
-
-	ShaderSet Renderer::createShaderSet(const ShaderStageInfo* pStageInfos, uint32_t stageCount) {
-		return std::move(ShaderSet(m_pCore.get(), pStageInfos, stageCount));
-	}
-
-	ShaderSet Renderer::createShaderSet(const std::vector<std::vector<uint32_t>>& shaderCode) {
-		return std::move(ShaderSet(m_pCore.get(), shaderCode));
 	}
 
 	ResourceID Renderer::createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const ShaderSet& shaderSet, PipelineSettings settings) {

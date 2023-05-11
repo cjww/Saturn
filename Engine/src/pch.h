@@ -56,6 +56,3 @@
 #include "UUID.h"
 //#include "Tools/Profiler.h"
 //#include <Tools/Logger.hpp>
-
-
-

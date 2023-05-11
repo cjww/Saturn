@@ -191,7 +191,7 @@ int main() {
 	try {
 		const int WIDTH = 1400, HEIGHT = 800;
 		sa::RenderWindow window(WIDTH, HEIGHT, "Test Window");
-		
+
 		ResourceID crossHairCursor = sa::Window::CreateCursor(sa::StandardCursor::CROSSHAIR);
 		window.setCursor(crossHairCursor);
 
@@ -202,7 +202,7 @@ int main() {
 			else {
 				SA_DEBUG_LOG_INFO("Joystick", (int)joystick, "disconnected");
 			}
-		});
+			});
 
 
 		sa::Renderer& renderer = sa::Renderer::get();
@@ -222,10 +222,16 @@ int main() {
 
 		auto vshaderCode = sa::ReadSPVFile("Passthrough.vert.spv");
 		auto fshaderCode = sa::ReadSPVFile("Passthrough.frag.spv");
-		sa::ShaderSet shaderSet = renderer.createShaderSet({ vshaderCode, fshaderCode });
-		
+
+		sa::ShaderSet shaderSet({ vshaderCode, fshaderCode });
 
 		ResourceID pipeline = renderer.createGraphicsPipeline(renderProgram, 0, window.getCurrentExtent(), shaderSet);
+
+		ResourceID sceneDescriptorSet = shaderSet.allocateDescriptorSet(0);
+		ResourceID objectDescriptorSet = shaderSet.allocateDescriptorSet(1);
+
+		sa::ShaderAttribute timeAttrib = shaderSet.getShaderAttribute("object.material.time");
+		sa::ShaderAttribute colorAttrib = shaderSet.getShaderAttribute("object.material.color");
 
 		sa::Buffer vertexBuffer = renderer.createBuffer(sa::BufferType::VERTEX);
 		vertexBuffer.write(box);
@@ -233,12 +239,13 @@ int main() {
 		sa::Buffer indexBuffer = renderer.createBuffer(sa::BufferType::INDEX);
 		indexBuffer.write(boxIndices);
 
-
-		ResourceID sceneDescriptorSet = shaderSet.allocateDescriptorSet(0);
-		ResourceID objectDescriptorSet = shaderSet.allocateDescriptorSet(1);
-
 		sa::Buffer sceneUniformBuffer = renderer.createBuffer(sa::BufferType::UNIFORM, sizeof(glm::mat4) * 2);
 		sa::Buffer objectUniformBuffer = renderer.createBuffer(sa::BufferType::UNIFORM, sizeof(glm::mat4));
+
+		glm::mat4 boxTransform(1);
+		objectUniformBuffer << boxTransform;
+		objectUniformBuffer.write(glm::vec4(1, 1, 1, 1), colorAttrib.offset);
+		objectUniformBuffer.write(0.0f, timeAttrib.offset);
 
 
 		glm::mat4 projection = glm::perspective(glm::radians(60.f), (float)window.getCurrentExtent().width / window.getCurrentExtent().height, 0.01f, 1000.f);
@@ -248,17 +255,10 @@ int main() {
 			<< glm::lookAt(glm::vec3(0, 0, 5), glm::vec3(0, 0, 0), glm::vec3(0, 1, 0))
 			<< projection;
 		
-		glm::mat4 boxTransform(1);
-
-		sa::ShaderAttribute timeAttrib = shaderSet.getShaderAttribute("object.material.time");
-		sa::ShaderAttribute colorAttrib = shaderSet.getShaderAttribute("object.material.color");
-
-		objectUniformBuffer << boxTransform;
-		objectUniformBuffer.write(glm::vec4(1, 1, 1, 1), colorAttrib.offset);
-		objectUniformBuffer.write(0.0f, timeAttrib.offset);
 
 		renderer.updateDescriptorSet(sceneDescriptorSet, 0, sceneUniformBuffer);
 		renderer.updateDescriptorSet(objectDescriptorSet, 0, objectUniformBuffer);
+
 
 		ResourceID sampler = renderer.createSampler();
 
@@ -314,10 +314,9 @@ int main() {
 				ImGui::RadioButton("Box", &textureIndex, 0);
 				ImGui::RadioButton("Character", &textureIndex, 1);
 
-				sa::ShaderAttribute color = shaderSet.getShaderAttribute("object.material.color");
 
-				float* colorValue = (float*)uniformBufferMap.at(color.set)->data(color.offset);
-				ImGui::ColorEdit3(color.name.c_str(), colorValue);
+				float* colorValue = (float*)uniformBufferMap.at(colorAttrib.set)->data(colorAttrib.offset);
+				ImGui::ColorEdit3(colorAttrib.name.c_str(), colorValue);
 
 				ImGui::End();
 			}

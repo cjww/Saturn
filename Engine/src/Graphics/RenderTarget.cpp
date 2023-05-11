@@ -95,7 +95,12 @@ namespace sa {
 			m_bloomData.outputTexture.destroy();
 	}
 
-	void RenderTarget::initializeMainRenderData(ResourceID colorRenderProgram, ResourceID depthPreRenderProgram, const ShaderSet& lightCullingShader, ResourceID sampler, Extent extent) {
+	void RenderTarget::initializeMainRenderData(ResourceID colorRenderProgram, ResourceID depthPreRenderProgram, 
+		const ShaderSet& lightCullingShader, 
+		const ShaderSet& depthShader, 
+		const ShaderSet& colorShader, 
+		ResourceID sampler, Extent extent) 
+	{
 		MainRenderData& data = m_mainRenderData;
 
 		Format colorFormat = m_renderer.getAttachmentFormat(colorRenderProgram, 0);
@@ -109,15 +114,11 @@ namespace sa {
 		//Depth pre pass
 		data.depthFramebuffer = m_renderer.createFramebuffer(depthPreRenderProgram, { (DynamicTexture)data.depthTexture });
 
-		auto vertexCode = ReadSPVFile((Engine::getShaderDirectory() / "ForwardPlusColorPass.vert.spv").generic_string().c_str());
-
-		ShaderSet shaderSet = m_renderer.createShaderSet({ vertexCode });
-
 		PipelineSettings settings = {};
 		settings.dynamicStates.push_back(DynamicState::VIEWPORT);
-		data.depthPipeline = m_renderer.createGraphicsPipeline(depthPreRenderProgram, 0, extent, { shaderSet }, settings);
+		data.depthPipeline = m_renderer.createGraphicsPipeline(depthPreRenderProgram, 0, extent, { depthShader }, settings);
 
-		data.sceneDepthDescriptorSet = shaderSet.allocateDescriptorSet(SET_PER_FRAME);
+		data.sceneDepthDescriptorSet = depthShader.allocateDescriptorSet(SET_PER_FRAME);
 
 		// Light culling pass
 		data.tileCount = { extent.width, extent.height };
@@ -130,15 +131,11 @@ namespace sa {
 
 		data.lightIndexBuffer = m_renderer.createDynamicBuffer(BufferType::STORAGE, sizeof(uint32_t) * MAX_LIGHTS_PER_TILE * totalTileCount);
 
-		auto fragmentCode = ReadSPVFile((Engine::getShaderDirectory() / "ForwardPlusColorPass.frag.spv").generic_string().c_str());
-
-		shaderSet = m_renderer.createShaderSet({ vertexCode, fragmentCode });
-
 		// Color pass
 		data.colorFramebuffer = m_renderer.createFramebuffer(colorRenderProgram, { (DynamicTexture)data.colorTexture, data.depthTexture });
-		data.colorPipeline = m_renderer.createGraphicsPipeline(colorRenderProgram, 0, extent, shaderSet, settings);
+		data.colorPipeline = m_renderer.createGraphicsPipeline(colorRenderProgram, 0, extent, colorShader, settings);
 
-		data.sceneDescriptorSet = shaderSet.allocateDescriptorSet(SET_PER_FRAME);
+		data.sceneDescriptorSet = colorShader.allocateDescriptorSet(SET_PER_FRAME);
 
 
 		m_renderer.updateDescriptorSet(data.lightCullingDescriptorSet, 0, data.depthTexture, sampler);	// read depth texture

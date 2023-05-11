@@ -12,7 +12,7 @@ namespace sa {
 
 		vk::Pipeline m_pipeline;
 		vk::PipelineLayout m_layout;
-		ShaderSet m_shaderSet;
+		ShaderSet* m_pShaderSet;
 
 	public:
 		Pipeline(VulkanCore* pCore, vk::RenderPass renderPass, const ShaderSet& shaderSet, uint32_t subpassIndex, Extent extent, PipelineConfig config);

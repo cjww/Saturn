@@ -107,7 +107,7 @@ namespace sa {
 	private:
 		friend class Texture;
 		friend class DynamicTexture;
-
+		
 		std::unique_ptr<VulkanCore> m_pCore;
 		
 		std::list<DataTransfer> m_transferQueue;
@@ -125,6 +125,8 @@ namespace sa {
 	public:
 		static Renderer& get();
 		virtual ~Renderer();
+
+		VulkanCore* getCore() const;
 
 #ifndef IMGUI_DISABLE
 		void initImGui(const Window& window, ResourceID renderProgram, uint32_t subpass);
@@ -165,9 +167,6 @@ namespace sa {
 		size_t getFramebufferTextureCount(ResourceID framebuffer) const;
 		Extent getFramebufferExtent(ResourceID framebuffer) const;
 		void swapFramebuffer(ResourceID framebuffer);
-
-		ShaderSet createShaderSet(const ShaderStageInfo* pStageInfos, uint32_t stageCount);
-		ShaderSet createShaderSet(const std::vector<std::vector<uint32_t>>& shaderCode);
 
 		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const ShaderSet& shaderSet, PipelineSettings settings = {});
 

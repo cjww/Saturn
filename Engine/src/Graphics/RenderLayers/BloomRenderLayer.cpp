@@ -7,7 +7,7 @@ namespace sa {
 
 		auto code = ReadSPVFile((Engine::getShaderDirectory() / "BloomShader.comp.spv").generic_string().c_str());
 
-		m_bloomShader = m_renderer.createShaderSet({ code });
+		m_bloomShader.create({ code });
 
 		m_bloomPipeline = m_renderer.createComputePipeline(m_bloomShader);
 
@@ -31,7 +31,7 @@ namespace sa {
 	}
 
 	void BloomRenderLayer::cleanup() {
-
+		m_bloomShader.destroy();
 	}
 
 

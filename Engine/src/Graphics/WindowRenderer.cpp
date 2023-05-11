@@ -5,6 +5,10 @@
 
 namespace sa {
 	
+	IWindowRenderer::~IWindowRenderer() {
+	
+	}
+
 	WindowRenderer::WindowRenderer(RenderWindow* pWindow)
 		: m_pWindow(pWindow)
 		, m_swapchainFramebuffer(NULL_RESOURCE)
@@ -16,7 +20,7 @@ namespace sa {
 		auto& renderer = sa::Renderer::get();
 		auto vertexCode = ReadSPVFile((Engine::getShaderDirectory() / "TransferToSwapchain.vert.spv").generic_string().c_str());
 		auto fragmentCode = ReadSPVFile((Engine::getShaderDirectory() / "TransferToSwapchain.frag.spv").generic_string().c_str());
-		m_swapchainShader = renderer.createShaderSet({ vertexCode, fragmentCode });
+		m_swapchainShader.create({ vertexCode, fragmentCode });
 
 		onWindowResize(m_pWindow->getCurrentExtent());
 		m_sampler = renderer.createSampler(FilterMode::LINEAR);

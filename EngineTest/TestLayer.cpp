@@ -13,6 +13,7 @@ namespace sa {
 		m_pEngine = &engine;
 		m_pWindow = &window;
 		
+
 		Scene* pScene = sa::AssetManager::get().createAsset<Scene>("MyScene");
 		m_pEngine->setScene(pScene);
 		
@@ -20,8 +21,6 @@ namespace sa {
 		comp::Transform* cameraTransform = cameraEntity.addComponent<comp::Transform>();
 		comp::Camera* camera = cameraEntity.addComponent<comp::Camera>();
 		cameraTransform->position = { 0, 0, -5 };
-		
-
 
 		Entity box = pScene->createEntity("Box");
 		box.addComponent<comp::Transform>();
@@ -38,7 +37,6 @@ namespace sa {
 
 	void TestLayer::onUpdate(float dt) {
 		m_pEngine->getCurrentScene()->runtimeUpdate(dt);
-
 	}
 
 	void TestLayer::onImGuiRender() {

@@ -2,5 +2,7 @@
 #include "IRenderTechnique.h"
 
 namespace sa {
-   
+    IRenderTechnique::~IRenderTechnique() {
+
+    }
 }

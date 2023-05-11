@@ -17,7 +17,6 @@
 
 #include <RenderWindow.hpp>
 
-
 namespace sa {
 
 

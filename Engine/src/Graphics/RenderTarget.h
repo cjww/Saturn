@@ -62,7 +62,11 @@ namespace sa {
 		void cleanupBloomData();
 
 		friend class ForwardPlus;
-		void initializeMainRenderData(ResourceID colorRenderProgram, ResourceID depthPreRenderProgram, const ShaderSet& lightCullingShader, ResourceID sampler, Extent extent);
+		void initializeMainRenderData(ResourceID colorRenderProgram, ResourceID depthPreRenderProgram, 
+			const ShaderSet& lightCullingShader,
+			const ShaderSet& depthShader,
+			const ShaderSet& colorShader,
+			ResourceID sampler, Extent extent);
 		void cleanupMainRenderData();
 
 		void setOutputTexture(const DynamicTexture& dynamicTexture);

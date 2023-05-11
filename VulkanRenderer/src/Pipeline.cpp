@@ -12,7 +12,7 @@ namespace sa {
 
 	void Pipeline::create(VulkanCore* pCore, vk::RenderPass renderPass, const ShaderSet& shaderSet, uint32_t subpassIndex, Extent extent, PipelineConfig config) {
 		m_pCore = pCore;
-		m_shaderSet = shaderSet;
+		m_pShaderSet = (ShaderSet*)&shaderSet;
 
 		vk::PipelineLayoutCreateInfo layoutInfo = {};
 
@@ -106,7 +106,7 @@ namespace sa {
 
 	void Pipeline::create(VulkanCore* pCore, const ShaderSet& shaderSet, PipelineConfig config) {
 		m_pCore = pCore;
-		m_shaderSet = shaderSet;
+		m_pShaderSet = (ShaderSet*)&shaderSet;
 
 		vk::PipelineLayoutCreateInfo layoutInfo = {};
 
@@ -158,7 +158,6 @@ namespace sa {
 	void Pipeline::destroy() {
 		m_pCore->getDevice().destroyPipeline(m_pipeline);
 		m_pCore->getDevice().destroyPipelineLayout(m_layout);
-		m_shaderSet.destroy();
 	}
 
 	void Pipeline::bind(CommandBufferSet* cmd) {
@@ -209,7 +208,7 @@ namespace sa {
 
 	void Pipeline::pushConstants(CommandBufferSet* cmd, vk::ShaderStageFlags stages, uint32_t size, void* data) {
 		uint32_t offset = UINT32_MAX;
-		const auto& pushConstantRanges = m_shaderSet.getPushConstantRanges();
+		const auto& pushConstantRanges = m_pShaderSet->getPushConstantRanges();
 		for (auto range : pushConstantRanges) {
 			if ((vk::ShaderStageFlags)range.stageFlags & stages) {
 				if (range.offset < offset)
@@ -220,6 +219,6 @@ namespace sa {
 	}
 
 	bool Pipeline::isCompute() {
-		return !m_shaderSet.isGraphicsSet();
+		return !m_pShaderSet->isGraphicsSet();
 	}
 }

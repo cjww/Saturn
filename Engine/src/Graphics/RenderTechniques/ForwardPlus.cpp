@@ -17,6 +17,12 @@ namespace sa {
 			.addAttachmentReference(0, SubpassAttachmentUsage::DepthTarget)
 			.endSubpass()
 			.end();
+
+
+		auto vertexCode = ReadSPVFile((Engine::getShaderDirectory() / "ForwardPlusColorPass.vert.spv").generic_string().c_str());
+
+		m_depthShader.create({ vertexCode });
+
 	}
 	
 	void ForwardPlus::createLightCullingShader() {
@@ -27,7 +33,7 @@ namespace sa {
 		}
 
 		auto code = ReadSPVFile((Engine::getShaderDirectory() / "LightCulling.comp.spv").generic_string().c_str());
-		m_lightCullingShader = m_renderer.createShaderSet({ code });
+		m_lightCullingShader.create({ code });
 		m_lightCullingPipeline = m_renderer.createComputePipeline(m_lightCullingShader);
 		
 	}
@@ -50,6 +56,11 @@ namespace sa {
 			.endSubpass()
 			.end();
 		m_renderer.setClearColor(m_colorRenderProgram, Color{ 0.0f, 0.0f, 0.1f, 1.0f });	
+
+		auto vertexCode = ReadSPVFile((Engine::getShaderDirectory() / "ForwardPlusColorPass.vert.spv").generic_string().c_str());
+		auto fragmentCode = ReadSPVFile((Engine::getShaderDirectory() / "ForwardPlusColorPass.frag.spv").generic_string().c_str());
+
+		m_colorShader.create({ vertexCode, fragmentCode });
 	}
 
 	ForwardPlus::ForwardPlus() 
@@ -95,7 +106,9 @@ namespace sa {
 	}
 
 	void ForwardPlus::cleanup() {
-	
+		m_colorShader.destroy();
+		m_depthShader.destroy();
+		m_lightCullingShader.destroy();
 	}
 
 	bool ForwardPlus::preRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sc) {
@@ -106,7 +119,7 @@ namespace sa {
 
 		if (!data.isInitialized) {
 			pRenderTarget->cleanupMainRenderData();
-			pRenderTarget->initializeMainRenderData(m_colorRenderProgram, m_depthPreRenderProgram, m_lightCullingShader, m_linearSampler, pRenderTarget->getExtent());
+			pRenderTarget->initializeMainRenderData(m_colorRenderProgram, m_depthPreRenderProgram, m_lightCullingShader, m_depthShader, m_colorShader, m_linearSampler, pRenderTarget->getExtent());
 		}
 
 		context.updateDescriptorSet(data.sceneDepthDescriptorSet, 0, sc.getObjectBuffer());

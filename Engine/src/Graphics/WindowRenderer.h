@@ -8,6 +8,7 @@
 namespace sa {
 	class IWindowRenderer {
 	public:
+		virtual ~IWindowRenderer();
 		virtual void render(RenderContext& context, const Texture& texture) = 0;		
 		virtual void onWindowResize(Extent newExtent) = 0;
 	};

@@ -54,6 +54,8 @@ namespace sa {
 
 		uint32_t set;
 		uint32_t binding;
+
+		~ShaderAttribute();
 	};
 
 	class ShaderSet {
@@ -83,12 +85,19 @@ namespace sa {
 
 	public:
 		ShaderSet();
-		ShaderSet(const ShaderSet&) = default;
-		ShaderSet& operator=(const ShaderSet&) = default;
+		ShaderSet(const ShaderSet&) = delete;
+		ShaderSet& operator=(const ShaderSet&) = delete;
+		~ShaderSet();
 
-		ShaderSet(VulkanCore* pCore, const ShaderStageInfo* pStageInfos, uint32_t stageCount);
-		ShaderSet(VulkanCore* pCore, const std::vector<ShaderStageInfo>& stageInfos);
-		ShaderSet(VulkanCore* pCore, const std::vector<std::vector<uint32_t>>& shaderCode);
+		ShaderSet(const ShaderStageInfo* pStageInfos, uint32_t stageCount);
+		ShaderSet(const std::vector<ShaderStageInfo>& stageInfos);
+		ShaderSet(const std::vector<std::vector<uint32_t>>& shaderCode);
+
+		bool isValid() const;
+
+		void create(const ShaderStageInfo* pStageInfos, uint32_t stageCount);
+		void create(const std::vector<ShaderStageInfo>& stageInfos);
+		void create(const std::vector<std::vector<uint32_t>>& shaderCode);
 
 		void destroy();
 
