@@ -39,6 +39,8 @@ namespace sa {
 
 		bool m_enterSceneNamePopup;
 
+		bool m_profilerWindow;
+
 		void makePopups();
 
 		bool openProject(const std::filesystem::path& path);

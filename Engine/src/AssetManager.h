@@ -106,6 +106,9 @@ namespace sa {
 		AssetTypeID getAssetTypeID() const;
 
 		template<typename T>
+		bool isType(IAsset* pAsset) const;
+
+		template<typename T>
 		T* getAsset(UUID id) const;
 		IAsset* getAsset(UUID id) const;
 
@@ -157,6 +160,11 @@ namespace sa {
 			return -1;
 		}
 		return m_stringToType.at(str);
+	}
+
+	template<typename T>
+	inline bool AssetManager::isType(IAsset* pAsset) const {
+		return pAsset->getHeader().type == getAssetTypeID<T>();
 	}
 
 	template<typename T>

@@ -115,8 +115,6 @@ namespace sa {
 		char* endStr;
 		UUID sceneID = strtoull(startScene.data(), &endStr, 10);
 		Scene* scene = AssetManager::get().getAsset<Scene>(sceneID);
-		if(scene)
-			scene->load();
 		m_pEngine->setScene(scene);
 
 		std::filesystem::path projectPath = path;
@@ -287,14 +285,15 @@ namespace sa {
 		pScene->setAssetPath(MakeEditorRelative("sceneCache.data"));
 		pScene->load(sa::AssetLoadFlagBits::FORCE_SHALLOW | sa::AssetLoadFlagBits::NO_REF);
 		pScene->setAssetPath(path);
-		//pScene->release(); // since loading will increase refCount, we decrease it again
 		
 		m_state = State::EDIT;
 	}
 
 
 	void EngineEditor::imGuiProfiler() {
-		if (ImGui::Begin("Profiler")) {
+		if (!m_profilerWindow) 
+			return;
+		if (ImGui::Begin("Profiler", &m_profilerWindow)) {
 			
 			static bool isRecording = false;
 			static std::string filePath = "profile_editor_result.json";
@@ -381,6 +380,7 @@ namespace sa {
 			recentProjectsFile.close();
 		}
 
+		m_profilerWindow = false;
 	}
 
 	void EngineEditor::onDetach() {
@@ -455,6 +455,11 @@ namespace sa {
 					}
 				}
 
+#if SA_PROFILER_ENABLE
+				if (ImGui::MenuItem("Profiler")) {
+					m_profilerWindow = true;
+				}
+#endif
 				ImGui::End();
 			}
 

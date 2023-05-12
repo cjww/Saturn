@@ -390,8 +390,7 @@ namespace ImGui {
 
 		sa::IAsset* renderTarget = camera->getRenderTarget();
 		if (AssetSlot("RenderTarget", renderTarget, sa::AssetManager::get().getAssetTypeID<sa::RenderTarget>())) {
-			if (renderTarget)
-				camera->setRenderTarget(static_cast<sa::RenderTarget*>(renderTarget));
+			camera->setRenderTarget(static_cast<sa::RenderTarget*>(renderTarget));
 		}
 
 	}
@@ -724,6 +723,8 @@ namespace ImGui {
 			contentArea = ImGui::GetContentRegionAvail();
 		}
 
+		static std::filesystem::path orignalPath = openDirectory;
+
 		bool began = BeginChild((std::string(str_id) + "1").c_str(), contentArea, false, ImGuiWindowFlags_MenuBar);
 		if(began) {
 			static std::set<std::filesystem::path> copiedFiles;
@@ -731,9 +732,13 @@ namespace ImGui {
 			//Menu Bar
 			if (BeginMenuBar()) {
 
-				if (ImGui::ArrowButton((std::string("parentDir_") + str_id).c_str(), ImGuiDir_Left)) {
-					openDirectory = std::filesystem::absolute(openDirectory);
-					openDirectory = openDirectory.parent_path();
+				if (!std::filesystem::equivalent(openDirectory, orignalPath)) {
+					if (ImGui::ArrowButton((std::string("parentDir_") + str_id).c_str(), ImGuiDir_Left)) {
+						if (openDirectory.has_parent_path()) {
+							openDirectory = openDirectory.parent_path();
+						}
+					}
+					SameLine();
 				}
 				if (BeginDragDropTarget()) {
 					const ImGuiPayload* payload = AcceptDragDropPayload("Path");
@@ -750,7 +755,6 @@ namespace ImGui {
 					}
 					EndDragDropTarget();
 				}
-				SameLine();
 
 				Text(openDirectory.generic_string().c_str());
 				SameLine();

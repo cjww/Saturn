@@ -331,7 +331,11 @@ namespace sa {
 
 	void Engine::setScene(Scene* scene) {
 		SA_PROFILE_FUNCTION();
+		if (scene)
+			scene->load();
 		publish<engine_event::SceneSet>(m_currentScene, scene);
+		if (m_currentScene)
+			m_currentScene->release();
 		m_currentScene = scene;	
 	}
 }

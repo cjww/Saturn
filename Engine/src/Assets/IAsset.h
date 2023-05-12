@@ -111,5 +111,14 @@ namespace sa {
 
 		static void waitAllAssets();
 
+		template<typename T>
+		T* cast();
+
 	};
+
+
+	template<typename T>
+	inline T* IAsset::cast() {
+		return dynamic_cast<T*>(this);
+	}
 }

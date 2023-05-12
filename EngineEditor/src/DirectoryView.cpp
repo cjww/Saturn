@@ -14,8 +14,12 @@ DirectoryView::DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor)
 	m_pEngine->on<sa::editor_event::DragDropped>([&](const sa::editor_event::DragDropped& e, const sa::Engine& engine) {
 		for (uint32_t i = 0; i < e.count; i++) {
 			std::filesystem::path path = e.paths[i];
-			if (sa::ModelAsset::isExtensionSupported(path.extension().generic_string())) {
+			std::string extension = path.extension().generic_string();
+			if (sa::ModelAsset::isExtensionSupported(extension)) {
 				sa::AssetManager::get().importAsset<sa::ModelAsset>(path);
+			}
+			else {
+				SA_DEBUG_LOG_WARNING("Could not import: Unsupported extension ", extension);
 			}
 		}
 	});
@@ -117,7 +121,12 @@ void DirectoryView::onImGui() {
 					}
 					sa::IAsset* pAsset = sa::AssetManager::get().findAssetByPath(entry.path());
 					if (pAsset) {
-						m_openAssetProperties.insert(pAsset);
+						if (sa::AssetManager::get().isType<sa::Scene>(pAsset)) {
+							m_pEngine->setScene(pAsset->cast<sa::Scene>());
+						}
+						else {
+							m_openAssetProperties.insert(pAsset);
+						}
 					}
 				}
 
