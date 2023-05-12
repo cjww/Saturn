@@ -8,7 +8,7 @@ layout(location = 1) in vec4 in_vertexNormal;
 layout(location = 2) in vec2 in_vertexUV;
 
 struct Object {
-    mat4 worldMat;
+    mat4 modelMatrix;
 };
 
 layout(set = 0, binding = 0) readonly buffer Objects {
@@ -23,5 +23,7 @@ layout(push_constant) uniform Camera {
 Object GetObject() {
     return objectBuffer.objects[gl_InstanceIndex];
 }
+
+
 
 #endif
