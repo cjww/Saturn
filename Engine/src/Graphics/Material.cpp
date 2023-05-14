@@ -29,6 +29,7 @@ namespace sa {
 	{
 		twoSided = false;
 		m_allTexturesLoaded = false;
+		m_pShaderMaterial = nullptr;
 	}
 
 	void Material::update() {

@@ -156,6 +156,9 @@
     <ClCompile Include="src\simdjson\simdjson.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="src\Assets\MaterialShader.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\ECS\Entity.h">
@@ -324,6 +327,9 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Graphics\WindowRenderer.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="src\Assets\MaterialShader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

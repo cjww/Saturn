@@ -9,6 +9,8 @@
 
 #include "Assets/TextureAsset.h"
 
+#include "Assets\MaterialShader.h"
+
 #define MAX_TEXTURE_MAP_COUNT 4U
 
 namespace sa {
@@ -203,6 +205,8 @@ namespace sa {
 		std::vector<Texture> m_allTextures;
 		bool m_allTexturesLoaded;
 
+		MaterialShader* m_pMaterialShader;
+
 		void setTextures(const std::vector<BlendedTexture>& textures, MaterialTextureType type, uint32_t& count);
 
 	public:
@@ -234,6 +238,7 @@ namespace sa {
 
 		bool twoSided;
 
+
 		static std::string TextureTypeToString(MaterialTextureType type);
 
 
@@ -247,6 +252,9 @@ namespace sa {
 		const std::vector<Texture>& fetchTextures();
 		
 		std::unordered_map<MaterialTextureType, std::vector<UUID>>& getTextures();
+
+		MaterialShader* getMaterialShader() const;
+		void setMaterialShader(MaterialShader* pMaterialShader) const;
 
 		virtual bool onLoad(std::ifstream& file, AssetLoadFlags flags) override;
 		virtual bool onWrite(std::ofstream& file, AssetWriteFlags flags) override;

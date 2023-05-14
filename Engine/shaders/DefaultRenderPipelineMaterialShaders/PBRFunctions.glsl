@@ -59,8 +59,8 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
             break;
         }
     }
-
-    return vec4((albedoColor + specularColor) * occlusion * albedo, alpha);
+    emission *= 2.0;
+    return vec4((albedoColor + specularColor) * occlusion * albedo + emission, alpha);
 }
 
 

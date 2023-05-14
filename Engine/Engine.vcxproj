@@ -298,6 +298,7 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="src\Assets\IAsset.cpp" />
+    <ClCompile Include="src\Assets\MaterialShader.cpp" />
     <ClCompile Include="src\Assets\ModelAsset.cpp" />
     <ClCompile Include="src\Assets\TextureAsset.cpp" />
     <ClCompile Include="src\ECS\Components\BoxCollider.cpp" />
@@ -351,6 +352,7 @@
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="src\Assets\IAsset.h" />
+    <ClInclude Include="src\Assets\MaterialShader.h" />
     <ClInclude Include="src\Assets\ModelAsset.h" />
     <ClInclude Include="src\Assets\TextureAsset.h" />
     <ClInclude Include="src\ECS\Components\BoxCollider.h" />
