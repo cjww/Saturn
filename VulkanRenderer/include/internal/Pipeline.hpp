@@ -1,6 +1,6 @@
 #pragma once
 
-#include "internal/ShaderSet.hpp"
+#include "ShaderSet.hpp"
 #include "internal/DescriptorSet.hpp"
 #include "VulkanCore.hpp"
 

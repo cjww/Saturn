@@ -10,7 +10,7 @@
 #include "structs.hpp"
 
 #include "CommandPool.hpp"
-#include "internal/ShaderSet.hpp"
+#include "ShaderSet.hpp"
 #include "internal/DeviceMemoryManager.hpp"
 
 #include "FormatFlags.hpp"

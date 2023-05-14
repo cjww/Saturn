@@ -63,7 +63,7 @@
     <ClInclude Include="include\Resources\Texture.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\internal\ShaderSet.hpp">
+    <ClInclude Include="include\ShaderSet.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\RenderContext.hpp">
@@ -105,10 +105,10 @@
     <ClInclude Include="include\internal\Pipeline.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\internal\DescriptorSetStructs.h">
+    <ClInclude Include="include\DescriptorSetStructs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="include\internal\ShaderInfoStructs.h">
+    <ClInclude Include="include\ShaderInfoStructs.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="include\ApiBuildOptions.h">

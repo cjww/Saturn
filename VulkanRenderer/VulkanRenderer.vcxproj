@@ -267,9 +267,9 @@
     <ClInclude Include="include\Image.hpp" />
     <ClInclude Include="include\InputEnums.hpp" />
     <ClInclude Include="include\ApiBuildOptions.h" />
-    <ClInclude Include="include\internal\DescriptorSetStructs.h" />
+    <ClInclude Include="include\DescriptorSetStructs.h" />
     <ClInclude Include="include\internal\Pipeline.hpp" />
-    <ClInclude Include="include\internal\ShaderInfoStructs.h" />
+    <ClInclude Include="include\ShaderInfoStructs.h" />
     <ClInclude Include="include\PipelineSettings.hpp" />
     <ClInclude Include="include\Resources\Buffer.hpp" />
     <ClInclude Include="include\internal\DescriptorSet.hpp" />
@@ -283,7 +283,7 @@
     <ClInclude Include="include\internal\DeviceMemoryManager.hpp" />
     <ClInclude Include="include\Resources\ResourceManager.hpp" />
     <ClInclude Include="include\internal\CommandPool.hpp" />
-    <ClInclude Include="include\internal\ShaderSet.hpp" />
+    <ClInclude Include="include\ShaderSet.hpp" />
     <ClInclude Include="include\structs.hpp" />
     <ClInclude Include="include\pch.h" />
     <ClInclude Include="include\internal\Swapchain.hpp" />

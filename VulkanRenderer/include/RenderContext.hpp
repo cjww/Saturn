@@ -5,7 +5,7 @@
 #include "Resources/Buffer.hpp"
 #include "Resources/Texture.hpp"
 #include "Resources/DynamicBuffer.hpp"
-#include "internal/ShaderSet.hpp"
+#include "ShaderSet.hpp"
 
 namespace vk {
 	class Sampler;

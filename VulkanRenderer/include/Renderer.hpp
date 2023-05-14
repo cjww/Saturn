@@ -12,7 +12,7 @@
 #include "PipelineSettings.hpp"
 #include "DeviceMemoryStats.hpp"
 
-#include "internal/ShaderSet.hpp"
+#include "ShaderSet.hpp"
 
 #include "Window.hpp"
 
