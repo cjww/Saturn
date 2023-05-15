@@ -254,7 +254,7 @@ namespace sa {
 		std::unordered_map<MaterialTextureType, std::vector<UUID>>& getTextures();
 
 		MaterialShader* getMaterialShader() const;
-		void setMaterialShader(MaterialShader* pMaterialShader) const;
+		void setMaterialShader(MaterialShader* pMaterialShader);
 
 		virtual bool onLoad(std::ifstream& file, AssetLoadFlags flags) override;
 		virtual bool onWrite(std::ofstream& file, AssetWriteFlags flags) override;

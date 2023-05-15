@@ -29,7 +29,7 @@ namespace sa {
 	{
 		twoSided = false;
 		m_allTexturesLoaded = false;
-		m_pShaderMaterial = nullptr;
+		m_pMaterialShader = nullptr;
 	}
 
 	void Material::update() {
@@ -77,6 +77,14 @@ namespace sa {
 
 	std::unordered_map<MaterialTextureType, std::vector<UUID>>& Material::getTextures() {
 		return m_textures;
+	}
+
+	MaterialShader* Material::getMaterialShader() const {
+		return m_pMaterialShader;
+	}
+
+	void Material::setMaterialShader(MaterialShader* pMaterialShader) {
+		m_pMaterialShader = pMaterialShader;
 	}
 
 	bool Material::onLoad(std::ifstream& file, AssetLoadFlags flags) {

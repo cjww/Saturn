@@ -38,10 +38,11 @@ namespace sa {
 		uint32_t m_indexCount = 0;
 		uint32_t m_uniqueMeshCount = 0;
 
-		ResourceID m_sceneDescriptorSetColorPass = NULL_RESOURCE;
-		ResourceID m_sceneDescriptorSetDepthPass = NULL_RESOURCE;
 
 	public:
+		ResourceID sceneDescriptorSetColorPass = NULL_RESOURCE;
+		ResourceID sceneDescriptorSetDepthPass = NULL_RESOURCE;
+
 		MaterialShaderCollection(MaterialShader* pMaterialShader);
 		void clear();
 		void swap();
@@ -57,6 +58,10 @@ namespace sa {
 
 		const std::vector<Texture>& getTextures() const;
 
+		ResourceID getSceneDescriptorSetColorPass() const;
+		ResourceID getSceneDescriptorSetDepthPass() const;
+
+
 	};
 
 	class SceneCollection {
@@ -70,7 +75,7 @@ namespace sa {
 
 		std::vector<MaterialShaderCollection> m_materialShaderCollections;
 		
-		MaterialShaderCollection& getMaterialShaderCollection(const MaterialShader* pMaterialShader);
+		MaterialShaderCollection& getMaterialShaderCollection(MaterialShader* pMaterialShader);
 
 	public:
 
@@ -88,8 +93,8 @@ namespace sa {
 
 		const Buffer& getLightBuffer() const;
 		
-		const std::vector<MaterialShaderCollection>::iterator& begin();
-		const std::vector<MaterialShaderCollection>::iterator& end();
+		std::vector<MaterialShaderCollection>::iterator begin();
+		std::vector<MaterialShaderCollection>::iterator end();
 
 	};
 }

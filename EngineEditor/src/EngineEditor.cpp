@@ -111,11 +111,17 @@ namespace sa {
 
 		AssetManager::get().rescanAssets();
 
-		std::string_view startScene = doc["startScene"].get_string().value();
-		char* endStr;
-		UUID sceneID = strtoull(startScene.data(), &endStr, 10);
-		Scene* scene = AssetManager::get().getAsset<Scene>(sceneID);
-		m_pEngine->setScene(scene);
+		if (doc["startScene"].error() == SUCCESS) {
+			std::string_view startScene = doc["startScene"].get_string().take_value();
+			char* endStr;
+			UUID sceneID = strtoull(startScene.data(), &endStr, 10);
+			Scene* scene = AssetManager::get().getAsset<Scene>(sceneID);
+			if (!scene) {
+				SA_DEBUG_LOG_WARNING("No startup scene");
+				scene = AssetManager::get().createAsset<Scene>("Default Scene");
+			}
+			m_pEngine->setScene(scene);
+		}
 
 		std::filesystem::path projectPath = path;
 		auto it = std::find(m_recentProjectPaths.begin(), m_recentProjectPaths.end(), projectPath);

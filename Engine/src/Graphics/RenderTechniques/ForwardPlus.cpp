@@ -122,21 +122,6 @@ namespace sa {
 			pRenderTarget->initializeMainRenderData(m_colorRenderProgram, m_depthPreRenderProgram, m_lightCullingShader, m_depthShader, m_colorShader, m_linearSampler, pRenderTarget->getExtent());
 		}
 
-		context.updateDescriptorSet(data.sceneDepthDescriptorSet, 0, sc.getObjectBuffer());
-
-		context.updateDescriptorSet(data.sceneDescriptorSet, 0, sc.getObjectBuffer());
-		context.updateDescriptorSet(data.sceneDescriptorSet, 1, sc.getLightBuffer());
-		context.updateDescriptorSet(data.sceneDescriptorSet, 2, sc.getMaterialBuffer());
-		context.updateDescriptorSet(data.sceneDescriptorSet, 3, sc.getMaterialIndicesBuffer());
-		context.updateDescriptorSet(data.sceneDescriptorSet, 4, data.lightIndexBuffer.getBuffer());
-		context.updateDescriptorSet(data.sceneDescriptorSet, 6, sc.getTextures(), 0);
-
-		context.updateDescriptorSet(data.lightCullingDescriptorSet, 1, data.lightIndexBuffer.getBuffer());
-		context.updateDescriptorSet(data.lightCullingDescriptorSet, 2, sc.getLightBuffer());
-
-		context.bindVertexBuffers(0, { sc.getVertexBuffer() });
-		context.bindIndexBuffer(sc.getIndexBuffer());
-
 		Rectf cameraViewport = pCamera->getViewport();
 		Rect viewport = {
 			{ cameraViewport.offset.x * pRenderTarget->getExtent().width, cameraViewport.offset.y * pRenderTarget->getExtent().height },
@@ -153,19 +138,47 @@ namespace sa {
 		perFrame.viewPos = pCamera->getPosition();
 
 
-		// Depth prepass
 		context.beginRenderProgram(m_depthPreRenderProgram, data.depthFramebuffer, SubpassContents::DIRECT);
-		context.bindPipeline(data.depthPipeline);
+		for (auto& collection : sc) {
 
-		context.setViewport(viewport);
-		context.bindDescriptorSet(data.sceneDepthDescriptorSet, data.depthPipeline);
+			if (collection.sceneDescriptorSetColorPass == NULL_RESOURCE) {
+				collection.sceneDescriptorSetColorPass = m_colorShader.allocateDescriptorSet(SET_PER_FRAME);
+			}
+
+			if (collection.sceneDescriptorSetDepthPass == NULL_RESOURCE) {
+				collection.sceneDescriptorSetDepthPass = m_depthShader.allocateDescriptorSet(SET_PER_FRAME);
+			}
 
 
-		if (sc.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>() > 0) {
-			context.pushConstant(data.depthPipeline, ShaderStageFlagBits::VERTEX, perFrame);
-			context.drawIndexedIndirect(sc.getDrawCommandBuffer(), 0, sc.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
+			context.updateDescriptorSet(collection.getSceneDescriptorSetDepthPass(), 0, collection.getObjectBuffer());
+
+			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 0, collection.getObjectBuffer());
+			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 1, sc.getLightBuffer());
+			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 2, collection.getMaterialBuffer());
+			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 3, collection.getMaterialIndicesBuffer());
+			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 4, data.lightIndexBuffer.getBuffer());
+			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 5, m_linearSampler);
+			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 6, collection.getTextures(), 0);
+
+			context.updateDescriptorSet(data.lightCullingDescriptorSet, 1, data.lightIndexBuffer.getBuffer());
+			context.updateDescriptorSet(data.lightCullingDescriptorSet, 2, sc.getLightBuffer());
+
+			context.bindVertexBuffers(0, { collection.getVertexBuffer() });
+			context.bindIndexBuffer(collection.getIndexBuffer());
+		
+			// Depth prepass
+			context.bindPipeline(data.depthPipeline);
+
+			context.setViewport(viewport);
+			context.bindDescriptorSet(collection.getSceneDescriptorSetDepthPass(), data.depthPipeline);
+
+
+			if (collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>() > 0) {
+				context.pushConstant(data.depthPipeline, ShaderStageFlagBits::VERTEX, perFrame);
+				context.drawIndexedIndirect(collection.getDrawCommandBuffer(), 0, collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
+			}
+
 		}
-
 		context.endRenderProgram(m_depthPreRenderProgram);
 
 
@@ -207,16 +220,18 @@ namespace sa {
 
 		// Main color pass
 		context.beginRenderProgram(m_colorRenderProgram, data.colorFramebuffer, SubpassContents::DIRECT);
-		context.bindPipeline(data.colorPipeline);
-		context.bindDescriptorSet(data.sceneDescriptorSet, data.colorPipeline);
+		for (auto& collection : sc) {
+			context.bindPipeline(data.colorPipeline);
+			context.bindDescriptorSet(collection.getSceneDescriptorSetColorPass(), data.colorPipeline);
 
-		context.setViewport(viewport);
+			context.setViewport(viewport);
 
-		if (sc.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>() > 0) {
-			context.pushConstant(data.colorPipeline, ShaderStageFlagBits::VERTEX | ShaderStageFlagBits::FRAGMENT, perFrame);
-			context.pushConstant(data.colorPipeline, ShaderStageFlagBits::FRAGMENT, data.tileCount.x, sizeof(perFrame));
+			if (collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>() > 0) {
+				context.pushConstant(data.colorPipeline, ShaderStageFlagBits::VERTEX | ShaderStageFlagBits::FRAGMENT, perFrame);
+				context.pushConstant(data.colorPipeline, ShaderStageFlagBits::FRAGMENT, data.tileCount.x, sizeof(perFrame));
 
-			context.drawIndexedIndirect(sc.getDrawCommandBuffer(), 0, sc.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
+				context.drawIndexedIndirect(collection.getDrawCommandBuffer(), 0, collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
+			}
 		}
 
 		context.endRenderProgram(m_colorRenderProgram);
