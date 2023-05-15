@@ -5,8 +5,13 @@
 namespace sa {
 	class MaterialShader : public IAsset {
 	private:
-		ShaderSet m_shaderSet;
-		ResourceID m_pipeline;
+		friend class MaterialShaderCollection;
+
+		ShaderSet m_colorShaderSet;
+		ShaderSet m_depthShaderSet;
+		ResourceID m_colorPipeline;
+		ResourceID m_depthPipeline;
+
 	public:
 		using IAsset::IAsset;
 		

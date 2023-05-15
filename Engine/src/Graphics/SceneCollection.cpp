@@ -4,16 +4,14 @@
 #include "Scene.h"
 
 namespace sa {
-	SceneCollection::SceneCollection() {
+	MaterialShaderCollection::MaterialShaderCollection(MaterialShader* pMaterialShader) {
+		m_pMaterialShader = pMaterialShader;
 		m_objectCount = 0;
 		m_vertexCount = 0;
 		m_indexCount = 0;
 		m_uniqueMeshCount = 0;
 
 		sa::Renderer& renderer = sa::Renderer::get();
-
-		uint32_t lightCount = 0U;
-		m_lightBuffer = renderer.createDynamicBuffer(BufferType::STORAGE, sizeof(uint32_t), &lightCount);
 
 		m_indirectIndexedBuffer = renderer.createDynamicBuffer(BufferType::INDIRECT);
 		m_vertexBuffer = renderer.createDynamicBuffer(BufferType::VERTEX);
@@ -22,22 +20,94 @@ namespace sa {
 
 		m_materialBuffer = renderer.createDynamicBuffer(BufferType::STORAGE);
 		m_materialIndicesBuffer = renderer.createDynamicBuffer(BufferType::STORAGE);
-
 	}
 
-	void SceneCollection::clear() {
+	void MaterialShaderCollection::clear() {
 		m_models.clear();
 		m_objects.clear();
 		m_textures.clear();
 		m_materials.clear();
 		m_materialData.clear();
 		m_materialIndices.clear();
-		m_lights.clear();
-
+		
 		m_objectCount = 0;
 		m_vertexCount = 0;
 		m_indexCount = 0;
 		m_uniqueMeshCount = 0;
+	}
+
+	void MaterialShaderCollection::swap() {
+		m_vertexBuffer.swap();
+		m_indexBuffer.swap();
+		m_indirectIndexedBuffer.swap();
+		m_objectBuffer.swap();
+		m_materialBuffer.swap();
+		m_materialIndicesBuffer.swap();
+	}
+
+	void MaterialShaderCollection::readyDescriptorSets() {
+		if (m_sceneDescriptorSetColorPass == NULL_RESOURCE) {
+			m_sceneDescriptorSetColorPass = m_pMaterialShader->m_colorShaderSet.allocateDescriptorSet(SET_PER_FRAME);
+		}
+		if (m_sceneDescriptorSetDepthPass == NULL_RESOURCE) {
+			m_sceneDescriptorSetDepthPass = m_pMaterialShader->m_depthShaderSet.allocateDescriptorSet(SET_PER_FRAME);
+		}
+	}
+
+	MaterialShaderCollection& SceneCollection::getMaterialShaderCollection(const MaterialShader* pMaterialShader) {
+		if (!pMaterialShader)
+			return m_materialShaderCollections[0];
+		auto it = std::find_if(m_materialShaderCollections.begin(), m_materialShaderCollections.end(), 
+			[&](const MaterialShaderCollection& collection) { return collection.m_pMaterialShader == pMaterialShader; });
+		if (it == m_materialShaderCollections.end()) {
+			return m_materialShaderCollections.emplace_back(pMaterialShader);
+		}
+		return *it;
+	}
+
+	const Buffer& MaterialShaderCollection::getVertexBuffer() const {
+		return m_vertexBuffer.getBuffer();
+	}
+
+	const Buffer& MaterialShaderCollection::getIndexBuffer() const {
+		return m_indexBuffer.getBuffer();
+	}
+
+	const Buffer& MaterialShaderCollection::getDrawCommandBuffer() const {
+		return m_indirectIndexedBuffer.getBuffer();
+	}
+
+	const Buffer& MaterialShaderCollection::getObjectBuffer() const {
+		return m_objectBuffer.getBuffer();
+	}
+
+	const Buffer& MaterialShaderCollection::getMaterialBuffer() const {
+		return m_materialBuffer.getBuffer();
+	}
+
+	const Buffer& MaterialShaderCollection::getMaterialIndicesBuffer() const {
+		return m_materialIndicesBuffer.getBuffer();
+	}
+
+	const std::vector<Texture>& MaterialShaderCollection::getTextures() const {
+		return m_textures;
+	}
+
+	SceneCollection::SceneCollection() {
+		m_materialShaderCollections.emplace_back(nullptr); // default
+
+		sa::Renderer& renderer = sa::Renderer::get();
+
+		uint32_t lightCount = 0U;
+		m_lightBuffer = renderer.createDynamicBuffer(BufferType::STORAGE, sizeof(uint32_t), &lightCount);
+
+	}
+
+	void SceneCollection::clear() {
+		m_lights.clear();
+		for (auto& collection : m_materialShaderCollections) {
+			collection.clear();
+		}
 	}
 
 	void SceneCollection::collect(Scene* pScene) {
@@ -61,26 +131,42 @@ namespace sa {
 		ObjectData objectBuffer = {};
 		objectBuffer.worldMat = transformation;
 
-		auto it = std::find(m_models.begin(), m_models.end(), pModelAsset);
-		if (it == m_models.end()) {
-			m_models.push_back(pModelAsset);
-			if (m_objects.size() >= m_models.size()) {
-				m_objects[m_models.size() - 1].clear();
-				m_objects[m_models.size() - 1].push_back(objectBuffer);
-			}
-			else {
-				m_objects.push_back({ objectBuffer });
-			}
+		
+		// make sure all collection exists
+		for (const auto& mesh : pModel->meshes) {
+			Material* pMaterial = AssetManager::get().getAsset<Material>(mesh.materialID);
+			MaterialShaderCollection& collection = getMaterialShaderCollection(pMaterial ? pMaterial->getMaterialShader() : nullptr);
+		}
+
+		for (auto& collection : m_materialShaderCollections) {
+			auto it = std::find(collection.m_models.begin(), collection.m_models.end(), pModelAsset);
 			for (const auto& mesh : pModel->meshes) {
-				m_vertexCount += mesh.vertices.size();
-				m_indexCount += mesh.indices.size();
-				m_uniqueMeshCount++;
+				Material* pMaterial = AssetManager::get().getAsset<Material>(mesh.materialID);
+				MaterialShaderCollection& thisCollection = getMaterialShaderCollection(pMaterial ? pMaterial->getMaterialShader() : nullptr);
+				if (&thisCollection != &collection)
+					continue;
+
+				if (it == collection.m_models.end()) {
+					collection.m_models.push_back(pModelAsset);
+					if (collection.m_objects.size() >= collection.m_models.size()) {
+						collection.m_objects[collection.m_models.size() - 1].clear();
+						collection.m_objects[collection.m_models.size() - 1].push_back(objectBuffer);
+					}
+					else {
+						collection.m_objects.push_back({ objectBuffer });
+					}
+
+					collection.m_vertexCount += mesh.vertices.size();
+					collection.m_indexCount += mesh.indices.size();
+					collection.m_uniqueMeshCount++;
+				}
+				else {
+					collection.m_objects[std::distance(collection.m_models.begin(), it)].push_back(objectBuffer);
+				}
+				collection.m_objectCount++;
 			}
 		}
-		else {
-			m_objects[std::distance(m_models.begin(), it)].push_back(objectBuffer);
-		}
-		m_objectCount++;
+
 	}
 
 	void SceneCollection::addLight(const LightData& light) {
@@ -98,126 +184,110 @@ namespace sa {
 
 
 		// Clear Dynamic buffers
-		m_objectBuffer.clear();
-		m_indirectIndexedBuffer.clear();
-		m_vertexBuffer.clear();
-		m_indexBuffer.clear();
-		m_materialBuffer.clear();
-		m_materialIndicesBuffer.clear();
+		for (auto& collection : m_materialShaderCollections) {
 
-		// reserve dynamic buffers
-		m_objectBuffer.reserve(m_objectCount * sizeof(ObjectData), IGNORE_CONTENT);
-		m_indirectIndexedBuffer.reserve(m_uniqueMeshCount * sizeof(DrawIndexedIndirectCommand), IGNORE_CONTENT);
-		m_vertexBuffer.reserve(m_vertexCount * sizeof(VertexNormalUV), IGNORE_CONTENT);
-		m_indexBuffer.reserve(m_indexCount * sizeof(uint32_t), IGNORE_CONTENT);
-		m_materialBuffer.reserve(m_uniqueMeshCount * sizeof(Material::Values), IGNORE_CONTENT);
-		m_materialIndicesBuffer.reserve(m_uniqueMeshCount * sizeof(int32_t), IGNORE_CONTENT);
+			collection.m_objectBuffer.clear();
+			collection.m_indirectIndexedBuffer.clear();
+			collection.m_vertexBuffer.clear();
+			collection.m_indexBuffer.clear();
+			collection.m_materialBuffer.clear();
+			collection.m_materialIndicesBuffer.clear();
 
-		uint32_t firstInstance = 0;
+			// reserve dynamic buffers
+			collection.m_objectBuffer.reserve(collection.m_objectCount * sizeof(ObjectData), IGNORE_CONTENT);
+			collection.m_indirectIndexedBuffer.reserve(collection.m_uniqueMeshCount * sizeof(DrawIndexedIndirectCommand), IGNORE_CONTENT);
+			collection.m_vertexBuffer.reserve(collection.m_vertexCount * sizeof(VertexNormalUV), IGNORE_CONTENT);
+			collection.m_indexBuffer.reserve(collection.m_indexCount * sizeof(uint32_t), IGNORE_CONTENT);
+			collection.m_materialBuffer.reserve(collection.m_uniqueMeshCount * sizeof(Material::Values), IGNORE_CONTENT);
+			collection.m_materialIndicesBuffer.reserve(collection.m_uniqueMeshCount * sizeof(int32_t), IGNORE_CONTENT);
 
-		int32_t materialCount = 0;
-		uint32_t meshCount = 0;
+			uint32_t firstInstance = 0;
 
-		for (size_t i = 0; i < m_models.size(); i++) {
-			for (const auto& objectBuffer : m_objects[i]) {
-				m_objectBuffer << objectBuffer;
-			}
-			ModelData* pModel = &m_models[i]->data;
+			int32_t materialCount = 0;
+			uint32_t meshCount = 0;
 
-			for (const auto& mesh : pModel->meshes) {
+			for (size_t i = 0; i < collection.m_models.size(); i++) {
+				for (const auto& objectBuffer : collection.m_objects[i]) {
+					collection.m_objectBuffer << objectBuffer;
+				}
+				ModelData* pModel = &collection.m_models[i]->data;
+				for (const auto& mesh : pModel->meshes) {
+					Material* pMaterial = AssetManager::get().getAsset<Material>(mesh.materialID);
+					MaterialShaderCollection& thisCollection = getMaterialShaderCollection(pMaterial ? pMaterial->getMaterialShader() : nullptr);
+					if (&thisCollection != &collection)
+						continue;
 
-				// Push mesh into buffers
-				uint32_t vertexOffset = m_vertexBuffer.getElementCount<VertexNormalUV>();
-				m_vertexBuffer << mesh.vertices;
+					// Push mesh into buffers
+					uint32_t vertexOffset = collection.m_vertexBuffer.getElementCount<VertexNormalUV>();
+					collection.m_vertexBuffer << mesh.vertices;
 
-				uint32_t firstIndex = m_indexBuffer.getElementCount<uint32_t>();
-				m_indexBuffer << mesh.indices;
+					uint32_t firstIndex = collection.m_indexBuffer.getElementCount<uint32_t>();
+					collection.m_indexBuffer << mesh.indices;
 
-				// Create a draw command for this mesh
-				DrawIndexedIndirectCommand cmd = {};
-				cmd.firstIndex = firstIndex;
-				cmd.indexCount = mesh.indices.size();
-				cmd.firstInstance = firstInstance;
-				cmd.instanceCount = m_objects[i].size();
-				cmd.vertexOffset = vertexOffset;
-				m_indirectIndexedBuffer << cmd;
+					// Create a draw command for this mesh
+					DrawIndexedIndirectCommand cmd = {};
+					cmd.firstIndex = firstIndex;
+					cmd.indexCount = mesh.indices.size();
+					cmd.firstInstance = firstInstance;
+					cmd.instanceCount = collection.m_objects[i].size();
+					cmd.vertexOffset = vertexOffset;
+					collection.m_indirectIndexedBuffer << cmd;
 
-				//Material
-				Material* pMaterial = AssetManager::get().getAsset<Material>(mesh.materialID);
-				if (pMaterial && pMaterial->isLoaded()) {
-					auto it = std::find(m_materials.begin(), m_materials.end(), pMaterial);
-					if (it == m_materials.end()) {
-						uint32_t textureOffset = m_textures.size();
-						const std::vector<Texture>& matTextures = pMaterial->fetchTextures();
-						m_textures.insert(m_textures.end(), matTextures.begin(), matTextures.end());
+					//Material
+					if (pMaterial && pMaterial->isLoaded()) {
+						auto it = std::find(collection.m_materials.begin(), collection.m_materials.end(), pMaterial);
+						if (it == collection.m_materials.end()) {
+							uint32_t textureOffset = collection.m_textures.size();
+							const std::vector<Texture>& matTextures = pMaterial->fetchTextures();
+							collection.m_textures.insert(collection.m_textures.end(), matTextures.begin(), matTextures.end());
 
-						Material::Values values = pMaterial->values;
-						values.albedoMapFirst = values.albedoMapFirst + textureOffset;
-						values.emissiveMapFirst = values.emissiveMapFirst + textureOffset;
-						values.occlusionMapFirst = values.occlusionMapFirst + textureOffset;
-						values.normalMapFirst = values.normalMapFirst + textureOffset;
-						values.metalnessMapFirst = values.metalnessMapFirst + textureOffset;
+							Material::Values values = pMaterial->values;
+							values.albedoMapFirst = values.albedoMapFirst + textureOffset;
+							values.emissiveMapFirst = values.emissiveMapFirst + textureOffset;
+							values.occlusionMapFirst = values.occlusionMapFirst + textureOffset;
+							values.normalMapFirst = values.normalMapFirst + textureOffset;
+							values.metalnessMapFirst = values.metalnessMapFirst + textureOffset;
 
-						m_materials.push_back(pMaterial);
-						m_materialData.push_back(values);
-						m_materialIndices.push_back(materialCount);
-						materialCount++;
+							collection.m_materials.push_back(pMaterial);
+							collection.m_materialData.push_back(values);
+							collection.m_materialIndices.push_back(materialCount);
+							materialCount++;
+						}
+						else {
+							collection.m_materialIndices.push_back(std::distance(collection.m_materials.begin(), it));
+						}
 					}
 					else {
-						m_materialIndices.push_back(std::distance(m_materials.begin(), it));
+						collection.m_materialIndices.push_back(-1); // Default Material in shader
 					}
+					meshCount++;
 				}
-				else {
-					m_materialIndices.push_back(-1); // Default Material in shader
-				}
-				meshCount++;
+				firstInstance += collection.m_objects[i].size();
 			}
-			firstInstance += m_objects[i].size();
+
+			collection.m_materialBuffer.write(collection.m_materialData);
+			collection.m_materialIndicesBuffer.write(collection.m_materialIndices);
+			
+			collection.readyDescriptorSets();
 		}
 
-		m_materialBuffer.write(m_materialData);
-		m_materialIndicesBuffer.write(m_materialIndices);
 	}
 
 	void SceneCollection::swap() {
 		m_lightBuffer.swap();
-		m_vertexBuffer.swap();
-		m_indexBuffer.swap();
-		m_indirectIndexedBuffer.swap();
-		m_objectBuffer.swap();
-		m_materialBuffer.swap();
-		m_materialIndicesBuffer.swap();
+
+		for (auto& collection : m_materialShaderCollections) {
+			collection.swap();
+		}
 	}
 	
 	const Buffer& SceneCollection::getLightBuffer() const {
 		return m_lightBuffer.getBuffer();
 	}
-
-	const Buffer& SceneCollection::getVertexBuffer() const {
-		return m_vertexBuffer.getBuffer();
+	const std::vector<MaterialShaderCollection>::iterator& SceneCollection::begin() {
+		return m_materialShaderCollections.begin();
 	}
-
-	const Buffer& SceneCollection::getIndexBuffer() const {
-		return m_indexBuffer.getBuffer();
-	}
-
-	const Buffer& SceneCollection::getDrawCommandBuffer() const {
-		return m_indirectIndexedBuffer.getBuffer();
-	}
-	
-	const Buffer& SceneCollection::getObjectBuffer() const {
-		return m_objectBuffer.getBuffer();
-	}
-	
-	const Buffer& SceneCollection::getMaterialBuffer() const {
-		return m_materialBuffer.getBuffer();
-	}
-	
-	const Buffer& SceneCollection::getMaterialIndicesBuffer() const {
-		return m_materialIndicesBuffer.getBuffer();
-	}
-
-	const std::vector<Texture>& SceneCollection::getTextures() const {
-		return m_textures;
+	const std::vector<MaterialShaderCollection>::iterator& SceneCollection::end() {
+		return m_materialShaderCollections.end();
 	}
 }
