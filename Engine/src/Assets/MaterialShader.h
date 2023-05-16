@@ -5,9 +5,20 @@
 #include <Renderer.hpp>
 
 namespace sa {
-	class MaterialShader {
+
+	struct ShaderSourceFile {
+		std::filesystem::path filePath;
+		ShaderStageFlagBits stage;
+	};
+
+	class MaterialShader : public IAsset {
 	private:
 		friend class MaterialShaderCollection;
+		
+
+		std::vector<ShaderSourceFile> m_sourceFiles;
+
+		std::vector<std::vector<uint32_t>> m_code;
 
 		Extent m_currentExtent;
 
@@ -18,10 +29,9 @@ namespace sa {
 		ResourceID m_depthPipeline = NULL_RESOURCE;
 
 	public:
-		//using IAsset::IAsset;
+		using IAsset::IAsset;
 
-		MaterialShader();
-
+		void create(const std::vector<ShaderSourceFile>& sourceFiles);
 		void create(const std::vector<std::vector<uint32_t>>& code);
 
 		void recreatePipelines(ResourceID colorRenderProgram, ResourceID depthRenderProgram, Extent extent);
@@ -29,13 +39,10 @@ namespace sa {
 		void bindColorPipeline(RenderContext& context);
 		void bindDepthPipeline(RenderContext& context);
 
-		/*
 		virtual bool onLoad(std::ifstream& file, AssetLoadFlags flags) override;
 		virtual bool onWrite(std::ofstream& file, AssetWriteFlags flags) override;
 		virtual bool onUnload() override;
 
-		*/
-		
 
 	};
 }

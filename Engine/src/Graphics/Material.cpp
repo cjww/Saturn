@@ -29,7 +29,7 @@ namespace sa {
 	{
 		twoSided = false;
 		m_allTexturesLoaded = false;
-		m_pMaterialShader = AssetManager::get().loadDefaultMaterialShader();
+		m_pMaterialShader = nullptr;
 	}
 
 	void Material::update() {
@@ -84,9 +84,7 @@ namespace sa {
 	}
 
 	void Material::setMaterialShader(MaterialShader* pMaterialShader) {
-		//m_pMaterialShader->release();
 		m_pMaterialShader = pMaterialShader;
-		//m_pMaterialShader->load();
 	}
 
 	bool Material::onLoad(std::ifstream& file, AssetLoadFlags flags) {
@@ -95,6 +93,18 @@ namespace sa {
 		m_allTextures.clear();
 
 		file.read((char*)&values, sizeof(values));
+		
+		//MaterialShader
+		UUID materialShaderID = 0;
+		file.read((char*)&materialShaderID, sizeof(UUID));
+		m_pMaterialShader = AssetManager::get().getAsset<MaterialShader>(materialShaderID);
+		if (m_pMaterialShader)	{
+			m_pMaterialShader->load(flags);
+			addDependency(m_pMaterialShader->getProgress());
+		}
+		else {
+			SA_DEBUG_LOG_WARNING("onLoad: No material shader attached to material");
+		}
 
 		uint32_t typeCount = 0;
 		file.read((char*)&typeCount, sizeof(typeCount));
@@ -134,6 +144,17 @@ namespace sa {
 	bool Material::onWrite(std::ofstream& file, AssetWriteFlags flags) {
 		// Values
 		file.write((char*)&values, sizeof(values));
+
+		//MaterialShader
+		UUID materialShaderID = 0;
+		if (m_pMaterialShader) {
+			materialShaderID = m_pMaterialShader->getID();
+		}
+		else {
+			SA_DEBUG_LOG_WARNING("onWrite: No MaterialShader attached to Material");
+		}
+
+		file.write((char*)&materialShaderID, sizeof(UUID));
 
 		//Textures
 		uint32_t typeCount = m_textures.size();
@@ -176,6 +197,9 @@ namespace sa {
 
 		std::unordered_map<MaterialTextureType, std::vector<UUID>> tmpTex;
 		m_textures.swap(tmpTex);
+
+		if(m_pMaterialShader)
+			m_pMaterialShader->release();
 		return true;
 	}
 	

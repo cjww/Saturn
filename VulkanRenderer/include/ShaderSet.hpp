@@ -2,6 +2,7 @@
 #include "DescriptorSetStructs.h"
 #include "ApiBuildOptions.h"
 #include <map>
+#include <set>
 
 namespace spirv_cross {
 	class Compiler;
@@ -16,6 +17,8 @@ namespace sa {
 	[[nodiscard]] std::vector<uint32_t> CompileGLSLFromMemory(const char* glslCode, ShaderStageFlagBits shaderStage, const char* entryPointName = "main", const char* tag = "Unamned Source");
 
 	[[nodiscard]] std::vector<uint32_t> ReadSPVFile(const char* spvPath);
+
+	[[nodiscard]] std::string ReadFile(const char* path);
 
 
 	enum class ShaderAttributeType {
@@ -72,6 +75,8 @@ namespace sa {
 
 		std::unordered_map<std::string, ShaderAttribute> m_attributes;
 
+		std::set<ResourceID> m_allocatedDescriptorSets;
+
 		ResourceID m_descriptorPool;
 
 		bool m_isGraphicsSet;
@@ -115,7 +120,9 @@ namespace sa {
 		bool isGraphicsSet() const;
 		bool hasTessellationStage() const;
 
-		ResourceID allocateDescriptorSet(uint32_t setIndex) const;
+		ResourceID allocateDescriptorSet(uint32_t setIndex);
+
+		bool hasAllocatedDescriptorSet(ResourceID descriptorSet);
 	};
 
 }

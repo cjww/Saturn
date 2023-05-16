@@ -6,7 +6,7 @@
 
 namespace sa {
 
-	void RenderTarget::initializeBloomData(RenderContext& context, Extent extent, const DynamicTexture* colorTexture, const ShaderSet& bloomShader, ResourceID sampler) {
+	void RenderTarget::initializeBloomData(RenderContext& context, Extent extent, const DynamicTexture* colorTexture, ShaderSet& bloomShader, ResourceID sampler) {
 		//Textures
 		m_bloomData.bloomTexture = DynamicTexture2D(TextureTypeFlagBits::STORAGE | TextureTypeFlagBits::SAMPLED, extent, 1U, 6U);
 		m_bloomData.bloomMipTextures = m_bloomData.bloomTexture.createMipLevelTextures();
@@ -96,7 +96,7 @@ namespace sa {
 	}
 
 	void RenderTarget::initializeMainRenderData(ResourceID colorRenderProgram, ResourceID depthPreRenderProgram, 
-		const ShaderSet& lightCullingShader, 
+		ShaderSet& lightCullingShader, 
 		ResourceID sampler, Extent extent) 
 	{
 		MainRenderData& data = m_mainRenderData;

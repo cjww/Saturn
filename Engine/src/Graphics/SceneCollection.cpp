@@ -46,15 +46,22 @@ namespace sa {
 	}
 
 	void MaterialShaderCollection::readyDescriptorSets() {
-		if (m_sceneDescriptorSetColorPass == NULL_RESOURCE) {
+		if (!m_pMaterialShader->isLoaded())
+			return;
+
+		if (m_sceneDescriptorSetColorPass == NULL_RESOURCE || !m_pMaterialShader->m_colorShaderSet.hasAllocatedDescriptorSet(m_sceneDescriptorSetColorPass)) {
 			m_sceneDescriptorSetColorPass = m_pMaterialShader->m_colorShaderSet.allocateDescriptorSet(SET_PER_FRAME);
 		}
-		if (m_sceneDescriptorSetDepthPass == NULL_RESOURCE) {
+
+		if (m_sceneDescriptorSetDepthPass == NULL_RESOURCE || !m_pMaterialShader->m_depthShaderSet.hasAllocatedDescriptorSet(m_sceneDescriptorSetDepthPass)) {
 			m_sceneDescriptorSetDepthPass = m_pMaterialShader->m_depthShaderSet.allocateDescriptorSet(SET_PER_FRAME);
 		}
 	}
-
+	
 	MaterialShaderCollection& SceneCollection::getMaterialShaderCollection(MaterialShader* pMaterialShader) {
+		if (!pMaterialShader)
+			pMaterialShader = AssetManager::get().getDefaultMaterialShader();
+
 		auto it = std::find_if(m_materialShaderCollections.begin(), m_materialShaderCollections.end(), 
 			[&](const MaterialShaderCollection& collection) { return collection.getMaterialShader() == pMaterialShader; });
 		if (it == m_materialShaderCollections.end()) {
@@ -143,14 +150,14 @@ namespace sa {
 		// make sure all collection exists
 		for (const auto& mesh : pModel->meshes) {
 			Material* pMaterial = AssetManager::get().getAsset<Material>(mesh.materialID);
-			MaterialShaderCollection& collection = getMaterialShaderCollection(pMaterial ? pMaterial->getMaterialShader() : AssetManager::get().loadDefaultMaterialShader());
+			MaterialShaderCollection& collection = getMaterialShaderCollection(pMaterial ? pMaterial->getMaterialShader() : nullptr);
 		}
 
 		for (auto& collection : m_materialShaderCollections) {
 			auto it = std::find(collection.m_models.begin(), collection.m_models.end(), pModelAsset);
 			for (const auto& mesh : pModel->meshes) {
 				Material* pMaterial = AssetManager::get().getAsset<Material>(mesh.materialID);
-				MaterialShaderCollection& thisCollection = getMaterialShaderCollection(pMaterial ? pMaterial->getMaterialShader() : AssetManager::get().loadDefaultMaterialShader());
+				MaterialShaderCollection& thisCollection = getMaterialShaderCollection(pMaterial ? pMaterial->getMaterialShader() : nullptr);
 				if (&thisCollection != &collection)
 					continue;
 
@@ -221,7 +228,7 @@ namespace sa {
 				ModelData* pModel = &collection.m_models[i]->data;
 				for (const auto& mesh : pModel->meshes) {
 					Material* pMaterial = AssetManager::get().getAsset<Material>(mesh.materialID);
-					MaterialShaderCollection& thisCollection = getMaterialShaderCollection(pMaterial ? pMaterial->getMaterialShader() : AssetManager::get().loadDefaultMaterialShader());
+					MaterialShaderCollection& thisCollection = getMaterialShaderCollection(pMaterial ? pMaterial->getMaterialShader() : nullptr);
 					if (&thisCollection != &collection)
 						continue;
 
@@ -275,8 +282,6 @@ namespace sa {
 
 			collection.m_materialBuffer.write(collection.m_materialData);
 			collection.m_materialIndicesBuffer.write(collection.m_materialIndices);
-			
-			collection.readyDescriptorSets();
 		}
 
 	}

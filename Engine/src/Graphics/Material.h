@@ -214,7 +214,7 @@ namespace sa {
 			Color diffuseColor = { 1, 1, 1, 1 };
 			Color specularColor = { 1, 1, 1, 1 };
 			Color ambientColor = { 1, 1, 1, 1 };
-			Color emissiveColor = { 1, 1, 1, 1 };
+			Color emissiveColor = { 0, 0, 0, 0 };
 
 			uint32_t albedoMapFirst = 0;
 			uint32_t albedoMapCount = 0;

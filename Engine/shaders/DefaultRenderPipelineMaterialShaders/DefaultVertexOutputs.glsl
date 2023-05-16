@@ -1,7 +1,7 @@
 #ifndef DEFAULT_VERTEX_OUTPUTS
 #define DEFAULT_VERTEX_OUTPUTS
 
-#include "DefaultRenderPipelineMaterialShaders/DefaultVertexInputs.glsl"
+#include "DefaultVertexInputs.glsl"
 
 layout(location = 0) out vec2 out_vertexUV;
 layout(location = 1) out vec3 out_vertexWorldPos;

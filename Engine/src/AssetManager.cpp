@@ -155,8 +155,8 @@ namespace sa {
 			return pAsset;
 		}
 
-		std::filesystem::create_directories(m_defaultPath);
-		pAsset = createAsset<ModelAsset>(SA_DEFAULT_QUAD_NAME, m_defaultPath);
+		std::filesystem::create_directories(SA_DEFAULT_ASSET_DIR);
+		pAsset = createAsset<ModelAsset>(SA_DEFAULT_QUAD_NAME, SA_DEFAULT_ASSET_DIR);
 		
 		Mesh mesh = {};
 		
@@ -172,7 +172,9 @@ namespace sa {
 			1, 2, 3
 		};
 		
-		mesh.materialID = 0;
+		Material* pMaterial = getDefaultMaterial();
+		pMaterial->load();
+		mesh.materialID = pMaterial->getID();
 
 		pAsset->data.meshes.push_back(mesh);
 
@@ -190,8 +192,8 @@ namespace sa {
 			return pAsset;
 		}
 
-		std::filesystem::create_directories(m_defaultPath);
-		pAsset = createAsset<ModelAsset>(SA_DEFAULT_CUBE_NAME, m_defaultPath);
+		std::filesystem::create_directories(SA_DEFAULT_ASSET_DIR);
+		pAsset = createAsset<ModelAsset>(SA_DEFAULT_CUBE_NAME, SA_DEFAULT_ASSET_DIR);
 
 		Mesh& mesh = pAsset->data.meshes.emplace_back();
 
@@ -250,34 +252,61 @@ namespace sa {
 		};
 
 
-		mesh.materialID = 0;
+		Material* pMaterial = getDefaultMaterial();
+		pMaterial->load();
+		mesh.materialID = pMaterial->getID();
 		pAsset->load();
 		pAsset->write();
 		return pAsset;
 	}
 
-	MaterialShader* AssetManager::loadDefaultMaterialShader() {
-		//MaterialShader* pAsset = findAssetByName<MaterialShader>(SA_DEFAULT_MATERIAL_SHADER_NAME);
-		if (m_defaultMaterialShader) {
-			//pAsset->load();
-			return m_defaultMaterialShader;
+	Material* AssetManager::getDefaultMaterial() {
+		Material* pAsset = findAssetByName<Material>(SA_DEFAULT_MATERIAL_NAME);
+		if (pAsset) {
+			return pAsset;
 		}
 
-		//std::filesystem::create_directories(m_defaultPath);
-		//pAsset = createAsset<MaterialShader>(SA_DEFAULT_MATERIAL_SHADER_NAME, m_defaultPath);
-		m_defaultMaterialShader = new MaterialShader;
+		pAsset = createAsset<Material>(SA_DEFAULT_MATERIAL_NAME, SA_DEFAULT_ASSET_DIR);
+		pAsset->setMaterialShader(getDefaultMaterialShader());
+		return pAsset;
+	}
+
+	MaterialShader* AssetManager::loadDefaultMaterialShader() {
+		MaterialShader* pAsset = findAssetByName<MaterialShader>(SA_DEFAULT_MATERIAL_SHADER_NAME);
+		if (pAsset) {
+			pAsset->load();
+			return pAsset;
+		}
+
+		std::filesystem::create_directories(SA_DEFAULT_ASSET_DIR);
+		pAsset = createAsset<MaterialShader>(SA_DEFAULT_MATERIAL_SHADER_NAME, SA_DEFAULT_ASSET_DIR);
+		
+		auto vertexCode = ReadSPVFile((Engine::getShaderDirectory() / "ForwardPlusColorPass.vert.spv").generic_string().c_str());
+		auto fragmentCode = ReadSPVFile((Engine::getShaderDirectory() / "ForwardPlusColorPass.frag.spv").generic_string().c_str());
+		pAsset->create({ vertexCode, fragmentCode });
+
+		pAsset->load(); // just to increase reference count
+		pAsset->write();
+
+		return pAsset;
+	}
+
+	MaterialShader* AssetManager::getDefaultMaterialShader() {
+		MaterialShader* pAsset = findAssetByName<MaterialShader>(SA_DEFAULT_MATERIAL_SHADER_NAME);
+		if (pAsset) {
+			return pAsset;
+		}
+
+		std::filesystem::create_directories(SA_DEFAULT_ASSET_DIR);
+		pAsset = createAsset<MaterialShader>(SA_DEFAULT_MATERIAL_SHADER_NAME, SA_DEFAULT_ASSET_DIR);
 
 		auto vertexCode = ReadSPVFile((Engine::getShaderDirectory() / "ForwardPlusColorPass.vert.spv").generic_string().c_str());
 		auto fragmentCode = ReadSPVFile((Engine::getShaderDirectory() / "ForwardPlusColorPass.frag.spv").generic_string().c_str());
-
-		m_defaultMaterialShader->create({ vertexCode, fragmentCode });
-
-		/*
-		pAsset->load();
+		pAsset->create({ vertexCode, fragmentCode });
+		
 		pAsset->write();
 
-		*/
-		return m_defaultMaterialShader;
+		return pAsset;
 	}
 
 	const std::unordered_map<UUID, std::unique_ptr<IAsset>>& AssetManager::getAssets() const{
@@ -412,21 +441,17 @@ namespace sa {
 		});
 
 		m_nextTypeID = 0;
-		m_defaultPath = SA_DEFAULT_ASSET_DIR;
 
 		registerAssetType<ModelAsset>();
 		registerAssetType<Material>();
 		registerAssetType<TextureAsset>();
 		registerAssetType<Scene>();
 		registerAssetType<RenderTarget>();
-		//registerAssetType<MaterialShader>();
+		registerAssetType<MaterialShader>();
 	
-		m_defaultMaterialShader = nullptr;
 	}
 
 	AssetManager::~AssetManager() {
 		ResourceManager::get().clearContainer<Texture2D>();
-		if (m_defaultMaterialShader)
-			delete m_defaultMaterialShader;
 	}
 }

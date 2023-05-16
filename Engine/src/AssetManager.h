@@ -58,15 +58,10 @@ namespace sa {
 		std::unordered_map<UUID, std::unique_ptr<IAsset>> m_assets;
 		std::list<AssetPackage> m_assetPackages;
 
-		std::filesystem::path m_defaultPath;
-
 		AssetTypeID m_nextTypeID;
 		std::unordered_map<AssetTypeID, std::function<IAsset* (const AssetHeader&)>> m_assetAddConversions;
 		std::unordered_map<AssetTypeID, std::string> m_typeToString;
 		std::unordered_map<std::string, AssetTypeID> m_stringToType;
-
-
-		MaterialShader* m_defaultMaterialShader;
 
 		AssetManager();
 
@@ -94,7 +89,10 @@ namespace sa {
 		ModelAsset* loadQuad();
 		ModelAsset* loadCube();
 
+		Material* getDefaultMaterial();
 		MaterialShader* loadDefaultMaterialShader();
+		MaterialShader* getDefaultMaterialShader();
+
 
 		const std::unordered_map<UUID, std::unique_ptr<IAsset>>& getAssets() const;
 		void getAssets(std::vector<IAsset*>* assets, const std::string& filter) const;

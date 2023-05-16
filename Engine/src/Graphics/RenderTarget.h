@@ -53,12 +53,12 @@ namespace sa {
 
 
 		friend class BloomRenderLayer;
-		void initializeBloomData(RenderContext& context, Extent extent, const DynamicTexture* colorTexture, const ShaderSet& bloomShader, ResourceID sampler);
+		void initializeBloomData(RenderContext& context, Extent extent, const DynamicTexture* colorTexture, ShaderSet& bloomShader, ResourceID sampler);
 		void cleanupBloomData();
 
 		friend class ForwardPlus;
 		void initializeMainRenderData(ResourceID colorRenderProgram, ResourceID depthPreRenderProgram, 
-			const ShaderSet& lightCullingShader,
+			ShaderSet& lightCullingShader,
 			ResourceID sampler, Extent extent);
 		void cleanupMainRenderData();
 

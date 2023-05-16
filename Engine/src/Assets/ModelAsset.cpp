@@ -252,7 +252,7 @@ namespace sa {
 		runTaskflow(taskflow).wait();
 
 		for (auto& mesh : data.meshes) {
-			mesh.materialID = materials[mesh.materialID]->getHeader().id; // swap index to material ID
+			mesh.materialID = materials[mesh.materialID]->getID(); // swap index to material ID
 		}
 		return true;
 	}
@@ -287,10 +287,14 @@ namespace sa {
 
 			file.read((char*)&mesh.materialID, sizeof(mesh.materialID));
 			IAsset* pMaterial = AssetManager::get().getAsset(mesh.materialID);
-			if (pMaterial) {
-				pMaterial->load(flags);
-				addDependency(pMaterial->getProgress());
+			if (!pMaterial) {
+				pMaterial = AssetManager::get().getDefaultMaterial();
+				mesh.materialID = pMaterial->getID();
 			}
+
+			pMaterial->load(flags);
+			addDependency(pMaterial->getProgress());
+			
 		}
 		return true;
 	}

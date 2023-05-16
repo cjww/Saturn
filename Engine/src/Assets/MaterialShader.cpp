@@ -1,14 +1,28 @@
 #include "pch.h"
 #include "MaterialShader.h"
 
-sa::MaterialShader::MaterialShader() {
+#include "Engine.h"
 
+void sa::MaterialShader::create(const std::vector<ShaderSourceFile>& sourceFiles) {
+    for (auto& source : sourceFiles) {
+        std::filesystem::path path = std::filesystem::current_path();
+        std::filesystem::current_path(sa::Engine::getShaderDirectory());
+        m_code.push_back(sa::CompileGLSLFromFile(source.filePath.generic_string().c_str(), source.stage, "main", source.filePath.generic_string().c_str()));
+        std::filesystem::current_path(path);
+        m_sourceFiles.push_back(source);
+
+    }
+    m_colorShaderSet.create(m_code);
+    m_depthShaderSet.create({ m_code[0] });
+    m_currentExtent = { 0, 0 };
 }
 
 void sa::MaterialShader::create(const std::vector<std::vector<uint32_t>>& code) {
-    m_colorShaderSet.create(code);
-    m_depthShaderSet.create({ code[0] });
+    m_code = code;
+    m_colorShaderSet.create(m_code);
+    m_depthShaderSet.create({ m_code[0] });
     m_currentExtent = { 0, 0 };
+    m_sourceFiles.resize(m_code.size());
 }
 
 void sa::MaterialShader::recreatePipelines(ResourceID colorRenderProgram, ResourceID depthRenderProgram, Extent extent) {
@@ -39,20 +53,71 @@ void sa::MaterialShader::bindColorPipeline(RenderContext& context) {
 void sa::MaterialShader::bindDepthPipeline(RenderContext& context) {
     context.bindPipeline(m_depthPipeline);
 }
-/*
-bool sa::MaterialShader::onLoad(std::ifstream& file, AssetLoadFlags flags)
-{
-    return false;
+
+bool sa::MaterialShader::onLoad(std::ifstream& file, AssetLoadFlags flags) {
+    uint32_t codeCount = 0;
+    file.read((char*)&codeCount, sizeof(uint32_t));
+    m_code.resize(codeCount);
+    m_sourceFiles.resize(codeCount);
+    //Source files
+    for (int i = 0; i < codeCount; i++) {
+        uint32_t pathLength = 0;
+        file.read((char*)&pathLength, sizeof(uint32_t));
+        std::string path;
+        path.resize(pathLength);
+        file.read(path.data(), path.size());
+        m_sourceFiles[i].filePath = path;
+        file.read((char*)&m_sourceFiles[i].stage, sizeof(uint32_t));
+    }
+
+    for (int i = 0; i < codeCount; i++) {
+        size_t codeSize = 0;
+        file.read((char*)&codeSize, sizeof(size_t));
+        m_code[i].resize(codeSize);
+        file.read((char*)m_code[i].data(), codeSize * sizeof(uint32_t));
+    }
+
+    if (m_colorShaderSet.isValid())
+        m_colorShaderSet.destroy();
+
+    if (m_depthShaderSet.isValid())
+        m_depthShaderSet.destroy();
+
+    m_currentExtent = { 0, 0 };
+    try {
+        m_colorShaderSet.create(m_code);
+        m_depthShaderSet.create({ m_code[0] });
+    }
+    catch (const std::exception& e) {
+        SA_DEBUG_LOG_ERROR(e.what());
+        return false;
+    }
+
+    return true;
 }
 
 bool sa::MaterialShader::onWrite(std::ofstream& file, AssetWriteFlags flags) {
-
-    return false;
+    uint32_t codeCount = m_code.size();
+    file.write((char*)&codeCount, sizeof(uint32_t));
+    
+    //Source files
+    for (auto& source : m_sourceFiles) {
+        uint32_t pathLength = source.filePath.generic_string().length();
+        file.write((char*)&pathLength, sizeof(uint32_t));
+        file.write(source.filePath.generic_string().c_str(), pathLength);
+        uint32_t stage = source.stage;
+        file.write((char*)&stage, sizeof(uint32_t));
+    }
+    //Binary code
+    for (auto& code : m_code) {
+        size_t codeSize = code.size();
+        file.write((char*)&codeSize, sizeof(size_t));
+        file.write((char*)code.data(), code.size() * sizeof(uint32_t));
+    }
+    return true;
 }
 
 bool sa::MaterialShader::onUnload() {
-
-    return false;
+    m_code.clear();
+    return true;
 }
-
-*/

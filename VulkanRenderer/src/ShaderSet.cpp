@@ -9,6 +9,7 @@
 #include <spirv_cross/spirv_cross.hpp>
 
 #include <shaderc\shaderc.hpp>
+#include <filesystem>
 
 namespace sa {
 
@@ -263,6 +264,44 @@ namespace sa {
 		}
 	}
 	
+	class ShaderIncluder : public shaderc::CompileOptions::IncluderInterface {
+		shaderc_include_result* GetInclude(
+			const char* requested_source,
+			shaderc_include_type type,
+			const char* requesting_source,
+			size_t include_depth)
+		{
+
+			std::filesystem::path source = requested_source;
+			std::filesystem::path includer = requesting_source;
+
+			source = includer.parent_path() / source;
+
+			const std::string contents = ReadFile(source.generic_string().c_str());
+
+			auto container = new std::array<std::string, 2>;
+			(*container)[0] = source.generic_string();
+			(*container)[1] = contents;
+
+			auto data = new shaderc_include_result;
+
+			data->user_data = container;
+
+			data->source_name = (*container)[0].data();
+			data->source_name_length = (*container)[0].size();
+
+			data->content = (*container)[1].data();
+			data->content_length = (*container)[1].size();
+
+			return data;
+		};
+
+		void ReleaseInclude(shaderc_include_result* data) override {
+			delete static_cast<std::array<std::string, 2>*>(data->user_data);
+			delete data;
+		};
+	};
+
 	std::vector<uint32_t> CompileGLSLFromFile(const char* glslPath, ShaderStageFlagBits shaderStage, const char* entryPointName, const char* tag) {
 		std::ifstream file(glslPath, std::ios::in);
 		if (!file.is_open()) {
@@ -288,6 +327,7 @@ namespace sa {
 		options.SetAutoBindUniforms(true);
 		options.SetAutoMapLocations(true);
 		options.SetTargetEnvironment(shaderc_target_env_vulkan, SA_VK_API_VERSION);
+		options.SetIncluder(std::make_unique<ShaderIncluder>());
 
 		shaderc::Compiler compiler;
 		shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(glslCode, ToShadercKind(shaderStage), tag, entryPointName, options);
@@ -315,6 +355,25 @@ namespace sa {
 		std::vector<uint32_t> buffer(length / sizeof(uint32_t));
 		file.read((char*)buffer.data(), length);
 		
+		file.close();
+
+		return std::move(buffer);
+	}
+
+	std::string ReadFile(const char* path) {
+		std::ifstream file(path);
+		if (!file.is_open()) {
+			throw std::runtime_error("Failed to open file " + std::string(path));
+		}
+		file.ignore(std::numeric_limits<std::streamsize>::max());
+		std::streamsize length = file.gcount();
+		file.clear();
+		file.seekg(0, std::ios_base::beg);
+
+		std::string buffer;
+		buffer.resize(length);
+		file.read(buffer.data(), length);
+
 		file.close();
 
 		return std::move(buffer);
@@ -537,6 +596,8 @@ namespace sa {
 		m_attributes.clear();
 		m_vertexAttributes.clear();
 		m_vertexBindings.clear();
+
+		m_allocatedDescriptorSets.clear();
 	}
 
 	const std::map<uint32_t, ResourceID>& ShaderSet::getDescriptorSetLayouts() const {
@@ -575,7 +636,7 @@ namespace sa {
 		return m_hasTessellationStage;
 	}
 
-	ResourceID ShaderSet::allocateDescriptorSet(uint32_t setIndex) const {
+	ResourceID ShaderSet::allocateDescriptorSet(uint32_t setIndex) {
 		if (!m_descriptorSetLayouts.count(setIndex)) {
 			throw std::runtime_error("Invalid set index!");
 		}
@@ -596,6 +657,12 @@ namespace sa {
 		DescriptorSet descriptorSet;
 		descriptorSet.create(m_pCore->getDevice(), *pDescriptorPool, m_pCore->getQueueCount(), m_descriptorSetLayoutInfos.at(setIndex), *pLayout, setIndex);
 
-		return ResourceManager::get().insert<DescriptorSet>(descriptorSet);
+		ResourceID id = ResourceManager::get().insert<DescriptorSet>(descriptorSet);
+		m_allocatedDescriptorSets.insert(id);
+		return id;
+	}
+
+	bool ShaderSet::hasAllocatedDescriptorSet(ResourceID descriptorSet) {
+		return m_allocatedDescriptorSets.contains(descriptorSet);
 	}
 }

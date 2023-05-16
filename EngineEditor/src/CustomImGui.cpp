@@ -390,7 +390,7 @@ namespace ImGui {
 
 		sa::IAsset* renderTarget = camera->getRenderTarget();
 		if (AssetSlot("RenderTarget", renderTarget, sa::AssetManager::get().getAssetTypeID<sa::RenderTarget>())) {
-			camera->setRenderTarget(static_cast<sa::RenderTarget*>(renderTarget));
+camera->setRenderTarget(static_cast<sa::RenderTarget*>(renderTarget));
 		}
 
 	}
@@ -459,7 +459,7 @@ namespace ImGui {
 			static AssetEditorInfo info{
 				.inCreateMenu = true,
 				.icon = LoadEditorIcon("resources/file-white.png"),
-				.imGuiPropertiesFn = [](sa::IAsset* pAsset) { 
+				.imGuiPropertiesFn = [](sa::IAsset* pAsset) {
 					return false;
 				}
 			};
@@ -473,7 +473,7 @@ namespace ImGui {
 			};
 			return info;
 		}
-		
+
 		static AssetEditorInfo info{
 			.inCreateMenu = false,
 			.icon = LoadEditorIcon("resources/file-white.png"),
@@ -488,6 +488,12 @@ namespace ImGui {
 
 	bool MaterialProperties(sa::IAsset* pAsset) {
 		sa::Material* pMaterial = static_cast<sa::Material*>(pAsset);
+
+		sa::MaterialShader* pMaterialShader = pMaterial->getMaterialShader();
+		if(AssetSlot("Material Shader", (sa::IAsset*&)pMaterialShader, sa::AssetManager::get().getAssetTypeID<sa::MaterialShader>())) {
+			pMaterial->setMaterialShader(pMaterialShader);
+		}
+
 		ColorEdit3("Ambient Color", (float*)&pMaterial->values.ambientColor);
 		ColorEdit3("Diffuse Color", (float*)&pMaterial->values.diffuseColor);
 		ColorEdit3("Specular Color", (float*)&pMaterial->values.specularColor);
