@@ -38,10 +38,10 @@ namespace sa {
 		uint32_t m_indexCount = 0;
 		uint32_t m_uniqueMeshCount = 0;
 
+		ResourceID m_sceneDescriptorSetColorPass = NULL_RESOURCE;
+		ResourceID m_sceneDescriptorSetDepthPass = NULL_RESOURCE;
 
 	public:
-		ResourceID sceneDescriptorSetColorPass = NULL_RESOURCE;
-		ResourceID sceneDescriptorSetDepthPass = NULL_RESOURCE;
 
 		MaterialShaderCollection(MaterialShader* pMaterialShader);
 		void clear();
@@ -61,6 +61,7 @@ namespace sa {
 		ResourceID getSceneDescriptorSetColorPass() const;
 		ResourceID getSceneDescriptorSetDepthPass() const;
 
+		MaterialShader* getMaterialShader() const;
 
 	};
 

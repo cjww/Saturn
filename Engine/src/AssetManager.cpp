@@ -15,8 +15,10 @@
 #include "Assets/ModelAsset.h"
 #include "Assets/TextureAsset.h"
 #include "Scene.h"
+#include "Assets/MaterialShader.h"
 
 #include "Core.h"
+#include "Engine.h"
 
 namespace sa {
 	
@@ -254,6 +256,30 @@ namespace sa {
 		return pAsset;
 	}
 
+	MaterialShader* AssetManager::loadDefaultMaterialShader() {
+		//MaterialShader* pAsset = findAssetByName<MaterialShader>(SA_DEFAULT_MATERIAL_SHADER_NAME);
+		if (m_defaultMaterialShader) {
+			//pAsset->load();
+			return m_defaultMaterialShader;
+		}
+
+		//std::filesystem::create_directories(m_defaultPath);
+		//pAsset = createAsset<MaterialShader>(SA_DEFAULT_MATERIAL_SHADER_NAME, m_defaultPath);
+		m_defaultMaterialShader = new MaterialShader;
+
+		auto vertexCode = ReadSPVFile((Engine::getShaderDirectory() / "ForwardPlusColorPass.vert.spv").generic_string().c_str());
+		auto fragmentCode = ReadSPVFile((Engine::getShaderDirectory() / "ForwardPlusColorPass.frag.spv").generic_string().c_str());
+
+		m_defaultMaterialShader->create({ vertexCode, fragmentCode });
+
+		/*
+		pAsset->load();
+		pAsset->write();
+
+		*/
+		return m_defaultMaterialShader;
+	}
+
 	const std::unordered_map<UUID, std::unique_ptr<IAsset>>& AssetManager::getAssets() const{
 		return m_assets;
 	}
@@ -393,9 +419,14 @@ namespace sa {
 		registerAssetType<TextureAsset>();
 		registerAssetType<Scene>();
 		registerAssetType<RenderTarget>();
+		//registerAssetType<MaterialShader>();
+	
+		m_defaultMaterialShader = nullptr;
 	}
 
 	AssetManager::~AssetManager() {
 		ResourceManager::get().clearContainer<Texture2D>();
+		if (m_defaultMaterialShader)
+			delete m_defaultMaterialShader;
 	}
 }

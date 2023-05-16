@@ -18,11 +18,6 @@ namespace sa {
 			.endSubpass()
 			.end();
 
-
-		auto vertexCode = ReadSPVFile((Engine::getShaderDirectory() / "ForwardPlusColorPass.vert.spv").generic_string().c_str());
-
-		m_depthShader.create({ vertexCode });
-
 	}
 	
 	void ForwardPlus::createLightCullingShader() {
@@ -57,10 +52,7 @@ namespace sa {
 			.end();
 		m_renderer.setClearColor(m_colorRenderProgram, Color{ 0.0f, 0.0f, 0.1f, 1.0f });	
 
-		auto vertexCode = ReadSPVFile((Engine::getShaderDirectory() / "ForwardPlusColorPass.vert.spv").generic_string().c_str());
-		auto fragmentCode = ReadSPVFile((Engine::getShaderDirectory() / "ForwardPlusColorPass.frag.spv").generic_string().c_str());
-
-		m_colorShader.create({ vertexCode, fragmentCode });
+		
 	}
 
 	ForwardPlus::ForwardPlus() 
@@ -79,7 +71,6 @@ namespace sa {
 		m_linearSampler = m_renderer.createSampler(FilterMode::LINEAR);
 		m_nearestSampler = m_renderer.createSampler(FilterMode::NEAREST);
 
-		
 		//DEBUG
 		/*
 		m_debugLightHeatmap = DynamicTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, { m_tileCount.x, m_tileCount.y });
@@ -106,8 +97,6 @@ namespace sa {
 	}
 
 	void ForwardPlus::cleanup() {
-		m_colorShader.destroy();
-		m_depthShader.destroy();
 		m_lightCullingShader.destroy();
 	}
 
@@ -119,9 +108,9 @@ namespace sa {
 
 		if (!data.isInitialized) {
 			pRenderTarget->cleanupMainRenderData();
-			pRenderTarget->initializeMainRenderData(m_colorRenderProgram, m_depthPreRenderProgram, m_lightCullingShader, m_depthShader, m_colorShader, m_linearSampler, pRenderTarget->getExtent());
+			pRenderTarget->initializeMainRenderData(m_colorRenderProgram, m_depthPreRenderProgram, m_lightCullingShader, m_linearSampler, pRenderTarget->getExtent());
 		}
-
+		
 		Rectf cameraViewport = pCamera->getViewport();
 		Rect viewport = {
 			{ cameraViewport.offset.x * pRenderTarget->getExtent().width, cameraViewport.offset.y * pRenderTarget->getExtent().height },
@@ -141,13 +130,7 @@ namespace sa {
 		context.beginRenderProgram(m_depthPreRenderProgram, data.depthFramebuffer, SubpassContents::DIRECT);
 		for (auto& collection : sc) {
 
-			if (collection.sceneDescriptorSetColorPass == NULL_RESOURCE) {
-				collection.sceneDescriptorSetColorPass = m_colorShader.allocateDescriptorSet(SET_PER_FRAME);
-			}
-
-			if (collection.sceneDescriptorSetDepthPass == NULL_RESOURCE) {
-				collection.sceneDescriptorSetDepthPass = m_depthShader.allocateDescriptorSet(SET_PER_FRAME);
-			}
+			collection.getMaterialShader()->recreatePipelines(m_colorRenderProgram, m_depthPreRenderProgram, pRenderTarget->getExtent());
 
 
 			context.updateDescriptorSet(collection.getSceneDescriptorSetDepthPass(), 0, collection.getObjectBuffer());
@@ -160,34 +143,34 @@ namespace sa {
 			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 5, m_linearSampler);
 			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 6, collection.getTextures(), 0);
 
-			context.updateDescriptorSet(data.lightCullingDescriptorSet, 1, data.lightIndexBuffer.getBuffer());
-			context.updateDescriptorSet(data.lightCullingDescriptorSet, 2, sc.getLightBuffer());
-
 			context.bindVertexBuffers(0, { collection.getVertexBuffer() });
 			context.bindIndexBuffer(collection.getIndexBuffer());
 		
 			// Depth prepass
-			context.bindPipeline(data.depthPipeline);
-
+			collection.getMaterialShader()->bindDepthPipeline(context);
+			
 			context.setViewport(viewport);
-			context.bindDescriptorSet(collection.getSceneDescriptorSetDepthPass(), data.depthPipeline);
+			context.bindDescriptorSet(collection.getSceneDescriptorSetDepthPass());
 
 
 			if (collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>() > 0) {
-				context.pushConstant(data.depthPipeline, ShaderStageFlagBits::VERTEX, perFrame);
+				context.pushConstant(ShaderStageFlagBits::VERTEX, perFrame);
 				context.drawIndexedIndirect(collection.getDrawCommandBuffer(), 0, collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
 			}
 
 		}
+
 		context.endRenderProgram(m_depthPreRenderProgram);
 
+		context.updateDescriptorSet(data.lightCullingDescriptorSet, 1, data.lightIndexBuffer.getBuffer());
+		context.updateDescriptorSet(data.lightCullingDescriptorSet, 2, sc.getLightBuffer());
 
 		// Light culling
 		context.bindPipeline(m_lightCullingPipeline);
-		context.bindDescriptorSet(data.lightCullingDescriptorSet, m_lightCullingPipeline);
+		context.bindDescriptorSet(data.lightCullingDescriptorSet);
 
-		context.pushConstant(m_lightCullingPipeline, ShaderStageFlagBits::COMPUTE, pCamera->getProjectionMatrix());
-		context.pushConstant(m_lightCullingPipeline, ShaderStageFlagBits::COMPUTE, pCamera->getViewMatrix(), sizeof(Matrix4x4));
+		context.pushConstant(ShaderStageFlagBits::COMPUTE, pCamera->getProjectionMatrix());
+		context.pushConstant(ShaderStageFlagBits::COMPUTE, pCamera->getViewMatrix(), sizeof(Matrix4x4));
 
 		context.dispatch(data.tileCount.x, data.tileCount.y, 1);
 
@@ -221,14 +204,15 @@ namespace sa {
 		// Main color pass
 		context.beginRenderProgram(m_colorRenderProgram, data.colorFramebuffer, SubpassContents::DIRECT);
 		for (auto& collection : sc) {
-			context.bindPipeline(data.colorPipeline);
-			context.bindDescriptorSet(collection.getSceneDescriptorSetColorPass(), data.colorPipeline);
+			collection.getMaterialShader()->bindColorPipeline(context);
+
+			context.bindDescriptorSet(collection.getSceneDescriptorSetColorPass());
 
 			context.setViewport(viewport);
 
 			if (collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>() > 0) {
-				context.pushConstant(data.colorPipeline, ShaderStageFlagBits::VERTEX | ShaderStageFlagBits::FRAGMENT, perFrame);
-				context.pushConstant(data.colorPipeline, ShaderStageFlagBits::FRAGMENT, data.tileCount.x, sizeof(perFrame));
+				context.pushConstant(ShaderStageFlagBits::VERTEX | ShaderStageFlagBits::FRAGMENT, perFrame);
+				context.pushConstant(ShaderStageFlagBits::FRAGMENT, data.tileCount.x, sizeof(perFrame));
 
 				context.drawIndexedIndirect(collection.getDrawCommandBuffer(), 0, collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
 			}

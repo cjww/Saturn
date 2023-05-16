@@ -20,13 +20,8 @@ namespace sa {
 			DynamicTexture colorTexture;
 			DynamicTexture depthTexture;
 			ResourceID colorFramebuffer = NULL_RESOURCE;
-			ResourceID colorPipeline = NULL_RESOURCE;
-			ResourceID sceneDescriptorSet = NULL_RESOURCE;
-			
-			ResourceID depthPipeline = NULL_RESOURCE;
 			ResourceID depthFramebuffer = NULL_RESOURCE;
-			ResourceID sceneDepthDescriptorSet = NULL_RESOURCE;
-
+			
 
 			// Light culling
 			glm::uvec2 tileCount;
@@ -64,8 +59,6 @@ namespace sa {
 		friend class ForwardPlus;
 		void initializeMainRenderData(ResourceID colorRenderProgram, ResourceID depthPreRenderProgram, 
 			const ShaderSet& lightCullingShader,
-			const ShaderSet& depthShader,
-			const ShaderSet& colorShader,
 			ResourceID sampler, Extent extent);
 		void cleanupMainRenderData();
 

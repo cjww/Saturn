@@ -29,7 +29,7 @@ namespace sa {
 	{
 		twoSided = false;
 		m_allTexturesLoaded = false;
-		m_pMaterialShader = nullptr;
+		m_pMaterialShader = AssetManager::get().loadDefaultMaterialShader();
 	}
 
 	void Material::update() {
@@ -84,7 +84,9 @@ namespace sa {
 	}
 
 	void Material::setMaterialShader(MaterialShader* pMaterialShader) {
+		//m_pMaterialShader->release();
 		m_pMaterialShader = pMaterialShader;
+		//m_pMaterialShader->load();
 	}
 
 	bool Material::onLoad(std::ifstream& file, AssetLoadFlags flags) {

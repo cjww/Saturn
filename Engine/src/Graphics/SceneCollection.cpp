@@ -46,21 +46,17 @@ namespace sa {
 	}
 
 	void MaterialShaderCollection::readyDescriptorSets() {
-		/*
 		if (m_sceneDescriptorSetColorPass == NULL_RESOURCE) {
 			m_sceneDescriptorSetColorPass = m_pMaterialShader->m_colorShaderSet.allocateDescriptorSet(SET_PER_FRAME);
 		}
 		if (m_sceneDescriptorSetDepthPass == NULL_RESOURCE) {
 			m_sceneDescriptorSetDepthPass = m_pMaterialShader->m_depthShaderSet.allocateDescriptorSet(SET_PER_FRAME);
 		}
-		*/
 	}
 
 	MaterialShaderCollection& SceneCollection::getMaterialShaderCollection(MaterialShader* pMaterialShader) {
-		if (!pMaterialShader)
-			return m_materialShaderCollections[0];
 		auto it = std::find_if(m_materialShaderCollections.begin(), m_materialShaderCollections.end(), 
-			[&](const MaterialShaderCollection& collection) { return collection.m_pMaterialShader == pMaterialShader; });
+			[&](const MaterialShaderCollection& collection) { return collection.getMaterialShader() == pMaterialShader; });
 		if (it == m_materialShaderCollections.end()) {
 			return m_materialShaderCollections.emplace_back(pMaterialShader);
 		}
@@ -96,16 +92,18 @@ namespace sa {
 	}
 
 	ResourceID MaterialShaderCollection::getSceneDescriptorSetColorPass() const {
-		return sceneDescriptorSetColorPass;
+		return m_sceneDescriptorSetColorPass;
 	}
 
 	ResourceID MaterialShaderCollection::getSceneDescriptorSetDepthPass() const {
-		return sceneDescriptorSetDepthPass;
+		return m_sceneDescriptorSetDepthPass;
+	}
+
+	MaterialShader* MaterialShaderCollection::getMaterialShader() const {
+		return m_pMaterialShader;
 	}
 
 	SceneCollection::SceneCollection() {
-		m_materialShaderCollections.emplace_back(nullptr); // default
-
 		sa::Renderer& renderer = sa::Renderer::get();
 
 		uint32_t lightCount = 0U;
@@ -145,14 +143,14 @@ namespace sa {
 		// make sure all collection exists
 		for (const auto& mesh : pModel->meshes) {
 			Material* pMaterial = AssetManager::get().getAsset<Material>(mesh.materialID);
-			MaterialShaderCollection& collection = getMaterialShaderCollection(pMaterial ? pMaterial->getMaterialShader() : nullptr);
+			MaterialShaderCollection& collection = getMaterialShaderCollection(pMaterial ? pMaterial->getMaterialShader() : AssetManager::get().loadDefaultMaterialShader());
 		}
 
 		for (auto& collection : m_materialShaderCollections) {
 			auto it = std::find(collection.m_models.begin(), collection.m_models.end(), pModelAsset);
 			for (const auto& mesh : pModel->meshes) {
 				Material* pMaterial = AssetManager::get().getAsset<Material>(mesh.materialID);
-				MaterialShaderCollection& thisCollection = getMaterialShaderCollection(pMaterial ? pMaterial->getMaterialShader() : nullptr);
+				MaterialShaderCollection& thisCollection = getMaterialShaderCollection(pMaterial ? pMaterial->getMaterialShader() : AssetManager::get().loadDefaultMaterialShader());
 				if (&thisCollection != &collection)
 					continue;
 
@@ -223,7 +221,7 @@ namespace sa {
 				ModelData* pModel = &collection.m_models[i]->data;
 				for (const auto& mesh : pModel->meshes) {
 					Material* pMaterial = AssetManager::get().getAsset<Material>(mesh.materialID);
-					MaterialShaderCollection& thisCollection = getMaterialShaderCollection(pMaterial ? pMaterial->getMaterialShader() : nullptr);
+					MaterialShaderCollection& thisCollection = getMaterialShaderCollection(pMaterial ? pMaterial->getMaterialShader() : AssetManager::get().loadDefaultMaterialShader());
 					if (&thisCollection != &collection)
 						continue;
 
@@ -294,9 +292,11 @@ namespace sa {
 	const Buffer& SceneCollection::getLightBuffer() const {
 		return m_lightBuffer.getBuffer();
 	}
+
 	std::vector<MaterialShaderCollection>::iterator SceneCollection::begin() {
 		return m_materialShaderCollections.begin();
 	}
+	
 	std::vector<MaterialShaderCollection>::iterator SceneCollection::end() {
 		return m_materialShaderCollections.end();
 	}

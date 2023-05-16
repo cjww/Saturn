@@ -58,10 +58,10 @@ namespace sa {
 
 		// Filter
 		context.bindPipeline(m_bloomPipeline);
-		context.bindDescriptorSet(m_bloomPreferencesDescriptorSet, m_bloomPipeline);
+		context.bindDescriptorSet(m_bloomPreferencesDescriptorSet);
 
-		context.bindDescriptorSet(bd.filterDescriptorSet, m_bloomPipeline);
-		context.pushConstant(m_bloomPipeline, ShaderStageFlagBits::COMPUTE, 0);
+		context.bindDescriptorSet(bd.filterDescriptorSet);
+		context.pushConstant(ShaderStageFlagBits::COMPUTE, 0);
 		context.dispatch(threadX, threadY, 1);
 
 		
@@ -74,8 +74,8 @@ namespace sa {
 			threadY = threadY >> 1;
 			m_threadCountStack[m_stackSize++] = { threadX, threadY };
 
-			context.bindDescriptorSet(bd.blurDescriptorSets[i], m_bloomPipeline);
-			context.pushConstant(m_bloomPipeline, ShaderStageFlagBits::COMPUTE, 1);
+			context.bindDescriptorSet(bd.blurDescriptorSets[i]);
+			context.pushConstant(ShaderStageFlagBits::COMPUTE, 1);
 			context.dispatch(threadX, threadY, 1);
 		}
 		// Upsample + combine
@@ -86,8 +86,8 @@ namespace sa {
 			threadX = m_threadCountStack[m_stackSize].width;
 			threadY = m_threadCountStack[m_stackSize].height;
 
-			context.bindDescriptorSet(bd.upsampleDescriptorSets[i], m_bloomPipeline);
-			context.pushConstant(m_bloomPipeline, ShaderStageFlagBits::COMPUTE, 2);
+			context.bindDescriptorSet(bd.upsampleDescriptorSets[i]);
+			context.pushConstant(ShaderStageFlagBits::COMPUTE, 2);
 			context.dispatch(threadX, threadY, 1);
 			
 		}
@@ -97,8 +97,8 @@ namespace sa {
 
 		// Composite + Tonemap
 		
-		context.bindDescriptorSet(bd.compositeDescriptorSet, m_bloomPipeline);
-		context.pushConstant(m_bloomPipeline, ShaderStageFlagBits::COMPUTE, 3);
+		context.bindDescriptorSet(bd.compositeDescriptorSet);
+		context.pushConstant(ShaderStageFlagBits::COMPUTE, 3);
 		context.dispatch(threadX, threadY, 1);
 
 		pRenderTarget->setOutputTexture(bd.outputTexture);

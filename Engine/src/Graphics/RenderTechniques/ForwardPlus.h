@@ -33,8 +33,10 @@ namespace sa {
 		ResourceID m_debugLightHeatmapDescriptorSet = NULL_RESOURCE;
 		
 		ShaderSet m_lightCullingShader;
+		/*
 		ShaderSet m_depthShader;
 		ShaderSet m_colorShader;
+		*/
 
 		void createPreDepthPass();
 		void createLightCullingShader();

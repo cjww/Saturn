@@ -64,7 +64,7 @@ namespace sa {
 		context.updateDescriptorSet(m_swapchainDescriptorSet, 0, texture, m_sampler);
 		context.beginRenderProgram(m_swapchainRenderProgram, m_swapchainFramebuffer, SubpassContents::DIRECT);
 		context.bindPipeline(m_swapchainPipeline);
-		context.bindDescriptorSet(m_swapchainDescriptorSet, m_swapchainPipeline);
+		context.bindDescriptorSet(m_swapchainDescriptorSet);
 		context.draw(6, 1);
 		context.endRenderProgram(m_swapchainRenderProgram);
 	}

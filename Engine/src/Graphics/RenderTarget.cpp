@@ -97,8 +97,6 @@ namespace sa {
 
 	void RenderTarget::initializeMainRenderData(ResourceID colorRenderProgram, ResourceID depthPreRenderProgram, 
 		const ShaderSet& lightCullingShader, 
-		const ShaderSet& depthShader, 
-		const ShaderSet& colorShader, 
 		ResourceID sampler, Extent extent) 
 	{
 		MainRenderData& data = m_mainRenderData;
@@ -114,12 +112,6 @@ namespace sa {
 		//Depth pre pass
 		data.depthFramebuffer = m_renderer.createFramebuffer(depthPreRenderProgram, { (DynamicTexture)data.depthTexture });
 
-		PipelineSettings settings = {};
-		settings.dynamicStates.push_back(DynamicState::VIEWPORT);
-		data.depthPipeline = m_renderer.createGraphicsPipeline(depthPreRenderProgram, 0, extent, { depthShader }, settings);
-
-		data.sceneDepthDescriptorSet = depthShader.allocateDescriptorSet(SET_PER_FRAME);
-
 		// Light culling pass
 		data.tileCount = { extent.width, extent.height };
 		data.tileCount += (TILE_SIZE - data.tileCount % TILE_SIZE);
@@ -133,14 +125,10 @@ namespace sa {
 
 		// Color pass
 		data.colorFramebuffer = m_renderer.createFramebuffer(colorRenderProgram, { (DynamicTexture)data.colorTexture, data.depthTexture });
-		data.colorPipeline = m_renderer.createGraphicsPipeline(colorRenderProgram, 0, extent, colorShader, settings);
-
-		data.sceneDescriptorSet = colorShader.allocateDescriptorSet(SET_PER_FRAME);
-
+		
 
 		m_renderer.updateDescriptorSet(data.lightCullingDescriptorSet, 0, data.depthTexture, sampler);	// read depth texture
-		m_renderer.updateDescriptorSet(data.lightCullingDescriptorSet, 1, data.lightIndexBuffer);				// write what lights are in what tiles
-		m_renderer.updateDescriptorSet(data.sceneDescriptorSet, 5, sampler);
+		m_renderer.updateDescriptorSet(data.lightCullingDescriptorSet, 1, data.lightIndexBuffer);		// write what lights are in what tiles
 
 		data.isInitialized = true;
 
@@ -157,31 +145,12 @@ namespace sa {
 			m_mainRenderData.depthFramebuffer = NULL_RESOURCE;
 		}
 
-		if (m_mainRenderData.sceneDepthDescriptorSet != NULL_RESOURCE) {
-			m_renderer.freeDescriptorSet(m_mainRenderData.sceneDepthDescriptorSet);
-			m_mainRenderData.sceneDepthDescriptorSet = NULL_RESOURCE;
-		}
-
-		if (m_mainRenderData.depthPipeline != NULL_RESOURCE) {
-			m_renderer.destroyPipeline(m_mainRenderData.depthPipeline);
-			m_mainRenderData.depthPipeline = NULL_RESOURCE;
-		}
-
 		if (m_mainRenderData.lightIndexBuffer.isValid())
 			m_mainRenderData.lightIndexBuffer.destroy();
 
 		if (m_mainRenderData.colorFramebuffer != NULL_RESOURCE) {
 			m_renderer.destroyFramebuffer(m_mainRenderData.colorFramebuffer);
 			m_mainRenderData.colorFramebuffer = NULL_RESOURCE;
-		}
-
-		if (m_mainRenderData.sceneDescriptorSet != NULL_RESOURCE) {
-			m_renderer.freeDescriptorSet(m_mainRenderData.sceneDescriptorSet);
-			m_mainRenderData.sceneDescriptorSet = NULL_RESOURCE;
-		}
-		if (m_mainRenderData.colorPipeline != NULL_RESOURCE) {
-			m_renderer.destroyPipeline(m_mainRenderData.colorPipeline);
-			m_mainRenderData.colorPipeline = NULL_RESOURCE;
 		}
 	}
 

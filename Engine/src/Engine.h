@@ -23,7 +23,7 @@ namespace sa {
 	class Engine : public entt::emitter<Engine> {
 	private:
 		static std::filesystem::path s_shaderDirectory;
-		
+
 		RenderPipeline m_renderPipeline;
 		IWindowRenderer* m_pWindowRenderer;
 

@@ -22,9 +22,11 @@
 #define SA_ASSET_DIR "Assets/"
 
 #define SA_DEFAULT_MATERIAL_NAME "default_material"
+#define SA_DEFAULT_MATERIAL_SHADER_NAME "default_material_shader"
 #define SA_DEFAULT_CUBE_NAME "default_cube"
 #define SA_DEFAULT_QUAD_NAME "default_quad"
 #define SA_DEFAULT_ASSET_DIR "Assets/default"
+
 
 
 //--------------------------------------------------------------------------------------
@@ -64,6 +66,8 @@ namespace sa {
 		std::unordered_map<std::string, AssetTypeID> m_stringToType;
 
 
+		MaterialShader* m_defaultMaterialShader;
+
 		AssetManager();
 
 		void locateAssetPackages();
@@ -89,6 +93,8 @@ namespace sa {
 
 		ModelAsset* loadQuad();
 		ModelAsset* loadCube();
+
+		MaterialShader* loadDefaultMaterialShader();
 
 		const std::unordered_map<UUID, std::unique_ptr<IAsset>>& getAssets() const;
 		void getAssets(std::vector<IAsset*>* assets, const std::string& filter) const;
