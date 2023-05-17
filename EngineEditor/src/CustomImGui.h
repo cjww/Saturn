@@ -63,6 +63,7 @@ namespace ImGui {
 	bool ModelProperties(sa::IAsset* pAsset);
 	bool TextureProperties(sa::IAsset* pAsset);
 	bool RenderTargetProperties(sa::IAsset* pAsset);
+	bool MaterialShaderProperties(sa::IAsset* pAsset);
 
 	void AssetPreview(sa::Material* pMaterial);
 	void AssetPreview(sa::ModelAsset* pModel);

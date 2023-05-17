@@ -4,25 +4,36 @@
 #include "Engine.h"
 
 void sa::MaterialShader::create(const std::vector<ShaderSourceFile>& sourceFiles) {
-    for (auto& source : sourceFiles) {
+    if (m_colorShaderSet.isValid())
+        m_colorShaderSet.destroy();
+
+    if (m_depthShaderSet.isValid())
+        m_depthShaderSet.destroy();
+
+    m_sourceFiles = sourceFiles;
+    for (auto& source : m_sourceFiles) {
         std::filesystem::path path = std::filesystem::current_path();
         std::filesystem::current_path(sa::Engine::getShaderDirectory());
         m_code.push_back(sa::CompileGLSLFromFile(source.filePath.generic_string().c_str(), source.stage, "main", source.filePath.generic_string().c_str()));
         std::filesystem::current_path(path);
-        m_sourceFiles.push_back(source);
-
     }
+    m_currentExtent = { 0, 0 };
     m_colorShaderSet.create(m_code);
     m_depthShaderSet.create({ m_code[0] });
-    m_currentExtent = { 0, 0 };
+    
 }
 
 void sa::MaterialShader::create(const std::vector<std::vector<uint32_t>>& code) {
+    if (m_colorShaderSet.isValid())
+        m_colorShaderSet.destroy();
+
+    if (m_depthShaderSet.isValid())
+        m_depthShaderSet.destroy();
+
     m_code = code;
     m_colorShaderSet.create(m_code);
     m_depthShaderSet.create({ m_code[0] });
     m_currentExtent = { 0, 0 };
-    m_sourceFiles.resize(m_code.size());
 }
 
 void sa::MaterialShader::recreatePipelines(ResourceID colorRenderProgram, ResourceID depthRenderProgram, Extent extent) {
@@ -54,6 +65,25 @@ void sa::MaterialShader::bindDepthPipeline(RenderContext& context) {
     context.bindPipeline(m_depthPipeline);
 }
 
+const std::vector<sa::ShaderSourceFile>& sa::MaterialShader::getShaderSourceFiles() const {
+    return m_sourceFiles;
+}
+
+void sa::MaterialShader::addShaderSourceFile(const sa::ShaderSourceFile& sourceFile) {
+    m_sourceFiles.push_back(sourceFile);
+}
+
+void sa::MaterialShader::removeShaderSourceFile(sa::ShaderStageFlagBits stage) {
+    auto it = std::find_if(m_sourceFiles.begin(), m_sourceFiles.end(), [&](const ShaderSourceFile& sourceFile) { return sourceFile.stage == stage; });
+    if (it != m_sourceFiles.end()) {
+        m_sourceFiles.erase(it);
+    }
+}
+
+void sa::MaterialShader::compileSource() {
+    create(m_sourceFiles);
+}
+
 bool sa::MaterialShader::onLoad(std::ifstream& file, AssetLoadFlags flags) {
     uint32_t codeCount = 0;
     file.read((char*)&codeCount, sizeof(uint32_t));
@@ -77,16 +107,8 @@ bool sa::MaterialShader::onLoad(std::ifstream& file, AssetLoadFlags flags) {
         file.read((char*)m_code[i].data(), codeSize * sizeof(uint32_t));
     }
 
-    if (m_colorShaderSet.isValid())
-        m_colorShaderSet.destroy();
-
-    if (m_depthShaderSet.isValid())
-        m_depthShaderSet.destroy();
-
-    m_currentExtent = { 0, 0 };
     try {
-        m_colorShaderSet.create(m_code);
-        m_depthShaderSet.create({ m_code[0] });
+        create(m_code);
     }
     catch (const std::exception& e) {
         SA_DEBUG_LOG_ERROR(e.what());

@@ -473,6 +473,15 @@ camera->setRenderTarget(static_cast<sa::RenderTarget*>(renderTarget));
 			};
 			return info;
 		}
+		
+		else if (type == am.getAssetTypeID<sa::MaterialShader>()) {
+			static AssetEditorInfo info{
+				.inCreateMenu = true,
+				.icon = LoadEditorIcon("resources/file-white.png"),
+				.imGuiPropertiesFn = MaterialShaderProperties,
+			};
+			return info;
+		}
 
 		static AssetEditorInfo info{
 			.inCreateMenu = false,
@@ -572,6 +581,28 @@ camera->setRenderTarget(static_cast<sa::RenderTarget*>(renderTarget));
 		size.y = size.x * aspect;
 		
 		Image(pRenderTarget->getOutputTexture(), size);
+
+		return false;
+	}
+
+	bool MaterialShaderProperties(sa::IAsset* pAsset) {
+		sa::MaterialShader* pMaterialShader = static_cast<sa::MaterialShader*>(pAsset);
+		if(ImGui::BeginListBox("Source Files")) {
+			for (auto& sourceFile : pMaterialShader->getShaderSourceFiles()) {
+				std::string path = sourceFile.filePath.generic_string();
+				if (sourceFile.stage != 0) {
+					ImGui::InputText(sa::to_string(sourceFile.stage).c_str(), &path, ImGuiInputTextFlags_ReadOnly);
+				}
+			}
+		}
+		ImGui::EndListBox();
+
+		if (ImGui::SmallButton("+")) {
+			pMaterialShader->addShaderSourceFile({ "", sa::ShaderStageFlagBits::FRAGMENT });
+		}
+		if (ImGui::Button("Compile")) {
+			pMaterialShader->compileSource();
+		}
 
 		return false;
 	}

@@ -19,8 +19,8 @@ namespace sa {
 			{ShaderStageFlagBits::FRAGMENT, shaderc_glsl_default_fragment_shader},
 			{ShaderStageFlagBits::COMPUTE, shaderc_glsl_default_compute_shader},
 			{ShaderStageFlagBits::GEOMETRY, shaderc_glsl_default_geometry_shader},
-			{ShaderStageFlagBits::TESSELATION_CONTROL, shaderc_glsl_default_tess_control_shader},
-			{ShaderStageFlagBits::TESSELATION_EVALUATION, shaderc_glsl_default_tess_evaluation_shader},
+			{ShaderStageFlagBits::TESSELLATION_CONTROL, shaderc_glsl_default_tess_control_shader},
+			{ShaderStageFlagBits::TESSELLATION_EVALUATION, shaderc_glsl_default_tess_evaluation_shader},
 		};
 		return map.at(shaderStage);
 	}
@@ -396,7 +396,7 @@ namespace sa {
 	void ShaderSet::initializeStage(spirv_cross::Compiler* pCompiler, ShaderStageFlagBits stage) {
 		if ((stage & sa::ShaderStageFlagBits::COMPUTE) != 0)
 			m_isGraphicsSet = false;
-		if ((stage & (sa::ShaderStageFlagBits::TESSELATION_CONTROL | sa::ShaderStageFlagBits::TESSELATION_EVALUATION)) != 0)
+		if ((stage & (sa::ShaderStageFlagBits::TESSELLATION_CONTROL | sa::ShaderStageFlagBits::TESSELLATION_EVALUATION)) != 0)
 			m_hasTessellationStage = true;
 
 		for (auto ext : pCompiler->get_declared_extensions()) {

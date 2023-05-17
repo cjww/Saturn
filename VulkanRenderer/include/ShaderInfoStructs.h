@@ -8,13 +8,14 @@ namespace sa {
 	typedef uint32_t ShaderStageFlags;
 	enum ShaderStageFlagBits : ShaderStageFlags {
 		VERTEX = 1,
-		TESSELATION_CONTROL = 2,
-		TESSELATION_EVALUATION = 4,
+		TESSELLATION_CONTROL = 2,
+		TESSELLATION_EVALUATION = 4,
 		GEOMETRY = 8,
 		FRAGMENT = 16,
 		COMPUTE = 32,
 	};
 
+	std::string to_string(sa::ShaderStageFlagBits stage);
 
 	struct ShaderStageInfo {
 		char* pName;

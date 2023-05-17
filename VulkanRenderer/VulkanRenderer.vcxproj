@@ -300,6 +300,7 @@
     <ClCompile Include="src\DynamicBuffer.cpp" />
     <ClCompile Include="src\DynamicTexture.cpp" />
     <ClCompile Include="src\imgui_stdlib.cpp" />
+    <ClCompile Include="src\ShaderInfoStructs.cpp" />
     <ClCompile Include="src\utils.cpp" />
     <ClCompile Include="src\imgui.cpp" />
     <ClCompile Include="src\imgui_demo.cpp" />

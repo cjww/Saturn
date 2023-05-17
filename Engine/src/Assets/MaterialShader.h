@@ -39,6 +39,12 @@ namespace sa {
 		void bindColorPipeline(RenderContext& context);
 		void bindDepthPipeline(RenderContext& context);
 
+		const std::vector<ShaderSourceFile>& getShaderSourceFiles() const;
+		void addShaderSourceFile(const ShaderSourceFile& sourceFile);
+		void removeShaderSourceFile(ShaderStageFlagBits stage);
+
+		void compileSource();
+
 		virtual bool onLoad(std::ifstream& file, AssetLoadFlags flags) override;
 		virtual bool onWrite(std::ofstream& file, AssetWriteFlags flags) override;
 		virtual bool onUnload() override;

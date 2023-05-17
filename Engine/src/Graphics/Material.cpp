@@ -103,7 +103,7 @@ namespace sa {
 			addDependency(m_pMaterialShader->getProgress());
 		}
 		else {
-			SA_DEBUG_LOG_WARNING("onLoad: No material shader attached to material");
+			SA_DEBUG_LOG_WARNING("onLoad: No material shader attached to material ", getName());
 		}
 
 		uint32_t typeCount = 0;
@@ -151,7 +151,7 @@ namespace sa {
 			materialShaderID = m_pMaterialShader->getID();
 		}
 		else {
-			SA_DEBUG_LOG_WARNING("onWrite: No MaterialShader attached to Material");
+			SA_DEBUG_LOG_WARNING("onWrite: No MaterialShader attached to material ", getName());
 		}
 
 		file.write((char*)&materialShaderID, sizeof(UUID));

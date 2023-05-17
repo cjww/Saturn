@@ -6,23 +6,17 @@
 namespace sa {
 	
 	std::string to_string(const BufferType& value) {
-		switch (value)
-		{
-		case sa::BufferType::VERTEX:
-			return "VERTEX";
-		case sa::BufferType::INDEX:
-			return "INDEX";
-		case sa::BufferType::UNIFORM:
-			return "UNIFORM";
-		case sa::BufferType::STORAGE:
-			return "STORAGE";
-		case sa::BufferType::UNIFORM_TEXEL:
-			return "UNIFORM_TEXEL";
-		case sa::BufferType::STORAGE_TEXEL:
-			return "STORAGE_TEXEL";
-		default:
-			return "-";
-		}
+		const static std::unordered_map<BufferType, std::string> map = {
+			{ sa::BufferType::VERTEX, "Vertex" },
+			{ sa::BufferType::INDEX, "Index" },
+			{ sa::BufferType::UNIFORM, "Uniform" },
+			{ sa::BufferType::STORAGE, "Storage" },
+			{ sa::BufferType::UNIFORM_TEXEL, "Uniform Texel" },
+			{ sa::BufferType::STORAGE_TEXEL, "Storage Texel" },
+			{ sa::BufferType::INDIRECT, "Indirect" },
+		};
+
+		return map.at(value);
 	}
 
 	Buffer::Buffer()
