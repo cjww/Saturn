@@ -20,6 +20,8 @@ namespace sa {
 
 		m_materialBuffer = renderer.createDynamicBuffer(BufferType::STORAGE);
 		m_materialIndicesBuffer = renderer.createDynamicBuffer(BufferType::STORAGE);
+
+		m_currentExtent = { 0, 0 };
 	}
 
 	void MaterialShaderCollection::clear() {
@@ -57,6 +59,37 @@ namespace sa {
 			m_sceneDescriptorSetDepthPass = m_pMaterialShader->m_depthShaderSet.allocateDescriptorSet(SET_PER_FRAME);
 		}
 	}
+
+
+	void MaterialShaderCollection::recreatePipelines(ResourceID colorRenderProgram, ResourceID depthRenderProgram, Extent extent) {
+		if (extent == m_currentExtent && !m_pMaterialShader->m_recompiled)
+			return;
+
+		PipelineSettings settings = {};
+		settings.dynamicStates.push_back(sa::VIEWPORT);
+
+		auto& renderer = Renderer::get();
+		if (m_colorPipeline != NULL_RESOURCE) {
+			renderer.destroyPipeline(m_colorPipeline);
+		}
+		if (m_depthPipeline != NULL_RESOURCE) {
+			renderer.destroyPipeline(m_depthPipeline);
+		}
+
+		m_colorPipeline = renderer.createGraphicsPipeline(colorRenderProgram, 0, extent, m_pMaterialShader->m_colorShaderSet, settings);
+		m_depthPipeline = renderer.createGraphicsPipeline(depthRenderProgram, 0, extent, m_pMaterialShader->m_depthShaderSet, settings);
+		m_currentExtent = extent;
+		m_pMaterialShader->m_recompiled = false;
+	}
+
+	void MaterialShaderCollection::bindColorPipeline(RenderContext& context) {
+		context.bindPipeline(m_colorPipeline);
+	}
+
+	void MaterialShaderCollection::bindDepthPipeline(RenderContext& context) {
+		context.bindPipeline(m_depthPipeline);
+	}
+
 	
 	MaterialShaderCollection& SceneCollection::getMaterialShaderCollection(MaterialShader* pMaterialShader) {
 		if (!pMaterialShader)
@@ -116,6 +149,7 @@ namespace sa {
 		uint32_t lightCount = 0U;
 		m_lightBuffer = renderer.createDynamicBuffer(BufferType::STORAGE, sizeof(uint32_t), &lightCount);
 
+		SA_DEBUG_LOG_INFO("SceneCOllection created");
 	}
 
 	void SceneCollection::clear() {

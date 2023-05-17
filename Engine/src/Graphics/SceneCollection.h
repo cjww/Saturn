@@ -15,8 +15,7 @@ namespace sa {
 	private:
 		friend class SceneCollection;
 
-		MaterialShader* m_pMaterialShader;
-
+		
 		std::vector<ModelAsset*> m_models;
 		std::vector<std::vector<ObjectData>> m_objects;
 		std::vector<Texture> m_textures;
@@ -38,8 +37,16 @@ namespace sa {
 		uint32_t m_indexCount = 0;
 		uint32_t m_uniqueMeshCount = 0;
 
+
+		MaterialShader* m_pMaterialShader;
+
 		ResourceID m_sceneDescriptorSetColorPass = NULL_RESOURCE;
 		ResourceID m_sceneDescriptorSetDepthPass = NULL_RESOURCE;
+
+		ResourceID m_colorPipeline = NULL_RESOURCE;
+		ResourceID m_depthPipeline = NULL_RESOURCE;
+		Extent m_currentExtent;
+
 
 	public:
 
@@ -48,6 +55,11 @@ namespace sa {
 		void swap();
 
 		void readyDescriptorSets();
+		void recreatePipelines(ResourceID colorRenderProgram, ResourceID depthRenderProgram, Extent extent);
+
+		void bindColorPipeline(RenderContext& context);
+		void bindDepthPipeline(RenderContext& context);
+
 
 		const Buffer& getVertexBuffer() const;
 		const Buffer& getIndexBuffer() const;

@@ -134,7 +134,7 @@ namespace sa {
 				continue;
 			}
 			collection.readyDescriptorSets();
-			collection.getMaterialShader()->recreatePipelines(m_colorRenderProgram, m_depthPreRenderProgram, pRenderTarget->getExtent());
+			collection.recreatePipelines(m_colorRenderProgram, m_depthPreRenderProgram, pRenderTarget->getExtent());
 
 
 			context.updateDescriptorSet(collection.getSceneDescriptorSetDepthPass(), 0, collection.getObjectBuffer());
@@ -147,11 +147,11 @@ namespace sa {
 			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 5, m_linearSampler);
 			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 6, collection.getTextures(), 0);
 
+			// Depth prepass
+			collection.bindDepthPipeline(context);
+		
 			context.bindVertexBuffers(0, { collection.getVertexBuffer() });
 			context.bindIndexBuffer(collection.getIndexBuffer());
-		
-			// Depth prepass
-			collection.getMaterialShader()->bindDepthPipeline(context);
 			
 			context.setViewport(viewport);
 			context.bindDescriptorSet(collection.getSceneDescriptorSetDepthPass());
@@ -211,7 +211,7 @@ namespace sa {
 			if (!collection.getMaterialShader()->isLoaded()) {
 				continue;
 			}
-			collection.getMaterialShader()->bindColorPipeline(context);
+			collection.bindColorPipeline(context);
 
 			context.bindDescriptorSet(collection.getSceneDescriptorSetColorPass());
 

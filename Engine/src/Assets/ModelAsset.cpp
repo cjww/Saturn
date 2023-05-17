@@ -142,7 +142,7 @@ namespace sa {
 			textures[i].blendFactor = blending;
 			textures[i].blendOp = (TextureBlendOp)op;
 
-			SA_DEBUG_LOG_INFO("Loaded texture: ", finalPath.filename(), ", type:", sa::Material::TextureTypeToString((MaterialTextureType)type), ", Material: ", &pAiMaterial);
+			SA_DEBUG_LOG_INFO("Loaded texture: ", finalPath.filename(), ", type:", sa::to_string((MaterialTextureType)type), ", Material: ", &pAiMaterial);
 		}
 
 		material.setTextures(textures, (MaterialTextureType)type);
@@ -224,6 +224,8 @@ namespace sa {
 			SA_DEBUG_LOG_INFO("Load material: ", path.generic_string(), "-", aMaterial->GetName().C_Str());
 
 			Material* pMaterial = AssetManager::get().createAsset<Material>(aMaterial->GetName().C_Str(), materialDir);
+			pMaterial->setMaterialShader(AssetManager::get().getDefaultMaterialShader());
+			pMaterial->getMaterialShader()->load();
 			// Diffuse Color
 			pMaterial->values.diffuseColor = getColor(aMaterial, AI_MATKEY_COLOR_DIFFUSE);
 			// Specular Color

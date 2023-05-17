@@ -197,6 +197,8 @@ namespace sa {
 		float blendFactor;
 		TextureBlendOp blendOp;
 	};
+	
+	std::string to_string(MaterialTextureType type);
 
 	class Material : public IAsset{
 	private:
@@ -237,9 +239,6 @@ namespace sa {
 		} values;
 
 		bool twoSided;
-
-
-		static std::string TextureTypeToString(MaterialTextureType type);
 
 
 		Material(const AssetHeader& header);

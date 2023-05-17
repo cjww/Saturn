@@ -17,10 +17,9 @@ void sa::MaterialShader::create(const std::vector<ShaderSourceFile>& sourceFiles
         m_code.push_back(sa::CompileGLSLFromFile(source.filePath.generic_string().c_str(), source.stage, "main", source.filePath.generic_string().c_str()));
         std::filesystem::current_path(path);
     }
-    m_currentExtent = { 0, 0 };
     m_colorShaderSet.create(m_code);
     m_depthShaderSet.create({ m_code[0] });
-    
+    m_recompiled = true;
 }
 
 void sa::MaterialShader::create(const std::vector<std::vector<uint32_t>>& code) {
@@ -33,36 +32,7 @@ void sa::MaterialShader::create(const std::vector<std::vector<uint32_t>>& code) 
     m_code = code;
     m_colorShaderSet.create(m_code);
     m_depthShaderSet.create({ m_code[0] });
-    m_currentExtent = { 0, 0 };
-}
-
-void sa::MaterialShader::recreatePipelines(ResourceID colorRenderProgram, ResourceID depthRenderProgram, Extent extent) {
-    if (extent == m_currentExtent)
-        return;
-    
-    PipelineSettings settings = {};
-    settings.dynamicStates.push_back(sa::VIEWPORT);
-
-    auto& renderer = Renderer::get();
-    if (m_colorPipeline != NULL_RESOURCE) {
-        renderer.destroyPipeline(m_colorPipeline);
-    }
-    if (m_depthPipeline != NULL_RESOURCE) {
-        renderer.destroyPipeline(m_depthPipeline);
-    }
-
-    m_colorPipeline = renderer.createGraphicsPipeline(colorRenderProgram, 0, extent, m_colorShaderSet, settings);
-    m_depthPipeline = renderer.createGraphicsPipeline(depthRenderProgram, 0, extent, m_depthShaderSet, settings);
-    m_currentExtent = extent;
-
-}
-
-void sa::MaterialShader::bindColorPipeline(RenderContext& context) {
-    context.bindPipeline(m_colorPipeline);
-}
-
-void sa::MaterialShader::bindDepthPipeline(RenderContext& context) {
-    context.bindPipeline(m_depthPipeline);
+    m_recompiled = true;
 }
 
 const std::vector<sa::ShaderSourceFile>& sa::MaterialShader::getShaderSourceFiles() const {
@@ -85,12 +55,12 @@ void sa::MaterialShader::compileSource() {
 }
 
 bool sa::MaterialShader::onLoad(std::ifstream& file, AssetLoadFlags flags) {
-    uint32_t codeCount = 0;
-    file.read((char*)&codeCount, sizeof(uint32_t));
-    m_code.resize(codeCount);
-    m_sourceFiles.resize(codeCount);
     //Source files
-    for (int i = 0; i < codeCount; i++) {
+    uint32_t sourceCount = 0;
+    file.read((char*)&sourceCount, sizeof(uint32_t));
+
+    m_sourceFiles.resize(sourceCount);
+    for (int i = 0; i < sourceCount; i++) {
         uint32_t pathLength = 0;
         file.read((char*)&pathLength, sizeof(uint32_t));
         std::string path;
@@ -99,7 +69,11 @@ bool sa::MaterialShader::onLoad(std::ifstream& file, AssetLoadFlags flags) {
         m_sourceFiles[i].filePath = path;
         file.read((char*)&m_sourceFiles[i].stage, sizeof(uint32_t));
     }
+    // Binary code
+    uint32_t codeCount = 0;
+    file.read((char*)&codeCount, sizeof(uint32_t));
 
+    m_code.resize(codeCount);
     for (int i = 0; i < codeCount; i++) {
         size_t codeSize = 0;
         file.read((char*)&codeSize, sizeof(size_t));
@@ -108,6 +82,18 @@ bool sa::MaterialShader::onLoad(std::ifstream& file, AssetLoadFlags flags) {
     }
 
     try {
+        if (m_code.empty()) {
+            SA_DEBUG_LOG_WARNING("No spv code read from Material Shader asset ", getName());
+            if(m_sourceFiles.empty())
+                return false;
+            SA_DEBUG_LOG_INFO("Compiling Material Shader asset ", getName(), " from source files");
+            for (auto& source : m_sourceFiles) {
+                SA_DEBUG_LOG_INFO(sa::to_string(source.stage), " Stage : ", source.filePath);
+            }
+            create(m_sourceFiles);
+            return true;
+        }
+
         create(m_code);
     }
     catch (const std::exception& e) {
@@ -119,10 +105,11 @@ bool sa::MaterialShader::onLoad(std::ifstream& file, AssetLoadFlags flags) {
 }
 
 bool sa::MaterialShader::onWrite(std::ofstream& file, AssetWriteFlags flags) {
-    uint32_t codeCount = m_code.size();
-    file.write((char*)&codeCount, sizeof(uint32_t));
-    
+
     //Source files
+    uint32_t sourceCount = m_sourceFiles.size();
+    file.write((char*)&sourceCount, sizeof(uint32_t));
+
     for (auto& source : m_sourceFiles) {
         uint32_t pathLength = source.filePath.generic_string().length();
         file.write((char*)&pathLength, sizeof(uint32_t));
@@ -130,7 +117,11 @@ bool sa::MaterialShader::onWrite(std::ofstream& file, AssetWriteFlags flags) {
         uint32_t stage = source.stage;
         file.write((char*)&stage, sizeof(uint32_t));
     }
+
     //Binary code
+    uint32_t codeCount = m_code.size();
+    file.write((char*)&codeCount, sizeof(uint32_t));
+
     for (auto& code : m_code) {
         size_t codeSize = code.size();
         file.write((char*)&codeSize, sizeof(size_t));

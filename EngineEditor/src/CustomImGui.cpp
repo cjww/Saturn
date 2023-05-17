@@ -268,17 +268,20 @@ namespace ImGui {
 
 		ImGui::SliderFloat("Intensity", &light->values.color.a, 0.0f, 10.f);
 
-		static std::string preview = "Point";
+		static const std::unordered_map<sa::LightType, std::string> map = {
+			{ sa::LightType::POINT, "Point" },
+			{ sa::LightType::DIRECTIONAL, "Directional" },
+		};
+
+		std::string preview = map.at(light->values.type);
 		if (ImGui::BeginCombo("Type", preview.c_str())) {
 			if (ImGui::Selectable("Point", light->values.type == sa::LightType::POINT)) {
 				light->values.type = sa::LightType::POINT;
-				preview = "Point";
 			}
 			if (ImGui::Selectable("Directional", light->values.type == sa::LightType::DIRECTIONAL)) {
 				light->values.type = sa::LightType::DIRECTIONAL;
-				preview = "Directional";
 			}
-
+			preview = map.at(light->values.type);
 			ImGui::EndCombo();
 		}
 		if (light->values.type == sa::LightType::POINT) {
@@ -431,56 +434,61 @@ camera->setRenderTarget(static_cast<sa::RenderTarget*>(renderTarget));
 
 	AssetEditorInfo GetAssetInfo(sa::AssetTypeID type) {
 		sa::AssetManager& am = sa::AssetManager::get();
-		if (type == am.getAssetTypeID<sa::Material>()) {
-			static AssetEditorInfo info{
-				.inCreateMenu = true,
-				.icon = LoadEditorIcon("resources/sphere-white.png"),
-				.imGuiPropertiesFn = MaterialProperties,
-			};
-			return info;
-		}
-		else if (type == am.getAssetTypeID<sa::ModelAsset>()) {
-			static AssetEditorInfo info{
-				.inCreateMenu = false,
-				.icon = LoadEditorIcon("resources/mesh_cube.png"),
-				.imGuiPropertiesFn = ModelProperties,
-			};
-			return info;
-		}
-		else if (type == am.getAssetTypeID<sa::TextureAsset>()) {
-			static AssetEditorInfo info{
-				.inCreateMenu = false,
-				.icon = LoadEditorIcon("resources/image.png"),
-				.imGuiPropertiesFn = TextureProperties,
-			};
-			return info;
-		}
-		else if (type == am.getAssetTypeID<sa::Scene>()) {
-			static AssetEditorInfo info{
-				.inCreateMenu = true,
-				.icon = LoadEditorIcon("resources/file-white.png"),
-				.imGuiPropertiesFn = [](sa::IAsset* pAsset) {
-					return false;
+		const static std::unordered_map<sa::AssetTypeID, AssetEditorInfo> map = {
+			{
+				am.getAssetTypeID<sa::Material>(), 
+				{
+					.inCreateMenu = true,
+					.icon = LoadEditorIcon("resources/sphere-white.png"),
+					.imGuiPropertiesFn = MaterialProperties,
 				}
-			};
-			return info;
-		}
-		else if (type == am.getAssetTypeID<sa::RenderTarget>()) {
-			static AssetEditorInfo info{
-				.inCreateMenu = true,
-				.icon = LoadEditorIcon("resources/image.png"),
-				.imGuiPropertiesFn = RenderTargetProperties,
-			};
-			return info;
-		}
-		
-		else if (type == am.getAssetTypeID<sa::MaterialShader>()) {
-			static AssetEditorInfo info{
-				.inCreateMenu = true,
-				.icon = LoadEditorIcon("resources/file-white.png"),
-				.imGuiPropertiesFn = MaterialShaderProperties,
-			};
-			return info;
+			},
+			{ 
+				am.getAssetTypeID<sa::ModelAsset>(), 
+				{
+					.inCreateMenu = false,
+					.icon = LoadEditorIcon("resources/mesh_cube.png"),
+					.imGuiPropertiesFn = ModelProperties,
+				}
+			},
+			{ 
+				am.getAssetTypeID<sa::TextureAsset>(), 
+				{
+					.inCreateMenu = false,
+					.icon = LoadEditorIcon("resources/image.png"),
+					.imGuiPropertiesFn = TextureProperties,
+				}
+			},
+			{
+				am.getAssetTypeID<sa::Scene>(),
+				{
+					.inCreateMenu = true,
+					.icon = LoadEditorIcon("resources/file-white.png"),
+					.imGuiPropertiesFn = [](sa::IAsset* pAsset) {
+						return false;
+					}
+				}
+			},
+			{
+				am.getAssetTypeID<sa::RenderTarget>(),
+				{
+					.inCreateMenu = true,
+					.icon = LoadEditorIcon("resources/image.png"),
+					.imGuiPropertiesFn = RenderTargetProperties,
+				}
+			},
+			{
+				am.getAssetTypeID<sa::MaterialShader>(),
+				{
+					.inCreateMenu = true,
+					.icon = LoadEditorIcon("resources/file-white.png"),
+					.imGuiPropertiesFn = MaterialShaderProperties,
+				}
+			}
+		};
+
+		if (map.contains(type)) {
+			return map.at(type);
 		}
 
 		static AssetEditorInfo info{
@@ -518,7 +526,7 @@ camera->setRenderTarget(static_cast<sa::RenderTarget*>(renderTarget));
 		if (BeginListBox("Textures")) {
 			int i = 0;
 			for (auto& [type, textures] : textures) {
-				std::string textureTypeName = sa::Material::TextureTypeToString(type);
+				std::string textureTypeName = sa::to_string(type);
 				for (auto& texID : textures) {
 					sa::TextureAsset* pTexture = sa::AssetManager::get().getAsset<sa::TextureAsset>(texID);
 					sa::IAsset* texAsset = pTexture;

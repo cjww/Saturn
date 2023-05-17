@@ -268,6 +268,7 @@ namespace sa {
 
 		pAsset = createAsset<Material>(SA_DEFAULT_MATERIAL_NAME, SA_DEFAULT_ASSET_DIR);
 		pAsset->setMaterialShader(getDefaultMaterialShader());
+		pAsset->write();
 		return pAsset;
 	}
 
