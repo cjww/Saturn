@@ -8,6 +8,8 @@
 
 #include "AssetManager.h"
 
+#include "FileTemplates.h"
+
 #include <glm\gtx\matrix_decompose.hpp>
 #include <glm\gtc\quaternion.hpp>
 
@@ -68,8 +70,8 @@ namespace ImGui {
 	void AssetPreview(sa::Material* pMaterial);
 	void AssetPreview(sa::ModelAsset* pModel);
 
-
 	bool AssetSlot(const char* label, sa::IAsset*& pAsset, sa::AssetTypeID typeID);
+	bool FileSlot(const char* label, std::filesystem::path& path, const char* extension);
 
 	void AddEditorModuleSettingsHandler(sa::EngineEditor* pEditor);
 

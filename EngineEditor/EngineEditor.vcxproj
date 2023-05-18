@@ -267,6 +267,7 @@
     <ClCompile Include="src\EditorModule.cpp" />
     <ClCompile Include="src\EngineEditor.cpp" />
     <ClCompile Include="src\EntityInspector.cpp" />
+    <ClCompile Include="src\FileTemplates.cpp" />
     <ClCompile Include="src\GameView.cpp" />
     <ClCompile Include="src\ImGuiRenderLayer.cpp" />
     <ClCompile Include="src\RenderPipelinePreferences.cpp" />
@@ -282,6 +283,7 @@
     <ClInclude Include="src\EngineEditor.h" />
     <ClInclude Include="src\EntityInspector.h" />
     <ClInclude Include="src\Events.h" />
+    <ClInclude Include="src\FileTemplates.h" />
     <ClInclude Include="src\GameView.h" />
     <ClInclude Include="src\ImGuiRenderLayer.h" />
     <ClInclude Include="src\RenderPipelinePreferences.h" />

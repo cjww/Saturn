@@ -32,6 +32,8 @@ namespace sa {
 
 		
 		const std::vector<ShaderSourceFile>& getShaderSourceFiles() const;
+		std::vector<sa::ShaderSourceFile>& getShaderSourceFiles();
+
 		void addShaderSourceFile(const ShaderSourceFile& sourceFile);
 		void removeShaderSourceFile(ShaderStageFlagBits stage);
 

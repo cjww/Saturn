@@ -5,6 +5,8 @@
 
 #include "EngineEditor.h"
 
+#include "FileTemplates.h"
+
 DirectoryView::DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor)
 	: EditorModule(pEngine, pEditor, "Directory View", true)
 {
@@ -77,6 +79,38 @@ void DirectoryView::onImGui() {
 		bool wasChanged = false;
 
 		auto menuItemsFn = [&]() {
+			
+			if (ImGui::BeginMenu("File...")) {
+
+				uint32_t stage = sa::ShaderStageFlagBits::VERTEX;
+				while (stage != sa::ShaderStageFlagBits::COMPUTE << 1) {
+					std::string typeName = sa::to_string((sa::ShaderStageFlagBits)stage) + " Shader";
+
+					if (ImGui::MenuItem(typeName.c_str())) {
+						auto newPath = openDirectory / ("New " + typeName + " File");
+						newPath.replace_extension(".glsl");
+						sa::createGlslFile(newPath, (sa::ShaderStageFlagBits)stage);
+						editedFile = newPath;
+						editingName = newPath.stem().generic_string();
+						wasChanged = true;
+					}
+					stage = stage << 1;
+				}
+
+				ImGui::Separator();
+				
+				if (ImGui::MenuItem("Lua Script")) {
+					auto newPath = openDirectory / "New Lua Script";
+					newPath.replace_extension(".lua");
+					sa::createLuaFile(newPath);
+					editedFile = newPath;
+					editingName = newPath.stem().generic_string();
+					wasChanged = true;
+				}
+
+				ImGui::EndMenu();
+			}
+
 			ImGui::Separator();
 			static std::vector<sa::AssetTypeID> types;
 			sa::AssetManager::get().getRegisteredAssetTypes(types);
@@ -84,7 +118,7 @@ void DirectoryView::onImGui() {
 				if (ImGui::GetAssetInfo(type).inCreateMenu) {
 					std::string typeName = sa::AssetManager::get().getAssetTypeName(type);
 					if (ImGui::MenuItem(typeName.c_str())) {
-						sa::IAsset* pAsset = sa::AssetManager::get().createAsset(type, "New " + typeName, openDirectory);
+						sa::IAsset* pAsset = sa::AssetManager::get().createAsset(type, "New " + typeName + ".asset", openDirectory);
 						editingName = pAsset->getName();
 						editedFile = pAsset->getAssetPath();
 					}

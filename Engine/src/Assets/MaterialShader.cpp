@@ -39,6 +39,10 @@ const std::vector<sa::ShaderSourceFile>& sa::MaterialShader::getShaderSourceFile
     return m_sourceFiles;
 }
 
+std::vector<sa::ShaderSourceFile>& sa::MaterialShader::getShaderSourceFiles() {
+    return m_sourceFiles;
+}
+
 void sa::MaterialShader::addShaderSourceFile(const sa::ShaderSourceFile& sourceFile) {
     m_sourceFiles.push_back(sourceFile);
 }

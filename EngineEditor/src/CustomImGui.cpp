@@ -4,6 +4,8 @@
 #include "Assets/ModelAsset.h"
 #include "Assets/TextureAsset.h"
 
+#include "Tools\FileDialogs.h"
+
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui_internal.h"
 #include "imgui_stdlib.h"
@@ -393,7 +395,7 @@ namespace ImGui {
 
 		sa::IAsset* renderTarget = camera->getRenderTarget();
 		if (AssetSlot("RenderTarget", renderTarget, sa::AssetManager::get().getAssetTypeID<sa::RenderTarget>())) {
-camera->setRenderTarget(static_cast<sa::RenderTarget*>(renderTarget));
+			camera->setRenderTarget(static_cast<sa::RenderTarget*>(renderTarget));
 		}
 
 	}
@@ -554,9 +556,9 @@ camera->setRenderTarget(static_cast<sa::RenderTarget*>(renderTarget));
 				sa::Material* pMaterial = sa::AssetManager::get().getAsset<sa::Material>(mesh.materialID);
 				sa::IAsset* pAsset = pMaterial;
 				if (AssetSlot("Material", pAsset, sa::AssetManager::get().getAssetTypeID<sa::Material>())) {
-					if(pAsset)
+					if (pAsset)
 						mesh.materialID = pAsset->getID();
-					else 
+					else
 						mesh.materialID = 0;
 				}
 				PopID();
@@ -587,7 +589,7 @@ camera->setRenderTarget(static_cast<sa::RenderTarget*>(renderTarget));
 		ImVec2 size = GetContentRegionAvail();
 		float aspect = (float)pRenderTarget->getExtent().height / pRenderTarget->getExtent().width;
 		size.y = size.x * aspect;
-		
+
 		Image(pRenderTarget->getOutputTexture(), size);
 
 		return false;
@@ -595,19 +597,71 @@ camera->setRenderTarget(static_cast<sa::RenderTarget*>(renderTarget));
 
 	bool MaterialShaderProperties(sa::IAsset* pAsset) {
 		sa::MaterialShader* pMaterialShader = static_cast<sa::MaterialShader*>(pAsset);
-		if(ImGui::BeginListBox("Source Files")) {
-			for (auto& sourceFile : pMaterialShader->getShaderSourceFiles()) {
-				std::string path = sourceFile.filePath.generic_string();
-				if (sourceFile.stage != 0) {
-					ImGui::InputText(sa::to_string(sourceFile.stage).c_str(), &path, ImGuiInputTextFlags_ReadOnly);
-				}
-			}
-		}
-		ImGui::EndListBox();
+		ImVec2 size = ImGui::GetContentRegionAvail();
 
-		if (ImGui::SmallButton("+")) {
-			pMaterialShader->addShaderSourceFile({ "", sa::ShaderStageFlagBits::FRAGMENT });
+		if (ImGui::BeginListBox("Source Files", ImVec2(size.x, 0.0f))) {
+			int i = 0;
+			for (auto& sourceFile : pMaterialShader->getShaderSourceFiles()) {
+				if (sourceFile.stage == 0)
+					continue;
+
+				ImGui::PushID(i);
+				std::string preview = sa::to_string(sourceFile.stage);
+				if (ImGui::BeginCombo("Stage", preview.c_str())) {
+					uint32_t stage = sa::ShaderStageFlagBits::VERTEX;
+					while (stage != sa::ShaderStageFlagBits::COMPUTE << 1) {
+						if (ImGui::Selectable(sa::to_string((sa::ShaderStageFlagBits)stage).c_str(), sourceFile.stage & stage)) {
+							sourceFile.stage = (sa::ShaderStageFlagBits)stage;
+						}
+						stage = stage << 1;
+					}
+					preview = sa::to_string(sourceFile.stage);
+					ImGui::EndCombo();
+				}
+				std::string path = sourceFile.filePath.generic_string();
+				if (ImGui::InputText(("##" + sa::to_string(sourceFile.stage)).c_str(), &path, ImGuiInputTextFlags_EnterReturnsTrue)) {
+					sourceFile.filePath = path;
+					if(!path.empty())
+						sourceFile.filePath.replace_extension(".glsl");
+				}
+				
+				if (!std::filesystem::exists(sourceFile.filePath)) {
+					ImGui::PushStyleColor(ImGuiCol_Text, IMGUI_COLOR_ERROR_RED);
+					ImGui::Text("No Such File");
+					ImGui::PopStyleColor();
+					ImGui::SameLine();
+					if (ImGui::Button("Create")) {
+						if (!std::filesystem::exists(sourceFile.filePath.parent_path())) {
+							SA_DEBUG_LOG_ERROR(sourceFile.filePath.parent_path(), " does not exist");
+						}
+						else {
+							createGlslFile(sourceFile.filePath, sourceFile.stage);
+							
+						}
+					}
+				}
+				else if (ImGui::Button("Open")) {
+					SA_DEBUG_LOG_INFO("Opening ", sourceFile.filePath, " in external editor");
+
+				}
+
+				ImGui::SameLine();
+				if (ImGui::SmallButton("Remove")) {
+					pMaterialShader->removeShaderSourceFile(sourceFile.stage);
+				}
+				ImGui::Separator();
+				ImGui::PopID();
+					
+				i++;
+			}
+			ImGui::EndListBox();
 		}
+	
+		
+		if (ImGui::SmallButton("Add Stage +")) {
+			pMaterialShader->addShaderSourceFile({ "", sa::ShaderStageFlagBits::VERTEX });
+		}
+
 		if (ImGui::Button("Compile")) {
 			pMaterialShader->compileSource();
 		}
@@ -693,6 +747,24 @@ camera->setRenderTarget(static_cast<sa::RenderTarget*>(renderTarget));
 			EndDragDropTarget();
 		}
 		return selected;
+	}
+
+	bool FileSlot(const char* label, std::filesystem::path& path, const char* extension) {
+		std::string pathStr = path.generic_string();
+		if (ImGui::InputText(label, &pathStr, ImGuiInputTextFlags_EnterReturnsTrue)) {
+			path = pathStr;
+			if (!pathStr.empty())
+				path.replace_extension(".glsl");
+		}
+
+		if (!std::filesystem::exists(path)) {
+			ImGui::PushStyleColor(ImGuiCol_Text, IMGUI_COLOR_ERROR_RED);
+			ImGui::Text("No Such File");
+			ImGui::PopStyleColor();
+			ImGui::SameLine();
+			return false;
+		}
+		return true;
 	}
 
 	void AddEditorModuleSettingsHandler(sa::EngineEditor* pEditor) {
@@ -815,7 +887,7 @@ camera->setRenderTarget(static_cast<sa::RenderTarget*>(renderTarget));
 
 
 				if (BeginMenu("Create...")) {
-					if (MenuItem("New Folder")) {
+					if (MenuItem("Folder")) {
 						auto newPath = openDirectory / "New Folder";
 						std::filesystem::create_directory(openDirectory / "New Folder");
 						editedFile = newPath;
@@ -851,18 +923,20 @@ camera->setRenderTarget(static_cast<sa::RenderTarget*>(renderTarget));
 					copiedFiles.insert(selectedItems.begin(), selectedItems.end());
 				}
 
-				if (MenuItem("Delete", "Del")) {
-					for (auto& file : selectedItems) {
-						try {
-							std::filesystem::remove(file);
-							wasChanged = true;
+				if (!selectedItems.empty()) {
+					if (MenuItem("Delete", "Del")) {
+						for (auto& file : selectedItems) {
+							try {
+								std::filesystem::remove(file);
+								wasChanged = true;
+							}
+							catch (std::exception e) {
+								SA_DEBUG_LOG_ERROR(e.what());
+							}
 						}
-						catch (std::exception e) {
-							SA_DEBUG_LOG_ERROR(e.what());
-						}
+						selectedItems.clear();
+						lastSelected.clear();
 					}
-					selectedItems.clear();
-					lastSelected.clear();
 				}
 
 				EndPopup();
@@ -996,7 +1070,8 @@ camera->setRenderTarget(static_cast<sa::RenderTarget*>(renderTarget));
 			PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
 			if (InputText("##edit_name", &editingName, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
 				//rename
-				std::string newName = (editedFile.parent_path() / editingName).generic_string();
+				std::string newName = (editedFile.parent_path() / editingName).replace_extension(editedFile.extension()).generic_string();
+
 				std::rename(editedFile.generic_string().c_str(), newName.c_str());
 				wasChanged = true;
 				editedFile.clear();
