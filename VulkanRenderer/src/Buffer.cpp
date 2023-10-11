@@ -164,11 +164,11 @@ namespace sa {
 			SA_DEBUG_LOG_ERROR("Buffer not initialized! Wrote 0 bytes");
 			return;
 		}
-		if (getCapacity() < size) {
-			resize(size);
+		if (getCapacity() < size + offset) {
+			resize(size + offset);
 		}
 		memcpy((char*)m_pBuffer->mappedData + offset, data, size);
-		m_size = size;
+		m_size += size;
 	}
 
 	void Buffer::append(void* data, size_t size, int alignment) {

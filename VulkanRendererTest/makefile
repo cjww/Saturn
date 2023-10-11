@@ -1,3 +1,4 @@
+SHELL=bash
 
 SHADER_DIR = .
 VERT_SHADERS := $(wildcard $(SHADER_DIR)/*.vert)

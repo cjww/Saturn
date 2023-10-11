@@ -8,8 +8,8 @@ layout (location = 0) out vec2 out_vertexUV;
 layout (location = 1) out vec4 out_vertexColor;
 
 struct Material {
-    float time;
     vec4 color;
+    float time;
 };
 
 layout (set = 0, binding = 0) uniform Scene {
@@ -35,7 +35,7 @@ void main() {
 
     vertexWorldPos.x += sin(pc.timer * object.material.time);
 
-    out_vertexColor = object.material.color;
+    out_vertexColor = color;
 
     out_vertexUV = in_vertexUV;
     gl_Position = vp * vertexWorldPos;

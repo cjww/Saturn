@@ -225,7 +225,10 @@ int main() {
 
 		sa::ShaderSet shaderSet({ vshaderCode, fshaderCode });
 
-		ResourceID pipeline = renderer.createGraphicsPipeline(renderProgram, 0, window.getCurrentExtent(), shaderSet);
+		sa::PipelineSettings pipelineSettings = {};
+		pipelineSettings.cullMode = sa::CullModeFlagBits::BACK;
+
+		ResourceID pipeline = renderer.createGraphicsPipeline(renderProgram, 0, window.getCurrentExtent(), shaderSet, pipelineSettings);
 
 		ResourceID sceneDescriptorSet = shaderSet.allocateDescriptorSet(0);
 		ResourceID objectDescriptorSet = shaderSet.allocateDescriptorSet(1);
@@ -330,20 +333,18 @@ int main() {
 			sa::RenderContext context = window.beginFrame();
 			if (context) {
 
-				context.updateDescriptorSet(objectDescriptorSet, 0, objectUniformBuffer);
-
 				context.beginRenderProgram(renderProgram, framebuffer, sa::SubpassContents::DIRECT);
 				context.bindPipeline(pipeline);
 
-				context.bindDescriptorSet(sceneDescriptorSet, pipeline);
-				context.bindDescriptorSet(objectDescriptorSet, pipeline);
+				context.bindDescriptorSet(sceneDescriptorSet);
+				context.bindDescriptorSet(objectDescriptorSet);
 				
 				context.bindVertexBuffers(0, { vertexBuffer });
 				context.bindIndexBuffer(indexBuffer);
 
-				context.pushConstant(pipeline, sa::ShaderStageFlagBits::VERTEX, timer);
-				context.pushConstant(pipeline, sa::ShaderStageFlagBits::FRAGMENT, glm::vec4(1.f, 0.f, 0.5f, 1.f));
-				context.pushConstant(pipeline, sa::ShaderStageFlagBits::FRAGMENT, textureIndex, 32);
+				context.pushConstant(sa::ShaderStageFlagBits::VERTEX, timer);
+				context.pushConstant(sa::ShaderStageFlagBits::FRAGMENT, glm::vec4(1.f, 0.f, 0.5f, 1.f));
+				context.pushConstant(sa::ShaderStageFlagBits::FRAGMENT, textureIndex, 32);
 
 
 				context.drawIndexed(indexBuffer.getElementCount<uint32_t>(), 1);

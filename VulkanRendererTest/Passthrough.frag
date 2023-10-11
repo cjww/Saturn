@@ -14,7 +14,5 @@ layout(push_constant) uniform PC {
 };
 
 void main() {
-    
 	out_color = texture(myTex[texIndex], in_vertexUV) * in_vertexColor;
-
 }

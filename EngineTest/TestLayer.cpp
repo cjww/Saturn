@@ -15,24 +15,30 @@ namespace sa {
 		
 
 		Scene* pScene = sa::AssetManager::get().createAsset<Scene>("MyScene");
-		m_pEngine->setScene(pScene);
 		
 		Entity cameraEntity = pScene->createEntity("MainCamera");
 		comp::Transform* cameraTransform = cameraEntity.addComponent<comp::Transform>();
 		comp::Camera* camera = cameraEntity.addComponent<comp::Camera>();
-		cameraTransform->position = { 0, 0, -5 };
+		cameraTransform->position = { 0, 1, -5 };
 
 		Entity box = pScene->createEntity("Box");
 		box.addComponent<comp::Transform>();
 		box.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadCube()->getID();
 
 		Entity light = pScene->createEntity("Light");
-		light.addComponent<comp::Transform>();
+		comp::Transform* lightTransform = light.addComponent<comp::Transform>();
+		lightTransform->rotation = glm::rotate(lightTransform->rotation, glm::radians(-45.f), glm::vec3(1, 0, 0));
+
 		comp::Light* lightComp = light.addComponent<comp::Light>();
 		lightComp->values.type = sa::LightType::DIRECTIONAL;
-		lightComp->values.direction = glm::vec4(glm::normalize(glm::vec3(0.f, 0.f, -1.f)), 0.f);
-		
 
+		//lightComp->values.direction = glm::vec4(glm::normalize(glm::vec3(0.f, -1.f, 1.f)), 0.f);
+
+		box.addScript("test2.lua");
+		light.addScript("test2.lua");
+
+
+		m_pEngine->setScene(pScene);
 	}
 
 	void TestLayer::onUpdate(float dt) {

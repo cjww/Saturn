@@ -1,23 +1,18 @@
 --$using model transform
+local timer = 0.0;
+local originalpos;
+function onStart()
 
-function init()
-
-    timer = 0.0
-    t = entity.transform
-    assert(t == transform, "t and transform not same")
-    --s = entity.script
-    s = script
-    assert(s.t == transform, "s.t and transform not same")
-
-    --print("hello from entity " .. entity.name .. " : " .. entity.id)
-    originalpos = transform.position.y
-    --transform.rotation.x = -90;
-    --print(type(transform.position))
+    print("hello from entity " .. entity.name .. " : " .. entity.id)
+    
+    originalpos = entity.transform.position.y;
 end
 
-function update(dt)
+function onUpdate(dt)
+
     timer = timer + dt
-    --transform.rotation.y = transform.rotation.y + dt * 10;
-    transform.rotation:rotate(dt * 10, Vec3.new(0, 1, 0));
-    --transform.position.y = originalpos + math.sin(timer * 10)
+    
+    
+    entity.transform.rotation:rotate(dt * 50, Vec3.new(0, 1, 0));
+    --entity.transform.position.y = originalpos + math.sin(timer * 10)
 end
