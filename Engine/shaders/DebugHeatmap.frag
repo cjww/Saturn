@@ -22,14 +22,26 @@ void main() {
     for(int i = 0; i < MAX_LIGHTS_PER_TILE && lightIndices.data[i + offset] != -1; i++) {
         lightCount++;
     }
-    out_color = vec4(0, 0, 0, 1);
-    if(lightCount > 0 && lightCount < 2) {
-        out_color.b = 1;
-    }
-    else if(lightCount >= 2 && lightCount < 5) {
-        out_color.g = 1;
-    }
-    else if(lightCount >= 5) {
-        out_color.r = 1;
+    out_color = vec4(0, 0, 0, 0);
+    
+    uint colorLimits[] = {
+        0,
+        2,
+        5,
+        10
+    };
+
+    vec4 colors[] = {
+        vec4(0.0, 0.0, 0.0, 0.7),
+        vec4(0.0, 0.0, 1.0, 0.7),
+        vec4(0.0, 1.0, 0.0, 0.7),
+        vec4(1.0, 0.0, 0.0, 0.7)
+    };
+    
+
+    for(int i = 0; i < 3; i++) {
+        if(lightCount > colorLimits[i]) {
+            out_color = mix(colors[i], colors[i + 1], float(lightCount) / float(colorLimits[i + 1] - colorLimits[i]));
+        }
     }
 }

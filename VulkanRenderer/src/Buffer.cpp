@@ -168,7 +168,7 @@ namespace sa {
 			resize(size + offset);
 		}
 		memcpy((char*)m_pBuffer->mappedData + offset, data, size);
-		m_size += size;
+		m_size = std::max(m_size, offset + size);
 	}
 
 	void Buffer::append(void* data, size_t size, int alignment) {
@@ -176,6 +176,7 @@ namespace sa {
 			SA_DEBUG_LOG_ERROR("Buffer not initialized! Wrote 0 bytes");
 			return;
 		}
+		/*
 		if (alignment != 0) {
 			alignment = alignment - (getSize() % alignment);
 		}
@@ -185,6 +186,13 @@ namespace sa {
 		}
 		memcpy((char*)m_pBuffer->mappedData + getSize() + alignment, data, size);
 		m_size += size + alignment;
+		*/
+		int offset = 0;
+		if (alignment != 0) {
+			offset = alignment - (getSize() % alignment);
+		}
+		m_size += offset;
+		write(data, size, m_size);
 	}
 
 	void Buffer::clear() {

@@ -28,6 +28,14 @@ namespace sa {
 			DynamicBuffer lightIndexBuffer;
 			ResourceID lightCullingDescriptorSet = NULL_RESOURCE;
 
+			DynamicTexture2D debugLightHeatmap;
+			ResourceID debugLightHeatmapRenderProgram = NULL_RESOURCE;
+			ResourceID debugLightHeatmapFramebuffer = NULL_RESOURCE;
+			ResourceID debugLightHeatmapPipeline = NULL_RESOURCE;
+			ResourceID debugLightHeatmapDescriptorSet = NULL_RESOURCE;
+			bool renderDebugHeatmap = false;
+
+
 			bool isInitialized = false;
 		} m_mainRenderData;
 		
@@ -59,6 +67,7 @@ namespace sa {
 		friend class ForwardPlus;
 		void initializeMainRenderData(ResourceID colorRenderProgram, ResourceID depthPreRenderProgram, 
 			ShaderSet& lightCullingShader,
+			ShaderSet& debugHeatmapShader,
 			ResourceID sampler, Extent extent);
 		void cleanupMainRenderData();
 
@@ -83,6 +92,8 @@ namespace sa {
 
 		const MainRenderData& getMainRenderData() const;
 		const BloomData& getBloomData() const;
+
+		void setRenderDebugHeatmap(bool value);
 
 		const Extent& getExtent() const;
 

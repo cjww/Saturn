@@ -19,6 +19,7 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 	m_camera.setOrthoWidth(10.f);
 	
 	m_renderTarget.initialize(pWindow->getCurrentExtent());
+	m_renderTarget.setRenderDebugHeatmap(true);
 
 	//m_camera.setViewport(sa::Rect{ { 0, 0 }, m_renderTarget.extent });
 
@@ -59,6 +60,7 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 			e.pRenderPipeline->render(*e.pContext, &m_camera, &m_renderTarget, m_sceneCollection);
 		}
 	});
+
 }
 
 SceneView::~SceneView() {
@@ -186,6 +188,7 @@ void SceneView::onImGui() {
 		static bool showIcons = true;
 
 		static bool showStats = false;
+		static bool showLightHeatmap = false;
 			
 		if (ImGui::BeginMenuBar()) {
 			
@@ -198,12 +201,9 @@ void SceneView::onImGui() {
 				ImGui::DragFloat("Snap Distance", &snapDistance, 0.5f, 0.0f, 100.f, "%.1f m");
 				ImGui::DragFloat("Snap Angle", &snapAngle, 1.f, 1.f, 180.f, "%.0f degrees");
 
-				static bool showLightHeatmap = false;
 				sa::ForwardPlus* forwardPlusTechnique = dynamic_cast<sa::ForwardPlus*>(m_pEngine->getRenderPipeline().getRenderTechnique());
 				if (forwardPlusTechnique) {
-					if (ImGui::Checkbox("Show Light Heatmap", &showLightHeatmap)) {
-						forwardPlusTechnique->setShowHeatmap(showLightHeatmap);
-					}
+					ImGui::Checkbox("Show Light Heatmap", &showLightHeatmap);
 				}
 
 				ImGui::Checkbox("Show Icons", &showIcons);
@@ -231,7 +231,7 @@ void SceneView::onImGui() {
 		// render outputTexture with variable aspect ratio
 		ImVec2 imAvailSize = ImGui::GetContentRegionAvail();
 		glm::vec2 availSize(imAvailSize.x, imAvailSize.y);
-
+		
 		if (availSize != m_displayedSize && !ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
 			if (availSize.x >= 1.f && availSize.y >= 1.f) {
 				m_renderTarget.resize({ (uint32_t)availSize.x, (uint32_t)availSize.y });
@@ -239,7 +239,15 @@ void SceneView::onImGui() {
 			}
 		}
 		else if (m_renderTarget.isReady()) {
+
 			ImGui::Image(m_renderTarget.getOutputTexture(), imAvailSize);
+			if (showLightHeatmap) {
+				auto heatmap = m_renderTarget.getMainRenderData().debugLightHeatmap.getTexture();
+				if (heatmap.isValid()) {
+					ImGui::SetCursorPos(ImGui::GetWindowContentRegionMin());
+					ImGui::Image(heatmap, imAvailSize);
+				}
+			}
 		}
 		ImVec2 imageMin = ImGui::GetItemRectMin();
 		ImVec2 imageSize = ImGui::GetItemRectSize();

@@ -224,10 +224,10 @@ namespace sa {
 
 	void SceneCollection::makeRenderReady() {
 		SA_PROFILE_FUNCTION();
-
-	
+		
 
 		//Ligths
+		m_lightBuffer.clear();
 		m_lightBuffer.write(static_cast<uint32_t>(m_lights.size()));
 		m_lightBuffer.append(m_lights, 16);
 

@@ -81,18 +81,29 @@ namespace sa {
 			.endSubpass()
 			.end();
 
+
+		sa::ShaderSet shaderSet({
+			sa::ReadSPVFile((Engine::getShaderDirectory() / "DebugHeatmap.vert.spv").generic_string().c_str()),
+			sa::ReadSPVFile((Engine::getShaderDirectory() / "DebugHeatmap.frag.spv").generic_string().c_str())
+		});
+
 		m_debugLightHeatmapFramebuffer = m_renderer.createFramebuffer(m_debugLightHeatmapRenderProgram, { m_debugLightHeatmap });
-		m_debugLightHeatmapPipeline = m_renderer.createGraphicsPipeline(m_debugLightHeatmapRenderProgram, 0, { m_tileCount.x, m_tileCount.y },
-			(Engine::getShaderDirectory()  / "DebugHeatmap.vert.spv",
-			"../Engine/shaders/DebugHeatmap.frag.spv"
-			);
-		m_debugLightHeatmapDescriptorSet = m_renderer.allocateDescriptorSet(m_debugLightHeatmapPipeline, 0);
+		m_debugLightHeatmapPipeline = m_renderer.createGraphicsPipeline(
+			m_debugLightHeatmapRenderProgram, 
+			0, 
+			{ m_tileCount.x, m_tileCount.y },
+			shaderSet);
+
+		m_debugLightHeatmapDescriptorSet = shaderSet.allocateDescriptorSet(0);
 		m_renderer.updateDescriptorSet(m_debugLightHeatmapDescriptorSet, 0, m_lightIndexBuffer);
 
-		setShowHeatmap(false);
+		setShowHeatmap(true);
 		*/
 
-
+		m_debugHeatmapShaderSet.create({
+			sa::ReadSPVFile((Engine::getShaderDirectory() / "DebugHeatmap.vert.spv").generic_string().c_str()),
+			sa::ReadSPVFile((Engine::getShaderDirectory() / "DebugHeatmap.frag.spv").generic_string().c_str())
+		});
 
 	}
 
@@ -108,7 +119,7 @@ namespace sa {
 
 		if (!data.isInitialized) {
 			pRenderTarget->cleanupMainRenderData();
-			pRenderTarget->initializeMainRenderData(m_colorRenderProgram, m_depthPreRenderProgram, m_lightCullingShader, m_linearSampler, pRenderTarget->getExtent());
+			pRenderTarget->initializeMainRenderData(m_colorRenderProgram, m_depthPreRenderProgram, m_lightCullingShader, m_debugHeatmapShaderSet, m_linearSampler, pRenderTarget->getExtent());
 		}
 		
 		Rectf cameraViewport = pCamera->getViewport();
@@ -228,26 +239,18 @@ namespace sa {
 		context.endRenderProgram(m_colorRenderProgram);
 
 		
-		/*
-		context.beginRenderProgram(m_debugLightHeatmapRenderProgram, m_debugLightHeatmapFramebuffer, SubpassContents::DIRECT);
-		context.bindPipeline(m_debugLightHeatmapPipeline);
-		context.bindDescriptorSet(m_debugLightHeatmapDescriptorSet, m_debugLightHeatmapPipeline);
-		context.pushConstant(m_debugLightHeatmapPipeline, ShaderStageFlagBits::FRAGMENT, m_tileCount.x);
-		context.draw(6, 1);
-		context.endRenderProgram(m_debugLightHeatmapRenderProgram);
-		*/
+		if(data.renderDebugHeatmap) {
+			context.beginRenderProgram(data.debugLightHeatmapRenderProgram, data.debugLightHeatmapFramebuffer, SubpassContents::DIRECT);
+			context.bindPipeline(data.debugLightHeatmapPipeline);
+			context.bindDescriptorSet(data.debugLightHeatmapDescriptorSet);
+			context.pushConstant(ShaderStageFlagBits::FRAGMENT, data.tileCount.x);
+			context.draw(6, 1);
+			context.endRenderProgram(data.debugLightHeatmapRenderProgram);
+		}
+		
 
 		pRenderTarget->setOutputTexture(data.colorTexture);
 		return data.colorTexture.getTexture();
 	}
-
-	const Texture2D& ForwardPlus::getLightHeatmap() const {
-		return m_debugLightHeatmap;
-	}
-
-	void ForwardPlus::setShowHeatmap(bool value) {
-		
-	}
-
 
 }

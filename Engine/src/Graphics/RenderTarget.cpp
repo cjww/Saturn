@@ -96,7 +96,8 @@ namespace sa {
 	}
 
 	void RenderTarget::initializeMainRenderData(ResourceID colorRenderProgram, ResourceID depthPreRenderProgram, 
-		ShaderSet& lightCullingShader, 
+		ShaderSet& lightCullingShader,
+		ShaderSet& debugHeatmapShader,
 		ResourceID sampler, Extent extent) 
 	{
 		MainRenderData& data = m_mainRenderData;
@@ -130,6 +131,27 @@ namespace sa {
 		m_renderer.updateDescriptorSet(data.lightCullingDescriptorSet, 0, data.depthTexture, sampler);	// read depth texture
 		m_renderer.updateDescriptorSet(data.lightCullingDescriptorSet, 1, data.lightIndexBuffer);		// write what lights are in what tiles
 
+		// ----------- DEBUG -------------------
+		data.debugLightHeatmap = DynamicTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, { data.tileCount.x, data.tileCount.y });
+		data.debugLightHeatmapRenderProgram = m_renderer.createRenderProgram()
+			.addColorAttachment(AttachmentFlagBits::eClear | AttachmentFlagBits::eSampled | AttachmentFlagBits::eStore, data.debugLightHeatmap)
+			.beginSubpass()
+			.addAttachmentReference(0, SubpassAttachmentUsage::ColorTarget)
+			.endSubpass()
+			.end();
+
+
+		data.debugLightHeatmapFramebuffer = m_renderer.createFramebuffer(data.debugLightHeatmapRenderProgram, { data.debugLightHeatmap });
+		data.debugLightHeatmapPipeline = m_renderer.createGraphicsPipeline(
+			data.debugLightHeatmapRenderProgram,
+			0,
+			{ data.tileCount.x, data.tileCount.y },
+			debugHeatmapShader);
+
+		data.debugLightHeatmapDescriptorSet = debugHeatmapShader.allocateDescriptorSet(0);
+		m_renderer.updateDescriptorSet(data.debugLightHeatmapDescriptorSet, 0, data.lightIndexBuffer);
+		// ----------------------------------
+
 		data.isInitialized = true;
 
 	}
@@ -152,6 +174,28 @@ namespace sa {
 			m_renderer.destroyFramebuffer(m_mainRenderData.colorFramebuffer);
 			m_mainRenderData.colorFramebuffer = NULL_RESOURCE;
 		}
+
+		//DEBUG 
+		if (m_mainRenderData.debugLightHeatmap.isValid())
+			m_mainRenderData.debugLightHeatmap.destroy();
+		
+		if (m_mainRenderData.debugLightHeatmapFramebuffer != NULL_RESOURCE) {
+			m_renderer.destroyFramebuffer(m_mainRenderData.debugLightHeatmapFramebuffer);
+			m_mainRenderData.debugLightHeatmapFramebuffer = NULL_RESOURCE;
+		}
+
+		if (m_mainRenderData.debugLightHeatmapPipeline != NULL_RESOURCE) {
+			m_renderer.destroyPipeline(m_mainRenderData.debugLightHeatmapPipeline);
+			m_mainRenderData.debugLightHeatmapPipeline = NULL_RESOURCE;
+		}
+
+		if(m_mainRenderData.debugLightHeatmapRenderProgram != NULL_RESOURCE) {
+			m_renderer.destroyRenderProgram(m_mainRenderData.debugLightHeatmapRenderProgram);
+			m_mainRenderData.debugLightHeatmapRenderProgram = NULL_RESOURCE;
+		}
+
+
+
 	}
 
 	void RenderTarget::setOutputTexture(const DynamicTexture& dynamicTexture) {
@@ -216,6 +260,10 @@ namespace sa {
 
 			m_renderer.swapFramebuffer(m_mainRenderData.colorFramebuffer);
 			m_renderer.swapFramebuffer(m_mainRenderData.depthFramebuffer);
+
+			m_mainRenderData.debugLightHeatmap.swap();
+			m_renderer.swapFramebuffer(m_mainRenderData.debugLightHeatmapFramebuffer);
+
 		}
 		if (m_bloomData.isInitialized) {
 			m_bloomData.outputTexture.swap();
@@ -236,6 +284,10 @@ namespace sa {
 
 	const RenderTarget::BloomData& RenderTarget::getBloomData() const {
 		return m_bloomData;
+	}
+
+	void RenderTarget::setRenderDebugHeatmap(bool value) {
+		m_mainRenderData.renderDebugHeatmap = value;
 	}
 
 	const Extent& RenderTarget::getExtent() const {

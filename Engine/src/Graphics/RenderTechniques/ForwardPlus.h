@@ -26,18 +26,10 @@ namespace sa {
 		ResourceID m_depthPreRenderProgram = NULL_RESOURCE;
 		ResourceID m_lightCullingPipeline = NULL_RESOURCE;
 		
-		ResourceID m_debugLightHeatmapRenderProgram = NULL_RESOURCE;
-		ResourceID m_debugLightHeatmapPipeline = NULL_RESOURCE;
-		ResourceID m_debugLightHeatmapFramebuffer = NULL_RESOURCE;
-		Texture2D m_debugLightHeatmap;
-		ResourceID m_debugLightHeatmapDescriptorSet = NULL_RESOURCE;
-		
 		ShaderSet m_lightCullingShader;
-		/*
-		ShaderSet m_depthShader;
-		ShaderSet m_colorShader;
-		*/
 
+		ShaderSet m_debugHeatmapShaderSet;
+		
 		void createPreDepthPass();
 		void createLightCullingShader();
 		void createColorPass();
@@ -52,9 +44,6 @@ namespace sa {
 
 		virtual bool preRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) override;
 		virtual const Texture& render(RenderContext& context, SceneCamera* pCamera, RenderTarget* rendertarget, SceneCollection& sceneCollection) override;
-
-		const Texture2D& getLightHeatmap() const;
-		void setShowHeatmap(bool value);
 
 	};
 }
