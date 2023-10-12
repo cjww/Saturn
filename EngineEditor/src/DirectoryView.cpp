@@ -216,6 +216,7 @@ void DirectoryView::onImGui() {
 					sa::Entity entity = m_pEngine->getCurrentScene()->createEntity();
 					entity.addComponent<comp::Transform>();
 					entity.addComponent<comp::Model>()->modelID = selected->getID();
+					selected->load();
 				}
 			}
 			else if (selected->getType() == sa::Scene::type()) {
