@@ -101,16 +101,23 @@ namespace sa {
 	}
 
 	bool Scene::onLoad(std::ifstream& file, AssetLoadFlags flags) {
-		simdjson::padded_string jsonStr(getHeader().size);
-		file.read(jsonStr.data(), jsonStr.length());
+		try
+		{
+			simdjson::padded_string jsonStr(getHeader().size);
+			file.read(jsonStr.data(), jsonStr.length());
 
-		simdjson::ondemand::parser parser;
-		auto doc = parser.iterate(jsonStr);
-		if (doc.error() != simdjson::error_code::SUCCESS) {
-			SA_DEBUG_LOG_ERROR("Json error: ", simdjson::error_message(doc.error()));
+			simdjson::ondemand::parser parser;
+			auto doc = parser.iterate(jsonStr);
+			if (doc.error() != simdjson::error_code::SUCCESS) {
+				SA_DEBUG_LOG_ERROR("Json error: ", simdjson::error_message(doc.error()));
+				return false;
+			}
+			deserialize(&doc);
+		}
+		catch(const simdjson::simdjson_error& e) {
+			SA_DEBUG_LOG_ERROR("Failed to load Scene ", getName(), " : ", e.what());
 			return false;
 		}
-		deserialize(&doc);
 
 		return true;
 	}

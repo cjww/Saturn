@@ -19,6 +19,8 @@ namespace sa {
 		void beginScope(const std::string& key, char start);
 		void endScope(char stop);
 
+		void value(const std::string& key, sol::userdata userdata);
+
 	public:
 		Serializer();
 		~Serializer() = default;
@@ -37,6 +39,7 @@ namespace sa {
 
 		std::string dump() const;
 
+		static glm::vec2 DeserializeVec2(void* pObj);
 		static glm::vec3 DeserializeVec3(void* pObj);
 		static glm::vec4 DeserializeVec4(void* pObj);
 		static glm::quat DeserializeQuat(void* pObj);
@@ -77,6 +80,23 @@ namespace sa {
 		}
 		m_ss << "\n" << std::setw(m_depth * m_tabSize + 1) << "\"" << key << "\" : " << (value ? "true" : "false");
 		m_hasElements = true;
+	}
+
+
+	template<>
+	inline void Serializer::value(glm::vec2 v) {
+		beginObject();
+		value("x", v.x);
+		value("y", v.y);
+		endObject();
+	}
+
+	template<>
+	inline void Serializer::value(const std::string& key, glm::vec2 v) {
+		beginObject(key);
+		value("x", v.x);
+		value("y", v.y);
+		endObject();
 	}
 
 	template<>
@@ -151,7 +171,7 @@ namespace sa {
 			value(key, luaValue.as<std::string>().c_str());
 			break;
 		case sol::type::userdata:
-
+			value(key, luaValue.as<sol::userdata>());
 			break;
 		case sol::type::lightuserdata:
 

@@ -48,6 +48,15 @@ namespace sa {
 			type["dot"] = [](const Vector3& v1, const Vector3& v2) -> float {
 				return glm::dot((glm::vec3)v1, (glm::vec3)v2);
 			};
+			
+			type["serialize"] = [](const Vector3 &self, Serializer& s) {
+				s.value("Vec3", (glm::vec3)self);
+			};
+
+			type["deserialize"] = [](simdjson::ondemand::object& jsonObject) -> Vector3 {
+				return Serializer::DeserializeVec3(&jsonObject);
+			};
+
 		}
 		{
 			auto type = LuaAccessable::registerType<Vector4>("Vec4",
@@ -98,6 +107,14 @@ namespace sa {
 			type["dot"] = [](const Vector4& v1, const Vector4& v2) -> float {
 				return glm::dot((glm::vec4)v1, (glm::vec4)v2);
 			};
+
+			type["serialize"] = [](const Vector4& self, Serializer& s) {
+				s.value("Vec4", (glm::vec4)self);
+			};
+
+			type["deserialize"] = [](simdjson::ondemand::object& jsonObject) -> Vector4 {
+				return Serializer::DeserializeVec4(&jsonObject);
+			};
 		}
 
 		{
@@ -139,6 +156,14 @@ namespace sa {
 			type["dot"] = [](const Vector2& v1, const Vector2& v2) -> float {
 				return glm::dot((glm::vec2)v1, (glm::vec2)v2);
 			};
+
+			type["serialize"] = [](const Vector2& self, Serializer& s) {
+				s.value("Vec2", (glm::vec2)self);
+			};
+
+			type["deserialize"] = [](simdjson::ondemand::object& jsonObject) -> Vector2 {
+				return Serializer::DeserializeVec2(&jsonObject);
+			};
 		}
 
 		{
@@ -147,6 +172,14 @@ namespace sa {
 				self = glm::rotate(self, glm::radians(angle), axis);
 			};
 			type["Identity"] = &glm::quat_identity<float, glm::packed_highp>;
+
+			type["serialize"] = [](const glm::quat& self, Serializer& s) {
+				s.value("Quat", self);
+			};
+
+			type["deserialize"] = [](simdjson::ondemand::object& jsonObject) -> glm::quat {
+				return Serializer::DeserializeQuat(&jsonObject);
+			};
 		}
 	}
 
