@@ -274,4 +274,7 @@ namespace sa {
             || !m_pScene->m_reg.valid(m_entity);
     }
 
+    std::string Entity::toString() const {
+        return (isNull() ? "Null" : getComponent<comp::Name>()->name) + " (Entity " + std::to_string((uint32_t)m_entity) + ")";
+    }
 }

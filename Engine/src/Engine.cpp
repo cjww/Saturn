@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "Engine.h"
 
+#include "ECS/Ref.h"
+
 namespace sa {
 	std::filesystem::path Engine::s_shaderDirectory = std::filesystem::current_path();
 
@@ -196,131 +198,6 @@ namespace sa {
 				return Serializer::DeserializeQuat(&jsonObject);
 			};
 		}
-		{
-			struct Ref
-			{
-				sol::object type;
-				sol::object value;
-				Ref() = default;
-				Ref(const sol::object& type, const sol::object& value)
-					: type(type)
-					, value(value)
-				{
-				}
-			};
-
-			auto type = LuaAccessable::registerType<Ref>("Ref", 
-				sol::constructors<Ref(const sol::object&, const sol::object&), Ref()>()
-				);
-
-			type["hasReference"] = [](const Ref& self) {
-				return !self.value.is<sol::nil_t>();
-			};
-
-			type["__index"] = [=](Ref& self, const sol::lua_value& key) -> sol::lua_value {
-				if (self.value.is<sol::nil_t>())
-					return self.value;
-
-				switch (self.type.get_type()) {
-				case sol::type::string: // Holds a script
-				{
-					Entity entity = self.value.as<Entity>();
-					std::string scriptName = self.type.as<std::string>();
-					EntityScript* script = entity.getScript(scriptName);
-					if (script)
-						return script->env[key];
-					sol::error error("Failed to index Ref: No script named " + scriptName);
-
-					break;
-				}
-				case sol::type::table: // Holds userdata
-				{
-					sol::table table = self.type.as<sol::table>();
-					sol::userdata ud = table["get"](self.value);
-					return ud[key];
-				}
-				default:
-					break;
-				}
-				return sol::nil;
-
-			};
-			type["serialize"] = [](Ref& self, Serializer& s, sol::this_state ts) {
-				const sol::state_view& lua = ts;
-
-				s.beginObject("Ref");
-				switch (self.type.get_type()) {
-				case sol::type::string: // Holds a script
-				{
-					std::string scriptName = self.type.as<std::string>();
-					s.value("type", scriptName.c_str());
-					if (self.value.is<sol::nil_t>())
-						break;
-					Entity entity = self.value.as<Entity>();
-					s.value("value", (uint32_t)entity);
-
-					break;
-				}
-				case sol::type::table: // Holds userdata
-				{
-					sol::table table = self.type.as<sol::table>();
-					s.value("type", lua[table].get<std::string>().c_str());
-					if (self.value.is<sol::nil_t>())
-						break;
-					
-					if(self.value.is<Entity>()) {
-						s.value("value", (uint32_t)self.value.as<Entity>());
-						break;
-					}
-
-					s.value("value", self.value.as<size_t>());
-					break;
-				}
-				default:
-					s.value("type", "null");
-					SA_DEBUG_LOG_WARNING("Failed to serialize Ref: type was not string or table");
-					break;
-				}
-
-				s.endObject();
-			};
-
-			type["deserialize"] = [](simdjson::ondemand::object& jsonObject, sol::this_state ts, sol::this_environment te) -> sol::lua_value {
-				const sol::state_view& lua = ts;
-				sol::environment& env = te;
-
-				sol::lua_value type(lua, sol::nil);
-				sol::lua_value value(lua, sol::nil);
-
-				auto result = jsonObject.find_field("type");
-				std::string_view typeStr = result.get_string();
-				if (typeStr == "null")
-					return Ref{};
-
-				if (lua[typeStr] != sol::nil)
-					type = lua[typeStr];
-
-				else
-					type = typeStr;
-
-				result = jsonObject.find_field("value");
-				if(result.error() == simdjson::error_code::SUCCESS) {
-					if(result.is_integer()) {
-						int64_t id = result.get_int64().take_value();
-
-						Scene* pScene = env["scene"];
-						Entity entity(pScene, (entt::entity)id);
-						value = entity;
-					}
-					else {
-						uint64_t id = static_cast<uint64_t>(result.get_int64_in_string().take_value());
-						value = id;
-					}
-				}
-
-				return lua["Ref"]["new"](type, value);
-			};
-		}
 	}
 
 	void Engine::reg() {
@@ -419,6 +296,7 @@ namespace sa {
 		reg();
 		Scene::reg();
 		Entity::reg();
+		Ref::reg();
 		
 		if (pWindow) {
 			m_renderPipeline.create(new ForwardPlus);

@@ -80,6 +80,8 @@ namespace sa {
 
 		bool isNull() const;
 
+		std::string toString() const;
+
 		operator bool() const {
 			return !isNull();
 		}
