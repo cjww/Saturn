@@ -107,13 +107,13 @@ namespace sa {
 	EntityScript* ScriptManager::addScript(const Entity& entity, const std::filesystem::path& path) {
 		if (!std::filesystem::exists(path)) {
 			SA_DEBUG_LOG_ERROR("File does not exist: ", path);
-			return {};
+			return nullptr;
 		}
 
 
 		std::string scriptName = path.filename().replace_extension().generic_string();
 		if (m_entityScriptIndices[entity].count(scriptName)) {
-			return {}; // don't add same script again
+			return nullptr; // don't add same script again
 		}
 
 		size_t hashedString = std::hash<std::string>()(scriptName);
@@ -121,7 +121,13 @@ namespace sa {
 
 		if (!m_scripts.count(hashedString)) {
 			// load file as function
-			m_scripts[hashedString] = lua.load_file(path.generic_string());
+			auto result = lua.load_file(path.generic_string());
+			if(result.status() != sol::load_status::ok) {
+				sol::error err = result;
+				SA_DEBUG_LOG_ERROR("Failed to load script ", path.generic_string(), ": ", err.what());
+				return nullptr;
+			}
+			m_scripts[hashedString] = result;
 		}
 
 		sol::environment env = sol::environment(lua, sol::create, lua.globals());
@@ -137,8 +143,9 @@ namespace sa {
 
 		// fill environment with contents of script
 		auto ret = func();
-		if (!ret.valid()) {
-			SA_DEBUG_LOG_ERROR(lua_tostring(lua, -1));
+		if (ret.status() != sol::call_status::ok) {
+			sol::error err = ret;
+			SA_DEBUG_LOG_ERROR("Failed to run script ", path.generic_string(), ": ", err.what());
 		}
 
 		return &m_allScripts.back();

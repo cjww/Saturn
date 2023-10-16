@@ -9,8 +9,8 @@ namespace sa {
 		{
 			auto type = LuaAccessable::registerType<Vector3>("Vec3",
 				sol::constructors<Vector3(float, float, float), Vector3(float), Vector3()>(),
-				sol::meta_function::addition, &Vector3::operator+=,
-				sol::meta_function::subtraction, &Vector3::operator-=,
+				sol::meta_function::addition, [](const Vector3& self, const Vector3& other) -> Vector3 { return self + other; },
+				sol::meta_function::subtraction, [](const Vector3& self, const Vector3& other) -> Vector3 { return self - other; },
 				sol::meta_function::multiplication, [](const Vector3& self, sol::lua_value value) -> Vector3 {
 					if (value.is<float>()) {
 						return self * value.as<float>();
@@ -48,7 +48,10 @@ namespace sa {
 			type["dot"] = [](const Vector3& v1, const Vector3& v2) -> float {
 				return glm::dot((glm::vec3)v1, (glm::vec3)v2);
 			};
-			
+			type["normalize"] = [](Vector3& self) {
+				self = glm::normalize(self);
+			};
+
 			type["serialize"] = [](const Vector3 &self, Serializer& s) {
 				s.value("Vec3", (glm::vec3)self);
 			};
@@ -61,8 +64,8 @@ namespace sa {
 		{
 			auto type = LuaAccessable::registerType<Vector4>("Vec4",
 				sol::constructors<Vector4(float, float, float, float), Vector4(float), Vector4(), Vector4(const Vector3&)>(),
-				sol::meta_function::addition, &Vector4::operator+=,
-				sol::meta_function::subtraction, &Vector4::operator-=,
+				sol::meta_function::addition, [](const Vector4& self, const Vector4& other) -> Vector4 { return self + other; },
+				sol::meta_function::subtraction, [](const Vector4& self, const Vector4& other) -> Vector4 { return self - other; },
 				sol::meta_function::multiplication, [](const Vector4& self, sol::lua_value value) {
 					if (value.is<float>()) {
 						return self * value.as<float>();
@@ -108,6 +111,10 @@ namespace sa {
 				return glm::dot((glm::vec4)v1, (glm::vec4)v2);
 			};
 
+			type["normalize"] = [](Vector4& self) {
+				self = glm::normalize(self);
+			};
+
 			type["serialize"] = [](const Vector4& self, Serializer& s) {
 				s.value("Vec4", (glm::vec4)self);
 			};
@@ -120,8 +127,8 @@ namespace sa {
 		{
 			auto type = LuaAccessable::registerType<Vector2>("Vec2",
 				sol::constructors<Vector2(float, float), Vector2(float), Vector2()>(),
-				sol::meta_function::addition, &Vector2::operator+=,
-				sol::meta_function::subtraction, &Vector2::operator-=,
+				sol::meta_function::addition, [](const Vector2& self, const Vector2& other) -> Vector2 { return self + other; },
+				sol::meta_function::subtraction, [](const Vector2& self, const Vector2& other) -> Vector2 { return self - other; },
 				sol::meta_function::multiplication, [](const Vector2& self, sol::lua_value value) {
 					if (value.is<float>()) {
 						return self * value.as<float>();
@@ -157,6 +164,10 @@ namespace sa {
 				return glm::dot((glm::vec2)v1, (glm::vec2)v2);
 			};
 
+			type["normalize"] = [](Vector2& self) {
+				self = glm::normalize(self);
+			};
+
 			type["serialize"] = [](const Vector2& self, Serializer& s) {
 				s.value("Vec2", (glm::vec2)self);
 			};
@@ -168,17 +179,146 @@ namespace sa {
 
 		{
 			auto type = LuaAccessable::registerType<glm::quat>("Quat");
-			type["rotate"] = [](glm::quat& self, float angle, Vector3 axis) {
+			type["rotate"] = [](glm::quat& self, float angle, const Vector3& axis) {
 				self = glm::rotate(self, glm::radians(angle), axis);
 			};
-			type["Identity"] = &glm::quat_identity<float, glm::packed_highp>;
 
+			type["lookAt"] = [](glm::quat& self, const Vector3& direction, const Vector3& up) {
+				self = glm::quatLookAt(direction, up);
+			};
+
+			type["Identity"] = &glm::quat_identity<float, glm::packed_highp>;
 			type["serialize"] = [](const glm::quat& self, Serializer& s) {
 				s.value("Quat", self);
 			};
 
 			type["deserialize"] = [](simdjson::ondemand::object& jsonObject) -> glm::quat {
 				return Serializer::DeserializeQuat(&jsonObject);
+			};
+		}
+		{
+			struct Ref
+			{
+				sol::object type;
+				sol::object value;
+				Ref() = default;
+				Ref(const sol::object& type, const sol::object& value)
+					: type(type)
+					, value(value)
+				{
+				}
+			};
+
+			auto type = LuaAccessable::registerType<Ref>("Ref", 
+				sol::constructors<Ref(const sol::object&, const sol::object&), Ref()>()
+				);
+
+			type["hasReference"] = [](const Ref& self) {
+				return !self.value.is<sol::nil_t>();
+			};
+
+			type["__index"] = [=](Ref& self, const sol::lua_value& key) -> sol::lua_value {
+				if (self.value.is<sol::nil_t>())
+					return self.value;
+
+				switch (self.type.get_type()) {
+				case sol::type::string: // Holds a script
+				{
+					Entity entity = self.value.as<Entity>();
+					std::string scriptName = self.type.as<std::string>();
+					EntityScript* script = entity.getScript(scriptName);
+					if (script)
+						return script->env[key];
+					sol::error error("Failed to index Ref: No script named " + scriptName);
+
+					break;
+				}
+				case sol::type::table: // Holds userdata
+				{
+					sol::table table = self.type.as<sol::table>();
+					sol::userdata ud = table["get"](self.value);
+					return ud[key];
+				}
+				default:
+					break;
+				}
+				return sol::nil;
+
+			};
+			type["serialize"] = [](Ref& self, Serializer& s, sol::this_state ts) {
+				const sol::state_view& lua = ts;
+
+				s.beginObject("Ref");
+				switch (self.type.get_type()) {
+				case sol::type::string: // Holds a script
+				{
+					std::string scriptName = self.type.as<std::string>();
+					s.value("type", scriptName.c_str());
+					if (self.value.is<sol::nil_t>())
+						break;
+					Entity entity = self.value.as<Entity>();
+					s.value("value", (uint32_t)entity);
+
+					break;
+				}
+				case sol::type::table: // Holds userdata
+				{
+					sol::table table = self.type.as<sol::table>();
+					s.value("type", lua[table].get<std::string>().c_str());
+					if (self.value.is<sol::nil_t>())
+						break;
+					
+					if(self.value.is<Entity>()) {
+						s.value("value", (uint32_t)self.value.as<Entity>());
+						break;
+					}
+
+					s.value("value", self.value.as<size_t>());
+					break;
+				}
+				default:
+					s.value("type", "null");
+					SA_DEBUG_LOG_WARNING("Failed to serialize Ref: type was not string or table");
+					break;
+				}
+
+				s.endObject();
+			};
+
+			type["deserialize"] = [](simdjson::ondemand::object& jsonObject, sol::this_state ts, sol::this_environment te) -> sol::lua_value {
+				const sol::state_view& lua = ts;
+				sol::environment& env = te;
+
+				sol::lua_value type(lua, sol::nil);
+				sol::lua_value value(lua, sol::nil);
+
+				auto result = jsonObject.find_field("type");
+				std::string_view typeStr = result.get_string();
+				if (typeStr == "null")
+					return Ref{};
+
+				if (lua[typeStr] != sol::nil)
+					type = lua[typeStr];
+
+				else
+					type = typeStr;
+
+				result = jsonObject.find_field("value");
+				if(result.error() == simdjson::error_code::SUCCESS) {
+					if(result.is_integer()) {
+						int64_t id = result.get_int64().take_value();
+
+						Scene* pScene = env["scene"];
+						Entity entity(pScene, (entt::entity)id);
+						value = entity;
+					}
+					else {
+						uint64_t id = static_cast<uint64_t>(result.get_int64_in_string().take_value());
+						value = id;
+					}
+				}
+
+				return lua["Ref"]["new"](type, value);
 			};
 		}
 	}

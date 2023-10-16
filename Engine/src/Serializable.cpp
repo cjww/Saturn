@@ -1,5 +1,7 @@
 #include "pch.h"
 #include "Serializable.h"
+
+#include "../../DX11Renderer/include/DX11Renderer.h"
 #include "Tools/Logger.hpp"
 
 
@@ -37,7 +39,7 @@ namespace sa {
 			return;
 		}
 		beginObject(key);
-		const auto func = serializeFunction.value(); 
+		const auto func = serializeFunction.value();
 		const auto result = func(userdata, *this);
 		if (!result.valid()) {
 			const sol::error err = result;

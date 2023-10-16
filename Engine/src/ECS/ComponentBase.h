@@ -43,7 +43,10 @@ namespace sa {
 
 	template<typename T, typename ...Args>
 	inline sol::usertype<T> LuaAccessable::registerType(const std::string& customName, Args&&... args) {
-		return getState().new_usertype<T>((customName.empty()) ? sa::getComponentName<T>() : customName, args...);
+		std::string name = (customName.empty()) ? sa::getComponentName<T>() : customName;
+		auto type = getState().new_usertype<T>(name, args...);
+		getState().set(type, name);
+		return type;
 	}
 
 	template<typename T>

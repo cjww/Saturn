@@ -58,6 +58,7 @@ namespace sa {
 					break;
 				}
 				const auto func = deserializeFunction.value();
+				env.set_on(func);
 				const auto result = func(userDataObj);
 				if (!result.valid()) {
 					sol::error err = result;

@@ -48,13 +48,14 @@ namespace sa {
         );
         
         type["__index"] = [](Entity& self, std::string key) -> sol::lua_value {
-
+            /*
             std::string componentName = key;
             componentName[0] = utils::toUpper(componentName[0]);
             auto metaComp = self.getComponent(componentName);
             if(metaComp.isValid()) {
                 return LuaAccessable::cast(metaComp);
             }
+            */
 
             EntityScript* pScript = self.getScript(key);
             if (!pScript)

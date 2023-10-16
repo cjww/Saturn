@@ -190,8 +190,13 @@ namespace sa {
 		}
 		if constexpr (std::is_base_of_v<sa::LuaAccessable, std::decay_t<Comp>>) {
 			
-			LuaAccessable::registerComponent<Comp>();
 			Comp::reg();
+			LuaAccessable::registerComponent<Comp>();
+
+			LuaAccessable::getState()[getComponentName<Comp>()]["get"] = [](const sol::lua_value& value) {
+				Entity entity = value.as<Entity>();
+				return entity.getComponent<Comp>();
+			};
 
 			auto& type = Entity::getType();
 			std::string name = getComponentName<Comp>();

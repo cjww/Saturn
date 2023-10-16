@@ -82,7 +82,6 @@ namespace sa {
 		m_hasElements = true;
 	}
 
-
 	template<>
 	inline void Serializer::value(glm::vec2 v) {
 		beginObject();
