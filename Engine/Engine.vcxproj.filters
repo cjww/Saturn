@@ -342,7 +342,4 @@
   <ItemGroup>
     <Xml Include="src\setup.xml" />
   </ItemGroup>
-  <ItemGroup>
-    <None Include="packages.config" />
-  </ItemGroup>
 </Project>
