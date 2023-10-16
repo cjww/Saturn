@@ -172,9 +172,6 @@ namespace sa {
 		case sol::type::userdata:
 			value(key, luaValue.as<sol::userdata>());
 			break;
-		case sol::type::lightuserdata:
-
-			break;
 		case sol::type::table:
 			beginObject(key);
 			for (auto& [tableKey, tableValue] : luaValue.as<sol::table>()) {
@@ -187,7 +184,9 @@ namespace sa {
 			}
 			endObject();
 			break;
+		case sol::type::lightuserdata:
 		default:
+			throw std::runtime_error("Serializer: Lua type not implemented");
 			break;
 		}
 	}

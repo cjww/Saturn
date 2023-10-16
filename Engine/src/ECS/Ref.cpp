@@ -120,14 +120,16 @@ namespace sa {
 				type = typeStr;
 
 			auto valueResult = jsonObject.find_field("value");
-			if (valueResult.is_integer()) {
-				int64_t id = valueResult.get_int64().take_value();
-				Scene* pScene = env["scene"];
-				Entity entity(pScene, static_cast<entt::entity>(id));
-				value = entity;
+			if(valueResult.error() == simdjson::error_code::SUCCESS) {
+				if (valueResult.is_integer()) {
+					int64_t id = valueResult.get_int64().take_value();
+					Scene* pScene = env["scene"];
+					Entity entity(pScene, static_cast<entt::entity>(id));
+					value = entity;
+				}
+				else
+					value = static_cast<uint64_t>(valueResult.get_int64_in_string().take_value());
 			}
-			else
-				value = static_cast<uint64_t>(valueResult.get_int64_in_string().take_value());
 
 			return lua["Ref"]["new"](type, value);
 		};

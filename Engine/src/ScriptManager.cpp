@@ -138,7 +138,7 @@ namespace sa {
 		env["scriptName"] = scriptName;
 		env["scene"] = entity.getScene();
 
-		m_allScripts.emplace_back(scriptName, path, env, entity);
+		m_allScripts.emplace_back(scriptName, path, env, entity, std::filesystem::last_write_time(path));
 		m_entityScriptIndices[entity][scriptName] = m_allScripts.size() - 1;
 
 		// fill environment with contents of script
@@ -224,5 +224,31 @@ namespace sa {
 			scripts.push_back(m_allScripts[index]);
 		}
 		return scripts;
+	}
+
+	void ScriptManager::reloadScripts() {
+		for(EntityScript& script : m_allScripts) {
+
+			std::error_code error;
+			std::filesystem::file_time_type time = std::filesystem::last_write_time(script.path, error);
+			if(error) {
+				SA_DEBUG_LOG_ERROR("Failed to load script ", script.path);
+				continue;
+			}
+			if(time > script.lastWriteTime) {
+				sol::state& lua = LuaAccessable::getState();
+				// do file to update environment
+				auto loadResult = lua.do_file(script.path.generic_string(), script.env);
+				
+				if (loadResult.status() != sol::call_status::ok) {
+					sol::error err = loadResult;
+					SA_DEBUG_LOG_ERROR("Error when running script ", script.path.generic_string(), ": ", err.what());
+				}
+				script.lastWriteTime = time;
+				SA_DEBUG_LOG_INFO("Reloaded script ", script.path.generic_string());
+			}
+
+
+		}
 	}
 }

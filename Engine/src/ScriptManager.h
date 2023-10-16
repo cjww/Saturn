@@ -60,6 +60,7 @@ namespace sa {
 		void freeMemory();
 
 		std::vector<EntityScript> getEntityScripts(const entt::entity& entity) const;
+		void reloadScripts();
 
 		template<typename ...Args>
 		static void tryCall(const sol::environment& env, const std::string& functionName, Args&& ...args);
@@ -71,14 +72,15 @@ namespace sa {
 
 	template<typename ...Args>
 	inline void ScriptManager::tryCall(const sol::environment& env, const std::string& functionName, Args&& ...args) {
-		sol::safe_function func = env[functionName];
+		sol::protected_function func = env[functionName];
 		if (func == sol::nil) {
 			return;
 		}
 		env.set_on(func);
-		auto r = func(args...);
-		if (!r.valid()) {
-			SA_DEBUG_LOG_ERROR(lua_tostring(LuaAccessable::getState(), -1));
+		auto result = func(args...);
+		if (result.status() != sol::call_status::ok) {
+			sol::error error = result;
+			SA_DEBUG_LOG_ERROR("Error in function ", functionName, ": ", error.what());
 		}
 	}
 
@@ -96,9 +98,10 @@ namespace sa {
 			return;
 		}
 		env.set_on(function);
-		auto r = function(args...);
-		if (!r.valid()) {
-			SA_DEBUG_LOG_ERROR(lua_tostring(LuaAccessable::getState(), -1));
+		auto result = func(args...);
+		if (result.status() != sol::call_status::ok) {
+			sol::error error = result;
+			SA_DEBUG_LOG_ERROR("Error in lua function: ", error.what());
 		}
 	}
 }

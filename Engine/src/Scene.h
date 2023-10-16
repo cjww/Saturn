@@ -91,6 +91,8 @@ namespace sa {
 
 		// Scripts
 		std::vector<EntityScript> getAssignedScripts(const Entity& entity) const;
+		void reloadScripts();
+
 
 		// Hierarchy
 		EntityHierarchy& getHierarchy();

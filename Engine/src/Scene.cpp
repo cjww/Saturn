@@ -255,6 +255,10 @@ namespace sa {
 		return m_scriptManager.getEntityScripts(entity);
 	}
 
+	void Scene::reloadScripts() {
+		m_scriptManager.reloadScripts();
+	}
+
 	EntityHierarchy& Scene::getHierarchy() {
 		return m_hierarchy;
 	}

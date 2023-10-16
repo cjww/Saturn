@@ -521,6 +521,8 @@ namespace sa {
 
 	void EngineEditor::onUpdate(float dt) {
 		if (m_pEngine->getCurrentScene()) {
+			m_pEngine->getCurrentScene()->reloadScripts();
+
 			if (m_state == State::PLAYING) {
 				m_pEngine->getCurrentScene()->runtimeUpdate(dt);
 			}
@@ -528,7 +530,6 @@ namespace sa {
 				m_pEngine->getCurrentScene()->inEditorUpdate(dt);
 			}
 		}
-
 
 		for (auto& module : m_editorModules) {
 			module->update(dt);

@@ -71,13 +71,17 @@ namespace sa {
 				break;
 			}
 			case json_type::array:
-				break;
+
+				
 			case json_type::null:
-				break;
+				
 
 			default:
+				throw std::runtime_error("Not implemented");
 				break;
 			}
+
+			serializedData[std::string(key)] = env[key];
 		}
 	}
 }
