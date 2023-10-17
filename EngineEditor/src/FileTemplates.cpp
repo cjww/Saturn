@@ -34,9 +34,17 @@ namespace sa {
 
 	const char* getTemplateLuaScript() {
 		return
+			"Serialize({\n"
+			"	-- Place serialized variables here\n"
+			"})\n"
 			"\n"
-			"-- Called every frame\n";
-			"function onUpdate()\n";
+			"-- Called once when scene starts running\n"
+			"function onStart()\n"
+			"\n"
+			"end\n"
+			"\n"
+			"-- Called every frame\n"
+			"function onUpdate(deltaTime)\n"
 			"\n"
 			"end\n";
 	}

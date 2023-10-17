@@ -59,3 +59,30 @@ bool sa::FileDialogs::SaveFile(const char* filter, std::filesystem::path& filePa
 #endif
     return false;
 }
+
+bool sa::FileDialogs::OpenFileInTextEditor(const std::filesystem::path& applicationPath, const std::filesystem::path& file) {
+    STARTUPINFO si;
+    PROCESS_INFORMATION pi;
+    ZeroMemory(&si, sizeof(si));
+    ZeroMemory(&pi, sizeof(pi));
+
+    si.cb = sizeof(si);
+
+    std::wstring commandLine = L"\"" + applicationPath.wstring() + L"\" " + file.generic_wstring();
+
+	bool success = CreateProcess(NULL,   // the path
+        commandLine.data(),           // Command line
+        NULL,           // Process handle not inheritable
+        NULL,           // Thread handle not inheritable
+        FALSE,          // Set handle inheritance to FALSE
+        0,              // No creation flags
+        NULL,           // Use parent's environment block
+        NULL,           // Use parent's starting directory 
+        &si,            // Pointer to STARTUPINFO structure
+        &pi             // Pointer to PROCESS_INFORMATION structure (removed extra parentheses)
+    );
+
+    CloseHandle(pi.hProcess);
+    CloseHandle(pi.hThread);
+    return success;
+}

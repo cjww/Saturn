@@ -918,12 +918,12 @@ namespace ImGui {
 						}
 					}
 				}
-				if (MenuItem("Copy", "Ctrl + C")) {
-					copiedFiles.clear();
-					copiedFiles.insert(selectedItems.begin(), selectedItems.end());
-				}
-
 				if (!selectedItems.empty()) {
+					if (MenuItem("Copy", "Ctrl + C")) {
+						copiedFiles.clear();
+						copiedFiles.insert(selectedItems.begin(), selectedItems.end());
+					}
+
 					if (MenuItem("Delete", "Del")) {
 						for (auto& file : selectedItems) {
 							try {
@@ -936,6 +936,15 @@ namespace ImGui {
 						}
 						selectedItems.clear();
 						lastSelected.clear();
+					}
+				}
+
+				Separator();
+
+				if(MenuItem("Open in code editor")) {
+					//TODO get code editor executable from editor settings
+					if(!sa::FileDialogs::OpenFileInTextEditor("F:/Microsoft VS Code/Code.exe", openDirectory)) {
+						SA_DEBUG_LOG_ERROR("Failed to open in code editor");
 					}
 				}
 

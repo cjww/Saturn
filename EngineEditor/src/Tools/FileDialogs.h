@@ -8,5 +8,6 @@ namespace sa {
 		static bool OpenFile(const char* filter, std::filesystem::path& filePath, const std::filesystem::path& initialPath = std::filesystem::current_path());
 		static bool SaveFile(const char* filter, std::filesystem::path& filePath, const std::filesystem::path& initialPath = std::filesystem::current_path());
 
+		static bool OpenFileInTextEditor(const std::filesystem::path& applicationPath, const std::filesystem::path& file);
 	};
 }
