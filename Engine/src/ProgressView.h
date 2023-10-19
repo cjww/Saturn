@@ -29,10 +29,10 @@ namespace sa {
 		float getAllCompletion() const;
 
 		T getValue() const;
-		void wait();
-		void wait(const std::chrono::seconds& timeout);
-		void waitAll();
-		void waitAll(const std::chrono::seconds& timeout);
+		void wait() const;
+		void wait(const std::chrono::seconds& timeout) const;
+		void waitAll() const;
+		void waitAll(const std::chrono::seconds& timeout) const;
 
 
 		bool isDone() const;
@@ -111,18 +111,18 @@ namespace sa {
 	}
 
 	template<typename T>
-	inline void ProgressView<T>::wait() {
+	inline void ProgressView<T>::wait() const {
 		if(m_future.valid())
 			m_future.wait();
 	}
 
 	template<typename T>
-	inline void ProgressView<T>::wait(const std::chrono::seconds& timeout) {
+	inline void ProgressView<T>::wait(const std::chrono::seconds& timeout) const {
 		m_future.wait_for(timeout);
 	}
 
 	template<typename T>
-	inline void ProgressView<T>::waitAll() {
+	inline void ProgressView<T>::waitAll() const {
 		wait();
 		for (auto& dep : m_dependencies) {
 			dep->wait();
@@ -130,7 +130,7 @@ namespace sa {
 	}
 
 	template<typename T>
-	inline void ProgressView<T>::waitAll(const std::chrono::seconds& timeout) {
+	inline void ProgressView<T>::waitAll(const std::chrono::seconds& timeout) const {
 		wait(timeout);
 		for (auto& dep : m_dependencies) {
 			dep->wait(timeout);

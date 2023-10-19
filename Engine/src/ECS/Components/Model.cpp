@@ -1,7 +1,16 @@
 #include "pch.h"
 #include "Model.h"
 
+#include "Assets/ModelAsset.h"
+
 namespace comp {
+
+	Model& Model::operator=(const Model& other) {
+		modelID = other.modelID;
+		// make sure this asset is loaded and increase its reference count
+		sa::AssetManager::get().getAsset<sa::ModelAsset>(modelID)->load();
+		return *this;
+	}
 
 	void Model::serialize(sa::Serializer& s) {
 		sa::IAsset* pAsset = sa::AssetManager::get().getAsset(modelID);

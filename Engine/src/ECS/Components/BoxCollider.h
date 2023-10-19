@@ -16,6 +16,11 @@ namespace comp {
 		physx::PxShape* pShape = nullptr;
 
 		BoxCollider() = default;
+		BoxCollider(const BoxCollider&) = default;
+		BoxCollider(BoxCollider&&) = default;
+		BoxCollider& operator=(const BoxCollider&) = default;
+		BoxCollider& operator=(BoxCollider&&) = default;
+
 		BoxCollider(const sa::Vector3& halfLengths);
 		BoxCollider(const sa::Vector3& halfLengths, const sa::Vector3& offset);
 

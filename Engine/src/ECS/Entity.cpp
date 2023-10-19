@@ -28,6 +28,7 @@ namespace sa {
             self.removeComponent(name);
         };
 
+        type["clone"] = &Entity::clone;
 
         type["parent"] = sol::property(
             [](const Entity& self) -> sol::lua_value {

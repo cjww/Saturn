@@ -28,8 +28,6 @@ namespace sa {
 	
 
 	class ScriptManager {
-	public:
-
 	private:
 
 		std::unordered_map<std::string, SystemScript> m_systemScripts;
@@ -86,6 +84,7 @@ namespace sa {
 
 	template<typename ...Args>
 	inline void ScriptManager::broadcast(const std::string& functionName, Args&& ...args) {
+		SA_PROFILE_SCOPE("Broadcast " + functionName);
 		// Scripts
 		for (const auto& script : m_allScripts) {
 			tryCall<Args...>(script.env, functionName, args...);

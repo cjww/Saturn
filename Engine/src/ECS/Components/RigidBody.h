@@ -15,8 +15,13 @@ namespace comp {
 	public:
 
 		RigidBody() = default;
+		RigidBody(const RigidBody&) = default;
+		RigidBody(RigidBody&&) = default;
+		RigidBody& operator=(const RigidBody& other);
+		RigidBody& operator=(RigidBody&&) noexcept = default;
+		
+
 		RigidBody(bool isStatic);
-		RigidBody(const RigidBody& other) = default;
 
 		void setMass(float mass);
 		float getMass() const;
@@ -40,8 +45,6 @@ namespace comp {
 		virtual void onUpdate(sa::Entity* e) override;
 		virtual void onDestroy(sa::Entity* e) override;
 
-		RigidBody& operator=(RigidBody&& other) = default;
-		RigidBody& operator=(const RigidBody& other);
 
 	};
 }

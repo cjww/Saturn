@@ -11,6 +11,11 @@ namespace comp {
 		physx::PxShape* pShape = nullptr;
 
 		SphereCollider() = default;
+		SphereCollider(const SphereCollider&) = default;
+		SphereCollider(SphereCollider&&) = default;
+		SphereCollider& operator=(const SphereCollider&) = default;
+		SphereCollider& operator=(SphereCollider&&) noexcept = default;
+
 		SphereCollider(float radius);
 
 		virtual void serialize(sa::Serializer& s) override;

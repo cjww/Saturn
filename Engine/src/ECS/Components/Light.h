@@ -28,6 +28,10 @@ namespace comp {
 		sa::LightData values;
 
 		Light() = default;
+		Light(const Light&) = default;
+		Light(Light&&) = default;
+		Light& operator=(const Light&) = default;
+		Light& operator=(Light&&) noexcept = default;
 
 
 		virtual void serialize(sa::Serializer& s) override;

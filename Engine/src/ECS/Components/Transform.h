@@ -24,8 +24,13 @@ namespace comp {
 		
 
 		Transform() = default;
+		Transform(const Transform&) = default;
+		Transform(Transform&&) = default;
+		Transform& operator=(const Transform&) = default;
+		Transform& operator=(Transform&&) noexcept = default;
+
 		Transform(physx::PxTransform pxTransform);
-		comp::Transform& operator=(const physx::PxTransform pxTransform);
+		Transform& operator=(const physx::PxTransform pxTransform);
 		operator physx::PxTransform() const;
 
 		virtual void serialize(sa::Serializer& s) override;

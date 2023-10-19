@@ -19,10 +19,11 @@ namespace comp {
 		bool autoCollectScene = true;
 
 		Camera() = default;
-
 		Camera(const Camera&) = default;
-		Camera& operator=(const Camera& other) = default;
+		Camera(Camera&&) = default;
+		Camera& operator=(const Camera&) = default;
 		Camera& operator=(Camera&&) = default;
+
 
 		virtual void serialize(sa::Serializer& s) override;
 		virtual void deserialize(void* pDoc) override;

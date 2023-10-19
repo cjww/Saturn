@@ -337,7 +337,7 @@ namespace sa {
 		if (!context)
 			return;
 		
-		if (m_currentScene) {
+		if (getCurrentScene()) {
 			
 			bool renderedToMainRenderTarget = false;
 			m_currentScene->forEach<comp::Camera>([&](comp::Camera& camera) {
@@ -377,14 +377,23 @@ namespace sa {
 	}
 
 	Scene* Engine::getCurrentScene() const {
-		return m_currentScene;
+		return m_currentScene ? (m_currentScene->isLoaded() ? m_currentScene : nullptr) : nullptr;
 	}
 
 	void Engine::setScene(Scene* scene) {
 		SA_PROFILE_FUNCTION();
-		if (scene)
-			scene->load();
+		if (scene) {
+			scene->getProgress().waitAll();
+			if (!scene->isLoaded()) {
+				scene->load();
+				scene->getProgress().waitAll();
+			}
+		}
+		if (m_currentScene) 
+			m_currentScene->getProgress().waitAll();
+
 		publish<engine_event::SceneSet>(m_currentScene, scene);
+
 		if (m_currentScene)
 			m_currentScene->release();
 		m_currentScene = scene;	

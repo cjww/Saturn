@@ -17,9 +17,9 @@ namespace sa {
 
 	ScriptManager::ScriptManager() {
 		SA_PROFILE_FUNCTION();
-
-		LuaAccessable::getState().open_libraries();
 		
+		LuaAccessable::getState().open_libraries();
+
 		auto ret = LuaAccessable::getState().do_string("return 'Loaded ' .. jit.version .. ' for ' .. jit.os .. ' ' .. jit.arch");
 		if (ret.valid()) {
 			SA_DEBUG_LOG_INFO(ret[0].as<std::string>());	

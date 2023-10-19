@@ -60,7 +60,9 @@ namespace sa {
 			throw sol::error("Bad argument to Ref: Unsupported type");
 		}
 
-		m_indexFunction = [](const sol::lua_value&) { return sol::nil; };
+		m_indexFunction = [](const sol::lua_value&) {
+			return sol::nil;
+		};
 		m_serializeFunc = [=](const Ref& self, Serializer& s, sol::state_view lua) {
 			s.beginObject("Ref");
 
