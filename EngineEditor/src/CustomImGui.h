@@ -44,7 +44,7 @@ namespace ImGui {
 
 	void SetupImGuiStyle();
 
-	void displayLuaTable(std::string name, sol::table table);
+	void DisplayLuaTable(std::string name, sol::table table);
 
 	void Component(sa::Entity entity, comp::Transform* transform);
 	void Component(sa::Entity entity, comp::Model* model);

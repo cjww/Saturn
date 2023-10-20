@@ -41,7 +41,7 @@ namespace sa {
 		void destroyEntity(const Entity& entity);
 		EntityScript* addScript(const Entity& entity, const std::filesystem::path& path);
 		void removeScript(const Entity& entity, const std::string& name);
-		EntityScript* getScript(const Entity& entity, const std::string& name);
+		EntityScript* getScript(const Entity& entity, const std::string& name) const;
 
 		template<typename T>
 		void onComponentConstruct(entt::registry& reg, entt::entity e);

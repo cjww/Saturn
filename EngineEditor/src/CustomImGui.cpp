@@ -15,6 +15,8 @@
 
 #include <PhysicsSystem.h>
 
+#include "ECS/Ref.h"
+
 namespace ImGui {
 
 	void SetupImGuiStyle() {
@@ -107,75 +109,75 @@ namespace ImGui {
 		style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.5860000252723694f);
 	}
 
-	void displayLuaTable(std::string name, sol::table table) {
+	void DisplayLuaTable(std::string name, sol::table table) {
 		bool open = ImGui::TreeNode(name.c_str());
 		if (ImGui::IsItemHovered()) {
 			ImGui::SetTooltip("table");
 		}
 		if (open) {	
 			for (auto& [key, value] : table) {
+				std::string keyAsStr = sa::LuaAccessable::getState()["tostring"](key);
+
+				ImGui::PushID(keyAsStr.c_str());
 				switch (value.get_type()) {
 					case sol::type::userdata:
 					{
 						if (value.is<sa::Vector2>()) {
 							sa::Vector2& vec2 = value.as<sa::Vector2>();
-							if (ImGui::DragFloat2(key.as<std::string>().c_str(), (float*)&vec2, 0.5f)) {
-								table[key] = vec2;
-							}
+							ImGui::DragFloat2(keyAsStr.c_str(), (float*)&vec2, 0.5f);
+							
 							if (ImGui::IsItemHovered()) {
 								ImGui::SetTooltip("Vec2");
 							}
 						}
 						else if (value.is<sa::Vector3>()) {
 							sa::Vector3& vec3 = value.as<sa::Vector3>();
-							if (ImGui::DragFloat3(key.as<std::string>().c_str(), (float*)&vec3, 0.5f)) {
-								table[key] = vec3;
-							}
+							ImGui::DragFloat3(keyAsStr.c_str(), (float*)&vec3, 0.5f);
+							
 							if (ImGui::IsItemHovered()) {
 								ImGui::SetTooltip("Vec3");
 							}
 						}
 						else if (value.is<sa::Vector4>()) {
 							sa::Vector4& vec4 = value.as<sa::Vector4>();
-							if (ImGui::DragFloat4(key.as<std::string>().c_str(), (float*)&vec4, 0.5f)) {
-								table[key] = vec4;
-							}
-							ImGui::SameLine();
-							
-							ImVec4 col = { vec4.x, vec4.y, vec4.z, vec4.w };
-							if (ImGui::ColorButton("as_color", col)) {
-								ImGui::OpenPopup("##ColorPicker");
-							}
-							
-							if (ImGui::BeginPopup("##ColorPicker")) {
-								ImGui::ColorPicker3("##Vec4AsColor", (float*)&vec4);
-								ImGui::EndPopup();
-							}
-							
+							ImGui::ColorEdit4(keyAsStr.c_str(), (float*)&vec4, ImGuiColorEditFlags_Float);
 							if (ImGui::IsItemHovered()) {
 								ImGui::SetTooltip("Vec4");
 							}
 						}
+						else if(value.is<sa::Ref>()) {
+							sa::Ref& ref = value.as<sa::Ref>();
+							if(ref.hasReference()) {
+								ImGui::Text("%s = Ref<%s>: has reference", key.as<std::string>().c_str(), ref.getType().c_str());
+							}
+							else {
+								ImGui::Text("%s = Ref<%s>: no reference", key.as<std::string>().c_str(), ref.getType().c_str());
+							}
+
+							const std::string& typeStr = ref.getType();
+							sol::table type = sa::LuaAccessable::getState()[typeStr];
+							if (type != sol::nil) {
+								
+							}
+							else {
+								
+							}
+
+
+						}
 						else {
 							std::string valueAsStr = sa::LuaAccessable::getState()["tostring"](value);
-							std::string str = key.as<std::string>() + " = " + valueAsStr;
-							ImGui::Text(str.c_str());
+							ImGui::Text("%s = %s", keyAsStr.c_str(), valueAsStr.c_str());
 							if(ImGui::IsItemHovered()) {
 								ImGui::SetTooltip("userdata");
 							}
 						}
+
 						break;
 					}
 					case sol::type::table: 
 					{
-						std::string keyString;
-						if (!key.is<int>()) {
-							keyString = key.as<std::string>();
-						}
-						else {
-							keyString = std::to_string(key.as<int>());
-						}
-						displayLuaTable(keyString, value.as<sol::table>());
+						DisplayLuaTable(keyAsStr, value.as<sol::table>());
 
 						break;
 					}
@@ -217,7 +219,7 @@ namespace ImGui {
 						ImGui::Text("nil");
 						break;
 				}
-
+				ImGui::PopID();
 			}
 
 			ImGui::TreePop();
@@ -260,7 +262,7 @@ namespace ImGui {
 		if (!script->env.valid())
 			return;
 
-		displayLuaTable("Environment", script->env);
+		DisplayLuaTable("Environment", script->env);
 
 	}
 

@@ -52,7 +52,7 @@ namespace sa {
 		EntityScript* addScript(const Entity& entity, const std::filesystem::path& path);
 		void removeScript(const entt::entity& entity, const std::string& name);
 		void clearEntity(const entt::entity& entity);
-		EntityScript* getScript(const entt::entity& entity, const std::string& name);
+		EntityScript* getScript(const entt::entity& entity, const std::string& name) const;
 
 		void clearAll();
 		void freeMemory();

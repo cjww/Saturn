@@ -129,7 +129,7 @@ void EntityInspector::onImGui() {
 				static bool visable = true;
 
 				if (ImGui::CollapsingHeader(script.name.c_str(), &visable)) {
-					ImGui::displayLuaTable("Environment##" + script.name, script.env);
+					ImGui::DisplayLuaTable("Environment##" + script.name, script.env);
 				}
 				if (!visable) {
 					ImGui::OpenPopup("Remove script?");

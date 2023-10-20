@@ -112,6 +112,7 @@ namespace sa {
 	}
 
 	bool ForwardPlus::preRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sc) {
+		SA_PROFILE_FUNCTION();
 		if (!pCamera)
 			return false;
 
@@ -196,6 +197,7 @@ namespace sa {
 
 
 	const Texture& ForwardPlus::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sc) {
+		SA_PROFILE_FUNCTION();
 		if (!pCamera)
 			return {};
 		const RenderTarget::MainRenderData& data = pRenderTarget->getMainRenderData();

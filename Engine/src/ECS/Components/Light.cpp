@@ -38,8 +38,8 @@ namespace comp {
 		type["intensity"] = sol::property([](const Light& self) {return self.values.color.a; }, [](Light& self, float value) { self.values.color.a = value; });
 		type["attenuationRadius"] = sol::property([](const Light& self) {return self.values.position.w; }, [](Light& self, float value) { self.values.position.w = value; });
 		type["color"] = sol::property(
-			[](const comp::Light& light) {return sa::Vector4(light.values.color.r, light.values.color.g, light.values.color.b, light.values.color.a); },
-			[](comp::Light& self, const sa::Vector4& color) {self.values.color = sa::Color{ color.x, color.y, color.z, color.w }; }
+			[](const comp::Light& light) {return sa::Vector3(light.values.color.r, light.values.color.g, light.values.color.b); },
+			[](comp::Light& self, const sa::Vector3& color) {self.values.color = sa::Color{ color.x, color.y, color.z, self.values.color.a }; }
 		);
 
 	}

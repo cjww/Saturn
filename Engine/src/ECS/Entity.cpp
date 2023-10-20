@@ -49,22 +49,19 @@ namespace sa {
         );
         
         type["__index"] = [](Entity& self, std::string key) -> sol::lua_value {
-            /*
-            std::string componentName = key;
-            componentName[0] = utils::toUpper(componentName[0]);
-            auto metaComp = self.getComponent(componentName);
-            if(metaComp.isValid()) {
-                return LuaAccessable::cast(metaComp);
-            }
-            */
-
-            EntityScript* pScript = self.getScript(key);
+        	EntityScript* pScript = self.getScript(key);
             if (!pScript)
                 return sol::nil;
             
             return pScript->env;
         };
 
+        type[sol::meta_function::to_string] = [](const Entity& self) { return self.toString(); };
+
+        type["Get"] = [](const Entity& entity) -> const Entity&
+        {
+	        return entity;
+        };
     }
 
     sol::usertype<Entity>& Entity::getType() {
@@ -209,7 +206,7 @@ namespace sa {
         m_pScene->removeScript(*this, name);
     }
 
-    EntityScript* Entity::getScript(const std::string& name) {
+   EntityScript* Entity::getScript(const std::string& name) const {
         return m_pScene->getScript(*this, name);
     }
 

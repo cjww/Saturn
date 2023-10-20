@@ -184,14 +184,14 @@ namespace sa {
 		m_entityScriptIndices.erase(entity);
 	}
 
-	EntityScript* ScriptManager::getScript(const entt::entity& entity, const std::string& name) {
+	EntityScript* ScriptManager::getScript(const entt::entity& entity, const std::string& name) const{
 		if (!m_entityScriptIndices.count(entity))
 			return nullptr;
 		auto& entityScripts = m_entityScriptIndices.at(entity);
 		if (!entityScripts.count(name))
 			return nullptr;
 
-		return &m_allScripts.at(entityScripts.at(name));
+		return (EntityScript*)&m_allScripts.at(entityScripts.at(name));
 	}
 
 	void ScriptManager::clearAll() {

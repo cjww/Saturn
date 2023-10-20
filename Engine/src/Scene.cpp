@@ -97,6 +97,8 @@ namespace sa {
 		};
 
 		type["createEntity"] = &Scene::createEntity;
+		type["destroyEntity"] = &Scene::destroyEntity;
+
 
 	}
 
@@ -246,7 +248,7 @@ namespace sa {
 		m_scriptManager.removeScript(entity, name);
 	}
 
-	EntityScript* Scene::getScript(const Entity& entity, const std::string& name) {
+	EntityScript* Scene::getScript(const Entity& entity, const std::string& name) const {
 		return m_scriptManager.getScript(entity, name);
 	}
 

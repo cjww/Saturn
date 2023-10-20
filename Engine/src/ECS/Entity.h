@@ -62,7 +62,7 @@ namespace sa {
 
 		EntityScript* addScript(const std::filesystem::path& path);
 		void removeScript(const std::string& name);
-		EntityScript* getScript(const std::string& name);
+		EntityScript* getScript(const std::string& name) const;
 
 		void setParent(const Entity& parent);
 		void orphan() const;
@@ -195,8 +195,7 @@ namespace sa {
 			Comp::reg();
 			LuaAccessable::registerComponent<Comp>();
 
-			LuaAccessable::getState()[getComponentName<Comp>()]["get"] = [](const sol::lua_value& value) {
-				Entity entity = value.as<Entity>();
+			LuaAccessable::getState()[getComponentName<Comp>()]["Get"] = [](const Entity& entity) {
 				return entity.getComponent<Comp>();
 			};
 
