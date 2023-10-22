@@ -44,7 +44,8 @@ namespace ImGui {
 
 	void SetupImGuiStyle();
 
-	void DisplayLuaTable(std::string name, sol::table table);
+	sol::lua_value DisplayLuaValue(const std::string& keyAsStr, const sol::object& value);
+	void DisplayLuaTable(const std::string& name, sol::table table);
 
 	void Component(sa::Entity entity, comp::Transform* transform);
 	void Component(sa::Entity entity, comp::Model* model);
@@ -57,6 +58,9 @@ namespace ImGui {
 
 	template<typename T>
 	void Component(const sa::Entity& entity);
+
+	void Script(sa::EntityScript& pScript, bool* visable);
+
 
 	AssetEditorInfo GetAssetInfo(sa::AssetTypeID type);
 	sa::Texture2D LoadEditorIcon(const std::filesystem::path& path);
@@ -72,6 +76,10 @@ namespace ImGui {
 
 	bool AssetSlot(const char* label, sa::IAsset*& pAsset, sa::AssetTypeID typeID);
 	bool FileSlot(const char* label, std::filesystem::path& path, const char* extension);
+	bool ScriptSlot(const char* label, sa::Entity& entity, const std::string& scriptName);
+	bool ComponentSlot(const char* label, sa::Entity& entity, sa::ComponentType type);
+	bool EntitySlot(const char* label, sa::Entity& entity);
+
 
 	void AddEditorModuleSettingsHandler(sa::EngineEditor* pEditor);
 

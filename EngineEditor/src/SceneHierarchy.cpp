@@ -148,7 +148,7 @@ void SceneHierarchy::makeTree(sa::Entity e) {
 	}
 
 	bool opened = ImGui::TreeNodeEx((e.getComponent<comp::Name>()->name + "##" + std::to_string((uint32_t)e)).c_str(), flags);
-	if (ImGui::IsItemClicked()) {
+	if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
 		if (s) {
 			m_pEngine->publish<sa::editor_event::EntityDeselected>(e);
 		}

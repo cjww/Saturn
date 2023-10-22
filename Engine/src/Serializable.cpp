@@ -35,7 +35,7 @@ namespace sa {
 	void Serializer::value(const std::string& key, sol::userdata userdata) {
 		const std::optional<sol::protected_function> serializeFunction = userdata.get<std::optional<sol::protected_function>>("serialize");
 		if (!serializeFunction.has_value()) {
-			SA_DEBUG_LOG_WARNING("Did not serialize requested userdata: userdata not serializable");
+			SA_DEBUG_LOG_WARNING("Did not serialize requested userdata: " + key + " not serializable");
 			return;
 		}
 		beginObject(key);
@@ -43,7 +43,7 @@ namespace sa {
 		const auto result = func(userdata, *this);
 		if (!result.valid()) {
 			const sol::error err = result;
-			SA_DEBUG_LOG_ERROR("Failed to serialize userdata: ", err.what());
+			SA_DEBUG_LOG_ERROR("Failed to serialize userdata " + key + ": ", err.what());
 		}
 		endObject();
 	}

@@ -109,7 +109,123 @@ namespace ImGui {
 		style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.5860000252723694f);
 	}
 
-	void DisplayLuaTable(std::string name, sol::table table) {
+	sol::lua_value DisplayLuaValue(const std::string& keyAsStr, const sol::object& value) {
+		switch (value.get_type()) {
+		case sol::type::userdata:
+		{
+			if (value.is<sa::Vector2>()) {
+				sa::Vector2& vec2 = value.as<sa::Vector2>();
+				ImGui::DragFloat2(keyAsStr.c_str(), (float*)&vec2, 0.5f);
+
+				if (ImGui::IsItemHovered()) {
+					ImGui::SetTooltip("Vec2");
+				}
+			}
+			else if (value.is<sa::Vector3>()) {
+				sa::Vector3& vec3 = value.as<sa::Vector3>();
+				ImGui::DragFloat3(keyAsStr.c_str(), (float*)&vec3, 0.5f);
+
+				if (ImGui::IsItemHovered()) {
+					ImGui::SetTooltip("Vec3");
+				}
+			}
+			else if (value.is<sa::Vector4>()) {
+				sa::Vector4& vec4 = value.as<sa::Vector4>();
+				ImGui::ColorEdit4(keyAsStr.c_str(), (float*)&vec4, ImGuiColorEditFlags_Float);
+				if (ImGui::IsItemHovered()) {
+					ImGui::SetTooltip("Vec4");
+				}
+			}
+			else if (value.is<sa::Ref>()) {
+				sa::Ref& ref = value.as<sa::Ref>();
+				const std::string& typeStr = ref.getType();
+				sol::lua_value refValue = ref.getValue();
+
+				sa::Entity entity;
+				if (refValue.is<sa::Entity>()) {
+					entity = refValue.as<sa::Entity>();
+				}
+
+				sol::lua_value type = sa::LuaAccessable::getState()[typeStr];
+				if (!type.is<sol::nil_t>()) { // is userdata
+					sa::ComponentType componentType = sa::getComponentType(typeStr);
+					if (componentType.isValid()) { // is component
+						if (ComponentSlot(keyAsStr.c_str(), entity, componentType)) {
+							return sa::Ref(type.as<sol::table>(), entity);
+						}
+					}
+					else if (typeStr == "Entity") {
+						if (EntitySlot(keyAsStr.c_str(), entity)) {
+							return sa::Ref(type.as<sol::table>(), entity);
+						}
+					}
+				}
+				else {
+					if (ScriptSlot(keyAsStr.c_str(), entity, typeStr)) {
+						return sa::Ref(typeStr, entity);
+					}
+				}
+			}
+			else {
+				std::string valueAsStr = sa::LuaAccessable::getState()["tostring"](value);
+				ImGui::Text("%s = %s", keyAsStr.c_str(), valueAsStr.c_str());
+				if (ImGui::IsItemHovered()) {
+					ImGui::SetTooltip("userdata");
+				}
+			}
+
+			break;
+		}
+		case sol::type::table:
+		{
+			DisplayLuaTable(keyAsStr, value.as<sol::table>());
+
+			break;
+		}
+		case sol::type::function:
+			ImGui::Text(keyAsStr.c_str());
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip("function");
+			}
+			break;
+		case sol::type::string: {
+			std::string v = value.as<std::string>();
+			if (ImGui::InputText(keyAsStr.c_str(), &v, ImGuiInputTextFlags_EnterReturnsTrue))
+				return v;
+			
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip("string");
+			}
+			break;
+		}
+		case sol::type::number: {
+			float v = value.as<float>();
+			if(ImGui::InputFloat(keyAsStr.c_str(), &v))
+				return v;
+			
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip("number");
+			}
+			break;
+		}
+		case sol::type::boolean: {
+			bool v = value.as<bool>();
+			if(ImGui::Checkbox(keyAsStr.c_str(), &v))
+				return v;
+
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip("boolean");
+			}
+			break;
+		}
+		default:
+			ImGui::Text("nil");
+			break;
+		}
+		return sol::nil;
+	}
+
+	void DisplayLuaTable(const std::string& name, sol::table table) {
 		bool open = ImGui::TreeNode(name.c_str());
 		if (ImGui::IsItemHovered()) {
 			ImGui::SetTooltip("table");
@@ -119,106 +235,11 @@ namespace ImGui {
 				std::string keyAsStr = sa::LuaAccessable::getState()["tostring"](key);
 
 				ImGui::PushID(keyAsStr.c_str());
-				switch (value.get_type()) {
-					case sol::type::userdata:
-					{
-						if (value.is<sa::Vector2>()) {
-							sa::Vector2& vec2 = value.as<sa::Vector2>();
-							ImGui::DragFloat2(keyAsStr.c_str(), (float*)&vec2, 0.5f);
-							
-							if (ImGui::IsItemHovered()) {
-								ImGui::SetTooltip("Vec2");
-							}
-						}
-						else if (value.is<sa::Vector3>()) {
-							sa::Vector3& vec3 = value.as<sa::Vector3>();
-							ImGui::DragFloat3(keyAsStr.c_str(), (float*)&vec3, 0.5f);
-							
-							if (ImGui::IsItemHovered()) {
-								ImGui::SetTooltip("Vec3");
-							}
-						}
-						else if (value.is<sa::Vector4>()) {
-							sa::Vector4& vec4 = value.as<sa::Vector4>();
-							ImGui::ColorEdit4(keyAsStr.c_str(), (float*)&vec4, ImGuiColorEditFlags_Float);
-							if (ImGui::IsItemHovered()) {
-								ImGui::SetTooltip("Vec4");
-							}
-						}
-						else if(value.is<sa::Ref>()) {
-							sa::Ref& ref = value.as<sa::Ref>();
-							if(ref.hasReference()) {
-								ImGui::Text("%s = Ref<%s>: has reference", key.as<std::string>().c_str(), ref.getType().c_str());
-							}
-							else {
-								ImGui::Text("%s = Ref<%s>: no reference", key.as<std::string>().c_str(), ref.getType().c_str());
-							}
 
-							const std::string& typeStr = ref.getType();
-							sol::table type = sa::LuaAccessable::getState()[typeStr];
-							if (type != sol::nil) {
-								
-							}
-							else {
-								
-							}
+				sol::lua_value changedValue = DisplayLuaValue(keyAsStr, value);
+				if (!changedValue.is<sol::nil_t>())
+					table[key] = changedValue;
 
-
-						}
-						else {
-							std::string valueAsStr = sa::LuaAccessable::getState()["tostring"](value);
-							ImGui::Text("%s = %s", keyAsStr.c_str(), valueAsStr.c_str());
-							if(ImGui::IsItemHovered()) {
-								ImGui::SetTooltip("userdata");
-							}
-						}
-
-						break;
-					}
-					case sol::type::table: 
-					{
-						DisplayLuaTable(keyAsStr, value.as<sol::table>());
-
-						break;
-					}
-					case sol::type::function:
-						ImGui::Text(key.as<std::string>().c_str());
-						if (ImGui::IsItemHovered()) {
-							ImGui::SetTooltip("function");
-						}
-						break;
-					case sol::type::string: {
-						std::string v = value.as<std::string>();
-						if (ImGui::InputText(key.as<std::string>().c_str(), &v, ImGuiInputTextFlags_EnterReturnsTrue)) {
-							table[key] = v;
-						}
-						if (ImGui::IsItemHovered()) {
-							ImGui::SetTooltip("string");
-						}
-						break;
-					}
-					case sol::type::number: {
-						float v = value.as<float>();
-						ImGui::InputFloat(key.as<std::string>().c_str(), &v);
-						table[key] = v;
-						if (ImGui::IsItemHovered()) {
-							ImGui::SetTooltip("number");
-						}
-						break;
-					}
-					case sol::type::boolean: {
-						bool v = value.as<bool>();
-						ImGui::Checkbox(key.as<std::string>().c_str(), &v);
-						table[key] = v;
-						if (ImGui::IsItemHovered()) {
-							ImGui::SetTooltip("boolean");
-						}
-						break;
-					}
-					default:
-						ImGui::Text("nil");
-						break;
-				}
 				ImGui::PopID();
 			}
 
@@ -434,6 +455,17 @@ namespace ImGui {
 			ImGui::TreePop();
 		}
 		return doubleClicked;
+	}
+
+	void Script(sa::EntityScript& script, bool* visable) {
+		if (ImGui::CollapsingHeader(script.name.c_str(), visable)) {
+			for (auto& [key, value] : script.serializedData) {
+				auto changedValue = ImGui::DisplayLuaValue(key, script.env[key]);
+				if (!changedValue.is<sol::nil_t>()) {
+					script.env[key] = changedValue;
+				}
+			}
+		}
 	}
 
 	AssetEditorInfo GetAssetInfo(sa::AssetTypeID type) {
@@ -756,7 +788,7 @@ namespace ImGui {
 		if (ImGui::InputText(label, &pathStr, ImGuiInputTextFlags_EnterReturnsTrue)) {
 			path = pathStr;
 			if (!pathStr.empty())
-				path.replace_extension(".glsl");
+				path.replace_extension(extension);
 		}
 
 		if (!std::filesystem::exists(path)) {
@@ -767,6 +799,76 @@ namespace ImGui {
 			return false;
 		}
 		return true;
+	}
+
+	bool ScriptSlot(const char* label, sa::Entity& entity, const std::string& scriptName) {
+		std::string preview = "None";
+		if (!entity.isNull()) {
+			preview = entity.toString();
+		}
+		preview += " (" + scriptName + ")";
+		bool selected = false;
+
+		ImGui::InputText(label, preview.data(), preview.size(), ImGuiInputTextFlags_ReadOnly);
+
+		if (BeginDragDropTarget()) {
+			const ImGuiPayload* payload = AcceptDragDropPayload("Entity");
+			if (payload && payload->IsDelivery()) {
+				sa::Entity* pEntityPayload = static_cast<sa::Entity*>(payload->Data);
+				if(pEntityPayload->getScript(scriptName)) {
+					entity = *pEntityPayload;
+					selected = true;
+				}
+			}
+			EndDragDropTarget();
+		}
+		return selected;
+	}
+
+	bool ComponentSlot(const char* label, sa::Entity& entity, sa::ComponentType type) {
+		std::string preview = "None";
+		if (!entity.isNull()) {
+			preview = entity.toString();
+		}
+		preview += " (" + type.getName() + ")";
+		bool selected = false;
+
+		ImGui::InputText(label, preview.data(), preview.size(), ImGuiInputTextFlags_ReadOnly);
+
+		if (BeginDragDropTarget()) {
+			const ImGuiPayload* payload = AcceptDragDropPayload("Entity");
+			if (payload && payload->IsDelivery()) {
+				sa::Entity* pEntityPayload = static_cast<sa::Entity*>(payload->Data);
+				if (pEntityPayload->getComponent(type).isValid()) {
+					entity = *pEntityPayload;
+					selected = true;
+				}
+			}
+			EndDragDropTarget();
+		}
+		return selected;
+	}
+
+	bool EntitySlot(const char* label, sa::Entity& entity) {
+		std::string preview = "None";
+		if (!entity.isNull()) {
+			preview = entity.toString();
+		}
+
+		bool selected = false;
+
+		ImGui::InputText(label, preview.data(), preview.size(), ImGuiInputTextFlags_ReadOnly);
+
+		if (BeginDragDropTarget()) {
+			const ImGuiPayload* payload = AcceptDragDropPayload("Entity");
+			if (payload && payload->IsDelivery()) {
+				sa::Entity* pEntityPayload = static_cast<sa::Entity*>(payload->Data);
+				entity = *pEntityPayload;
+				selected = true;
+			}
+			EndDragDropTarget();
+		}
+		return selected;
 	}
 
 	void AddEditorModuleSettingsHandler(sa::EngineEditor* pEditor) {

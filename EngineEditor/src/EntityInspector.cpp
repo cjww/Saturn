@@ -1,5 +1,6 @@
 #include "EntityInspector.h"
 #include "EngineEditor.h"
+#include "../../DX11Renderer/include/DX11Renderer.h"
 
 void EntityInspector::makePopups() {
 	if (ImGui::BeginPopup("Remove?")) {
@@ -95,8 +96,8 @@ EntityInspector::~EntityInspector() {
 
 void EntityInspector::onImGui() {
 	SA_PROFILE_FUNCTION();
-
-	if (ImGui::Begin(m_name)) {
+	
+	if (ImGui::Begin(m_name) && m_pEngine->getCurrentScene()) {
 
 		if (m_selectedEntity) {
 			
@@ -128,9 +129,7 @@ void EntityInspector::onImGui() {
 				ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
 				static bool visable = true;
 
-				if (ImGui::CollapsingHeader(script.name.c_str(), &visable)) {
-					ImGui::DisplayLuaTable("Environment##" + script.name, script.env);
-				}
+				ImGui::Script(script, &visable);
 				if (!visable) {
 					ImGui::OpenPopup("Remove script?");
 					ImGui::payload.name = script.name;
@@ -138,8 +137,6 @@ void EntityInspector::onImGui() {
 				}
 			}
 
-
-			
 			ImGui::Separator();
 			ImGui::Spacing();
 			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 3);

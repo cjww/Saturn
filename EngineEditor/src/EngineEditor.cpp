@@ -527,7 +527,7 @@ namespace sa {
 	void EngineEditor::onUpdate(float dt) {
 		if (m_pEngine->getCurrentScene()) {
 			m_pEngine->getCurrentScene()->reloadScripts();
-
+			
 			if (m_state == State::PLAYING) {
 				m_pEngine->getCurrentScene()->runtimeUpdate(dt);
 			}

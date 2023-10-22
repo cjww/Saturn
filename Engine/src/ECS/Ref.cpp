@@ -6,6 +6,7 @@
 namespace sa {
 	Ref::Ref(const std::string& type, const sa::Entity& value) {
 		m_typeStr = type;
+		m_getValueFunc = [=]() -> sol::lua_value { return Entity(value); };
 
 		m_retriveFunction = [=]() -> sol::table {
 			if (value.isNull())
@@ -32,6 +33,7 @@ namespace sa {
 			throw sol::error("Bad argument to Ref: Unsupported type");
 
 		m_typeStr = LuaAccessable::getState()[type].get<std::string>();
+		m_getValueFunc = [=]() -> sol::lua_value { return Entity(value); };
 
 		m_retriveFunction = [=]() -> sol::table {
 			if(value.isNull())
@@ -43,7 +45,7 @@ namespace sa {
 		m_serializeFunc = [=](const Ref& self, Serializer& s) {
 			s.beginObject("Ref");
 			
-			s.value("type", m_typeStr.c_str());
+			s.value("type", self.m_typeStr.c_str());
 			s.value("value", (uint32_t)value);
 
 			s.endObject();
@@ -65,13 +67,15 @@ namespace sa {
 		else 
 			throw sol::error("Bad argument to Ref: Unsupported type");
 
+		m_getValueFunc = [=]()  { return value; };
+
 		m_retriveFunction = []() {
 			return sol::nil;
 		};
 
 		m_serializeFunc = [=](const Ref& self, Serializer& s) {
 			s.beginObject("Ref");
-			s.value("type", m_typeStr.c_str());
+			s.value("type", self.m_typeStr.c_str());
 			s.endObject();
 		};
 
@@ -84,6 +88,10 @@ namespace sa {
 
 	const std::string& Ref::getType() const {
 		return m_typeStr;
+	}
+
+	sol::lua_value Ref::getValue() const {
+		return m_getValueFunc();
 	}
 
 	void Ref::reg() {

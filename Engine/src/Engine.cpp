@@ -224,8 +224,7 @@ namespace sa {
 
 		lua["Serialize"] = [](sol::lua_value table, sol::this_environment thisEnv) {
 			if (!table.is<sol::table>()) {
-				SA_DEBUG_LOG_ERROR("First argument is not a table");
-				return;
+				throw sol::error("[Serialize] First argument is not a table");
 			}
 			sol::table t = table.as<sol::table>();
 			sol::environment& env = thisEnv;
@@ -234,8 +233,7 @@ namespace sa {
 			
 			EntityScript* pScript = entity.getScript(scriptName);
 			if (!pScript) {
-				SA_DEBUG_LOG_ERROR("No such script! ", scriptName);
-				return;
+				throw sol::error("[Serialize] No such script! " + scriptName);
 			}
 			
 			for (auto& [key, value] : t) {
@@ -244,10 +242,12 @@ namespace sa {
 				// if stored load stored value
 				if (pScript->serializedData.count(variableName)) {
 					value = pScript->serializedData[variableName];
+					SA_DEBUG_LOG_INFO("Variable overwritten by serialized data: ", variableName, " = ", sol::type_name(LuaAccessable::getState(), value.get_type()));
 				}
 				else {
 					// else store this value
 					pScript->serializedData[variableName] = value;
+					SA_DEBUG_LOG_INFO("Serialized data added: ", variableName, " = ", sol::type_name(LuaAccessable::getState(), value.get_type()));
 				}
 				// initialize variable with appropriate value
 				env[variableName] = value;
@@ -377,7 +377,9 @@ namespace sa {
 	}
 
 	Scene* Engine::getCurrentScene() const {
-		return m_currentScene ? (m_currentScene->isLoaded() ? m_currentScene : nullptr) : nullptr;
+		if (m_currentScene && m_currentScene->getProgress().isDone() && m_currentScene->isLoaded())
+			return m_currentScene;
+		return nullptr;
 	}
 
 	void Engine::setScene(Scene* scene) {

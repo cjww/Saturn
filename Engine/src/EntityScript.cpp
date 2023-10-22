@@ -12,8 +12,9 @@ namespace sa {
 		s.value("path", path.generic_string().c_str());
 
 		s.beginObject("env");
-		for (auto& [key, value] : serializedData) {
-			s.value(key, sol::object(env[key]));
+		for (const auto& [key, value] : serializedData) {
+			SA_DEBUG_LOG_INFO("Serialized ", key);
+			s.value(key, env.get<sol::object>(key));
 		}
 		s.endObject();
 
