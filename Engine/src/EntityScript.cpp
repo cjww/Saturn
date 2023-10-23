@@ -13,7 +13,7 @@ namespace sa {
 
 		s.beginObject("env");
 		for (const auto& [key, value] : serializedData) {
-			SA_DEBUG_LOG_INFO("Serialized ", key);
+			SA_DEBUG_LOG_INFO("Serializing ", key);
 			s.value(key, env.get<sol::object>(key));
 		}
 		s.endObject();
@@ -28,6 +28,7 @@ namespace sa {
 		for (auto o : e.get_object()) {
 			auto value = o.value();
 			std::string_view key = o.unescaped_key();
+			SA_DEBUG_LOG_INFO("Deserializing ", key);
 			switch (value.type()) {
 			case json_type::number:
 				if (value.get_number_type() == number_type::floating_point_number) {
@@ -78,11 +79,12 @@ namespace sa {
 				
 
 			default:
-				throw std::runtime_error("Not implemented");
+				throw std::runtime_error("[EntityScript deserialize] Not implemented json type");
 				break;
 			}
 
 			serializedData[std::string(key)] = env[key];
+			
 		}
 	}
 }

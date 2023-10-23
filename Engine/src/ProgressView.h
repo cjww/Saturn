@@ -44,6 +44,7 @@ namespace sa {
 
 		operator T();
 
+
 	};
 
 	template<typename T>

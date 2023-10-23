@@ -85,25 +85,19 @@ bool sa::MaterialShader::onLoad(std::ifstream& file, AssetLoadFlags flags) {
         file.read((char*)m_code[i].data(), codeSize * sizeof(uint32_t));
     }
 
-    try {
-        if (m_code.empty()) {
-            SA_DEBUG_LOG_WARNING("No spv code read from Material Shader asset ", getName());
-            if(m_sourceFiles.empty())
-                return false;
-            SA_DEBUG_LOG_INFO("Compiling Material Shader asset ", getName(), " from source files");
-            for (auto& source : m_sourceFiles) {
-                SA_DEBUG_LOG_INFO(sa::to_string(source.stage), " Stage : ", source.filePath);
-            }
-            create(m_sourceFiles);
-            return true;
+    if (m_code.empty()) {
+        SA_DEBUG_LOG_WARNING("No spv code read from Material Shader asset ", getName());
+        if(m_sourceFiles.empty())
+            return false;
+        SA_DEBUG_LOG_INFO("Compiling Material Shader asset ", getName(), " from source files");
+        for (auto& source : m_sourceFiles) {
+            SA_DEBUG_LOG_INFO(sa::to_string(source.stage), " Stage : ", source.filePath);
         }
+        create(m_sourceFiles);
+        return true;
+    }
 
-        create(m_code);
-    }
-    catch (const std::exception& e) {
-        SA_DEBUG_LOG_ERROR(e.what());
-        return false;
-    }
+    create(m_code);
 
     return true;
 }

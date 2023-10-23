@@ -1,6 +1,5 @@
 #include "EntityInspector.h"
 #include "EngineEditor.h"
-#include "../../DX11Renderer/include/DX11Renderer.h"
 
 void EntityInspector::makePopups() {
 	if (ImGui::BeginPopup("Remove?")) {
@@ -125,14 +124,18 @@ void EntityInspector::onImGui() {
 
 
 			// Display entity scripts
-			for (auto& script : m_pEngine->getCurrentScene()->getAssignedScripts(m_selectedEntity)) {
+			auto scripts = m_pEngine->getCurrentScene()->getAssignedScripts(m_selectedEntity);
+			for (auto& pScript : scripts) {
 				ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
 				static bool visable = true;
 
-				ImGui::Script(script, &visable);
+				if(ImGui::Script(pScript, &visable)) {
+					m_pEngine->getCurrentScene()->reloadScript(pScript);
+				}
+
 				if (!visable) {
 					ImGui::OpenPopup("Remove script?");
-					ImGui::payload.name = script.name;
+					ImGui::payload.name = pScript->name;
 					visable = true;
 				}
 			}

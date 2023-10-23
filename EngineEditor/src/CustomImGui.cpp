@@ -112,76 +112,12 @@ namespace ImGui {
 	sol::lua_value DisplayLuaValue(const std::string& keyAsStr, const sol::object& value) {
 		switch (value.get_type()) {
 		case sol::type::userdata:
-		{
-			if (value.is<sa::Vector2>()) {
-				sa::Vector2& vec2 = value.as<sa::Vector2>();
-				ImGui::DragFloat2(keyAsStr.c_str(), (float*)&vec2, 0.5f);
+			return DisplayLuaUserdata(keyAsStr, value.as<sol::userdata>());
 
-				if (ImGui::IsItemHovered()) {
-					ImGui::SetTooltip("Vec2");
-				}
-			}
-			else if (value.is<sa::Vector3>()) {
-				sa::Vector3& vec3 = value.as<sa::Vector3>();
-				ImGui::DragFloat3(keyAsStr.c_str(), (float*)&vec3, 0.5f);
-
-				if (ImGui::IsItemHovered()) {
-					ImGui::SetTooltip("Vec3");
-				}
-			}
-			else if (value.is<sa::Vector4>()) {
-				sa::Vector4& vec4 = value.as<sa::Vector4>();
-				ImGui::ColorEdit4(keyAsStr.c_str(), (float*)&vec4, ImGuiColorEditFlags_Float);
-				if (ImGui::IsItemHovered()) {
-					ImGui::SetTooltip("Vec4");
-				}
-			}
-			else if (value.is<sa::Ref>()) {
-				sa::Ref& ref = value.as<sa::Ref>();
-				const std::string& typeStr = ref.getType();
-				sol::lua_value refValue = ref.getValue();
-
-				sa::Entity entity;
-				if (refValue.is<sa::Entity>()) {
-					entity = refValue.as<sa::Entity>();
-				}
-
-				sol::lua_value type = sa::LuaAccessable::getState()[typeStr];
-				if (!type.is<sol::nil_t>()) { // is userdata
-					sa::ComponentType componentType = sa::getComponentType(typeStr);
-					if (componentType.isValid()) { // is component
-						if (ComponentSlot(keyAsStr.c_str(), entity, componentType)) {
-							return sa::Ref(type.as<sol::table>(), entity);
-						}
-					}
-					else if (typeStr == "Entity") {
-						if (EntitySlot(keyAsStr.c_str(), entity)) {
-							return sa::Ref(type.as<sol::table>(), entity);
-						}
-					}
-				}
-				else {
-					if (ScriptSlot(keyAsStr.c_str(), entity, typeStr)) {
-						return sa::Ref(typeStr, entity);
-					}
-				}
-			}
-			else {
-				std::string valueAsStr = sa::LuaAccessable::getState()["tostring"](value);
-				ImGui::Text("%s = %s", keyAsStr.c_str(), valueAsStr.c_str());
-				if (ImGui::IsItemHovered()) {
-					ImGui::SetTooltip("userdata");
-				}
-			}
-
-			break;
-		}
 		case sol::type::table:
-		{
 			DisplayLuaTable(keyAsStr, value.as<sol::table>());
-
 			break;
-		}
+
 		case sol::type::function:
 			ImGui::Text(keyAsStr.c_str());
 			if (ImGui::IsItemHovered()) {
@@ -219,8 +155,72 @@ namespace ImGui {
 			break;
 		}
 		default:
-			ImGui::Text("nil");
+			ImGui::Text("%s = nil", keyAsStr.c_str());
 			break;
+		}
+		return sol::nil;
+	}
+
+	sol::lua_value DisplayLuaUserdata(const std::string& keyAsStr, const sol::userdata& value) {
+		if (value.is<sa::Vector2>()) {
+			sa::Vector2& vec2 = value.as<sa::Vector2>();
+			ImGui::DragFloat2(keyAsStr.c_str(), (float*)&vec2, 0.5f);
+
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip("Vec2");
+			}
+		}
+		else if (value.is<sa::Vector3>()) {
+			sa::Vector3& vec3 = value.as<sa::Vector3>();
+			ImGui::DragFloat3(keyAsStr.c_str(), (float*)&vec3, 0.5f);
+
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip("Vec3");
+			}
+		}
+		else if (value.is<sa::Vector4>()) {
+			sa::Vector4& vec4 = value.as<sa::Vector4>();
+			ImGui::ColorEdit4(keyAsStr.c_str(), (float*)&vec4, ImGuiColorEditFlags_Float);
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip("Vec4");
+			}
+		}
+		else if (value.is<sa::Ref>()) {
+			sa::Ref& ref = value.as<sa::Ref>();
+			const std::string& typeStr = ref.getType();
+			sol::lua_value refValue = ref.getValue();
+
+			sa::Entity entity;
+			if (refValue.is<sa::Entity>()) {
+				entity = refValue.as<sa::Entity>();
+			}
+
+			sol::lua_value type = sa::LuaAccessable::getState()[typeStr];
+			if (!type.is<sol::nil_t>()) { // is userdata
+				sa::ComponentType componentType = sa::getComponentType(typeStr);
+				if (componentType.isValid()) { // is component
+					if (ComponentSlot(keyAsStr.c_str(), entity, componentType)) {
+						return sa::Ref(type.as<sol::table>(), entity);
+					}
+				}
+				else if (typeStr == "Entity") {
+					if (EntitySlot(keyAsStr.c_str(), entity)) {
+						return sa::Ref(type.as<sol::table>(), entity);
+					}
+				}
+			}
+			else {
+				if (ScriptSlot(keyAsStr.c_str(), entity, typeStr)) {
+					return sa::Ref(typeStr, entity);
+				}
+			}
+		}
+		else {
+			std::string valueAsStr = sa::LuaAccessable::getState()["tostring"](value);
+			ImGui::Text("%s = %s", keyAsStr.c_str(), valueAsStr.c_str());
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip("userdata");
+			}
 		}
 		return sol::nil;
 	}
@@ -457,15 +457,23 @@ namespace ImGui {
 		return doubleClicked;
 	}
 
-	void Script(sa::EntityScript& script, bool* visable) {
-		if (ImGui::CollapsingHeader(script.name.c_str(), visable)) {
-			for (auto& [key, value] : script.serializedData) {
-				auto changedValue = ImGui::DisplayLuaValue(key, script.env[key]);
+	bool Script(sa::EntityScript* pScript, bool* visable) {
+		if (CollapsingHeader(pScript->name.c_str(), visable)) {
+			for (auto& [key, value] : pScript->serializedData) {
+				auto changedValue = ImGui::DisplayLuaValue(key, pScript->env[key]);
 				if (!changedValue.is<sol::nil_t>()) {
-					script.env[key] = changedValue;
+					pScript->env[key] = changedValue;
+				}
+
+				auto pos = ImVec2(GetItemRectMax().x, GetItemRectMin().y);
+				if(CloseButton(ImGui::GetID((key + "##reset_button").c_str()), pos)) {
+					pScript->env[key] = sol::nil;
+					pScript->serializedData.erase(key);
+					return true;
 				}
 			}
 		}
+		return false;
 	}
 
 	AssetEditorInfo GetAssetInfo(sa::AssetTypeID type) {

@@ -10,6 +10,7 @@
 
 namespace sa {
 
+	
 	typedef uint32_t AssetTypeID;
 	struct AssetHeader {
 		UUID id;
@@ -42,7 +43,7 @@ namespace sa {
 	*/
 	class IAsset {
 	private:
-		inline static tf::Executor s_taskExecutor;
+		static tf::Executor s_taskExecutor;
 
 		AssetHeader m_header;
 		std::atomic_bool m_isLoaded;

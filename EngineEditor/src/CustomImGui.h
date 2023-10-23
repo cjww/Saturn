@@ -45,6 +45,8 @@ namespace ImGui {
 	void SetupImGuiStyle();
 
 	sol::lua_value DisplayLuaValue(const std::string& keyAsStr, const sol::object& value);
+	sol::lua_value DisplayLuaUserdata(const std::string& keyAsStr, const sol::userdata& value);
+
 	void DisplayLuaTable(const std::string& name, sol::table table);
 
 	void Component(sa::Entity entity, comp::Transform* transform);
@@ -58,8 +60,7 @@ namespace ImGui {
 
 	template<typename T>
 	void Component(const sa::Entity& entity);
-
-	void Script(sa::EntityScript& pScript, bool* visable);
+	bool Script(sa::EntityScript* pScript, bool* visable);
 
 
 	AssetEditorInfo GetAssetInfo(sa::AssetTypeID type);

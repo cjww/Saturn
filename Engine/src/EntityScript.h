@@ -14,6 +14,8 @@ namespace sa {
 
 		std::unordered_map<std::string, sol::object> serializedData;
 
+		bool wantsReload;
+
 		EntityScript(std::string name, std::filesystem::path path, sol::environment env, entt::entity owner, std::filesystem::file_time_type lastWriteTime)
 			: name(name)
 			, path(path)

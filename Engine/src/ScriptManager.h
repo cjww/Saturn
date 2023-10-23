@@ -57,8 +57,10 @@ namespace sa {
 		void clearAll();
 		void freeMemory();
 
-		std::vector<EntityScript> getEntityScripts(const entt::entity& entity) const;
+		std::vector<EntityScript*> getEntityScripts(const entt::entity& entity);
+		void reloadScript(EntityScript* pScript);
 		void reloadScripts();
+
 
 		template<typename ...Args>
 		static void tryCall(const sol::environment& env, const std::string& functionName, Args&& ...args);

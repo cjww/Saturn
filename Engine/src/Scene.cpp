@@ -103,24 +103,15 @@ namespace sa {
 	}
 
 	bool Scene::onLoad(std::ifstream& file, AssetLoadFlags flags) {
-		try
-		{
-			simdjson::padded_string jsonStr(getHeader().size);
-			file.read(jsonStr.data(), jsonStr.length());
+		simdjson::padded_string jsonStr(getHeader().size);
+		file.read(jsonStr.data(), jsonStr.length());
 
-			simdjson::ondemand::parser parser;
-			auto doc = parser.iterate(jsonStr);
-			if (doc.error() != simdjson::error_code::SUCCESS) {
-				SA_DEBUG_LOG_ERROR("Json error: ", simdjson::error_message(doc.error()));
-				return false;
-			}
-			deserialize(&doc);
+		simdjson::ondemand::parser parser;
+		auto doc = parser.iterate(jsonStr);
+		if (doc.error() != simdjson::error_code::SUCCESS) {
+			throw std::runtime_error("Json error: " + std::string(simdjson::error_message(doc.error())));
 		}
-		catch(const simdjson::simdjson_error& e) {
-			SA_DEBUG_LOG_ERROR("Failed to load Scene ", getName(), " : ", e.what());
-			return false;
-		}
-
+		deserialize(&doc);
 		return true;
 	}
 
@@ -253,12 +244,16 @@ namespace sa {
 	}
 
 
-	std::vector<EntityScript> Scene::getAssignedScripts(const Entity& entity) const {
+	std::vector<EntityScript*> Scene::getAssignedScripts(const Entity& entity) {
 		return m_scriptManager.getEntityScripts(entity);
 	}
 
 	void Scene::reloadScripts() {
 		m_scriptManager.reloadScripts();
+	}
+
+	void Scene::reloadScript(EntityScript* pScript) {
+		m_scriptManager.reloadScript(pScript);
 	}
 
 	EntityHierarchy& Scene::getHierarchy() {

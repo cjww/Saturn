@@ -90,8 +90,10 @@ namespace sa {
 		void clearEntities();
 
 		// Scripts
-		std::vector<EntityScript> getAssignedScripts(const Entity& entity) const;
+		std::vector<EntityScript*> getAssignedScripts(const Entity& entity);
 		void reloadScripts();
+		void reloadScript(EntityScript* pScript);
+
 
 
 		// Hierarchy

@@ -114,8 +114,8 @@ namespace sa {
         s.beginArray("scripts");
 
         auto scripts = m_pScene->getAssignedScripts(*this);
-        for (auto& script : scripts) {
-            script.serialize(s);
+        for (auto& pScript : scripts) {
+            pScript->serialize(s);
         }
 
         s.endArray();
@@ -152,7 +152,7 @@ namespace sa {
             if (pScript)
                 pScript->deserialize(&script);
             else
-                SA_DEBUG_LOG_ERROR("No such script ", scriptPath);
+                throw std::runtime_error("No such script " + scriptPath.generic_string());
             
         }
     }

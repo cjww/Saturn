@@ -267,7 +267,7 @@ namespace sa {
 		}
 
 		if (ImGui::MenuItem("Reload Scene", "Ctrl + R")) {
-			m_pEngine->getCurrentScene()->load();
+			m_pEngine->getCurrentScene()->load( AssetLoadFlagBits::NO_REF | AssetLoadFlagBits::FORCE);
 		}
 	}
 
@@ -442,7 +442,7 @@ namespace sa {
 					}
 				
 					if (ImGui::IsKeyPressed(ImGuiKey_R, false)) {
-						m_pEngine->getCurrentScene()->load();
+						m_pEngine->getCurrentScene()->load(AssetLoadFlagBits::NO_REF | AssetLoadFlagBits::FORCE);
 					}
 
 				}

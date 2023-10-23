@@ -215,15 +215,27 @@ namespace sa {
 		
 	}
 
-	std::vector<EntityScript> ScriptManager::getEntityScripts(const entt::entity& entity) const {
+	std::vector<EntityScript*> ScriptManager::getEntityScripts(const entt::entity& entity) {
 		if (!m_entityScriptIndices.count(entity))
 			return {};
 
-		std::vector<EntityScript> scripts;
+		std::vector<EntityScript*> scripts;
 		for (auto& [name, index] : m_entityScriptIndices.at(entity)) {
-			scripts.push_back(m_allScripts[index]);
+			scripts.push_back(&m_allScripts[index]);
 		}
 		return scripts;
+	}
+
+	void ScriptManager::reloadScript(EntityScript* pScript) {
+		sol::state& lua = LuaAccessable::getState();
+		// do file to update environment
+		auto loadResult = lua.do_file(pScript->path.generic_string(), pScript->env);
+
+		if (loadResult.status() != sol::call_status::ok) {
+			sol::error err = loadResult;
+			SA_DEBUG_LOG_ERROR("Error when running script ", pScript->path.generic_string(), ": ", err.what());
+		}
+		SA_DEBUG_LOG_INFO("Reloaded script ", pScript->path.generic_string());
 	}
 
 	void ScriptManager::reloadScripts() {
@@ -232,23 +244,13 @@ namespace sa {
 			std::error_code error;
 			std::filesystem::file_time_type time = std::filesystem::last_write_time(script.path, error);
 			if(error) {
-				SA_DEBUG_LOG_ERROR("Failed to load script ", script.path);
+				SA_DEBUG_LOG_ERROR("Failed to load script file ", script.path);
 				continue;
 			}
 			if(time > script.lastWriteTime) {
-				sol::state& lua = LuaAccessable::getState();
-				// do file to update environment
-				auto loadResult = lua.do_file(script.path.generic_string(), script.env);
-				
-				if (loadResult.status() != sol::call_status::ok) {
-					sol::error err = loadResult;
-					SA_DEBUG_LOG_ERROR("Error when running script ", script.path.generic_string(), ": ", err.what());
-				}
+				reloadScript(&script);
 				script.lastWriteTime = time;
-				SA_DEBUG_LOG_INFO("Reloaded script ", script.path.generic_string());
 			}
-
-
 		}
 	}
 }
