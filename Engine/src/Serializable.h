@@ -5,7 +5,7 @@
 
 #include <glm\vec3.hpp>
 #include <glm/gtc/quaternion.hpp>
-
+#include <sol/sol.hpp>
 namespace sa {
 	
 	class Serializer {

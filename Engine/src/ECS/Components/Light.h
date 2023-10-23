@@ -3,6 +3,7 @@
 #include "Tools\Vector.h"
 
 #include "ECS/ComponentBase.h"
+#include "Lua/LuaAccessable.h"
 
 namespace sa {
 
@@ -22,7 +23,7 @@ namespace sa {
 }
 
 namespace comp {
-	class Light : public sa::LuaAccessable {
+	class Light : public sa::ComponentBase, sa::LuaAccessable {
 	public:
 		unsigned int index;
 		sa::LightData values;

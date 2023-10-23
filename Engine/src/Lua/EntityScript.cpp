@@ -3,6 +3,7 @@
 
 #include <Tools\Logger.hpp>
 
+#include "LuaAccessable.h"
 #include "ECS/ComponentBase.h"
 
 namespace sa {

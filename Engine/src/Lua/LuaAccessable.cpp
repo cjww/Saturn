@@ -1,8 +1,7 @@
 #include "pch.h"
-#include "ComponentBase.h"
+#include "LuaAccessable.h"
 
 namespace sa {
-
 	sol::state& LuaAccessable::getState() {
 		static sol::state luaState;
 		return luaState;
@@ -24,8 +23,4 @@ namespace sa {
 		}
 		return names;
 	}
-
-
-	// ----------------------------
-
 }

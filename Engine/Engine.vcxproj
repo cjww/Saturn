@@ -310,6 +310,7 @@
     <ClCompile Include="src\ECS\Components\RigidBody.cpp" />
     <ClCompile Include="src\ECS\Components\SphereCollider.cpp" />
     <ClCompile Include="src\ECS\Components\Transform.cpp" />
+    <ClCompile Include="src\Lua\LuaAccessable.cpp" />
     <ClCompile Include="src\Lua\Ref.cpp" />
     <ClCompile Include="src\Lua\EntityScript.cpp" />
     <ClCompile Include="src\Graphics\IRenderLayer.cpp" />
@@ -323,7 +324,6 @@
     <ClCompile Include="src\simdjson\simdjson.cpp" />
     <ClCompile Include="src\Tools\MemoryChecker.cpp" />
     <ClCompile Include="src\Application.cpp" />
-    <ClCompile Include="src\ECS\ComponentBase.cpp" />
     <ClCompile Include="src\ECS\ComponentType.cpp" />
     <ClCompile Include="src\Graphics\RenderTechniques\ForwardPlus.cpp" />
     <ClCompile Include="src\Graphics\Material.cpp" />
@@ -364,6 +364,7 @@
     <ClInclude Include="src\ECS\Components\RigidBody.h" />
     <ClInclude Include="src\ECS\Components\SphereCollider.h" />
     <ClInclude Include="src\ECS\Components\Transform.h" />
+    <ClInclude Include="src\Lua\LuaAccessable.h" />
     <ClInclude Include="src\Lua\Ref.h" />
     <ClInclude Include="src\Lua\EntityScript.h" />
     <ClInclude Include="src\Graphics\RenderTarget.h" />

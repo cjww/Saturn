@@ -3,6 +3,7 @@
 #include "ComponentType.h"
 #include "MetaComponent.h"
 #include "ComponentBase.h"
+#include "Lua/LuaAccessable.h"
 
 #include "Serializable.h"
 #include "Lua/EntityScript.h"
