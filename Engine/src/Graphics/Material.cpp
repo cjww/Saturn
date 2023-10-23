@@ -54,7 +54,7 @@ namespace sa {
 	}
 
 	Material::Material(const AssetHeader& header)
-		: IAsset(header)
+		: Asset(header)
 	{
 		twoSided = false;
 		m_allTexturesLoaded = false;
@@ -212,7 +212,7 @@ namespace sa {
 	bool Material::onUnload() {
 		for (auto& [type, textures] : m_textures) {
 			for (auto& id : textures) {
-				IAsset* pTexture = AssetManager::get().getAsset(id);
+				Asset* pTexture = AssetManager::get().getAsset(id);
 				if (pTexture)
 					pTexture->release();
 			}

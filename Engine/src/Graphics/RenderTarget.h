@@ -2,13 +2,13 @@
 
 #include <Renderer.hpp>
 #include <RenderWindow.hpp>
-#include "Assets\IAsset.h"
+#include "Assets\Asset.h"
 
 namespace sa {
 
 	class Engine;
 
-	class RenderTarget : public IAsset {
+	class RenderTarget : public Asset {
 	private:
 		Renderer& m_renderer;
 

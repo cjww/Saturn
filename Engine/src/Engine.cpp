@@ -1,7 +1,11 @@
 #include "pch.h"
 #include "Engine.h"
 
-#include "ECS/Ref.h"
+#include "Graphics/RenderTechniques/ForwardPlus.h"
+#include "Lua/Ref.h"
+#include "Tools/Vector.h"
+#include "Tools/Profiler.h"
+
 
 namespace sa {
 	std::filesystem::path Engine::s_shaderDirectory = std::filesystem::current_path();
@@ -228,8 +232,8 @@ namespace sa {
 			}
 			sol::table t = table.as<sol::table>();
 			sol::environment& env = thisEnv;
-			sa::Entity entity = env["entity"];
-			std::string scriptName = env["scriptName"];
+			sa::Entity entity = env["this_entity"];
+			std::string scriptName = env["this_name"];
 			
 			EntityScript* pScript = entity.getScript(scriptName);
 			if (!pScript) {
@@ -252,22 +256,8 @@ namespace sa {
 				// initialize variable with appropriate value
 				env[variableName] = value;
 			}
-			
-			
-			//SA_DEBUG_LOG_INFO("Serialize");
+
 		};
-
-		/*
-		{
-			auto type = LuaAccessable::registerType<Color>("Color");
-			type["r"] = &Color::r;
-			type["g"] = &Color::g;
-			type["b"] = &Color::b;
-			type["a"] = &Color::a;
-
-		}
-		*/
-
 	}
 
 	void Engine::onWindowResize(Extent newExtent) {

@@ -297,7 +297,7 @@
     </Lib>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="src\Assets\IAsset.cpp" />
+    <ClCompile Include="src\Assets\Asset.cpp" />
     <ClCompile Include="src\Assets\MaterialShader.cpp" />
     <ClCompile Include="src\Assets\ModelAsset.cpp" />
     <ClCompile Include="src\Assets\TextureAsset.cpp" />
@@ -310,8 +310,8 @@
     <ClCompile Include="src\ECS\Components\RigidBody.cpp" />
     <ClCompile Include="src\ECS\Components\SphereCollider.cpp" />
     <ClCompile Include="src\ECS\Components\Transform.cpp" />
-    <ClCompile Include="src\ECS\Ref.cpp" />
-    <ClCompile Include="src\EntityScript.cpp" />
+    <ClCompile Include="src\Lua\Ref.cpp" />
+    <ClCompile Include="src\Lua\EntityScript.cpp" />
     <ClCompile Include="src\Graphics\IRenderLayer.cpp" />
     <ClCompile Include="src\Graphics\RenderLayers\BloomRenderLayer.cpp" />
     <ClCompile Include="src\Graphics\RenderPipeline.cpp" />
@@ -327,7 +327,7 @@
     <ClCompile Include="src\ECS\ComponentType.cpp" />
     <ClCompile Include="src\Graphics\RenderTechniques\ForwardPlus.cpp" />
     <ClCompile Include="src\Graphics\Material.cpp" />
-    <ClCompile Include="src\ScriptManager.cpp" />
+    <ClCompile Include="src\Lua\ScriptManager.cpp" />
     <ClCompile Include="src\ECS\MetaComponent.cpp" />
     <ClCompile Include="src\pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
@@ -352,7 +352,7 @@
     <ClCompile Include="src\UUID.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="src\Assets\IAsset.h" />
+    <ClInclude Include="src\Assets\Asset.h" />
     <ClInclude Include="src\Assets\MaterialShader.h" />
     <ClInclude Include="src\Assets\ModelAsset.h" />
     <ClInclude Include="src\Assets\TextureAsset.h" />
@@ -364,8 +364,8 @@
     <ClInclude Include="src\ECS\Components\RigidBody.h" />
     <ClInclude Include="src\ECS\Components\SphereCollider.h" />
     <ClInclude Include="src\ECS\Components\Transform.h" />
-    <ClInclude Include="src\ECS\Ref.h" />
-    <ClInclude Include="src\EntityScript.h" />
+    <ClInclude Include="src\Lua\Ref.h" />
+    <ClInclude Include="src\Lua\EntityScript.h" />
     <ClInclude Include="src\Graphics\RenderTarget.h" />
     <ClInclude Include="src\Graphics\SceneCollection.h" />
     <ClInclude Include="src\Graphics\WindowRenderer.h" />
@@ -386,7 +386,7 @@
     <ClInclude Include="src\internal\internalVector.h" />
     <ClInclude Include="src\Graphics\RenderWindow.hpp" />
     <ClInclude Include="src\ProgressView.h" />
-    <ClInclude Include="src\ScriptManager.h" />
+    <ClInclude Include="src\Lua\ScriptManager.h" />
     <ClInclude Include="src\ECS\Events.h" />
     <ClInclude Include="src\ECS\MetaComponent.h" />
     <ClInclude Include="src\pch.h" />

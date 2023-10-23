@@ -73,7 +73,7 @@ namespace sa {
 	}
 
 
-	Scene::Scene(const AssetHeader& header) : IAsset(header) {
+	Scene::Scene(const AssetHeader& header) : Asset(header) {
 		m_pPhysicsScene = PhysicsSystem::get().createScene();
 		registerComponentCallBacks();
 	}

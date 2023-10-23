@@ -36,7 +36,7 @@ DirectoryView::DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor)
 
 void DirectoryView::onImGui() {
 	for (auto it = m_openAssetProperties.begin(); it != m_openAssetProperties.end(); it++) {
-		sa::IAsset* pAsset = *it;
+		sa::Asset* pAsset = *it;
 		bool isOpen = true;
 		if(ImGui::Begin((pAsset->getName() + " Properties").c_str(), &isOpen)) {
 			ImGui::GetAssetInfo(pAsset->getType()).imGuiPropertiesFn(pAsset);
@@ -118,7 +118,7 @@ void DirectoryView::onImGui() {
 				if (ImGui::GetAssetInfo(type).inCreateMenu) {
 					std::string typeName = sa::AssetManager::get().getAssetTypeName(type);
 					if (ImGui::MenuItem(typeName.c_str())) {
-						sa::IAsset* pAsset = sa::AssetManager::get().createAsset(type, "New " + typeName + ".asset", openDirectory);
+						sa::Asset* pAsset = sa::AssetManager::get().createAsset(type, "New " + typeName + ".asset", openDirectory);
 						editingName = pAsset->getName();
 						editedFile = pAsset->getAssetPath();
 					}
@@ -139,7 +139,7 @@ void DirectoryView::onImGui() {
 					icon = m_directoryIcon;
 				}
 
-				sa::IAsset* pAsset = sa::AssetManager::get().findAssetByPath(entry.path());
+				sa::Asset* pAsset = sa::AssetManager::get().findAssetByPath(entry.path());
 				if (pAsset) {
 					icon = ImGui::GetAssetInfo(pAsset->getType()).icon;
 				}
@@ -153,7 +153,7 @@ void DirectoryView::onImGui() {
 						openDirectory = entry.path();
 						break;
 					}
-					sa::IAsset* pAsset = sa::AssetManager::get().findAssetByPath(entry.path());
+					sa::Asset* pAsset = sa::AssetManager::get().findAssetByPath(entry.path());
 					if (pAsset) {
 						if (sa::AssetManager::get().isType<sa::Scene>(pAsset)) {
 							m_pEngine->setScene(pAsset->cast<sa::Scene>());
@@ -196,7 +196,7 @@ void DirectoryView::onImGui() {
 		ImGui::Separator();
 
 		auto& assets = sa::AssetManager::get().getAssets();
-		static sa::IAsset* selected = nullptr;
+		static sa::Asset* selected = nullptr;
 
 		if (ImGui::Button("Load Asset") && selected) {
 			selected->load();

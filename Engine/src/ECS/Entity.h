@@ -5,7 +5,7 @@
 #include "ComponentBase.h"
 
 #include "Serializable.h"
-#include "EntityScript.h"
+#include "Lua/EntityScript.h"
 
 #include <Tools/Logger.hpp>
 

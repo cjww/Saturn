@@ -288,7 +288,7 @@ namespace sa {
 			file.read((char*)mesh.indices.data(), sizeof(uint32_t) * indexCount);
 
 			file.read((char*)&mesh.materialID, sizeof(mesh.materialID));
-			IAsset* pMaterial = AssetManager::get().getAsset(mesh.materialID);
+			Asset* pMaterial = AssetManager::get().getAsset(mesh.materialID);
 			if (!pMaterial) {
 				pMaterial = AssetManager::get().getDefaultMaterial();
 				mesh.materialID = pMaterial->getID();
@@ -323,7 +323,7 @@ namespace sa {
 
 	bool ModelAsset::onUnload() {
 		for (auto& mesh : data.meshes) {
-			IAsset* pMaterial = AssetManager::get().getAsset(mesh.materialID);
+			Asset* pMaterial = AssetManager::get().getAsset(mesh.materialID);
 			if (pMaterial)
 				pMaterial->release();
 		}

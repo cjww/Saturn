@@ -3,6 +3,7 @@
 #include "IRenderTechnique.h"
 
 #include "Engine.h"
+#include "RenderTechniques/ForwardPlus.h"
 
 namespace sa {
 
@@ -203,7 +204,7 @@ namespace sa {
 	}
 
 	RenderTarget::RenderTarget(const AssetHeader& header) 
-		: IAsset(header)
+		: Asset(header)
 		, m_renderer(Renderer::get())
 		, m_isActive(true)
 		, m_extent({256, 256})

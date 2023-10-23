@@ -31,7 +31,7 @@ namespace sa {
 struct AssetEditorInfo {
 	bool inCreateMenu;
 	sa::Texture2D icon;
-	std::function<bool(sa::IAsset*)> imGuiPropertiesFn;
+	std::function<bool(sa::Asset*)> imGuiPropertiesFn;
 };
 
 namespace ImGui {
@@ -66,16 +66,16 @@ namespace ImGui {
 	AssetEditorInfo GetAssetInfo(sa::AssetTypeID type);
 	sa::Texture2D LoadEditorIcon(const std::filesystem::path& path);
 
-	bool MaterialProperties(sa::IAsset* pAsset);
-	bool ModelProperties(sa::IAsset* pAsset);
-	bool TextureProperties(sa::IAsset* pAsset);
-	bool RenderTargetProperties(sa::IAsset* pAsset);
-	bool MaterialShaderProperties(sa::IAsset* pAsset);
+	bool MaterialProperties(sa::Asset* pAsset);
+	bool ModelProperties(sa::Asset* pAsset);
+	bool TextureProperties(sa::Asset* pAsset);
+	bool RenderTargetProperties(sa::Asset* pAsset);
+	bool MaterialShaderProperties(sa::Asset* pAsset);
 
 	void AssetPreview(sa::Material* pMaterial);
 	void AssetPreview(sa::ModelAsset* pModel);
 
-	bool AssetSlot(const char* label, sa::IAsset*& pAsset, sa::AssetTypeID typeID);
+	bool AssetSlot(const char* label, sa::Asset*& pAsset, sa::AssetTypeID typeID);
 	bool FileSlot(const char* label, std::filesystem::path& path, const char* extension);
 	bool ScriptSlot(const char* label, sa::Entity& entity, const std::string& scriptName);
 	bool ComponentSlot(const char* label, sa::Entity& entity, sa::ComponentType type);

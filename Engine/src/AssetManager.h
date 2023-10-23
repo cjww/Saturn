@@ -14,7 +14,7 @@
 
 #include <Tools\utils.h>
 
-#include "Assets\IAsset.h"
+#include "Assets\Asset.h"
 #include "Graphics/Material.h"
 #include "Graphics\RenderTarget.h"
 
@@ -55,11 +55,11 @@ namespace sa {
 		std::unordered_map<ResourceID, Texture2D*> m_textures;
 
 		std::unordered_map<std::filesystem::path, UUID> m_importedAssets;
-		std::unordered_map<UUID, std::unique_ptr<IAsset>> m_assets;
+		std::unordered_map<UUID, std::unique_ptr<Asset>> m_assets;
 		std::list<AssetPackage> m_assetPackages;
 
 		AssetTypeID m_nextTypeID;
-		std::unordered_map<AssetTypeID, std::function<IAsset* (const AssetHeader&)>> m_assetAddConversions;
+		std::unordered_map<AssetTypeID, std::function<Asset* (const AssetHeader&)>> m_assetAddConversions;
 		std::unordered_map<AssetTypeID, std::string> m_typeToString;
 		std::unordered_map<std::string, AssetTypeID> m_stringToType;
 
@@ -67,7 +67,7 @@ namespace sa {
 
 		void locateAssetPackages();
 		void locateStandaloneAssets();
-		IAsset* addAsset(const std::filesystem::path& assetPath);
+		Asset* addAsset(const std::filesystem::path& assetPath);
 
 		void loadAssetPackage(AssetPackage& package);
 
@@ -94,9 +94,9 @@ namespace sa {
 		MaterialShader* getDefaultMaterialShader();
 
 
-		const std::unordered_map<UUID, std::unique_ptr<IAsset>>& getAssets() const;
-		void getAssets(std::vector<IAsset*>* assets, const std::string& filter) const;
-		void getAssets(std::vector<IAsset*>* assets, AssetTypeID typeFilter) const;
+		const std::unordered_map<UUID, std::unique_ptr<Asset>>& getAssets() const;
+		void getAssets(std::vector<Asset*>* assets, const std::string& filter) const;
+		void getAssets(std::vector<Asset*>* assets, AssetTypeID typeFilter) const;
 
 		void rescanAssets();
 
@@ -110,19 +110,19 @@ namespace sa {
 		AssetTypeID getAssetTypeID() const;
 
 		template<typename T>
-		bool isType(IAsset* pAsset) const;
+		bool isType(Asset* pAsset) const;
 
 		template<typename T>
 		T* getAsset(UUID id) const;
-		IAsset* getAsset(UUID id) const;
+		Asset* getAsset(UUID id) const;
 
 		template<typename T>
 		T* findAssetByName(const std::string& name) const;
-		IAsset* findAssetByName(const std::string& name) const;
+		Asset* findAssetByName(const std::string& name) const;
 
 		template<typename T>
 		T* findAssetByPath(const std::filesystem::path& path) const;
-		IAsset* findAssetByPath(const std::filesystem::path& path) const;
+		Asset* findAssetByPath(const std::filesystem::path& path) const;
 
 
 		template<typename T>
@@ -131,11 +131,11 @@ namespace sa {
 		template<typename T>
 		T* createAsset(const std::string& name, const std::filesystem::path& assetDirectory = SA_ASSET_DIR);
 
-		IAsset* importAsset(AssetTypeID type, const std::filesystem::path& path, const std::filesystem::path& assetDirectory = SA_ASSET_DIR);
-		IAsset* createAsset(AssetTypeID type, const std::string& name, const std::filesystem::path& assetDirectory = SA_ASSET_DIR);
+		Asset* importAsset(AssetTypeID type, const std::filesystem::path& path, const std::filesystem::path& assetDirectory = SA_ASSET_DIR);
+		Asset* createAsset(AssetTypeID type, const std::string& name, const std::filesystem::path& assetDirectory = SA_ASSET_DIR);
 
 
-		void removeAsset(IAsset* asset);
+		void removeAsset(Asset* asset);
 		void removeAsset(UUID id);
 
 	};
@@ -167,7 +167,7 @@ namespace sa {
 	}
 
 	template<typename T>
-	inline bool AssetManager::isType(IAsset* pAsset) const {
+	inline bool AssetManager::isType(Asset* pAsset) const {
 		return pAsset->getHeader().type == getAssetTypeID<T>();
 	}
 
@@ -194,7 +194,7 @@ namespace sa {
 		AssetHeader header; // generates new UUID
 		header.type = getAssetTypeID<T>();
 		assert(header.type != -1 && "Can not use unregistered type!");
-		IAsset* asset;
+		Asset* asset;
 		{
 			std::lock_guard<std::mutex> lock(m_mutex);
 			if (m_importedAssets.count(path)) {
@@ -230,7 +230,7 @@ namespace sa {
 		auto [it, success] = m_assets.insert({ header.id, std::make_unique<T>(header) });
 		m_mutex.unlock();
 
-		IAsset* asset = it->second.get();
+		Asset* asset = it->second.get();
 
 		asset->create(name, assetDirectory);
 		SA_DEBUG_LOG_INFO("Finished Creating ", getAssetTypeName(header.type), " ", name);

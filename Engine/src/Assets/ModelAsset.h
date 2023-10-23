@@ -1,6 +1,6 @@
 #pragma once
 
-#include "IAsset.h"
+#include "Asset.h"
 #include "Vertex.h"
 
 namespace sa {
@@ -16,12 +16,12 @@ namespace sa {
 		std::vector<Mesh> meshes;
 	};
 
-	class ModelAsset : public IAsset {
+	class ModelAsset : public Asset {
 	private:
 		void processNode(const void* scene, const void* node);
 		bool loadAssimpModel(const std::filesystem::path& path);
 	public:
-		using IAsset::IAsset;
+		using Asset::Asset;
 		
 		static bool isExtensionSupported(const std::string& extension);
 

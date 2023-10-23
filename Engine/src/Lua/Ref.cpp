@@ -1,7 +1,6 @@
 ﻿#include "pch.h"
 #include "Ref.h"
 
-#include "Components/Name.h"
 
 namespace sa {
 	Ref::Ref(const std::string& type, const sa::Entity& value) {
@@ -141,7 +140,7 @@ namespace sa {
 			if(valueResult.error() == simdjson::error_code::SUCCESS) {
 				if (valueResult.is_integer()) {
 					int64_t id = valueResult.get_int64().take_value();
-					Scene* pScene = env["scene"];
+					Scene* pScene = env["this_scene"];
 					Entity entity(pScene, static_cast<entt::entity>(id));
 					value = entity;
 				}

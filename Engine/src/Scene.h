@@ -14,16 +14,16 @@
 #include "Tools/Profiler.h"
 
 
-#include "ScriptManager.h"
+#include "Lua/ScriptManager.h"
 #include "EntityHierarchy.h"
 
 #include "Serializable.h"
 
-#include "Assets/IAsset.h"
+#include "Assets/Asset.h"
 
 
 namespace sa {
-	class Scene : public entt::emitter<Scene>, public Serializable, public IAsset {
+	class Scene : public entt::emitter<Scene>, public Serializable, public Asset {
 	private:
 		friend class AssetManager;
 		inline static AssetTypeID s_typeID;
@@ -68,9 +68,9 @@ namespace sa {
 		static void reg();
 		static AssetTypeID type() { return s_typeID; }
 
-		virtual bool onLoad(std::ifstream& file, AssetLoadFlags flags) override; // IAsset
-		virtual bool onWrite(std::ofstream& file, AssetWriteFlags flags) override; // IAsset
-		virtual bool onUnload() override; // IAsset
+		virtual bool onLoad(std::ifstream& file, AssetLoadFlags flags) override; // Asset
+		virtual bool onWrite(std::ofstream& file, AssetWriteFlags flags) override; // Asset
+		virtual bool onUnload() override; // Asset
 
 		virtual void onRuntimeStart();
 		virtual void onRuntimeStop();

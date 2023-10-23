@@ -35,14 +35,14 @@ namespace sa {
 		}
 	}
 
-	IAsset* AssetManager::addAsset(const std::filesystem::path& assetPath) {
+	Asset* AssetManager::addAsset(const std::filesystem::path& assetPath) {
 		// read header
 		std::ifstream file(assetPath, std::ios::binary);
 		if (!file.good()) {
 			SA_DEBUG_LOG_ERROR("Failed to open persumed asset ", assetPath);
 			return nullptr;
 		}
-		AssetHeader header = IAsset::readHeader(file);
+		AssetHeader header = Asset::readHeader(file);
 		file.close();
 		if (header.version != SA_ASSET_VERSION) {
 			SA_DEBUG_LOG_WARNING("Asset versions do not match! ", assetPath, " (", header.version, " vs ", SA_ASSET_VERSION, ")");
@@ -58,7 +58,7 @@ namespace sa {
 			return nullptr;
 		}
 
-		IAsset* pAsset = m_assetAddConversions.at(header.type)(header);
+		Asset* pAsset = m_assetAddConversions.at(header.type)(header);
 
 		pAsset->setAssetPath(assetPath); // The path the asset will write to
 		
@@ -90,7 +90,7 @@ namespace sa {
 
 
 	void AssetManager::clear() {
-		IAsset::waitAllAssets();
+		Asset::waitAllAssets();
 		for (auto& [id, pAsset] : m_assets) {
 			while (!pAsset->release());
 		}
@@ -310,11 +310,11 @@ namespace sa {
 		return pAsset;
 	}
 
-	const std::unordered_map<UUID, std::unique_ptr<IAsset>>& AssetManager::getAssets() const{
+	const std::unordered_map<UUID, std::unique_ptr<Asset>>& AssetManager::getAssets() const{
 		return m_assets;
 	}
 
-	void AssetManager::getAssets(std::vector<IAsset*>* assets, const std::string& filter) const {
+	void AssetManager::getAssets(std::vector<Asset*>* assets, const std::string& filter) const {
 		for (auto& [id, asset] : m_assets) {
 			if (asset->getName().find(filter) != std::string::npos) {
 				assets->push_back(asset.get());
@@ -322,7 +322,7 @@ namespace sa {
 		}
 	}
 
-	void AssetManager::getAssets(std::vector<IAsset*>* assets, AssetTypeID typeFilter) const {
+	void AssetManager::getAssets(std::vector<Asset*>* assets, AssetTypeID typeFilter) const {
 		for (auto& [id, asset] : m_assets) {
 			if (asset->getType() == typeFilter) {
 				assets->push_back(asset.get());
@@ -352,13 +352,13 @@ namespace sa {
 		return m_typeToString.at(typeID);
 	}
 
-	IAsset* AssetManager::getAsset(UUID id) const {
+	Asset* AssetManager::getAsset(UUID id) const {
 		if (!m_assets.count(id))
 			return nullptr;
 		return m_assets.at(id).get();
 	}
 
-	IAsset* AssetManager::findAssetByName(const std::string& name) const {
+	Asset* AssetManager::findAssetByName(const std::string& name) const {
 		for (auto& [id, asset] : m_assets) {
 			if (asset->getName() == name)
 				return asset.get();
@@ -366,7 +366,7 @@ namespace sa {
 		return nullptr;
 	}
 
-	IAsset* AssetManager::findAssetByPath(const std::filesystem::path& path) const {
+	Asset* AssetManager::findAssetByPath(const std::filesystem::path& path) const {
 		if (!std::filesystem::exists(path))
 			return nullptr;
 		for (auto& [id, asset] : m_assets) {
@@ -378,12 +378,12 @@ namespace sa {
 		return nullptr;
 	}
 
-	IAsset* AssetManager::importAsset(AssetTypeID type, const std::filesystem::path& path, const std::filesystem::path& assetDirectory) {
+	Asset* AssetManager::importAsset(AssetTypeID type, const std::filesystem::path& path, const std::filesystem::path& assetDirectory) {
 		SA_DEBUG_LOG_INFO("Importing ", getAssetTypeName(type), " ", path);
 		AssetHeader header; // generates new UUID
 		header.type = type;
 		assert(header.type != -1 && "Can not use unregistered type!");
-		IAsset* asset;
+		Asset* asset;
 		{
 			std::lock_guard<std::mutex> lock(m_mutex);
 			if (m_importedAssets.count(path)) {
@@ -407,7 +407,7 @@ namespace sa {
 	}
 
 
-	IAsset* AssetManager::createAsset(AssetTypeID type, const std::string& name, const std::filesystem::path& assetDirectory) {
+	Asset* AssetManager::createAsset(AssetTypeID type, const std::string& name, const std::filesystem::path& assetDirectory) {
 		SA_DEBUG_LOG_INFO("Creating ", getAssetTypeName(type), " ", name);
 
 		AssetHeader header; // generates new UUID
@@ -415,7 +415,7 @@ namespace sa {
 		assert(header.type != -1 && "Can not use unregistered type!");
 
 		m_mutex.lock();
-		IAsset* asset = m_assetAddConversions[type](header);
+		Asset* asset = m_assetAddConversions[type](header);
 		m_mutex.unlock();
 
 
@@ -427,7 +427,7 @@ namespace sa {
 	}
 
 
-	void AssetManager::removeAsset(IAsset* asset) {
+	void AssetManager::removeAsset(Asset* asset) {
 		m_assets.erase(asset->getID());
 	}
 

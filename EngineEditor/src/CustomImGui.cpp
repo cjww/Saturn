@@ -265,7 +265,7 @@ namespace ImGui {
 
 	void Component(sa::Entity entity, comp::Model* model) {
 		
-		sa::IAsset* pAsset = sa::AssetManager::get().getAsset(model->modelID);
+		sa::Asset* pAsset = sa::AssetManager::get().getAsset(model->modelID);
 		if (AssetSlot(("Model##" + entity.getComponent<comp::Name>()->name).c_str(), pAsset, sa::AssetManager::get().getAssetTypeID<sa::ModelAsset>())) {	
 			if (pAsset)
 				model->modelID = pAsset->getID();
@@ -416,7 +416,7 @@ namespace ImGui {
 			camera->camera.setFar(far);
 		}
 
-		sa::IAsset* renderTarget = camera->getRenderTarget();
+		sa::Asset* renderTarget = camera->getRenderTarget();
 		if (AssetSlot("RenderTarget", renderTarget, sa::AssetManager::get().getAssetTypeID<sa::RenderTarget>())) {
 			camera->setRenderTarget(static_cast<sa::RenderTarget*>(renderTarget));
 		}
@@ -508,7 +508,7 @@ namespace ImGui {
 				{
 					.inCreateMenu = true,
 					.icon = LoadEditorIcon("resources/file-white.png"),
-					.imGuiPropertiesFn = [](sa::IAsset* pAsset) {
+					.imGuiPropertiesFn = [](sa::Asset* pAsset) {
 						return false;
 					}
 				}
@@ -538,7 +538,7 @@ namespace ImGui {
 		static AssetEditorInfo info{
 			.inCreateMenu = false,
 			.icon = LoadEditorIcon("resources/file-white.png"),
-			.imGuiPropertiesFn = [](sa::IAsset*) { return false; },
+			.imGuiPropertiesFn = [](sa::Asset*) { return false; },
 		};
 		return info;
 	}
@@ -547,11 +547,11 @@ namespace ImGui {
 		return sa::Texture2D(sa::Image(sa::EngineEditor::MakeEditorRelative(path).generic_string().c_str()), true);
 	}
 
-	bool MaterialProperties(sa::IAsset* pAsset) {
+	bool MaterialProperties(sa::Asset* pAsset) {
 		sa::Material* pMaterial = static_cast<sa::Material*>(pAsset);
 
 		sa::MaterialShader* pMaterialShader = pMaterial->getMaterialShader();
-		if(AssetSlot("Material Shader", (sa::IAsset*&)pMaterialShader, sa::AssetManager::get().getAssetTypeID<sa::MaterialShader>())) {
+		if(AssetSlot("Material Shader", (sa::Asset*&)pMaterialShader, sa::AssetManager::get().getAssetTypeID<sa::MaterialShader>())) {
 			pMaterial->setMaterialShader(pMaterialShader);
 		}
 
@@ -573,7 +573,7 @@ namespace ImGui {
 				std::string textureTypeName = sa::to_string(type);
 				for (auto& texID : textures) {
 					sa::TextureAsset* pTexture = sa::AssetManager::get().getAsset<sa::TextureAsset>(texID);
-					sa::IAsset* texAsset = pTexture;
+					sa::Asset* texAsset = pTexture;
 					if (AssetSlot((textureTypeName + " Texture").c_str(), texAsset, textureAssetType)) {
 						if (texAsset)
 							texID = texAsset->getID();
@@ -589,14 +589,14 @@ namespace ImGui {
 		return false;
 	}
 
-	bool ModelProperties(sa::IAsset* pAsset) {
+	bool ModelProperties(sa::Asset* pAsset) {
 		sa::ModelAsset* pModel = static_cast<sa::ModelAsset*>(pAsset);
 		if (BeginListBox("Meshes")) {
 			int i = 0;
 			for (auto& mesh : pModel->data.meshes) {
 				PushID(i);
 				sa::Material* pMaterial = sa::AssetManager::get().getAsset<sa::Material>(mesh.materialID);
-				sa::IAsset* pAsset = pMaterial;
+				sa::Asset* pAsset = pMaterial;
 				if (AssetSlot("Material", pAsset, sa::AssetManager::get().getAssetTypeID<sa::Material>())) {
 					if (pAsset)
 						mesh.materialID = pAsset->getID();
@@ -611,7 +611,7 @@ namespace ImGui {
 		return false;
 	}
 
-	bool TextureProperties(sa::IAsset* pAsset) {
+	bool TextureProperties(sa::Asset* pAsset) {
 		sa::TextureAsset* pTexture = static_cast<sa::TextureAsset*>(pAsset);
 		ImVec2 size = GetContentRegionAvail();
 		float aspect = (float)pTexture->getTexture().getExtent().height / pTexture->getTexture().getExtent().width;
@@ -621,7 +621,7 @@ namespace ImGui {
 		return false;
 	}
 
-	bool RenderTargetProperties(sa::IAsset* pAsset) {
+	bool RenderTargetProperties(sa::Asset* pAsset) {
 		sa::RenderTarget* pRenderTarget = static_cast<sa::RenderTarget*>(pAsset);
 		sa::Extent extent = pRenderTarget->getExtent();
 		if (InputScalarN("Extent", ImGuiDataType_U32, (uint32_t*)&extent, 2, NULL, NULL, "%d", ImGuiInputTextFlags_EnterReturnsTrue)) {
@@ -637,7 +637,7 @@ namespace ImGui {
 		return false;
 	}
 
-	bool MaterialShaderProperties(sa::IAsset* pAsset) {
+	bool MaterialShaderProperties(sa::Asset* pAsset) {
 		sa::MaterialShader* pMaterialShader = static_cast<sa::MaterialShader*>(pAsset);
 		ImVec2 size = ImGui::GetContentRegionAvail();
 
@@ -720,7 +720,7 @@ namespace ImGui {
 
 	}
 
-	bool AssetSlot(const char* label, sa::IAsset*& pAsset, sa::AssetTypeID typeID) {
+	bool AssetSlot(const char* label, sa::Asset*& pAsset, sa::AssetTypeID typeID) {
 		std::string preview = "None";
 		if (pAsset) {
 			preview = pAsset->getName();
@@ -728,7 +728,7 @@ namespace ImGui {
 		bool selected = false;
 		static std::string filter;
 		if(BeginCombo(label, preview.c_str())) {
-			std::vector<sa::IAsset*> assets;
+			std::vector<sa::Asset*> assets;
 			sa::AssetManager::get().getAssets(&assets, typeID);
 			PushID(label);
 			InputText("Filter", &filter, ImGuiInputTextFlags_AutoSelectAll);
@@ -752,7 +752,7 @@ namespace ImGui {
 					}
 
 					if (Selectable(asset->getName().c_str(), asset == pAsset)) {
-						sa::IAsset* pOldAsset = pAsset;
+						sa::Asset* pOldAsset = pAsset;
 						pAsset = asset;
 						
 						pAsset->load();
@@ -774,9 +774,9 @@ namespace ImGui {
 			if (payload && payload->IsDelivery()) {
 				std::filesystem::path* pPath = (std::filesystem::path*)payload->Data;
 				if (pPath->extension() == ".asset") {
-					sa::IAsset* asset = sa::AssetManager::get().findAssetByPath(*pPath);
+					sa::Asset* asset = sa::AssetManager::get().findAssetByPath(*pPath);
 					if (asset && asset != pAsset && asset->getType() == typeID) {
-						sa::IAsset* pOldAsset = pAsset;
+						sa::Asset* pOldAsset = pAsset;
 						pAsset = asset;
 
 						pAsset->load();

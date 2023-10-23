@@ -13,7 +13,7 @@ namespace comp {
 	}
 
 	void Model::serialize(sa::Serializer& s) {
-		sa::IAsset* pAsset = sa::AssetManager::get().getAsset(modelID);
+		sa::Asset* pAsset = sa::AssetManager::get().getAsset(modelID);
 		sa::UUID id = 0;
 		if (pAsset) {
 			id = pAsset->getID();
@@ -28,10 +28,10 @@ namespace comp {
 		std::string_view strID = obj["ID"].get_string().value();
 		char* stopString = NULL;
 
-		sa::IAsset* pPreviousAsset = sa::AssetManager::get().getAsset(modelID);
+		sa::Asset* pPreviousAsset = sa::AssetManager::get().getAsset(modelID);
 		
 		modelID = strtoull(strID.data(), &stopString, 10);
-		sa::IAsset* pModelAsset = sa::AssetManager::get().getAsset(modelID);
+		sa::Asset* pModelAsset = sa::AssetManager::get().getAsset(modelID);
 
 		if (pPreviousAsset == pModelAsset) {
 			return;
@@ -46,7 +46,7 @@ namespace comp {
 	}
 
 	void Model::onDestroy(sa::Entity* e) {
-		sa::IAsset* pModelAsset = sa::AssetManager::get().getAsset(modelID);
+		sa::Asset* pModelAsset = sa::AssetManager::get().getAsset(modelID);
 		if (pModelAsset) {
 			pModelAsset->release();
 		}

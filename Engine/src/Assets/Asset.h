@@ -34,14 +34,14 @@ namespace sa {
 	};
 
 	/*
-		Base class interface for Assets
-		All IAsset subclasses must fill following conditions:
+		Base class for Assets
+		All Asset subclasses must fill following conditions:
 			* override bool onLoad(std::ifstream& file, AssetLoadFlags flags)
 			* override bool onWrite(std::ofstream& file, AssetWriteFlags flags)
 			* override bool onUnload()
-			* use IAsset constructors or using IAsset::IAsset
+			* use Asset constructors or using Asset::Asset
 	*/
-	class IAsset {
+	class Asset {
 	private:
 		static tf::Executor s_taskExecutor;
 
@@ -65,9 +65,9 @@ namespace sa {
 		tf::Future<void> runTaskflow(tf::Taskflow& tf);
 
 	public:
-		IAsset(const AssetHeader& header);
+		Asset(const AssetHeader& header);
 
-		virtual ~IAsset();
+		virtual ~Asset();
 
 		bool create(const std::string& name, const std::filesystem::path& assetDirectory);
 		bool importFromFile(const std::filesystem::path& path, const std::filesystem::path& assetDirectory);
@@ -119,7 +119,7 @@ namespace sa {
 
 
 	template<typename T>
-	inline T* IAsset::cast() {
+	inline T* Asset::cast() {
 		return dynamic_cast<T*>(this);
 	}
 }

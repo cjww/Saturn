@@ -1,5 +1,5 @@
 #pragma once
-#include "IAsset.h"
+#include "Asset.h"
 #include <ShaderSet.hpp>
 #include <structs.h>
 #include <Renderer.hpp>
@@ -11,7 +11,7 @@ namespace sa {
 		ShaderStageFlagBits stage;
 	};
 
-	class MaterialShader : public IAsset {
+	class MaterialShader : public Asset {
 	private:
 		friend class MaterialShaderCollection;
 
@@ -25,7 +25,7 @@ namespace sa {
 		bool m_recompiled = false;
 
 	public:
-		using IAsset::IAsset;
+		using Asset::Asset;
 
 		void create(const std::vector<ShaderSourceFile>& sourceFiles);
 		void create(const std::vector<std::vector<uint32_t>>& code);

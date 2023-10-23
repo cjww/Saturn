@@ -1,17 +1,17 @@
 #pragma once
 
 #include <Resources/Texture.hpp>
-#include "IAsset.h"
+#include "Asset.h"
 
 namespace sa {
-	class TextureAsset : public IAsset {
+	class TextureAsset : public Asset {
 	private:
 		std::vector<unsigned char> m_dataBuffer;
 
 		Texture m_texture;
 		
 	public:
-		using IAsset::IAsset;
+		using Asset::Asset;
 		
 		virtual bool onImport(const std::filesystem::path& path) override;
 

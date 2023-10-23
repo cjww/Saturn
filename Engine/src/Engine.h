@@ -3,17 +3,8 @@
 #include "Graphics/RenderPipeline.h"
 #include "Graphics/WindowRenderer.h"
 
-#include "Graphics/RenderTechniques/ForwardPlus.h"
-
 #include "AssetManager.h"
 #include "Scene.h"
-
-#include "Tools/Vector.h"
-
-#include "Tools\utils.h"
-#include "ScriptManager.h"
-
-#include "Tools/Profiler.h"
 
 #include <RenderWindow.hpp>
 

@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "IAsset.h"
+#include "Asset.h"
 
 namespace sa {
 	class WorkerInterface : public tf::WorkerInterface
@@ -12,26 +12,26 @@ namespace sa {
 		};
 	};
 
-	tf::Executor IAsset::s_taskExecutor = tf::Executor(std::thread::hardware_concurrency(), std::make_shared<WorkerInterface>());
+	tf::Executor Asset::s_taskExecutor = tf::Executor(std::thread::hardware_concurrency(), std::make_shared<WorkerInterface>());
 
 
-	void IAsset::addDependency(const sa::ProgressView<bool>& progress) {
+	void Asset::addDependency(const sa::ProgressView<bool>& progress) {
 		m_progress.addDependency(&progress);
 	}
 
-	void IAsset::setCompletionCount(unsigned int count) {
+	void Asset::setCompletionCount(unsigned int count) {
 		m_progress.setMaxCompletionCount(count);
 	}
 
-	void IAsset::incrementProgress() {
+	void Asset::incrementProgress() {
 		m_progress.increment();
 	}
 
-	tf::Future<void> IAsset::runTaskflow(tf::Taskflow& tf) {
+	tf::Future<void> Asset::runTaskflow(tf::Taskflow& tf) {
 		return s_taskExecutor.run(tf);
 	}
 
-	IAsset::IAsset(const AssetHeader& header)
+	Asset::Asset(const AssetHeader& header)
 		: m_isLoaded(false)
 		, m_name("New Asset")
 		, m_refCount(0)
@@ -40,11 +40,11 @@ namespace sa {
 		
 	}
 
-	IAsset::~IAsset() {
+	Asset::~Asset() {
 		m_progress.wait();
 	}
 
-	bool IAsset::create(const std::string& name, const std::filesystem::path& assetDirectory) {
+	bool Asset::create(const std::string& name, const std::filesystem::path& assetDirectory) {
 		m_name = name;
 		m_assetPath.clear();
 		if (!assetDirectory.empty()) {
@@ -54,7 +54,7 @@ namespace sa {
 		return true;
 	}
 
-	bool IAsset::importFromFile(const std::filesystem::path& path, const std::filesystem::path& assetDirectory) {
+	bool Asset::importFromFile(const std::filesystem::path& path, const std::filesystem::path& assetDirectory) {
 		m_name = path.stem().generic_string();
 
 		m_assetPath.clear();
@@ -71,7 +71,7 @@ namespace sa {
 		return m_isLoaded;
 	}
 
-	bool IAsset::load(AssetLoadFlags flags) {
+	bool Asset::load(AssetLoadFlags flags) {
 		bool shallowForce = (flags & AssetLoadFlagBits::FORCE_SHALLOW) == AssetLoadFlagBits::FORCE_SHALLOW;
 		bool force = shallowForce || (flags & AssetLoadFlagBits::FORCE) == AssetLoadFlagBits::FORCE;
 		bool noRef = (flags & AssetLoadFlagBits::NO_REF) == AssetLoadFlagBits::NO_REF;
@@ -122,7 +122,7 @@ namespace sa {
 		return true;
 	}
 
-	bool IAsset::write(AssetWriteFlags flags) {
+	bool Asset::write(AssetWriteFlags flags) {
 		if (!m_isLoaded)
 			return false;
 		if (m_assetPath.empty())
@@ -159,7 +159,7 @@ namespace sa {
 		return true;
 	}
 
-	bool IAsset::release() {
+	bool Asset::release() {
 		if (!m_isLoaded)
 			return true;
 		if (m_refCount > 0) {
@@ -173,58 +173,58 @@ namespace sa {
 		return false;
 	}
 
-	bool IAsset::isLoaded() const {
+	bool Asset::isLoaded() const {
 		return m_isLoaded;
 	}
 
-	const ProgressView<bool>& IAsset::getProgress() const {
+	const ProgressView<bool>& Asset::getProgress() const {
 		return m_progress;
 	}
 
-	AssetTypeID IAsset::getType() const {
+	AssetTypeID Asset::getType() const {
 		return m_header.type;
 	}
 
-	const std::string& IAsset::getName() const {
+	const std::string& Asset::getName() const {
 		return m_name;
 	}
 
-	const std::filesystem::path& IAsset::getAssetPath() const {
+	const std::filesystem::path& Asset::getAssetPath() const {
 		return m_assetPath;
 	}
 
-	void IAsset::setAssetPath(const std::filesystem::path& assetPath) {
+	void Asset::setAssetPath(const std::filesystem::path& assetPath) {
 		m_assetPath = assetPath;
 		m_name = m_assetPath.filename().replace_extension().generic_string();
 	}
 
-	void IAsset::setHeader(const AssetHeader& header) {
+	void Asset::setHeader(const AssetHeader& header) {
 		m_header = header;
 	}
 
-	const AssetHeader& IAsset::getHeader() const {
+	const AssetHeader& Asset::getHeader() const {
 		return m_header;
 	}
 
-	const UUID& IAsset::getID() const {
+	const UUID& Asset::getID() const {
 		return m_header.id;
 	}
 
-	uint32_t IAsset::getReferenceCount() const {
+	uint32_t Asset::getReferenceCount() const {
 		return m_refCount;
 	}
 
-	AssetHeader IAsset::readHeader(std::ifstream& file) {
+	AssetHeader Asset::readHeader(std::ifstream& file) {
 		AssetHeader header = {};
 		file.read((char*)&header, sizeof(AssetHeader));
 		return header;
 	}
 
-	void IAsset::writeHeader(const AssetHeader& header, std::ofstream& file) {
+	void Asset::writeHeader(const AssetHeader& header, std::ofstream& file) {
 		file.write((char*)&header, sizeof(AssetHeader));
 	}
 
-	void IAsset::waitAllAssets() {
+	void Asset::waitAllAssets() {
 		s_taskExecutor.wait_for_all();
 	}
 

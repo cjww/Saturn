@@ -54,7 +54,7 @@
     <ClCompile Include="src\Tools\Matrix.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ScriptManager.cpp">
+    <ClCompile Include="src\Lua\ScriptManager.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Tools\utils.cpp">
@@ -132,10 +132,10 @@
     <ClCompile Include="src\Graphics\RenderTarget.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\EntityScript.cpp">
+    <ClCompile Include="src\Lua\EntityScript.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\Assets\IAsset.cpp">
+    <ClCompile Include="src\Assets\Asset.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="src\Assets\ModelAsset.cpp">
@@ -159,7 +159,7 @@
     <ClCompile Include="src\Assets\MaterialShader.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="src\ECS\Ref.cpp">
+    <ClCompile Include="src\Lua\Ref.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
@@ -218,7 +218,7 @@
     <ClInclude Include="src\Tools\Matrix.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ScriptManager.h">
+    <ClInclude Include="src\Lua\ScriptManager.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Graphics\RenderWindow.hpp">
@@ -311,10 +311,10 @@
     <ClInclude Include="src\Graphics\RenderTarget.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\EntityScript.h">
+    <ClInclude Include="src\Lua\EntityScript.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\Assets\IAsset.h">
+    <ClInclude Include="src\Assets\Asset.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="src\Assets\ModelAsset.h">
@@ -335,7 +335,7 @@
     <ClInclude Include="src\Assets\MaterialShader.h">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="src\ECS\Ref.h">
+    <ClInclude Include="src\Lua\Ref.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

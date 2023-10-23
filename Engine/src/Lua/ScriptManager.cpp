@@ -134,9 +134,9 @@ namespace sa {
 		sol::safe_function& func = m_scripts[hashedString];
 		env.set_on(func);
 
-		env["entity"] = entity;
-		env["scriptName"] = scriptName;
-		env["scene"] = entity.getScene();
+		env["this_entity"] = entity;
+		env["this_name"] = scriptName;
+		env["this_scene"] = entity.getScene();
 
 		m_allScripts.emplace_back(scriptName, path, env, entity, std::filesystem::last_write_time(path));
 		m_entityScriptIndices[entity][scriptName] = m_allScripts.size() - 1;
