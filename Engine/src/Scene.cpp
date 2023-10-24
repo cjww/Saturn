@@ -85,7 +85,9 @@ namespace sa {
 
 	void Scene::reg() {
 
-		auto type = LuaAccessable::registerType<Scene>();
+		auto type = registerType<Scene>("Scene",
+			sol::no_constructor,
+			sol::base_classes, sol::bases<Asset>());
 		type["findEntitiesByName"] = [](Scene& self, const std::string& name) {
 			std::vector<Entity> entities;
 			self.m_reg.each([&](entt::entity e) {
@@ -214,6 +216,8 @@ namespace sa {
 	}
 
 	void Scene::destroyEntity(const Entity& entity) {
+		if (entity.isNull())
+			throw std::runtime_error("Attempt to destroy null entity: " + entity.toString());
 		publish<scene_event::EntityDestroyed>(entity);
 		m_scriptManager.clearEntity(entity);
 		m_hierarchy.destroy(entity);

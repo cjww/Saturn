@@ -23,11 +23,9 @@
 
 
 namespace sa {
-	class Scene : public entt::emitter<Scene>, public Serializable, public Asset {
+	class Scene : public entt::emitter<Scene>, public Serializable, public Asset, LuaAccessable {
 	private:
-		friend class AssetManager;
-		inline static AssetTypeID s_typeID;
-
+		
 		entt::registry m_reg;
 
 		ScriptManager m_scriptManager;
@@ -66,8 +64,7 @@ namespace sa {
 		virtual ~Scene() override;
 
 		static void reg();
-		static AssetTypeID type() { return s_typeID; }
-
+		
 		virtual bool onLoad(std::ifstream& file, AssetLoadFlags flags) override; // Asset
 		virtual bool onWrite(std::ofstream& file, AssetWriteFlags flags) override; // Asset
 		virtual bool onUnload() override; // Asset

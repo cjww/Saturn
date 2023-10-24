@@ -18,7 +18,7 @@ namespace comp {
 	}
 
 	void Camera::onConstruct(sa::Entity* entity) {
-		if (!entity->hasComponent<comp::Transform>()) {
+		if (!entity->hasComponents<comp::Transform>()) {
 			entity->addComponent<comp::Transform>();
 		}
 	}

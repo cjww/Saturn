@@ -18,6 +18,7 @@
 #include "Graphics/Material.h"
 #include "Graphics\RenderTarget.h"
 
+#include "Lua/LuaAccessable.h"
 
 #define SA_ASSET_DIR "Assets/"
 
@@ -152,6 +153,10 @@ namespace sa {
 		utils::stripTypeName(str);
 		m_typeToString[id] = str;
 		m_stringToType[str] = id;
+
+		if constexpr (std::is_base_of_v<LuaAccessable, T>) {
+			T::reg();
+		}
 
 		return id;
 	}

@@ -284,7 +284,6 @@ namespace sa {
 		registerAllComponents();
 
 		reg();
-		Scene::reg();
 		Entity::reg();
 		Ref::reg();
 		

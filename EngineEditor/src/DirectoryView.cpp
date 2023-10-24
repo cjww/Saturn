@@ -219,7 +219,7 @@ void DirectoryView::onImGui() {
 					selected->load();
 				}
 			}
-			else if (selected->getType() == sa::Scene::type()) {
+			else if (selected->getType() == sa::AssetManager::get().getAssetTypeID<sa::Scene>()) {
 				if (ImGui::Button("Set Scene")) {
 					m_pEngine->setScene(static_cast<sa::Scene*>(selected));
 				}

@@ -41,7 +41,7 @@ namespace sa {
 		MetaComponent getComponent(const std::string& name) const;
 
 		template<typename ...Components>
-		bool hasComponent() const;
+		bool hasComponents() const;
 
 		bool hasComponent(ComponentType type) const;
 		bool hasComponent(const std::string& name) const;
@@ -59,7 +59,7 @@ namespace sa {
 		void removeComponent(const std::string& name);
 
 		template<typename ...Components>
-		void update();
+		void updateComponents();
 
 		EntityScript* addScript(const std::filesystem::path& path);
 		void removeScript(const std::string& name);
@@ -74,7 +74,7 @@ namespace sa {
 		void destroy();
 
 		template<typename Comp>
-		Comp* copyComponent(Entity src);
+		Comp* copyComponent(const Entity& src);
 		MetaComponent copyComponent(ComponentType type, Entity src);
 
 		Entity clone();
@@ -119,20 +119,23 @@ namespace sa {
 	template<typename T>
 	inline T* Entity::getComponent() const {
 		if (this->isNull()) {
-			return nullptr;
+			throw std::runtime_error("[Entity getComponent] Entity is null: " + toString());
 		}
 		return m_pRegistry->try_get<T>(m_entity);
 	}
 
 	template<typename ...Components>
-	inline bool Entity::hasComponent() const {
+	inline bool Entity::hasComponents() const {
+		if (this->isNull()) {
+			throw std::runtime_error("[Entity hasComponent] Entity is null: " + toString());
+		}
 		return m_pRegistry->all_of<Components...>(m_entity);
 	}
 
 	template<typename T, typename ...Args>
 	inline T* Entity::addComponent(Args&& ... args) {
 		if (this->isNull()) {
-			throw std::runtime_error("Entity was a null entity");
+			throw std::runtime_error("[Entity addComponent] Entity is null: " + toString());
 		}
 		T* pComponent = nullptr;
 		if (m_pRegistry->all_of<T>(m_entity)) {
@@ -148,19 +151,29 @@ namespace sa {
 	template<typename T>
 	inline void Entity::removeComponent() {
 		if (this->isNull()) {
-			throw std::runtime_error("Entity was a null entity");
+			throw std::runtime_error("[Entity removeComponent] Entity is null: " + toString());
 		}
 		m_pRegistry->remove<T>(m_entity);
 	}
 
 	template<typename ...Components>
-	inline void Entity::update() {
+	inline void Entity::updateComponents() {
+		if (this->isNull()) {
+			throw std::runtime_error("[Entity updateComponent] Entity is null: " + toString());
+		}
 		if(m_pRegistry->all_of<Components...>(m_entity))
 			m_pRegistry->patch<Components...>(m_entity);
 	}
 
 	template<typename Comp>
-	inline Comp* Entity::copyComponent(Entity src) {
+	inline Comp* Entity::copyComponent(const Entity& src) {
+		if (this->isNull()) {
+			throw std::runtime_error("[Entity copyComponent] Destination Entity is null: " + toString());
+		}
+		if (src.isNull()) {
+			throw std::runtime_error("[Entity copyComponent] Source Entity is null: " + toString());
+		}
+
 		Comp& orig = m_pRegistry->get<Comp>(src.m_entity);
 		Comp& c = m_pRegistry->get_or_emplace<Comp>(m_entity, orig);
 		
@@ -180,7 +193,7 @@ namespace sa {
 			using namespace entt::literals;
 			entt::meta<Comp>()
 				.type(entt::hashed_string(getComponentName<Comp>().c_str()))
-				.func<&Entity::hasComponent<Comp>>("has"_hs)
+				.func<&Entity::hasComponents<Comp>>("has"_hs)
 				.func<&Entity::getComponent<Comp>, entt::as_ref_t>("get"_hs)
 				.func<&Entity::addComponent<Comp>, entt::as_ref_t>("add"_hs)
 				.func<&Entity::removeComponent<Comp>>("remove"_hs)

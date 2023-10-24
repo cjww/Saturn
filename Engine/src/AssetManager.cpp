@@ -443,6 +443,7 @@ namespace sa {
 
 		m_nextTypeID = 0;
 
+		Asset::reg();
 		registerAssetType<ModelAsset>();
 		registerAssetType<Material>();
 		registerAssetType<TextureAsset>();

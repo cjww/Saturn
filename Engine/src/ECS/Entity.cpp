@@ -199,20 +199,30 @@ namespace sa {
     }
 
     EntityScript* Entity::addScript(const std::filesystem::path& path) {
+        if (this->isNull()) {
+            throw std::runtime_error("[Entity addScript] Entity is null: " + toString());
+        }
         return m_pScene->addScript(*this, path);
     }
 
     void Entity::removeScript(const std::string& name) {
+        if (this->isNull()) {
+            throw std::runtime_error("[Entity removeScript] Entity is null: " + toString());
+        }
         m_pScene->removeScript(*this, name);
     }
 
    EntityScript* Entity::getScript(const std::string& name) const {
-        return m_pScene->getScript(*this, name);
+	   if (this->isNull()) {
+	       throw std::runtime_error("[Entity getScript] Entity is null: " + toString());
+	   }
+		return m_pScene->getScript(*this, name);
     }
 
     void Entity::setParent(const Entity& parent) {
         if (parent == *this || m_pScene != parent.m_pScene)
             return;
+
         m_pScene->getHierarchy().setParent(*this, parent);
         comp::Transform* transform = getComponent<comp::Transform>();
         comp::Transform* parentTransform = parent.getComponent<comp::Transform>();

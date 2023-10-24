@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "Asset.h"
 
+#include "Lua/LuaAccessable.h"
+
 namespace sa {
 	class WorkerInterface : public tf::WorkerInterface
 	{
@@ -42,6 +44,36 @@ namespace sa {
 
 	Asset::~Asset() {
 		m_progress.wait();
+	}
+
+	void Asset::reg() {
+		{
+			
+			auto type = LuaAccessable::registerType<ProgressView<bool>>("AssetProgressView",
+				sol::no_constructor);
+			type["getCompletion"] = &ProgressView<bool>::getCompletion;
+			type["isDone"] = &ProgressView<bool>::isDone;
+			type["isAllDone"] = &ProgressView<bool>::isAllDone;
+			type["value"] = sol::property(&ProgressView<bool>::getValue);
+
+
+		}
+		{
+			auto type = sa::LuaAccessable::registerType<Asset>("Asset",
+				sol::no_constructor);
+			type["load"] = &Asset::load;
+			type["write"] = &Asset::write;
+			type["release"] = &Asset::release;
+
+			type["isLoaded"] = &Asset::isLoaded;
+
+			type["progress"] = sol::property([](const Asset& self) { return &self.getProgress(); });
+			type["name"] = sol::property(&Asset::getName);
+			type["id"] = sol::property(&Asset::getID);
+			type["referenceCount"] = sol::property(&Asset::getReferenceCount);
+			type["path"] = sol::property([](const Asset& self) { return self.getAssetPath().generic_string(); });
+		}
+
 	}
 
 	bool Asset::create(const std::string& name, const std::filesystem::path& assetDirectory) {
