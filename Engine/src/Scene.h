@@ -31,6 +31,8 @@ namespace sa {
 		ScriptManager m_scriptManager;
 
 		EntityHierarchy m_hierarchy;
+		
+		bool m_runtime;
 
 		friend class comp::RigidBody;
 		physx::PxScene* m_pPhysicsScene;

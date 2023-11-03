@@ -28,6 +28,13 @@ namespace sa {
 	}
 	namespace scene_event {
 
+		struct SceneUpdate {
+			float deltaTime;
+		};
+
+		struct SceneStart {};
+		struct SceneStop {};
+
 		struct SceneRequest {
 			std::string sceneName;
 		};

@@ -4,7 +4,7 @@
 #include "Serializable.h"
 
 namespace sa {
-
+	
 	struct EntityScript : public Serializable {
 		std::string name;
 		std::filesystem::path path;
@@ -14,7 +14,8 @@ namespace sa {
 
 		std::unordered_map<std::string, sol::object> serializedData;
 
-		bool wantsReload;
+		std::function<void()> disconnectCallbacks;
+		EntityScript() {};
 
 		EntityScript(std::string name, std::filesystem::path path, sol::environment env, entt::entity owner, std::filesystem::file_time_type lastWriteTime)
 			: name(name)
@@ -22,6 +23,7 @@ namespace sa {
 			, env(env)
 			, owner(owner)
 			, lastWriteTime(lastWriteTime)
+			, disconnectCallbacks([]() {})
 		{}
 
 		virtual void serialize(Serializer& s) override;

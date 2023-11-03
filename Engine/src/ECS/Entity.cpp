@@ -274,6 +274,12 @@ namespace sa {
                 e.copyComponent(type, *this);
             }
         });
+
+        auto scripts = m_pScene->getAssignedScripts(*this);
+        for(auto& script : scripts) {
+            e.addScript(script->path);
+        }
+
         return e;
     }
 

@@ -4,7 +4,7 @@
 #include "Scene.h"
 
 namespace sa {
-
+	
 	void ScriptManager::setComponents(const entt::entity& entity, sol::environment& env, std::vector<ComponentType>& components) {
 		for (auto& type : components) {
 			/*
@@ -15,7 +15,52 @@ namespace sa {
 		}
 	}
 
-	ScriptManager::ScriptManager() {
+	void ScriptManager::connectCallbacks(EntityScript* pScript) {
+		std::optional<entt::emitter<Scene>::connection<scene_event::SceneUpdate>> updateConn;
+		{
+			sol::safe_function function = pScript->env["onUpdate"];
+			pScript->env.set_on(function);
+			if (function != sol::nil) {
+				updateConn = m_eventEmitter.on<scene_event::SceneUpdate>([=](const scene_event::SceneUpdate& e, Scene&) {
+					call(function, e.deltaTime);
+				});
+			}
+		}
+		std::optional<entt::emitter<Scene>::connection<scene_event::SceneStart>> startConn;
+		{
+			sol::safe_function function = pScript->env["onStart"];
+			pScript->env.set_on(function);
+			if (function != sol::nil) {
+				startConn = m_eventEmitter.on<scene_event::SceneStart>([=](const scene_event::SceneStart&, Scene&) {
+					call(function);
+				});
+			}
+		}
+
+		std::optional<entt::emitter<Scene>::connection<scene_event::SceneStop>> stopConn;
+		{
+			sol::safe_function function = pScript->env["onStop"];
+			pScript->env.set_on(function);
+			if (function != sol::nil) {
+				stopConn = m_eventEmitter.on<scene_event::SceneStop>([=](const scene_event::SceneStop&, Scene&) {
+					call(function);
+				});
+			}
+		}
+		
+		
+		pScript->disconnectCallbacks = [=]() {
+			if (updateConn.has_value()) m_eventEmitter.erase(updateConn.value());
+			if (startConn.has_value()) m_eventEmitter.erase(startConn.value());
+			if (stopConn.has_value()) m_eventEmitter.erase(stopConn.value());
+
+		};
+
+	}
+
+	ScriptManager::ScriptManager(entt::emitter<Scene>& eventEmitter)
+		: m_eventEmitter(eventEmitter)
+	{
 		SA_PROFILE_FUNCTION();
 		
 		LuaAccessable::getState().open_libraries();
@@ -110,146 +155,161 @@ namespace sa {
 			return nullptr;
 		}
 
-
 		std::string scriptName = path.filename().replace_extension().generic_string();
-		if (m_entityScriptIndices[entity].count(scriptName)) {
-			return nullptr; // don't add same script again
+		
+		if (m_entityScripts[entity].count(scriptName)) {
+			return &m_entityScripts[entity][scriptName]; // don't add same script again
 		}
 
-		size_t hashedString = std::hash<std::string>()(scriptName);
 		sol::state& lua = LuaAccessable::getState();
 
-		if (!m_scripts.count(hashedString)) {
-			// load file as function
-			auto result = lua.load_file(path.generic_string());
-			if(result.status() != sol::load_status::ok) {
-				sol::error err = result;
-				SA_DEBUG_LOG_ERROR("Failed to load script ", path.generic_string(), ": ", err.what());
-				return nullptr;
-			}
-			m_scripts[hashedString] = result;
+		// load file as function
+		auto result = lua.load_file(path.generic_string());
+		if(result.status() != sol::load_status::ok) {
+			sol::error err = result;
+			SA_DEBUG_LOG_ERROR("Failed to load script ", path.generic_string(), ": ", err.what());
+			return nullptr;
 		}
 
 		sol::environment env = sol::environment(lua, sol::create, lua.globals());
-		sol::safe_function& func = m_scripts[hashedString];
+		const sol::safe_function func = result;
 		env.set_on(func);
 
 		env["this_entity"] = entity;
 		env["this_name"] = scriptName;
 		env["this_scene"] = entity.getScene();
 
-		m_allScripts.emplace_back(scriptName, path, env, entity, std::filesystem::last_write_time(path));
-		m_entityScriptIndices[entity][scriptName] = m_allScripts.size() - 1;
+		m_entityScripts[entity].insert({ scriptName,
+			EntityScript(scriptName, path, env, entity, std::filesystem::last_write_time(path)) });
 
+		m_scriptsToBind.emplace_back(&m_entityScripts[entity][scriptName]);
+		
 		// fill environment with contents of script
 		auto ret = func();
 		if (ret.status() != sol::call_status::ok) {
 			sol::error err = ret;
 			SA_DEBUG_LOG_ERROR("Failed to run script ", path.generic_string(), ": ", err.what());
 		}
-
-		return &m_allScripts.back();
+		
+		 
+		return &m_entityScripts[entity][scriptName];
 	}
 
 	void ScriptManager::removeScript(const entt::entity& entity, const std::string& name) {
-		size_t scriptCount = m_allScripts.size();
-		auto& entityScripts = m_entityScriptIndices[entity];
+		
+		auto& entityScripts = m_entityScripts[entity];
 		if (!entityScripts.count(name))
 			return; // script does not exist on this entity
-		size_t scriptIndex = entityScripts.at(name);
-		if (scriptCount > 1) {
-			EntityScript& backScript = m_allScripts.back();
-			m_entityScriptIndices[backScript.owner][backScript.name] = scriptIndex;
-			m_allScripts[scriptIndex] = std::move(backScript);
-		}
-		else if (scriptCount == 0)
-			return;
-		
-		m_allScripts.pop_back();
+
+		EntityScript& script = entityScripts.at(name);
+		script.disconnectCallbacks();
+
 		entityScripts.erase(name);
+		
 	}
 
 	void ScriptManager::clearEntity(const entt::entity& entity) {
-		if (!m_entityScriptIndices.count(entity))
+		if (!m_entityScripts.count(entity))
 			return;
 
-		auto& entityScripts = m_entityScriptIndices.at(entity);
-		size_t scriptCount = entityScripts.size();
-		for (auto& [name, index] : entityScripts) {
-			EntityScript& backScript = m_allScripts.back();
-			m_entityScriptIndices[backScript.owner][backScript.name] = index;
-			m_allScripts[index] = std::move(backScript);
-			m_allScripts.pop_back();
+		auto& entityScripts = m_entityScripts.at(entity);
+		for (auto& [name, script] : entityScripts) {
+			script.disconnectCallbacks();
 		}
-		m_entityScriptIndices.erase(entity);
+		m_entityScripts.erase(entity);
 	}
 
 	EntityScript* ScriptManager::getScript(const entt::entity& entity, const std::string& name) const{
-		if (!m_entityScriptIndices.count(entity))
+		if (!m_entityScripts.count(entity))
 			return nullptr;
-		auto& entityScripts = m_entityScriptIndices.at(entity);
+		auto& entityScripts = m_entityScripts.at(entity);
 		if (!entityScripts.count(name))
 			return nullptr;
 
-		return (EntityScript*)&m_allScripts.at(entityScripts.at(name));
+		return (EntityScript*)&entityScripts.at(name);
+	}
+
+	void ScriptManager::applyChanges() {
+		for(auto& pScript: m_scriptsToBind) {
+			connectCallbacks(pScript);
+		}
+		
+		m_scriptsToBind.clear();
+
 	}
 
 	void ScriptManager::clearAll() {
-		m_allScripts.clear();
-		m_entityScriptIndices.clear();
-		m_scripts.clear();
+		
+		for (auto [entity, scripts] : m_entityScripts) {
+			for (auto& [name, script] : scripts) {
+				script.disconnectCallbacks();
+			}
+		}
+		m_entityScripts.clear();
+
 	}
 
 	void ScriptManager::freeMemory() {
-		m_allScripts.clear();
-		m_allScripts.shrink_to_fit();
-
+		
 		std::unordered_map<std::string, SystemScript> tmpSystemScripts;
 		m_systemScripts.swap(tmpSystemScripts);
 
-		std::unordered_map<size_t, sol::safe_function> tmpScripts;
-		m_scripts.swap(tmpScripts);
-
-		std::unordered_map<entt::entity, std::unordered_map<std::string, size_t>> tmpEntityScriptIndices;
-		m_entityScriptIndices.swap(tmpEntityScriptIndices);
+		std::unordered_map<entt::entity, std::unordered_map<std::string, EntityScript>> tmpEntityScripts;
+		m_entityScripts.swap(tmpEntityScripts);
 		
 	}
 
 	std::vector<EntityScript*> ScriptManager::getEntityScripts(const entt::entity& entity) {
-		if (!m_entityScriptIndices.count(entity))
+		if (!m_entityScripts.count(entity))
 			return {};
 
 		std::vector<EntityScript*> scripts;
-		for (auto& [name, index] : m_entityScriptIndices.at(entity)) {
-			scripts.push_back(&m_allScripts[index]);
+		for (auto& [name, script] : m_entityScripts.at(entity)) {
+			scripts.push_back(&script);
 		}
 		return scripts;
 	}
 
 	void ScriptManager::reloadScript(EntityScript* pScript) {
 		sol::state& lua = LuaAccessable::getState();
-		// do file to update environment
-		auto loadResult = lua.do_file(pScript->path.generic_string(), pScript->env);
-
-		if (loadResult.status() != sol::call_status::ok) {
+		// load file to store function
+		auto loadResult = lua.load_file(pScript->path.generic_string());
+		if (loadResult.status() != sol::load_status::ok) {
 			sol::error err = loadResult;
-			SA_DEBUG_LOG_ERROR("Error when running script ", pScript->path.generic_string(), ": ", err.what());
+			SA_DEBUG_LOG_ERROR("Error when loading script ", pScript->path.generic_string(), ": ", err.what());
+			return;
 		}
+
+		// do file to update environment
+		sol::safe_function func = loadResult;
+		pScript->env.set_on(func);
+		auto callResult = func();
+
+		if (callResult.status() != sol::call_status::ok) {
+			sol::error err = callResult;
+			SA_DEBUG_LOG_ERROR("Error when running script ", pScript->path.generic_string(), ": ", err.what());
+			return;
+		}
+
+		pScript->disconnectCallbacks();
+		connectCallbacks(pScript);
+
 		SA_DEBUG_LOG_INFO("Reloaded script ", pScript->path.generic_string());
 	}
 
 	void ScriptManager::reloadScripts() {
-		for(EntityScript& script : m_allScripts) {
-
-			std::error_code error;
-			std::filesystem::file_time_type time = std::filesystem::last_write_time(script.path, error);
-			if(error) {
-				SA_DEBUG_LOG_ERROR("Failed to load script file ", script.path);
-				continue;
-			}
-			if(time > script.lastWriteTime) {
-				reloadScript(&script);
-				script.lastWriteTime = time;
+		for(auto& [entity, scripts] : m_entityScripts) {
+			for (auto& [name, script] : scripts) {
+				std::error_code error;
+				std::filesystem::file_time_type time = std::filesystem::last_write_time(script.path, error);
+				if (error) {
+					SA_DEBUG_LOG_ERROR("Failed to load script file ", script.path);
+					continue;
+				}
+				if (time > script.lastWriteTime) {
+					reloadScript(&script);
+					script.lastWriteTime = time;
+				}
 			}
 		}
 	}

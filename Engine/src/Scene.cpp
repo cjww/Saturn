@@ -73,7 +73,11 @@ namespace sa {
 	}
 
 
-	Scene::Scene(const AssetHeader& header) : Asset(header) {
+	Scene::Scene(const AssetHeader& header)
+		: Asset(header)
+		, m_scriptManager(*this)
+	{
+		m_runtime = false;
 		m_pPhysicsScene = PhysicsSystem::get().createScene();
 		registerComponentCallBacks();
 	}
@@ -143,20 +147,26 @@ namespace sa {
 	}
 
 	void Scene::onRuntimeStart() {
-		m_scriptManager.broadcast("onStart");
+		m_runtime = true;
+		m_scriptManager.applyChanges();
+		publish<scene_event::SceneStart>();
 	}
 
 	void Scene::onRuntimeStop()	{
-		m_scriptManager.broadcast("onStop");
+		m_runtime = false;
 	}
 
 	void Scene::runtimeUpdate(float dt) {
 		SA_PROFILE_FUNCTION();
 
 		updatePhysics(dt);
-		
+
+		m_scriptManager.applyChanges();
 		// Scripts
-		m_scriptManager.broadcast("onUpdate", dt);
+		{
+			SA_PROFILE_SCOPE("Update Event");
+			publish<scene_event::SceneUpdate>(dt);
+		}
 		
 		updateChildPositions();
 		updateCameraPositions();
@@ -229,7 +239,10 @@ namespace sa {
 	}
 
 	EntityScript* Scene::addScript(const Entity& entity, const std::filesystem::path& path) {
-		return m_scriptManager.addScript(entity, path);
+		auto pScript = m_scriptManager.addScript(entity, path);
+		if (pScript && m_runtime)
+			m_scriptManager.tryCall(pScript->env, "onStart");
+		return pScript;
 	}
 
 	void Scene::clearEntities() {
