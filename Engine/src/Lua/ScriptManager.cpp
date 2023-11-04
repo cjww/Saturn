@@ -16,44 +16,24 @@ namespace sa {
 	}
 
 	void ScriptManager::connectCallbacks(EntityScript* pScript) {
-		std::optional<entt::emitter<Scene>::connection<scene_event::SceneUpdate>> updateConn;
-		{
-			sol::safe_function function = pScript->env["onUpdate"];
-			pScript->env.set_on(function);
-			if (function != sol::nil) {
-				updateConn = m_eventEmitter.on<scene_event::SceneUpdate>([=](const scene_event::SceneUpdate& e, Scene&) {
-					call(function, e.deltaTime);
-				});
-			}
-		}
-		std::optional<entt::emitter<Scene>::connection<scene_event::SceneStart>> startConn;
-		{
-			sol::safe_function function = pScript->env["onStart"];
-			pScript->env.set_on(function);
-			if (function != sol::nil) {
-				startConn = m_eventEmitter.on<scene_event::SceneStart>([=](const scene_event::SceneStart&, Scene&) {
-					call(function);
-				});
-			}
-		}
 
-		std::optional<entt::emitter<Scene>::connection<scene_event::SceneStop>> stopConn;
-		{
-			sol::safe_function function = pScript->env["onStop"];
-			pScript->env.set_on(function);
-			if (function != sol::nil) {
-				stopConn = m_eventEmitter.on<scene_event::SceneStop>([=](const scene_event::SceneStop&, Scene&) {
-					call(function);
-				});
-			}
-		}
+
+		auto updateConn = callback<scene_event::SceneUpdate>(pScript, "onUpdate", &scene_event::SceneUpdate::deltaTime);
+		
+		auto startConn = callback<scene_event::SceneStart>(pScript, "onStart");
+		auto stopConn = callback<scene_event::SceneStop>(pScript, "onStop");
+
+		auto entityCreatedConn = callback<scene_event::EntityCreated>(pScript, "onEntityCreation", &scene_event::EntityCreated::entity);
+		auto entityDestroyedConn = callback<scene_event::EntityDestroyed>(pScript, "onEntityDestruction", &scene_event::EntityDestroyed::entity);
 		
 		
 		pScript->disconnectCallbacks = [=]() {
 			if (updateConn.has_value()) m_eventEmitter.erase(updateConn.value());
 			if (startConn.has_value()) m_eventEmitter.erase(startConn.value());
 			if (stopConn.has_value()) m_eventEmitter.erase(stopConn.value());
-
+			if (entityCreatedConn.has_value()) m_eventEmitter.erase(entityCreatedConn.value());
+			if (entityDestroyedConn.has_value()) m_eventEmitter.erase(entityDestroyedConn.value());
+			
 		};
 
 	}
@@ -158,7 +138,7 @@ namespace sa {
 		std::string scriptName = path.filename().replace_extension().generic_string();
 		
 		if (m_entityScripts[entity].count(scriptName)) {
-			return &m_entityScripts[entity][scriptName]; // don't add same script again
+			return nullptr; // don't add same script again
 		}
 
 		sol::state& lua = LuaAccessable::getState();
@@ -283,8 +263,15 @@ namespace sa {
 		// do file to update environment
 		sol::safe_function func = loadResult;
 		pScript->env.set_on(func);
-		auto callResult = func();
 
+		// clear all functions
+		pScript->env.for_each([&](sol::lua_value key, sol::lua_value value){
+			if(value.is<sol::function>()) {
+				pScript->env[key] = sol::nil;
+			}
+		});
+
+		auto callResult = func();
 		if (callResult.status() != sol::call_status::ok) {
 			sol::error err = callResult;
 			SA_DEBUG_LOG_ERROR("Error when running script ", pScript->path.generic_string(), ": ", err.what());

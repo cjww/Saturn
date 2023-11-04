@@ -71,35 +71,8 @@ namespace sa {
 		m_linearSampler = m_renderer.createSampler(FilterMode::LINEAR);
 		m_nearestSampler = m_renderer.createSampler(FilterMode::NEAREST);
 
+
 		//DEBUG
-		/*
-		m_debugLightHeatmap = DynamicTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, { m_tileCount.x, m_tileCount.y });
-		m_debugLightHeatmapRenderProgram = m_renderer.createRenderProgram()
-			.addColorAttachment(true, m_debugLightHeatmap)
-			.beginSubpass()
-			.addAttachmentReference(0, SubpassAttachmentUsage::ColorTarget)
-			.endSubpass()
-			.end();
-
-
-		sa::ShaderSet shaderSet({
-			sa::ReadSPVFile((Engine::getShaderDirectory() / "DebugHeatmap.vert.spv").generic_string().c_str()),
-			sa::ReadSPVFile((Engine::getShaderDirectory() / "DebugHeatmap.frag.spv").generic_string().c_str())
-		});
-
-		m_debugLightHeatmapFramebuffer = m_renderer.createFramebuffer(m_debugLightHeatmapRenderProgram, { m_debugLightHeatmap });
-		m_debugLightHeatmapPipeline = m_renderer.createGraphicsPipeline(
-			m_debugLightHeatmapRenderProgram, 
-			0, 
-			{ m_tileCount.x, m_tileCount.y },
-			shaderSet);
-
-		m_debugLightHeatmapDescriptorSet = shaderSet.allocateDescriptorSet(0);
-		m_renderer.updateDescriptorSet(m_debugLightHeatmapDescriptorSet, 0, m_lightIndexBuffer);
-
-		setShowHeatmap(true);
-		*/
-
 		m_debugHeatmapShaderSet.create({
 			sa::ReadSPVFile((Engine::getShaderDirectory() / "DebugHeatmap.vert.spv").generic_string().c_str()),
 			sa::ReadSPVFile((Engine::getShaderDirectory() / "DebugHeatmap.frag.spv").generic_string().c_str())

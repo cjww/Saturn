@@ -14,21 +14,15 @@ namespace sa {
             [](const Entity& e, const std::string& str) { e.getComponent<comp::Name>()->name = str; }
         );
 
-        type["addScript"] = [](Entity& self, const std::string& path) {
-            self.addScript(path);
-        };
-        type["removeScript"] = [](Entity& self, const std::string& name) {
-            self.removeScript(name);
-        };
+        type["addScript"] = &addScript;
+        type["removeScript"] = &removeScript;
 
         type["addComponent"] = [](Entity& self, const std::string& name) {
             self.addComponent(name);
         };
-        type["removeComponent"] = [](Entity& self, const std::string& name) {
-            self.removeComponent(name);
-        };
+        type["removeComponent"] = &removeScript;
 
-        type["clone"] = &Entity::clone;
+        type["clone"] = &clone;
 
         type["parent"] = sol::property(
             [](const Entity& self) -> sol::lua_value {
@@ -58,8 +52,7 @@ namespace sa {
 
         type[sol::meta_function::to_string] = [](const Entity& self) { return self.toString(); };
 
-        type["Get"] = [](const Entity& entity) -> const Entity&
-        {
+        type["Get"] = [](const Entity& entity) -> const Entity& {
 	        return entity;
         };
     }

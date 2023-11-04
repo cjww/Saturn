@@ -23,6 +23,7 @@ namespace sa {
 		std::vector<ComponentType> components;
 	};
 
+
 	class ScriptManager {
 	private:
 
@@ -37,12 +38,8 @@ namespace sa {
 			
 		void connectCallbacks(EntityScript* pScript);
 
-		/*
 		template<typename Event, typename ...Args>
 		std::optional<entt::emitter<Scene>::connection<Event>> callback(EntityScript* pScript, const std::string& functionName, Args&&...);
-		template <typename Event>
-		std::optional<entt::emitter<Scene>::connection<Event>> callback(EntityScript* pScript, const std::string& functionName, const std::function<void(const Event&, Scene&)>& wrapper)
-		*/
 
 	public:
 
@@ -75,7 +72,7 @@ namespace sa {
 		
 
 	};
-	/*
+
 	template <typename Event, typename ... Args>
 	inline std::optional<entt::emitter<Scene>::connection<Event>> ScriptManager::callback(EntityScript* pScript,
 		const std::string& functionName, Args&&... args)
@@ -85,25 +82,11 @@ namespace sa {
 		pScript->env.set_on(function);
 		if (function != sol::nil) {
 			conn = m_eventEmitter.on<Event>([=](const Event& e, Scene&) {
-				call(function, (e->*args)... );
+				call(function, ((&e)->*args)...);
 			});
 		}
 		return conn;
 	}
-
-	template <typename Event>
-	inline std::optional<entt::emitter<Scene>::connection<Event>> ScriptManager::callback(EntityScript* pScript,
-		const std::string& functionName, const std::function<void(const Event&, Scene&)>& wrapper)
-	{
-		std::optional<entt::emitter<Scene>::connection<Event>> conn;
-		sol::safe_function function = pScript->env[functionName];
-		pScript->env.set_on(function);
-		if (function != sol::nil) {
-			conn = m_eventEmitter.on<Event>(wrapper);
-		}
-		return conn;
-	}
-	*/
 
 	template<typename ...Args>
 	inline void ScriptManager::tryCall(const sol::environment& env, const std::string& functionName, Args&& ...args) {

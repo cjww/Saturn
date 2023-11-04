@@ -154,6 +154,7 @@ namespace sa {
 
 	void Scene::onRuntimeStop()	{
 		m_runtime = false;
+		publish<scene_event::SceneStop>();
 	}
 
 	void Scene::runtimeUpdate(float dt) {
@@ -240,8 +241,11 @@ namespace sa {
 
 	EntityScript* Scene::addScript(const Entity& entity, const std::filesystem::path& path) {
 		auto pScript = m_scriptManager.addScript(entity, path);
-		if (pScript && m_runtime)
-			m_scriptManager.tryCall(pScript->env, "onStart");
+		if (pScript) {
+			m_scriptManager.tryCall(pScript->env, "onCreation");
+			if(m_runtime)
+				m_scriptManager.tryCall(pScript->env, "onStart");
+		}
 		return pScript;
 	}
 
