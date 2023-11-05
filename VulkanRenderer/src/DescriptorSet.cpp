@@ -59,7 +59,13 @@ namespace sa {
 	}
 
 	void DescriptorSet::destroy() {
+		if (!m_descriptorPool || m_descriptorSets.empty())
+			return;
+
 		m_device.freeDescriptorSets(m_descriptorPool, m_descriptorSets);
+			
+		m_descriptorPool = VK_NULL_HANDLE;
+		m_descriptorSets.clear();
 	}
 
 	void DescriptorSet::update(uint32_t binding, vk::Buffer buffer, vk::DeviceSize bufferSize, vk::DeviceSize bufferOffset, vk::BufferView* pView, uint32_t indexToUpdate) {

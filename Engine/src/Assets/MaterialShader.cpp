@@ -130,5 +130,11 @@ bool sa::MaterialShader::onWrite(std::ofstream& file, AssetWriteFlags flags) {
 
 bool sa::MaterialShader::onUnload() {
     m_code.clear();
+    m_code.shrink_to_fit();
+    m_sourceFiles.clear();
+    m_sourceFiles.shrink_to_fit();
+
+    m_colorShaderSet.destroy();
+    m_depthShaderSet.destroy();
     return true;
 }

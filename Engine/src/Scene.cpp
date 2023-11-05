@@ -118,6 +118,7 @@ namespace sa {
 			throw std::runtime_error("Json error: " + std::string(simdjson::error_message(doc.error())));
 		}
 		deserialize(&doc);
+		
 		return true;
 	}
 
@@ -141,6 +142,7 @@ namespace sa {
 	bool Scene::onUnload() {
 		m_reg.clear();
 		m_reg.shrink_to_fit();
+		m_scriptManager.clearAll();
 		m_scriptManager.freeMemory();
 		m_hierarchy.freeMemory();
 		return true;
@@ -242,9 +244,8 @@ namespace sa {
 	EntityScript* Scene::addScript(const Entity& entity, const std::filesystem::path& path) {
 		auto pScript = m_scriptManager.addScript(entity, path);
 		if (pScript) {
-			m_scriptManager.tryCall(pScript->env, "onCreation");
 			if(m_runtime)
-				m_scriptManager.tryCall(pScript->env, "onStart");
+				m_scriptManager.tryCall(pScript->env, scene_event::SceneStart::CallbackName);
 		}
 		return pScript;
 	}
@@ -257,7 +258,10 @@ namespace sa {
 
 
 	void Scene::removeScript(const Entity& entity, const std::string& name) {
-		m_scriptManager.removeScript(entity, name);
+		auto pScript = m_scriptManager.getScript(entity, name);
+		if(!pScript) 
+			return;
+		m_scriptManager.removeScript(pScript);
 	}
 
 	EntityScript* Scene::getScript(const Entity& entity, const std::string& name) const {

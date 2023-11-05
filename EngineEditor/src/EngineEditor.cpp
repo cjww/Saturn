@@ -289,13 +289,15 @@ namespace sa {
 		m_pEngine->getCurrentScene()->onRuntimeStop();
 		
 		Scene* pScene = m_pEngine->getCurrentScene();
-		
+
+		pScene->clearEntities();
+
 		auto path = pScene->getAssetPath();
 		pScene->setAssetPath(MakeEditorRelative("sceneCache.data"));
 		pScene->load(sa::AssetLoadFlagBits::FORCE_SHALLOW | sa::AssetLoadFlagBits::NO_REF);
 		pScene->setAssetPath(path);
 
-		pScene->getProgress().waitAll();
+		//pScene->getProgress().waitAll();
 
 		m_state = State::EDIT;
 	}

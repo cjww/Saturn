@@ -29,11 +29,16 @@ namespace sa {
 	namespace scene_event {
 
 		struct SceneUpdate {
+			inline static const char* CallbackName = "onUpdate";
 			float deltaTime;
 		};
 
-		struct SceneStart {};
-		struct SceneStop {};
+		struct SceneStart{
+			inline static const char* CallbackName = "onStart";
+		};
+		struct SceneStop {
+			inline static const char* CallbackName = "onStop";
+		};
 
 		struct SceneRequest {
 			std::string sceneName;
@@ -48,10 +53,12 @@ namespace sa {
 		};
 
 		struct EntityDestroyed {
+			inline static const char* CallbackName = "onEntityDestruction";
 			Entity entity;
 		};
 
 		struct EntityCreated {
+			inline static const char* CallbackName = "onEntityCreation";
 			Entity entity;
 		};
 

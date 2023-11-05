@@ -20,6 +20,7 @@ namespace sa {
 		void update(uint32_t binding, uint32_t arrayIndex, uint32_t indexToUpdate);
 
 	public:
+
 		void create(
 			vk::Device device,
 			vk::DescriptorPool descriptorPool,

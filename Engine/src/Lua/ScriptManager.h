@@ -39,7 +39,7 @@ namespace sa {
 		void connectCallbacks(EntityScript* pScript);
 
 		template<typename Event, typename ...Args>
-		std::optional<entt::emitter<Scene>::connection<Event>> callback(EntityScript* pScript, const std::string& functionName, Args&&...);
+		std::optional<entt::emitter<Scene>::connection<Event>> callback(EntityScript* pScript, Args&&...);
 
 	public:
 
@@ -49,7 +49,7 @@ namespace sa {
 		void loadSystemScript(const std::string& path);
 
 		EntityScript* addScript(const Entity& entity, const std::filesystem::path& path);
-		void removeScript(const entt::entity& entity, const std::string& name);
+		void removeScript(EntityScript* pScript);
 		void clearEntity(const entt::entity& entity);
 		EntityScript* getScript(const entt::entity& entity, const std::string& name) const;
 
@@ -74,11 +74,10 @@ namespace sa {
 	};
 
 	template <typename Event, typename ... Args>
-	inline std::optional<entt::emitter<Scene>::connection<Event>> ScriptManager::callback(EntityScript* pScript,
-		const std::string& functionName, Args&&... args)
+	inline std::optional<entt::emitter<Scene>::connection<Event>> ScriptManager::callback(EntityScript* pScript, Args&&... args)
 	{
 		std::optional<entt::emitter<Scene>::connection<Event>> conn;
-		sol::safe_function function = pScript->env[functionName];
+		sol::safe_function function = pScript->env[Event::CallbackName];
 		pScript->env.set_on(function);
 		if (function != sol::nil) {
 			conn = m_eventEmitter.on<Event>([=](const Event& e, Scene&) {

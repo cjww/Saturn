@@ -14,7 +14,7 @@ namespace sa {
             [](const Entity& e, const std::string& str) { e.getComponent<comp::Name>()->name = str; }
         );
 
-        type["addScript"] = &addScript;
+        type["addScript"] = [](Entity& self, const std::string& filepath) { self.addScript(filepath); };
         type["removeScript"] = &removeScript;
 
         type["addComponent"] = [](Entity& self, const std::string& name) {

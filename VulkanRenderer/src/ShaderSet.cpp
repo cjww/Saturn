@@ -574,6 +574,12 @@ namespace sa {
 	}
 
 	void ShaderSet::destroy() {
+		for(auto id : m_allocatedDescriptorSets) {
+			ResourceManager::get().remove<DescriptorSet>(id);
+		}
+		m_allocatedDescriptorSets.clear();
+		std::set<ResourceID> allocatedDescSets;
+		m_allocatedDescriptorSets.swap(allocatedDescSets);
 
 		for (const auto& [set, layout] : m_descriptorSetLayouts) {
 			ResourceManager::get().remove<vk::DescriptorSetLayout>(layout);
@@ -590,14 +596,27 @@ namespace sa {
 		m_descriptorPool = NULL_RESOURCE;
 
 		m_descriptorSetLayoutInfos.clear();
-		m_descriptorSetLayouts.clear();
-		m_shaderModules.clear();
-		m_pushConstantRanges.clear();
-		m_attributes.clear();
-		m_vertexAttributes.clear();
-		m_vertexBindings.clear();
+		std::unordered_map<uint32_t, DescriptorSetLayoutInfo> descSetInfo;
+		m_descriptorSetLayoutInfos.swap(descSetInfo);
 
-		m_allocatedDescriptorSets.clear();
+		std::map<uint32_t, ResourceID> descSetLayouts;
+		m_descriptorSetLayouts.clear();
+		m_descriptorSetLayouts.swap(descSetLayouts);
+
+		m_shaderModules.clear();
+		m_shaderModules.shrink_to_fit();
+		m_pushConstantRanges.clear();
+		m_pushConstantRanges.shrink_to_fit();
+
+		std::unordered_map<std::string, ShaderAttribute> attribs;
+		m_attributes.clear();
+		m_attributes.swap(attribs);
+		
+		m_vertexAttributes.clear();
+		m_vertexAttributes.shrink_to_fit();
+		m_vertexBindings.clear();
+		m_vertexBindings.shrink_to_fit();
+
 	}
 
 	const std::map<uint32_t, ResourceID>& ShaderSet::getDescriptorSetLayouts() const {
@@ -656,7 +675,6 @@ namespace sa {
 
 		DescriptorSet descriptorSet;
 		descriptorSet.create(m_pCore->getDevice(), *pDescriptorPool, m_pCore->getQueueCount(), m_descriptorSetLayoutInfos.at(setIndex), *pLayout, setIndex);
-
 		ResourceID id = ResourceManager::get().insert<DescriptorSet>(descriptorSet);
 		m_allocatedDescriptorSets.insert(id);
 		return id;
