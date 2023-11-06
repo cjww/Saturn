@@ -48,7 +48,7 @@ namespace sa {
 
 		void loadSystemScript(const std::string& path);
 
-		EntityScript* addScript(const Entity& entity, const std::filesystem::path& path);
+		EntityScript* addScript(const Entity& entity, const std::filesystem::path& path, const std::unordered_map<std::string, sol::object>& serializedData = {});
 		void removeScript(EntityScript* pScript);
 		void clearEntity(const entt::entity& entity);
 		EntityScript* getScript(const entt::entity& entity, const std::string& name) const;

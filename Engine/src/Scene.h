@@ -39,7 +39,7 @@ namespace sa {
 	
 		friend class Entity;
 		void destroyEntity(const Entity& entity);
-		EntityScript* addScript(const Entity& entity, const std::filesystem::path& path);
+		EntityScript* addScript(const Entity& entity, const std::filesystem::path& path, const std::unordered_map<std::string, sol::object>& serializedData = {});
 		void removeScript(const Entity& entity, const std::string& name);
 		EntityScript* getScript(const Entity& entity, const std::string& name) const;
 
@@ -60,7 +60,6 @@ namespace sa {
 		void updateCameraPositions();
 		void updateLightPositions();
 
-
 	public:
 		Scene(const AssetHeader& header);
 		virtual ~Scene() override;
@@ -80,11 +79,13 @@ namespace sa {
 		void serialize(Serializer& s) override;
 		void deserialize(void* pDoc) override;
 
+		Scene* clone(const std::string& name);
+
 		// Event emitter
 		void setScene(const std::string& name);
 
 		// Entity
-		Entity createEntity(const std::string& name = "Entity");
+		Entity createEntity(const std::string& name = "Entity", entt::entity idHint = entt::null);
 		size_t getEntityCount() const;
 		void clearEntities();
 
@@ -105,6 +106,7 @@ namespace sa {
 		void forEach(const std::vector<ComponentType>& components, F func);
 
 		void forEachComponentType(std::function<void(ComponentType)> function);
+
 
 	};
 	

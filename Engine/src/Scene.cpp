@@ -155,8 +155,9 @@ namespace sa {
 	}
 
 	void Scene::onRuntimeStop()	{
+		if(m_runtime) 
+			publish<scene_event::SceneStop>();
 		m_runtime = false;
-		publish<scene_event::SceneStop>();
 	}
 
 	void Scene::runtimeUpdate(float dt) {
@@ -217,12 +218,21 @@ namespace sa {
 		}
 	}
 
+	Scene* Scene::clone(const std::string& name) {
+
+		auto clone = AssetManager::get().createAsset<Scene>(name, "");
+		forEach([&](Entity entity) {
+			entity.clone(clone);
+		});
+		return clone;
+	}
+
 	void Scene::setScene(const std::string& name) {
 		publish<scene_event::SceneRequest>(name);
 	}
 
-	Entity Scene::createEntity(const std::string& name) {
-		Entity e(this, m_reg.create());
+	Entity Scene::createEntity(const std::string& name, entt::entity idHint) {
+		Entity e(this, (idHint == entt::null ? m_reg.create() : m_reg.create(idHint)));
 		e.addComponent<comp::Name>(name);
 		publish<scene_event::EntityCreated>(e);
 		return e;
@@ -241,8 +251,8 @@ namespace sa {
 		return m_reg.alive();
 	}
 
-	EntityScript* Scene::addScript(const Entity& entity, const std::filesystem::path& path) {
-		auto pScript = m_scriptManager.addScript(entity, path);
+	EntityScript* Scene::addScript(const Entity& entity, const std::filesystem::path& path, const std::unordered_map<std::string, sol::object>& serializedData) {
+		auto pScript = m_scriptManager.addScript(entity, path, serializedData);
 		if (pScript) {
 			if(m_runtime)
 				m_scriptManager.tryCall(pScript->env, scene_event::SceneStart::CallbackName);

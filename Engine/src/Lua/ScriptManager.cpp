@@ -129,7 +129,7 @@ namespace sa {
 		lua.stack_clear();
 	}
 
-	EntityScript* ScriptManager::addScript(const Entity& entity, const std::filesystem::path& path) {
+	EntityScript* ScriptManager::addScript(const Entity& entity, const std::filesystem::path& path, const std::unordered_map<std::string, sol::object>& serializedData) {
 		if (!std::filesystem::exists(path)) {
 			SA_DEBUG_LOG_ERROR("File does not exist: ", path);
 			return nullptr;
@@ -163,7 +163,9 @@ namespace sa {
 			EntityScript(scriptName, path, env, entity, std::filesystem::last_write_time(path)) });
 
 		m_scriptsToBind.emplace_back(&m_entityScripts[entity][scriptName]);
-		
+
+		m_entityScripts[entity][scriptName].serializedData = serializedData;
+
 		// fill environment with contents of script
 		auto ret = func();
 		if (ret.status() != sol::call_status::ok) {

@@ -75,7 +75,7 @@ bool sa::FileDialogs::OpenFileInTextEditor(const std::filesystem::path& applicat
         NULL,           // Process handle not inheritable
         NULL,           // Thread handle not inheritable
         FALSE,          // Set handle inheritance to FALSE
-        0,              // No creation flags
+        DETACHED_PROCESS, // creation flags
         NULL,           // Use parent's environment block
         NULL,           // Use parent's starting directory 
         &si,            // Pointer to STARTUPINFO structure

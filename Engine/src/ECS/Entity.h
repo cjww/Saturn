@@ -61,7 +61,7 @@ namespace sa {
 		template<typename ...Components>
 		void updateComponents();
 
-		EntityScript* addScript(const std::filesystem::path& path);
+		EntityScript* addScript(const std::filesystem::path& path, const EntityScript* inheritSerializedData = nullptr);
 		void removeScript(const std::string& name);
 		EntityScript* getScript(const std::string& name) const;
 
@@ -77,7 +77,7 @@ namespace sa {
 		Comp* copyComponent(const Entity& src);
 		MetaComponent copyComponent(ComponentType type, Entity src);
 
-		Entity clone();
+		Entity clone(Scene* pDstScene = nullptr);
 
 		bool isNull() const;
 
@@ -174,7 +174,7 @@ namespace sa {
 			throw std::runtime_error("[Entity copyComponent] Source Entity is null: " + toString());
 		}
 
-		Comp& orig = m_pRegistry->get<Comp>(src.m_entity);
+		Comp& orig = src.m_pRegistry->get<Comp>(src.m_entity);
 		Comp& c = m_pRegistry->get_or_emplace<Comp>(m_entity, orig);
 		
 		c = orig;

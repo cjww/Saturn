@@ -22,7 +22,7 @@ namespace sa {
         };
         type["removeComponent"] = &removeScript;
 
-        type["clone"] = &clone;
+        type["clone"] = [](Entity& self) { return self.clone(); };
 
         type["parent"] = sol::property(
             [](const Entity& self) -> sol::lua_value {
@@ -191,11 +191,14 @@ namespace sa {
         removeComponent(type);
     }
 
-    EntityScript* Entity::addScript(const std::filesystem::path& path) {
+    EntityScript* Entity::addScript(const std::filesystem::path& path, const EntityScript* inheritSerializedData) {
         if (this->isNull()) {
             throw std::runtime_error("[Entity addScript] Entity is null: " + toString());
         }
-        return m_pScene->addScript(*this, path);
+        if(inheritSerializedData != nullptr) {
+            return m_pScene->addScript(*this, path, inheritSerializedData->serializedData);
+        }
+    	return m_pScene->addScript(*this, path);
     }
 
     void Entity::removeScript(const std::string& name) {
@@ -256,9 +259,11 @@ namespace sa {
         return type.invoke("copy", *this, src);
     }
 
-    Entity Entity::clone() {
+    Entity Entity::clone(Scene* pDstScene) {
         std::string name = getComponent<comp::Name>()->name;
-        Entity e = m_pScene->createEntity(name);
+        Scene* pDst = (pDstScene == nullptr) ? m_pScene : pDstScene;
+
+        Entity e = pDst->createEntity(name, (pDst == m_pScene)? entt::null : m_entity);
         m_pScene->forEachComponentType([&](ComponentType type) {
             if (type == getComponentType<comp::Name>())
                 return;
@@ -270,7 +275,7 @@ namespace sa {
 
         auto scripts = m_pScene->getAssignedScripts(*this);
         for(auto& script : scripts) {
-            e.addScript(script->path);
+            e.addScript(script->path, script);
         }
 
         return e;
@@ -282,6 +287,8 @@ namespace sa {
     }
 
     std::string Entity::toString() const {
-        return (isNull() ? "Null" : getComponent<comp::Name>()->name) + " (Entity " + std::to_string((uint32_t)m_entity) + ")";
+        if (isNull())
+            return "Null (" + (m_pScene ? m_pScene->getName() : "-" ) + ": " + std::to_string((uint32_t)m_entity) + ")";
+        return getComponent<comp::Name>()->name + " (" + m_pScene->getName() + ": " + std::to_string((uint32_t)m_entity) + ")";
     }
 }
