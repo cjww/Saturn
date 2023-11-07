@@ -6,6 +6,26 @@
 
 #include "EngineEditor.h"
 
+void SceneView::onEntitySelected(const sa::editor_event::EntitySelected& e) {
+	m_selectedEntity = e.entity;
+}
+
+void SceneView::onEntityDeselected(const sa::editor_event::EntityDeselected& e) {
+	m_selectedEntity = {};
+}
+
+void SceneView::onSceneSet(const sa::engine_event::SceneSet& e) {
+	m_selectedEntity = {};
+}
+
+void SceneView::onRender(const sa::engine_event::OnRender& e) {
+	if (m_isOpen && m_pEngine->getCurrentScene()) {
+		m_sceneCollection.clear();
+		m_sceneCollection.collect(m_pEngine->getCurrentScene());
+		e.pRenderPipeline->render(*e.pContext, &m_camera, &m_renderTarget, m_sceneCollection);
+	}
+}
+
 SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWindow* pWindow)
 	: EditorModule(pEngine, pEditor, "Scene View", false)
 {
@@ -32,19 +52,11 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 	m_statsUpdateTime = 0.1f;
 	m_statsTimer = m_statsUpdateTime;
 
+	pEngine->sink<sa::engine_event::SceneSet>().connect<&SceneView::onSceneSet>(this);
+	pEngine->sink<sa::editor_event::EntitySelected>().connect<&SceneView::onEntitySelected>(this);
+	pEngine->sink<sa::editor_event::EntityDeselected>().connect<&SceneView::onEntityDeselected>(this);
+	pEngine->sink<sa::engine_event::OnRender>().connect<&SceneView::onRender>(this);
 
-	pEngine->on<sa::engine_event::SceneSet>([&](const sa::engine_event::SceneSet& sceneSetEvent, sa::Engine& engine) {
-		m_selectedEntity = {};
-	});
-
-	pEngine->on<sa::editor_event::EntitySelected>([&](const sa::editor_event::EntitySelected& e, sa::Engine&) {
-		m_selectedEntity = e.entity;
-	});
-
-	pEngine->on<sa::editor_event::EntityDeselected>([&](const sa::editor_event::EntityDeselected&, sa::Engine&) {
-		m_selectedEntity = {};
-	});
-	
 	m_focusPointDistance = 10.f;
 	m_zoom = 0.f;
 	m_pWindow->addScrollCallback([&](double x, double y) {
@@ -52,15 +64,6 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 			m_zoom = y;
 		}
 	});
-	
-	pEngine->on<sa::engine_event::OnRender>([&](sa::engine_event::OnRender& e, sa::Engine& engine) {
-		if (m_isOpen && engine.getCurrentScene()) {
-			m_sceneCollection.clear();
-			m_sceneCollection.collect(engine.getCurrentScene());
-			e.pRenderPipeline->render(*e.pContext, &m_camera, &m_renderTarget, m_sceneCollection);
-		}
-	});
-
 }
 
 SceneView::~SceneView() {
@@ -71,7 +74,6 @@ void SceneView::update(float dt) {
 	SA_PROFILE_FUNCTION();
 
 	m_deltaTime = dt;
-	
 	m_statsTimer -= dt;
 	if (m_statsTimer < 0.0f) {
 		m_statsTimer = m_statsUpdateTime;
@@ -470,7 +472,9 @@ void SceneView::onImGui() {
 			ImGui::Indent(ImGui::GetWindowWidth() - 400);
 			ImGui::Text("Camera Pos: %.2f, %.2f, %.2f", camera.getPosition().x, camera.getPosition().y, camera.getPosition().z);
 
-			ImGui::Text("Entity Count: %llu", m_pEngine->getCurrentScene()->getEntityCount());
+			sa::Scene* pScene = m_pEngine->getCurrentScene();
+			if(pScene)
+				ImGui::Text("Entity Count: %llu", pScene->getEntityCount());
 
 			ImGui::Text("FPS: %f", 1 / m_statistics.frameTime);
 			ImVec4 bgColor = ImGui::GetStyleColorVec4(ImGuiCol_FrameBg);

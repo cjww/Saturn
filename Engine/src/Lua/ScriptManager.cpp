@@ -17,29 +17,15 @@ namespace sa {
 
 	void ScriptManager::connectCallbacks(EntityScript* pScript) {
 
-
-		auto updateConn = callback<scene_event::SceneUpdate>(pScript, &scene_event::SceneUpdate::deltaTime);
-		
-		auto startConn = callback<scene_event::SceneStart>(pScript);
-		auto stopConn = callback<scene_event::SceneStop>(pScript);
-
-		auto entityCreatedConn = callback<scene_event::EntityCreated>(pScript, &scene_event::EntityCreated::entity);
-		auto entityDestroyedConn = callback<scene_event::EntityDestroyed>(pScript, &scene_event::EntityDestroyed::entity);
-		
-		
-		pScript->disconnectCallbacks = [=]() {
-			if (updateConn.has_value()) m_eventEmitter.erase(updateConn.value());
-			if (startConn.has_value()) m_eventEmitter.erase(startConn.value());
-			if (stopConn.has_value()) m_eventEmitter.erase(stopConn.value());
-			if (entityCreatedConn.has_value()) m_eventEmitter.erase(entityCreatedConn.value());
-			if (entityDestroyedConn.has_value()) m_eventEmitter.erase(entityDestroyedConn.value());
-			
-		};
-
+		pScript->bind<scene_event::SceneUpdate, &scene_event::SceneUpdate::deltaTime>(m_dispatcher);
+		pScript->bind<scene_event::SceneStart>(m_dispatcher);
+		pScript->bind<scene_event::SceneStop>(m_dispatcher);
+		pScript->bind<scene_event::EntityCreated, &scene_event::EntityCreated::entity>(m_dispatcher);
+		pScript->bind<scene_event::EntityDestroyed, &scene_event::EntityDestroyed::entity>(m_dispatcher);
 	}
 
-	ScriptManager::ScriptManager(entt::emitter<Scene>& eventEmitter)
-		: m_eventEmitter(eventEmitter)
+	ScriptManager::ScriptManager(entt::dispatcher& dispatcher)
+		: m_dispatcher(dispatcher)
 	{
 		SA_PROFILE_FUNCTION();
 		
@@ -180,7 +166,6 @@ namespace sa {
 
 	void ScriptManager::removeScript(EntityScript* pScript) {
 		tryCall(pScript->env, "onDestruction");
-		pScript->disconnectCallbacks();
 
 		const Entity entity = pScript->env["this_entity"];
 		m_entityScripts.at(entity).erase(pScript->name);
@@ -194,7 +179,6 @@ namespace sa {
 		auto& entityScripts = m_entityScripts.at(entity);
 		for (auto& [name, script] : entityScripts) {
 			tryCall(script.env, "onDestruction");
-			script.disconnectCallbacks();
 		}
 		m_entityScripts.erase(entity);
 	}
@@ -223,7 +207,6 @@ namespace sa {
 		for (auto [entity, scripts] : m_entityScripts) {
 			for (auto& [name, script] : scripts) {
 				tryCall(script.env, "onDestruction");
-				script.disconnectCallbacks();
 			}
 		}
 		m_entityScripts.clear();
@@ -279,7 +262,7 @@ namespace sa {
 			return;
 		}
 
-		pScript->disconnectCallbacks();
+		pScript->disconnect();
 		connectCallbacks(pScript);
 
 		SA_DEBUG_LOG_INFO("Reloaded script ", pScript->path.generic_string());

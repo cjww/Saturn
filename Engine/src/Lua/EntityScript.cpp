@@ -7,6 +7,9 @@
 #include "ECS/ComponentBase.h"
 
 namespace sa {
+	EntityScript::~EntityScript() {
+		disconnect();
+	}
 
 	void EntityScript::serialize(Serializer& s) {
 		s.beginObject();
@@ -87,5 +90,10 @@ namespace sa {
 			serializedData[std::string(key)] = env[key];
 			
 		}
+	}
+
+	void EntityScript::disconnect() {
+		for (auto& conn : connections)
+			conn.release();
 	}
 }

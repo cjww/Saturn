@@ -3,6 +3,7 @@
 #include <Renderer.hpp>
 #include <RenderWindow.hpp>
 #include "Assets\Asset.h"
+#include "ECS/Events.h"
 
 namespace sa {
 
@@ -15,6 +16,8 @@ namespace sa {
 		bool m_isActive;
 
 		Extent m_extent;
+
+		entt::connection m_windowResizedConnection;
 
 		struct MainRenderData {
 			DynamicTexture colorTexture;
@@ -73,6 +76,7 @@ namespace sa {
 
 		void setOutputTexture(const DynamicTexture& dynamicTexture);
 
+		void onWindowResized(const engine_event::WindowResized& e);
 	public:
 
 		RenderTarget();

@@ -11,7 +11,7 @@
 namespace sa {
 
 
-	class Engine : public entt::emitter<Engine> {
+	class Engine : public entt::dispatcher {
 	private:
 		static std::filesystem::path s_shaderDirectory;
 
@@ -52,6 +52,9 @@ namespace sa {
 		Scene* getCurrentScene() const;
 
 		void setScene(Scene* scene);
+
+		void onSceneSet(engine_event::SceneSet& e);
+
 	};
 	
 }

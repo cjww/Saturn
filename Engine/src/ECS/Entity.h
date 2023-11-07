@@ -194,8 +194,8 @@ namespace sa {
 			entt::meta<Comp>()
 				.type(entt::hashed_string(getComponentName<Comp>().c_str()))
 				.func<&Entity::hasComponents<Comp>>("has"_hs)
-				.func<&Entity::getComponent<Comp>, entt::as_ref_t>("get"_hs)
-				.func<&Entity::addComponent<Comp>, entt::as_ref_t>("add"_hs)
+				.func<&Entity::getComponent<Comp>>("get"_hs)
+				.func<&Entity::addComponent<Comp>>("add"_hs)
 				.func<&Entity::removeComponent<Comp>>("remove"_hs)
 				.func<&Entity::copyComponent<Comp>>("copy"_hs)
 				;
@@ -253,6 +253,7 @@ namespace std
 	};
 }
 
+/*
 // register components with meta types
 template<typename Type>
 struct entt::type_seq<Type> {
@@ -261,4 +262,5 @@ struct entt::type_seq<Type> {
 		return value;
 	}
 };
+ */
 

@@ -76,17 +76,20 @@ void EntityInspector::makePopups() {
 
 }
 
+void EntityInspector::onEntitySelected(const sa::editor_event::EntitySelected& e) {
+	m_selectedEntity = e.entity;
+}
+
+void EntityInspector::onEntityDeselected(const sa::editor_event::EntityDeselected& e) {
+	m_selectedEntity = {};
+}
+
 EntityInspector::EntityInspector(sa::Engine* pEngine, sa::EngineEditor* pEditor) 
 	: EditorModule(pEngine, pEditor, "Inspector", false) {
 	m_selectedEntity = {};
 
-	pEngine->on<sa::editor_event::EntitySelected>([&](const sa::editor_event::EntitySelected& e, sa::Engine&) {
-		m_selectedEntity = e.entity;
-	});
-
-	pEngine->on<sa::editor_event::EntityDeselected>([&](const sa::editor_event::EntityDeselected&, sa::Engine&) {
-		m_selectedEntity = {};
-	});
+	pEngine->sink<sa::editor_event::EntitySelected>().connect<&EntityInspector::onEntitySelected>(this);
+	pEngine->sink<sa::editor_event::EntityDeselected>().connect<&EntityInspector::onEntityDeselected>(this);
 }
 
 EntityInspector::~EntityInspector() {

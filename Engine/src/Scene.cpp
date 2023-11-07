@@ -1,5 +1,8 @@
 #include "pch.h"
 #include "Scene.h"
+
+#include <d3d10sdklayers.h>
+
 #include "ECS/Components.h"
 
 namespace sa {
@@ -94,11 +97,11 @@ namespace sa {
 			sol::base_classes, sol::bases<Asset>());
 		type["findEntitiesByName"] = [](Scene& self, const std::string& name) {
 			std::vector<Entity> entities;
-			self.m_reg.each([&](entt::entity e) {
+			for (auto [e] : self.m_reg.storage<entt::entity>().each()) {
 				if (self.m_reg.get<comp::Name>(e).name == name) {
 					entities.emplace_back(&self, e);
 				}
-			});
+			}
 			return sol::as_table(entities);
 		};
 
@@ -141,7 +144,8 @@ namespace sa {
 
 	bool Scene::onUnload() {
 		m_reg.clear();
-		m_reg.shrink_to_fit();
+		decltype(m_reg) reg;
+		m_reg.swap(reg);
 		m_scriptManager.clearAll();
 		m_scriptManager.freeMemory();
 		m_hierarchy.freeMemory();
@@ -151,12 +155,12 @@ namespace sa {
 	void Scene::onRuntimeStart() {
 		m_runtime = true;
 		m_scriptManager.applyChanges();
-		publish<scene_event::SceneStart>();
+		trigger<scene_event::SceneStart>();
 	}
 
 	void Scene::onRuntimeStop()	{
 		if(m_runtime) 
-			publish<scene_event::SceneStop>();
+			trigger<scene_event::SceneStop>();
 		m_runtime = false;
 	}
 
@@ -169,7 +173,7 @@ namespace sa {
 		// Scripts
 		{
 			SA_PROFILE_SCOPE("Update Event");
-			publish<scene_event::SceneUpdate>(dt);
+			trigger<scene_event::SceneUpdate>(scene_event::SceneUpdate{ dt });
 		}
 		
 		updateChildPositions();
@@ -200,8 +204,15 @@ namespace sa {
 		using namespace simdjson;
 		ondemand::document& doc = *(ondemand::document*)pDoc;
 		ondemand::array entities = doc["entities"];
+
 		
-		m_reg.reserve(entities.count_elements());
+		std::unordered_set<entt::entity> allEntities;
+		for(auto [e] : m_reg.storage<entt::entity>().each()) {
+			allEntities.insert(e);
+		}
+		
+
+		m_reg.storage<entt::entity>().reserve(entities.count_elements());
 		for (auto e : entities) {
 			if (e.error()) {
 				SA_DEBUG_LOG_WARNING("Failed to get entity from file");
@@ -215,6 +226,11 @@ namespace sa {
 			}
 			Entity entity(this, entityID);
 			entity.deserialize(&obj);
+			allEntities.erase(entityID);
+		}
+		for(auto& entityId : allEntities) {
+			Entity entity(this, entityId);
+			entity.destroy();
 		}
 	}
 
@@ -228,27 +244,27 @@ namespace sa {
 	}
 
 	void Scene::setScene(const std::string& name) {
-		publish<scene_event::SceneRequest>(name);
+		trigger<scene_event::SceneRequest>(scene_event::SceneRequest{ name });
 	}
 
 	Entity Scene::createEntity(const std::string& name, entt::entity idHint) {
 		Entity e(this, (idHint == entt::null ? m_reg.create() : m_reg.create(idHint)));
 		e.addComponent<comp::Name>(name);
-		publish<scene_event::EntityCreated>(e);
+		trigger<scene_event::EntityCreated>(scene_event::EntityCreated{ e });
 		return e;
 	}
 
 	void Scene::destroyEntity(const Entity& entity) {
 		if (entity.isNull())
 			throw std::runtime_error("Attempt to destroy null entity: " + entity.toString());
-		publish<scene_event::EntityDestroyed>(entity);
+		trigger<scene_event::EntityDestroyed>(scene_event::EntityDestroyed{ entity });
 		m_scriptManager.clearEntity(entity);
 		m_hierarchy.destroy(entity);
 		m_reg.destroy(entity);
 	}
 
 	size_t Scene::getEntityCount() const {
-		return m_reg.alive();
+		return m_reg.storage<entt::entity>()->in_use();
 	}
 
 	EntityScript* Scene::addScript(const Entity& entity, const std::filesystem::path& path, const std::unordered_map<std::string, sol::object>& serializedData) {
@@ -296,9 +312,9 @@ namespace sa {
 	}
 
 	void Scene::forEachComponentType(std::function<void(ComponentType)> function) {
-		m_reg.visit([&](const entt::type_info& info) {
-			function(entt::resolve(info));
-		});
+		for(auto&& [id, type] : entt::resolve()) {
+			function(type);
+		}
 	}
 
 }

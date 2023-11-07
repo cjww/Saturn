@@ -32,18 +32,19 @@ namespace sa {
 		
 		std::list<EntityScript*> m_scriptsToBind;
 
-		entt::emitter<Scene>& m_eventEmitter;
+		entt::dispatcher& m_dispatcher;
 		
 		void setComponents(const entt::entity& entity, sol::environment& env, std::vector<ComponentType>& components);
 			
 		void connectCallbacks(EntityScript* pScript);
-
+		/*
 		template<typename Event, typename ...Args>
 		std::optional<entt::emitter<Scene>::connection<Event>> callback(EntityScript* pScript, Args&&...);
+		 */
 
 	public:
 
-		ScriptManager(entt::emitter<Scene>& eventEmitter);
+		ScriptManager(entt::dispatcher& dispatcher);
 		virtual ~ScriptManager();
 
 		void loadSystemScript(const std::string& path);
@@ -72,7 +73,7 @@ namespace sa {
 		
 
 	};
-
+	/*
 	template <typename Event, typename ... Args>
 	inline std::optional<entt::emitter<Scene>::connection<Event>> ScriptManager::callback(EntityScript* pScript, Args&&... args)
 	{
@@ -86,6 +87,7 @@ namespace sa {
 		}
 		return conn;
 	}
+	 */
 
 	template<typename ...Args>
 	inline void ScriptManager::tryCall(const sol::environment& env, const std::string& functionName, Args&& ...args) {

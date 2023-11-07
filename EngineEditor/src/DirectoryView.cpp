@@ -7,24 +7,26 @@
 
 #include "FileTemplates.h"
 
+void DirectoryView::onDraggedDropped(const sa::editor_event::DragDropped& e) {
+	for (uint32_t i = 0; i < e.count; i++) {
+		std::filesystem::path path = e.paths[i];
+		std::string extension = path.extension().generic_string();
+		if (sa::ModelAsset::isExtensionSupported(extension)) {
+			sa::AssetManager::get().importAsset<sa::ModelAsset>(path);
+		}
+		else {
+			SA_DEBUG_LOG_WARNING("Could not import: Unsupported extension ", extension);
+		}
+	}
+}
+
 DirectoryView::DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor)
 	: EditorModule(pEngine, pEditor, "Directory View", true)
 {
 	m_isOpen = false;
 	m_isAssetListOpen = false;
 
-	m_pEngine->on<sa::editor_event::DragDropped>([&](const sa::editor_event::DragDropped& e, const sa::Engine& engine) {
-		for (uint32_t i = 0; i < e.count; i++) {
-			std::filesystem::path path = e.paths[i];
-			std::string extension = path.extension().generic_string();
-			if (sa::ModelAsset::isExtensionSupported(extension)) {
-				sa::AssetManager::get().importAsset<sa::ModelAsset>(path);
-			}
-			else {
-				SA_DEBUG_LOG_WARNING("Could not import: Unsupported extension ", extension);
-			}
-		}
-	});
+	m_pEngine->sink<sa::editor_event::DragDropped>().connect<&DirectoryView::onDraggedDropped>(this);
 
 	sa::Image img(m_pEditor->MakeEditorRelative("resources/folder-white.png").generic_string());
 	m_directoryIcon = sa::Texture2D(img, true);

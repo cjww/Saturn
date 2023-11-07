@@ -23,7 +23,7 @@
 
 
 namespace sa {
-	class Scene : public entt::emitter<Scene>, public Serializable, public Asset, LuaAccessable {
+	class Scene : public entt::dispatcher, public Serializable, public Asset, LuaAccessable {
 	private:
 		
 		entt::registry m_reg;
@@ -102,9 +102,6 @@ namespace sa {
 		template<typename ...T, typename F>
 		void forEach(F func);
 
-		template<typename F>
-		void forEach(const std::vector<ComponentType>& components, F func);
-
 		void forEachComponentType(std::function<void(ComponentType)> function);
 
 
@@ -145,10 +142,10 @@ namespace sa {
 			std::is_assignable_v<std::function<void(Entity)>, F> &&
 			"Not a valid function signature");
 		if constexpr (std::is_assignable_v<std::function<void(Entity)>, F>) {
-			m_reg.each([&](const entt::entity e) {
+			for(auto [e] : m_reg.storage<entt::entity>().each()) {
 				Entity entity(this, e);
 				func(entity);
-			});
+			}
 		}
 		else if constexpr (std::is_assignable_v<std::function<void(Entity, T&...)>, F>) {
 			m_reg.view<T...>().each([&](entt::entity e, T&... comp) {
@@ -161,21 +158,4 @@ namespace sa {
 		}
 
 	}
-
-
-	template<typename F>
-	inline void Scene::forEach(const std::vector<ComponentType>& components, F func) {
-		using namespace entt::literals;
-		
-		std::vector<entt::id_type> types(components.size());
-		for (size_t i = 0; i < types.size(); i++) {
-			types[i] = components[i].getTypeId();
-		}
-
-		m_reg.runtime_view(std::cbegin(types), std::cend(types)).each([&](entt::entity e) {
-			Entity entity(this, e);
-			func(entity);
-		});
-	}
-
 }

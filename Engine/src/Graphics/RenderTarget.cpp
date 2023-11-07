@@ -203,6 +203,11 @@ namespace sa {
 		m_pOutputTexture = (DynamicTexture*)&dynamicTexture;
 	}
 
+	void RenderTarget::onWindowResized(const engine_event::WindowResized& e) {
+		this->resize(e.newExtent);
+		m_extent = e.newExtent;
+	}
+
 	RenderTarget::RenderTarget(const AssetHeader& header) 
 		: Asset(header)
 		, m_renderer(Renderer::get())
@@ -231,17 +236,16 @@ namespace sa {
 	}
 	
 	void RenderTarget::initialize(Engine* pEngine, RenderWindow* pWindow) {
-		pEngine->on<engine_event::WindowResized>([this](engine_event::WindowResized& e, Engine& engine) {
-			this->resize(e.newExtent);
-			m_extent = e.newExtent;
-		});
-		
+		m_windowResizedConnection = pEngine->sink<engine_event::WindowResized>().connect<&RenderTarget::onWindowResized>(this);
+
 		initialize(pWindow->getCurrentExtent());
 	}
 
 	void RenderTarget::destroy() {
+		m_windowResizedConnection.release();
 		cleanupMainRenderData();
 		cleanupBloomData();
+
 	}
 
 	void RenderTarget::resize(Extent extent) {

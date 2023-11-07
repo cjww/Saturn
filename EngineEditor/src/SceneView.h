@@ -49,6 +49,10 @@ private:
 	std::array<float, 100> m_gpuMemoryData;
 
 
+	void onEntitySelected(const sa::editor_event::EntitySelected& e);
+	void onEntityDeselected(const sa::editor_event::EntityDeselected& e);
+	void onSceneSet(const sa::engine_event::SceneSet& e);
+	void onRender(const sa::engine_event::OnRender& e);
 
 
 public:

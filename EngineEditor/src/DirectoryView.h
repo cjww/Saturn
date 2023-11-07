@@ -10,10 +10,13 @@ private:
 
 	std::unordered_set<sa::Asset*> m_openAssetProperties;
 
+	void onDraggedDropped(const sa::editor_event::DragDropped& e);
+
 public:
 	DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor);
 
 	virtual void onImGui() override;
 	virtual void update(float dt) override;
+
 
 };
