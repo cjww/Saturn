@@ -413,11 +413,6 @@
     <ClInclude Include="src\Tools\StopWatch.h" />
   </ItemGroup>
   <ItemGroup>
-    <ProjectReference Include="..\DX11Renderer\DX11Renderer.vcxproj">
-      <Project>{42400a75-a51a-4fe1-8e17-58e4683224e7}</Project>
-    </ProjectReference>
-  </ItemGroup>
-  <ItemGroup>
     <Xml Include="src\setup.xml" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
