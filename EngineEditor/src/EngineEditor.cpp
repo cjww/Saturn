@@ -6,7 +6,7 @@
 
 #include "Tools\FileDialogs.h"
 
-#include <simdjson/simdjson.h>
+#include <simdjson.h>
 
 #include "AssetManager.h"
 #include "Assets\ModelAsset.h"
