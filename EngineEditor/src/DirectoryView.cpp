@@ -28,11 +28,16 @@ DirectoryView::DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor)
 
 	m_pEngine->sink<sa::editor_event::DragDropped>().connect<&DirectoryView::onDraggedDropped>(this);
 
-	sa::Image img(m_pEditor->MakeEditorRelative("resources/folder-white.png").generic_string());
-	m_directoryIcon = sa::Texture2D(img, true);
-
-	sa::Image img1(m_pEditor->MakeEditorRelative("resources/file-white.png").generic_string());
-	m_otherFileIcon = sa::Texture2D(img1, true);
+	
+	m_directoryIcon = sa::Texture2D(
+		sa::Image(m_pEditor->MakeEditorRelative("resources/folder-white.png").generic_string()),
+		true);
+	m_otherFileIcon = sa::Texture2D(
+		sa::Image(m_pEditor->MakeEditorRelative("resources/file-white.png").generic_string()),
+		true);
+	m_luaScriptIcon = sa::Texture2D(
+		sa::Image(m_pEditor->MakeEditorRelative("resources/lua_file-white.png").generic_string()),
+		true);
 
 }
 
@@ -139,6 +144,9 @@ void DirectoryView::onImGui() {
 				sa::Texture2D icon = m_otherFileIcon;
 				if (entry.is_directory()) {
 					icon = m_directoryIcon;
+				}
+				else if(entry.path().extension() == ".lua") {
+					icon = m_luaScriptIcon;
 				}
 
 				sa::Asset* pAsset = sa::AssetManager::get().findAssetByPath(entry.path());

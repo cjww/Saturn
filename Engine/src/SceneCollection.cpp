@@ -189,13 +189,14 @@ namespace sa {
 
 		for (auto& collection : m_materialShaderCollections) {
 			auto it = std::find(collection.m_models.begin(), collection.m_models.end(), pModelAsset);
+			bool uniqueModel = it == collection.m_models.end();
 			for (const auto& mesh : pModel->meshes) {
 				Material* pMaterial = AssetManager::get().getAsset<Material>(mesh.materialID);
 				MaterialShaderCollection& thisCollection = getMaterialShaderCollection(pMaterial ? pMaterial->getMaterialShader() : nullptr);
 				if (&thisCollection != &collection)
 					continue;
 
-				if (it == collection.m_models.end()) {
+				if (uniqueModel) {
 					collection.m_models.push_back(pModelAsset);
 					if (collection.m_objects.size() >= collection.m_models.size()) {
 						collection.m_objects[collection.m_models.size() - 1].clear();
