@@ -139,9 +139,9 @@ set_target_properties(${PROJECT_NAME} PROPERTIES
 # Target name
 ################################################################################
 set_target_properties(${PROJECT_NAME} PROPERTIES
-    TARGET_NAME_DEBUG     "$ENV{SolutionName}_${CMAKE_VS_PLATFORM_NAME}$<CONFIG>"
-    TARGET_NAME_OPTIMIZED "$ENV{SolutionName}_${CMAKE_VS_PLATFORM_NAME}$<CONFIG>"
-    TARGET_NAME_RELEASE   "$ENV{SolutionName}_${CMAKE_VS_PLATFORM_NAME}$<CONFIG>"
+    TARGET_NAME_DEBUG     "${CMAKE_PROJECT_NAME}_${CMAKE_VS_PLATFORM_NAME}$<CONFIG>"
+    TARGET_NAME_OPTIMIZED "${CMAKE_PROJECT_NAME}_${CMAKE_VS_PLATFORM_NAME}$<CONFIG>"
+    TARGET_NAME_RELEASE   "${CMAKE_PROJECT_NAME}_${CMAKE_VS_PLATFORM_NAME}$<CONFIG>"
 )
 ################################################################################
 # Output directory
@@ -241,7 +241,8 @@ endif()
 ################################################################################
 # Dependencies
 ################################################################################
-add_dependencies(${PROJECT_NAME}
+
+target_link_libraries(${PROJECT_NAME} PUBLIC
     VulkanRenderer
 )
 
@@ -256,7 +257,6 @@ set(ADDITIONAL_LIBRARY_DEPENDENCIES
     "$<$<CONFIG:Release>:"
         "assimp-vc143-mt"
     ">"
-    "VulkanRenderer_$(Platform)$(Configuration);"
     "lua51;"
     "PhysXExtensions_static_64;"
     "PhysX_64;"
@@ -281,7 +281,6 @@ target_link_directories(${PROJECT_NAME} PUBLIC
         "${CMAKE_CURRENT_SOURCE_DIR}/deps/PhysX/bin/release"
     ">"
     "${CMAKE_CURRENT_SOURCE_DIR}/deps/lua/;"
-    "${CMAKE_SOURCE_DIR}/VulkanRenderer/lib"
 )
 
 

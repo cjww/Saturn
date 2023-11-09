@@ -156,21 +156,3 @@ endif()
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Engine
 )
-
-set(ADDITIONAL_LIBRARY_DEPENDENCIES
-    "Saturn_$(Platform)$(Configuration)"
-)
-
-target_link_libraries(${PROJECT_NAME} PRIVATE "${ADDITIONAL_LIBRARY_DEPENDENCIES}")
-
-target_link_directories(${PROJECT_NAME} PRIVATE
-    "${CMAKE_SOURCE_DIR}//Engine/lib"
-)
-
-add_custom_command(
-    TARGET ${PROJECT_NAME} POST_BUILD
-    COMMAND ${CMAKE_COMMAND} -E copy_directory
-        "$<TARGET_PROPERTY:${PROJECT_NAME},SOURCE_DIR>/resources"
-        "$<TARGET_PROPERTY:${PROJECT_NAME},BINARY_DIR>/resources"
-)
-
