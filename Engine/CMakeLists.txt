@@ -249,47 +249,101 @@ target_link_libraries(${PROJECT_NAME} PUBLIC
 set(ADDITIONAL_LIBRARY_DEPENDENCIES
     "$<$<CONFIG:Debug>:"
         "PhysXPvdSDK_static_64;"
-        "assimp-vc143-mtd"
     ">"
-    "$<$<CONFIG:Optimized>:"
-        "assimp-vc143-mt"
-    ">"
-    "$<$<CONFIG:Release>:"
-        "assimp-vc143-mt"
-    ">"
-    "lua51;"
     "PhysXExtensions_static_64;"
-    "PhysX_64;"
-    "PhysXCommon_64;"
-    "PhysXFoundation_64;"
-    "PhysXCooking_64"
 )
 
-target_link_libraries(${PROJECT_NAME} PUBLIC "${ADDITIONAL_LIBRARY_DEPENDENCIES}")
 
 target_link_directories(${PROJECT_NAME} PUBLIC
     "$<$<CONFIG:Debug>:"
-        "${CMAKE_CURRENT_SOURCE_DIR}/deps/assimp-5.2.4/lib/$<CONFIG>;"
         "${CMAKE_CURRENT_SOURCE_DIR}/deps/PhysX/bin/debug"
     ">"
     "$<$<CONFIG:Optimized>:"
-        "${CMAKE_CURRENT_SOURCE_DIR}/deps/assimp-5.2.4/lib/Release;"
         "${CMAKE_CURRENT_SOURCE_DIR}/deps/PhysX/bin/release"
     ">"
     "$<$<CONFIG:Release>:"
-        "${CMAKE_CURRENT_SOURCE_DIR}/deps/assimp-5.2.4/lib/$<CONFIG>;"
         "${CMAKE_CURRENT_SOURCE_DIR}/deps/PhysX/bin/release"
     ">"
-    "${CMAKE_CURRENT_SOURCE_DIR}/deps/lua/;"
+)
+
+# Lua
+add_library(lua SHARED IMPORTED)
+set_target_properties(lua PROPERTIES IMPORTED_LOCATION ${CMAKE_CURRENT_SOURCE_DIR}/deps/lua/lua51.dll)
+set_target_properties(lua PROPERTIES IMPORTED_IMPLIB ${CMAKE_CURRENT_SOURCE_DIR}/deps/lua/lua51.lib)
+
+# Assimp
+add_library(assimp SHARED IMPORTED)
+set_target_properties(assimp PROPERTIES 
+    IMPORTED_LOCATION_DEBUG ${CMAKE_CURRENT_SOURCE_DIR}/deps/assimp-5.2.4/bin/Debug/assimp-vc143-mtd.dll
+    IMPORTED_IMPLIB_DEBUG ${CMAKE_CURRENT_SOURCE_DIR}/deps/assimp-5.2.4/lib/Debug/assimp-vc143-mtd.lib
+   
+    IMPORTED_LOCATION_OPTIMIZED ${CMAKE_CURRENT_SOURCE_DIR}/deps/assimp-5.2.4/bin/Release/assimp-vc143-mt.dll
+    IMPORTED_IMPLIB_OPTIMIZED ${CMAKE_CURRENT_SOURCE_DIR}/deps/assimp-5.2.4/lib/Release/assimp-vc143-mt.lib
+   
+    IMPORTED_LOCATION_RELEASE ${CMAKE_CURRENT_SOURCE_DIR}/deps/assimp-5.2.4/bin/Release/assimp-vc143-mt.dll
+    IMPORTED_IMPLIB_RELEASE ${CMAKE_CURRENT_SOURCE_DIR}/deps/assimp-5.2.4/lib/Release/assimp-vc143-mt.lib
+)
+
+# PhysX
+add_library(PhysX::Common SHARED IMPORTED)
+set_target_properties(PhysX::Common PROPERTIES 
+    IMPORTED_LOCATION_DEBUG ${CMAKE_CURRENT_SOURCE_DIR}/deps/PhysX/bin/debug/PhysXCommon_64.dll
+    IMPORTED_IMPLIB_DEBUG ${CMAKE_CURRENT_SOURCE_DIR}/deps/PhysX/bin/debug/PhysXCommon_64.lib
+    
+    IMPORTED_LOCATION_OPTIMIZED ${CMAKE_CURRENT_SOURCE_DIR}/deps/PhysX/bin/release/PhysXCommon_64.dll
+    IMPORTED_IMPLIB_OPTIMIZED ${CMAKE_CURRENT_SOURCE_DIR}/deps/PhysX/bin/release/PhysXCommon_64.lib
+    
+    IMPORTED_LOCATION_RELEASE ${CMAKE_CURRENT_SOURCE_DIR}/deps/PhysX/bin/release/PhysXCommon_64.dll
+    IMPORTED_IMPLIB_RELEASE ${CMAKE_CURRENT_SOURCE_DIR}/deps/PhysX/bin/release/PhysXCommon_64.lib
+)
+add_library(PhysX::Foundation SHARED IMPORTED)
+set_target_properties(PhysX::Foundation PROPERTIES 
+    IMPORTED_LOCATION_DEBUG ${CMAKE_CURRENT_SOURCE_DIR}/deps/PhysX/bin/debug/PhysXFoundation_64.dll
+    IMPORTED_IMPLIB_DEBUG ${CMAKE_CURRENT_SOURCE_DIR}/deps/PhysX/bin/debug/PhysXFoundation_64.lib
+    
+    IMPORTED_LOCATION_OPTIMIZED ${CMAKE_CURRENT_SOURCE_DIR}/deps/PhysX/bin/release/PhysXFoundation_64.dll
+    IMPORTED_IMPLIB_OPTIMIZED ${CMAKE_CURRENT_SOURCE_DIR}/deps/PhysX/bin/release/PhysXFoundation_64.lib
+    
+    IMPORTED_LOCATION_RELEASE ${CMAKE_CURRENT_SOURCE_DIR}/deps/PhysX/bin/release/PhysXFoundation_64.dll
+    IMPORTED_IMPLIB_RELEASE ${CMAKE_CURRENT_SOURCE_DIR}/deps/PhysX/bin/release/PhysXFoundation_64.lib
+)
+
+add_library(PhysX::Cooking SHARED IMPORTED)
+set_target_properties(PhysX::Cooking PROPERTIES 
+    IMPORTED_LOCATION_DEBUG ${CMAKE_CURRENT_SOURCE_DIR}/deps/PhysX/bin/debug/PhysXCooking_64.dll
+    IMPORTED_IMPLIB_DEBUG ${CMAKE_CURRENT_SOURCE_DIR}/deps/PhysX/bin/debug/PhysXCooking_64.lib
+    
+    IMPORTED_LOCATION_OPTIMIZED ${CMAKE_CURRENT_SOURCE_DIR}/deps/PhysX/bin/release/PhysXCooking_64.dll
+    IMPORTED_IMPLIB_OPTIMIZED ${CMAKE_CURRENT_SOURCE_DIR}/deps/PhysX/bin/release/PhysXCooking_64.lib
+    
+    IMPORTED_LOCATION_RELEASE ${CMAKE_CURRENT_SOURCE_DIR}/deps/PhysX/bin/release/PhysXCooking_64.dll
+    IMPORTED_IMPLIB_RELEASE ${CMAKE_CURRENT_SOURCE_DIR}/deps/PhysX/bin/release/PhysXCooking_64.lib
+)
+add_library(PhysX SHARED IMPORTED)
+set_target_properties(PhysX PROPERTIES 
+    IMPORTED_LOCATION_DEBUG ${CMAKE_CURRENT_SOURCE_DIR}/deps/PhysX/bin/debug/PhysX_64.dll
+    IMPORTED_IMPLIB_DEBUG ${CMAKE_CURRENT_SOURCE_DIR}/deps/PhysX/bin/debug/PhysX_64.lib
+    
+    IMPORTED_LOCATION_OPTIMIZED ${CMAKE_CURRENT_SOURCE_DIR}/deps/PhysX/bin/release/PhysX_64.dll
+    IMPORTED_IMPLIB_OPTIMIZED ${CMAKE_CURRENT_SOURCE_DIR}/deps/PhysX/bin/release/PhysX_64.lib
+    
+    IMPORTED_LOCATION_RELEASE ${CMAKE_CURRENT_SOURCE_DIR}/deps/PhysX/bin/release/PhysX_64.dll
+    IMPORTED_IMPLIB_RELEASE ${CMAKE_CURRENT_SOURCE_DIR}/deps/PhysX/bin/release/PhysX_64.lib
+)
+set_property(TARGET PhysX PROPERTY INTERFACE_LINK_LIBRARIES 
+    PhysX::Common
+    PhysX::Foundation
+    PhysX::Cooking
 )
 
 
-#add_custom_command(
-#    TARGET ${PROJECT_NAME} POST_BUILD
-#    COMMAND ${CMAKE_COMMAND} -E copy_directory
-#        "$<TARGET_PROPERTY:${PROJECT_NAME},SOURCE_DIR>/shaders"
-#        "$<TARGET_PROPERTY:${PROJECT_NAME},BINARY_DIR>/shaders"
-#)
+set(target_shared_libs
+    lua
+    assimp
+    PhysX
+)
+
+target_link_libraries(${PROJECT_NAME} PUBLIC ${target_shared_libs} "${ADDITIONAL_LIBRARY_DEPENDENCIES}")
 
 find_package(Vulkan REQUIRED COMPONENTS glslc)
 find_program(glslc_executable NAMES glslc HINTS Vulkan::glslc)

@@ -131,20 +131,21 @@ if(MSVC)
         $<$<CONFIG:Debug>:
             /SUBSYSTEM:CONSOLE;
             /INCREMENTAL
+            /DEBUG
         >
         $<$<CONFIG:Optimized>:
             /SUBSYSTEM:CONSOLE;
             /OPT:REF;
             /OPT:ICF;
             /INCREMENTAL:NO
+            /DEBUG
         >
         $<$<CONFIG:Release>:
-            /SUBSYSTEM:WINDOWS;
+            /SUBSYSTEM:CONSOLE;
             /OPT:REF;
             /OPT:ICF;
             /INCREMENTAL:NO
         >
-        /DEBUG
     )
     
 endif()
@@ -155,4 +156,21 @@ endif()
 # Link with other targets.
 target_link_libraries(${PROJECT_NAME} PRIVATE
     Engine
+)
+
+# Copying dlls
+add_custom_command ( TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_if_different
+        $<TARGET_RUNTIME_DLLS:${PROJECT_NAME}>
+        $<TARGET_FILE_DIR:${PROJECT_NAME}>
+    COMMAND_EXPAND_LISTS
+    COMMENT "Copying dlls $<TARGET_RUNTIME_DLLS:${PROJECT_NAME}> to $<TARGET_FILE_DIR:${PROJECT_NAME}>"
+    VERBATIM
+)
+# Copying resources
+add_custom_command(
+    TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "$<TARGET_PROPERTY:${PROJECT_NAME},SOURCE_DIR>/resources"
+        "$<TARGET_PROPERTY:${PROJECT_NAME},BINARY_DIR>/resources"
 )
