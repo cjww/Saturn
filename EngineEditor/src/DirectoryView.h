@@ -11,7 +11,10 @@ private:
 
 	std::unordered_set<sa::Asset*> m_openAssetProperties;
 
+	std::filesystem::path m_openDirectory;
+
 	void onDraggedDropped(const sa::editor_event::DragDropped& e);
+	void onProjectOpened(const sa::editor_event::ProjectOpened& e);
 
 public:
 	DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor);

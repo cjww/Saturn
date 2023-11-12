@@ -157,6 +157,7 @@ namespace sa {
 		for (auto& collection : m_materialShaderCollections) {
 			collection.clear();
 		}
+		m_materialShaderCollections.clear();
 	}
 
 	void SceneCollection::collect(Scene* pScene) {

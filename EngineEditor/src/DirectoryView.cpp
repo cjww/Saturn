@@ -20,6 +20,10 @@ void DirectoryView::onDraggedDropped(const sa::editor_event::DragDropped& e) {
 	}
 }
 
+void DirectoryView::onProjectOpened(const sa::editor_event::ProjectOpened& e) {
+	m_openDirectory = std::filesystem::is_directory(e.projectPath)? e.projectPath : e.projectPath.parent_path();
+}
+
 DirectoryView::DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor)
 	: EditorModule(pEngine, pEditor, "Directory View", true)
 {
@@ -27,6 +31,7 @@ DirectoryView::DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor)
 	m_isAssetListOpen = false;
 
 	m_pEngine->sink<sa::editor_event::DragDropped>().connect<&DirectoryView::onDraggedDropped>(this);
+	m_pEngine->sink<sa::editor_event::ProjectOpened>().connect<&DirectoryView::onProjectOpened>(this);
 
 	
 	m_directoryIcon = sa::Texture2D(
@@ -39,6 +44,8 @@ DirectoryView::DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor)
 		sa::Image(m_pEditor->MakeEditorRelative("resources/lua_file-white.png").generic_string()),
 		true);
 
+
+	m_openDirectory = std::filesystem::current_path();
 }
 
 void DirectoryView::onImGui() {
@@ -75,7 +82,7 @@ void DirectoryView::onImGui() {
 			ImGui::EndMenuBar();
 		}
 
-		static auto openDirectory = std::filesystem::current_path();
+		
 		static int iconSize = 45;
 		
 		static std::filesystem::path lastSelected;
@@ -94,7 +101,7 @@ void DirectoryView::onImGui() {
 					std::string typeName = sa::to_string((sa::ShaderStageFlagBits)stage) + " Shader";
 
 					if (ImGui::MenuItem(typeName.c_str())) {
-						auto newPath = openDirectory / ("New " + typeName + " File");
+						auto newPath = m_openDirectory / ("New " + typeName + " File");
 						newPath.replace_extension(".glsl");
 						sa::createGlslFile(newPath, (sa::ShaderStageFlagBits)stage);
 						editedFile = newPath;
@@ -107,7 +114,7 @@ void DirectoryView::onImGui() {
 				ImGui::Separator();
 				
 				if (ImGui::MenuItem("Lua Script")) {
-					auto newPath = openDirectory / "New Lua Script";
+					auto newPath = m_openDirectory / "New Lua Script";
 					newPath.replace_extension(".lua");
 					sa::createLuaFile(newPath);
 					editedFile = newPath;
@@ -125,7 +132,7 @@ void DirectoryView::onImGui() {
 				if (ImGui::GetAssetInfo(type).inCreateMenu) {
 					std::string typeName = sa::AssetManager::get().getAssetTypeName(type);
 					if (ImGui::MenuItem(typeName.c_str())) {
-						sa::Asset* pAsset = sa::AssetManager::get().createAsset(type, "New " + typeName + ".asset", openDirectory);
+						sa::Asset* pAsset = sa::AssetManager::get().createAsset(type, "New " + typeName + ".asset", m_openDirectory);
 						editingName = pAsset->getName();
 						editedFile = pAsset->getAssetPath();
 					}
@@ -133,11 +140,11 @@ void DirectoryView::onImGui() {
 			}
 		};
 
-		if (ImGui::BeginDirectoryIcons("Explorer", openDirectory, iconSize, wasChanged, editedFile, editingName, lastSelected, selectedItems, menuItemsFn)) {
+		if (ImGui::BeginDirectoryIcons("Explorer", m_openDirectory, iconSize, wasChanged, editedFile, editingName, lastSelected, selectedItems, menuItemsFn)) {
 			
 			// Icon View Area
 			ImVec2 iconSizeVec((float)iconSize, (float)iconSize);
-			for (const auto& entry : std::filesystem::directory_iterator(openDirectory)) {
+			for (const auto& entry : std::filesystem::directory_iterator(m_openDirectory)) {
 
 
 				// Determine Icon
@@ -160,7 +167,7 @@ void DirectoryView::onImGui() {
 					if (entry.is_directory()) {
 						selectedItems.clear();
 						lastSelected.clear();
-						openDirectory = entry.path();
+						m_openDirectory = entry.path();
 						break;
 					}
 					sa::Asset* pAsset = sa::AssetManager::get().findAssetByPath(entry.path());

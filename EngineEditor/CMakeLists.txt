@@ -173,4 +173,14 @@ add_custom_command(
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "$<TARGET_PROPERTY:${PROJECT_NAME},SOURCE_DIR>/resources"
         "$<TARGET_PROPERTY:${PROJECT_NAME},BINARY_DIR>/resources"
+        
+)
+
+# Copying shaders
+add_custom_command(
+    TARGET ${PROJECT_NAME} POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy_directory
+        "$<TARGET_PROPERTY:Engine,SOURCE_DIR>/shaders"
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders"
+    COMMENT "Copying Shaders $<TARGET_PROPERTY:Engine,BINARY_DIR>/shaders to $<TARGET_FILE_DIR:${PROJECT_NAME}>/shaders"
 )

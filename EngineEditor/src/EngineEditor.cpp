@@ -82,14 +82,15 @@ namespace sa {
 
 	bool EngineEditor::openProject(const std::filesystem::path& path) {
 		//unload project
-
 		if (!m_projectFile.empty()) {
 			ImGui::SaveIniSettingsToDisk("imgui.ini");
 		}
 
-		AssetManager::get().clear();
+		m_pEngine->setScene(nullptr);
 		m_pEngine->trigger<editor_event::EntityDeselected>({});
+		AssetManager::get().clear();
 
+		// Load Project
 		using namespace simdjson;
 		ondemand::parser parser;
 		auto json = padded_string::load(path.generic_string());
@@ -102,8 +103,7 @@ namespace sa {
 		if (version != SA_VERSION) {
 			SA_DEBUG_LOG_ERROR("Project version missmatch:\n\tProject: ", version, "\n\tEngine: ", SA_VERSION);
 		}
-		SA_DEBUG_LOG_INFO("Opened Project: ", path);
-		
+
 		m_projectFile = path.filename();
 		std::filesystem::current_path(path.parent_path());
 
@@ -130,7 +130,8 @@ namespace sa {
 		}
 		m_recentProjectPaths.push_back(projectPath);
 
-
+		m_pEngine->trigger<editor_event::ProjectOpened>(editor_event::ProjectOpened{ path });
+		SA_DEBUG_LOG_INFO("Opened Project: ", path);
 		return true;
 	}
 
@@ -361,7 +362,7 @@ namespace sa {
 	void EngineEditor::onAttach(sa::Engine& engine, sa::RenderWindow& renderWindow) {
 		m_pEngine = &engine;
 		m_pWindow = &renderWindow;
-
+		
 		s_editorPath = std::filesystem::current_path();
 		
 		renderWindow.addDragDropCallback([&](int count, const char** paths) {

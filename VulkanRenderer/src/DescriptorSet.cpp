@@ -61,7 +61,7 @@ namespace sa {
 	void DescriptorSet::destroy() {
 		if (!m_descriptorPool || m_descriptorSets.empty())
 			return;
-
+		m_device.waitIdle();
 		m_device.freeDescriptorSets(m_descriptorPool, m_descriptorSets);
 			
 		m_descriptorPool = VK_NULL_HANDLE;
