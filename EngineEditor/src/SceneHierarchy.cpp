@@ -8,13 +8,13 @@ void SceneHierarchy::makePopups() {
 		if (!m_hoveredEntity.isNull()) {	
 			//ImGui::Text(m_hoveredEntity.getComponent<comp::Name>()->name.c_str());
 			if (ImGui::MenuItem("Delete")) {
-				m_pEngine->publish<sa::editor_event::EntityDeselected>(m_hoveredEntity);
+				m_pEngine->trigger<sa::editor_event::EntityDeselected>(sa::editor_event::EntityDeselected{ m_hoveredEntity });
 				m_hoveredEntity.destroy();
 				ImGui::CloseCurrentPopup();
 			}
 			if (ImGui::MenuItem("Duplicate")) {
 				sa::Entity clone = m_hoveredEntity.clone();
-				m_pEngine->publish<sa::editor_event::EntitySelected>(clone);
+				m_pEngine->trigger<sa::editor_event::EntitySelected>(sa::editor_event::EntitySelected{ clone });
 
 				ImGui::CloseCurrentPopup();
 			}
@@ -28,35 +28,35 @@ void SceneHierarchy::makePopups() {
 			if (ImGui::MenuItem("Empty")) {
 				sa::Entity entity = m_pEngine->getCurrentScene()->createEntity("Empty");
 				entity.addComponent<comp::Transform>();
-				m_pEngine->publish<sa::editor_event::EntitySelected>(entity);
+				m_pEngine->trigger<sa::editor_event::EntitySelected>(sa::editor_event::EntitySelected{ entity });
 			}
 			
 			if (ImGui::MenuItem("Quad")) {
 				sa::Entity entity = m_pEngine->getCurrentScene()->createEntity("Quad");
 				entity.addComponent<comp::Transform>();
 				entity.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadQuad()->getID();
-				m_pEngine->publish<sa::editor_event::EntitySelected>(entity);
+				m_pEngine->trigger<sa::editor_event::EntitySelected>(sa::editor_event::EntitySelected{ entity });
 			}
 			
 			if (ImGui::MenuItem("Cube")) {
 				sa::Entity entity = m_pEngine->getCurrentScene()->createEntity("Cube");
 				entity.addComponent<comp::Transform>();
 				entity.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadCube()->getID();
-				m_pEngine->publish<sa::editor_event::EntitySelected>(entity);
+				m_pEngine->trigger<sa::editor_event::EntitySelected>(sa::editor_event::EntitySelected{ entity });
 			}
 
 			if (ImGui::MenuItem("Camera")) {
 				sa::Entity entity = m_pEngine->getCurrentScene()->createEntity("Camera");
 				entity.addComponent<comp::Transform>();
 				entity.addComponent<comp::Camera>();
-				m_pEngine->publish<sa::editor_event::EntitySelected>(entity);
+				m_pEngine->trigger<sa::editor_event::EntitySelected>(sa::editor_event::EntitySelected{ entity });
 			}
 
 			if (ImGui::MenuItem("Light")) {
 				sa::Entity entity = m_pEngine->getCurrentScene()->createEntity("Light");
 				entity.addComponent<comp::Transform>();
 				entity.addComponent<comp::Light>();
-				m_pEngine->publish<sa::editor_event::EntitySelected>(entity);
+				m_pEngine->trigger<sa::editor_event::EntitySelected>(sa::editor_event::EntitySelected{ entity });
 			}
 
 			ImGui::EndMenu();
@@ -65,26 +65,6 @@ void SceneHierarchy::makePopups() {
 	}
 }
 
-SceneHierarchy::SceneHierarchy(sa::Engine* pEngine, sa::EngineEditor* pEditor) 
-	: EditorModule(pEngine, pEditor, "Scene Hierarchy", false) {
-	pEngine->on<sa::engine_event::SceneSet>([&](sa::engine_event::SceneSet& e, sa::Engine& engine) {
-		m_hoveredEntity = {};
-		m_selectedEntity = {};
-		m_isPopupMenuOpen = false;
-	});
-
-	pEngine->on<sa::editor_event::EntitySelected>([&](const sa::editor_event::EntitySelected& e, sa::Engine&) {
-		m_selectedEntity = e.entity;
-	});
-
-	pEngine->on<sa::editor_event::EntityDeselected>([&](const sa::editor_event::EntityDeselected&, sa::Engine&) {
-		m_selectedEntity = {};
-	});
-
-	m_hoveredEntity = {};
-	m_selectedEntity = {};
-	m_isPopupMenuOpen = false;
-}
 
 void SceneHierarchy::elementEvents(const sa::Entity& e) {
 	static sa::Entity payload;
@@ -150,10 +130,10 @@ void SceneHierarchy::makeTree(sa::Entity e) {
 	bool opened = ImGui::TreeNodeEx((e.getComponent<comp::Name>()->name + "##" + std::to_string((uint32_t)e)).c_str(), flags);
 	if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
 		if (s) {
-			m_pEngine->publish<sa::editor_event::EntityDeselected>(e);
+			m_pEngine->trigger<sa::editor_event::EntityDeselected>(sa::editor_event::EntityDeselected{ e });
 		}
 		else {
-			m_pEngine->publish<sa::editor_event::EntitySelected>(e);
+			m_pEngine->trigger<sa::editor_event::EntitySelected>(sa::editor_event::EntitySelected{ e });
 		}
 	}
 	
@@ -166,6 +146,32 @@ void SceneHierarchy::makeTree(sa::Entity e) {
 		ImGui::TreePop();
 	}
 	
+}
+
+void SceneHierarchy::onEntitySelected(const sa::editor_event::EntitySelected& e) {
+	m_selectedEntity = e.entity;
+}
+
+void SceneHierarchy::onEntityDeselected(const sa::editor_event::EntityDeselected& e) {
+	m_selectedEntity = {};
+}
+
+void SceneHierarchy::onSceneSet(const sa::engine_event::SceneSet& e) {
+	m_hoveredEntity = {};
+	m_selectedEntity = {};
+	m_isPopupMenuOpen = false;
+}
+
+SceneHierarchy::SceneHierarchy(sa::Engine* pEngine, sa::EngineEditor* pEditor)
+	: EditorModule(pEngine, pEditor, "Scene Hierarchy", false) {
+
+	pEngine->sink<sa::engine_event::SceneSet>().connect<&SceneHierarchy::onSceneSet>(this); 
+	pEngine->sink<sa::editor_event::EntitySelected>().connect<&SceneHierarchy::onEntitySelected>(this);
+	pEngine->sink<sa::editor_event::EntityDeselected>().connect<&SceneHierarchy::onEntityDeselected>(this);
+
+	m_hoveredEntity = {};
+	m_selectedEntity = {};
+	m_isPopupMenuOpen = false;
 }
 
 SceneHierarchy::~SceneHierarchy() {

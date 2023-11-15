@@ -10,6 +10,10 @@ class EntityInspector : public EditorModule {
 
 	void makePopups();
 
+	void onEntitySelected(const sa::editor_event::EntitySelected& e);
+	void onEntityDeselected(const sa::editor_event::EntityDeselected& e);
+
+
 public:
 	EntityInspector(sa::Engine* pEngine, sa::EngineEditor* pEditor);
 	virtual ~EntityInspector();

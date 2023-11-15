@@ -263,7 +263,7 @@ namespace sa {
 	void Engine::onWindowResize(Extent newExtent) {
 		m_pWindowRenderer->onWindowResize(newExtent);
 
-		publish<sa::engine_event::WindowResized>(m_windowExtent, newExtent);
+		trigger<engine_event::WindowResized>(engine_event::WindowResized{ m_windowExtent, newExtent });
 		m_windowExtent = newExtent;
 	}
 
@@ -296,13 +296,8 @@ namespace sa {
 			m_windowExtent = pWindow->getCurrentExtent();
 			m_mainRenderTarget.initialize(this, m_pWindow);
 		}
-		
-		on<engine_event::SceneSet>([](engine_event::SceneSet& e, Engine&) {
-			if (e.oldScene) {
-				e.oldScene->onRuntimeStop();
-			}
-			e.newScene->onRuntimeStart();
-		});
+		sink<engine_event::SceneSet>().connect<&Engine::onSceneSet>(this);
+
 	}
 
 	void Engine::cleanup() {
@@ -342,7 +337,7 @@ namespace sa {
 			});
 			
 		}
-		publish<engine_event::OnRender>(&context, &m_renderPipeline);
+		trigger<engine_event::OnRender>(engine_event::OnRender{ &context, &m_renderPipeline });
 
 		m_pWindowRenderer->render(context, m_mainRenderTarget.getOutputTexture());
 		{
@@ -383,11 +378,18 @@ namespace sa {
 		if (m_currentScene) 
 			m_currentScene->getProgress().waitAll();
 
-		publish<engine_event::SceneSet>(m_currentScene, scene);
+		trigger<engine_event::SceneSet>(engine_event::SceneSet{ m_currentScene, scene });
 
 		if (m_currentScene)
 			m_currentScene->release();
 		m_currentScene = scene;	
+	}
+
+	void Engine::onSceneSet(engine_event::SceneSet& e) {
+		if (e.oldScene) {
+			e.oldScene->onRuntimeStop();
+		}
+		e.newScene->onRuntimeStart();
 	}
 }
 

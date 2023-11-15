@@ -6,7 +6,7 @@
 
 #include "Tools\FileDialogs.h"
 
-#include <simdjson/simdjson.h>
+#include <simdjson.h>
 
 #include "AssetManager.h"
 #include "Assets\ModelAsset.h"
@@ -82,14 +82,15 @@ namespace sa {
 
 	bool EngineEditor::openProject(const std::filesystem::path& path) {
 		//unload project
-
 		if (!m_projectFile.empty()) {
 			ImGui::SaveIniSettingsToDisk("imgui.ini");
 		}
 
+		m_pEngine->setScene(nullptr);
+		m_pEngine->trigger<editor_event::EntityDeselected>({});
 		AssetManager::get().clear();
-		m_pEngine->publish<editor_event::EntityDeselected>();
 
+		// Load Project
 		using namespace simdjson;
 		ondemand::parser parser;
 		auto json = padded_string::load(path.generic_string());
@@ -102,8 +103,7 @@ namespace sa {
 		if (version != SA_VERSION) {
 			SA_DEBUG_LOG_ERROR("Project version missmatch:\n\tProject: ", version, "\n\tEngine: ", SA_VERSION);
 		}
-		SA_DEBUG_LOG_INFO("Opened Project: ", path);
-		
+
 		m_projectFile = path.filename();
 		std::filesystem::current_path(path.parent_path());
 
@@ -130,7 +130,8 @@ namespace sa {
 		}
 		m_recentProjectPaths.push_back(projectPath);
 
-
+		m_pEngine->trigger<editor_event::ProjectOpened>(editor_event::ProjectOpened{ path });
+		SA_DEBUG_LOG_INFO("Opened Project: ", path);
 		return true;
 	}
 
@@ -272,9 +273,15 @@ namespace sa {
 	}
 
 	void EngineEditor::startSimulation() {
-		m_state = State::PLAYING;
 		
 		Scene* pScene = m_pEngine->getCurrentScene();
+		/*
+		m_pEditingScene = pScene;
+
+		Scene* pSandbox = pScene->clone("Sandbox");
+		
+		m_pEngine->setScene(pSandbox);
+		*/
 		auto path = pScene->getAssetPath();
 		pScene->setAssetPath(MakeEditorRelative("sceneCache.data"));
 		pScene->write();
@@ -282,15 +289,25 @@ namespace sa {
 
 		pScene->getProgress().waitAll();
 
+		m_state = State::PLAYING;
 		m_pEngine->getCurrentScene()->onRuntimeStart();
 	}
 
 	void EngineEditor::stopSimulation() {
 		m_pEngine->getCurrentScene()->onRuntimeStop();
+		m_state = State::EDIT;
 		
-		Scene* pScene = m_pEngine->getCurrentScene();
+		/*
+		Scene* pScene = m_pEditingScene;
+		Scene* pScene = m_pEditingScene;
 
-		pScene->clearEntities();
+		m_pEngine->setScene(pScene);
+		AssetManager::get().removeAsset(pSandbox->getID());
+		pSandbox = nullptr;
+		*/
+
+		Scene* pScene = m_pEngine->getCurrentScene();
+		//pScene->clearEntities();
 
 		auto path = pScene->getAssetPath();
 		pScene->setAssetPath(MakeEditorRelative("sceneCache.data"));
@@ -299,7 +316,6 @@ namespace sa {
 
 		//pScene->getProgress().waitAll();
 
-		m_state = State::EDIT;
 	}
 
 
@@ -330,36 +346,40 @@ namespace sa {
 		ImGui::End();
 	}
 
+	void EngineEditor::onWindowResized(const engine_event::WindowResized& e) {
+			ImGui::SetupImGuiStyle();
+	}
+
+	void EngineEditor::onSceneSet(const engine_event::SceneSet& e) {
+		if (m_state == State::EDIT)
+			return;
+		if (e.oldScene) {
+			e.oldScene->onRuntimeStop();
+		}
+		e.newScene->onRuntimeStart();
+	}
+
 	void EngineEditor::onAttach(sa::Engine& engine, sa::RenderWindow& renderWindow) {
 		m_pEngine = &engine;
 		m_pWindow = &renderWindow;
-
+		
 		s_editorPath = std::filesystem::current_path();
 		
 		renderWindow.addDragDropCallback([&](int count, const char** paths) {
-			m_pEngine->publish<editor_event::DragDropped>(count, paths);
+			m_pEngine->trigger<editor_event::DragDropped>({ static_cast<uint32_t>(count), paths });
 		});
 
 		m_pEngine->setWindowRenderer(new ImGuiRenderLayer(m_pWindow));
 
 		ImGui::SetupImGuiStyle();
-		engine.on<engine_event::WindowResized>([](const engine_event::WindowResized& e, Engine& engine) {
-			ImGui::SetupImGuiStyle();
-		});
+		engine.sink<engine_event::WindowResized>().connect<&EngineEditor::onWindowResized>(this);
 
 		ImGui::AddEditorModuleSettingsHandler(this);
 		ImGui::GetIO().IniFilename = NULL; // Handle loading and saving ImGui state manually
 
 		//hijack sceneSet event
-		engine.clear<engine_event::SceneSet>();
-		engine.on<engine_event::SceneSet>([&](engine_event::SceneSet& e, Engine&) {
-			if (m_state == State::EDIT)
-				return;
-			if (e.oldScene) {
-				e.oldScene->onRuntimeStop();
-			}
-			e.newScene->onRuntimeStart();
-		});
+		engine.sink<engine_event::SceneSet>().disconnect<&Engine::onSceneSet>(m_pEngine);
+		engine.sink<engine_event::SceneSet>().connect<&EngineEditor::onSceneSet>(this);
 
 		m_editorModules.push_back(std::make_unique<SceneView>(&engine, this, &renderWindow));
 

@@ -7,8 +7,6 @@ GameView::GameView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWin
 {
 	m_isOpen = true;
 
-	m_renderedCamera = false;
-	
 	m_resolutionIndex = 0;
 
 	//m_renderTarget.initialize(m_Resolutions[0]);
@@ -17,27 +15,6 @@ GameView::GameView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWin
 
 	m_mipLevel = 0;
 
-	pEngine->on<sa::engine_event::OnRender>([&](sa::engine_event::OnRender& e, sa::Engine& engine) {
-		SA_PROFILE_SCOPE("GameView: OnRender");
-		m_renderedCamera = false;
-		if (!m_isWindowOpen || !m_isOpen)
-			return;
-		/*
-		m_sceneCollection.clear();
-		m_sceneCollection.collect(engine.getCurrentScene());
-		m_sceneCollection.makeRenderReady();
-
-		engine.getCurrentScene()->forEach<comp::Camera>([&](comp::Camera& camera) {
-			if (camera.camera.getViewport().extent != m_renderTarget.extent) {
-				camera.camera.setViewport({ { 0, 0 }, m_renderTarget.extent });
-			}
-			e.pRenderPipeline->render(*e.pContext, &camera.camera, &m_renderTarget, m_sceneCollection);
-		});
-		m_sceneCollection.swap();
-		*/
-		m_renderedCamera = true;
-		
-	});
 }
 
 void GameView::update(float dt) {
@@ -67,7 +44,7 @@ void GameView::onImGui() {
 			ImGui::EndMenuBar();
 		}
 
-		if (m_renderedCamera && m_pEngine->getMainRenderTarget().isReady()) {
+		if (m_pEngine->getMainRenderTarget().isReady()) {
 			// render outputTexture with constant aspect ratio
 			sa::Extent extent = m_pEngine->getMainRenderTarget().getExtent();
 			float aspect = (float)extent.height / extent.width;

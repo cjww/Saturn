@@ -17,5 +17,9 @@ namespace sa {
 			uint32_t count;
 			const char** paths;
 		};
+
+		struct ProjectOpened {
+			std::filesystem::path projectPath;
+		};
 	};
 }
