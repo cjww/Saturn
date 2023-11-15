@@ -149,7 +149,7 @@ namespace sa {
 		uint32_t lightCount = 0U;
 		m_lightBuffer = renderer.createDynamicBuffer(BufferType::STORAGE, sizeof(uint32_t), &lightCount);
 
-		SA_DEBUG_LOG_INFO("SceneCOllection created");
+		SA_DEBUG_LOG_INFO("SceneCollection created");
 	}
 
 	void SceneCollection::clear() {
@@ -157,7 +157,6 @@ namespace sa {
 		for (auto& collection : m_materialShaderCollections) {
 			collection.clear();
 		}
-		m_materialShaderCollections.clear();
 	}
 
 	void SceneCollection::collect(Scene* pScene) {
@@ -190,7 +189,9 @@ namespace sa {
 
 		for (auto& collection : m_materialShaderCollections) {
 			auto it = std::find(collection.m_models.begin(), collection.m_models.end(), pModelAsset);
+			size_t modelIndex = std::distance(collection.m_models.begin(), it);
 			bool uniqueModel = it == collection.m_models.end();
+
 			for (const auto& mesh : pModel->meshes) {
 				Material* pMaterial = AssetManager::get().getAsset<Material>(mesh.materialID);
 				MaterialShaderCollection& thisCollection = getMaterialShaderCollection(pMaterial ? pMaterial->getMaterialShader() : nullptr);
@@ -199,6 +200,7 @@ namespace sa {
 
 				if (uniqueModel) {
 					collection.m_models.push_back(pModelAsset);
+
 					if (collection.m_objects.size() >= collection.m_models.size()) {
 						collection.m_objects[collection.m_models.size() - 1].clear();
 						collection.m_objects[collection.m_models.size() - 1].push_back(objectBuffer);
@@ -212,7 +214,7 @@ namespace sa {
 					collection.m_uniqueMeshCount++;
 				}
 				else {
-					collection.m_objects[std::distance(collection.m_models.begin(), it)].push_back(objectBuffer);
+					collection.m_objects[modelIndex].push_back(objectBuffer);
 				}
 				collection.m_objectCount++;
 			}
@@ -245,12 +247,15 @@ namespace sa {
 			collection.m_materialIndicesBuffer.clear();
 
 			// reserve dynamic buffers
-			collection.m_objectBuffer.reserve(collection.m_objectCount * sizeof(ObjectData), IGNORE_CONTENT);
-			collection.m_indirectIndexedBuffer.reserve(collection.m_uniqueMeshCount * sizeof(DrawIndexedIndirectCommand), IGNORE_CONTENT);
-			collection.m_vertexBuffer.reserve(collection.m_vertexCount * sizeof(VertexNormalUV), IGNORE_CONTENT);
-			collection.m_indexBuffer.reserve(collection.m_indexCount * sizeof(uint32_t), IGNORE_CONTENT);
-			collection.m_materialBuffer.reserve(collection.m_uniqueMeshCount * sizeof(Material::Values), IGNORE_CONTENT);
-			collection.m_materialIndicesBuffer.reserve(collection.m_uniqueMeshCount * sizeof(int32_t), IGNORE_CONTENT);
+			{
+				SA_PROFILE_SCOPE("Reserve rendering buffers");
+				collection.m_objectBuffer.reserve(collection.m_objectCount * sizeof(ObjectData), IGNORE_CONTENT);
+				collection.m_indirectIndexedBuffer.reserve(collection.m_uniqueMeshCount * sizeof(DrawIndexedIndirectCommand), IGNORE_CONTENT);
+				collection.m_vertexBuffer.reserve(collection.m_vertexCount * sizeof(VertexNormalUV), IGNORE_CONTENT);
+				collection.m_indexBuffer.reserve(collection.m_indexCount * sizeof(uint32_t), IGNORE_CONTENT);
+				collection.m_materialBuffer.reserve(collection.m_uniqueMeshCount * sizeof(Material::Values), IGNORE_CONTENT);
+				collection.m_materialIndicesBuffer.reserve(collection.m_uniqueMeshCount * sizeof(int32_t), IGNORE_CONTENT);
+			}
 
 			uint32_t firstInstance = 0;
 
@@ -267,13 +272,18 @@ namespace sa {
 					MaterialShaderCollection& thisCollection = getMaterialShaderCollection(pMaterial ? pMaterial->getMaterialShader() : nullptr);
 					if (&thisCollection != &collection)
 						continue;
-
-					// Push mesh into buffers
 					uint32_t vertexOffset = collection.m_vertexBuffer.getElementCount<VertexNormalUV>();
-					collection.m_vertexBuffer << mesh.vertices;
-
+					{
+						SA_PROFILE_SCOPE("Append Vertex buffer");
+						// Push mesh into buffers
+						collection.m_vertexBuffer << mesh.vertices;
+					}
 					uint32_t firstIndex = collection.m_indexBuffer.getElementCount<uint32_t>();
-					collection.m_indexBuffer << mesh.indices;
+					{
+						SA_PROFILE_SCOPE("Append Index buffer");
+						collection.m_indexBuffer << mesh.indices;
+						
+					}
 
 					// Create a draw command for this mesh
 					DrawIndexedIndirectCommand cmd = {};
@@ -282,7 +292,11 @@ namespace sa {
 					cmd.firstInstance = firstInstance;
 					cmd.instanceCount = collection.m_objects[i].size();
 					cmd.vertexOffset = vertexOffset;
-					collection.m_indirectIndexedBuffer << cmd;
+					{
+						SA_PROFILE_SCOPE("Append Draw buffer");
+						collection.m_indirectIndexedBuffer << cmd;
+					}
+						
 
 					//Material
 					if (pMaterial && pMaterial->isLoaded()) {
@@ -315,9 +329,11 @@ namespace sa {
 				}
 				firstInstance += collection.m_objects[i].size();
 			}
-
-			collection.m_materialBuffer.write(collection.m_materialData);
-			collection.m_materialIndicesBuffer.write(collection.m_materialIndices);
+			{
+				SA_PROFILE_SCOPE("Write Materials");
+				collection.m_materialBuffer.write(collection.m_materialData);
+				collection.m_materialIndicesBuffer.write(collection.m_materialIndices);
+			}
 		}
 
 	}

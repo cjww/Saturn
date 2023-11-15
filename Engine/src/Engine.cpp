@@ -14,7 +14,8 @@ namespace sa {
 
 		{
 			auto type = LuaAccessable::registerType<Vector3>("Vec3",
-				sol::constructors<Vector3(float, float, float), Vector3(float), Vector3()>(),
+				sol::constructors<Vector3(float, float, float), Vector3(float), Vector3(), 
+				Vector3(const Vector2&), Vector3(const Vector3&), Vector3(const Vector4&)>(),
 				sol::meta_function::addition, [](const Vector3& self, const Vector3& other) -> Vector3 { return self + other; },
 				sol::meta_function::subtraction, [](const Vector3& self, const Vector3& other) -> Vector3 { return self - other; },
 				sol::meta_function::multiplication, [](const Vector3& self, sol::lua_value value) -> Vector3 {
@@ -69,7 +70,8 @@ namespace sa {
 		}
 		{
 			auto type = LuaAccessable::registerType<Vector4>("Vec4",
-				sol::constructors<Vector4(float, float, float, float), Vector4(float), Vector4(), Vector4(const Vector3&)>(),
+				sol::constructors<Vector4(float, float, float, float), Vector4(float), Vector4(),
+				Vector4(const Vector2&), Vector4(const Vector3&), Vector4(const Vector4&)>(),
 				sol::meta_function::addition, [](const Vector4& self, const Vector4& other) -> Vector4 { return self + other; },
 				sol::meta_function::subtraction, [](const Vector4& self, const Vector4& other) -> Vector4 { return self - other; },
 				sol::meta_function::multiplication, [](const Vector4& self, sol::lua_value value) {
@@ -132,7 +134,8 @@ namespace sa {
 
 		{
 			auto type = LuaAccessable::registerType<Vector2>("Vec2",
-				sol::constructors<Vector2(float, float), Vector2(float), Vector2()>(),
+				sol::constructors<Vector2(float, float), Vector2(float), Vector2(),
+				Vector2(const Vector2&), Vector2(const Vector3&), Vector2(const Vector4&)>(),
 				sol::meta_function::addition, [](const Vector2& self, const Vector2& other) -> Vector2 { return self + other; },
 				sol::meta_function::subtraction, [](const Vector2& self, const Vector2& other) -> Vector2 { return self - other; },
 				sol::meta_function::multiplication, [](const Vector2& self, sol::lua_value value) {

@@ -568,10 +568,17 @@ namespace ImGui {
 		auto& textures = pMaterial->getTextures();
 		sa::AssetTypeID textureAssetType = sa::AssetManager::get().getAssetTypeID<sa::TextureAsset>();
 		if (BeginListBox("Textures")) {
-			int i = 0;
-			for (auto& [type, textures] : textures) {
+			for (auto& [type, texArr] : textures) {
 				std::string textureTypeName = sa::to_string(type);
-				for (auto& texID : textures) {
+				int i = 0;
+				for (auto& texID : texArr) {
+					PushID(texID + i);
+					if(SmallButton("-")) {
+						texArr.erase(texArr.begin() + i);
+						PopID();
+						break;
+					}
+					SameLine();
 					sa::TextureAsset* pTexture = sa::AssetManager::get().getAsset<sa::TextureAsset>(texID);
 					sa::Asset* texAsset = pTexture;
 					if (AssetSlot((textureTypeName + " Texture").c_str(), texAsset, textureAssetType)) {
@@ -582,10 +589,34 @@ namespace ImGui {
 
 						pMaterial->update();
 					}
+					PopID();
+					i++;
 				}
 			}
 			EndListBox();
 		}
+
+		if(BeginPopup("select_texture_type")) {
+
+			
+			for(int i = static_cast<uint32_t>(sa::MaterialTextureType::DIFFUSE); i < static_cast<uint32_t>(sa::MaterialTextureType::UNKNOWN); i++) {
+				auto textureType = static_cast<sa::MaterialTextureType>(i);
+				std::string textureTypeName = sa::to_string(textureType);
+				if(Selectable(textureTypeName.c_str())) {
+					textures[textureType].push_back(0);
+					pMaterial->update();
+					CloseCurrentPopup();
+				}
+			}
+
+			EndPopup();
+		}
+
+
+		if(Button("+")) {
+			OpenPopup("select_texture_type");
+		}
+
 		return false;
 	}
 

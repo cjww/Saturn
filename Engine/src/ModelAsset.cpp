@@ -53,14 +53,18 @@ namespace sa {
 	}
 
 	void ModelAsset::processNode(const void* pScene, const void* pNode) {
+		SA_PROFILE_FUNCTION();
 		const aiScene* scene = (const aiScene*)pScene;
 		const aiNode* node = (const aiNode*)pNode;
 
-		SA_PROFILE_FUNCTION();
+		SA_DEBUG_LOG_INFO("> ", node->mName.C_Str(), 
+			" { Parent: ", (node->mParent ? node->mParent->mName.C_Str() : "None"), 
+			", Meshes: ", node->mNumMeshes);
+
 		for (int i = 0; i < node->mNumMeshes; i++) {
 			Mesh mesh = {};
 			const aiMesh* aMesh = scene->mMeshes[node->mMeshes[i]];
-
+			SA_DEBUG_LOG_INFO("Mesh: ", aMesh->mName.C_Str());
 			std::vector<VertexNormalUV>& vertices = mesh.vertices;
 			std::vector<uint32_t>& indices = mesh.indices;
 
@@ -215,7 +219,7 @@ namespace sa {
 		if (!std::filesystem::exists(textureDir)) {
 			std::filesystem::create_directory(textureDir);
 		}
-
+		
 		tf::Taskflow taskflow;
 		taskflow.for_each_index(0U, scene->mNumMaterials, 1U, [&](int i) {
 		//for (uint32_t i = 0; i < scene->mNumMaterials; i++) {
@@ -240,7 +244,7 @@ namespace sa {
 			aMaterial->Get(AI_MATKEY_SHININESS, pMaterial->values.shininess);
 			aMaterial->Get(AI_MATKEY_METALLIC_FACTOR, pMaterial->values.metallic);
 			aMaterial->Get(AI_MATKEY_TWOSIDED, pMaterial->twoSided);
-
+			
 			for (unsigned int j = aiTextureType::aiTextureType_NONE; j <= aiTextureType::aiTextureType_TRANSMISSION; j++) {
 				loadMaterialTexture(*pMaterial, path.parent_path(), (aiTextureType)j, scene->mTextures, aMaterial, textureDir);
 			}

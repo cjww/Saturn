@@ -87,7 +87,8 @@ if(MSVC)
    
     target_link_options(${PROJECT_NAME} PRIVATE
         $<$<CONFIG:Debug>:
-            /INCREMENTAL
+            /INCREMENTAL;
+            /DEBUG
         >
         $<$<CONFIG:Optimized>:
             /OPT:REF;
@@ -99,7 +100,6 @@ if(MSVC)
             /OPT:ICF;
             /INCREMENTAL:NO
         >
-        /DEBUG;
         /SUBSYSTEM:CONSOLE
     )
 endif()
