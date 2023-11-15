@@ -200,7 +200,7 @@ namespace sa {
 	
 	std::string to_string(MaterialTextureType type);
 
-	class Material : public Asset{
+	class Material : public Asset {
 	private:
 		std::unordered_map<MaterialTextureType, std::vector<UUID>> m_textures;
 		std::unordered_map<MaterialTextureType, std::vector<std::pair<TextureBlendOp, float>>> m_blending;

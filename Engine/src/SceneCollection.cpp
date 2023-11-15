@@ -24,9 +24,45 @@ namespace sa {
 		m_currentExtent = { 0, 0 };
 	}
 
+	void MaterialShaderCollection::addMesh(ModelAsset* pModelAsset, uint32_t meshIndex, const ObjectData& objectData) {
+
+		auto it = std::find(m_models.begin(), m_models.end(), pModelAsset);
+		size_t modelIndex = std::distance(m_models.begin(), it);
+		bool uniqueModel = it == m_models.end();
+		if (uniqueModel) {
+			modelIndex = m_models.size();
+			m_models.emplace_back(pModelAsset);
+			m_meshes.push_back({});
+			if (m_objects.size() >= m_models.size()) {
+				m_objects[modelIndex].clear();
+				m_objects[modelIndex].push_back(objectData);
+			}
+			else {
+				m_objects.push_back({ objectData });
+			}
+		}
+		else {
+			m_objects[modelIndex].push_back(objectData);
+		}
+		m_objectCount++;
+			
+		{
+			auto it = std::find(m_meshes[modelIndex].begin(), m_meshes[modelIndex].end(), meshIndex);
+			if(it == m_meshes[modelIndex].end()) {
+				m_meshes[modelIndex].push_back(meshIndex);
+				const Mesh& mesh = pModelAsset->data.meshes[meshIndex];
+				m_vertexCount += mesh.vertices.size();
+				m_indexCount += mesh.indices.size();
+				m_uniqueMeshCount++;
+			}
+		}
+		
+	}
+
 	void MaterialShaderCollection::clear() {
 		m_models.clear();
-		m_objects.clear();
+		m_meshes.clear();  // frees memory
+		m_objects.clear(); // frees memory
 		m_textures.clear();
 		m_materials.clear();
 		m_materialData.clear();
@@ -180,46 +216,14 @@ namespace sa {
 		ObjectData objectBuffer = {};
 		objectBuffer.worldMat = transformation;
 
-		
 		// make sure all collection exists
+		uint32_t i = 0;
 		for (const auto& mesh : pModel->meshes) {
 			Material* pMaterial = AssetManager::get().getAsset<Material>(mesh.materialID);
 			MaterialShaderCollection& collection = getMaterialShaderCollection(pMaterial ? pMaterial->getMaterialShader() : nullptr);
+			collection.addMesh(pModelAsset, i, objectBuffer);
+			i++;
 		}
-
-		for (auto& collection : m_materialShaderCollections) {
-			auto it = std::find(collection.m_models.begin(), collection.m_models.end(), pModelAsset);
-			size_t modelIndex = std::distance(collection.m_models.begin(), it);
-			bool uniqueModel = it == collection.m_models.end();
-
-			for (const auto& mesh : pModel->meshes) {
-				Material* pMaterial = AssetManager::get().getAsset<Material>(mesh.materialID);
-				MaterialShaderCollection& thisCollection = getMaterialShaderCollection(pMaterial ? pMaterial->getMaterialShader() : nullptr);
-				if (&thisCollection != &collection)
-					continue;
-
-				if (uniqueModel) {
-					collection.m_models.push_back(pModelAsset);
-
-					if (collection.m_objects.size() >= collection.m_models.size()) {
-						collection.m_objects[collection.m_models.size() - 1].clear();
-						collection.m_objects[collection.m_models.size() - 1].push_back(objectBuffer);
-					}
-					else {
-						collection.m_objects.push_back({ objectBuffer });
-					}
-
-					collection.m_vertexCount += mesh.vertices.size();
-					collection.m_indexCount += mesh.indices.size();
-					collection.m_uniqueMeshCount++;
-				}
-				else {
-					collection.m_objects[modelIndex].push_back(objectBuffer);
-				}
-				collection.m_objectCount++;
-			}
-		}
-
 	}
 
 	void SceneCollection::addLight(const LightData& light) {
@@ -267,11 +271,8 @@ namespace sa {
 					collection.m_objectBuffer << objectBuffer;
 				}
 				ModelData* pModel = &collection.m_models[i]->data;
-				for (const auto& mesh : pModel->meshes) {
-					Material* pMaterial = AssetManager::get().getAsset<Material>(mesh.materialID);
-					MaterialShaderCollection& thisCollection = getMaterialShaderCollection(pMaterial ? pMaterial->getMaterialShader() : nullptr);
-					if (&thisCollection != &collection)
-						continue;
+				for (const auto& meshIndex : collection.m_meshes[i]) {
+					const Mesh& mesh = pModel->meshes[meshIndex];
 					uint32_t vertexOffset = collection.m_vertexBuffer.getElementCount<VertexNormalUV>();
 					{
 						SA_PROFILE_SCOPE("Append Vertex buffer");
@@ -297,8 +298,8 @@ namespace sa {
 						collection.m_indirectIndexedBuffer << cmd;
 					}
 						
-
 					//Material
+					sa::Material* pMaterial = sa::AssetManager::get().getAsset<sa::Material>(mesh.materialID);
 					if (pMaterial && pMaterial->isLoaded()) {
 						auto it = std::find(collection.m_materials.begin(), collection.m_materials.end(), pMaterial);
 						if (it == collection.m_materials.end()) {

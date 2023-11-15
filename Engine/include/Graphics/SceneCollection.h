@@ -17,6 +17,8 @@ namespace sa {
 
 		
 		std::vector<ModelAsset*> m_models;
+		std::vector<std::vector<uint32_t>> m_meshes;
+
 		std::vector<std::vector<ObjectData>> m_objects;
 		std::vector<Texture> m_textures;
 		std::vector<Material*> m_materials;
@@ -51,6 +53,9 @@ namespace sa {
 	public:
 
 		MaterialShaderCollection(MaterialShader* pMaterialShader);
+
+		void addMesh(ModelAsset* pModelAsset, uint32_t meshIndex, const ObjectData& objectData);
+
 		void clear();
 		void swap();
 
