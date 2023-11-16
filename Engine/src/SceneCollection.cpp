@@ -131,7 +131,7 @@ namespace sa {
 		if (!pMaterialShader)
 			pMaterialShader = AssetManager::get().getDefaultMaterialShader();
 
-		auto it = std::find_if(m_materialShaderCollections.begin(), m_materialShaderCollections.end(), 
+		const auto it = std::find_if(m_materialShaderCollections.begin(), m_materialShaderCollections.end(), 
 			[&](const MaterialShaderCollection& collection) { return collection.getMaterialShader() == pMaterialShader; });
 		if (it == m_materialShaderCollections.end()) {
 			return m_materialShaderCollections.emplace_back(pMaterialShader);
@@ -267,6 +267,9 @@ namespace sa {
 			uint32_t meshCount = 0;
 
 			for (size_t i = 0; i < collection.m_models.size(); i++) {
+				ModelAsset* pModelAsset = collection.m_models.at(i);
+				if(!pModelAsset->isLoaded())
+					continue;
 				for (const auto& objectBuffer : collection.m_objects[i]) {
 					collection.m_objectBuffer << objectBuffer;
 				}

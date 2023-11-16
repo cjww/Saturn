@@ -130,7 +130,7 @@ namespace sa {
 				std::ifstream file(path, std::ios::binary);
 				if (!file.good()) {
 					file.close();
-					return false;
+					throw std::runtime_error("Failed to open file " + path.generic_string());
 				}
 				m_header = readHeader(file);
 				if (m_header.version != SA_ASSET_VERSION) {
@@ -142,13 +142,13 @@ namespace sa {
 
 				file.close();
 				SA_DEBUG_LOG_INFO("Finished Loading ", m_name, " from ", path);
-				return m_isLoaded.load();
 			}
 			catch(std::exception& e)
 			{
 				SA_DEBUG_LOG_ERROR("[Asset failed load] (", m_name, " <- ", path, ") ", e.what());
+				return false;
 			}
-			return false;
+			return m_isLoaded.load();
 		});
 		m_progress.setFuture(future.share());
 		return true;

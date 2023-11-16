@@ -127,13 +127,13 @@ namespace sa {
 		UUID materialShaderID = 0;
 		file.read((char*)&materialShaderID, sizeof(UUID));
 		m_pMaterialShader = AssetManager::get().getAsset<MaterialShader>(materialShaderID);
-		if (m_pMaterialShader)	{
-			m_pMaterialShader->load(flags);
-			addDependency(m_pMaterialShader->getProgress());
+		if (!m_pMaterialShader)	{
+			m_pMaterialShader = AssetManager::get().getDefaultMaterialShader();
+			SA_DEBUG_LOG_WARNING("onLoad: No material shader attached to material, using default ", getName());
 		}
-		else {
-			SA_DEBUG_LOG_WARNING("onLoad: No material shader attached to material ", getName());
-		}
+
+		m_pMaterialShader->load(flags);
+		addDependency(m_pMaterialShader->getProgress());
 
 		uint32_t typeCount = 0;
 		file.read((char*)&typeCount, sizeof(typeCount));
@@ -175,13 +175,11 @@ namespace sa {
 		file.write((char*)&values, sizeof(values));
 
 		//MaterialShader
-		UUID materialShaderID = 0;
-		if (m_pMaterialShader) {
-			materialShaderID = m_pMaterialShader->getID();
+		if (!m_pMaterialShader) {
+			m_pMaterialShader = AssetManager::get().getDefaultMaterialShader();
+			SA_DEBUG_LOG_WARNING("onWrite: No MaterialShader attached to material, using default", getName());
 		}
-		else {
-			SA_DEBUG_LOG_WARNING("onWrite: No MaterialShader attached to material ", getName());
-		}
+		UUID materialShaderID = m_pMaterialShader->getID();
 
 		file.write((char*)&materialShaderID, sizeof(UUID));
 

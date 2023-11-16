@@ -18,7 +18,6 @@ namespace comp {
 			id = pAsset->getID();
 		}
 		s.value("ID", std::to_string(id).c_str());
-		//pAsset->write();
 	}
 
 	void Model::deserialize(void* pDoc) {
