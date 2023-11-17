@@ -34,14 +34,14 @@ void SceneHierarchy::makePopups() {
 			if (ImGui::MenuItem("Quad")) {
 				sa::Entity entity = m_pEngine->getCurrentScene()->createEntity("Quad");
 				entity.addComponent<comp::Transform>();
-				entity.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadQuad()->getID();
+				entity.addComponent<comp::Model>()->model = sa::AssetManager::get().getQuad();
 				m_pEngine->trigger<sa::editor_event::EntitySelected>(sa::editor_event::EntitySelected{ entity });
 			}
 			
 			if (ImGui::MenuItem("Cube")) {
 				sa::Entity entity = m_pEngine->getCurrentScene()->createEntity("Cube");
 				entity.addComponent<comp::Transform>();
-				entity.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadCube()->getID();
+				entity.addComponent<comp::Model>()->model = sa::AssetManager::get().getCube();
 				m_pEngine->trigger<sa::editor_event::EntitySelected>(sa::editor_event::EntitySelected{ entity });
 			}
 

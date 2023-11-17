@@ -7,6 +7,7 @@ set(Header_Files
     "include/Application.h"
     "include/AssetManager.h"
     "include/Assets/Asset.h"
+    "include/Assets/AssetHolder.h"
     "include/Assets/MaterialShader.h"
     "include/Assets/ModelAsset.h"
     "include/Assets/TextureAsset.h"

@@ -14,7 +14,12 @@ void sa::MaterialShader::create(const std::vector<ShaderSourceFile>& sourceFiles
     for (auto& source : m_sourceFiles) {
         std::filesystem::path path = std::filesystem::current_path();
         std::filesystem::current_path(sa::Engine::getShaderDirectory());
-        m_code.push_back(sa::CompileGLSLFromFile(source.filePath.generic_string().c_str(), source.stage, "main", source.filePath.generic_string().c_str()));
+    	std::vector<uint32_t> code = sa::CompileGLSLFromFile(
+            source.filePath.generic_string().c_str(), 
+            source.stage, 
+            "main", 
+            source.filePath.generic_string().c_str());
+    	m_code.push_back(code);
         std::filesystem::current_path(path);
     }
     m_colorShaderSet.create(m_code);
@@ -58,6 +63,10 @@ void sa::MaterialShader::compileSource() {
     create(m_sourceFiles);
 }
 
+bool sa::MaterialShader::isCompiled() const {
+    return m_code.empty();
+}
+
 bool sa::MaterialShader::onLoad(std::ifstream& file, AssetLoadFlags flags) {
     //Source files
     uint32_t sourceCount = 0;
@@ -87,13 +96,13 @@ bool sa::MaterialShader::onLoad(std::ifstream& file, AssetLoadFlags flags) {
 
     if (m_code.empty()) {
         SA_DEBUG_LOG_WARNING("No spv code read from Material Shader asset ", getName());
-        if(m_sourceFiles.empty())
-            return false;
-        SA_DEBUG_LOG_INFO("Compiling Material Shader asset ", getName(), " from source files");
-        for (auto& source : m_sourceFiles) {
-            SA_DEBUG_LOG_INFO(sa::to_string(source.stage), " Stage : ", source.filePath);
+        if(!m_sourceFiles.empty()) {
+	        SA_DEBUG_LOG_INFO("Compiling Material Shader asset ", getName(), " from source files");
+	        for (auto& source : m_sourceFiles) {
+	            SA_DEBUG_LOG_INFO(sa::to_string(source.stage), " Stage : ", source.filePath);
+	        }
+	        create(m_sourceFiles);
         }
-        create(m_sourceFiles);
         return true;
     }
 

@@ -1,6 +1,7 @@
 #pragma once
 
-#include "AssetManager.h"
+#include "Assets/AssetHolder.h"
+#include "Assets/ModelAsset.h"
 
 #include "ECS/ComponentBase.h"
 #include "Lua/LuaAccessable.h"
@@ -8,7 +9,7 @@
 namespace comp {
 	class Model : public sa::ComponentBase, sa::LuaAccessable {
 	public:
-		sa::UUID modelID = UINT64_MAX;
+		sa::AssetHolder<sa::ModelAsset> model;
 
 		Model() = default;
 		Model(const Model&) = default;

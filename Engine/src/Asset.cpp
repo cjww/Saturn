@@ -61,7 +61,7 @@ namespace sa {
 		{
 			auto type = sa::LuaAccessable::registerType<Asset>("Asset",
 				sol::no_constructor);
-			type["load"] = &Asset::load;
+			type["hold"] = &Asset::hold;
 			type["write"] = &Asset::write;
 			type["release"] = &Asset::release;
 
@@ -103,28 +103,29 @@ namespace sa {
 		return m_isLoaded;
 	}
 
-	bool Asset::load(AssetLoadFlags flags) {
-		bool shallowForce = (flags & AssetLoadFlagBits::FORCE_SHALLOW) == AssetLoadFlagBits::FORCE_SHALLOW;
-		bool force = shallowForce || (flags & AssetLoadFlagBits::FORCE) == AssetLoadFlagBits::FORCE;
-		bool noRef = (flags & AssetLoadFlagBits::NO_REF) == AssetLoadFlagBits::NO_REF;
-		if (shallowForce)
-			flags &= ~(AssetLoadFlagBits::FORCE_SHALLOW | AssetLoadFlagBits::FORCE); // Remove Force flags
-		if(!noRef)
-			m_refCount++; 
-
-		if (m_isLoaded && !force)
+	bool Asset::hold() {
+		++m_refCount;
+		if (m_isLoaded)
 			return false;
+		return load();
+	}
+
+	bool Asset::load(AssetLoadFlags flags) {
+
 		if (m_assetPath.empty())
 			return false;
 		
 		auto path = m_assetPath;
-			
 		auto future = s_taskExecutor.async([=]() {
 			try
 			{
+				if (!m_mutex.try_lock()) {
+					SA_DEBUG_LOG_WARNING("A thread was already loading ", m_name);
+					return false; // already a thread loading
+				}
+				m_mutex.unlock();
 				std::lock_guard<std::mutex> lock(m_mutex);
-				if (m_isLoaded && !force)
-					return false;
+				
 				SA_DEBUG_LOG_INFO("Began Loading ", m_name, " from ", path);
 				m_progress.reset();
 				std::ifstream file(path, std::ios::binary);
@@ -143,7 +144,7 @@ namespace sa {
 				file.close();
 				SA_DEBUG_LOG_INFO("Finished Loading ", m_name, " from ", path);
 			}
-			catch(std::exception& e)
+			catch (std::exception& e)
 			{
 				SA_DEBUG_LOG_ERROR("[Asset failed load] (", m_name, " <- ", path, ") ", e.what());
 				return false;
@@ -192,17 +193,16 @@ namespace sa {
 	}
 
 	bool Asset::release() {
-		if (!m_isLoaded)
-			return true;
 		if (m_refCount > 0) {
 			m_refCount--;
 		}
-		if(m_refCount == 0) {
+		if(m_refCount == 0 && m_isLoaded) {
 			m_progress.wait();
+			SA_DEBUG_LOG_INFO("Unloading ", m_name);
 			m_isLoaded = !onUnload();
-			return true;
+			return !m_isLoaded;
 		}
-		return false;
+		return !m_isLoaded;
 	}
 
 	bool Asset::isLoaded() const {

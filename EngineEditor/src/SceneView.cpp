@@ -16,6 +16,8 @@ void SceneView::onEntityDeselected(const sa::editor_event::EntityDeselected& e) 
 
 void SceneView::onSceneSet(const sa::engine_event::SceneSet& e) {
 	m_selectedEntity = {};
+	m_camera.setPosition(sa::Vector3(0, 2, 10));
+	m_camera.setForward(sa::Vector3(0, 0, -1));
 }
 
 void SceneView::onRender(const sa::engine_event::OnRender& e) {

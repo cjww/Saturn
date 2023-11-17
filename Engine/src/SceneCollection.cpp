@@ -197,7 +197,7 @@ namespace sa {
 
 	void SceneCollection::collect(Scene* pScene) {
 		pScene->forEach<comp::Transform, comp::Model>([&](const comp::Transform& transform, const comp::Model& model) {
-			sa::ModelAsset* pModel = sa::AssetManager::get().getAsset<sa::ModelAsset>(model.modelID);
+			sa::ModelAsset* pModel = model.model.getAsset();
 			if(pModel)
 				addObject(transform.getMatrix(), pModel);
 		});
@@ -219,8 +219,8 @@ namespace sa {
 		// make sure all collection exists
 		uint32_t i = 0;
 		for (const auto& mesh : pModel->meshes) {
-			Material* pMaterial = AssetManager::get().getAsset<Material>(mesh.materialID);
-			MaterialShaderCollection& collection = getMaterialShaderCollection(pMaterial ? pMaterial->getMaterialShader() : nullptr);
+			Material* pMaterial = mesh.material.getAsset();
+			MaterialShaderCollection& collection = getMaterialShaderCollection(pMaterial ? pMaterial->getMaterialShader().getAsset() : nullptr);
 			collection.addMesh(pModelAsset, i, objectBuffer);
 			i++;
 		}
@@ -302,8 +302,8 @@ namespace sa {
 					}
 						
 					//Material
-					sa::Material* pMaterial = sa::AssetManager::get().getAsset<sa::Material>(mesh.materialID);
-					if (pMaterial && pMaterial->isLoaded()) {
+					sa::Material* pMaterial = mesh.material.getAsset();
+					if (pMaterial) {
 						auto it = std::find(collection.m_materials.begin(), collection.m_materials.end(), pMaterial);
 						if (it == collection.m_materials.end()) {
 							uint32_t textureOffset = collection.m_textures.size();

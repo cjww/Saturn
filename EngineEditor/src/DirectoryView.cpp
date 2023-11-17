@@ -64,7 +64,7 @@ void DirectoryView::onImGui() {
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Revert")) {
-				pAsset->load(sa::AssetLoadFlagBits::FORCE_SHALLOW | sa::AssetLoadFlagBits::NO_REF);
+				pAsset->load();
 			}
 		}
 		ImGui::End();
@@ -182,7 +182,7 @@ void DirectoryView::onImGui() {
 							m_pEngine->setScene(pAsset->cast<sa::Scene>());
 						}
 						else {
-							pAsset->load();
+							pAsset->hold();
 							m_openAssetProperties.insert(pAsset);
 						}
 					}
@@ -223,7 +223,7 @@ void DirectoryView::onImGui() {
 		static sa::Asset* selected = nullptr;
 
 		if (ImGui::Button("Load Asset") && selected) {
-			selected->load();
+			selected->hold();
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Release Asset") && selected) {
@@ -239,8 +239,7 @@ void DirectoryView::onImGui() {
 				if (ImGui::Button("Spawn")) {
 					sa::Entity entity = m_pEngine->getCurrentScene()->createEntity();
 					entity.addComponent<comp::Transform>();
-					entity.addComponent<comp::Model>()->modelID = selected->getID();
-					selected->load();
+					entity.addComponent<comp::Model>()->model = selected->getID();
 				}
 			}
 			else if (selected->getType() == sa::AssetManager::get().getAssetTypeID<sa::Scene>()) {

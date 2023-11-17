@@ -23,7 +23,7 @@ namespace sa {
 		Extent m_windowExtent;
 		RenderWindow* m_pWindow;
 
-		Scene* m_currentScene;
+		AssetHolder<Scene> m_currentScene;
 		
 		void registerMath();
 

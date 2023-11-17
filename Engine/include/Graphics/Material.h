@@ -7,6 +7,8 @@
 
 #include <Tools/Logger.hpp>
 
+
+#include "Assets/AssetHolder.h"
 #include "Assets/TextureAsset.h"
 
 #include "Assets\MaterialShader.h"
@@ -202,12 +204,12 @@ namespace sa {
 
 	class Material : public Asset {
 	private:
-		std::unordered_map<MaterialTextureType, std::vector<UUID>> m_textures;
+		std::unordered_map<MaterialTextureType, std::vector<AssetHolder<TextureAsset>>> m_textures;
 		std::unordered_map<MaterialTextureType, std::vector<std::pair<TextureBlendOp, float>>> m_blending;
 		std::vector<Texture> m_allTextures;
 		bool m_allTexturesLoaded;
 
-		MaterialShader* m_pMaterialShader;
+		AssetHolder<MaterialShader> m_materialShader;
 
 		void setTextures(const std::vector<BlendedTexture>& textures, MaterialTextureType type, uint32_t& count);
 
@@ -250,10 +252,10 @@ namespace sa {
 		// Gathers all textures into an array, unless already gathered since last update
 		const std::vector<Texture>& fetchTextures();
 		
-		std::unordered_map<MaterialTextureType, std::vector<UUID>>& getTextures();
+		std::unordered_map<MaterialTextureType, std::vector<AssetHolder<TextureAsset>>>& getTextures();
 
-		MaterialShader* getMaterialShader() const;
-		void setMaterialShader(MaterialShader* pMaterialShader);
+		const AssetHolder<MaterialShader>& getMaterialShader() const;
+		void setMaterialShader(UUID id);
 
 		virtual bool onLoad(std::ifstream& file, AssetLoadFlags flags) override;
 		virtual bool onWrite(std::ofstream& file, AssetWriteFlags flags) override;

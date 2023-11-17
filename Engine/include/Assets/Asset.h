@@ -91,6 +91,7 @@ namespace sa {
 		virtual bool onUnload() = 0;
 
 
+		bool hold();
 		bool load(AssetLoadFlags flags = 0);
 		bool write(AssetWriteFlags flags = 0);
 		bool release();

@@ -5,19 +5,12 @@
 namespace comp {
 
 	Model& Model::operator=(const Model& other) {
-		modelID = other.modelID;
-		// make sure this asset is loaded and increase its reference count
-		sa::AssetManager::get().getAsset<sa::ModelAsset>(modelID)->load();
+		model = other.model;
 		return *this;
 	}
 
 	void Model::serialize(sa::Serializer& s) {
-		sa::Asset* pAsset = sa::AssetManager::get().getAsset(modelID);
-		sa::UUID id = 0;
-		if (pAsset) {
-			id = pAsset->getID();
-		}
-		s.value("ID", std::to_string(id).c_str());
+		s.value("ID", std::to_string(model.getID()).c_str());
 	}
 
 	void Model::deserialize(void* pDoc) {
@@ -26,28 +19,13 @@ namespace comp {
 		std::string_view strID = obj["ID"].get_string().value();
 		char* stopString = NULL;
 
-		sa::Asset* pPreviousAsset = sa::AssetManager::get().getAsset(modelID);
-		
-		modelID = strtoull(strID.data(), &stopString, 10);
-		sa::Asset* pModelAsset = sa::AssetManager::get().getAsset(modelID);
-
-		if (pPreviousAsset == pModelAsset) {
-			return;
-		}
-		
-		if(pModelAsset)
-			pModelAsset->load();
-
-		if (pPreviousAsset)
-			pPreviousAsset->release();
+		sa::UUID modelID = strtoull(strID.data(), &stopString, 10);
+		model = modelID;
 
 	}
 
 	void Model::onDestroy(sa::Entity* e) {
-		sa::Asset* pModelAsset = sa::AssetManager::get().getAsset(modelID);
-		if (pModelAsset) {
-			pModelAsset->release();
-		}
+
 	}
 
 
@@ -56,6 +34,6 @@ namespace comp {
 			sol::constructors<Model()>()
 			);
 
-		type["id"] = &comp::Model::modelID;
+		//type["id"] = &comp::Model::model.getID();
 	}
 }

@@ -3,6 +3,8 @@
 #include "Tools\Math.h"
 #include "Assets/ModelAsset.h"
 #include "Assets/TextureAsset.h"
+#include "Graphics/Material.h"
+#include "Assets/MaterialShader.h"
 
 #include "Tools\FileDialogs.h"
 
@@ -265,14 +267,12 @@ namespace ImGui {
 
 	void Component(sa::Entity entity, comp::Model* model) {
 		
-		sa::Asset* pAsset = sa::AssetManager::get().getAsset(model->modelID);
-		if (AssetSlot(("Model##" + entity.getComponent<comp::Name>()->name).c_str(), pAsset, sa::AssetManager::get().getAssetTypeID<sa::ModelAsset>())) {	
-			if (pAsset)
-				model->modelID = pAsset->getID();
-			else
-				model->modelID = 0;
+		sa::UUID id = model->model.getID();
+		if (AssetSlot(("Model##" + entity.getComponent<comp::Name>()->name).c_str(), id, sa::AssetManager::get().getAssetTypeID<sa::ModelAsset>())) {	
+			model->model = id;
 		}
 
+		sa::Asset* pAsset = sa::AssetManager::get().getAsset(id);
 		if (pAsset && !pAsset->getProgress().isAllDone()) {
 			ProgressBar(pAsset->getProgress().getAllCompletion());
 		}
@@ -416,9 +416,10 @@ namespace ImGui {
 			camera->camera.setFar(far);
 		}
 
-		sa::Asset* renderTarget = camera->getRenderTarget();
-		if (AssetSlot("RenderTarget", renderTarget, sa::AssetManager::get().getAssetTypeID<sa::RenderTarget>())) {
-			camera->setRenderTarget(static_cast<sa::RenderTarget*>(renderTarget));
+		
+		sa::UUID id = camera->getRenderTarget()->getID();
+		if (AssetSlot("RenderTarget", id, sa::AssetManager::get().getAssetTypeID<sa::RenderTarget>())) {
+			camera->setRenderTarget(sa::AssetManager::get().getAsset<sa::RenderTarget>(id));
 		}
 
 	}
@@ -550,9 +551,9 @@ namespace ImGui {
 	bool MaterialProperties(sa::Asset* pAsset) {
 		sa::Material* pMaterial = static_cast<sa::Material*>(pAsset);
 
-		sa::MaterialShader* pMaterialShader = pMaterial->getMaterialShader();
-		if(AssetSlot("Material Shader", (sa::Asset*&)pMaterialShader, sa::AssetManager::get().getAssetTypeID<sa::MaterialShader>())) {
-			pMaterial->setMaterialShader(pMaterialShader);
+		sa::UUID id = pMaterial->getMaterialShader().getID();
+		if(AssetSlot("Material Shader", id, sa::AssetManager::get().getAssetTypeID<sa::MaterialShader>())) {
+			pMaterial->setMaterialShader(id);
 		}
 
 		ColorEdit3("Ambient Color", (float*)&pMaterial->values.ambientColor);
@@ -571,22 +572,18 @@ namespace ImGui {
 			for (auto& [type, texArr] : textures) {
 				std::string textureTypeName = sa::to_string(type);
 				int i = 0;
-				for (auto& texID : texArr) {
-					PushID(texID + i);
+				for (auto& tex : texArr) {
+					PushID(tex.getID() + i);
 					if(SmallButton("-")) {
 						texArr.erase(texArr.begin() + i);
 						PopID();
 						break;
 					}
 					SameLine();
-					sa::TextureAsset* pTexture = sa::AssetManager::get().getAsset<sa::TextureAsset>(texID);
-					sa::Asset* texAsset = pTexture;
-					if (AssetSlot((textureTypeName + " Texture").c_str(), texAsset, textureAssetType)) {
-						if (texAsset)
-							texID = texAsset->getID();
-						else
-							texID = 0;
 
+					sa::UUID id = tex.getID();
+					if (AssetSlot((textureTypeName + " Texture").c_str(), id, textureAssetType)) {
+						tex = id;
 						pMaterial->update();
 					}
 					PopID();
@@ -626,13 +623,10 @@ namespace ImGui {
 			int i = 0;
 			for (auto& mesh : pModel->data.meshes) {
 				PushID(i);
-				sa::Material* pMaterial = sa::AssetManager::get().getAsset<sa::Material>(mesh.materialID);
-				sa::Asset* pAsset = pMaterial;
-				if (AssetSlot("Material", pAsset, sa::AssetManager::get().getAssetTypeID<sa::Material>())) {
-					if (pAsset)
-						mesh.materialID = pAsset->getID();
-					else
-						mesh.materialID = 0;
+
+				sa::UUID id = mesh.material.getID();
+				if (AssetSlot("Material", id, mesh.material.getTypeID())) {
+					mesh.material = id;
 				}
 				PopID();
 				i++;
@@ -697,6 +691,13 @@ namespace ImGui {
 					if(!path.empty())
 						sourceFile.filePath.replace_extension(".glsl");
 				}
+				if(BeginDragDropTarget()) {
+					auto payload = AcceptDragDropPayload("Path");
+					if(payload && payload->IsDelivery()) {
+						sourceFile.filePath = *static_cast<std::filesystem::path*>(payload->Data);
+					}
+					EndDragDropTarget();
+				}
 				
 				if (!std::filesystem::exists(sourceFile.filePath)) {
 					ImGui::PushStyleColor(ImGuiCol_Text, IMGUI_COLOR_ERROR_RED);
@@ -715,7 +716,6 @@ namespace ImGui {
 				}
 				else if (ImGui::Button("Open")) {
 					SA_DEBUG_LOG_INFO("Opening ", sourceFile.filePath, " in external editor");
-
 				}
 
 				ImGui::SameLine();
@@ -739,6 +739,7 @@ namespace ImGui {
 			pMaterialShader->compileSource();
 		}
 
+
 		return false;
 	}
 
@@ -751,10 +752,13 @@ namespace ImGui {
 
 	}
 
-	bool AssetSlot(const char* label, sa::Asset*& pAsset, sa::AssetTypeID typeID) {
+	bool AssetSlot(const char* label, sa::UUID& assetID, sa::AssetTypeID typeID) {
 		std::string preview = "None";
-		if (pAsset) {
-			preview = pAsset->getName();
+		{
+			sa::Asset* pAsset = sa::AssetManager::get().getAsset(assetID);
+			if (pAsset) {
+				preview = pAsset->getName();
+			}
 		}
 		bool selected = false;
 		static std::string filter;
@@ -766,9 +770,8 @@ namespace ImGui {
 			
 			float width = GetItemRectSize().x;
 			if (BeginChild("##asset_list", ImVec2(width, 100))) {
-				if (Selectable("None", pAsset == nullptr)) {
-					if (pAsset) pAsset->release();
-					pAsset = nullptr;
+				if (Selectable("None", assetID == 0)) {
+					assetID = 0;
 					selected = true;
 					filter.clear();
 					CloseCurrentPopup();
@@ -782,13 +785,8 @@ namespace ImGui {
 						}
 					}
 
-					if (Selectable(asset->getName().c_str(), asset == pAsset)) {
-						sa::Asset* pOldAsset = pAsset;
-						pAsset = asset;
-						
-						pAsset->load();
-						if(pOldAsset) pOldAsset->release();
-
+					if (Selectable(asset->getName().c_str(), asset->getID() == assetID)) {
+						assetID = asset->getID();
 						selected = true;
 						filter.clear();
 						CloseCurrentPopup();
@@ -806,13 +804,8 @@ namespace ImGui {
 				std::filesystem::path* pPath = (std::filesystem::path*)payload->Data;
 				if (pPath->extension() == ".asset") {
 					sa::Asset* asset = sa::AssetManager::get().findAssetByPath(*pPath);
-					if (asset && asset != pAsset && asset->getType() == typeID) {
-						sa::Asset* pOldAsset = pAsset;
-						pAsset = asset;
-
-						pAsset->load();
-						if (pOldAsset) pOldAsset->release();
-
+					if (asset && asset->getID() != assetID && asset->getType() == typeID) {
+						assetID = asset->getID();
 						selected = true;
 					}
 				}
@@ -1107,7 +1100,12 @@ namespace ImGui {
 			if (IsKeyPressed(ImGuiKey_Delete)) {
 				for (auto& path : selectedItems) {
 					try {
-						std::filesystem::remove(path);
+						if(std::filesystem::is_directory(path)) {
+							std::filesystem::remove_all(path);
+						}
+						else {
+							std::filesystem::remove(path);
+						}
 						wasChanged = true;
 
 					}

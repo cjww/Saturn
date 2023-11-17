@@ -147,11 +147,10 @@ namespace sa {
 		return tex;
 	}
 
-	ModelAsset* AssetManager::loadQuad() {
+	ModelAsset* AssetManager::getQuad() {
 		
 		ModelAsset* pAsset = findAssetByName<ModelAsset>(SA_DEFAULT_QUAD_NAME);
 		if (pAsset) {
-			pAsset->load();
 			return pAsset;
 		}
 
@@ -172,23 +171,19 @@ namespace sa {
 			1, 2, 3
 		};
 		
-		Material* pMaterial = getDefaultMaterial();
-		pMaterial->load();
-		mesh.materialID = pMaterial->getID();
+		mesh.material = getDefaultMaterial();
 
 		pAsset->data.meshes.push_back(mesh);
 
-		pAsset->load();
 		pAsset->write();
 		return pAsset;
 	}
 
-	ModelAsset* AssetManager::loadCube() {
+	ModelAsset* AssetManager::getCube() {
 		SA_PROFILE_FUNCTION();
 
 		ModelAsset* pAsset = findAssetByName<ModelAsset>(SA_DEFAULT_CUBE_NAME);
 		if (pAsset) {
-			pAsset->load();
 			return pAsset;
 		}
 
@@ -252,10 +247,7 @@ namespace sa {
 		};
 
 
-		Material* pMaterial = getDefaultMaterial();
-		pMaterial->load();
-		mesh.materialID = pMaterial->getID();
-		pAsset->load();
+		mesh.material = getDefaultMaterial();
 		pAsset->write();
 		return pAsset;
 	}
@@ -267,28 +259,7 @@ namespace sa {
 		}
 
 		pAsset = createAsset<Material>(SA_DEFAULT_MATERIAL_NAME, SA_DEFAULT_ASSET_DIR);
-		pAsset->setMaterialShader(getDefaultMaterialShader());
 		pAsset->write();
-		return pAsset;
-	}
-
-	MaterialShader* AssetManager::loadDefaultMaterialShader() {
-		MaterialShader* pAsset = findAssetByName<MaterialShader>(SA_DEFAULT_MATERIAL_SHADER_NAME);
-		if (pAsset) {
-			pAsset->load();
-			return pAsset;
-		}
-
-		std::filesystem::create_directories(SA_DEFAULT_ASSET_DIR);
-		pAsset = createAsset<MaterialShader>(SA_DEFAULT_MATERIAL_SHADER_NAME, SA_DEFAULT_ASSET_DIR);
-		
-		auto vertexCode = ReadSPVFile((Engine::getShaderDirectory() / "ForwardPlusColorPass.vert.spv").generic_string().c_str());
-		auto fragmentCode = ReadSPVFile((Engine::getShaderDirectory() / "ForwardPlusColorPass.frag.spv").generic_string().c_str());
-		pAsset->create({ vertexCode, fragmentCode });
-
-		pAsset->load(); // just to increase reference count
-		pAsset->write();
-
 		return pAsset;
 	}
 

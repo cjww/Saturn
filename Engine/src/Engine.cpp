@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "Engine.h"
 
+#include <vulkan/vulkan_core.h>
+
 #include "Graphics/RenderTechniques/ForwardPlus.h"
 #include "Lua/Ref.h"
 #include "Tools/Vector.h"
@@ -327,7 +329,7 @@ namespace sa {
 		if (getCurrentScene()) {
 			
 			bool renderedToMainRenderTarget = false;
-			m_currentScene->forEach<comp::Camera>([&](comp::Camera& camera) {
+			m_currentScene.getAsset()->forEach<comp::Camera>([&](comp::Camera& camera) {
 				RenderTarget* pRenderTarget = camera.getRenderTarget();
 				if (pRenderTarget) {
 					m_renderPipeline.render(context, &camera.camera, pRenderTarget, camera.getSceneCollection());
@@ -364,28 +366,31 @@ namespace sa {
 	}
 
 	Scene* Engine::getCurrentScene() const {
-		if (m_currentScene && m_currentScene->getProgress().isDone() && m_currentScene->isLoaded())
-			return m_currentScene;
-		return nullptr;
+		return m_currentScene.getAsset();
 	}
 
 	void Engine::setScene(Scene* scene) {
 		SA_PROFILE_FUNCTION();
-		if (scene) {
-			scene->getProgress().waitAll();
-			if (!scene->isLoaded()) {
-				scene->load();
-				scene->getProgress().waitAll();
-			}
-		}
+
+		if (m_currentScene.getAsset() == scene)
+			return;
+
 		if (m_currentScene) 
-			m_currentScene->getProgress().waitAll();
+			m_currentScene.getProgress()->wait();
 
-		trigger<engine_event::SceneSet>(engine_event::SceneSet{ m_currentScene, scene });
+		if (scene) {
+			scene->hold();
+			scene->getProgress().wait();
+		}
 
-		if (m_currentScene)
-			m_currentScene->release();
-		m_currentScene = scene;	
+		trigger<engine_event::SceneSet>(engine_event::SceneSet{ m_currentScene.getAsset(), scene });
+
+		m_currentScene = scene;
+
+		if(scene)
+			scene->release();
+		
+
 	}
 
 	void Engine::onSceneSet(engine_event::SceneSet& e) {
