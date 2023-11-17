@@ -100,7 +100,7 @@ namespace sa {
 				}
 			}
 			materialIndices.push_back(aMesh->mMaterialIndex);
-			data.meshes.push_back(mesh);
+			data.meshes.emplace_back(std::move(mesh));
 			incrementProgress();
 		}
 

@@ -67,14 +67,18 @@ namespace sa {
 	AssetHolder<T>::AssetHolder(const UUID& id) {
 		m_id = id;
 		m_pAsset = AssetManager::get().getAsset<T>(id);
-		m_pAsset->hold();
+		if(m_pAsset)
+			m_pAsset->hold();
 	}
 
 	template <typename T>
 	AssetHolder<T>::AssetHolder(T* pAsset) {
 		m_pAsset = pAsset;
-		m_id = pAsset->getID();
-		m_pAsset->hold();
+		m_id = 0;
+		if(m_pAsset) {
+			m_id = m_pAsset->getID();
+			m_pAsset->hold();
+		}
 
 	}
 
@@ -88,7 +92,8 @@ namespace sa {
 	AssetHolder<T>::AssetHolder(const AssetHolder& other) {
 		m_id = other.m_id;
 		m_pAsset = other.m_pAsset;
-		m_pAsset->hold();
+		if(m_pAsset)
+			m_pAsset->hold();
 	}
 
 	template <typename T>
