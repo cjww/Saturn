@@ -129,23 +129,20 @@ if(MSVC)
     
     target_link_options(${PROJECT_NAME} PRIVATE
         $<$<CONFIG:Debug>:
-            /SUBSYSTEM:CONSOLE;
-            /INCREMENTAL
+            /INCREMENTAL;
             /DEBUG
         >
         $<$<CONFIG:Optimized>:
-            /SUBSYSTEM:CONSOLE;
             /OPT:REF;
             /OPT:ICF;
             /INCREMENTAL:NO
-            /DEBUG
         >
         $<$<CONFIG:Release>:
-            /SUBSYSTEM:CONSOLE;
             /OPT:REF;
             /OPT:ICF;
             /INCREMENTAL:NO
         >
+        /SUBSYSTEM:CONSOLE
     )
     
 endif()

@@ -85,12 +85,13 @@ namespace sa {
 
 		// [DO NOT USE] Called by load. Do not call directly
 		virtual bool onLoad(std::ifstream& file, AssetLoadFlags flags) = 0;
-		// [DO NOT USE] Called by load. Do not call directly
+		// [DO NOT USE] Called by write. Do not call directly
 		virtual bool onWrite(std::ofstream& file, AssetWriteFlags flags) = 0;
-		// [DO NOT USE] Called by load. Do not call directly
+		// [DO NOT USE] Called by release. Do not call directly
 		virtual bool onUnload() = 0;
 
 
+		bool hold();
 		bool load(AssetLoadFlags flags = 0);
 		bool write(AssetWriteFlags flags = 0);
 		bool release();

@@ -1,6 +1,8 @@
 #include "pch.h"
 #include "Engine.h"
 
+#include <vulkan/vulkan_core.h>
+
 #include "Graphics/RenderTechniques/ForwardPlus.h"
 #include "Lua/Ref.h"
 #include "Tools/Vector.h"
@@ -14,7 +16,8 @@ namespace sa {
 
 		{
 			auto type = LuaAccessable::registerType<Vector3>("Vec3",
-				sol::constructors<Vector3(float, float, float), Vector3(float), Vector3()>(),
+				sol::constructors<Vector3(float, float, float), Vector3(float), Vector3(), 
+				Vector3(const Vector2&), Vector3(const Vector3&), Vector3(const Vector4&)>(),
 				sol::meta_function::addition, [](const Vector3& self, const Vector3& other) -> Vector3 { return self + other; },
 				sol::meta_function::subtraction, [](const Vector3& self, const Vector3& other) -> Vector3 { return self - other; },
 				sol::meta_function::multiplication, [](const Vector3& self, sol::lua_value value) -> Vector3 {
@@ -69,7 +72,8 @@ namespace sa {
 		}
 		{
 			auto type = LuaAccessable::registerType<Vector4>("Vec4",
-				sol::constructors<Vector4(float, float, float, float), Vector4(float), Vector4(), Vector4(const Vector3&)>(),
+				sol::constructors<Vector4(float, float, float, float), Vector4(float), Vector4(),
+				Vector4(const Vector2&), Vector4(const Vector3&), Vector4(const Vector4&)>(),
 				sol::meta_function::addition, [](const Vector4& self, const Vector4& other) -> Vector4 { return self + other; },
 				sol::meta_function::subtraction, [](const Vector4& self, const Vector4& other) -> Vector4 { return self - other; },
 				sol::meta_function::multiplication, [](const Vector4& self, sol::lua_value value) {
@@ -132,7 +136,8 @@ namespace sa {
 
 		{
 			auto type = LuaAccessable::registerType<Vector2>("Vec2",
-				sol::constructors<Vector2(float, float), Vector2(float), Vector2()>(),
+				sol::constructors<Vector2(float, float), Vector2(float), Vector2(),
+				Vector2(const Vector2&), Vector2(const Vector3&), Vector2(const Vector4&)>(),
 				sol::meta_function::addition, [](const Vector2& self, const Vector2& other) -> Vector2 { return self + other; },
 				sol::meta_function::subtraction, [](const Vector2& self, const Vector2& other) -> Vector2 { return self - other; },
 				sol::meta_function::multiplication, [](const Vector2& self, sol::lua_value value) {
@@ -324,7 +329,7 @@ namespace sa {
 		if (getCurrentScene()) {
 			
 			bool renderedToMainRenderTarget = false;
-			m_currentScene->forEach<comp::Camera>([&](comp::Camera& camera) {
+			m_currentScene.getAsset()->forEach<comp::Camera>([&](comp::Camera& camera) {
 				RenderTarget* pRenderTarget = camera.getRenderTarget();
 				if (pRenderTarget) {
 					m_renderPipeline.render(context, &camera.camera, pRenderTarget, camera.getSceneCollection());
@@ -361,28 +366,31 @@ namespace sa {
 	}
 
 	Scene* Engine::getCurrentScene() const {
-		if (m_currentScene && m_currentScene->getProgress().isDone() && m_currentScene->isLoaded())
-			return m_currentScene;
-		return nullptr;
+		return m_currentScene.getAsset();
 	}
 
 	void Engine::setScene(Scene* scene) {
 		SA_PROFILE_FUNCTION();
-		if (scene) {
-			scene->getProgress().waitAll();
-			if (!scene->isLoaded()) {
-				scene->load();
-				scene->getProgress().waitAll();
-			}
-		}
+
+		if (m_currentScene.getAsset() == scene)
+			return;
+
 		if (m_currentScene) 
-			m_currentScene->getProgress().waitAll();
+			m_currentScene.getProgress()->wait();
 
-		trigger<engine_event::SceneSet>(engine_event::SceneSet{ m_currentScene, scene });
+		if (scene) {
+			scene->hold();
+			scene->getProgress().wait();
+		}
 
-		if (m_currentScene)
-			m_currentScene->release();
-		m_currentScene = scene;	
+		trigger<engine_event::SceneSet>(engine_event::SceneSet{ m_currentScene.getAsset(), scene });
+
+		m_currentScene = scene;
+
+		if(scene)
+			scene->release();
+		
+
 	}
 
 	void Engine::onSceneSet(engine_event::SceneSet& e) {

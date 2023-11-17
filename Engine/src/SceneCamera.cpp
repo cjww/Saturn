@@ -84,6 +84,10 @@ namespace sa {
         m_forward = glm::rotate(m_forward, angle, axis);
     }
 
+    void SceneCamera::setForward(Vector3 forward) {
+        m_forward = glm::normalize(forward);
+    }
+
     Vector3 SceneCamera::getForward() const {
         return m_forward;
     }

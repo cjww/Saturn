@@ -7,6 +7,7 @@ set(Header_Files
     "include/Application.h"
     "include/AssetManager.h"
     "include/Assets/Asset.h"
+    "include/Assets/AssetHolder.h"
     "include/Assets/MaterialShader.h"
     "include/Assets/ModelAsset.h"
     "include/Assets/TextureAsset.h"
@@ -226,6 +227,9 @@ if(MSVC)
     )
         
     target_link_options(${PROJECT_NAME} PRIVATE
+        $<$<CONFIG:Debug>:    
+            /DEBUG
+        >
         $<$<CONFIG:Optimized>:
             /OPT:REF;
             /OPT:ICF
@@ -388,7 +392,7 @@ foreach(source IN LISTS SHADERS)
       ${source}
     OUTPUT ${SHADER_BINARY_DIR}/${FILENAME}.spv
     DEPENDS ${source} ${SHADER_BINARY_DIR}
-    COMMENT "Compiling ${FILENAME}"
+    COMMENT "Compiling shader ${FILENAME} with ${glslc_executable}"
   )
   list(APPEND SPV_SHADERS ${SHADER_BINARY_DIR}/${FILENAME}.spv)
 endforeach()

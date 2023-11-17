@@ -268,7 +268,7 @@ namespace sa {
 		}
 
 		if (ImGui::MenuItem("Reload Scene", "Ctrl + R")) {
-			m_pEngine->getCurrentScene()->load( AssetLoadFlagBits::NO_REF | AssetLoadFlagBits::FORCE);
+			m_pEngine->getCurrentScene()->load();
 		}
 	}
 
@@ -311,7 +311,7 @@ namespace sa {
 
 		auto path = pScene->getAssetPath();
 		pScene->setAssetPath(MakeEditorRelative("sceneCache.data"));
-		pScene->load(sa::AssetLoadFlagBits::FORCE_SHALLOW | sa::AssetLoadFlagBits::NO_REF);
+		pScene->load();
 		pScene->setAssetPath(path);
 
 		//pScene->getProgress().waitAll();
@@ -464,7 +464,7 @@ namespace sa {
 					}
 				
 					if (ImGui::IsKeyPressed(ImGuiKey_R, false)) {
-						m_pEngine->getCurrentScene()->load(AssetLoadFlagBits::NO_REF | AssetLoadFlagBits::FORCE);
+						m_pEngine->getCurrentScene()->load();
 					}
 
 				}

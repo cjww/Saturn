@@ -57,13 +57,15 @@ namespace sa {
 	void EntityScript::listener(const Event& e) {
 		sol::safe_function function = env[Event::CallbackName];
 		env.set_on(function);
-		if (function != sol::nil) {
-			call(function, ((&e)->*values) ...);
-		}
+		call(function, ((&e)->*values) ...);
 	}
 
 	template <typename Event, auto... values>
 	void EntityScript::bind(entt::dispatcher& dispatcher) {
+		const sol::safe_function function = env[Event::CallbackName];
+		if (function == sol::nil)
+			return;
+
 		connections.emplace_back(dispatcher.sink<Event>()
 			.connect<&EntityScript::listener<Event, values...>>(this));
 	}

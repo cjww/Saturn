@@ -75,7 +75,7 @@ namespace ImGui {
 	void AssetPreview(sa::Material* pMaterial);
 	void AssetPreview(sa::ModelAsset* pModel);
 
-	bool AssetSlot(const char* label, sa::Asset*& pAsset, sa::AssetTypeID typeID);
+	bool AssetSlot(const char* label, sa::UUID& assetID, sa::AssetTypeID typeID);
 	bool FileSlot(const char* label, std::filesystem::path& path, const char* extension);
 	bool ScriptSlot(const char* label, sa::Entity& entity, const std::string& scriptName);
 	bool ComponentSlot(const char* label, sa::Entity& entity, sa::ComponentType type);

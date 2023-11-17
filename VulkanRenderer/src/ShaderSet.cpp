@@ -333,8 +333,7 @@ namespace sa {
 		shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(glslCode, ToShadercKind(shaderStage), tag, entryPointName, options);
 
 		if (result.GetCompilationStatus() != shaderc_compilation_status_success) {
-			SA_DEBUG_LOG_ERROR(result.GetErrorMessage());
-			return {};
+			throw std::runtime_error("Failed to compile GLSL code: " + result.GetErrorMessage());
 		}
 
 		std::vector<uint32_t> output;
@@ -501,6 +500,7 @@ namespace sa {
 	ShaderSet::ShaderSet() 
 		: m_isGraphicsSet(true)
 		, m_hasTessellationStage(false)
+		, m_descriptorPool(NULL_RESOURCE)
 		, m_pCore(Renderer::get().getCore())
 	{
 	}

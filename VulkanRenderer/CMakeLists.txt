@@ -190,6 +190,9 @@ if(MSVC)
     )
     
     target_link_options(${PROJECT_NAME} PRIVATE
+        $<$<CONFIG:Debug>:    
+            /DEBUG
+        >
         $<$<CONFIG:Optimized>:
             /OPT:REF;
             /OPT:ICF

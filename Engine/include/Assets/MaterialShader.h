@@ -38,6 +38,7 @@ namespace sa {
 		void removeShaderSourceFile(ShaderStageFlagBits stage);
 
 		void compileSource();
+		bool isCompiled() const;
 
 		virtual bool onLoad(std::ifstream& file, AssetLoadFlags flags) override;
 		virtual bool onWrite(std::ofstream& file, AssetWriteFlags flags) override;

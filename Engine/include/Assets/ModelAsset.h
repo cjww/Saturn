@@ -1,6 +1,8 @@
 #pragma once
 
 #include "Asset.h"
+#include "AssetHolder.h"
+#include "Graphics/Material.h"
 #include "Vertex.h"
 
 namespace sa {
@@ -9,7 +11,7 @@ namespace sa {
 		std::vector<VertexNormalUV> vertices;
 		std::vector<uint32_t> indices;
 
-		UUID materialID;
+		AssetHolder<Material> material;
 	};
 
 	struct ModelData {
@@ -18,7 +20,7 @@ namespace sa {
 
 	class ModelAsset : public Asset {
 	private:
-		void processNode(const void* scene, const void* node);
+		void processNode(const void* scene, const void* node, std::vector<uint32_t>& materialIndices);
 		bool loadAssimpModel(const std::filesystem::path& path);
 	public:
 		using Asset::Asset;

@@ -122,7 +122,7 @@ namespace sa {
         auto parent = obj["parent"];
         if (!parent.error()) {
             Entity parentEntity(m_pScene, (entt::entity)parent.get_uint64().value());
-            setParent(parentEntity);
+            m_pScene->getHierarchy().setParent(*this, parentEntity); // Just set entityIndex as parent
         }
 
         for (simdjson::ondemand::object compObj : obj["components"]) {

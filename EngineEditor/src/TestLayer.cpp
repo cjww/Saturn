@@ -55,7 +55,7 @@ namespace sa {
 		box.addComponent<comp::Transform>()->position = position;
 		box.addComponent<comp::RigidBody>(false);
 		box.addComponent<comp::BoxCollider>(Vector3(scale, scale, scale));
-		box.addComponent<comp::Model>()->modelID = AssetManager::get().loadCube()->getID();
+		box.addComponent<comp::Model>()->model = AssetManager::get().getCube();
 
 		return box;
 	}

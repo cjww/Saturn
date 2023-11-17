@@ -61,6 +61,7 @@ namespace sa {
 
 		void rotate(float angle, Vector3 axis);
 
+		void setForward(Vector3 forward);
 		Vector3 getForward() const;
 		Vector3 getUp() const;
 		Vector3 getRight() const;

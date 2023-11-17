@@ -52,15 +52,19 @@ namespace sa {
 		return false;
 	}
 
-	void ModelAsset::processNode(const void* pScene, const void* pNode) {
+	void ModelAsset::processNode(const void* pScene, const void* pNode, std::vector<uint32_t>& materialIndices) {
+		SA_PROFILE_FUNCTION();
 		const aiScene* scene = (const aiScene*)pScene;
 		const aiNode* node = (const aiNode*)pNode;
 
-		SA_PROFILE_FUNCTION();
+		SA_DEBUG_LOG_INFO("> ", node->mName.C_Str(), 
+			" { Parent: ", (node->mParent ? node->mParent->mName.C_Str() : "None"), 
+			", Meshes: ", node->mNumMeshes);
+
 		for (int i = 0; i < node->mNumMeshes; i++) {
 			Mesh mesh = {};
 			const aiMesh* aMesh = scene->mMeshes[node->mMeshes[i]];
-
+			SA_DEBUG_LOG_INFO("Mesh: ", aMesh->mName.C_Str());
 			std::vector<VertexNormalUV>& vertices = mesh.vertices;
 			std::vector<uint32_t>& indices = mesh.indices;
 
@@ -95,13 +99,13 @@ namespace sa {
 					indices.push_back(vertices.size() - 1);
 				}
 			}
-			mesh.materialID = aMesh->mMaterialIndex;
-			data.meshes.push_back(mesh);
+			materialIndices.push_back(aMesh->mMaterialIndex);
+			data.meshes.emplace_back(std::move(mesh));
 			incrementProgress();
 		}
 
 		for (int i = 0; i < node->mNumChildren; i++) {
-			processNode(scene, node->mChildren[i]);
+			processNode(scene, node->mChildren[i], materialIndices);
 		}
 	}
 
@@ -185,7 +189,9 @@ namespace sa {
 			"\nLights", scene->mNumLights);
 
 		setCompletionCount(scene->mNumMeshes + scene->mNumMaterials);
-		processNode(scene, scene->mRootNode);
+		std::vector<uint32_t> materialIndices;
+		materialIndices.reserve(scene->mNumMeshes);
+		processNode(scene, scene->mRootNode, materialIndices);
 
 		// Materials
 		SA_DEBUG_LOG_INFO("Material Count:", scene->mNumMaterials);
@@ -215,7 +221,7 @@ namespace sa {
 		if (!std::filesystem::exists(textureDir)) {
 			std::filesystem::create_directory(textureDir);
 		}
-
+		
 		tf::Taskflow taskflow;
 		taskflow.for_each_index(0U, scene->mNumMaterials, 1U, [&](int i) {
 		//for (uint32_t i = 0; i < scene->mNumMaterials; i++) {
@@ -224,8 +230,7 @@ namespace sa {
 			SA_DEBUG_LOG_INFO("Load material: ", path.generic_string(), "-", aMaterial->GetName().C_Str());
 
 			Material* pMaterial = AssetManager::get().createAsset<Material>(aMaterial->GetName().C_Str(), materialDir);
-			pMaterial->setMaterialShader(AssetManager::get().getDefaultMaterialShader());
-			pMaterial->getMaterialShader()->load();
+
 			// Diffuse Color
 			pMaterial->values.diffuseColor = getColor(aMaterial, AI_MATKEY_COLOR_DIFFUSE);
 			// Specular Color
@@ -240,7 +245,7 @@ namespace sa {
 			aMaterial->Get(AI_MATKEY_SHININESS, pMaterial->values.shininess);
 			aMaterial->Get(AI_MATKEY_METALLIC_FACTOR, pMaterial->values.metallic);
 			aMaterial->Get(AI_MATKEY_TWOSIDED, pMaterial->twoSided);
-
+			
 			for (unsigned int j = aiTextureType::aiTextureType_NONE; j <= aiTextureType::aiTextureType_TRANSMISSION; j++) {
 				loadMaterialTexture(*pMaterial, path.parent_path(), (aiTextureType)j, scene->mTextures, aMaterial, textureDir);
 			}
@@ -253,8 +258,10 @@ namespace sa {
 
 		runTaskflow(taskflow).wait();
 
+		int i = 0;
 		for (auto& mesh : data.meshes) {
-			mesh.materialID = materials[mesh.materialID]->getID(); // swap index to material ID
+			mesh.material = materials[materialIndices[i]]; // swap index to material ID
+			++i;
 		}
 		return true;
 	}
@@ -286,16 +293,13 @@ namespace sa {
 			file.read((char*)&indexCount, sizeof(indexCount));
 			mesh.indices.resize(indexCount);
 			file.read((char*)mesh.indices.data(), sizeof(uint32_t) * indexCount);
+			UUID materialID;
+			file.read((char*)&materialID, sizeof(materialID));
+			mesh.material = materialID;
 
-			file.read((char*)&mesh.materialID, sizeof(mesh.materialID));
-			Asset* pMaterial = AssetManager::get().getAsset(mesh.materialID);
-			if (!pMaterial) {
-				pMaterial = AssetManager::get().getDefaultMaterial();
-				mesh.materialID = pMaterial->getID();
-			}
-
-			pMaterial->load(flags);
-			addDependency(pMaterial->getProgress());
+			auto pProgress = mesh.material.getProgress();
+			if(pProgress)
+				addDependency(*pProgress);
 			
 		}
 		return true;
@@ -316,18 +320,12 @@ namespace sa {
 			if (indexCount > 0)
 				file.write((char*)mesh.indices.data(), sizeof(uint32_t) * indexCount);
 
-			file.write((char*)&mesh.materialID, sizeof(mesh.materialID));
+			file.write((char*)&mesh.material.getID(), sizeof(mesh.material.getID()));
 		}
 		return true;
 	}
 
 	bool ModelAsset::onUnload() {
-		for (auto& mesh : data.meshes) {
-			Asset* pMaterial = AssetManager::get().getAsset(mesh.materialID);
-			if (pMaterial)
-				pMaterial->release();
-		}
-
 		data.meshes.clear();
 		data.meshes.shrink_to_fit();
 		return true;

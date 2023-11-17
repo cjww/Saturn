@@ -15,8 +15,6 @@
 #include <Tools\utils.h>
 
 #include "Assets\Asset.h"
-#include "Graphics/Material.h"
-#include "Graphics\RenderTarget.h"
 
 #include "Lua/LuaAccessable.h"
 
@@ -36,7 +34,10 @@
 namespace sa {
 
 	class ModelAsset;
-	
+	class Material;
+	class TextureAsset;
+	class MaterialShader;
+
 	class AssetPackage {
 	public:
 		std::filesystem::path path;
@@ -87,11 +88,10 @@ namespace sa {
 		Texture2D* loadDefaultBlackTexture();
 		Texture2D* loadTexture(const std::filesystem::path& path, bool generateMipMaps);
 
-		ModelAsset* loadQuad();
-		ModelAsset* loadCube();
+		ModelAsset* getQuad();
+		ModelAsset* getCube();
 
 		Material* getDefaultMaterial();
-		MaterialShader* loadDefaultMaterialShader();
 		MaterialShader* getDefaultMaterialShader();
 
 
@@ -243,4 +243,5 @@ namespace sa {
 
 		return static_cast<T*>(asset);
 	}
+
 }

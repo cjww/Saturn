@@ -12,11 +12,14 @@ void DirectoryView::onDraggedDropped(const sa::editor_event::DragDropped& e) {
 		std::filesystem::path path = e.paths[i];
 		std::string extension = path.extension().generic_string();
 		if (sa::ModelAsset::isExtensionSupported(extension)) {
-			sa::AssetManager::get().importAsset<sa::ModelAsset>(path);
+			sa::AssetManager::get().importAsset<sa::ModelAsset>(path, m_openDirectory);
+			continue;
 		}
-		else {
-			SA_DEBUG_LOG_WARNING("Could not import: Unsupported extension ", extension);
-		}
+		auto pTextureAsset = sa::AssetManager::get().importAsset<sa::TextureAsset>(path, m_openDirectory);
+		if(pTextureAsset)
+			continue;
+
+		SA_DEBUG_LOG_WARNING("Could not import: Unsupported extension ", extension);
 	}
 }
 
@@ -49,8 +52,10 @@ DirectoryView::DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor)
 }
 
 void DirectoryView::onImGui() {
+	SA_PROFILE_FUNCTION();
 	for (auto it = m_openAssetProperties.begin(); it != m_openAssetProperties.end(); it++) {
 		sa::Asset* pAsset = *it;
+		SA_PROFILE_SCOPE(sa::AssetManager::get().getAssetTypeName(pAsset->getType()), " Properties Window");
 		bool isOpen = true;
 		if(ImGui::Begin((pAsset->getName() + " Properties").c_str(), &isOpen)) {
 			ImGui::GetAssetInfo(pAsset->getType()).imGuiPropertiesFn(pAsset);
@@ -59,12 +64,13 @@ void DirectoryView::onImGui() {
 			}
 			ImGui::SameLine();
 			if (ImGui::Button("Revert")) {
-				pAsset->load(sa::AssetLoadFlagBits::FORCE_SHALLOW | sa::AssetLoadFlagBits::NO_REF);
+				pAsset->load();
 			}
 		}
 		ImGui::End();
 		if (!isOpen) {
 			m_openAssetProperties.erase(it);
+			pAsset->release();
 			break;
 		}
 	}
@@ -141,7 +147,7 @@ void DirectoryView::onImGui() {
 		};
 
 		if (ImGui::BeginDirectoryIcons("Explorer", m_openDirectory, iconSize, wasChanged, editedFile, editingName, lastSelected, selectedItems, menuItemsFn)) {
-			
+			SA_PROFILE_SCOPE("Explorer");
 			// Icon View Area
 			ImVec2 iconSizeVec((float)iconSize, (float)iconSize);
 			for (const auto& entry : std::filesystem::directory_iterator(m_openDirectory)) {
@@ -176,6 +182,7 @@ void DirectoryView::onImGui() {
 							m_pEngine->setScene(pAsset->cast<sa::Scene>());
 						}
 						else {
+							pAsset->hold();
 							m_openAssetProperties.insert(pAsset);
 						}
 					}
@@ -216,7 +223,7 @@ void DirectoryView::onImGui() {
 		static sa::Asset* selected = nullptr;
 
 		if (ImGui::Button("Load Asset") && selected) {
-			selected->load();
+			selected->hold();
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Release Asset") && selected) {
@@ -232,8 +239,7 @@ void DirectoryView::onImGui() {
 				if (ImGui::Button("Spawn")) {
 					sa::Entity entity = m_pEngine->getCurrentScene()->createEntity();
 					entity.addComponent<comp::Transform>();
-					entity.addComponent<comp::Model>()->modelID = selected->getID();
-					selected->load();
+					entity.addComponent<comp::Model>()->model = selected->getID();
 				}
 			}
 			else if (selected->getType() == sa::AssetManager::get().getAssetTypeID<sa::Scene>()) {
