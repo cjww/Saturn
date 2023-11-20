@@ -64,7 +64,7 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
         int shininess = 32;
         
         vec3 radiance = vec3(0);
-        float lightRadius = light.position.w;
+        float lightRadius = max(light.position.w, 0.0001);
         float lightIntensity = light.color.a;
 
         vec3 lightDir = vec3(0);
@@ -82,7 +82,13 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
             // Real world attenuation = 1.0 / (distance * distance)
             float fallOff = 0.5;
             float attenuation = max(1.0 - distance / lightRadius, 0.0) / fallOff;
-
+            /*
+            // (clamp10(1-(d/lightRadius)^4)^2)/d*d+1
+            float attenuation = clamp(1.0 - pow(distance / lightRadius, 4), 1.0, 0.0);
+            attenuation = attenuation * attenuation;
+            attenuation = attenuation / distance * distance + 1;
+            */
+            
             radiance = light.color.rgb * attenuation * lightIntensity;
             
 
@@ -121,7 +127,7 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
         vec3 specular = numerator / max(denominator, 0.0001);
 
         Lo += (kD * albedo / PI + specular) * radiance * NdotL;
-
+        
     }
 
     vec3 ambient = vec3(0.01) * albedo * occlusion;
@@ -169,7 +175,7 @@ float DistributionGGX(vec3 N, vec3 H, float roughness) {
     float denom = (NdotH2 * (a2 - 1.0) + 1.0);
     denom = PI * denom * denom;
 
-    return a2 / denom;
+    return a2 / max(denom, 0.0001);
 }
 
 float GeometrySchlickGGX(float NdotV, float roughness) {
@@ -179,7 +185,7 @@ float GeometrySchlickGGX(float NdotV, float roughness) {
     float num = NdotV;
     float denom = NdotV * (1.0 - k) + k;
 	
-    return num / denom;
+    return num / max(denom, 0.0001);
 }
 
 float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
