@@ -17,38 +17,39 @@ layout(location = 4) in flat uint in_meshIndex;
 
 struct Material {
     vec4 albedoColor;
-    vec4 specularColor;
-    vec4 ambientColor;
-    vec4 emissiveColor;
-    
+    vec3 emissiveColor;
+    float emissiveStrength;
+
     uint albedoMapFirst;
     uint albedoMapCount;
     uint normalMapFirst;
     uint normalMapCount;
     uint metalnessMapFirst;
     uint metalnessMapCount;
+    uint roughnessMapFirst;
+    uint roughnessMapCount;
     uint emissiveMapFirst;
     uint emissiveMapCount;
     uint lightMapFirst;
     uint lightMapCount;
     
     float opacity;
-    float shininess;
+    float roughness;
     float metallic;
 };
 
 const Material defaultMaterial = {
     vec4(1, 1, 1, 1),
-    vec4(1, 1, 1, 1),
-    vec4(1, 1, 1, 1),
-    vec4(0, 0, 0, 0),
+    vec3(0, 0, 0),
+    1.0,
+    0, 0,
     0, 0,
     0, 0,
     0, 0,
     0, 0,
     0, 0,
     1.0,
-    1.0,
+    0.5,
     0.0
 };
 

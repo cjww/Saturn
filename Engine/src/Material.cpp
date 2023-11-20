@@ -64,16 +64,19 @@ namespace sa {
 		values.albedoMapCount = m_textures[MaterialTextureType::BASE_COLOR].size();
 		values.albedoMapFirst = 0;
 		
-		values.normalMapCount = m_textures[MaterialTextureType::NORMALS].size();
+		values.normalMapCount = m_textures[MaterialTextureType::NORMAL_CAMERA].size();
 		values.normalMapFirst = values.albedoMapCount;
 		
 		values.metalnessMapCount = m_textures[MaterialTextureType::METALNESS].size();
 		values.metalnessMapFirst = values.normalMapFirst + values.normalMapCount;
-		
-		values.emissiveMapCount = m_textures[MaterialTextureType::EMISSIVE].size();
-		values.emissiveMapFirst = values.metalnessMapFirst + values.metalnessMapCount;
 
-		values.occlusionMapCount = m_textures[MaterialTextureType::LIGHTMAP].size();
+		values.roughnessMapCount = m_textures[MaterialTextureType::DIFFUSE_ROUGHNESS].size();
+		values.roughnessMapFirst = values.metalnessMapFirst + values.metalnessMapCount;
+
+		values.emissiveMapCount = m_textures[MaterialTextureType::EMISSION_COLOR].size();
+		values.emissiveMapFirst = values.roughnessMapFirst + values.roughnessMapCount;
+
+		values.occlusionMapCount = m_textures[MaterialTextureType::AMBIENT_OCCLUSION].size();
 		values.occlusionMapFirst = values.emissiveMapFirst + values.emissiveMapCount;
 		m_allTexturesLoaded = false;
 	}

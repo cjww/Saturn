@@ -34,20 +34,25 @@ vec4 CalculatePBRColor(Material material) {
         metallic = texture(sampler2D(textures[material.metalnessMapFirst], samp), in_vertexUV).r;
     }
 
-    vec3 emissive = material.emissiveColor.rgb;
+    float roughness = material.roughness;
+    if(material.roughnessMapCount > 0) {
+        roughness = texture(sampler2D(textures[material.roughnessMapFirst], samp), in_vertexUV).g;
+    }
+
+    vec3 emissive = material.emissiveColor.rgb * material.emissiveStrength;
     if(material.emissiveMapCount > 0) {
-        emissive += texture(sampler2D(textures[material.emissiveMapFirst], samp), in_vertexUV).rgb;
+        emissive *= texture(sampler2D(textures[material.emissiveMapFirst], samp), in_vertexUV).rgb;
     }
 
     float occlusion = 1.0;
     if(material.lightMapCount > 0) {
         occlusion = texture(sampler2D(textures[material.lightMapFirst], samp), in_vertexUV).r;
     }
-    
-    return GetPBRColor(albedoColor, in_vertexWorldNormal, emissive, metallic, material.shininess, occlusion, material.opacity, 0.5);
+
+    return GetPBRColor(albedoColor, in_vertexWorldNormal, emissive, metallic, roughness, occlusion, material.opacity, 0.5);
 }
 
-vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float smoothness, float occlusion, float alpha, float alphaClipThreshold) {
+vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float roughness, float occlusion, float alpha, float alphaClipThreshold) {
     vec3 viewDir = normalize(in_viewPos - in_vertexWorldPos);
     normal = normalize(normal);
 
@@ -110,7 +115,6 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
         vec3 F0 = vec3(0.04);
         F0 = mix(F0, pow(albedo, vec3(2.2)), metallic);
 
-        float roughness = 1.0 - smoothness;
         float NDF = DistributionGGX(normal, halfVector, roughness);
         float G = GeometrySmith(normal, viewDir, lightDir, roughness);
         vec3 F = FresnelSchlick(viewDir, halfVector, F0);
@@ -131,17 +135,9 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
     }
 
     vec3 ambient = vec3(0.01) * albedo * occlusion;
-    vec3 color = ambient + Lo;
-    /*
-    color = color / (color + vec3(1.0));
-    color = pow(color, vec3(1.0 / 2.2));
-    */
+    vec3 color = ambient + emission + Lo;
 
-    return vec4(color, 1.0);
-    /*
-    emission *= 2.0;
-    return vec4((albedoColor + specularColor) * occlusion * albedo + emission, alpha);
-    */
+    return vec4(color, alpha);
 }
 
 vec3 GetPointLightColor(Light light, vec3 normal) {
@@ -175,7 +171,7 @@ float DistributionGGX(vec3 N, vec3 H, float roughness) {
     float denom = (NdotH2 * (a2 - 1.0) + 1.0);
     denom = PI * denom * denom;
 
-    return a2 / max(denom, 0.0001);
+    return a2 / max(denom, 0.00001);
 }
 
 float GeometrySchlickGGX(float NdotV, float roughness) {
@@ -185,7 +181,7 @@ float GeometrySchlickGGX(float NdotV, float roughness) {
     float num = NdotV;
     float denom = NdotV * (1.0 - k) + k;
 	
-    return num / max(denom, 0.0001);
+    return num / max(denom, 0.00001);
 }
 
 float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {

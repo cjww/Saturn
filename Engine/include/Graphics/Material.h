@@ -215,11 +215,9 @@ namespace sa {
 
 	public:
 		struct alignas(16) Values { // sent to shader
-			Color diffuseColor = { 1, 1, 1, 1 };
-			Color specularColor = { 1, 1, 1, 1 };
-			Color ambientColor = { 1, 1, 1, 1 };
-			Color emissiveColor = { 0, 0, 0, 0 };
-
+			Color albedoColor = { 1, 1, 1, 1 };
+			Color emissiveColor = { 0, 0, 0, 1 };
+			
 			uint32_t albedoMapFirst = 0;
 			uint32_t albedoMapCount = 0;
 
@@ -228,7 +226,10 @@ namespace sa {
 
 			uint32_t metalnessMapFirst = 0;
 			uint32_t metalnessMapCount = 0;
-			
+
+			uint32_t roughnessMapFirst = 0;
+			uint32_t roughnessMapCount = 0;
+
 			uint32_t emissiveMapFirst = 0;
 			uint32_t emissiveMapCount = 0;
 
@@ -236,7 +237,7 @@ namespace sa {
 			uint32_t occlusionMapCount = 0;
 
 			float opacity = 1.0f;
-			float shininess = 1.0f;
+			float roughness = 0.5f;
 			float metallic = 0.0f;
 		} values;
 

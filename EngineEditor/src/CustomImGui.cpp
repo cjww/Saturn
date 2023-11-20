@@ -556,13 +556,15 @@ namespace ImGui {
 			pMaterial->setMaterialShader(id);
 		}
 
-		ColorEdit3("Ambient Color", (float*)&pMaterial->values.ambientColor);
-		ColorEdit3("Diffuse Color", (float*)&pMaterial->values.diffuseColor);
-		ColorEdit3("Specular Color", (float*)&pMaterial->values.specularColor);
+		
+		ColorEdit3("Albedo Color", (float*)&pMaterial->values.albedoColor);
 		ColorEdit3("Emissive Color", (float*)&pMaterial->values.emissiveColor);
+		DragFloat("Emissive Strength", &pMaterial->values.emissiveColor.a, 0.1f);
+		pMaterial->values.emissiveColor.a = std::max(pMaterial->values.emissiveColor.a, 0.0f);
+
 		SliderFloat("Opacity", &pMaterial->values.opacity, 0.0f, 1.0f);
 		SliderFloat("Metallic", &pMaterial->values.metallic, 0.0f, 1.0f);
-		SliderFloat("Shininess", &pMaterial->values.shininess, 0.0f, 1.0f);
+		SliderFloat("Roughness", &pMaterial->values.roughness, 0.0f, 1.0f);
 		
 		Checkbox("Two Sided", &pMaterial->twoSided);
 

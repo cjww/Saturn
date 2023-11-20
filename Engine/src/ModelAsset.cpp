@@ -231,24 +231,27 @@ namespace sa {
 
 			Material* pMaterial = AssetManager::get().createAsset<Material>(aMaterial->GetName().C_Str(), materialDir);
 
-			// Diffuse Color
-			pMaterial->values.diffuseColor = getColor(aMaterial, AI_MATKEY_COLOR_DIFFUSE);
-			// Specular Color
-			pMaterial->values.specularColor = getColor(aMaterial, AI_MATKEY_COLOR_SPECULAR);
-
-			// Ambient Color
-			pMaterial->values.ambientColor = getColor(aMaterial, AI_MATKEY_COLOR_AMBIENT);
+			// Base Color
+			//pMaterial->values.albedoColor = getColor(aMaterial, AI_MATKEY_COLOR_DIFFUSE);
+			pMaterial->values.albedoColor = getColor(aMaterial, AI_MATKEY_BASE_COLOR);
+			
 			// Emissive Color
 			pMaterial->values.emissiveColor = getColor(aMaterial, AI_MATKEY_COLOR_EMISSIVE, SA_COLOR_BLACK);
 
+			aMaterial->Get(AI_MATKEY_EMISSIVE_INTENSITY, pMaterial->values.emissiveColor.a);
 			aMaterial->Get(AI_MATKEY_OPACITY, pMaterial->values.opacity);
-			aMaterial->Get(AI_MATKEY_SHININESS, pMaterial->values.shininess);
+			aMaterial->Get(AI_MATKEY_ROUGHNESS_FACTOR, pMaterial->values.roughness);
 			aMaterial->Get(AI_MATKEY_METALLIC_FACTOR, pMaterial->values.metallic);
 			aMaterial->Get(AI_MATKEY_TWOSIDED, pMaterial->twoSided);
-			
-			for (unsigned int j = aiTextureType::aiTextureType_NONE; j <= aiTextureType::aiTextureType_TRANSMISSION; j++) {
-				loadMaterialTexture(*pMaterial, path.parent_path(), (aiTextureType)j, scene->mTextures, aMaterial, textureDir);
-			}
+
+			// PBR textures
+			loadMaterialTexture(*pMaterial, path.parent_path(), aiTextureType_BASE_COLOR, scene->mTextures, aMaterial, textureDir);
+			loadMaterialTexture(*pMaterial, path.parent_path(), aiTextureType_NORMAL_CAMERA, scene->mTextures, aMaterial, textureDir);
+			loadMaterialTexture(*pMaterial, path.parent_path(), aiTextureType_EMISSION_COLOR, scene->mTextures, aMaterial, textureDir);
+			loadMaterialTexture(*pMaterial, path.parent_path(), aiTextureType_METALNESS, scene->mTextures, aMaterial, textureDir);
+			loadMaterialTexture(*pMaterial, path.parent_path(), aiTextureType_DIFFUSE_ROUGHNESS, scene->mTextures, aMaterial, textureDir);
+			loadMaterialTexture(*pMaterial, path.parent_path(), aiTextureType_AMBIENT_OCCLUSION, scene->mTextures, aMaterial, textureDir);
+
 			pMaterial->update();
 			materials[i] = pMaterial;
 			pMaterial->write();
