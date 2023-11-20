@@ -1,38 +1,63 @@
 #include "pch.h"
 #include "Graphics/Material.h"
+
+#include <vulkan/vulkan_core.h>
+
 #include "Renderer.hpp"
 #include "structs.h"
 
 #include "AssetManager.h"
 
 namespace sa {
-	std::string to_string(MaterialTextureType type) {
-		const static std::unordered_map<MaterialTextureType, std::string> map = {
-			{ MaterialTextureType::AMBIENT, "Ambient" },
-			{ MaterialTextureType::AMBIENT_OCCLUSION, "Ambient Occlusion" },
-			{ MaterialTextureType::BASE_COLOR, "Base Color" },
-			{ MaterialTextureType::CLEARCOAT, "Clearcoat" },
-			{ MaterialTextureType::DIFFUSE, "Diffuse" },
-			{ MaterialTextureType::DIFFUSE_ROUGHNESS, "Diffuse Roughness" },
-			{ MaterialTextureType::DISPLACEMENT, "Displacement" },
-			{ MaterialTextureType::EMISSION_COLOR, "Emmision Color" },
-			{ MaterialTextureType::EMISSIVE, "Emissive" },
-			{ MaterialTextureType::HEIGHT, "Height" },
-			{ MaterialTextureType::LIGHTMAP, "Lightmap" },
-			{ MaterialTextureType::METALNESS, "Metalness" },
-			{ MaterialTextureType::NONE, "None" },
-			{ MaterialTextureType::NORMALS, "Normals" },
-			{ MaterialTextureType::NORMAL_CAMERA, "Normal Camera" },
-			{ MaterialTextureType::OPACITY, "Opacity" },
-			{ MaterialTextureType::REFLECTION, "Reflection" },
-			{ MaterialTextureType::SHEEN, "Sheen" },
-			{ MaterialTextureType::SHININESS, "Shininess" },
-			{ MaterialTextureType::SPECULAR, "Specular" },
-			{ MaterialTextureType::TRANSMISSION, "Transmission" },
-			{ MaterialTextureType::UNKNOWN, "Unknown" },
+	const char* to_string(MaterialTextureType type) {
+		switch (type) {
+		case MaterialTextureType::AMBIENT:
+			return "Ambient";
+		case MaterialTextureType::AMBIENT_OCCLUSION:
+			return "Ambient Occlusion";
+		case MaterialTextureType::BASE_COLOR:
+			return "Base Color";
+		case MaterialTextureType::CLEARCOAT:
+			return "Clearcoat";
+		case MaterialTextureType::DIFFUSE:
+			return "Diffuse";
+		case MaterialTextureType::DIFFUSE_ROUGHNESS:
+			return "Diffuse Roughness";
+		case MaterialTextureType::DISPLACEMENT:
+			return "Displacement";
+		case MaterialTextureType::EMISSION_COLOR:
+			return "Emmision Color";
+		case MaterialTextureType::EMISSIVE:
+			return "Emissive";
+		case MaterialTextureType::HEIGHT:
+			return "Height";
+		case MaterialTextureType::LIGHTMAP:
+			return "Lightmap";
+		case MaterialTextureType::METALNESS:
+			return "Metalness";
+		case MaterialTextureType::NONE:
+			return "None";
+		case MaterialTextureType::NORMALS:
+			return "Normals";
+		case MaterialTextureType::NORMAL_CAMERA:
+			return "Normal Camera";
+		case MaterialTextureType::OPACITY:
+			return "Opacity";
+		case MaterialTextureType::REFLECTION:
+			return "Reflection";
+		case MaterialTextureType::SHEEN:
+			return "Sheen";
+		case MaterialTextureType::SHININESS:
+			return "Shininess";
+		case MaterialTextureType::SPECULAR:
+			return "Specular";
+		case MaterialTextureType::TRANSMISSION:
+			return "Transmission";
+		case MaterialTextureType::UNKNOWN:
+			return "Unknown";
+		default:
+			return "None";
 		};
-
-		return map.at(type);
 	}
 
 	void Material::setTextures(const std::vector<BlendedTexture>& textures, MaterialTextureType type, uint32_t& count) {

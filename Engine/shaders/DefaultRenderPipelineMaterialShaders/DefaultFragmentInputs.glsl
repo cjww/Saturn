@@ -8,6 +8,8 @@
 
 #define LIGHT_TYPE_POINT 0
 #define LIGHT_TYPE_DIRECTIONAL 1
+#define LIGHT_TYPE_SPOT 2
+
 
 layout(location = 0) in vec2 in_vertexUV;
 layout(location = 1) in vec3 in_vertexWorldPos;

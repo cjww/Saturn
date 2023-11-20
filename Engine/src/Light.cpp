@@ -1,7 +1,22 @@
 #include "pch.h"
 #include "ECS/Components/Light.h"
+namespace sa {
+	const char* to_string(LightType type) {
+		switch (type) {
+		case LightType::POINT:
+			return "Point light";
+		case LightType::DIRECTIONAL:
+			return "Directional light";
+		case LightType::SPOT:
+			return "Spotlight";
+		default:
+			return "None";
+		}
+	}
+}
 
 namespace comp {
+
 
 	void Light::serialize(sa::Serializer& s) {
 		s.value("color", *(glm::vec4*)&values.color);

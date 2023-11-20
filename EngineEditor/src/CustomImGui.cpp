@@ -293,24 +293,25 @@ namespace ImGui {
 
 		ImGui::SliderFloat("Intensity", &light->values.color.a, 0.0f, 10.f);
 
-		static const std::unordered_map<sa::LightType, std::string> map = {
-			{ sa::LightType::POINT, "Point" },
-			{ sa::LightType::DIRECTIONAL, "Directional" },
-		};
-
-		std::string preview = map.at(light->values.type);
-		if (ImGui::BeginCombo("Type", preview.c_str())) {
-			if (ImGui::Selectable("Point", light->values.type == sa::LightType::POINT)) {
-				light->values.type = sa::LightType::POINT;
+		const char* preview = sa::to_string(light->values.type);
+		if (ImGui::BeginCombo("Type", preview)) {
+			for(uint32_t i = 0; i < static_cast<uint32_t>(sa::LightType::MAX_COUNT); i++) {
+				sa::LightType type = static_cast<sa::LightType>(i);
+				if(Selectable(sa::to_string(type), light->values.type == type)) {
+					light->values.type = type;
+				}
 			}
-			if (ImGui::Selectable("Directional", light->values.type == sa::LightType::DIRECTIONAL)) {
-				light->values.type = sa::LightType::DIRECTIONAL;
-			}
-			preview = map.at(light->values.type);
 			ImGui::EndCombo();
 		}
+
 		if (light->values.type == sa::LightType::POINT) {
 			ImGui::SliderFloat("Attenuation radius", &light->values.position.w, 0.0, 200.f);
+		}
+		else if (light->values.type == sa::LightType::SPOT) {
+			ImGui::SliderFloat("Attenuation range", &light->values.position.w, 0.0, 200.f);
+			float cutoff = glm::degrees(light->values.direction.w);
+			ImGui::SliderFloat("Cutoff Angle", &cutoff, 0.0, 360.0);
+			light->values.direction.w = glm::radians(cutoff);
 		}
 
 	}

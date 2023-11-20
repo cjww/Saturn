@@ -200,7 +200,7 @@ namespace sa {
 		TextureBlendOp blendOp;
 	};
 	
-	std::string to_string(MaterialTextureType type);
+	const char* to_string(MaterialTextureType type);
 
 	class Material : public Asset {
 	private:

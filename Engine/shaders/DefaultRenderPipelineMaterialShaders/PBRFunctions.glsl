@@ -95,16 +95,41 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
             */
             
             radiance = light.color.rgb * attenuation * lightIntensity;
-            
+
 
             break;
         }
         case LIGHT_TYPE_DIRECTIONAL: {
 
             lightDir = normalize(-light.direction.xyz);
+
             halfVector = normalize(viewDir + lightDir);
 
             radiance = light.color.rgb * lightIntensity;
+
+            break;
+        }
+        case LIGHT_TYPE_SPOT: {
+            lightDir = normalize(light.position.xyz - in_vertexWorldPos);
+            halfVector = normalize(viewDir + lightDir);
+            
+            vec3 spotDir = normalize(-light.direction.xyz);
+            float theta = dot(lightDir, spotDir);
+            
+            float cutoff = cos(light.direction.w);
+            
+            float innerCutoff = cutoff + 0.09;
+            float epsilon = innerCutoff - cutoff;
+            //float spot = theta > cutoff ? max((theta - cutoff) / epsilon, 0.0) : 0.0;
+            float spot = theta > cutoff ? smoothstep(0.0, 1.0, (theta - cutoff) / epsilon) : 0.0;
+
+            float distance = length(light.position.xyz - in_vertexWorldPos);
+            
+            // Real world attenuation = 1.0 / (distance * distance)
+            float fallOff = 1.0;
+            float attenuation = max(1.0 - distance / lightRadius, 0.0) / fallOff;
+            attenuation *= spot;
+            radiance = light.color.rgb * attenuation * lightIntensity;
 
             break;
         }
