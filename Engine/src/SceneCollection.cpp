@@ -311,11 +311,12 @@ namespace sa {
 							collection.m_textures.insert(collection.m_textures.end(), matTextures.begin(), matTextures.end());
 
 							Material::Values values = pMaterial->values;
-							values.albedoMapFirst = values.albedoMapFirst + textureOffset;
-							values.emissiveMapFirst = values.emissiveMapFirst + textureOffset;
-							values.occlusionMapFirst = values.occlusionMapFirst + textureOffset;
-							values.normalMapFirst = values.normalMapFirst + textureOffset;
-							values.metalnessMapFirst = values.metalnessMapFirst + textureOffset;
+							values.albedoMapFirst += textureOffset;
+							values.normalMapFirst += textureOffset;
+							values.metalnessMapFirst += textureOffset;
+							values.roughnessMapFirst += textureOffset;
+							values.emissiveMapFirst += textureOffset;
+							values.occlusionMapFirst += textureOffset;
 
 							collection.m_materials.push_back(pMaterial);
 							collection.m_materialData.push_back(values);
