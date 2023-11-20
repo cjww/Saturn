@@ -264,6 +264,7 @@ namespace sa {
 	}
 
 	MaterialShader* AssetManager::getDefaultMaterialShader() {
+		std::lock_guard lock(m_mutex);
 		MaterialShader* pAsset = findAssetByName<MaterialShader>(SA_DEFAULT_MATERIAL_SHADER_NAME);
 		if (pAsset) {
 			return pAsset;

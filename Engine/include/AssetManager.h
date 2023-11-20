@@ -230,10 +230,7 @@ namespace sa {
 		assert(header.type != -1 && "Can not use unregistered type!");
 		SA_DEBUG_LOG_INFO("Creating ", getAssetTypeName(header.type), " ", name);
 
-
-		m_mutex.lock();
 		auto [it, success] = m_assets.insert({ header.id, std::make_unique<T>(header) });
-		m_mutex.unlock();
 
 		Asset* asset = it->second.get();
 
