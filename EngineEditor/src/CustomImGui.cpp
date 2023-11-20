@@ -562,8 +562,8 @@ namespace ImGui {
 		ColorEdit3("Emissive Color", (float*)&pMaterial->values.emissiveColor);
 		SliderFloat("Opacity", &pMaterial->values.opacity, 0.0f, 1.0f);
 		SliderFloat("Metallic", &pMaterial->values.metallic, 0.0f, 1.0f);
-		DragFloat("Shininess", &pMaterial->values.shininess);
-
+		SliderFloat("Shininess", &pMaterial->values.shininess, 0.0f, 1.0f);
+		
 		Checkbox("Two Sided", &pMaterial->twoSided);
 
 		auto& textures = pMaterial->getTextures();
