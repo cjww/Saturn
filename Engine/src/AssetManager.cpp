@@ -149,13 +149,13 @@ namespace sa {
 
 	ModelAsset* AssetManager::getQuad() {
 		
-		ModelAsset* pAsset = findAssetByName<ModelAsset>(SA_DEFAULT_QUAD_NAME);
+		ModelAsset* pAsset = findAssetByName<ModelAsset>(SA_BUILTIN_QUAD_NAME);
 		if (pAsset) {
 			return pAsset;
 		}
 
-		std::filesystem::create_directories(SA_DEFAULT_ASSET_DIR);
-		pAsset = createAsset<ModelAsset>(SA_DEFAULT_QUAD_NAME, SA_DEFAULT_ASSET_DIR);
+		std::filesystem::create_directories(SA_BUILTIN_ASSET_DIR);
+		pAsset = createAsset<ModelAsset>(SA_BUILTIN_QUAD_NAME, SA_BUILTIN_ASSET_DIR);
 		
 		Mesh mesh = {};
 		
@@ -182,13 +182,13 @@ namespace sa {
 	ModelAsset* AssetManager::getCube() {
 		SA_PROFILE_FUNCTION();
 
-		ModelAsset* pAsset = findAssetByName<ModelAsset>(SA_DEFAULT_CUBE_NAME);
+		ModelAsset* pAsset = findAssetByName<ModelAsset>(SA_BUILTIN_CUBE_NAME);
 		if (pAsset) {
 			return pAsset;
 		}
 
-		std::filesystem::create_directories(SA_DEFAULT_ASSET_DIR);
-		pAsset = createAsset<ModelAsset>(SA_DEFAULT_CUBE_NAME, SA_DEFAULT_ASSET_DIR);
+		std::filesystem::create_directories(SA_BUILTIN_ASSET_DIR);
+		pAsset = createAsset<ModelAsset>(SA_BUILTIN_CUBE_NAME, SA_BUILTIN_ASSET_DIR);
 
 		Mesh& mesh = pAsset->data.meshes.emplace_back();
 
@@ -253,33 +253,32 @@ namespace sa {
 	}
 
 	Material* AssetManager::getDefaultMaterial() {
-		Material* pAsset = findAssetByName<Material>(SA_DEFAULT_MATERIAL_NAME);
+		std::lock_guard lock(m_mutex);
+		Material* pAsset = getAsset<Material>(SA_DEFAULT_MATERIAL_ID);
 		if (pAsset) {
 			return pAsset;
 		}
-
-		pAsset = createAsset<Material>(SA_DEFAULT_MATERIAL_NAME, SA_DEFAULT_ASSET_DIR);
-		pAsset->write();
+		pAsset = createAsset<Material>(SA_DEFAULT_MATERIAL_NAME, SA_DEFAULT_MATERIAL_ID);
+		pAsset->hold(); // Make sure this is not unloaded, because it can't be loaded again
 		return pAsset;
 	}
 
 	MaterialShader* AssetManager::getDefaultMaterialShader() {
 		std::lock_guard lock(m_mutex);
-		MaterialShader* pAsset = findAssetByName<MaterialShader>(SA_DEFAULT_MATERIAL_SHADER_NAME);
-		if (pAsset) {
-			return pAsset;
+		MaterialShader* pMaterialShader = getAsset<MaterialShader>(SA_DEFAULT_MATERIAL_SHADER_ID);
+		if (pMaterialShader) {
+			return pMaterialShader;
 		}
 
-		std::filesystem::create_directories(SA_DEFAULT_ASSET_DIR);
-		pAsset = createAsset<MaterialShader>(SA_DEFAULT_MATERIAL_SHADER_NAME, SA_DEFAULT_ASSET_DIR);
+		pMaterialShader = createAsset<MaterialShader>(SA_DEFAULT_MATERIAL_SHADER_NAME, SA_DEFAULT_MATERIAL_SHADER_ID);
 
 		auto vertexCode = ReadSPVFile((Engine::getShaderDirectory() / "ForwardPlusColorPass.vert.spv").generic_string().c_str());
 		auto fragmentCode = ReadSPVFile((Engine::getShaderDirectory() / "ForwardPlusColorPass.frag.spv").generic_string().c_str());
-		pAsset->create({ vertexCode, fragmentCode });
-		
-		pAsset->write();
+		pMaterialShader->create({ vertexCode, fragmentCode });
 
-		return pAsset;
+		pMaterialShader->hold(); // Make sure this is not unloaded, because it can't be loaded again
+
+		return pMaterialShader;
 	}
 
 	const std::unordered_map<UUID, std::unique_ptr<Asset>>& AssetManager::getAssets() const{
@@ -331,6 +330,7 @@ namespace sa {
 	}
 
 	Asset* AssetManager::findAssetByName(const std::string& name) const {
+		std::lock_guard lock(m_mutex);
 		for (auto& [id, asset] : m_assets) {
 			if (asset->getName() == name)
 				return asset.get();
@@ -339,6 +339,7 @@ namespace sa {
 	}
 
 	Asset* AssetManager::findAssetByPath(const std::filesystem::path& path) const {
+		std::lock_guard lock(m_mutex);
 		if (!std::filesystem::exists(path))
 			return nullptr;
 		for (auto& [id, asset] : m_assets) {
@@ -350,6 +351,26 @@ namespace sa {
 		return nullptr;
 	}
 
+	bool AssetManager::wasImported(Asset* pAsset) const {
+		return m_importedAssets.count(pAsset->getID());
+	}
+
+	void AssetManager::reimportAsset(Asset* pAsset) {
+		m_mutex.lock();
+		if (!m_importedAssets.count(pAsset->getID())) {
+			SA_DEBUG_LOG_WARNING("Asset was never imported: ", pAsset->getName());
+			m_mutex.unlock();
+			return;
+		}
+		auto& path = m_importedAssets.at(pAsset->getID());
+		m_mutex.unlock();
+
+		if (!pAsset->importFromFile(path, pAsset->getAssetPath().parent_path())) {
+
+		}
+
+	}
+
 	Asset* AssetManager::importAsset(AssetTypeID type, const std::filesystem::path& path, const std::filesystem::path& assetDirectory) {
 		SA_DEBUG_LOG_INFO("Importing ", getAssetTypeName(type), " ", path);
 		AssetHeader header; // generates new UUID
@@ -358,16 +379,13 @@ namespace sa {
 		Asset* asset;
 		{
 			std::lock_guard<std::mutex> lock(m_mutex);
-			if (m_importedAssets.count(path)) {
-				return m_assets.at(m_importedAssets.at(path)).get();
-			}
-			m_importedAssets[path] = header.id;
+			
+			m_importedAssets[header.id] = path;
 			asset = m_assetAddConversions[type](header);
 		}
 
 		if (!asset->importFromFile(path, assetDirectory)) {
 			std::lock_guard<std::mutex> lock(m_mutex);
-			m_importedAssets.erase(path);
 			removeAsset(asset);
 			return nullptr;
 		}
@@ -400,11 +418,41 @@ namespace sa {
 
 
 	void AssetManager::removeAsset(Asset* asset) {
-		m_assets.erase(asset->getID());
+		removeAsset(asset->getID());
 	}
 
 	void AssetManager::removeAsset(UUID id) {
 		m_assets.erase(id);
+		m_importedAssets.erase(id);
+	}
+
+	bool AssetManager::eraseAsset(Asset* asset) {
+		if (!asset)
+			return false;
+		if (asset->getReferenceCount() > 0)
+			throw std::runtime_error("Can not erase asset "
+				+ asset->getName()
+				+ " ("
+				+ std::to_string(asset->getID()) 
+				+ "), as it is still being used - Ref Count: "
+				+ std::to_string(asset->getReferenceCount()));
+
+		const auto& path = asset->getAssetPath();
+		if(!path.empty() && std::filesystem::exists(path)) {
+			try {
+				std::filesystem::remove(path); // delete file
+			}
+			catch(const std::filesystem::filesystem_error& e) {
+				SA_DEBUG_LOG_ERROR("Failed to remove file: ", e.what(), " -> ", e.path1());
+				return false;
+			}
+		}
+		removeAsset(asset); // remove from memory
+		return true;
+	}
+
+	bool AssetManager::eraseAsset(UUID id) {
+		return eraseAsset(getAsset(id));
 	}
 
 	AssetManager::AssetManager() {

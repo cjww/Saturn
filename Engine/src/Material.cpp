@@ -148,34 +148,32 @@ namespace sa {
 		m_blending.clear();
 		m_allTextures.clear();
 
-		file.read((char*)&values, sizeof(values));
+		file.read(reinterpret_cast<char*>(&values), sizeof(values));
 		
 		//MaterialShader
-		UUID materialShaderID = 0;
-		file.read((char*)&materialShaderID, sizeof(UUID));
+		UUID materialShaderID = SA_DEFAULT_MATERIAL_SHADER_ID;
+		file.read(reinterpret_cast<char*>(&materialShaderID), sizeof(UUID));
 		m_materialShader = materialShaderID;
 
-		auto pProgress = m_materialShader.getProgress();
-		if(pProgress)
+		if(const auto pProgress = m_materialShader.getProgress())
 			addDependency(*pProgress);
 
 		uint32_t typeCount = 0;
-		file.read((char*)&typeCount, sizeof(typeCount));
+		file.read(reinterpret_cast<char*>(&typeCount), sizeof(typeCount));
 
 		for (uint32_t i = 0; i < typeCount; i++) {
 			sa::MaterialTextureType type;
-			file.read((char*)&type, sizeof(type));
+			file.read(reinterpret_cast<char*>(&type), sizeof(type));
 			uint32_t textureCount = 0;
-			file.read((char*)&textureCount, sizeof(textureCount));
+			file.read(reinterpret_cast<char*>(&textureCount), sizeof(textureCount));
 			m_textures[type].resize(textureCount);
 
 			for (uint32_t j = 0; j < textureCount; j++) {
 				UUID textureID;
-				file.read((char*)&textureID, sizeof(textureID));
+				file.read(reinterpret_cast<char*>(&textureID), sizeof(textureID));
 				
 				m_textures[type][j] = textureID;
-				auto pProgress = m_textures[type][j].getProgress();
-				if(pProgress)
+				if(const auto pProgress = m_textures[type][j].getProgress())
 					addDependency(*pProgress);
 			}
 
@@ -183,11 +181,11 @@ namespace sa {
 
 		for (uint32_t i = 0; i < typeCount; i++) {
 			sa::MaterialTextureType type;
-			file.read((char*)&type, sizeof(type));
+			file.read(reinterpret_cast<char*>(&type), sizeof(type));
 			uint32_t blendCount = 0;
-			file.read((char*)&blendCount, sizeof(blendCount));
+			file.read(reinterpret_cast<char*>(&blendCount), sizeof(blendCount));
 			m_blending[type].resize(blendCount);
-			file.read((char*)m_blending[type].data(), sizeof(std::pair<sa::TextureBlendOp, float>) * blendCount);
+			file.read(reinterpret_cast<char*>(m_blending[type].data()), sizeof(std::pair<sa::TextureBlendOp, float>) * blendCount);
 		}
 
 		return true;
@@ -195,32 +193,31 @@ namespace sa {
 
 	bool Material::onWrite(std::ofstream& file, AssetWriteFlags flags) {
 		// Values
-		file.write((char*)&values, sizeof(values));
+		file.write(reinterpret_cast<char*>(&values), sizeof(values));
 
 		//MaterialShader
-		UUID materialShaderID = m_materialShader.getID();
-
-		file.write((char*)&materialShaderID, sizeof(UUID));
+		UUID materialShaderID = m_materialShader ? m_materialShader.getID() : static_cast<UUID>(SA_DEFAULT_MATERIAL_SHADER_ID);
+		file.write(reinterpret_cast<char*>(&materialShaderID), sizeof(UUID));
 
 		//Textures
 		uint32_t typeCount = m_textures.size();
-		file.write((char*)&typeCount, sizeof(typeCount));
+		file.write(reinterpret_cast<char*>(&typeCount), sizeof(typeCount));
 
 		for (auto& [type, assets] : m_textures) {
-			file.write((char*)&type, sizeof(type));
+			file.write(reinterpret_cast<const char*>(&type), sizeof(type));
 			uint32_t textureCount = assets.size();
-			file.write((char*)&textureCount, sizeof(textureCount));
+			file.write(reinterpret_cast<char*>(&textureCount), sizeof(textureCount));
 			for (auto& textureID : assets) {
-				file.write((char*)&textureID, sizeof(UUID));
+				file.write(reinterpret_cast<const char*>(&textureID.getID()), sizeof(UUID));
 			}
 		}
 
 		for (auto& [type, blendings] : m_blending) {
-			file.write((char*)&type, sizeof(type));
+			file.write(reinterpret_cast<const char*>(&type), sizeof(type));
 			uint32_t blendingCount = blendings.size();
-			file.write((char*)&blendingCount, sizeof(blendingCount));
+			file.write(reinterpret_cast<const char*>(&blendingCount), sizeof(blendingCount));
 			if (blendingCount > 0)
-				file.write((char*)blendings.data(), sizeof(std::pair<sa::TextureBlendOp, float>));
+				file.write(reinterpret_cast<const char*>(blendings.data()), sizeof(std::pair<sa::TextureBlendOp, float>));
 		}
 
 		return true;

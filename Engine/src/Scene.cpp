@@ -130,13 +130,6 @@ namespace sa {
 		serialize(s);
 		std::string jsonStr = s.dump();
 
-		AssetHeader header = getHeader();
-		header.size = jsonStr.size();
-		// TODO this is not going to work in a asset package
-		file.seekp((size_t)file.tellp() - sizeof(AssetHeader));
-		setHeader(header);
-		writeHeader(header, file);
-
 		file << s.dump();
 
 		return true;

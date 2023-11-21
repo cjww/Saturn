@@ -970,9 +970,78 @@ namespace ImGui {
 
 	}
 
+	bool PasteItems(const std::set<std::filesystem::path>& items, const std::filesystem::path& target) {
+		bool wasChanged = false;
+		for (auto& file : items) {
+			try {
+				std::filesystem::copy(file, target);
+				wasChanged = true;
+			}
+			catch (const std::filesystem::filesystem_error& e) {
+				SA_DEBUG_LOG_ERROR(e.what(), ": ", e.path1(), " ", e.path2());
+			}
+		}
+		return wasChanged;
+	}
+
+	bool DeleteItems(std::set<std::filesystem::path>& items) {
+		bool wasChanged = false;
+		for (auto& path : items) {
+			try {
+				if (std::filesystem::is_directory(path)) {
+					std::filesystem::remove_all(path);
+				}
+				else {
+					std::filesystem::remove(path);
+				}
+				wasChanged = true;
+
+			}
+			catch (const std::filesystem::filesystem_error& e) {
+				SA_DEBUG_LOG_ERROR(e.what(), ": ", e.path1(), " ", e.path2());
+			}
+		}
+		items.clear();
+		return wasChanged;
+	}
+
+	bool MoveItem(const std::filesystem::path& item, const std::filesystem::path& targetDirectory) {
+		bool wasChanged = false;
+		try {
+			auto newPath = targetDirectory / item.filename();
+			std::filesystem::rename(item, newPath);
+			wasChanged = true;
+		}
+		catch (const std::filesystem::filesystem_error& e) {
+			SA_DEBUG_LOG_ERROR(e.what(), ": ", e.path1(), " ", e.path2());
+		}
+		return wasChanged;
+	}
+
+	bool MoveItems(const std::set<std::filesystem::path>& items, const std::filesystem::path& targetDirectory) {
+		bool wasChanged = false;
+		for(auto& file : items) {
+			if (MoveItem(file, targetDirectory))
+				wasChanged = true;
+		}
+		return wasChanged;
+	}
+
+	bool RenameItem(const std::filesystem::path& item, const std::filesystem::path& name) {
+		bool wasChanged = false;
+		try {
+			std::filesystem::rename(item, name);
+			wasChanged = true;
+		}
+		catch (const std::filesystem::filesystem_error& e) {
+			SA_DEBUG_LOG_ERROR(e.what(), ": ", e.path1(), " ", e.path2());
+		}
+		return wasChanged;
+	}
+
 	bool BeginDirectoryIcons(const char* str_id, std::filesystem::path& openDirectory, 
-		int& iconSize, bool& wasChanged, std::filesystem::path& editedFile, std::string& editingName, 
-		std::filesystem::path& lastSelected, std::set<std::filesystem::path>& selectedItems, std::function<void()> createMenu, const ImVec2& size)
+	                         int& iconSize, bool& wasChanged, std::filesystem::path& editedFile, std::string& editingName, 
+	                         std::filesystem::path& lastSelected, std::set<std::filesystem::path>& selectedItems, std::function<void()> createMenu, const ImVec2& size)
 	{
 		ImVec2 contentArea = size;
 		if (size.x == 0.f && size.y == 0.f) {
@@ -999,15 +1068,9 @@ namespace ImGui {
 				if (BeginDragDropTarget()) {
 					const ImGuiPayload* payload = AcceptDragDropPayload("Path");
 					if (payload && payload->IsDelivery()) {
-						auto path = (std::filesystem::path*)payload->Data;
-						auto newPath = openDirectory.parent_path() / path->filename();
-						try {
-							std::filesystem::rename(*path, newPath);
+						auto path = static_cast<std::filesystem::path*>(payload->Data);
+						if (MoveItem(*path, openDirectory.parent_path()))
 							wasChanged = true;
-						}
-						catch (std::exception e) {
-							SA_DEBUG_LOG_ERROR(e.what());
-						}
 					}
 					EndDragDropTarget();
 				}
@@ -1044,17 +1107,10 @@ namespace ImGui {
 					editingName = lastSelected.filename().generic_string();
 				}
 
-				if (MenuItem("Paste", "Ctrl + V")) {
-					if (!copiedFiles.empty()) {
-						for (auto& file : copiedFiles) {
-							try {
-								std::filesystem::copy(file, openDirectory);
-								wasChanged = true;
-							}
-							catch (std::exception e) {
-								SA_DEBUG_LOG_ERROR(e.what());
-							}
-						}
+				if (!copiedFiles.empty()) {
+					if (MenuItem("Paste", "Ctrl + V")) {
+						if (PasteItems(copiedFiles, openDirectory))
+							wasChanged = true;
 					}
 				}
 				if (!selectedItems.empty()) {
@@ -1064,16 +1120,8 @@ namespace ImGui {
 					}
 
 					if (MenuItem("Delete", "Del")) {
-						for (auto& file : selectedItems) {
-							try {
-								std::filesystem::remove(file);
-								wasChanged = true;
-							}
-							catch (std::exception e) {
-								SA_DEBUG_LOG_ERROR(e.what());
-							}
-						}
-						selectedItems.clear();
+						if (DeleteItems(selectedItems))
+							wasChanged = true;
 						lastSelected.clear();
 					}
 				}
@@ -1101,22 +1149,8 @@ namespace ImGui {
 			}
 
 			if (IsKeyPressed(ImGuiKey_Delete)) {
-				for (auto& path : selectedItems) {
-					try {
-						if(std::filesystem::is_directory(path)) {
-							std::filesystem::remove_all(path);
-						}
-						else {
-							std::filesystem::remove(path);
-						}
-						wasChanged = true;
-
-					}
-					catch (std::exception e) {
-						SA_DEBUG_LOG_ERROR(e.what());
-					}
-				}
-				selectedItems.clear();
+				if (DeleteItems(selectedItems))
+					wasChanged = true;
 				lastSelected.clear();
 			}
 
@@ -1127,15 +1161,8 @@ namespace ImGui {
 
 			if (IsKeyPressed(ImGuiKey_V) && IsKeyDown(ImGuiKey_LeftCtrl)) {
 				if (!copiedFiles.empty()) {
-					for (auto& file : copiedFiles) {
-						try {
-							std::filesystem::copy(file, openDirectory);
-							wasChanged = true;
-						}
-						catch (std::exception e) {
-							SA_DEBUG_LOG_ERROR(e.what());
-						}
-					}
+					if (PasteItems(copiedFiles, openDirectory))
+						wasChanged = true;
 				}
 			}
 		}
@@ -1193,16 +1220,10 @@ namespace ImGui {
 			if (BeginDragDropTarget()) {
 				const ImGuiPayload* payload = AcceptDragDropPayload("Path");
 				if (payload && payload->IsDelivery()) {
-					auto path = (std::filesystem::path*)payload->Data;
+					auto path = static_cast<std::filesystem::path*>(payload->Data);
 					const auto& thisPath = entry.path();
-					auto newPath = thisPath / path->filename();
-					try {
-						std::filesystem::rename(*path, newPath);
+					if (MoveItem(*path, thisPath))
 						wasChanged = true;
-					}
-					catch (std::exception e) {
-						SA_DEBUG_LOG_ERROR(e.what());
-					}
 				}
 				EndDragDropTarget();
 			}
@@ -1223,10 +1244,9 @@ namespace ImGui {
 			PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
 			if (InputText("##edit_name", &editingName, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
 				//rename
-				std::string newName = (editedFile.parent_path() / editingName).replace_extension(editedFile.extension()).generic_string();
-
-				std::rename(editedFile.generic_string().c_str(), newName.c_str());
-				wasChanged = true;
+				std::filesystem::path newName = (editedFile.parent_path() / editingName).replace_extension(editedFile.extension());
+				if (RenameItem(editedFile, newName))
+					wasChanged = true;
 				editedFile.clear();
 			}
 			if (IsMouseClicked(ImGuiMouseButton_Left) && !IsItemHovered()) {

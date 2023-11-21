@@ -55,6 +55,7 @@ namespace sa {
 
 		std::filesystem::path m_assetPath;
 
+
 		ProgressView<bool> m_progress;
 		std::mutex m_mutex;
 	protected:

@@ -66,6 +66,12 @@ void DirectoryView::onImGui() {
 			if (ImGui::Button("Revert")) {
 				pAsset->load();
 			}
+			if(sa::AssetManager::get().wasImported(pAsset)) {
+				ImGui::SameLine();
+				if (ImGui::Button("Reimport")) {
+					sa::AssetManager::get().reimportAsset(pAsset);
+				}
+			}
 		}
 		ImGui::End();
 		if (!isOpen) {
@@ -250,12 +256,13 @@ void DirectoryView::onImGui() {
 		}
 
 		if (ImGui::BeginChildFrame(ImGui::GetCurrentWindow()->GetID("asset_table"), ImGui::GetContentRegionAvail())) {
-			if (ImGui::BeginTable("Asset Table", 5, ImGuiTableFlags_SizingFixedFit)) {
+			if (ImGui::BeginTable("Asset Table", 6, ImGuiTableFlags_SizingFixedFit)) {
 				ImGui::TableSetupColumn("Name");
 				ImGui::TableSetupColumn("Type");
 				ImGui::TableSetupColumn("Is Loaded");
 				ImGui::TableSetupColumn("Asset Path");
 				ImGui::TableSetupColumn("References");
+				ImGui::TableSetupColumn("Size on disk");
 
 				ImGui::TableHeadersRow();
 
@@ -287,7 +294,11 @@ void DirectoryView::onImGui() {
 					}
 
 					ImGui::TableNextColumn();
-					ImGui::Text("%d", asset->getReferenceCount());
+					ImGui::Text("%u", asset->getReferenceCount());
+
+					ImGui::TableNextColumn();
+					ImGui::Text("%llu bytes", asset->getHeader().size);
+
 
 				}
 				ImGui::EndTable();

@@ -85,7 +85,7 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
             float distance = length(light.position.xyz - in_vertexWorldPos);
             
             // Real world attenuation = 1.0 / (distance * distance)
-            float fallOff = 0.5;
+            float fallOff = 1.0;
             float attenuation = max(1.0 - distance / lightRadius, 0.0) / fallOff;
             /*
             // (clamp10(1-(d/lightRadius)^4)^2)/d*d+1

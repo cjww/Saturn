@@ -175,9 +175,21 @@ namespace sa {
 					file.close();
 					return false;
 				}
-				writeHeader(m_header, file);
 
-				bool success = onWrite(file, flags);
+				const auto headerPos = file.tellp();
+				writeHeader(m_header, file);
+				
+				const auto contentPos = file.tellp();
+				const bool success = onWrite(file, flags);
+
+				// Calculate size and overwrite header
+				const auto pos = file.tellp();
+				m_header.size = pos - contentPos;
+				file.seekp(headerPos);
+				writeHeader(m_header, file);
+				file.seekp(pos);
+				
+
 				file.close();
 				SA_DEBUG_LOG_INFO("Finished Writing ", m_name, " to ", path);
 				return success;

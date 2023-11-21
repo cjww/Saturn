@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <mutex>
 
 #include <glm/vec4.hpp>
 #include <glm/vec2.hpp>
@@ -20,11 +21,16 @@
 
 #define SA_ASSET_DIR "Assets/"
 
-#define SA_DEFAULT_MATERIAL_NAME "default_material"
 #define SA_DEFAULT_MATERIAL_SHADER_NAME "default_material_shader"
-#define SA_DEFAULT_CUBE_NAME "default_cube"
-#define SA_DEFAULT_QUAD_NAME "default_quad"
-#define SA_DEFAULT_ASSET_DIR "Assets/default"
+#define SA_DEFAULT_MATERIAL_SHADER_ID 1ull
+
+#define SA_DEFAULT_MATERIAL_NAME "default_material"
+#define SA_DEFAULT_MATERIAL_ID 2ull
+
+#define SA_BUILTIN_CUBE_NAME "builtin_cube"
+#define SA_BUILTIN_QUAD_NAME "builtin_quad"
+
+#define SA_BUILTIN_ASSET_DIR "Assets/builtin"
 
 
 
@@ -52,11 +58,12 @@ namespace sa {
 	// Singelton class
 	class AssetManager {
 	private:	
-		std::mutex m_mutex;
+		mutable std::mutex m_mutex;
 
 		std::unordered_map<ResourceID, Texture2D*> m_textures;
 
-		std::unordered_map<std::filesystem::path, UUID> m_importedAssets;
+		std::unordered_map<UUID, std::filesystem::path> m_importedAssets;
+
 		std::unordered_map<UUID, std::unique_ptr<Asset>> m_assets;
 		std::list<AssetPackage> m_assetPackages;
 
@@ -74,6 +81,10 @@ namespace sa {
 		void loadAssetPackage(AssetPackage& package);
 
 		AssetPackage& newAssetPackage(const std::filesystem::path& path);
+
+		template<typename T>
+		T* createAsset(const std::string& name, UUID id);
+
 
 	public:
 		~AssetManager();
@@ -129,6 +140,10 @@ namespace sa {
 		template<typename T>
 		T* importAsset(const std::filesystem::path& path, const std::filesystem::path& assetDirectory = SA_ASSET_DIR);
 
+		bool wasImported(Asset* pAsset) const;
+		void reimportAsset(Asset* pAsset);
+
+
 		template<typename T>
 		T* createAsset(const std::string& name, const std::filesystem::path& assetDirectory = SA_ASSET_DIR);
 
@@ -139,7 +154,28 @@ namespace sa {
 		void removeAsset(Asset* asset);
 		void removeAsset(UUID id);
 
+		bool eraseAsset(Asset* asset);
+		bool eraseAsset(UUID id);
+
+
 	};
+
+	template <typename T>
+	T* AssetManager::createAsset(const std::string& name, UUID id) {
+		AssetHeader header; // generates new UUID
+		header.id = id;
+		header.type = getAssetTypeID<T>();
+		assert(header.type != -1 && "Can not use unregistered type!");
+		SA_DEBUG_LOG_INFO("Creating ", getAssetTypeName(header.type), " ", name, " with id ", std::to_string(id));
+
+		auto [it, success] = m_assets.insert({ header.id, std::make_unique<T>(header) });
+
+		Asset* asset = it->second.get();
+
+		asset->create(name, "");
+		SA_DEBUG_LOG_INFO("Finished Creating ", getAssetTypeName(header.type), " ", name);
+		return static_cast<T*>(asset);
+	}
 
 	template<typename T>
 	inline AssetTypeID AssetManager::registerAssetType() {
@@ -173,14 +209,15 @@ namespace sa {
 
 	template<typename T>
 	inline bool AssetManager::isType(Asset* pAsset) const {
-		return pAsset->getHeader().type == getAssetTypeID<T>();
+		return pAsset && pAsset->getHeader().type == getAssetTypeID<T>();
 	}
 
 	template<typename T>
 	inline T* AssetManager::getAsset(UUID id) const {
-		if (!m_assets.count(id)) 
+		sa::Asset* pAsset = getAsset(id);
+		if (!isType<T>(pAsset))
 			return nullptr;
-		return dynamic_cast<T*>(m_assets.at(id).get());
+		return static_cast<T*>(pAsset);
 	}
 
 	template<typename T>
@@ -195,32 +232,9 @@ namespace sa {
 
 	template<typename T>
 	inline T* AssetManager::importAsset(const std::filesystem::path& path, const std::filesystem::path& assetDirectory) {
-		SA_DEBUG_LOG_INFO("Importing Asset", path);
-		AssetHeader header; // generates new UUID
-		header.type = getAssetTypeID<T>();
-		assert(header.type != -1 && "Can not use unregistered type!");
-		Asset* asset;
-		{
-			std::lock_guard<std::mutex> lock(m_mutex);
-			if (m_importedAssets.count(path)) {
-				return dynamic_cast<T*>(m_assets.at(m_importedAssets.at(path)).get());
-			}
-			m_importedAssets[path] = header.id;
-			auto [it, success] = m_assets.insert({ header.id, std::make_unique<T>(header) });
-			asset = it->second.get();
-		}
-		
-		if (!asset->importFromFile(path, assetDirectory)) {
-			std::lock_guard<std::mutex> lock(m_mutex);
-			m_importedAssets.erase(path);
-			removeAsset(asset);
-			return nullptr;
-		}
-		SA_DEBUG_LOG_INFO("Finished Importing Asset", path);
-
-		asset->write();
-
-		return static_cast<T*>(asset);
+		if (Asset* pAsset = importAsset(getAssetTypeID<T>(), path, assetDirectory))
+			return static_cast<T*>(pAsset);
+		return nullptr;
 	}
 	
 	template<typename T>
@@ -236,8 +250,6 @@ namespace sa {
 
 		asset->create(name, assetDirectory);
 		SA_DEBUG_LOG_INFO("Finished Creating ", getAssetTypeName(header.type), " ", name);
-		asset->write();
-
 		return static_cast<T*>(asset);
 	}
 
