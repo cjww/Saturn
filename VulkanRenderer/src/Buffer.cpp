@@ -1,28 +1,22 @@
 #include "pch.h"
 #include "Resources/Buffer.hpp"
 
-#include "VulkanCore.hpp"
+#include "internal/VulkanCore.hpp"
 
 namespace sa {
 	
 	std::string to_string(const BufferType& value) {
-		switch (value)
-		{
-		case sa::BufferType::VERTEX:
-			return "VERTEX";
-		case sa::BufferType::INDEX:
-			return "INDEX";
-		case sa::BufferType::UNIFORM:
-			return "UNIFORM";
-		case sa::BufferType::STORAGE:
-			return "STORAGE";
-		case sa::BufferType::UNIFORM_TEXEL:
-			return "UNIFORM_TEXEL";
-		case sa::BufferType::STORAGE_TEXEL:
-			return "STORAGE_TEXEL";
-		default:
-			return "-";
-		}
+		const static std::unordered_map<BufferType, std::string> map = {
+			{ sa::BufferType::VERTEX, "Vertex" },
+			{ sa::BufferType::INDEX, "Index" },
+			{ sa::BufferType::UNIFORM, "Uniform" },
+			{ sa::BufferType::STORAGE, "Storage" },
+			{ sa::BufferType::UNIFORM_TEXEL, "Uniform Texel" },
+			{ sa::BufferType::STORAGE_TEXEL, "Storage Texel" },
+			{ sa::BufferType::INDIRECT, "Indirect" },
+		};
+
+		return map.at(value);
 	}
 
 	Buffer::Buffer()
@@ -170,11 +164,11 @@ namespace sa {
 			SA_DEBUG_LOG_ERROR("Buffer not initialized! Wrote 0 bytes");
 			return;
 		}
-		if (getCapacity() < size) {
-			resize(size);
+		if (getCapacity() < size + offset) {
+			resize(size + offset);
 		}
 		memcpy((char*)m_pBuffer->mappedData + offset, data, size);
-		m_size = size;
+		m_size = std::max(m_size, offset + size);
 	}
 
 	void Buffer::append(void* data, size_t size, int alignment) {
@@ -182,6 +176,7 @@ namespace sa {
 			SA_DEBUG_LOG_ERROR("Buffer not initialized! Wrote 0 bytes");
 			return;
 		}
+		/*
 		if (alignment != 0) {
 			alignment = alignment - (getSize() % alignment);
 		}
@@ -191,6 +186,13 @@ namespace sa {
 		}
 		memcpy((char*)m_pBuffer->mappedData + getSize() + alignment, data, size);
 		m_size += size + alignment;
+		*/
+		int offset = 0;
+		if (alignment != 0) {
+			offset = alignment - (getSize() % alignment);
+		}
+		m_size += offset;
+		write(data, size, m_size);
 	}
 
 	void Buffer::clear() {
@@ -199,6 +201,10 @@ namespace sa {
 
 	void* Buffer::data() const {
 		return m_pBuffer->mappedData;
+	}
+
+	void* Buffer::data(uint32_t offset) const {
+		return (char*)m_pBuffer->mappedData + offset;
 	}
 
 	bool Buffer::isValid() const {

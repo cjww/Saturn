@@ -1,7 +1,7 @@
 #include "pch.h"
-#include "CommandPool.hpp"
+#include "internal/CommandPool.hpp"
 
-#include "debugFunctions.hpp"
+#include "internal/debugFunctions.hpp"
 
 namespace sa {
 	

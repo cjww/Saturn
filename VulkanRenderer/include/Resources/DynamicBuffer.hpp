@@ -20,7 +20,10 @@ namespace sa {
 
 		//bool setFormat(FormatPrecisionFlags precision, FormatDimensionFlags dimensions, FormatTypeFlags type);
 
-		const sa::Buffer& getBuffer(uint32_t index = -1) const;
+		const sa::Buffer& getBuffer() const;
+		sa::Buffer& getBuffer(uint32_t index);
+
+		
 		uint32_t getBufferIndex() const;
 		uint32_t getPreviousBufferIndex() const;
 		uint32_t getNextBufferIndex() const;
@@ -56,6 +59,7 @@ namespace sa {
 		void reserve(size_t capacity, BufferResizeFlags resizeFlags = PRESERVE_CONTENT);
 
 		void* data();
+		void* data(uint32_t offset);
 
 		void clear();
 
@@ -77,7 +81,8 @@ namespace sa {
 		Buffer& operator<<(std::array<T, Size>& values);
 
 		operator const Buffer& ();
-		
+		operator Buffer& ();
+
 		template<typename T>
 		T& at(uint32_t index) const;
 

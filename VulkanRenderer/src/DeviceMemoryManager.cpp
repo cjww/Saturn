@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "Resources/DeviceMemoryManager.hpp"
+#include "internal/DeviceMemoryManager.hpp"
 
 #define VMA_IMPLEMENTATION
 #include "vk_mem_alloc.h"

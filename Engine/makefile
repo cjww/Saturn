@@ -1,4 +1,6 @@
 
+SHELL = bash
+
 SHADER_DIR = ./shaders
 VERT_SHADERS := $(wildcard $(SHADER_DIR)/*.vert)
 FRAG_SHADERS := $(wildcard $(SHADER_DIR)/*.frag)

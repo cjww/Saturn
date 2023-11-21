@@ -147,8 +147,8 @@ vec4 upsample(ivec2 coordinate, float sampleScale) {
 
 vec3 filterThreshold(vec3 color, float threshold) {
 	float brightness = max(color.r, max(color.g, color.b));
-    float contribution = max(0, brightness - threshold);
-	contribution /= max(brightness, 0.00001);
+    float contribution = max(brightness - threshold, 0.0);
+	contribution /= max(brightness, 0.0001);
     return color * contribution;
 }
 

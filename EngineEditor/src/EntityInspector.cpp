@@ -76,17 +76,20 @@ void EntityInspector::makePopups() {
 
 }
 
+void EntityInspector::onEntitySelected(const sa::editor_event::EntitySelected& e) {
+	m_selectedEntity = e.entity;
+}
+
+void EntityInspector::onEntityDeselected(const sa::editor_event::EntityDeselected& e) {
+	m_selectedEntity = {};
+}
+
 EntityInspector::EntityInspector(sa::Engine* pEngine, sa::EngineEditor* pEditor) 
 	: EditorModule(pEngine, pEditor, "Inspector", false) {
 	m_selectedEntity = {};
 
-	pEngine->on<sa::editor_event::EntitySelected>([&](const sa::editor_event::EntitySelected& e, sa::Engine&) {
-		m_selectedEntity = e.entity;
-	});
-
-	pEngine->on<sa::editor_event::EntityDeselected>([&](const sa::editor_event::EntityDeselected&, sa::Engine&) {
-		m_selectedEntity = {};
-	});
+	pEngine->sink<sa::editor_event::EntitySelected>().connect<&EntityInspector::onEntitySelected>(this);
+	pEngine->sink<sa::editor_event::EntityDeselected>().connect<&EntityInspector::onEntityDeselected>(this);
 }
 
 EntityInspector::~EntityInspector() {
@@ -95,8 +98,8 @@ EntityInspector::~EntityInspector() {
 
 void EntityInspector::onImGui() {
 	SA_PROFILE_FUNCTION();
-
-	if (ImGui::Begin(m_name)) {
+	
+	if (ImGui::Begin(m_name) && m_pEngine->getCurrentScene()) {
 
 		if (m_selectedEntity) {
 			
@@ -124,22 +127,22 @@ void EntityInspector::onImGui() {
 
 
 			// Display entity scripts
-			for (auto& script : m_pEngine->getCurrentScene()->getAssignedScripts(m_selectedEntity)) {
+			auto scripts = m_pEngine->getCurrentScene()->getAssignedScripts(m_selectedEntity);
+			for (auto& pScript : scripts) {
 				ImGui::SetNextItemOpen(true, ImGuiCond_FirstUseEver);
 				static bool visable = true;
 
-				if (ImGui::CollapsingHeader(script.name.c_str(), &visable)) {
-					ImGui::displayLuaTable("Environment##" + script.name, script.env);
+				if(ImGui::Script(pScript, &visable)) {
+					m_pEngine->getCurrentScene()->reloadScript(pScript);
 				}
+
 				if (!visable) {
 					ImGui::OpenPopup("Remove script?");
-					ImGui::payload.name = script.name;
+					ImGui::payload.name = pScript->name;
 					visable = true;
 				}
 			}
 
-
-			
 			ImGui::Separator();
 			ImGui::Spacing();
 			ImGui::SetCursorPosX(ImGui::GetWindowContentRegionWidth() / 3);

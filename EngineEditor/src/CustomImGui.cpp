@@ -3,12 +3,21 @@
 #include "Tools\Math.h"
 #include "Assets/ModelAsset.h"
 #include "Assets/TextureAsset.h"
+#include "Graphics/Material.h"
+#include "Assets/MaterialShader.h"
+
+#include "Tools\FileDialogs.h"
 
 #define IMGUI_DEFINE_MATH_OPERATORS
 #include "imgui_internal.h"
 #include "imgui_stdlib.h"
 
 #include "EngineEditor.h"
+
+
+#include <PhysicsSystem.h>
+
+#include "Lua/Ref.h"
 
 namespace ImGui {
 
@@ -102,117 +111,138 @@ namespace ImGui {
 		style.Colors[ImGuiCol_ModalWindowDimBg] = ImVec4(0.0f, 0.0f, 0.0f, 0.5860000252723694f);
 	}
 
-	void displayLuaTable(std::string name, sol::table table) {
+	sol::lua_value DisplayLuaValue(const std::string& keyAsStr, const sol::object& value) {
+		switch (value.get_type()) {
+		case sol::type::userdata:
+			return DisplayLuaUserdata(keyAsStr, value.as<sol::userdata>());
+
+		case sol::type::table:
+			DisplayLuaTable(keyAsStr, value.as<sol::table>());
+			break;
+
+		case sol::type::function:
+			ImGui::Text(keyAsStr.c_str());
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip("function");
+			}
+			break;
+		case sol::type::string: {
+			std::string v = value.as<std::string>();
+			if (ImGui::InputText(keyAsStr.c_str(), &v, ImGuiInputTextFlags_EnterReturnsTrue))
+				return v;
+			
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip("string");
+			}
+			break;
+		}
+		case sol::type::number: {
+			float v = value.as<float>();
+			if(ImGui::InputFloat(keyAsStr.c_str(), &v))
+				return v;
+			
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip("number");
+			}
+			break;
+		}
+		case sol::type::boolean: {
+			bool v = value.as<bool>();
+			if(ImGui::Checkbox(keyAsStr.c_str(), &v))
+				return v;
+
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip("boolean");
+			}
+			break;
+		}
+		default:
+			ImGui::Text("%s = nil", keyAsStr.c_str());
+			break;
+		}
+		return sol::nil;
+	}
+
+	sol::lua_value DisplayLuaUserdata(const std::string& keyAsStr, const sol::userdata& value) {
+		if (value.is<sa::Vector2>()) {
+			sa::Vector2& vec2 = value.as<sa::Vector2>();
+			ImGui::DragFloat2(keyAsStr.c_str(), (float*)&vec2, 0.5f);
+
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip("Vec2");
+			}
+		}
+		else if (value.is<sa::Vector3>()) {
+			sa::Vector3& vec3 = value.as<sa::Vector3>();
+			ImGui::DragFloat3(keyAsStr.c_str(), (float*)&vec3, 0.5f);
+
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip("Vec3");
+			}
+		}
+		else if (value.is<sa::Vector4>()) {
+			sa::Vector4& vec4 = value.as<sa::Vector4>();
+			ImGui::ColorEdit4(keyAsStr.c_str(), (float*)&vec4, ImGuiColorEditFlags_Float);
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip("Vec4");
+			}
+		}
+		else if (value.is<sa::Ref>()) {
+			sa::Ref& ref = value.as<sa::Ref>();
+			const std::string& typeStr = ref.getType();
+			sol::lua_value refValue = ref.getValue();
+
+			sa::Entity entity;
+			if (refValue.is<sa::Entity>()) {
+				entity = refValue.as<sa::Entity>();
+			}
+
+			sol::lua_value type = sa::LuaAccessable::getState()[typeStr];
+			if (!type.is<sol::nil_t>()) { // is userdata
+				sa::ComponentType componentType = sa::getComponentType(typeStr);
+				if (componentType.isValid()) { // is component
+					if (ComponentSlot(keyAsStr.c_str(), entity, componentType)) {
+						return sa::Ref(type.as<sol::table>(), entity);
+					}
+				}
+				else if (typeStr == "Entity") {
+					if (EntitySlot(keyAsStr.c_str(), entity)) {
+						return sa::Ref(type.as<sol::table>(), entity);
+					}
+				}
+			}
+			else {
+				if (ScriptSlot(keyAsStr.c_str(), entity, typeStr)) {
+					return sa::Ref(typeStr, entity);
+				}
+			}
+		}
+		else {
+			std::string valueAsStr = sa::LuaAccessable::getState()["tostring"](value);
+			ImGui::Text("%s = %s", keyAsStr.c_str(), valueAsStr.c_str());
+			if (ImGui::IsItemHovered()) {
+				ImGui::SetTooltip("userdata");
+			}
+		}
+		return sol::nil;
+	}
+
+	void DisplayLuaTable(const std::string& name, sol::table table) {
 		bool open = ImGui::TreeNode(name.c_str());
 		if (ImGui::IsItemHovered()) {
 			ImGui::SetTooltip("table");
 		}
 		if (open) {	
 			for (auto& [key, value] : table) {
-				switch (value.get_type()) {
-					case sol::type::userdata:
-					{
-						if (value.is<sa::Vector2>()) {
-							sa::Vector2& vec2 = value.as<sa::Vector2>();
-							if (ImGui::DragFloat2(key.as<std::string>().c_str(), (float*)&vec2, 0.5f)) {
-								table[key] = vec2;
-							}
-							if (ImGui::IsItemHovered()) {
-								ImGui::SetTooltip("Vec2");
-							}
-						}
-						else if (value.is<sa::Vector3>()) {
-							sa::Vector3& vec3 = value.as<sa::Vector3>();
-							if (ImGui::DragFloat3(key.as<std::string>().c_str(), (float*)&vec3, 0.5f)) {
-								table[key] = vec3;
-							}
-							if (ImGui::IsItemHovered()) {
-								ImGui::SetTooltip("Vec3");
-							}
-						}
-						else if (value.is<sa::Vector4>()) {
-							sa::Vector4& vec4 = value.as<sa::Vector4>();
-							if (ImGui::DragFloat4(key.as<std::string>().c_str(), (float*)&vec4, 0.5f)) {
-								table[key] = vec4;
-							}
-							ImGui::SameLine();
-							
-							ImVec4 col = { vec4.x, vec4.y, vec4.z, vec4.w };
-							if (ImGui::ColorButton("as_color", col)) {
-								ImGui::OpenPopup("##ColorPicker");
-							}
-							
-							if (ImGui::BeginPopup("##ColorPicker")) {
-								ImGui::ColorPicker3("##Vec4AsColor", (float*)&vec4);
-								ImGui::EndPopup();
-							}
-							
-							if (ImGui::IsItemHovered()) {
-								ImGui::SetTooltip("Vec4");
-							}
-						}
-						else {
-							std::string valueAsStr = sa::LuaAccessable::getState()["tostring"](value);
-							std::string str = key.as<std::string>() + " = " + valueAsStr;
-							ImGui::Text(str.c_str());
-							if(ImGui::IsItemHovered()) {
-								ImGui::SetTooltip("userdata");
-							}
-						}
-						break;
-					}
-					case sol::type::table: 
-					{
-						std::string keyString;
-						if (!key.is<int>()) {
-							keyString = key.as<std::string>();
-						}
-						else {
-							keyString = std::to_string(key.as<int>());
-						}
-						displayLuaTable(keyString, value.as<sol::table>());
+				std::string keyAsStr = sa::LuaAccessable::getState()["tostring"](key);
 
-						break;
-					}
-					case sol::type::function:
-						ImGui::Text(key.as<std::string>().c_str());
-						if (ImGui::IsItemHovered()) {
-							ImGui::SetTooltip("function");
-						}
-						break;
-					case sol::type::string: {
-						std::string v = value.as<std::string>();
-						if (ImGui::InputText(key.as<std::string>().c_str(), &v, ImGuiInputTextFlags_EnterReturnsTrue)) {
-							table[key] = v;
-						}
-						if (ImGui::IsItemHovered()) {
-							ImGui::SetTooltip("string");
-						}
-						break;
-					}
-					case sol::type::number: {
-						float v = value.as<float>();
-						ImGui::InputFloat(key.as<std::string>().c_str(), &v);
-						table[key] = v;
-						if (ImGui::IsItemHovered()) {
-							ImGui::SetTooltip("number");
-						}
-						break;
-					}
-					case sol::type::boolean: {
-						bool v = value.as<bool>();
-						ImGui::Checkbox(key.as<std::string>().c_str(), &v);
-						table[key] = v;
-						if (ImGui::IsItemHovered()) {
-							ImGui::SetTooltip("boolean");
-						}
-						break;
-					}
-					default:
-						ImGui::Text("nil");
-						break;
-				}
+				ImGui::PushID(keyAsStr.c_str());
 
+				sol::lua_value changedValue = DisplayLuaValue(keyAsStr, value);
+				if (!changedValue.is<sol::nil_t>())
+					table[key] = changedValue;
+
+				ImGui::PopID();
 			}
 
 			ImGui::TreePop();
@@ -237,14 +267,12 @@ namespace ImGui {
 
 	void Component(sa::Entity entity, comp::Model* model) {
 		
-		sa::IAsset* pAsset = sa::AssetManager::get().getAsset(model->modelID);
-		if (AssetSlot(("Model##" + entity.getComponent<comp::Name>()->name).c_str(), pAsset, sa::AssetManager::get().getAssetTypeID<sa::ModelAsset>())) {	
-			if (pAsset)
-				model->modelID = pAsset->getID();
-			else
-				model->modelID = 0;
+		sa::UUID id = model->model.getID();
+		if (AssetSlot(("Model##" + entity.getComponent<comp::Name>()->name).c_str(), id, sa::AssetManager::get().getAssetTypeID<sa::ModelAsset>())) {	
+			model->model = id;
 		}
 
+		sa::Asset* pAsset = sa::AssetManager::get().getAsset(id);
 		if (pAsset && !pAsset->getProgress().isAllDone()) {
 			ProgressBar(pAsset->getProgress().getAllCompletion());
 		}
@@ -255,7 +283,7 @@ namespace ImGui {
 		if (!script->env.valid())
 			return;
 
-		displayLuaTable("Environment", script->env);
+		DisplayLuaTable("Environment", script->env);
 
 	}
 
@@ -265,30 +293,49 @@ namespace ImGui {
 
 		ImGui::SliderFloat("Intensity", &light->values.color.a, 0.0f, 10.f);
 
-		static std::string preview = "Point";
-		if (ImGui::BeginCombo("Type", preview.c_str())) {
-			if (ImGui::Selectable("Point", light->values.type == sa::LightType::POINT)) {
-				light->values.type = sa::LightType::POINT;
-				preview = "Point";
+		const char* preview = sa::to_string(light->values.type);
+		if (ImGui::BeginCombo("Type", preview)) {
+			for(uint32_t i = 0; i < static_cast<uint32_t>(sa::LightType::MAX_COUNT); i++) {
+				sa::LightType type = static_cast<sa::LightType>(i);
+				if(Selectable(sa::to_string(type), light->values.type == type)) {
+					light->values.type = type;
+				}
 			}
-			if (ImGui::Selectable("Directional", light->values.type == sa::LightType::DIRECTIONAL)) {
-				light->values.type = sa::LightType::DIRECTIONAL;
-				preview = "Directional";
-			}
-
 			ImGui::EndCombo();
 		}
+
 		if (light->values.type == sa::LightType::POINT) {
 			ImGui::SliderFloat("Attenuation radius", &light->values.position.w, 0.0, 200.f);
+		}
+		else if (light->values.type == sa::LightType::SPOT) {
+			ImGui::SliderFloat("Attenuation range", &light->values.position.w, 0.0, 200.f);
+			float cutoff = glm::degrees(light->values.direction.w);
+			ImGui::SliderFloat("Cutoff Angle", &cutoff, 0.0, 360.0);
+			light->values.direction.w = glm::radians(cutoff);
 		}
 
 	}
 
 	void Component(sa::Entity entity, comp::RigidBody* rb) {
-		if (ImGui::Checkbox("Static", &rb->isStatic)) {
-			entity.update<comp::RigidBody>();
+		bool isStatic = rb->isStatic();
+		if (ImGui::Checkbox("Static", &isStatic)) {
+			rb->setStatic(isStatic);
 		}
-
+		bool isKinematic = rb->isKinematic();
+		if (ImGui::Checkbox("Is Kinematic", &isKinematic)) {
+			rb->setKinematic(isKinematic);
+		}
+		
+		ImGui::BeginDisabled(isKinematic);
+		float mass = rb->getMass();
+		if (ImGui::InputFloat("Mass", &mass, 0.0f, 0.0f, "%.3f kg")) {
+			rb->setMass(mass);
+		}
+		bool gravity = rb->isGravityEnabled();
+		if (ImGui::Checkbox("Use Gravity", &gravity)) {
+			rb->setGravityEnabled(gravity);
+		}
+		ImGui::EndDisabled();
 
 	}
 
@@ -370,10 +417,10 @@ namespace ImGui {
 			camera->camera.setFar(far);
 		}
 
-		sa::IAsset* renderTarget = camera->getRenderTarget();
-		if (AssetSlot("RenderTarget", renderTarget, sa::AssetManager::get().getAssetTypeID<sa::RenderTarget>())) {
-			if (renderTarget)
-				camera->setRenderTarget(static_cast<sa::RenderTarget*>(renderTarget));
+		
+		sa::UUID id = camera->getRenderTarget().getID();
+		if (AssetSlot("RenderTarget", id, sa::AssetManager::get().getAssetTypeID<sa::RenderTarget>())) {
+			camera->setRenderTarget(sa::AssetManager::get().getAsset<sa::RenderTarget>(id));
 		}
 
 	}
@@ -412,55 +459,88 @@ namespace ImGui {
 		return doubleClicked;
 	}
 
+	bool Script(sa::EntityScript* pScript, bool* visable) {
+		if (CollapsingHeader(pScript->name.c_str(), visable)) {
+			for (auto& [key, value] : pScript->serializedData) {
+				auto changedValue = ImGui::DisplayLuaValue(key, pScript->env[key]);
+				if (!changedValue.is<sol::nil_t>()) {
+					pScript->env[key] = changedValue;
+				}
+
+				auto pos = ImVec2(GetItemRectMax().x, GetItemRectMin().y);
+				if(CloseButton(ImGui::GetID((key + "##reset_button").c_str()), pos)) {
+					pScript->env[key] = sol::nil;
+					pScript->serializedData.erase(key);
+					return true;
+				}
+			}
+		}
+		return false;
+	}
+
 	AssetEditorInfo GetAssetInfo(sa::AssetTypeID type) {
 		sa::AssetManager& am = sa::AssetManager::get();
-		if (type == am.getAssetTypeID<sa::Material>()) {
-			static AssetEditorInfo info{
-				.inCreateMenu = true,
-				.icon = LoadEditorIcon("resources/sphere-white.png"),
-				.imGuiPropertiesFn = MaterialProperties,
-			};
-			return info;
-		}
-		else if (type == am.getAssetTypeID<sa::ModelAsset>()) {
-			static AssetEditorInfo info{
-				.inCreateMenu = false,
-				.icon = LoadEditorIcon("resources/mesh_cube.png"),
-				.imGuiPropertiesFn = ModelProperties,
-			};
-			return info;
-		}
-		else if (type == am.getAssetTypeID<sa::TextureAsset>()) {
-			static AssetEditorInfo info{
-				.inCreateMenu = false,
-				.icon = LoadEditorIcon("resources/image.png"),
-				.imGuiPropertiesFn = TextureProperties,
-			};
-			return info;
-		}
-		else if (type == am.getAssetTypeID<sa::Scene>()) {
-			static AssetEditorInfo info{
-				.inCreateMenu = true,
-				.icon = LoadEditorIcon("resources/file-white.png"),
-				.imGuiPropertiesFn = [](sa::IAsset* pAsset) { 
-					return false;
+		const static std::unordered_map<sa::AssetTypeID, AssetEditorInfo> map = {
+			{
+				am.getAssetTypeID<sa::Material>(), 
+				{
+					.inCreateMenu = true,
+					.icon = LoadEditorIcon("resources/sphere-white.png"),
+					.imGuiPropertiesFn = MaterialProperties,
 				}
-			};
-			return info;
+			},
+			{ 
+				am.getAssetTypeID<sa::ModelAsset>(), 
+				{
+					.inCreateMenu = false,
+					.icon = LoadEditorIcon("resources/mesh_cube.png"),
+					.imGuiPropertiesFn = ModelProperties,
+				}
+			},
+			{ 
+				am.getAssetTypeID<sa::TextureAsset>(), 
+				{
+					.inCreateMenu = false,
+					.icon = LoadEditorIcon("resources/image.png"),
+					.imGuiPropertiesFn = TextureProperties,
+				}
+			},
+			{
+				am.getAssetTypeID<sa::Scene>(),
+				{
+					.inCreateMenu = true,
+					.icon = LoadEditorIcon("resources/file-white.png"),
+					.imGuiPropertiesFn = [](sa::Asset* pAsset) {
+						return false;
+					}
+				}
+			},
+			{
+				am.getAssetTypeID<sa::RenderTarget>(),
+				{
+					.inCreateMenu = true,
+					.icon = LoadEditorIcon("resources/image.png"),
+					.imGuiPropertiesFn = RenderTargetProperties,
+				}
+			},
+			{
+				am.getAssetTypeID<sa::MaterialShader>(),
+				{
+					.inCreateMenu = true,
+					.icon = LoadEditorIcon("resources/file-white.png"),
+					.imGuiPropertiesFn = MaterialShaderProperties,
+				}
+			}
+		};
+
+		if (map.contains(type)) {
+			return map.at(type);
 		}
-		else if (type == am.getAssetTypeID<sa::RenderTarget>()) {
-			static AssetEditorInfo info{
-				.inCreateMenu = true,
-				.icon = LoadEditorIcon("resources/image.png"),
-				.imGuiPropertiesFn = RenderTargetProperties,
-			};
-			return info;
-		}
-		
+
 		static AssetEditorInfo info{
 			.inCreateMenu = false,
 			.icon = LoadEditorIcon("resources/file-white.png"),
-			.imGuiPropertiesFn = [](sa::IAsset*) { return false; },
+			.imGuiPropertiesFn = [](sa::Asset*) { return false; },
 		};
 		return info;
 	}
@@ -469,55 +549,87 @@ namespace ImGui {
 		return sa::Texture2D(sa::Image(sa::EngineEditor::MakeEditorRelative(path).generic_string().c_str()), true);
 	}
 
-	bool MaterialProperties(sa::IAsset* pAsset) {
+	bool MaterialProperties(sa::Asset* pAsset) {
 		sa::Material* pMaterial = static_cast<sa::Material*>(pAsset);
-		ColorEdit3("Ambient Color", (float*)&pMaterial->values.ambientColor);
-		ColorEdit3("Diffuse Color", (float*)&pMaterial->values.diffuseColor);
-		ColorEdit3("Specular Color", (float*)&pMaterial->values.specularColor);
+
+		sa::UUID id = pMaterial->getMaterialShader().getID();
+		if(AssetSlot("Material Shader", id, sa::AssetManager::get().getAssetTypeID<sa::MaterialShader>())) {
+			pMaterial->setMaterialShader(id);
+		}
+
+		
+		ColorEdit3("Albedo Color", (float*)&pMaterial->values.albedoColor);
 		ColorEdit3("Emissive Color", (float*)&pMaterial->values.emissiveColor);
+		DragFloat("Emissive Strength", &pMaterial->values.emissiveColor.a, 0.1f);
+		pMaterial->values.emissiveColor.a = std::max(pMaterial->values.emissiveColor.a, 0.0f);
+
 		SliderFloat("Opacity", &pMaterial->values.opacity, 0.0f, 1.0f);
 		SliderFloat("Metallic", &pMaterial->values.metallic, 0.0f, 1.0f);
-		DragFloat("Shininess", &pMaterial->values.shininess);
-
+		SliderFloat("Roughness", &pMaterial->values.roughness, 0.0f, 1.0f);
+		
 		Checkbox("Two Sided", &pMaterial->twoSided);
 
 		auto& textures = pMaterial->getTextures();
 		sa::AssetTypeID textureAssetType = sa::AssetManager::get().getAssetTypeID<sa::TextureAsset>();
 		if (BeginListBox("Textures")) {
-			int i = 0;
-			for (auto& [type, textures] : textures) {
-				std::string textureTypeName = sa::Material::TextureTypeToString(type);
-				for (auto& texID : textures) {
-					sa::TextureAsset* pTexture = sa::AssetManager::get().getAsset<sa::TextureAsset>(texID);
-					sa::IAsset* texAsset = pTexture;
-					if (AssetSlot((textureTypeName + " Texture").c_str(), texAsset, textureAssetType)) {
-						if (texAsset)
-							texID = texAsset->getID();
-						else
-							texID = 0;
+			for (auto& [type, texArr] : textures) {
+				std::string textureTypeName = sa::to_string(type);
+				int i = 0;
+				for (auto& tex : texArr) {
+					PushID(tex.getID() + i);
+					if(SmallButton("-")) {
+						texArr.erase(texArr.begin() + i);
+						PopID();
+						break;
+					}
+					SameLine();
 
+					sa::UUID id = tex.getID();
+					if (AssetSlot((textureTypeName + " Texture").c_str(), id, textureAssetType)) {
+						tex = id;
 						pMaterial->update();
 					}
+					PopID();
+					i++;
 				}
 			}
 			EndListBox();
 		}
+
+		if(BeginPopup("select_texture_type")) {
+
+			
+			for(int i = static_cast<uint32_t>(sa::MaterialTextureType::DIFFUSE); i < static_cast<uint32_t>(sa::MaterialTextureType::UNKNOWN); i++) {
+				auto textureType = static_cast<sa::MaterialTextureType>(i);
+				std::string textureTypeName = sa::to_string(textureType);
+				if(Selectable(textureTypeName.c_str())) {
+					textures[textureType].push_back(0);
+					pMaterial->update();
+					CloseCurrentPopup();
+				}
+			}
+
+			EndPopup();
+		}
+
+
+		if(Button("+")) {
+			OpenPopup("select_texture_type");
+		}
+
 		return false;
 	}
 
-	bool ModelProperties(sa::IAsset* pAsset) {
+	bool ModelProperties(sa::Asset* pAsset) {
 		sa::ModelAsset* pModel = static_cast<sa::ModelAsset*>(pAsset);
 		if (BeginListBox("Meshes")) {
 			int i = 0;
 			for (auto& mesh : pModel->data.meshes) {
 				PushID(i);
-				sa::Material* pMaterial = sa::AssetManager::get().getAsset<sa::Material>(mesh.materialID);
-				sa::IAsset* pAsset = pMaterial;
-				if (AssetSlot("Material", pAsset, sa::AssetManager::get().getAssetTypeID<sa::Material>())) {
-					if(pAsset)
-						mesh.materialID = pAsset->getID();
-					else 
-						mesh.materialID = 0;
+
+				sa::UUID id = mesh.material.getID();
+				if (AssetSlot("Material", id, mesh.material.getTypeID())) {
+					mesh.material = id;
 				}
 				PopID();
 				i++;
@@ -527,7 +639,7 @@ namespace ImGui {
 		return false;
 	}
 
-	bool TextureProperties(sa::IAsset* pAsset) {
+	bool TextureProperties(sa::Asset* pAsset) {
 		sa::TextureAsset* pTexture = static_cast<sa::TextureAsset*>(pAsset);
 		ImVec2 size = GetContentRegionAvail();
 		float aspect = (float)pTexture->getTexture().getExtent().height / pTexture->getTexture().getExtent().width;
@@ -537,7 +649,7 @@ namespace ImGui {
 		return false;
 	}
 
-	bool RenderTargetProperties(sa::IAsset* pAsset) {
+	bool RenderTargetProperties(sa::Asset* pAsset) {
 		sa::RenderTarget* pRenderTarget = static_cast<sa::RenderTarget*>(pAsset);
 		sa::Extent extent = pRenderTarget->getExtent();
 		if (InputScalarN("Extent", ImGuiDataType_U32, (uint32_t*)&extent, 2, NULL, NULL, "%d", ImGuiInputTextFlags_EnterReturnsTrue)) {
@@ -547,8 +659,89 @@ namespace ImGui {
 		ImVec2 size = GetContentRegionAvail();
 		float aspect = (float)pRenderTarget->getExtent().height / pRenderTarget->getExtent().width;
 		size.y = size.x * aspect;
-		
+
 		Image(pRenderTarget->getOutputTexture(), size);
+
+		return false;
+	}
+
+	bool MaterialShaderProperties(sa::Asset* pAsset) {
+		sa::MaterialShader* pMaterialShader = static_cast<sa::MaterialShader*>(pAsset);
+		ImVec2 size = ImGui::GetContentRegionAvail();
+
+		if (ImGui::BeginListBox("Source Files", ImVec2(size.x, 0.0f))) {
+			int i = 0;
+			for (auto& sourceFile : pMaterialShader->getShaderSourceFiles()) {
+				if (sourceFile.stage == 0)
+					continue;
+
+				ImGui::PushID(i);
+				std::string preview = sa::to_string(sourceFile.stage);
+				if (ImGui::BeginCombo("Stage", preview.c_str())) {
+					uint32_t stage = sa::ShaderStageFlagBits::VERTEX;
+					while (stage != sa::ShaderStageFlagBits::COMPUTE << 1) {
+						if (ImGui::Selectable(sa::to_string((sa::ShaderStageFlagBits)stage).c_str(), sourceFile.stage & stage)) {
+							sourceFile.stage = (sa::ShaderStageFlagBits)stage;
+						}
+						stage = stage << 1;
+					}
+					preview = sa::to_string(sourceFile.stage);
+					ImGui::EndCombo();
+				}
+				std::string path = sourceFile.filePath.generic_string();
+				if (ImGui::InputText(("##" + sa::to_string(sourceFile.stage)).c_str(), &path, ImGuiInputTextFlags_EnterReturnsTrue)) {
+					sourceFile.filePath = path;
+					if(!path.empty())
+						sourceFile.filePath.replace_extension(".glsl");
+				}
+				if(BeginDragDropTarget()) {
+					auto payload = AcceptDragDropPayload("Path");
+					if(payload && payload->IsDelivery()) {
+						sourceFile.filePath = *static_cast<std::filesystem::path*>(payload->Data);
+					}
+					EndDragDropTarget();
+				}
+				
+				if (!std::filesystem::exists(sourceFile.filePath)) {
+					ImGui::PushStyleColor(ImGuiCol_Text, IMGUI_COLOR_ERROR_RED);
+					ImGui::Text("No Such File");
+					ImGui::PopStyleColor();
+					ImGui::SameLine();
+					if (ImGui::Button("Create")) {
+						if (!std::filesystem::exists(sourceFile.filePath.parent_path())) {
+							SA_DEBUG_LOG_ERROR(sourceFile.filePath.parent_path(), " does not exist");
+						}
+						else {
+							createGlslFile(sourceFile.filePath, sourceFile.stage);
+							
+						}
+					}
+				}
+				else if (ImGui::Button("Open")) {
+					SA_DEBUG_LOG_INFO("Opening ", sourceFile.filePath, " in external editor");
+				}
+
+				ImGui::SameLine();
+				if (ImGui::SmallButton("Remove")) {
+					pMaterialShader->removeShaderSourceFile(sourceFile.stage);
+				}
+				ImGui::Separator();
+				ImGui::PopID();
+					
+				i++;
+			}
+			ImGui::EndListBox();
+		}
+	
+		
+		if (ImGui::SmallButton("Add Stage +")) {
+			pMaterialShader->addShaderSourceFile({ "", sa::ShaderStageFlagBits::VERTEX });
+		}
+
+		if (ImGui::Button("Compile")) {
+			pMaterialShader->compileSource();
+		}
+
 
 		return false;
 	}
@@ -562,24 +755,26 @@ namespace ImGui {
 
 	}
 
-	bool AssetSlot(const char* label, sa::IAsset*& pAsset, sa::AssetTypeID typeID) {
+	bool AssetSlot(const char* label, sa::UUID& assetID, sa::AssetTypeID typeID) {
 		std::string preview = "None";
-		if (pAsset) {
-			preview = pAsset->getName();
+		{
+			sa::Asset* pAsset = sa::AssetManager::get().getAsset(assetID);
+			if (pAsset) {
+				preview = pAsset->getName();
+			}
 		}
 		bool selected = false;
 		static std::string filter;
 		if(BeginCombo(label, preview.c_str())) {
-			std::vector<sa::IAsset*> assets;
+			std::vector<sa::Asset*> assets;
 			sa::AssetManager::get().getAssets(&assets, typeID);
 			PushID(label);
 			InputText("Filter", &filter, ImGuiInputTextFlags_AutoSelectAll);
 			
 			float width = GetItemRectSize().x;
 			if (BeginChild("##asset_list", ImVec2(width, 100))) {
-				if (Selectable("None", pAsset == nullptr)) {
-					if (pAsset) pAsset->release();
-					pAsset = nullptr;
+				if (Selectable("None", assetID == 0)) {
+					assetID = 0;
 					selected = true;
 					filter.clear();
 					CloseCurrentPopup();
@@ -593,13 +788,8 @@ namespace ImGui {
 						}
 					}
 
-					if (Selectable(asset->getName().c_str(), asset == pAsset)) {
-						sa::IAsset* pOldAsset = pAsset;
-						pAsset = asset;
-						
-						pAsset->load();
-						if(pOldAsset) pOldAsset->release();
-
+					if (Selectable(asset->getName().c_str(), asset->getID() == assetID)) {
+						assetID = asset->getID();
 						selected = true;
 						filter.clear();
 						CloseCurrentPopup();
@@ -616,17 +806,100 @@ namespace ImGui {
 			if (payload && payload->IsDelivery()) {
 				std::filesystem::path* pPath = (std::filesystem::path*)payload->Data;
 				if (pPath->extension() == ".asset") {
-					sa::IAsset* asset = sa::AssetManager::get().findAssetByPath(*pPath);
-					if (asset && asset != pAsset && asset->getType() == typeID) {
-						sa::IAsset* pOldAsset = pAsset;
-						pAsset = asset;
-
-						pAsset->load();
-						if (pOldAsset) pOldAsset->release();
-
+					sa::Asset* asset = sa::AssetManager::get().findAssetByPath(*pPath);
+					if (asset && asset->getID() != assetID && asset->getType() == typeID) {
+						assetID = asset->getID();
 						selected = true;
 					}
 				}
+			}
+			EndDragDropTarget();
+		}
+		return selected;
+	}
+
+	bool FileSlot(const char* label, std::filesystem::path& path, const char* extension) {
+		std::string pathStr = path.generic_string();
+		if (ImGui::InputText(label, &pathStr, ImGuiInputTextFlags_EnterReturnsTrue)) {
+			path = pathStr;
+			if (!pathStr.empty())
+				path.replace_extension(extension);
+		}
+
+		if (!std::filesystem::exists(path)) {
+			ImGui::PushStyleColor(ImGuiCol_Text, IMGUI_COLOR_ERROR_RED);
+			ImGui::Text("No Such File");
+			ImGui::PopStyleColor();
+			ImGui::SameLine();
+			return false;
+		}
+		return true;
+	}
+
+	bool ScriptSlot(const char* label, sa::Entity& entity, const std::string& scriptName) {
+		std::string preview = "None";
+		if (!entity.isNull()) {
+			preview = entity.toString();
+		}
+		preview += " (" + scriptName + ")";
+		bool selected = false;
+
+		ImGui::InputText(label, preview.data(), preview.size(), ImGuiInputTextFlags_ReadOnly);
+
+		if (BeginDragDropTarget()) {
+			const ImGuiPayload* payload = AcceptDragDropPayload("Entity");
+			if (payload && payload->IsDelivery()) {
+				sa::Entity* pEntityPayload = static_cast<sa::Entity*>(payload->Data);
+				if(pEntityPayload->getScript(scriptName)) {
+					entity = *pEntityPayload;
+					selected = true;
+				}
+			}
+			EndDragDropTarget();
+		}
+		return selected;
+	}
+
+	bool ComponentSlot(const char* label, sa::Entity& entity, sa::ComponentType type) {
+		std::string preview = "None";
+		if (!entity.isNull()) {
+			preview = entity.toString();
+		}
+		preview += " (" + type.getName() + ")";
+		bool selected = false;
+
+		ImGui::InputText(label, preview.data(), preview.size(), ImGuiInputTextFlags_ReadOnly);
+
+		if (BeginDragDropTarget()) {
+			const ImGuiPayload* payload = AcceptDragDropPayload("Entity");
+			if (payload && payload->IsDelivery()) {
+				sa::Entity* pEntityPayload = static_cast<sa::Entity*>(payload->Data);
+				if (pEntityPayload->getComponent(type).isValid()) {
+					entity = *pEntityPayload;
+					selected = true;
+				}
+			}
+			EndDragDropTarget();
+		}
+		return selected;
+	}
+
+	bool EntitySlot(const char* label, sa::Entity& entity) {
+		std::string preview = "None";
+		if (!entity.isNull()) {
+			preview = entity.toString();
+		}
+
+		bool selected = false;
+
+		ImGui::InputText(label, preview.data(), preview.size(), ImGuiInputTextFlags_ReadOnly);
+
+		if (BeginDragDropTarget()) {
+			const ImGuiPayload* payload = AcceptDragDropPayload("Entity");
+			if (payload && payload->IsDelivery()) {
+				sa::Entity* pEntityPayload = static_cast<sa::Entity*>(payload->Data);
+				entity = *pEntityPayload;
+				selected = true;
 			}
 			EndDragDropTarget();
 		}
@@ -697,14 +970,85 @@ namespace ImGui {
 
 	}
 
+	bool PasteItems(const std::set<std::filesystem::path>& items, const std::filesystem::path& target) {
+		bool wasChanged = false;
+		for (auto& file : items) {
+			try {
+				std::filesystem::copy(file, target);
+				wasChanged = true;
+			}
+			catch (const std::filesystem::filesystem_error& e) {
+				SA_DEBUG_LOG_ERROR(e.what(), ": ", e.path1(), " ", e.path2());
+			}
+		}
+		return wasChanged;
+	}
+
+	bool DeleteItems(std::set<std::filesystem::path>& items) {
+		bool wasChanged = false;
+		for (auto& path : items) {
+			try {
+				if (std::filesystem::is_directory(path)) {
+					std::filesystem::remove_all(path);
+				}
+				else {
+					std::filesystem::remove(path);
+				}
+				wasChanged = true;
+
+			}
+			catch (const std::filesystem::filesystem_error& e) {
+				SA_DEBUG_LOG_ERROR(e.what(), ": ", e.path1(), " ", e.path2());
+			}
+		}
+		items.clear();
+		return wasChanged;
+	}
+
+	bool MoveItem(const std::filesystem::path& item, const std::filesystem::path& targetDirectory) {
+		bool wasChanged = false;
+		try {
+			auto newPath = targetDirectory / item.filename();
+			std::filesystem::rename(item, newPath);
+			wasChanged = true;
+		}
+		catch (const std::filesystem::filesystem_error& e) {
+			SA_DEBUG_LOG_ERROR(e.what(), ": ", e.path1(), " ", e.path2());
+		}
+		return wasChanged;
+	}
+
+	bool MoveItems(const std::set<std::filesystem::path>& items, const std::filesystem::path& targetDirectory) {
+		bool wasChanged = false;
+		for(auto& file : items) {
+			if (MoveItem(file, targetDirectory))
+				wasChanged = true;
+		}
+		return wasChanged;
+	}
+
+	bool RenameItem(const std::filesystem::path& item, const std::filesystem::path& name) {
+		bool wasChanged = false;
+		try {
+			std::filesystem::rename(item, name);
+			wasChanged = true;
+		}
+		catch (const std::filesystem::filesystem_error& e) {
+			SA_DEBUG_LOG_ERROR(e.what(), ": ", e.path1(), " ", e.path2());
+		}
+		return wasChanged;
+	}
+
 	bool BeginDirectoryIcons(const char* str_id, std::filesystem::path& openDirectory, 
-		int& iconSize, bool& wasChanged, std::filesystem::path& editedFile, std::string& editingName, 
-		std::filesystem::path& lastSelected, std::set<std::filesystem::path>& selectedItems, std::function<void()> createMenu, const ImVec2& size)
+	                         int& iconSize, bool& wasChanged, std::filesystem::path& editedFile, std::string& editingName, 
+	                         std::filesystem::path& lastSelected, std::set<std::filesystem::path>& selectedItems, std::function<void()> createMenu, const ImVec2& size)
 	{
 		ImVec2 contentArea = size;
 		if (size.x == 0.f && size.y == 0.f) {
 			contentArea = ImGui::GetContentRegionAvail();
 		}
+
+		static std::filesystem::path orignalPath = openDirectory;
 
 		bool began = BeginChild((std::string(str_id) + "1").c_str(), contentArea, false, ImGuiWindowFlags_MenuBar);
 		if(began) {
@@ -713,26 +1057,23 @@ namespace ImGui {
 			//Menu Bar
 			if (BeginMenuBar()) {
 
-				if (ImGui::ArrowButton((std::string("parentDir_") + str_id).c_str(), ImGuiDir_Left)) {
-					openDirectory = std::filesystem::absolute(openDirectory);
-					openDirectory = openDirectory.parent_path();
+				if (!std::filesystem::equivalent(openDirectory, orignalPath)) {
+					if (ImGui::ArrowButton((std::string("parentDir_") + str_id).c_str(), ImGuiDir_Left)) {
+						if (openDirectory.has_parent_path()) {
+							openDirectory = openDirectory.parent_path();
+						}
+					}
+					SameLine();
 				}
 				if (BeginDragDropTarget()) {
 					const ImGuiPayload* payload = AcceptDragDropPayload("Path");
 					if (payload && payload->IsDelivery()) {
-						auto path = (std::filesystem::path*)payload->Data;
-						auto newPath = openDirectory.parent_path() / path->filename();
-						try {
-							std::filesystem::rename(*path, newPath);
+						auto path = static_cast<std::filesystem::path*>(payload->Data);
+						if (MoveItem(*path, openDirectory.parent_path()))
 							wasChanged = true;
-						}
-						catch (std::exception e) {
-							SA_DEBUG_LOG_ERROR(e.what());
-						}
 					}
 					EndDragDropTarget();
 				}
-				SameLine();
 
 				Text(openDirectory.generic_string().c_str());
 				SameLine();
@@ -748,7 +1089,7 @@ namespace ImGui {
 
 
 				if (BeginMenu("Create...")) {
-					if (MenuItem("New Folder")) {
+					if (MenuItem("Folder")) {
 						auto newPath = openDirectory / "New Folder";
 						std::filesystem::create_directory(openDirectory / "New Folder");
 						editedFile = newPath;
@@ -766,36 +1107,32 @@ namespace ImGui {
 					editingName = lastSelected.filename().generic_string();
 				}
 
-				if (MenuItem("Paste", "Ctrl + V")) {
-					if (!copiedFiles.empty()) {
-						for (auto& file : copiedFiles) {
-							try {
-								std::filesystem::copy(file, openDirectory);
-								wasChanged = true;
-							}
-							catch (std::exception e) {
-								SA_DEBUG_LOG_ERROR(e.what());
-							}
-						}
+				if (!copiedFiles.empty()) {
+					if (MenuItem("Paste", "Ctrl + V")) {
+						if (PasteItems(copiedFiles, openDirectory))
+							wasChanged = true;
 					}
 				}
-				if (MenuItem("Copy", "Ctrl + C")) {
-					copiedFiles.clear();
-					copiedFiles.insert(selectedItems.begin(), selectedItems.end());
+				if (!selectedItems.empty()) {
+					if (MenuItem("Copy", "Ctrl + C")) {
+						copiedFiles.clear();
+						copiedFiles.insert(selectedItems.begin(), selectedItems.end());
+					}
+
+					if (MenuItem("Delete", "Del")) {
+						if (DeleteItems(selectedItems))
+							wasChanged = true;
+						lastSelected.clear();
+					}
 				}
 
-				if (MenuItem("Delete", "Del")) {
-					for (auto& file : selectedItems) {
-						try {
-							std::filesystem::remove(file);
-							wasChanged = true;
-						}
-						catch (std::exception e) {
-							SA_DEBUG_LOG_ERROR(e.what());
-						}
+				Separator();
+
+				if(MenuItem("Open in code editor")) {
+					//TODO get code editor executable from editor settings
+					if(!sa::FileDialogs::OpenFileInTextEditor("F:/Microsoft VS Code/Code.exe", openDirectory)) {
+						SA_DEBUG_LOG_ERROR("Failed to open in code editor");
 					}
-					selectedItems.clear();
-					lastSelected.clear();
 				}
 
 				EndPopup();
@@ -812,17 +1149,8 @@ namespace ImGui {
 			}
 
 			if (IsKeyPressed(ImGuiKey_Delete)) {
-				for (auto& path : selectedItems) {
-					try {
-						std::filesystem::remove(path);
-						wasChanged = true;
-
-					}
-					catch (std::exception e) {
-						SA_DEBUG_LOG_ERROR(e.what());
-					}
-				}
-				selectedItems.clear();
+				if (DeleteItems(selectedItems))
+					wasChanged = true;
 				lastSelected.clear();
 			}
 
@@ -833,15 +1161,8 @@ namespace ImGui {
 
 			if (IsKeyPressed(ImGuiKey_V) && IsKeyDown(ImGuiKey_LeftCtrl)) {
 				if (!copiedFiles.empty()) {
-					for (auto& file : copiedFiles) {
-						try {
-							std::filesystem::copy(file, openDirectory);
-							wasChanged = true;
-						}
-						catch (std::exception e) {
-							SA_DEBUG_LOG_ERROR(e.what());
-						}
-					}
+					if (PasteItems(copiedFiles, openDirectory))
+						wasChanged = true;
 				}
 			}
 		}
@@ -899,16 +1220,10 @@ namespace ImGui {
 			if (BeginDragDropTarget()) {
 				const ImGuiPayload* payload = AcceptDragDropPayload("Path");
 				if (payload && payload->IsDelivery()) {
-					auto path = (std::filesystem::path*)payload->Data;
+					auto path = static_cast<std::filesystem::path*>(payload->Data);
 					const auto& thisPath = entry.path();
-					auto newPath = thisPath / path->filename();
-					try {
-						std::filesystem::rename(*path, newPath);
+					if (MoveItem(*path, thisPath))
 						wasChanged = true;
-					}
-					catch (std::exception e) {
-						SA_DEBUG_LOG_ERROR(e.what());
-					}
 				}
 				EndDragDropTarget();
 			}
@@ -929,9 +1244,9 @@ namespace ImGui {
 			PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
 			if (InputText("##edit_name", &editingName, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
 				//rename
-				std::string newName = (editedFile.parent_path() / editingName).generic_string();
-				std::rename(editedFile.generic_string().c_str(), newName.c_str());
-				wasChanged = true;
+				std::filesystem::path newName = (editedFile.parent_path() / editingName).replace_extension(editedFile.extension());
+				if (RenameItem(editedFile, newName))
+					wasChanged = true;
 				editedFile.clear();
 			}
 			if (IsMouseClicked(ImGuiMouseButton_Left) && !IsItemHovered()) {

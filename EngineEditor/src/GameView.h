@@ -6,7 +6,6 @@ class GameView : public EditorModule {
 private:
 	int m_mipLevel;
 
-	bool m_renderedCamera;
 	bool m_isWindowOpen;
 
 

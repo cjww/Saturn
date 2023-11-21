@@ -1,7 +1,8 @@
 #include "pch.h"
 #include "Serializable.h"
 
-#include "simdjson.h"
+#include "Tools/Logger.hpp"
+
 
 namespace sa {
 	Serializer::Serializer()
@@ -30,6 +31,22 @@ namespace sa {
 		m_ss << "\n" << std::setw(m_depth * m_tabSize + 1) << stop;
 	}
 
+	void Serializer::value(const std::string& key, sol::userdata userdata) {
+		const std::optional<sol::protected_function> serializeFunction = userdata.get<std::optional<sol::protected_function>>("serialize");
+		if (!serializeFunction.has_value()) {
+			SA_DEBUG_LOG_WARNING("Did not serialize requested userdata: " + key + " not serializable");
+			return;
+		}
+		beginObject(key);
+		const auto func = serializeFunction.value();
+		const auto result = func(userdata, *this);
+		if (!result.valid()) {
+			const sol::error err = result;
+			SA_DEBUG_LOG_ERROR("Failed to serialize userdata " + key + ": ", err.what());
+		}
+		endObject();
+	}
+
 	void Serializer::beginObject(const std::string& key) {
 		beginScope(key, '{');
 	}
@@ -50,19 +67,37 @@ namespace sa {
 		return m_ss.str();
 	}
 
+	glm::vec2 Serializer::DeserializeVec2(void* pObj) {
+		simdjson::ondemand::object& obj = *(simdjson::ondemand::object*)pObj;
+		float x = obj.find_field("x").get_double();
+		float y = obj.find_field("y").get_double();
+		return { x, y };
+	}
+
 	glm::vec3 Serializer::DeserializeVec3(void* pObj) {
 		simdjson::ondemand::object& obj = *(simdjson::ondemand::object*)pObj;
-		return { (float)obj["x"].get_double(), (float)obj["y"].get_double(), (float)obj["z"].get_double() };
+		float x = obj.find_field("x").get_double();
+		float y = obj.find_field("y").get_double();
+		float z = obj.find_field("z").get_double();
+		return { x, y, z };
 	}
 
 	glm::vec4 Serializer::DeserializeVec4(void* pObj) {
 		simdjson::ondemand::object& obj = *(simdjson::ondemand::object*)pObj;
-		return { (float)obj["x"].get_double(), (float)obj["y"].get_double(), (float)obj["z"].get_double(), (float)obj["w"].get_double() };
+		float x = obj.find_field("x").get_double();
+		float y = obj.find_field("y").get_double();
+		float z = obj.find_field("z").get_double();
+		float w = obj.find_field("w").get_double();
+		return { x, y, z, w };
 	}
 
 	glm::quat Serializer::DeserializeQuat(void* pObj) {
 		simdjson::ondemand::object& obj = *(simdjson::ondemand::object*)pObj;
-		return { (float)obj["w"].get_double(), (float)obj["x"].get_double(), (float)obj["y"].get_double(), (float)obj["z"].get_double() };
+		float w = obj.find_field("w").get_double();
+		float x = obj.find_field("x").get_double();
+		float y = obj.find_field("y").get_double();
+		float z = obj.find_field("z").get_double();
+		return { w, x, y, z };
 	}
 
 }

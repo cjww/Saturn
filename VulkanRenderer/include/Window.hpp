@@ -107,21 +107,33 @@ namespace sa {
 		void close();
 
 		void setRefreshRate(int rate);
+		int getRefreshRate() const;
+
 		void setMonitor(int monitorIndex);
+		int getCurrentMonitor() const;
+		int getPrimaryMonitor() const;
+		int getMonitorCount() const;
+
+		void setFullscreen(bool fullscreen);
 		void toggleFullscreen();
 		bool isFullscreen() const;
+
 		void setBorderless(bool isBorderless);
 		void toggleBorderless();
 		bool isBorderless() const;
+		
 		void setBorderlessFullscreen(bool value);
 		void toggleBorderlessFullscreen();
 
+		void setResizable(bool isResizable);
+		bool isResizable() const;
 
 		void setWindowTitle(const char* title);
 		void setWindowTitle(const std::string& title);
 		void setWindowTitle(std::string&& title);
 
 		Extent getCurrentExtent() const;
+		Offset getWindowPosition() const;
 
 		GLFWwindow* getWindowHandle() const;
 		void* getWin32WindowHandle() const;

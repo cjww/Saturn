@@ -1,11 +1,11 @@
 #include "pch.h"
 #include "Resources/Texture.hpp"
-#include "Resources\Swapchain.hpp"
+#include "internal/Swapchain.hpp"
 
-#include "VulkanCore.hpp"
+#include "internal/VulkanCore.hpp"
 #include "Renderer.hpp"
 
-#include "Resources/DeviceMemoryManager.hpp"
+#include "internal/DeviceMemoryManager.hpp"
 
 namespace sa {
 

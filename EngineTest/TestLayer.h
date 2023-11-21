@@ -18,6 +18,7 @@ namespace sa {
 	public:
 
 		void onAttach(Engine& engine, RenderWindow& window) override;
+		void onDetach() override;
 		void onUpdate(float dt) override;
 		void onImGuiRender() override;
 	};

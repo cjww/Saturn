@@ -1,9 +1,3 @@
 [submodule "EngineEditor/ImGuizmo"]
 	path = EngineEditor/ImGuizmo
 	url = https://github.com/CedricGuillemet/ImGuizmo.git
-[submodule "EngineEditor/deps/simdjson"]
-	path = EngineEditor/deps/simdjson
-	url = https://github.com/simdjson/simdjson.git
-[submodule "Engine/deps/simdjson"]
-	path = Engine/deps/simdjson
-	url = https://github.com/simdjson/simdjson.git

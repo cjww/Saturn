@@ -1,5 +1,8 @@
 #include "pch.h"
 #include "Scene.h"
+
+#include <d3d10sdklayers.h>
+
 #include "ECS/Components.h"
 
 namespace sa {
@@ -17,8 +20,8 @@ namespace sa {
 
 	void Scene::updatePhysics(float dt) {
 		// Physics
-		m_reg.view<comp::RigidBody, comp::Transform>().each([&](const comp::RigidBody& rb, const comp::Transform& transform) {
-			rb.pActor->setGlobalPose(transform, false);
+		m_reg.view<comp::RigidBody, comp::Transform>().each([&](comp::RigidBody& rb, const comp::Transform& transform) {
+			rb.setGlobalPose(transform);
 		});
 
 		m_pPhysicsScene->simulate(dt);
@@ -73,7 +76,11 @@ namespace sa {
 	}
 
 
-	Scene::Scene(const AssetHeader& header) : IAsset(header) {
+	Scene::Scene(const AssetHeader& header)
+		: Asset(header)
+		, m_scriptManager(*this)
+	{
+		m_runtime = false;
 		m_pPhysicsScene = PhysicsSystem::get().createScene();
 		registerComponentCallBacks();
 	}
@@ -85,18 +92,22 @@ namespace sa {
 
 	void Scene::reg() {
 
-		auto type = LuaAccessable::registerType<Scene>();
+		auto type = registerType<Scene>("Scene",
+			sol::no_constructor,
+			sol::base_classes, sol::bases<Asset>());
 		type["findEntitiesByName"] = [](Scene& self, const std::string& name) {
 			std::vector<Entity> entities;
-			self.m_reg.each([&](entt::entity e) {
+			for (auto [e] : self.m_reg.storage<entt::entity>().each()) {
 				if (self.m_reg.get<comp::Name>(e).name == name) {
 					entities.emplace_back(&self, e);
 				}
-			});
+			}
 			return sol::as_table(entities);
 		};
 
 		type["createEntity"] = &Scene::createEntity;
+		type["destroyEntity"] = &Scene::destroyEntity;
+
 
 	}
 
@@ -107,11 +118,10 @@ namespace sa {
 		simdjson::ondemand::parser parser;
 		auto doc = parser.iterate(jsonStr);
 		if (doc.error() != simdjson::error_code::SUCCESS) {
-			SA_DEBUG_LOG_ERROR("Json error: ", simdjson::error_message(doc.error()));
-			return false;
+			throw std::runtime_error("Json error: " + std::string(simdjson::error_message(doc.error())));
 		}
 		deserialize(&doc);
-
+		
 		return true;
 	}
 
@@ -120,13 +130,6 @@ namespace sa {
 		serialize(s);
 		std::string jsonStr = s.dump();
 
-		AssetHeader header = getHeader();
-		header.size = jsonStr.size();
-		// TODO this is not going to work in a asset package
-		file.seekp((size_t)file.tellp() - sizeof(AssetHeader));
-		setHeader(header);
-		writeHeader(header, file);
-
 		file << s.dump();
 
 		return true;
@@ -134,27 +137,37 @@ namespace sa {
 
 	bool Scene::onUnload() {
 		m_reg.clear();
-		m_reg.shrink_to_fit();
+		decltype(m_reg) reg;
+		m_reg.swap(reg);
+		m_scriptManager.clearAll();
 		m_scriptManager.freeMemory();
 		m_hierarchy.freeMemory();
 		return true;
 	}
 
 	void Scene::onRuntimeStart() {
-		m_scriptManager.broadcast("onStart");
+		m_runtime = true;
+		m_scriptManager.applyChanges();
+		trigger<scene_event::SceneStart>();
 	}
 
 	void Scene::onRuntimeStop()	{
-		m_scriptManager.broadcast("onStop");
+		if(m_runtime) 
+			trigger<scene_event::SceneStop>();
+		m_runtime = false;
 	}
 
 	void Scene::runtimeUpdate(float dt) {
 		SA_PROFILE_FUNCTION();
 
 		updatePhysics(dt);
-		
+
+		m_scriptManager.applyChanges();
 		// Scripts
-		m_scriptManager.broadcast("onUpdate", dt);
+		{
+			SA_PROFILE_SCOPE("Update Event");
+			trigger<scene_event::SceneUpdate>(scene_event::SceneUpdate{ dt });
+		}
 		
 		updateChildPositions();
 		updateCameraPositions();
@@ -184,8 +197,15 @@ namespace sa {
 		using namespace simdjson;
 		ondemand::document& doc = *(ondemand::document*)pDoc;
 		ondemand::array entities = doc["entities"];
+
 		
-		m_reg.reserve(entities.count_elements());
+		std::unordered_set<entt::entity> allEntities;
+		for(auto [e] : m_reg.storage<entt::entity>().each()) {
+			allEntities.insert(e);
+		}
+		
+
+		m_reg.storage<entt::entity>().reserve(entities.count_elements());
 		for (auto e : entities) {
 			if (e.error()) {
 				SA_DEBUG_LOG_WARNING("Failed to get entity from file");
@@ -199,33 +219,54 @@ namespace sa {
 			}
 			Entity entity(this, entityID);
 			entity.deserialize(&obj);
+			allEntities.erase(entityID);
+		}
+		for(auto& entityId : allEntities) {
+			Entity entity(this, entityId);
+			entity.destroy();
 		}
 	}
 
-	void Scene::setScene(const std::string& name) {
-		publish<scene_event::SceneRequest>(name);
+	Scene* Scene::clone(const std::string& name) {
+
+		auto clone = AssetManager::get().createAsset<Scene>(name, "");
+		forEach([&](Entity entity) {
+			entity.clone(clone);
+		});
+		return clone;
 	}
 
-	Entity Scene::createEntity(const std::string& name) {
-		Entity e(this, m_reg.create());
+	void Scene::setScene(const std::string& name) {
+		trigger<scene_event::SceneRequest>(scene_event::SceneRequest{ name });
+	}
+
+	Entity Scene::createEntity(const std::string& name, entt::entity idHint) {
+		Entity e(this, (idHint == entt::null ? m_reg.create() : m_reg.create(idHint)));
 		e.addComponent<comp::Name>(name);
-		publish<scene_event::EntityCreated>(e);
+		trigger<scene_event::EntityCreated>(scene_event::EntityCreated{ e });
 		return e;
 	}
 
 	void Scene::destroyEntity(const Entity& entity) {
-		publish<scene_event::EntityDestroyed>(entity);
+		if (entity.isNull())
+			throw std::runtime_error("Attempt to destroy null entity: " + entity.toString());
+		trigger<scene_event::EntityDestroyed>(scene_event::EntityDestroyed{ entity });
 		m_scriptManager.clearEntity(entity);
 		m_hierarchy.destroy(entity);
 		m_reg.destroy(entity);
 	}
 
 	size_t Scene::getEntityCount() const {
-		return m_reg.alive();
+		return m_reg.storage<entt::entity>()->in_use();
 	}
 
-	EntityScript* Scene::addScript(const Entity& entity, const std::filesystem::path& path) {
-		return m_scriptManager.addScript(entity, path);
+	EntityScript* Scene::addScript(const Entity& entity, const std::filesystem::path& path, const std::unordered_map<std::string, sol::object>& serializedData) {
+		auto pScript = m_scriptManager.addScript(entity, path, serializedData);
+		if (pScript) {
+			if(m_runtime)
+				m_scriptManager.tryCall(pScript->env, scene_event::SceneStart::CallbackName);
+		}
+		return pScript;
 	}
 
 	void Scene::clearEntities() {
@@ -236,16 +277,27 @@ namespace sa {
 
 
 	void Scene::removeScript(const Entity& entity, const std::string& name) {
-		m_scriptManager.removeScript(entity, name);
+		auto pScript = m_scriptManager.getScript(entity, name);
+		if(!pScript) 
+			return;
+		m_scriptManager.removeScript(pScript);
 	}
 
-	EntityScript* Scene::getScript(const Entity& entity, const std::string& name) {
+	EntityScript* Scene::getScript(const Entity& entity, const std::string& name) const {
 		return m_scriptManager.getScript(entity, name);
 	}
 
 
-	std::vector<EntityScript> Scene::getAssignedScripts(const Entity& entity) const {
+	std::vector<EntityScript*> Scene::getAssignedScripts(const Entity& entity) {
 		return m_scriptManager.getEntityScripts(entity);
+	}
+
+	void Scene::reloadScripts() {
+		m_scriptManager.reloadScripts();
+	}
+
+	void Scene::reloadScript(EntityScript* pScript) {
+		m_scriptManager.reloadScript(pScript);
 	}
 
 	EntityHierarchy& Scene::getHierarchy() {
@@ -253,9 +305,9 @@ namespace sa {
 	}
 
 	void Scene::forEachComponentType(std::function<void(ComponentType)> function) {
-		m_reg.visit([&](const entt::type_info& info) {
-			function(entt::resolve(info));
-		});
+		for(auto&& [id, type] : entt::resolve()) {
+			function(type);
+		}
 	}
 
 }

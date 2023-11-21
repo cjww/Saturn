@@ -1,7 +1,7 @@
 #include "pch.h"
-#include "VulkanCore.hpp"
+#include "internal/VulkanCore.hpp"
 
-#include "debugFunctions.hpp" // for checkError and debugCallback
+#include "internal/debugFunctions.hpp" // for checkError and debugCallback
 
 namespace sa {
 	void VulkanCore::fillFormats() {
@@ -517,7 +517,7 @@ namespace sa {
 	vk::Pipeline VulkanCore::createGraphicsPipeline(vk::PipelineLayout layout, vk::RenderPass renderPass, uint32_t subpassIndex, vk::Extent2D extent, std::vector<vk::PipelineShaderStageCreateInfo> shaderStages, vk::PipelineVertexInputStateCreateInfo vertexInput, vk::PipelineCache cache,  PipelineConfig config) {
 
 		vk::PipelineInputAssemblyStateCreateInfo input{
-			.topology = config.input.topology,
+			.topology = (config.tessellation.enabled ? vk::PrimitiveTopology::ePatchList : config.input.topology),
 			.primitiveRestartEnable = false,
 		};
 
@@ -590,10 +590,14 @@ namespace sa {
 		vk::PipelineDynamicStateCreateInfo dynamicState;
 		dynamicState.setDynamicStates(config.dynamicStates);
 
+		vk::PipelineTessellationStateCreateInfo tessellation = {
+			.patchControlPoints = config.tessellation.pathControlPoints
+		};
+
 		vk::GraphicsPipelineCreateInfo info{
 			.pVertexInputState = &vertexInput,
 			.pInputAssemblyState = &input,
-			.pTessellationState = nullptr,
+			.pTessellationState = (config.tessellation.enabled ? &tessellation : nullptr),
 			.pViewportState = &viewportState,
 			.pRasterizationState = &rasterizer,
 			.pMultisampleState = &multisample,

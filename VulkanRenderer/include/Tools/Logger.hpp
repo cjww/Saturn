@@ -1,6 +1,7 @@
 #pragma once
 #include <string>
 #include <iostream>
+#include <mutex>
 
 #ifdef _WIN32
 #define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)

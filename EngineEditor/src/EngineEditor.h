@@ -39,6 +39,10 @@ namespace sa {
 
 		bool m_enterSceneNamePopup;
 
+		bool m_profilerWindow;
+
+		Scene* m_pEditingScene;
+
 		void makePopups();
 
 		bool openProject(const std::filesystem::path& path);
@@ -55,6 +59,10 @@ namespace sa {
 		void stopSimulation();
 
 		void imGuiProfiler();
+
+		void onWindowResized(const engine_event::WindowResized& e);
+		void onSceneSet(const engine_event::SceneSet& e);
+
 
 	public:
 		static std::filesystem::path MakeEditorRelative(const std::filesystem::path& editorRelativePath);

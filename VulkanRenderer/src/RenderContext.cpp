@@ -1,10 +1,10 @@
 #include "pch.h"
 #include "RenderContext.hpp"
 
-#include "Resources/RenderProgram.hpp"
-#include "Resources/FramebufferSet.hpp"
-#include "Resources/Pipeline.hpp"
-#include "Resources/Swapchain.hpp"
+#include "internal/RenderProgram.hpp"
+#include "internal/FramebufferSet.hpp"
+#include "internal/Pipeline.hpp"
+#include "internal/Swapchain.hpp"
 
 #include "imgui_impl_vulkan.h"
 #include "imgui_impl_glfw.h"
@@ -55,6 +55,7 @@ namespace sa {
 
 	RenderContext::RenderContext()
 		: m_pCommandBufferSet(nullptr)
+		, m_boundPipeline(NULL_RESOURCE)
 	{
 	}
 
@@ -97,6 +98,7 @@ namespace sa {
 	}
 
 	void RenderContext::bindPipeline(ResourceID pipeline) {
+		m_boundPipeline = pipeline;
 		Pipeline* pPipeline = getPipeline(pipeline);
 		pPipeline->bind(m_pCommandBufferSet);
 	}
@@ -160,20 +162,26 @@ namespace sa {
 		pDescriptorSet->update(binding, firstElement, textures, nullptr, m_pCommandBufferSet->getBufferIndex());
 	}
 
+	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, ResourceID sampler, uint32_t firstElement) {
+		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
+		pDescriptorSet->update(binding, firstElement, textures, pSampler, m_pCommandBufferSet->getBufferIndex());
+	}
+
 	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, ResourceID sampler) {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
 		pDescriptorSet->update(binding, VK_NULL_HANDLE, vk::ImageLayout::eUndefined, pSampler, m_pCommandBufferSet->getBufferIndex());
 	}
 
-	void RenderContext::bindDescriptorSet(ResourceID descriptorSet, ResourceID pipeline) {
-		Pipeline* pPipeline = getPipeline(pipeline);
+	void RenderContext::bindDescriptorSet(ResourceID descriptorSet) {
+		Pipeline* pPipeline = getPipeline(m_boundPipeline);
 		DescriptorSet* pDescriptorSet = getDescriptorSet(descriptorSet);
 		pPipeline->bindDescriptorSet(m_pCommandBufferSet, pDescriptorSet);
 	}
 
-	void RenderContext::pushConstants(ResourceID pipeline, ShaderStageFlags stages, uint32_t offset, uint32_t size, void* data) {
-		Pipeline* pPipeline = getPipeline(pipeline);
+	void RenderContext::pushConstants(ShaderStageFlags stages, uint32_t offset, uint32_t size, void* data) {
+		Pipeline* pPipeline = getPipeline(m_boundPipeline);
 		if (offset != UINT32_MAX) {
 			pPipeline->pushConstants(m_pCommandBufferSet, (vk::ShaderStageFlags)stages, offset, size, data);
 		}
@@ -182,8 +190,8 @@ namespace sa {
 		}
 	}
 
-	void RenderContext::bindDescriptorSets(const std::vector<ResourceID>& descriptorSets, ResourceID pipeline) {
-		Pipeline* pPipeline = getPipeline(pipeline);
+	void RenderContext::bindDescriptorSets(const std::vector<ResourceID>& descriptorSets) {
+		Pipeline* pPipeline = getPipeline(m_boundPipeline);
 		std::vector<vk::DescriptorSet> sets;
 		sets.reserve(descriptorSets.size());
 		uint32_t firstSet = UINT32_MAX;

@@ -16,6 +16,13 @@ private:
 
 	void elementEvents(const sa::Entity& e);
 	void makeTree(sa::Entity e);
+
+
+	void onEntitySelected(const sa::editor_event::EntitySelected& e);
+	void onEntityDeselected(const sa::editor_event::EntityDeselected& e);
+	void onSceneSet(const sa::engine_event::SceneSet& e);
+
+
 public:
 	
 	SceneHierarchy(sa::Engine* pEngine, sa::EngineEditor* pEditor);

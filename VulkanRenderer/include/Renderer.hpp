@@ -1,4 +1,5 @@
 #pragma once
+#include "ApiBuildOptions.h"
 
 #include "RenderProgramFactory.hpp"
 
@@ -10,6 +11,8 @@
 #include "FormatFlags.hpp"
 #include "PipelineSettings.hpp"
 #include "DeviceMemoryStats.hpp"
+
+#include "ShaderSet.hpp"
 
 #include "Window.hpp"
 
@@ -104,7 +107,7 @@ namespace sa {
 	private:
 		friend class Texture;
 		friend class DynamicTexture;
-
+		
 		std::unique_ptr<VulkanCore> m_pCore;
 		
 		std::list<DataTransfer> m_transferQueue;
@@ -122,6 +125,8 @@ namespace sa {
 	public:
 		static Renderer& get();
 		virtual ~Renderer();
+
+		VulkanCore* getCore() const;
 
 #ifndef IMGUI_DISABLE
 		void initImGui(const Window& window, ResourceID renderProgram, uint32_t subpass);
@@ -163,21 +168,19 @@ namespace sa {
 		Extent getFramebufferExtent(ResourceID framebuffer) const;
 		void swapFramebuffer(ResourceID framebuffer);
 
-		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, PipelineSettings settings = {});
-		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& fragmentShader, PipelineSettings settings = {});
-		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const std::string& vertexShader, const std::string& geometryShader, const std::string& fragmentShader, PipelineSettings settings = {});
+		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const ShaderSet& shaderSet, PipelineSettings settings = {});
 
-		ResourceID createComputePipeline(const std::string& computeShader);
+		ResourceID createComputePipeline(const ShaderSet& computeShader);
 		void destroyPipeline(ResourceID pipeline);
 
-		ResourceID allocateDescriptorSet(ResourceID pipeline, uint32_t setIndex);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Buffer& buffer);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, DynamicBuffer& buffer);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture, ResourceID sampler);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const DynamicTexture& texture, ResourceID sampler);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const DynamicTexture& texture);
-		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement = 0);
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement);
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, ResourceID sampler, uint32_t firstElement);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, ResourceID sampler);
 
 		void freeDescriptorSet(ResourceID descriptorSet);
@@ -187,10 +190,8 @@ namespace sa {
 
 		DeviceMemoryStats getGPUMemoryUsage() const;
 
-
 		DataTransfer* queueTransfer(const DataTransfer& transfer);
 		bool cancelTransfer(DataTransfer* pTransfer);
-
 
 		ResourceID createSampler(FilterMode filterMode = FilterMode::NEAREST);
 		ResourceID createSampler(const SamplerInfo& samplerInfo);

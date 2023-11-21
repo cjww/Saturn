@@ -5,6 +5,7 @@
 #include "Resources/Buffer.hpp"
 #include "Resources/Texture.hpp"
 #include "Resources/DynamicBuffer.hpp"
+#include "ShaderSet.hpp"
 
 namespace vk {
 	class Sampler;
@@ -21,21 +22,11 @@ namespace sa {
 	class FramebufferSet;
 	class Pipeline;
 	class DescriptorSet;
+	class ShaderModule;
 
 
-	typedef uint32_t ShaderStageFlags;
-
-	enum ShaderStageFlagBits : ShaderStageFlags {
-		VERTEX = 1,
-		TESSELATION_CONTROL = 2,
-		TESSELATION_EVALUATION = 4,
-		GEOMETRY = 8,
-		FRAGMENT = 16,
-		COMPUTE = 32,
-	};
-
+	
 	typedef uint32_t ContextUsageFlags;
-
 	enum ContextUsageFlagBits : ContextUsageFlags {
 		ONE_TIME_SUBMIT = 1,
 		RENDER_PROGRAM_CONTINUE = 2,
@@ -80,6 +71,8 @@ namespace sa {
 		CommandBufferSet* m_pCommandBufferSet;
 		VulkanCore* m_pCore;
 
+		ResourceID m_boundPipeline;
+
 		friend class RenderProgramFactory;
 		friend class Renderer;
 		static Swapchain* getSwapchain(ResourceID id);
@@ -112,20 +105,22 @@ namespace sa {
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture, ResourceID sampler);
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture);
 
-		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement = 0);
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement);
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, ResourceID sampler, uint32_t firstElement);
+
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, ResourceID sampler);
 
 
-		void bindDescriptorSets(const std::vector<ResourceID>& descriptorSets, ResourceID pipeline);
-		void bindDescriptorSet(ResourceID descriptorSet, ResourceID pipeline);
+		void bindDescriptorSets(const std::vector<ResourceID>& descriptorSets);
+		void bindDescriptorSet(ResourceID descriptorSet);
 
-		void pushConstants(ResourceID pipeline, ShaderStageFlags stages, uint32_t offset, uint32_t size, void* data);
+		void pushConstants(ShaderStageFlags stages, uint32_t offset, uint32_t size, void* data);
 
 		template<typename T>
-		void pushConstants(ResourceID pipeline, ShaderStageFlags stages, const std::vector<T>& values, uint32_t offset = UINT32_MAX);
+		void pushConstants(ShaderStageFlags stages, const std::vector<T>& values, uint32_t offset = UINT32_MAX);
 		
 		template<typename T>
-		void pushConstant(ResourceID pipeline, ShaderStageFlags stages, const T& value, uint32_t offset = UINT32_MAX);
+		void pushConstant(ShaderStageFlags stages, const T& value, uint32_t offset = UINT32_MAX);
 
 		void setScissor(Rect scissor);
 		void setViewport(Rect viewport);
@@ -143,7 +138,6 @@ namespace sa {
 
 		void barrierColorCompute(const Texture& texture);
 		void barrierColorCompute(const Buffer& buffer);
-		
 
 		void transitionTexture(const Texture& texture, Transition src, Transition dst);
 
@@ -195,13 +189,13 @@ namespace sa {
 	};
 
 	template<typename T>
-	inline void RenderContext::pushConstants(ResourceID pipeline, ShaderStageFlags stages, const std::vector<T>& values, uint32_t offset) {
-		pushConstants(pipeline, stages, offset, values.size() * sizeof(T), (void*)values.data());
+	inline void RenderContext::pushConstants(ShaderStageFlags stages, const std::vector<T>& values, uint32_t offset) {
+		pushConstants(stages, offset, values.size() * sizeof(T), (void*)values.data());
 	}
 
 	template<typename T>
-	inline void RenderContext::pushConstant(ResourceID pipeline, ShaderStageFlags stages, const T& value, uint32_t offset) {
-		pushConstants(pipeline, stages, offset, sizeof(T), (void*)&value);
+	inline void RenderContext::pushConstant(ShaderStageFlags stages, const T& value, uint32_t offset) {
+		pushConstants(stages, offset, sizeof(T), (void*)&value);
 	}
 
 }

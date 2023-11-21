@@ -8,6 +8,8 @@
 
 #include "AssetManager.h"
 
+#include "FileTemplates.h"
+
 #include <glm\gtx\matrix_decompose.hpp>
 #include <glm\gtc\quaternion.hpp>
 
@@ -29,7 +31,7 @@ namespace sa {
 struct AssetEditorInfo {
 	bool inCreateMenu;
 	sa::Texture2D icon;
-	std::function<bool(sa::IAsset*)> imGuiPropertiesFn;
+	std::function<bool(sa::Asset*)> imGuiPropertiesFn;
 };
 
 namespace ImGui {
@@ -42,7 +44,10 @@ namespace ImGui {
 
 	void SetupImGuiStyle();
 
-	void displayLuaTable(std::string name, sol::table table);
+	sol::lua_value DisplayLuaValue(const std::string& keyAsStr, const sol::object& value);
+	sol::lua_value DisplayLuaUserdata(const std::string& keyAsStr, const sol::userdata& value);
+
+	void DisplayLuaTable(const std::string& name, sol::table table);
 
 	void Component(sa::Entity entity, comp::Transform* transform);
 	void Component(sa::Entity entity, comp::Model* model);
@@ -55,25 +60,38 @@ namespace ImGui {
 
 	template<typename T>
 	void Component(const sa::Entity& entity);
+	bool Script(sa::EntityScript* pScript, bool* visable);
+
 
 	AssetEditorInfo GetAssetInfo(sa::AssetTypeID type);
 	sa::Texture2D LoadEditorIcon(const std::filesystem::path& path);
 
-	bool MaterialProperties(sa::IAsset* pAsset);
-	bool ModelProperties(sa::IAsset* pAsset);
-	bool TextureProperties(sa::IAsset* pAsset);
-	bool RenderTargetProperties(sa::IAsset* pAsset);
+	bool MaterialProperties(sa::Asset* pAsset);
+	bool ModelProperties(sa::Asset* pAsset);
+	bool TextureProperties(sa::Asset* pAsset);
+	bool RenderTargetProperties(sa::Asset* pAsset);
+	bool MaterialShaderProperties(sa::Asset* pAsset);
 
 	void AssetPreview(sa::Material* pMaterial);
 	void AssetPreview(sa::ModelAsset* pModel);
 
+	bool AssetSlot(const char* label, sa::UUID& assetID, sa::AssetTypeID typeID);
+	bool FileSlot(const char* label, std::filesystem::path& path, const char* extension);
+	bool ScriptSlot(const char* label, sa::Entity& entity, const std::string& scriptName);
+	bool ComponentSlot(const char* label, sa::Entity& entity, sa::ComponentType type);
+	bool EntitySlot(const char* label, sa::Entity& entity);
 
-	bool AssetSlot(const char* label, sa::IAsset*& pAsset, sa::AssetTypeID typeID);
 
 	void AddEditorModuleSettingsHandler(sa::EngineEditor* pEditor);
 
 	void DirectoryHierarchy(const char* str_id, const std::filesystem::path& directory, std::filesystem::path& openDirectory, int& iconSize, const ImVec2& size = ImVec2(0, 0));
-	
+
+	bool PasteItems(const std::set<std::filesystem::path>& items, const std::filesystem::path& targetDirectory);
+	bool DeleteItems(std::set<std::filesystem::path>& items);
+	bool MoveItem(const std::filesystem::path& item, const std::filesystem::path& targetDirectory);
+	bool MoveItems(const std::set<std::filesystem::path>& items, const std::filesystem::path& targetDirectory);
+	bool RenameItem(const std::filesystem::path& item, const std::filesystem::path& name);
+
 	bool BeginDirectoryIcons(const char* str_id, std::filesystem::path& openDirectory,
 		int& iconSize, bool& wasChanged, std::filesystem::path& editedFile, std::string& editingName, 
 		std::filesystem::path& lastSelected, std::set<std::filesystem::path>& selectedItems, std::function<void()> createMenu, const ImVec2& size = ImVec2(0, 0));

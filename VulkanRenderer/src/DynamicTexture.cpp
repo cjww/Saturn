@@ -1,6 +1,6 @@
 #include "pch.h"
 #include "Resources/DynamicTexture.hpp"
-#include "VulkanCore.hpp"
+#include "internal/VulkanCore.hpp"
 
 namespace sa {
 	DynamicTexture::DynamicTexture() 

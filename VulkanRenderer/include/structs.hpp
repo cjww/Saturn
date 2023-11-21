@@ -1,4 +1,5 @@
 #pragma once
+#include <stdint.h>
 #include "Tools/utils.hpp"
 
 #define SA_COLOR_WHITE sa::Color{ 1, 1, 1, 1 }

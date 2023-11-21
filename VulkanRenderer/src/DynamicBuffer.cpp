@@ -31,10 +31,11 @@ namespace sa{
 	}
 
 	
-	const Buffer& DynamicBuffer::getBuffer(uint32_t index) const {
-		if (index == -1) {
-			index = m_currentBufferIndex;
-		}
+	const sa::Buffer& DynamicBuffer::getBuffer() const {
+		return m_buffers.at(m_currentBufferIndex);
+	}
+
+	Buffer& DynamicBuffer::getBuffer(uint32_t index) {
 		return m_buffers.at(index);
 	}
 
@@ -82,6 +83,10 @@ namespace sa{
 		return getBuffer(m_currentBufferIndex).data();
 	}
 
+	void* DynamicBuffer::data(uint32_t offset) {
+		return getBuffer(m_currentBufferIndex).data(offset);
+	}
+
 	void DynamicBuffer::clear() {
 		m_buffers[m_currentBufferIndex].clear();
 	}
@@ -95,6 +100,10 @@ namespace sa{
 
 	DynamicBuffer::operator const Buffer& () {
 		return getBuffer();
+	}
+
+	DynamicBuffer::operator Buffer& () {
+		return m_buffers.at(m_currentBufferIndex);
 	}
 
 
