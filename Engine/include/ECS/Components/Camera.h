@@ -2,17 +2,14 @@
 #include "ECS\ComponentBase.h"
 
 #include "SceneCamera.h"
-//#include "Graphics\RenderTarget.h"
+#include "Graphics\RenderTarget.h"
 #include "Graphics\SceneCollection.h"
-
-namespace sa {
-	class RenderTarget;
-}
+#include "Assets/AssetHolder.h"
 
 namespace comp {
 	class Camera : public sa::ComponentBase {
 	private:
-		sa::RenderTarget* m_pRenderTarget = nullptr;
+		sa::AssetHolder<sa::RenderTarget> m_renderTarget;
 		sa::SceneCollection m_sceneCollection;
 	public:
 		sa::SceneCamera camera;
@@ -31,7 +28,7 @@ namespace comp {
 		virtual void onConstruct(sa::Entity* entity) override;
 		virtual void onDestroy(sa::Entity* entity) override;
 
-		sa::RenderTarget* getRenderTarget() const;
+		const sa::AssetHolder<sa::RenderTarget>& getRenderTarget() const;
 		void setRenderTarget(sa::RenderTarget* pRenderTarget);
 
 		sa::SceneCollection& getSceneCollection();

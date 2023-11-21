@@ -330,7 +330,7 @@ namespace sa {
 			
 			bool renderedToMainRenderTarget = false;
 			m_currentScene.getAsset()->forEach<comp::Camera>([&](comp::Camera& camera) {
-				RenderTarget* pRenderTarget = camera.getRenderTarget();
+				RenderTarget* pRenderTarget = camera.getRenderTarget().getAsset();
 				if (pRenderTarget) {
 					m_renderPipeline.render(context, &camera.camera, pRenderTarget, camera.getSceneCollection());
 				}

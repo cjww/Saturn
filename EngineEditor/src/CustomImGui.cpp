@@ -418,7 +418,7 @@ namespace ImGui {
 		}
 
 		
-		sa::UUID id = camera->getRenderTarget()->getID();
+		sa::UUID id = camera->getRenderTarget().getID();
 		if (AssetSlot("RenderTarget", id, sa::AssetManager::get().getAssetTypeID<sa::RenderTarget>())) {
 			camera->setRenderTarget(sa::AssetManager::get().getAsset<sa::RenderTarget>(id));
 		}

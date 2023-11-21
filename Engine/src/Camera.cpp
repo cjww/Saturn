@@ -27,12 +27,12 @@ namespace comp {
 
 	}
 
-	sa::RenderTarget* Camera::getRenderTarget() const {
-		return m_pRenderTarget;
+	const sa::AssetHolder<sa::RenderTarget>& Camera::getRenderTarget() const {
+		return m_renderTarget;
 	}
 
 	void Camera::setRenderTarget(sa::RenderTarget* pRenderTarget) {
-		m_pRenderTarget = pRenderTarget;
+		m_renderTarget = pRenderTarget;
 	}
 
 	sa::SceneCollection& Camera::getSceneCollection() {
