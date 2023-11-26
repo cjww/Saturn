@@ -230,7 +230,7 @@ void DirectoryView::onImGui() {
 		auto& assets = sa::AssetManager::get().getAssets();
 		static sa::Asset* selected = nullptr;
 
-		if (ImGui::Button("Load Asset") && selected) {
+		if (ImGui::Button("Hold Asset") && selected) {
 			selected->hold();
 		}
 		ImGui::SameLine();
@@ -241,6 +241,12 @@ void DirectoryView::onImGui() {
 		if (ImGui::Button("Write Asset") && selected) {
 			selected->write();
 		}
+		ImGui::SameLine();
+		if (ImGui::Button("Properties") && selected) {
+			selected->hold();
+			m_openAssetProperties.insert(selected);
+		}
+
 
 		if (selected && selected->isLoaded()) {
 			if (selected->getType() == sa::AssetManager::get().getAssetTypeID<sa::ModelAsset>()) {

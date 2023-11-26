@@ -310,6 +310,13 @@ namespace sa {
 		}
 	}
 
+	void AssetManager::getAssets(std::vector<UUID>* assets, AssetTypeID typeFilter) const {
+		for (auto& [id, asset] : m_assets) {
+			if (asset->getType() == typeFilter) {
+				assets->push_back(id);
+			}
+		}
+	}
 
 	void AssetManager::rescanAssets() {
 		locateAssets();
