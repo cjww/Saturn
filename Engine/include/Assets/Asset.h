@@ -16,7 +16,7 @@ namespace sa {
 	struct AssetHeader {
 		UUID id;
 		size_t size = 0;
-		std::streampos offset = 0;
+		std::streampos contentOffset = sizeof(AssetHeader);
 		AssetTypeID type;
 		uint16_t version = SA_ASSET_VERSION;
 	};
@@ -102,6 +102,7 @@ namespace sa {
 		AssetTypeID getType() const;
 
 		const std::string& getName() const;
+		void setName(const std::string& name);
 		const std::filesystem::path& getAssetPath() const;
 		void setAssetPath(const std::filesystem::path& assetPath);
 
@@ -112,8 +113,10 @@ namespace sa {
 
 		uint32_t getReferenceCount() const;
 
-		static AssetHeader readHeader(std::ifstream& file);
-		static void writeHeader(const AssetHeader& header, std::ofstream& file);
+		bool isFromPackage() const;
+
+		static AssetHeader ReadHeader(std::ifstream& file);
+		static void WriteHeader(const AssetHeader& header, std::ofstream& file);
 
 		static void waitAllAssets();
 

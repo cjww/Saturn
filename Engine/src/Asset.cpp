@@ -133,12 +133,8 @@ namespace sa {
 					file.close();
 					throw std::runtime_error("Failed to open file " + path.generic_string());
 				}
-				m_header = readHeader(file);
-				if (m_header.version != SA_ASSET_VERSION) {
-					SA_DEBUG_LOG_WARNING("Asset versions do not match! ", path, " (", m_header.version, " vs ", SA_ASSET_VERSION, ")");
-					m_header.version = SA_ASSET_VERSION;
-				}
 
+				file.seekg(m_header.contentOffset);
 				m_isLoaded = onLoad(file, flags);
 
 				file.close();
@@ -160,6 +156,10 @@ namespace sa {
 			return false;
 		if (m_assetPath.empty())
 			return false;
+
+		if (isFromPackage()) {
+			throw std::runtime_error("Can not write asset to asset package! Recreate the asset package instead or set new asset path");
+		}
 		auto path = m_assetPath;
 		auto future = s_taskExecutor.async([=]() {
 			try
@@ -177,7 +177,7 @@ namespace sa {
 				}
 
 				const auto headerPos = file.tellp();
-				writeHeader(m_header, file);
+				WriteHeader(m_header, file);
 				
 				const auto contentPos = file.tellp();
 				const bool success = onWrite(file, flags);
@@ -186,7 +186,7 @@ namespace sa {
 				const auto pos = file.tellp();
 				m_header.size = pos - contentPos;
 				file.seekp(headerPos);
-				writeHeader(m_header, file);
+				WriteHeader(m_header, file);
 				file.seekp(pos);
 				
 
@@ -233,13 +233,18 @@ namespace sa {
 		return m_name;
 	}
 
+	void Asset::setName(const std::string& name) {
+		m_name = name;
+	}
+
 	const std::filesystem::path& Asset::getAssetPath() const {
 		return m_assetPath;
 	}
 
 	void Asset::setAssetPath(const std::filesystem::path& assetPath) {
 		m_assetPath = assetPath;
-		m_name = m_assetPath.filename().replace_extension().generic_string();
+		if(!isFromPackage())
+			m_name = m_assetPath.filename().replace_extension().generic_string();
 	}
 
 	void Asset::setHeader(const AssetHeader& header) {
@@ -258,14 +263,18 @@ namespace sa {
 		return m_refCount;
 	}
 
-	AssetHeader Asset::readHeader(std::ifstream& file) {
+	bool Asset::isFromPackage() const {
+		return m_assetPath.extension() == SA_ASSET_PACKAGE_EXTENSION;
+	}
+
+	AssetHeader Asset::ReadHeader(std::ifstream& file) {
 		AssetHeader header = {};
-		file.read((char*)&header, sizeof(AssetHeader));
+		file.read(reinterpret_cast<char*>(&header), sizeof(AssetHeader));
 		return header;
 	}
 
-	void Asset::writeHeader(const AssetHeader& header, std::ofstream& file) {
-		file.write((char*)&header, sizeof(AssetHeader));
+	void Asset::WriteHeader(const AssetHeader& header, std::ofstream& file) {
+		file.write(reinterpret_cast<const char*>(&header), sizeof(AssetHeader));
 	}
 
 	void Asset::waitAllAssets() {

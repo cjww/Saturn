@@ -44,15 +44,14 @@ namespace sa {
 	class TextureAsset;
 	class MaterialShader;
 
-	class AssetPackage {
-	public:
-		std::filesystem::path path;
-		size_t size;
-		std::fstream file;
+	typedef uint32_t AssetPackageFlags;
+	enum class AssetPackageFlagBits : AssetPackageFlags {
+		
+	};
 
-		~AssetPackage() {
-			file.close();
-		}
+	struct AssetPackageHeader {
+		size_t assetCount;
+		AssetPackageFlags flags;
 	};
 
 	// Singelton class
@@ -65,7 +64,6 @@ namespace sa {
 		std::unordered_map<UUID, std::filesystem::path> m_importedAssets;
 
 		std::unordered_map<UUID, std::unique_ptr<Asset>> m_assets;
-		std::list<AssetPackage> m_assetPackages;
 
 		AssetTypeID m_nextTypeID;
 		std::unordered_map<AssetTypeID, std::function<Asset* (const AssetHeader&)>> m_assetAddConversions;
@@ -74,13 +72,11 @@ namespace sa {
 
 		AssetManager();
 
-		void locateAssetPackages();
-		void locateStandaloneAssets();
+		void locateAssets();
 		Asset* addAsset(const std::filesystem::path& assetPath);
+		Asset* addAsset(AssetHeader header, const std::filesystem::path& assetPath);
 
-		void loadAssetPackage(AssetPackage& package);
-
-		AssetPackage& newAssetPackage(const std::filesystem::path& path);
+		void addAssetPackage(const std::filesystem::path& packagePath);
 
 		template<typename T>
 		T* createAsset(const std::string& name, UUID id);
@@ -92,6 +88,8 @@ namespace sa {
 		static AssetManager& get();
 		
 		static bool IsAsset(const std::filesystem::directory_entry& entry);
+		static bool IsAssetPackage(const std::filesystem::directory_entry& entry);
+
 
 		void clear();
 
@@ -150,6 +148,7 @@ namespace sa {
 		Asset* importAsset(AssetTypeID type, const std::filesystem::path& path, const std::filesystem::path& assetDirectory = SA_ASSET_DIR);
 		Asset* createAsset(AssetTypeID type, const std::string& name, const std::filesystem::path& assetDirectory = SA_ASSET_DIR);
 
+		void makeAssetPackage(const std::vector<UUID>& assets, const std::filesystem::path& packagePath);
 
 		void removeAsset(Asset* asset);
 		void removeAsset(UUID id);

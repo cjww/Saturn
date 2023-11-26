@@ -167,10 +167,13 @@ void DirectoryView::onImGui() {
 				else if(entry.path().extension() == ".lua") {
 					icon = m_luaScriptIcon;
 				}
-
-				sa::Asset* pAsset = sa::AssetManager::get().findAssetByPath(entry.path());
-				if (pAsset) {
-					icon = ImGui::GetAssetInfo(pAsset->getType()).icon;
+				
+				sa::Asset* pAsset = nullptr;
+				if(sa::AssetManager::IsAsset(entry)) {
+					pAsset = sa::AssetManager::get().findAssetByPath(entry.path());
+					if (pAsset) {
+						icon = ImGui::GetAssetInfo(pAsset->getType()).icon;
+					}
 				}
 
 				ImGui::DirectoryEntry(entry, iconSize, selectedItems, lastSelected, wasChanged, editedFile, editingName, icon);
@@ -182,7 +185,6 @@ void DirectoryView::onImGui() {
 						m_openDirectory = entry.path();
 						break;
 					}
-					sa::Asset* pAsset = sa::AssetManager::get().findAssetByPath(entry.path());
 					if (pAsset) {
 						if (sa::AssetManager::get().isType<sa::Scene>(pAsset)) {
 							m_pEngine->setScene(pAsset->cast<sa::Scene>());

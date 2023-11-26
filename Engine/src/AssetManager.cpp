@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "AssetManager.h"
 
-
 #include "assimp/Importer.hpp"
 #include "assimp/scene.h"
 #include "assimp/postprocess.h"
@@ -22,15 +21,14 @@
 
 namespace sa {
 	
-	void AssetManager::locateAssetPackages() {
-		
-	}
-
-	void AssetManager::locateStandaloneAssets() {
+	void AssetManager::locateAssets() {
 		std::filesystem::path path = std::filesystem::current_path();
 		for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) {
 			if (IsAsset(entry)) {
 				addAsset(std::filesystem::proximate(entry.path()));
+			}
+			else if(IsAssetPackage(entry)) {
+				addAssetPackage(std::filesystem::proximate(entry.path()));
 			}
 		}
 	}
@@ -42,42 +40,50 @@ namespace sa {
 			SA_DEBUG_LOG_ERROR("Failed to open persumed asset ", assetPath);
 			return nullptr;
 		}
-		AssetHeader header = Asset::readHeader(file);
+		AssetHeader header = Asset::ReadHeader(file);
 		file.close();
+		return addAsset(header, assetPath);
+	}
+
+	Asset* AssetManager::addAsset(AssetHeader header, const std::filesystem::path& assetPath) {
 		if (header.version != SA_ASSET_VERSION) {
 			SA_DEBUG_LOG_WARNING("Asset versions do not match! ", assetPath, " (", header.version, " vs ", SA_ASSET_VERSION, ")");
 			header.version = SA_ASSET_VERSION;
 		}
-		
+
 		if (m_assets.count(header.id)) { // already loaded
 			m_assets.at(header.id)->setAssetPath(assetPath); // Update Asset Path 
 			return nullptr;
 		}
 		if (!m_assetAddConversions.count(header.type)) {
-			SA_DEBUG_LOG_ERROR("Unknown type");
-			return nullptr;
+			throw std::runtime_error("Unknown Asset Type " + std::to_string(header.type));
 		}
 
 		Asset* pAsset = m_assetAddConversions.at(header.type)(header);
 
 		pAsset->setAssetPath(assetPath); // The path the asset will write to
-		
+
 		return pAsset;
 	}
 
-	void AssetManager::loadAssetPackage(AssetPackage& package) {
-	
-	}
+	void AssetManager::addAssetPackage(const std::filesystem::path& packagePath) {
+		std::ifstream file(packagePath, std::ios::binary);
+		if (!file.good()) {
+			SA_DEBUG_LOG_ERROR("Failed to open persumed asset package ", packagePath);
+			return;
+		}
 
-	AssetPackage& AssetManager::newAssetPackage(const std::filesystem::path& path) {
-		AssetPackage& package = m_assetPackages.emplace_back();
-		package.path = path;
-		package.file.open(path, std::ios::binary | std::ios::app);
-		if (!package.file.is_open())
-			SA_DEBUG_LOG_ERROR("Failed to open package file");
-		return package;
-	}
+		AssetPackageHeader header = {};
+		file.read(reinterpret_cast<char*>(&header), sizeof(header));
+		SA_DEBUG_LOG_INFO("Package contains ", header.assetCount, " assets");
+		for(size_t i = 0; i < header.assetCount; i++) {
+			AssetHeader assetHeader = Asset::ReadHeader(file);
+			addAsset(assetHeader, packagePath);
+			SA_DEBUG_LOG_INFO(i, ": Asset size: ", assetHeader.size, " - Asset content offset: ", assetHeader.contentOffset, " - Asset Type: ", getAssetTypeName(assetHeader.type));
+		}
 
+		file.close();
+	}
 
 	AssetManager& AssetManager::get() {
 		static AssetManager instance;
@@ -85,7 +91,11 @@ namespace sa {
 	}
 
 	bool AssetManager::IsAsset(const std::filesystem::directory_entry& entry) {
-		return entry.is_regular_file() && entry.path().extension() == ".asset";
+		return entry.is_regular_file() && entry.path().extension() == SA_ASSET_EXTENSION;
+	}
+
+	bool AssetManager::IsAssetPackage(const std::filesystem::directory_entry& entry) {
+		return entry.is_regular_file() && entry.path().extension() == SA_ASSET_PACKAGE_EXTENSION;
 	}
 
 
@@ -95,7 +105,6 @@ namespace sa {
 			while (!pAsset->release());
 		}
 		m_assets.clear();
-		m_assetPackages.clear();
 	}
 	
 	Texture2D* AssetManager::loadDefaultTexture() {
@@ -303,11 +312,7 @@ namespace sa {
 
 
 	void AssetManager::rescanAssets() {
-		locateStandaloneAssets();
-		locateAssetPackages();
-		for (auto& pkg : m_assetPackages) {
-			loadAssetPackage(pkg);
-		}
+		locateAssets();
 	}
 
 	void AssetManager::getRegisteredAssetTypes(std::vector<AssetTypeID>& types) {
@@ -414,6 +419,62 @@ namespace sa {
 		asset->write();
 
 		return asset;
+	}
+
+	void AssetManager::makeAssetPackage(const std::vector<UUID>& assets, const std::filesystem::path& packagePath) {
+
+
+		// make sure all assets are loaded and not unloaded while writing
+		std::vector<AssetHolder<Asset>> heldAssets;
+		heldAssets.reserve(assets.size());
+		for (auto& id : assets) {
+			Asset* pAsset = getAsset(id);
+			heldAssets.emplace_back(pAsset);
+		}
+		for (auto& asset : heldAssets) {
+			asset.getProgress()->waitAll();
+		}
+
+		std::ofstream file;
+		if(packagePath.extension() == SA_ASSET_PACKAGE_EXTENSION) {
+			file.open(packagePath, std::ios::binary);
+		}
+		else {
+			auto path = packagePath;
+			path.replace_extension(SA_ASSET_PACKAGE_EXTENSION);
+			file.open(path, std::ios::binary);
+		}
+
+		if(!file.good()) {
+			SA_DEBUG_LOG_ERROR("Failed to open file for writing: ", packagePath);
+			return;
+		}
+
+		AssetPackageHeader packageHeader = {};
+		packageHeader.assetCount = assets.size();
+		packageHeader.flags = 0;
+		file.write(reinterpret_cast<const char*>(&packageHeader), sizeof(packageHeader));
+
+		std::streampos headerPos = file.tellp();
+		std::streampos contentPos = headerPos;
+		contentPos += sizeof(AssetHeader) * assets.size();
+
+		for(auto& id : assets) {
+			Asset* pAsset = getAsset(id);
+			auto header = pAsset->getHeader();
+
+			file.seekp(contentPos);
+			header.contentOffset = contentPos;
+			pAsset->onWrite(file, 0);
+			header.size = file.tellp() - contentPos;
+			contentPos = file.tellp();
+
+			file.seekp(headerPos);
+			Asset::WriteHeader(header, file);
+			headerPos = file.tellp();
+		}
+
+		file.close();
 	}
 
 
