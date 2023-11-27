@@ -134,6 +134,12 @@ namespace sa {
 		}
 		m_recentProjectPaths.push_back(projectPath);
 
+		std::vector<UUID> assets;
+
+		AssetManager::get().getAssets(&assets, AssetManager::get().getAssetTypeID<Material>());
+		AssetManager::get().makeAssetPackage(assets, "Assets/MyPackage.assetpkg");
+		//Asset* asset = AssetManager::get().findAssetByName("MyMaterial");
+		//AssetManager::get().makeAssetPackage({ asset->getID() }, "Assets/MyPackage.assetpkg");
 		return true;
 	}
 
