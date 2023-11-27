@@ -267,6 +267,10 @@ namespace sa {
 		return m_assetPath.extension() == SA_ASSET_PACKAGE_EXTENSION;
 	}
 
+	bool Asset::isFromPackage(const std::filesystem::path& packagePath) const {
+		return isFromPackage() && m_assetPath == packagePath;
+	}
+
 	AssetHeader Asset::ReadHeader(std::ifstream& file) {
 		AssetHeader header = {};
 		file.read(reinterpret_cast<char*>(&header), sizeof(AssetHeader));
