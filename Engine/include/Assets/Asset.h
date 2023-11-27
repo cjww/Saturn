@@ -98,6 +98,7 @@ namespace sa {
 		bool release();
 
 		bool isLoaded() const;
+		
 		const ProgressView<bool>& getProgress() const;
 		AssetTypeID getType() const;
 

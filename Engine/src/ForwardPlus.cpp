@@ -114,11 +114,10 @@ namespace sa {
 
 		context.beginRenderProgram(m_depthPreRenderProgram, data.depthFramebuffer, SubpassContents::DIRECT);
 		for (auto& collection : sc) {
-
-			if (!collection.getMaterialShader()->isLoaded()) {
+			if (!collection.readyDescriptorSets()) {
 				continue;
 			}
-			collection.readyDescriptorSets();
+
 			collection.recreatePipelines(m_colorRenderProgram, m_depthPreRenderProgram, pRenderTarget->getExtent());
 
 
@@ -194,7 +193,7 @@ namespace sa {
 		// Main color pass
 		context.beginRenderProgram(m_colorRenderProgram, data.colorFramebuffer, SubpassContents::DIRECT);
 		for (auto& collection : sc) {
-			if (!collection.getMaterialShader()->isLoaded()) {
+			if (!collection.readyDescriptorSets()) {
 				continue;
 			}
 			collection.bindColorPipeline(context);

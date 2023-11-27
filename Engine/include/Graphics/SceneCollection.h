@@ -40,7 +40,7 @@ namespace sa {
 		uint32_t m_uniqueMeshCount = 0;
 
 
-		MaterialShader* m_pMaterialShader;
+		UUID m_materialShaderID;
 
 		ResourceID m_sceneDescriptorSetColorPass = NULL_RESOURCE;
 		ResourceID m_sceneDescriptorSetDepthPass = NULL_RESOURCE;
@@ -59,7 +59,7 @@ namespace sa {
 		void clear();
 		void swap();
 
-		void readyDescriptorSets();
+		bool readyDescriptorSets();
 		void recreatePipelines(ResourceID colorRenderProgram, ResourceID depthRenderProgram, Extent extent);
 
 		void bindColorPipeline(RenderContext& context);

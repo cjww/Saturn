@@ -5,7 +5,7 @@
 
 namespace sa {
 	MaterialShaderCollection::MaterialShaderCollection(MaterialShader* pMaterialShader) {
-		m_pMaterialShader = pMaterialShader;
+		m_materialShaderID = pMaterialShader->getID();
 		m_objectCount = 0;
 		m_vertexCount = 0;
 		m_indexCount = 0;
@@ -83,22 +83,28 @@ namespace sa {
 		m_materialIndicesBuffer.swap();
 	}
 
-	void MaterialShaderCollection::readyDescriptorSets() {
-		if (!m_pMaterialShader->isLoaded())
-			return;
+	bool MaterialShaderCollection::readyDescriptorSets() {
+		const auto pMaterialShader = getMaterialShader();
+		if (!pMaterialShader || !pMaterialShader->isLoaded())
+			return false;
 
-		if (m_sceneDescriptorSetColorPass == NULL_RESOURCE || !m_pMaterialShader->m_colorShaderSet.hasAllocatedDescriptorSet(m_sceneDescriptorSetColorPass)) {
-			m_sceneDescriptorSetColorPass = m_pMaterialShader->m_colorShaderSet.allocateDescriptorSet(SET_PER_FRAME);
+		if (m_sceneDescriptorSetColorPass == NULL_RESOURCE || !pMaterialShader->m_colorShaderSet.hasAllocatedDescriptorSet(m_sceneDescriptorSetColorPass)) {
+			m_sceneDescriptorSetColorPass = pMaterialShader->m_colorShaderSet.allocateDescriptorSet(SET_PER_FRAME);
 		}
 
-		if (m_sceneDescriptorSetDepthPass == NULL_RESOURCE || !m_pMaterialShader->m_depthShaderSet.hasAllocatedDescriptorSet(m_sceneDescriptorSetDepthPass)) {
-			m_sceneDescriptorSetDepthPass = m_pMaterialShader->m_depthShaderSet.allocateDescriptorSet(SET_PER_FRAME);
+		if (m_sceneDescriptorSetDepthPass == NULL_RESOURCE || !pMaterialShader->m_depthShaderSet.hasAllocatedDescriptorSet(m_sceneDescriptorSetDepthPass)) {
+			m_sceneDescriptorSetDepthPass = pMaterialShader->m_depthShaderSet.allocateDescriptorSet(SET_PER_FRAME);
 		}
+
+		return true;
 	}
 
 
 	void MaterialShaderCollection::recreatePipelines(ResourceID colorRenderProgram, ResourceID depthRenderProgram, Extent extent) {
-		if (extent == m_currentExtent && !m_pMaterialShader->m_recompiled)
+		const auto pMaterialShader = getMaterialShader();
+		if (!pMaterialShader)
+			return;
+		if (extent == m_currentExtent && !pMaterialShader->m_recompiled)
 			return;
 
 		PipelineSettings settings = {};
@@ -112,10 +118,11 @@ namespace sa {
 			renderer.destroyPipeline(m_depthPipeline);
 		}
 
-		m_colorPipeline = renderer.createGraphicsPipeline(colorRenderProgram, 0, extent, m_pMaterialShader->m_colorShaderSet, settings);
-		m_depthPipeline = renderer.createGraphicsPipeline(depthRenderProgram, 0, extent, m_pMaterialShader->m_depthShaderSet, settings);
+		m_colorPipeline = renderer.createGraphicsPipeline(colorRenderProgram, 0, extent, pMaterialShader->m_colorShaderSet, settings);
+		m_depthPipeline = renderer.createGraphicsPipeline(depthRenderProgram, 0, extent, pMaterialShader->m_depthShaderSet, settings);
 		m_currentExtent = extent;
-		m_pMaterialShader->m_recompiled = false;
+
+		pMaterialShader->m_recompiled = false;
 	}
 
 	void MaterialShaderCollection::bindColorPipeline(RenderContext& context) {
@@ -128,9 +135,6 @@ namespace sa {
 
 	
 	MaterialShaderCollection& SceneCollection::getMaterialShaderCollection(MaterialShader* pMaterialShader) {
-		if (!pMaterialShader)
-			pMaterialShader = AssetManager::get().getDefaultMaterialShader();
-
 		const auto it = std::find_if(m_materialShaderCollections.begin(), m_materialShaderCollections.end(), 
 			[&](const MaterialShaderCollection& collection) { return collection.getMaterialShader() == pMaterialShader; });
 		if (it == m_materialShaderCollections.end()) {
@@ -176,7 +180,7 @@ namespace sa {
 	}
 
 	MaterialShader* MaterialShaderCollection::getMaterialShader() const {
-		return m_pMaterialShader;
+		return AssetManager::get().getAsset<MaterialShader>(m_materialShaderID);
 	}
 
 	SceneCollection::SceneCollection() {
@@ -220,7 +224,15 @@ namespace sa {
 		uint32_t i = 0;
 		for (const auto& mesh : pModel->meshes) {
 			Material* pMaterial = mesh.material.getAsset();
-			MaterialShaderCollection& collection = getMaterialShaderCollection(pMaterial ? pMaterial->getMaterialShader().getAsset() : nullptr);
+
+			MaterialShader* pMaterialShader;
+			if(pMaterial && pMaterial->getMaterialShader().getAsset()) {
+				pMaterialShader = pMaterial->getMaterialShader().getAsset();
+			}
+			else {
+				pMaterialShader = AssetManager::get().getDefaultMaterialShader();
+			}
+			MaterialShaderCollection& collection = getMaterialShaderCollection(pMaterialShader);
 			collection.addMesh(pModelAsset, i, objectBuffer);
 			i++;
 		}
@@ -240,9 +252,9 @@ namespace sa {
 		m_lightBuffer.append(m_lights, 16);
 
 
-		// Clear Dynamic buffers
 		for (auto& collection : m_materialShaderCollections) {
 
+			// Clear Dynamic buffers
 			collection.m_objectBuffer.clear();
 			collection.m_indirectIndexedBuffer.clear();
 			collection.m_vertexBuffer.clear();
