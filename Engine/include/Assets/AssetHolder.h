@@ -32,6 +32,7 @@ namespace sa {
 
 		const ProgressView<bool>* getProgress() const;
 		const char* getName() const;
+		const std::filesystem::path& getAssetPath() const;
 
 		const UUID& getID() const;
 		static AssetTypeID getTypeID();
@@ -196,6 +197,13 @@ namespace sa {
 		if (m_pAsset)
 			return m_pAsset->getName();
 		return "None";
+	}
+
+	template <typename T>
+	const std::filesystem::path& AssetHolder<T>::getAssetPath() const {
+		if (m_pAsset)
+			return m_pAsset->getAssetPath();
+		return {};
 	}
 
 	template <typename T>

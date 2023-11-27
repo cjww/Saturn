@@ -114,6 +114,7 @@ namespace sa {
 		uint32_t getReferenceCount() const;
 
 		bool isFromPackage() const;
+		bool isFromPackage(const std::filesystem::path& packagePath) const;
 
 		static AssetHeader ReadHeader(std::ifstream& file);
 		static void WriteHeader(const AssetHeader& header, std::ofstream& file);

@@ -52,7 +52,8 @@ namespace sa {
 		}
 
 		if (m_assets.count(header.id)) { // already loaded
-			m_assets.at(header.id)->setAssetPath(assetPath); // Update Asset Path 
+			m_assets.at(header.id)->setAssetPath(assetPath); // Update Asset Path
+			m_assets.at(header.id)->setHeader(header); // And header to bring over correct content offset value
 			return nullptr;
 		}
 		if (!m_assetAddConversions.count(header.type)) {
@@ -466,8 +467,8 @@ namespace sa {
 		std::streampos contentPos = headerPos;
 		contentPos += sizeof(AssetHeader) * assets.size();
 
-		for(auto& id : assets) {
-			Asset* pAsset = getAsset(id);
+		for(auto& asset : heldAssets) {
+			Asset* pAsset = asset.getAsset();
 			auto header = pAsset->getHeader();
 
 			file.seekp(contentPos);
@@ -479,6 +480,9 @@ namespace sa {
 			file.seekp(headerPos);
 			Asset::WriteHeader(header, file);
 			headerPos = file.tellp();
+
+			if(pAsset->isFromPackage(packagePath))
+				pAsset->setHeader(header);
 		}
 
 		file.close();
