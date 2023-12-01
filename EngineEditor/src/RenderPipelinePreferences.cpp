@@ -12,15 +12,18 @@ RenderPipelinePreferences::~RenderPipelinePreferences() {
 void RenderPipelinePreferences::onImGui() {
 	if (!m_isOpen)
 		return;
-
 	if (ImGui::Begin(m_name, &m_isOpen)) {
-		static sa::BloomPreferences bloomPrefs = m_pEngine->getRenderPipeline().getBloomPass()->getBloomPreferences();
+		sa::BloomRenderLayer* pBloomLayer = m_pEngine->getRenderPipeline().getLayer<sa::BloomRenderLayer>();
+		if (!pBloomLayer) {
+			ImGui::End();
+			return;
+		}
+		static sa::BloomPreferences bloomPrefs = pBloomLayer->getBloomPreferences();
 		bool changed = false;
 		static bool autoUpdate = true;
-
 		static bool bloomActive = true;
 		if(ImGui::Checkbox("##active", &bloomActive)) {
-			m_pEngine->getRenderPipeline().getBloomPass()->setActive(bloomActive);
+			pBloomLayer->setActive(bloomActive);
 		}
 
 		ImGui::SameLine();
@@ -68,18 +71,17 @@ void RenderPipelinePreferences::onImGui() {
 
 
 		if (ImGui::Button("Apply")) {
-			m_pEngine->getRenderPipeline().getBloomPass()->setBloomPreferences(bloomPrefs);
+			pBloomLayer->setBloomPreferences(bloomPrefs);
 		}
 		ImGui::SameLine();
 		ImGui::Checkbox("Update on change", &autoUpdate);
 
 		if (autoUpdate && changed) {
-			m_pEngine->getRenderPipeline().getBloomPass()->setBloomPreferences(bloomPrefs);
+			pBloomLayer->setBloomPreferences(bloomPrefs);
 		}
 
 	}
 	ImGui::End();
-	
 }
 
 void RenderPipelinePreferences::update(float dt) {

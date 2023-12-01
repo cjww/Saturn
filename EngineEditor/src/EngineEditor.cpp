@@ -364,6 +364,7 @@ namespace sa {
 	void EngineEditor::onAttach(sa::Engine& engine, sa::RenderWindow& renderWindow) {
 		m_pEngine = &engine;
 		m_pWindow = &renderWindow;
+
 		
 		s_editorPath = std::filesystem::current_path();
 		
@@ -371,6 +372,7 @@ namespace sa {
 			m_pEngine->trigger<editor_event::DragDropped>({ static_cast<uint32_t>(count), paths });
 		});
 
+		m_pEngine->setupDefaultRenderPipeline();
 		m_pEngine->setWindowRenderer(new ImGuiRenderLayer(m_pWindow));
 
 		ImGui::SetupImGuiStyle();

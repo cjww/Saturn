@@ -9,24 +9,32 @@ namespace sa {
 
 	class RenderPipeline {
 	private:
-		IRenderTechnique* m_pRenderTechnique;
 		
-		std::unique_ptr<BloomRenderLayer> m_pBloomPass;
-
+		std::vector<IRenderLayer*> m_renderLayers;
 	public:
 		RenderPipeline();
 		virtual ~RenderPipeline();
 
-		void create(IRenderTechnique* pRenderTechnique);
+		void addLayer(IRenderLayer* pLayer);
+
+		void onRenderTargetResize(UUID renderTargetID, Extent oldExtent, Extent newExtent);
 		
 		void beginFrameImGUI();
 		
 		void render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection);
 
-		IRenderTechnique* getRenderTechnique() const;
 
-		BloomRenderLayer* getBloomPass() const;
-
+		template<typename T>
+		T* getLayer() const;
 	};
 
+	template <typename T>
+	T* RenderPipeline::getLayer() const {
+		for(auto& layer : m_renderLayers) {
+			T* ptr = dynamic_cast<T*>(layer);
+			if (ptr)
+				return ptr;
+		}
+		return nullptr;
+	}
 }

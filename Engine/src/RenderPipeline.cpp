@@ -4,17 +4,24 @@
 namespace sa {
 
 	RenderPipeline::RenderPipeline() {
-		m_pBloomPass = std::make_unique<BloomRenderLayer>();
-		m_pBloomPass->init();
+
 	}
 
 	RenderPipeline::~RenderPipeline() {
-		delete m_pRenderTechnique;
+		for(auto& layer : m_renderLayers) {
+			delete layer;
+		}
 	}
 
-	void RenderPipeline::create(IRenderTechnique* pRenderTechnique) {
-		m_pRenderTechnique = pRenderTechnique;
-		m_pRenderTechnique->init();
+	void RenderPipeline::addLayer(IRenderLayer* pLayer) {
+		m_renderLayers.push_back(pLayer);
+		pLayer->init();
+	}
+
+	void RenderPipeline::onRenderTargetResize(UUID renderTargetID, Extent oldExtent, Extent newExtent) {
+		for (auto& layer : m_renderLayers) {
+			layer->onRenderTargetResize(renderTargetID, oldExtent, newExtent);
+		}
 	}
 
 	void RenderPipeline::beginFrameImGUI() {
@@ -28,23 +35,30 @@ namespace sa {
 
 		sceneCollection.makeRenderReady();
 
+
+		for(auto& layer : m_renderLayers) {
+			if (!layer->isActive())
+				continue;
+			if (!layer->preRender(context, pCamera, pRenderTarget, sceneCollection))
+				return;
+		}
+
+		for (auto& layer : m_renderLayers) {
+			if (!layer->isActive())
+				continue;
+			if (!layer->render(context, pCamera, pRenderTarget, sceneCollection))
+				return;
+		}
+
+		for (auto& layer : m_renderLayers) {
+			if(!layer->isActive())
+				continue;
+			if (!layer->postRender(context, pCamera, pRenderTarget, sceneCollection))
+				return;
+		}
 		
-		m_pRenderTechnique->preRender(context, pCamera, pRenderTarget, sceneCollection);
-		m_pRenderTechnique->render(context, pCamera, pRenderTarget, sceneCollection);
-
-		if(m_pBloomPass->isActive())
-			m_pBloomPass->render(context, pCamera, pRenderTarget, sceneCollection);
-
 		sceneCollection.swap();
-		pRenderTarget->swap();
-	}
-
-	IRenderTechnique* RenderPipeline::getRenderTechnique() const {
-		return m_pRenderTechnique;
-	}
-
-	BloomRenderLayer* RenderPipeline::getBloomPass() const {
-		return m_pBloomPass.get();
+		pRenderTarget->m_wasResized = false;
 	}
 
 

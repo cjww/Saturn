@@ -5,6 +5,7 @@ namespace sa {
 	IRenderLayer::IRenderLayer()
 		: m_renderer(Renderer::get())
 		, m_isActive(true)
+		, m_isInitialized(false)
 	{
 	}
 

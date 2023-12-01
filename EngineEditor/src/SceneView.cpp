@@ -40,8 +40,7 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 	m_camera.lookAt(sa::Vector3(0, 0, 0));
 	m_camera.setOrthoWidth(10.f);
 	
-	m_renderTarget.initialize(pWindow->getCurrentExtent());
-	m_renderTarget.setRenderDebugHeatmap(true);
+	m_renderTarget.initialize(pEngine, pWindow->getCurrentExtent());
 
 	//m_camera.setViewport(sa::Rect{ { 0, 0 }, m_renderTarget.extent });
 
@@ -205,9 +204,10 @@ void SceneView::onImGui() {
 				ImGui::DragFloat("Snap Distance", &snapDistance, 0.5f, 0.0f, 100.f, "%.1f m");
 				ImGui::DragFloat("Snap Angle", &snapAngle, 1.f, 1.f, 180.f, "%.0f degrees");
 
-				sa::ForwardPlus* forwardPlusTechnique = dynamic_cast<sa::ForwardPlus*>(m_pEngine->getRenderPipeline().getRenderTechnique());
-				if (forwardPlusTechnique) {
-					ImGui::Checkbox("Show Light Heatmap", &showLightHeatmap);
+				auto pForwardPlus = m_pEngine->getRenderPipeline().getLayer<sa::ForwardPlus>();
+				if (pForwardPlus) {
+					ImGui::Checkbox("Show Light Heatmap", 
+						&pForwardPlus->getRenderTargetData<sa::ForwardPlus::RenderData>(m_renderTarget.getID())->renderDebugHeatmap);
 				}
 
 				ImGui::Checkbox("Show Icons", &showIcons);
@@ -245,11 +245,17 @@ void SceneView::onImGui() {
 		else if (m_renderTarget.isReady()) {
 
 			ImGui::Image(m_renderTarget.getOutputTexture(), imAvailSize);
-			if (showLightHeatmap) {
-				auto heatmap = m_renderTarget.getMainRenderData().debugLightHeatmap.getTexture();
-				if (heatmap.isValid()) {
-					ImGui::SetCursorPos(ImGui::GetWindowContentRegionMin());
-					ImGui::Image(heatmap, imAvailSize);
+			
+			auto pForwardPlus = m_pEngine->getRenderPipeline().getLayer<sa::ForwardPlus>();
+			if (pForwardPlus) {
+				auto pRenderData = pForwardPlus->getRenderTargetData<sa::ForwardPlus::RenderData>(m_renderTarget.getID());
+
+				if (pRenderData->renderDebugHeatmap) {
+					auto heatmap = pRenderData->debugLightHeatmap.getTexture();
+					if (heatmap.isValid()) {
+						ImGui::SetCursorPos(ImGui::GetWindowContentRegionMin());
+						ImGui::Image(heatmap, imAvailSize);
+					}
 				}
 			}
 		}

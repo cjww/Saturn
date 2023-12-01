@@ -11,70 +11,19 @@ namespace sa {
 
 	class RenderTarget : public Asset {
 	private:
+		friend class RenderPipeline;
 		Renderer& m_renderer;
 
 		bool m_isActive;
 
 		Extent m_extent;
+		bool m_wasResized;
 
 		entt::connection m_windowResizedConnection;
 
-		struct MainRenderData {
-			DynamicTexture colorTexture;
-			DynamicTexture depthTexture;
-			ResourceID colorFramebuffer = NULL_RESOURCE;
-			ResourceID depthFramebuffer = NULL_RESOURCE;
-			
-
-			// Light culling
-			glm::uvec2 tileCount;
-			DynamicBuffer lightIndexBuffer;
-			ResourceID lightCullingDescriptorSet = NULL_RESOURCE;
-
-			DynamicTexture2D debugLightHeatmap;
-			ResourceID debugLightHeatmapRenderProgram = NULL_RESOURCE;
-			ResourceID debugLightHeatmapFramebuffer = NULL_RESOURCE;
-			ResourceID debugLightHeatmapPipeline = NULL_RESOURCE;
-			ResourceID debugLightHeatmapDescriptorSet = NULL_RESOURCE;
-			bool renderDebugHeatmap = false;
-
-
-			bool isInitialized = false;
-		} m_mainRenderData;
-		
-		struct BloomData {
-			bool isInitialized = false;
-
-			ResourceID filterDescriptorSet = NULL_RESOURCE;
-			std::vector<ResourceID> blurDescriptorSets;
-			std::vector<ResourceID> upsampleDescriptorSets;
-			ResourceID compositeDescriptorSet = NULL_RESOURCE;
-
-			DynamicTexture2D bloomTexture;
-			std::vector<DynamicTexture2D> bloomMipTextures;
-
-			DynamicTexture2D bufferTexture;
-			std::vector<DynamicTexture2D> bufferMipTextures;
-
-			DynamicTexture2D outputTexture;
-
-		} m_bloomData;
-
 		DynamicTexture* m_pOutputTexture = nullptr;
 
-
-		friend class BloomRenderLayer;
-		void initializeBloomData(RenderContext& context, Extent extent, const DynamicTexture* colorTexture, ShaderSet& bloomShader, ResourceID sampler);
-		void cleanupBloomData();
-
-		friend class ForwardPlus;
-		void initializeMainRenderData(ResourceID colorRenderProgram, ResourceID depthPreRenderProgram, 
-			ShaderSet& lightCullingShader,
-			ShaderSet& debugHeatmapShader,
-			ResourceID sampler, Extent extent);
-		void cleanupMainRenderData();
-
-		void setOutputTexture(const DynamicTexture& dynamicTexture);
+		entt::dispatcher* m_pDispatcher;
 
 		void onWindowResized(const engine_event::WindowResized& e);
 	public:
@@ -84,24 +33,20 @@ namespace sa {
 
 		virtual ~RenderTarget();
 
-		void initialize(Extent extent);
+		void initialize(Engine* pEngine, Extent extent);
 		void initialize(Engine* pEngine, RenderWindow* pWindow);
 		void destroy();
 
 		void resize(Extent extent);
-
-		void swap();
+		bool wasResized() const;
 
 		bool isReady() const;
 
-		const MainRenderData& getMainRenderData() const;
-		const BloomData& getBloomData() const;
-
-		void setRenderDebugHeatmap(bool value);
-
 		const Extent& getExtent() const;
 
+		const DynamicTexture* getOutputTextureDynamic() const;
 		const Texture& getOutputTexture() const;
+		void setOutputTexture(const DynamicTexture& dynamicTexture);
 
 		void setActive(bool isActive);
 		bool isActive() const;

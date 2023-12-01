@@ -25,6 +25,12 @@ namespace sa {
 			Extent newExtent;
 		};
 
+		struct RenderTargetResized {
+			UUID renderTargetID;
+			Extent oldExtent;
+			Extent newExtent;
+		};
+
 	}
 	namespace scene_event {
 

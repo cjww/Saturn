@@ -272,6 +272,10 @@ namespace sa {
 		m_windowExtent = newExtent;
 	}
 
+	void Engine::onRenderTargetResize(sa::engine_event::RenderTargetResized e) {
+		m_renderPipeline.onRenderTargetResize(e.renderTargetID, e.oldExtent, e.newExtent);
+	}
+
 	const std::filesystem::path& Engine::getShaderDirectory() {
 		return s_shaderDirectory;
 	}
@@ -293,7 +297,6 @@ namespace sa {
 		Ref::reg();
 		
 		if (pWindow) {
-			m_renderPipeline.create(new ForwardPlus);
 			
 			setWindowRenderer(new WindowRenderer(m_pWindow));
 
@@ -302,7 +305,12 @@ namespace sa {
 			m_mainRenderTarget.initialize(this, m_pWindow);
 		}
 		sink<engine_event::SceneSet>().connect<&Engine::onSceneSet>(this);
+		sink<engine_event::RenderTargetResized>().connect<&Engine::onRenderTargetResize>(this);
+	}
 
+	void Engine::setupDefaultRenderPipeline() {
+		m_renderPipeline.addLayer(new ForwardPlus);
+		m_renderPipeline.addLayer(new BloomRenderLayer);
 	}
 
 	void Engine::cleanup() {
@@ -351,7 +359,7 @@ namespace sa {
 		}
 	}
 
-	const RenderPipeline& Engine::getRenderPipeline() const {
+	RenderPipeline& Engine::getRenderPipeline() {
 		return m_renderPipeline;
 	}
 

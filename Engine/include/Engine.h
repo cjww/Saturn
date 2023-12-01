@@ -29,6 +29,7 @@ namespace sa {
 
 		void reg();
 		void onWindowResize(Extent newExtent);
+		void onRenderTargetResize(sa::engine_event::RenderTargetResized e);
 
 	public:
 		static const std::filesystem::path& getShaderDirectory();
@@ -37,13 +38,14 @@ namespace sa {
 
 		// Call this to set up engine
 		void setup(sa::RenderWindow* pWindow = nullptr, bool enableImgui = false);
+		void setupDefaultRenderPipeline();
 
 		void cleanup();
 
 		void recordImGui();
 		void draw();
 
-		const RenderPipeline& getRenderPipeline() const;
+		RenderPipeline& getRenderPipeline();
 
 		const RenderTarget& getMainRenderTarget() const;
 
