@@ -61,6 +61,10 @@ namespace sa {
 		template<typename ...Components>
 		void updateComponents();
 
+		void updateComponent(ComponentType type);
+		bool updateComponent(const std::string& name);
+
+
 		EntityScript* addScript(const std::filesystem::path& path, const EntityScript* inheritSerializedData = nullptr);
 		void removeScript(const std::string& name);
 		EntityScript* getScript(const std::string& name) const;
@@ -198,6 +202,7 @@ namespace sa {
 				.func<&Entity::addComponent<Comp>>("add"_hs)
 				.func<&Entity::removeComponent<Comp>>("remove"_hs)
 				.func<&Entity::copyComponent<Comp>>("copy"_hs)
+				.func<&Entity::updateComponents<Comp>>("update"_hs)
 				;
 		
 			SA_DEBUG_LOG_INFO("Registered Meta functions for ", getComponentName<Comp>());
@@ -231,6 +236,7 @@ namespace sa {
 					self.removeComponent(name);
 				});
 
+			
 			SA_DEBUG_LOG_INFO("Registered Lua property for ", getComponentName<Comp>());
 
 		}

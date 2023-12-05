@@ -95,6 +95,7 @@ namespace sa {
 		auto type = registerType<Scene>("Scene",
 			sol::no_constructor,
 			sol::base_classes, sol::bases<Asset>());
+
 		type["findEntitiesByName"] = [](Scene& self, const std::string& name) {
 			std::vector<Entity> entities;
 			for (auto [e] : self.m_reg.storage<entt::entity>().each()) {
@@ -105,7 +106,17 @@ namespace sa {
 			return sol::as_table(entities);
 		};
 
-		type["createEntity"] = &Scene::createEntity;
+		type["createEntity"] = [](Scene& self, const sol::object& name) {
+			switch(name.get_type()) {
+			case sol::type::nil:
+				return self.createEntity();
+			case sol::type::string:
+				return self.createEntity(name.as<std::string>());
+			default:
+				throw sol::error("Unexpected parameter '" + sol::type_name(getState(), name.get_type()) + "'");
+			}
+
+		};
 		type["destroyEntity"] = &Scene::destroyEntity;
 
 

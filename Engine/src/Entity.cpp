@@ -20,7 +20,15 @@ namespace sa {
         type["addComponent"] = [](Entity& self, const std::string& name) {
             self.addComponent(name);
         };
-        type["removeComponent"] = &removeScript;
+        type["removeComponent"] = [](Entity& self, const std::string& name) {
+            self.removeComponent(name);
+        };
+
+        type["update"] = [](Entity& self, const sol::table& type) {
+            const std::string name = LuaAccessable::getState()[type];
+            self.updateComponent(name);
+        };
+
 
         type["clone"] = [](Entity& self) { return self.clone(); };
 
@@ -189,6 +197,15 @@ namespace sa {
     void Entity::removeComponent(const std::string& name) {
         ComponentType type = getComponentType(name);
         removeComponent(type);
+    }
+
+    void Entity::updateComponent(ComponentType type) {
+        type.invoke("update", *this);
+    }
+
+    bool Entity::updateComponent(const std::string& name) {
+        ComponentType type = getComponentType(name);
+        updateComponent(type);
     }
 
     EntityScript* Entity::addScript(const std::filesystem::path& path, const EntityScript* inheritSerializedData) {
