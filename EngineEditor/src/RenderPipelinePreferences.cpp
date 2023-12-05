@@ -18,7 +18,7 @@ void RenderPipelinePreferences::onImGui() {
 			ImGui::End();
 			return;
 		}
-		static sa::BloomPreferences bloomPrefs = pBloomLayer->getBloomPreferences();
+		static sa::BloomPreferences bloomPrefs = pBloomLayer->getPreferences();
 		bool changed = false;
 		static bool autoUpdate = true;
 		static bool bloomActive = true;
@@ -28,6 +28,8 @@ void RenderPipelinePreferences::onImGui() {
 
 		ImGui::SameLine();
 		if (ImGui::CollapsingHeader("Bloom")) {
+			ImGui::PushID("Tonemapping");
+
 			if (ImGui::DragFloat("Threshold", &bloomPrefs.threshold, 0.1f)) {
 				bloomPrefs.threshold = std::max(bloomPrefs.threshold, 0.0f);
 				changed = true;
@@ -44,14 +46,14 @@ void RenderPipelinePreferences::onImGui() {
 			}
 
 			if (ImGui::Button("Reset")) {
-				bloomPrefs.threshold = 1.0;
-				bloomPrefs.intensity = 1.0;
-				bloomPrefs.spread = 1.0;
+				bloomPrefs = {};
 				changed = true;
 			}
+			ImGui::PopID();
 		}
 
 		if (ImGui::CollapsingHeader("Tonemapping")) {
+			ImGui::PushID("Tonemapping");
 			if (ImGui::DragFloat("Exposure", &bloomPrefs.tonemapPreferences.exposure, 0.1f)) {
 				bloomPrefs.tonemapPreferences.exposure = std::max(bloomPrefs.tonemapPreferences.exposure, 0.0f);
 				changed = true;
@@ -62,11 +64,10 @@ void RenderPipelinePreferences::onImGui() {
 			}
 
 			if (ImGui::Button("Reset")) {
-				bloomPrefs.tonemapPreferences.exposure = 1.0;
-				bloomPrefs.tonemapPreferences.gamma = 2.2;
+				bloomPrefs.tonemapPreferences = {};
 				changed = true;
 			}
-
+			ImGui::PopID();
 		}
 
 

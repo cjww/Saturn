@@ -13,7 +13,7 @@ namespace sa {
 		}
 	}
 
-	void RenderPipeline::addLayer(IRenderLayer* pLayer) {
+	void RenderPipeline::addLayer(BasicRenderLayer* pLayer) {
 		m_renderLayers.push_back(pLayer);
 		pLayer->init();
 	}

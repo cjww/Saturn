@@ -14,30 +14,34 @@
 
 namespace sa {
 
-	class ForwardPlus : public IRenderLayer {
-	public:
-		struct RenderData {
-			DynamicTexture colorTexture;
-			DynamicTexture depthTexture;
-			ResourceID colorFramebuffer = NULL_RESOURCE;
-			ResourceID depthFramebuffer = NULL_RESOURCE;
+	struct ForwardPlusRenderData {
+		DynamicTexture colorTexture;
+		DynamicTexture depthTexture;
+		ResourceID colorFramebuffer = NULL_RESOURCE;
+		ResourceID depthFramebuffer = NULL_RESOURCE;
 
 
-			// Light culling
-			glm::uvec2 tileCount;
-			DynamicBuffer lightIndexBuffer;
-			ResourceID lightCullingDescriptorSet = NULL_RESOURCE;
+		// Light culling
+		glm::uvec2 tileCount;
+		DynamicBuffer lightIndexBuffer;
+		ResourceID lightCullingDescriptorSet = NULL_RESOURCE;
 
-			DynamicTexture2D debugLightHeatmap;
-			ResourceID debugLightHeatmapRenderProgram = NULL_RESOURCE;
-			ResourceID debugLightHeatmapFramebuffer = NULL_RESOURCE;
-			ResourceID debugLightHeatmapPipeline = NULL_RESOURCE;
-			ResourceID debugLightHeatmapDescriptorSet = NULL_RESOURCE;
-			bool renderDebugHeatmap = false;
+		DynamicTexture2D debugLightHeatmap;
+		ResourceID debugLightHeatmapRenderProgram = NULL_RESOURCE;
+		ResourceID debugLightHeatmapFramebuffer = NULL_RESOURCE;
+		ResourceID debugLightHeatmapPipeline = NULL_RESOURCE;
+		ResourceID debugLightHeatmapDescriptorSet = NULL_RESOURCE;
+		bool renderDebugHeatmap = false;
 
 
-			bool isInitialized = false;
-		};
+		bool isInitialized = false;
+	};
+
+	struct ForwardPlusPreferences {
+		
+	};
+
+	class ForwardPlus : public IRenderLayer<ForwardPlusRenderData, ForwardPlusPreferences> {
 	private:
 		ResourceID m_colorRenderProgram = NULL_RESOURCE;
 		
@@ -57,12 +61,6 @@ namespace sa {
 
 		void initializeMainRenderData(const UUID& renderTargetID, Extent extent);
 		void cleanupMainRenderData(const UUID& renderTargetID);
-
-		struct RenderData;
-		std::unordered_map<UUID, RenderData> m_renderTargetData;
-
-		virtual void* getData(const UUID& renderTargetID) override;
-
 
 	public:
 

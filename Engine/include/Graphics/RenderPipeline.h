@@ -10,19 +10,18 @@ namespace sa {
 	class RenderPipeline {
 	private:
 		
-		std::vector<IRenderLayer*> m_renderLayers;
+		std::vector<BasicRenderLayer*> m_renderLayers;
 	public:
 		RenderPipeline();
 		virtual ~RenderPipeline();
 
-		void addLayer(IRenderLayer* pLayer);
+		void addLayer(BasicRenderLayer* pLayer);
 
 		void onRenderTargetResize(UUID renderTargetID, Extent oldExtent, Extent newExtent);
 		
 		void beginFrameImGUI();
 		
 		void render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection);
-
 
 		template<typename T>
 		T* getLayer() const;

@@ -19,26 +19,26 @@ namespace sa {
 		alignas(16) TonemapPreferences tonemapPreferences = {};
 	};
 	
+	struct BloomData {
+		bool isInitialized = false;
 
-	class BloomRenderLayer : public IRenderLayer {
+		ResourceID filterDescriptorSet = NULL_RESOURCE;
+		std::vector<ResourceID> blurDescriptorSets;
+		std::vector<ResourceID> upsampleDescriptorSets;
+		ResourceID compositeDescriptorSet = NULL_RESOURCE;
+
+		DynamicTexture2D bloomTexture;
+		std::vector<DynamicTexture2D> bloomMipTextures;
+
+		DynamicTexture2D bufferTexture;
+		std::vector<DynamicTexture2D> bufferMipTextures;
+
+		DynamicTexture2D outputTexture;
+
+	};
+
+	class BloomRenderLayer : public IRenderLayer<BloomData, BloomPreferences>{
 	public:
-		struct BloomData {
-			bool isInitialized = false;
-
-			ResourceID filterDescriptorSet = NULL_RESOURCE;
-			std::vector<ResourceID> blurDescriptorSets;
-			std::vector<ResourceID> upsampleDescriptorSets;
-			ResourceID compositeDescriptorSet = NULL_RESOURCE;
-
-			DynamicTexture2D bloomTexture;
-			std::vector<DynamicTexture2D> bloomMipTextures;
-
-			DynamicTexture2D bufferTexture;
-			std::vector<DynamicTexture2D> bufferMipTextures;
-
-			DynamicTexture2D outputTexture;
-
-		};
 	private:
 		
 		ShaderSet m_bloomShader;
@@ -59,10 +59,6 @@ namespace sa {
 		void initializeBloomData(const UUID& renderTargetID, RenderContext& context, Extent extent, const DynamicTexture* colorTexture);
 		void cleanupBloomData(const UUID& renderTargetID);
 
-		std::unordered_map<UUID, BloomData> m_renderTargetData;
-
-		virtual void* getData(const UUID& renderTargetID) override;
-		
 	public:
 
 		virtual void init() override;
@@ -74,10 +70,7 @@ namespace sa {
 		virtual bool render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) override;
 		virtual bool postRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) override;
 
-
-		const BloomPreferences& getBloomPreferences() const;
 		void setBloomPreferences(const BloomPreferences& bloomPreferences);
-
 
 	};
 }

@@ -22,8 +22,10 @@ void SceneView::onSceneSet(const sa::engine_event::SceneSet& e) {
 
 void SceneView::onRender(const sa::engine_event::OnRender& e) {
 	if (m_isOpen && m_pEngine->getCurrentScene()) {
+		/*
 		m_sceneCollection.clear();
 		m_sceneCollection.collect(m_pEngine->getCurrentScene());
+		 */
 		e.pRenderPipeline->render(*e.pContext, &m_camera, &m_renderTarget, m_sceneCollection);
 	}
 }
@@ -207,7 +209,7 @@ void SceneView::onImGui() {
 				auto pForwardPlus = m_pEngine->getRenderPipeline().getLayer<sa::ForwardPlus>();
 				if (pForwardPlus) {
 					ImGui::Checkbox("Show Light Heatmap", 
-						&pForwardPlus->getRenderTargetData<sa::ForwardPlus::RenderData>(m_renderTarget.getID())->renderDebugHeatmap);
+						&pForwardPlus->getRenderTargetData(m_renderTarget.getID()).renderDebugHeatmap);
 				}
 
 				ImGui::Checkbox("Show Icons", &showIcons);
@@ -248,10 +250,10 @@ void SceneView::onImGui() {
 			
 			auto pForwardPlus = m_pEngine->getRenderPipeline().getLayer<sa::ForwardPlus>();
 			if (pForwardPlus) {
-				auto pRenderData = pForwardPlus->getRenderTargetData<sa::ForwardPlus::RenderData>(m_renderTarget.getID());
+				auto renderData = pForwardPlus->getRenderTargetData(m_renderTarget.getID());
 
-				if (pRenderData->renderDebugHeatmap) {
-					auto heatmap = pRenderData->debugLightHeatmap.getTexture();
+				if (renderData.renderDebugHeatmap) {
+					auto heatmap = renderData.debugLightHeatmap.getTexture();
 					if (heatmap.isValid()) {
 						ImGui::SetCursorPos(ImGui::GetWindowContentRegionMin());
 						ImGui::Image(heatmap, imAvailSize);
