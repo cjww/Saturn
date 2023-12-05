@@ -83,6 +83,9 @@ namespace sa {
 
 
 	public:
+
+		static void reg();
+
 		~AssetManager();
 	
 		static AssetManager& get();

@@ -535,6 +535,7 @@ namespace sa {
 
 		m_nextTypeID = 0;
 
+		
 		Asset::reg();
 		registerAssetType<ModelAsset>();
 		registerAssetType<Material>();
@@ -543,6 +544,16 @@ namespace sa {
 		registerAssetType<RenderTarget>();
 		registerAssetType<MaterialShader>();
 	
+	}
+
+	void AssetManager::reg() {
+		auto type = LuaAccessable::registerType<AssetManager>("AssetManager",
+			sol::no_constructor);
+		type["getCube"] = &getCube;
+		type["getQuad"] = &getQuad;
+
+
+		LuaAccessable::getState()["AssetManager"] = &get();
 	}
 
 	AssetManager::~AssetManager() {
