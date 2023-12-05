@@ -9,6 +9,7 @@ namespace sa {
 
 	struct alignas(16) ObjectData {
 		glm::mat4 worldMat;
+		bool operator==(const ObjectData&) const = default;
 	};
 	
 	class MaterialShaderCollection {
@@ -19,7 +20,7 @@ namespace sa {
 		std::vector<ModelAsset*> m_models;
 		std::vector<std::vector<uint32_t>> m_meshes;
 
-		std::vector<std::vector<ObjectData>> m_objects;
+		std::vector<std::vector<Entity>> m_objects;
 		std::vector<Texture> m_textures;
 		std::vector<Material*> m_materials;
 		std::vector<Material::Values> m_materialData;
@@ -54,7 +55,8 @@ namespace sa {
 
 		MaterialShaderCollection(MaterialShader* pMaterialShader);
 
-		void addMesh(ModelAsset* pModelAsset, uint32_t meshIndex, const ObjectData& objectData);
+		void addMesh(ModelAsset* pModelAsset, uint32_t meshIndex, const Entity& entity);
+		void removeMesh(const ModelAsset* pModelAsset, uint32_t meshIndex, const Entity& entity);
 
 		void clear();
 		void swap();
@@ -95,6 +97,12 @@ namespace sa {
 		
 		MaterialShaderCollection& getMaterialShaderCollection(MaterialShader* pMaterialShader);
 
+		std::vector<entt::connection> m_connections;
+
+		void onModelConstruct(const entt::registry& reg, entt::entity entity);
+		void onModelUpdate(const entt::registry& reg, entt::entity entity);
+		void onModelDestroy(const entt::registry& reg, entt::entity entity);
+
 	public:
 
 		SceneCollection();
@@ -102,9 +110,13 @@ namespace sa {
 		void clear();
 
 		void collect(Scene* pScene);
+		void listen(Scene* pScene);
 
-		void addObject(glm::mat4 transformation, ModelAsset* pModel);
+		void addObject(const Entity& entity, ModelAsset* pModel);
 		void addLight(const LightData& light);
+
+		void removeObject(const Entity& entity, ModelAsset* pModel);
+		void removeLight(const LightData& light);
 
 		void makeRenderReady();
 		void swap();
