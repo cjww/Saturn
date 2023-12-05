@@ -264,6 +264,14 @@ namespace sa {
 		return true;
 	}
 
+	void ModelAsset::reg() {
+		auto type = registerType<ModelAsset>("ModelAsset", 
+			sol::no_constructor,
+			sol::base_classes, sol::bases<Asset>());
+
+
+	}
+
 	bool ModelAsset::isExtensionSupported(const std::string& extension) {
 		Assimp::Importer importer;
 		return importer.IsExtensionSupported(extension);

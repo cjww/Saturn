@@ -295,6 +295,7 @@ namespace sa {
 		reg();
 		Entity::reg();
 		Ref::reg();
+		AssetManager::reg();
 		
 		if (pWindow) {
 			

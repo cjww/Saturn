@@ -24,10 +24,6 @@ namespace comp {
 
 	}
 
-	void Model::onDestroy(sa::Entity* e) {
-
-	}
-
 
 	void Model::reg() {
 		auto type = registerType<Model>("",
@@ -35,5 +31,12 @@ namespace comp {
 			);
 
 		//type["id"] = &comp::Model::model.getID();
+		type["setAsset"] = [&](Model& self, sa::ModelAsset* pAsset) {
+			self.model = pAsset;
+		};
+		type["getAsset"] = [&](const Model& self) {
+			return self.model.getAsset();
+		};
+
 	}
 }
