@@ -26,9 +26,12 @@ namespace sa {
 
 		Entity(Scene* pScene, entt::entity entity);
 		
-		Entity(const Entity& other) = default;
+		Entity(const Entity&) = default;
 		Entity();
 		virtual ~Entity() = default;
+
+		Entity& operator=(const Entity&) = default;
+		Entity& operator=(Entity&&) = default;
 
 		virtual void serialize(Serializer& s) override;
 		virtual void deserialize(void* pDoc) override;
@@ -62,7 +65,7 @@ namespace sa {
 		void updateComponents();
 
 		void updateComponent(ComponentType type);
-		bool updateComponent(const std::string& name);
+		void updateComponent(const std::string& name);
 
 
 		EntityScript* addScript(const std::filesystem::path& path, const EntityScript* inheritSerializedData = nullptr);

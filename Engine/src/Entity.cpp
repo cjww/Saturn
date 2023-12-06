@@ -203,7 +203,7 @@ namespace sa {
         type.invoke("update", *this);
     }
 
-    bool Entity::updateComponent(const std::string& name) {
+    void Entity::updateComponent(const std::string& name) {
         ComponentType type = getComponentType(name);
         updateComponent(type);
     }

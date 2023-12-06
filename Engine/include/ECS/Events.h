@@ -71,13 +71,17 @@ namespace sa {
 		template<typename T>
 		struct ComponentCreated {
 			Entity entity;
-			T& component;
+		};
+
+		template<typename T>
+		struct ComponentUpdated {
+			Entity entity;
 		};
 
 		template<typename T>
 		struct ComponentDestroyed {
 			Entity entity;
-			T& component;
 		};
+
 	}
 }
