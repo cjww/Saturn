@@ -25,8 +25,9 @@ namespace sa {
 		AssetHolder& operator=(const UUID& id);
 		AssetHolder& operator=(T* pAsset);
 
+		bool isHolding() const;
 
-		operator bool();
+		operator bool() const;
 
 		T* getAsset() const;
 
@@ -174,8 +175,13 @@ namespace sa {
 	}
 
 	template <typename T>
-	AssetHolder<T>::operator bool() {
+	bool AssetHolder<T>::isHolding() const {
 		return m_pAsset != nullptr;
+	}
+
+	template <typename T>
+	AssetHolder<T>::operator bool() const {
+		return isHolding();
 	}
 
 	template <typename T>
