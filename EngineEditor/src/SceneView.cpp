@@ -18,20 +18,24 @@ void SceneView::onSceneSet(const sa::engine_event::SceneSet& e) {
 	m_selectedEntity = {};
 	m_camera.setPosition(sa::Vector3(0, 2, 10));
 	m_camera.setForward(sa::Vector3(0, 0, -1));
+	if (m_sceneCollection.getMode() == sa::SceneCollection::CollectionMode::REACTIVE)
+		m_sceneCollection.listen(e.newScene);
 }
 
 void SceneView::onRender(const sa::engine_event::OnRender& e) {
 	if (m_isOpen && m_pEngine->getCurrentScene()) {
-		/*
-		m_sceneCollection.clear();
-		m_sceneCollection.collect(m_pEngine->getCurrentScene());
-		 */
+		if (m_sceneCollection.getMode() == sa::SceneCollection::CollectionMode::CONTINUOUS) {
+			m_sceneCollection.clear();
+			m_sceneCollection.collect(m_pEngine->getCurrentScene());
+		}
+
 		e.pRenderPipeline->render(*e.pContext, &m_camera, &m_renderTarget, m_sceneCollection);
 	}
 }
 
 SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWindow* pWindow)
 	: EditorModule(pEngine, pEditor, "Scene View", false)
+	, m_sceneCollection(sa::SceneCollection::CollectionMode::CONTINUOUS)
 {
 	m_pWindow = pWindow;
 	m_isFocused = false;
@@ -350,6 +354,7 @@ void SceneView::onImGui() {
 						if (transform->hasParent) {
 							transform->relativePosition += transform->position - oldPosition;
 						}
+						//m_selectedEntity.updateComponents<comp::Light>();
 					}
 					if (ImGuizmo::IsOver() && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
 						isOperating = true;

@@ -139,7 +139,8 @@ namespace sa {
             MetaComponent mt = addComponent(compName);
             ComponentBase** comp = (ComponentBase**)mt.data();
             (*comp)->deserialize(&compObj);
-            (*comp)->onUpdate(this);
+            ComponentType type = getComponentType(mt.getTypeName());
+            updateComponent(type);
         }
 
         for (object script : obj["scripts"]) {

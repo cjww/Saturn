@@ -2,6 +2,8 @@
 
 #include "Material.h"
 #include "Assets/ModelAsset.h"
+#include "ECS/Events.h"
+#include "ECS/Components/Model.h"
 #include "ECS\Components\Light.h"
 
 namespace sa {
@@ -85,7 +87,12 @@ namespace sa {
 	};
 
 	class SceneCollection {
-		private:
+	public:
+		enum class CollectionMode {
+			REACTIVE,
+			CONTINUOUS
+		};
+	private:
 		// DrawData
 		// used for collecting meshes every frame
 		std::vector<LightData> m_lights;
@@ -99,18 +106,39 @@ namespace sa {
 
 		std::vector<entt::connection> m_connections;
 
-		void onModelConstruct(const entt::registry& reg, entt::entity entity);
-		void onModelUpdate(const entt::registry& reg, entt::entity entity);
-		void onModelDestroy(const entt::registry& reg, entt::entity entity);
+		CollectionMode m_mode;
+		std::unordered_map<Entity, UUID> m_entityModels;
+		std::unordered_set<Entity> m_entitiesToAdd;
+
+		std::unordered_map<Entity, LightData> m_entityLights;
+
+		void addQueuedEntities();
+
+
+		void onModelConstruct(const scene_event::ComponentCreated<comp::Model>& e);
+		void onModelUpdate(const scene_event::ComponentUpdated<comp::Model>& e);
+		void onModelDestroy(const scene_event::ComponentDestroyed<comp::Model>& e);
+
+		void onLightConstruct(const scene_event::ComponentCreated<comp::Light>& e);
+		void onLightUpdate(const scene_event::ComponentUpdated<comp::Light>& e);
+		void onLightDestroy(const scene_event::ComponentDestroyed<comp::Light>& e);
+
 
 	public:
 
-		SceneCollection();
+		SceneCollection(CollectionMode mode);
+		virtual ~SceneCollection();
 
 		void clear();
 
 		void collect(Scene* pScene);
 		void listen(Scene* pScene);
+		void stopListen();
+
+
+		void setMode(CollectionMode mode);
+		CollectionMode getMode() const;
+
 
 		void addObject(const Entity& entity, ModelAsset* pModel);
 		void addLight(const LightData& light);

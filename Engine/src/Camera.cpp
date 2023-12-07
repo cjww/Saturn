@@ -7,6 +7,11 @@
 
 
 namespace comp {
+	Camera::Camera()
+		: m_sceneCollection(sa::SceneCollection::CollectionMode::CONTINUOUS)
+	{
+
+	}
 
 	void Camera::serialize(sa::Serializer& s) {
 

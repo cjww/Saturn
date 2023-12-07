@@ -205,26 +205,88 @@ namespace sa {
 		return AssetManager::get().getAsset<MaterialShader>(m_materialShaderID);
 	}
 
-	void SceneCollection::onModelConstruct(const entt::registry& reg, entt::entity entity) {
-		auto& modelComp = reg.get<comp::Model>(entity);
-		sa::ModelAsset* pModelAsset = modelComp.model.getAsset();
+	void SceneCollection::addQueuedEntities() {
+		for (auto it = m_entitiesToAdd.begin(); it != m_entitiesToAdd.end();) {
+			const Entity& entity = *it;
+
+			if (m_entityModels.count(entity)) { // if already added, remove old one
+				ModelAsset* pModelAsset = AssetManager::get().getAsset<ModelAsset>(m_entityModels[entity]);
+				removeObject(entity, pModelAsset);
+			}
+
+			ModelAsset* pModelAsset = entity.getComponent<comp::Model>()->model.getAsset();
+			if (pModelAsset) { // if has asset and is done loading
+				addObject(entity, pModelAsset);
+				m_entityModels[entity] = pModelAsset->getID();
+				it = m_entitiesToAdd.erase(it);
+				continue;
+			}
+
+			it++;
+		}
 	}
 
-	void SceneCollection::onModelUpdate(const entt::registry& reg, entt::entity entity) {
-
+	void SceneCollection::onModelConstruct(const scene_event::ComponentCreated<comp::Model>& e) {
+		m_entitiesToAdd.insert(e.entity);
 	}
 
-	void SceneCollection::onModelDestroy(const entt::registry& reg, entt::entity entity)
+	void SceneCollection::onModelUpdate(const scene_event::ComponentUpdated<comp::Model>& e) {
+		m_entitiesToAdd.insert(e.entity);
+	}
+
+	void SceneCollection::onModelDestroy(const scene_event::ComponentDestroyed<comp::Model>& e) {
+		m_entitiesToAdd.erase(e.entity);
+
+		if (m_entityModels.count(e.entity)) {
+			sa::ModelAsset* pModelAsset = AssetManager::get().getAsset<sa::ModelAsset>(m_entityModels[e.entity]);
+			removeObject(e.entity, pModelAsset);
+			m_entityModels.erase(e.entity);
+		}
+	}
+
+	void SceneCollection::onLightConstruct(const scene_event::ComponentCreated<comp::Light>& e) {
+		if (m_entityLights.count(e.entity)) {
+			const LightData& data = m_entityLights[e.entity];
+			removeLight(data);
+			m_entityLights.erase(e.entity);
+		}
+		const auto& data = e.entity.getComponent<comp::Light>()->values;
+		addLight(data);
+		m_entityLights[e.entity] = data;
+	}
+
+	void SceneCollection::onLightUpdate(const scene_event::ComponentUpdated<comp::Light>& e) {
+		if (m_entityLights.count(e.entity)) {
+			const LightData& data = m_entityLights[e.entity];
+			removeLight(data);
+			m_entityLights.erase(e.entity);
+		}
+		const auto& data = e.entity.getComponent<comp::Light>()->values;
+		addLight(data);
+		m_entityLights[e.entity] = data;
+	}
+
+	void SceneCollection::onLightDestroy(const scene_event::ComponentDestroyed<comp::Light>& e) {
+		if (m_entityLights.count(e.entity)) {
+			const LightData& data = m_entityLights[e.entity];
+			removeLight(data);
+			m_entityLights.erase(e.entity);
+		}
+	}
+
+	SceneCollection::SceneCollection(CollectionMode mode)
+		: m_mode(mode)
 	{
-	}
-
-	SceneCollection::SceneCollection() {
 		sa::Renderer& renderer = sa::Renderer::get();
 
 		uint32_t lightCount = 0U;
 		m_lightBuffer = renderer.createDynamicBuffer(BufferType::STORAGE, sizeof(uint32_t), &lightCount);
 
 		SA_DEBUG_LOG_INFO("SceneCollection created");
+	}
+
+	SceneCollection::~SceneCollection() {
+		stopListen();
 	}
 
 	void SceneCollection::clear() {
@@ -235,6 +297,9 @@ namespace sa {
 	}
 
 	void SceneCollection::collect(Scene* pScene) {
+		if (m_mode != CollectionMode::CONTINUOUS)
+			throw std::runtime_error("Mode has to be CONTINUOUS to call collect");
+		
 		pScene->forEach<comp::Transform, comp::Model>([&](const Entity& entity, const comp::Transform& transform, const comp::Model& model) {
 			sa::ModelAsset* pModel = model.model.getAsset();
 			if(pModel)
@@ -246,12 +311,39 @@ namespace sa {
 	}
 
 	void SceneCollection::listen(Scene* pScene) {
-		for(auto conn : m_connections) {
+		if (m_mode != CollectionMode::REACTIVE)
+			throw std::runtime_error("Mode has to be REACTIVE to call listen");
+		stopListen();
+		m_connections.emplace_back(pScene->sink<scene_event::ComponentCreated<comp::Model>>().connect<&SceneCollection::onModelConstruct>(this));
+		m_connections.emplace_back(pScene->sink<scene_event::ComponentDestroyed<comp::Model>>().connect<&SceneCollection::onModelDestroy>(this));
+		m_connections.emplace_back(pScene->sink<scene_event::ComponentUpdated<comp::Model>>().connect<&SceneCollection::onModelUpdate>(this));
+
+		m_connections.emplace_back(pScene->sink<scene_event::ComponentCreated<comp::Light>>().connect<&SceneCollection::onLightConstruct>(this));
+		m_connections.emplace_back(pScene->sink<scene_event::ComponentDestroyed<comp::Light>>().connect<&SceneCollection::onLightDestroy>(this));
+		m_connections.emplace_back(pScene->sink<scene_event::ComponentUpdated<comp::Light>>().connect<&SceneCollection::onLightUpdate>(this));
+
+	}
+
+	void SceneCollection::stopListen() {
+		for (auto conn : m_connections) {
 			conn.release();
 		}
 		m_connections.clear();
-		m_connections.emplace_back(pScene->onConstruct<comp::Model, &SceneCollection::onModelConstruct>(this));
-		m_connections.emplace_back(pScene->onDestroy<comp::Model, &SceneCollection::onModelDestroy>(this));
+	}
+
+	void SceneCollection::setMode(CollectionMode mode) {
+		m_mode = mode;
+		switch (m_mode) {
+		case CollectionMode::CONTINUOUS:
+			stopListen();
+			break;
+		default:
+			break;
+		}
+	}
+
+	SceneCollection::CollectionMode SceneCollection::getMode() const {
+		return m_mode;
 	}
 
 	void SceneCollection::addObject(const Entity& entity, ModelAsset* pModelAsset) {
@@ -284,6 +376,7 @@ namespace sa {
 	}
 
 	void SceneCollection::removeObject(const Entity& entity, ModelAsset* pModelAsset) {
+		SA_PROFILE_FUNCTION();
 		if (!pModelAsset || !pModelAsset->isLoaded())
 			return;
 		ModelData* pModel = &pModelAsset->data;
@@ -312,7 +405,10 @@ namespace sa {
 
 	void SceneCollection::makeRenderReady() {
 		SA_PROFILE_FUNCTION();
-		
+		if(m_mode == CollectionMode::REACTIVE) {
+			addQueuedEntities();
+		}
+
 
 		//Ligths
 		m_lightBuffer.clear();
