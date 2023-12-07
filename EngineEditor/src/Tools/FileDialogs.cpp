@@ -61,15 +61,16 @@ bool sa::FileDialogs::SaveFile(const char* filter, std::filesystem::path& filePa
 }
 
 bool sa::FileDialogs::OpenFileInTextEditor(const std::filesystem::path& applicationPath, const std::filesystem::path& file) {
-    STARTUPINFO si;
+#ifdef _WIN32
+	STARTUPINFO si;
     PROCESS_INFORMATION pi;
     ZeroMemory(&si, sizeof(si));
     ZeroMemory(&pi, sizeof(pi));
 
     si.cb = sizeof(si);
 
-    std::wstring commandLine = L"\"" + applicationPath.wstring() + L"\" " + file.generic_wstring();
-
+    std::wstring commandLine = L"\"" + applicationPath.wstring() + L"\" \"" + file.generic_wstring() + L"\"";
+    
 	bool success = CreateProcess(NULL,   // the path
         commandLine.data(),           // Command line
         NULL,           // Process handle not inheritable
@@ -79,10 +80,11 @@ bool sa::FileDialogs::OpenFileInTextEditor(const std::filesystem::path& applicat
         NULL,           // Use parent's environment block
         NULL,           // Use parent's starting directory 
         &si,            // Pointer to STARTUPINFO structure
-        &pi             // Pointer to PROCESS_INFORMATION structure (removed extra parentheses)
+        &pi             // Pointer to PROCESS_INFORMATION structure
     );
 
     CloseHandle(pi.hProcess);
     CloseHandle(pi.hThread);
+#endif 
     return success;
 }
