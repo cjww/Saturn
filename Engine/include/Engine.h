@@ -25,9 +25,6 @@ namespace sa {
 
 		AssetHolder<Scene> m_currentScene;
 		
-		void registerMath();
-
-		void reg();
 		void onWindowResize(Extent newExtent);
 		void onRenderTargetResize(sa::engine_event::RenderTargetResized e);
 

@@ -3,12 +3,13 @@
 #include "ComponentType.h"
 #include "MetaComponent.h"
 #include "ComponentBase.h"
-#include "Lua/LuaAccessable.h"
 
 #include "Serializable.h"
 #include "Lua/EntityScript.h"
 
 #include <Tools/Logger.hpp>
+
+#include "Lua/LuaAccessable.h"
 
 namespace sa {
 	
@@ -21,9 +22,7 @@ namespace sa {
 		entt::entity m_entity;
 		
 	public:
-		static void reg();
-		static sol::usertype<Entity>& getType();
-
+		
 		Entity(Scene* pScene, entt::entity entity);
 		
 		Entity(const Entity&) = default;
@@ -120,7 +119,6 @@ namespace sa {
 	void registerComponentType();
 
 
-
 	// ----------------- Definitions -----------------
 
 	template<typename T>
@@ -212,16 +210,16 @@ namespace sa {
 
 			ComponentType::registerComponent<Comp>();
 		}
-		if constexpr (std::is_base_of_v<sa::LuaAccessable, std::decay_t<Comp>>) {
-			
-			Comp::reg();
-			LuaAccessable::registerComponent<Comp>();
 
+		
+		if (LuaAccessable::registerType<Comp>()) {
+			LuaAccessable::registerComponent<Comp>();
+			
 			LuaAccessable::getState()[getComponentName<Comp>()]["Get"] = [](const Entity& entity) {
 				return entity.getComponent<Comp>();
 			};
 
-			auto& type = Entity::getType();
+			auto& type = LuaAccessable::userType<Entity>();
 			std::string name = getComponentName<Comp>();
 			std::string varName = utils::toLower(name);
 			type[varName] = sol::property(
@@ -239,10 +237,10 @@ namespace sa {
 					self.removeComponent(name);
 				});
 
-			
 			SA_DEBUG_LOG_INFO("Registered Lua property for ", getComponentName<Comp>());
-
 		}
+
+		
 
 	}
 

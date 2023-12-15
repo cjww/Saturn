@@ -3,7 +3,6 @@
 #include "Tools\Vector.h"
 
 #include "ECS/ComponentBase.h"
-#include "Lua/LuaAccessable.h"
 
 namespace sa {
 
@@ -28,7 +27,7 @@ namespace sa {
 }
 
 namespace comp {
-	class Light : public sa::ComponentBase, sa::LuaAccessable {
+	class Light : public sa::ComponentBase {
 	public:
 		unsigned int index;
 		sa::LightData values;
@@ -43,7 +42,5 @@ namespace comp {
 		virtual void serialize(sa::Serializer& s) override;
 		virtual void deserialize(void* pDoc) override;
 
-
-		static void reg();
 	};
 }

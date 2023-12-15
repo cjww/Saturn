@@ -5,6 +5,9 @@
 namespace sa {
 	class Ref {
 	private:
+		friend bool LuaAccessable::registerType<Ref>();
+
+
 		std::function<sol::table()> m_retriveFunction;
 		std::function<void(const Ref&, Serializer&)> m_serializeFunc;
 		std::function<sol::lua_value()> m_getValueFunc;
@@ -20,8 +23,6 @@ namespace sa {
 		bool hasReference() const;
 		const std::string& getType() const;
 		sol::lua_value getValue() const;
-
-		static void reg();
 
 	};
 

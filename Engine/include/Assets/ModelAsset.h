@@ -18,7 +18,7 @@ namespace sa {
 		std::vector<Mesh> meshes;
 	};
 
-	class ModelAsset : public Asset, public LuaAccessable {
+	class ModelAsset : public Asset {
 	private:
 		void processNode(const void* scene, const void* node, std::vector<uint32_t>& materialIndices);
 		bool loadAssimpModel(const std::filesystem::path& path);
@@ -26,7 +26,6 @@ namespace sa {
 		using Asset::Asset;
 
 
-		static void reg();
 		static bool isExtensionSupported(const std::string& extension);
 
 		//Data

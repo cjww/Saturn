@@ -24,19 +24,4 @@ namespace comp {
 
 	}
 
-
-	void Model::reg() {
-		auto type = registerType<Model>("",
-			sol::constructors<Model()>()
-			);
-
-		//type["id"] = &comp::Model::model.getID();
-		type["setAsset"] = [&](Model& self, sa::ModelAsset* pAsset) {
-			self.model = pAsset;
-		};
-		type["getAsset"] = [&](const Model& self) {
-			return self.model.getAsset();
-		};
-
-	}
 }

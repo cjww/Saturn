@@ -49,23 +49,5 @@ namespace comp {
 		return glm::translate(sa::Matrix4x4(1), position) * glm::toMat4(rotation) * glm::scale(sa::Matrix4x4(1), scale);
 	}
 
-	void Transform::reg() {
-		auto type = registerType<Transform>();
-		type["position"] = sol::property(
-			[](Transform& self) -> sa::Vector3& {
-				if (self.hasParent)
-					return self.relativePosition;
-				return self.position;
-			},
-			[](Transform& self, const sa::Vector3& value) {
-				if (self.hasParent) {
-					self.relativePosition = value;
-					return;
-				}
-				self.position = value;
-			}
-			);
-		type["rotation"] = &Transform::rotation;
-		type["scale"] = &Transform::scale;
-	}
+	
 }

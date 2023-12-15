@@ -84,8 +84,6 @@ namespace sa {
 
 	public:
 
-		static void reg();
-
 		~AssetManager();
 	
 		static AssetManager& get();
@@ -194,10 +192,7 @@ namespace sa {
 		m_typeToString[id] = str;
 		m_stringToType[str] = id;
 
-		if constexpr (std::is_base_of_v<LuaAccessable, T>) {
-			T::reg();
-		}
-
+		LuaAccessable::registerType<T>();
 		return id;
 	}
 

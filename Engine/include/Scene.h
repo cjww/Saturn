@@ -23,7 +23,7 @@
 
 
 namespace sa {
-	class Scene : public entt::dispatcher, public Serializable, public Asset, LuaAccessable {
+	class Scene : public entt::dispatcher, public Serializable, public Asset {
 	private:
 		
 		entt::registry m_reg;
@@ -64,8 +64,6 @@ namespace sa {
 		Scene(const AssetHeader& header);
 		virtual ~Scene() override;
 
-		static void reg();
-		
 		virtual bool onLoad(std::ifstream& file, AssetLoadFlags flags) override; // Asset
 		virtual bool onWrite(std::ofstream& file, AssetWriteFlags flags) override; // Asset
 		virtual bool onUnload() override; // Asset
