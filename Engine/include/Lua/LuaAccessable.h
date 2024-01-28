@@ -20,7 +20,7 @@ namespace sa {
 
 
 
-		template<typename T>
+		template<typename Comp>
 		static void registerComponent();
 
 		static sol::lua_value cast(sa::MetaComponent& metaComponent);
@@ -45,16 +45,16 @@ namespace sa {
 		return type;
 	}
 
-	template<typename T>
+	template<typename Comp>
 	inline void LuaAccessable::registerComponent() {
-		std::string key = sa::getComponentName<T>();
+		std::string key = sa::getComponentName<Comp>();
 
 		s_casters[key] = [](sa::MetaComponent& comp) -> sol::lua_value {
-			return comp.cast<T>();
+			return comp.cast<Comp>();
 		};
 
 		s_copyCasters[key] = [](sa::MetaComponent& mc, sol::lua_value component) {
-			*mc.cast<T>() = component.as<T>();
+			*mc.cast<Comp>() = component.as<Comp>();
 		};
 	}
 

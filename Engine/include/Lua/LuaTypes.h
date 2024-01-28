@@ -14,6 +14,38 @@
 
 namespace sa {
 
+
+	template<typename Comp, std::enable_if_t<std::is_base_of_v<sa::ComponentBase, std::decay_t<Comp>>, bool> = true>
+	inline void registerComponentLua() {
+		if (LuaAccessable::registerType<Comp>()) {
+			LuaAccessable::registerComponent<Comp>();
+
+			LuaAccessable::getState()[getComponentName<Comp>()]["Get"] = [](const Entity& entity) {
+				return entity.getComponent<Comp>();
+			};
+			auto& type = LuaAccessable::userType<Entity>();
+			std::string name = getComponentName<Comp>();
+			std::string varName = utils::toLower(name);
+			type[varName] = sol::property(
+				[=](const Entity& self) -> sol::lua_value {
+					MetaComponent metaComp = self.getComponent(name);
+					return LuaAccessable::cast(metaComp);
+				},
+				[=](Entity& self, sol::lua_value component) {
+					if (!component.is<sol::nil_t>()) {
+						// Add component
+						MetaComponent mc = self.addComponent(name);
+						LuaAccessable::copy(mc, component);
+						return;
+					}
+					self.removeComponent(name);
+				});
+
+			SA_DEBUG_LOG_INFO("Registered Lua property for ", getComponentName<Comp>());
+		}
+	}
+
+
 	// ----------------- Components -----------------
 	template<>
 	inline bool sa::LuaAccessable::registerType<comp::Light>() {
@@ -526,4 +558,5 @@ namespace sa {
 		};
 		return true;
 	}
+
 }

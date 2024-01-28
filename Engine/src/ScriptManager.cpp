@@ -58,12 +58,6 @@ namespace sa {
 			script.env = sol::environment(lua, sol::create, lua.globals());
 		}
 		script.components.clear();
-		ComponentType scriptType = getComponentType<comp::Script>();
-		if (!scriptType.isValid()) {
-			registerComponentType<comp::Script>();
-			scriptType = getComponentType<comp::Script>();
-		}
-		script.components.push_back(scriptType);
 
 		std::ifstream file(path);
 		if (!file.is_open()) {

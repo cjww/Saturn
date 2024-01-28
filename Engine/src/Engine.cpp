@@ -9,6 +9,7 @@
 #include "Tools/Profiler.h"
 
 #include "Lua\LuaTypes.h"
+
 namespace sa {
 	std::filesystem::path Engine::s_shaderDirectory = std::filesystem::current_path();
 

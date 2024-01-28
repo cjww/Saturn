@@ -279,14 +279,6 @@ namespace ImGui {
 
 	}
 
-	void Component(sa::Entity entity, comp::Script* script) {
-		if (!script->env.valid())
-			return;
-
-		DisplayLuaTable("Environment", script->env);
-
-	}
-
 	void Component(sa::Entity entity, comp::Light* light) {
 
 		ImGui::ColorEdit3("Color", (float*)&light->values.color);

@@ -9,7 +9,7 @@
 
 #include <Tools/Logger.hpp>
 
-#include "Lua/LuaAccessable.h"
+//#include "Lua/LuaAccessable.h"
 
 namespace sa {
 	
@@ -23,6 +23,9 @@ namespace sa {
 		
 	public:
 		
+		template<typename Comp, std::enable_if_t<std::is_base_of_v<sa::ComponentBase, std::decay_t<Comp>>, bool> = true>
+		static void registerMetaFunctions();
+
 		Entity(Scene* pScene, entt::entity entity);
 		
 		Entity(const Entity&) = default;
@@ -115,11 +118,25 @@ namespace sa {
 
 	};
 
-	template<typename Comp>
-	void registerComponentType();
-
 
 	// ----------------- Definitions -----------------
+
+	template<typename Comp, std::enable_if_t<std::is_base_of_v<sa::ComponentBase, std::decay_t<Comp>>, bool>>
+	inline void Entity::registerMetaFunctions()
+	{	
+		using namespace entt::literals;
+		entt::meta<Comp>()
+			.type(entt::hashed_string(getComponentName<Comp>().c_str()))
+			.func<&Entity::hasComponents<Comp>>("has"_hs)
+			.func<&Entity::getComponent<Comp>>("get"_hs)
+			.func<&Entity::addComponent<Comp>>("add"_hs)
+			.func<&Entity::removeComponent<Comp>>("remove"_hs)
+			.func<&Entity::copyComponent<Comp>>("copy"_hs)
+			.func<&Entity::updateComponents<Comp>>("update"_hs)
+			;
+
+		SA_DEBUG_LOG_INFO("Registered Meta functions for ", getComponentName<Comp>());
+	}
 
 	template<typename T>
 	inline T* Entity::getComponent() const {
@@ -185,66 +202,6 @@ namespace sa {
 		c = orig;
 		return &c;
 	}
-
-	template<typename Comp>
-	inline void registerComponentType() {
-		static bool registered = false;
-		if (registered)
-			return;
-
-		registered = true;
-		if constexpr (std::is_base_of_v<sa::ComponentBase, std::decay_t<Comp>>) {
-			
-			using namespace entt::literals;
-			entt::meta<Comp>()
-				.type(entt::hashed_string(getComponentName<Comp>().c_str()))
-				.func<&Entity::hasComponents<Comp>>("has"_hs)
-				.func<&Entity::getComponent<Comp>>("get"_hs)
-				.func<&Entity::addComponent<Comp>>("add"_hs)
-				.func<&Entity::removeComponent<Comp>>("remove"_hs)
-				.func<&Entity::copyComponent<Comp>>("copy"_hs)
-				.func<&Entity::updateComponents<Comp>>("update"_hs)
-				;
-		
-			SA_DEBUG_LOG_INFO("Registered Meta functions for ", getComponentName<Comp>());
-
-			ComponentType::registerComponent<Comp>();
-		}
-
-		
-		if (LuaAccessable::registerType<Comp>()) {
-			LuaAccessable::registerComponent<Comp>();
-			
-			LuaAccessable::getState()[getComponentName<Comp>()]["Get"] = [](const Entity& entity) {
-				return entity.getComponent<Comp>();
-			};
-
-			auto& type = LuaAccessable::userType<Entity>();
-			std::string name = getComponentName<Comp>();
-			std::string varName = utils::toLower(name);
-			type[varName] = sol::property(
-				[=](const Entity& self) -> sol::lua_value {
-					MetaComponent metaComp = self.getComponent(name);
-					return LuaAccessable::cast(metaComp);
-				},
-				[=](Entity& self, sol::lua_value component) {
-					if (!component.is<sol::nil_t>()) {
-						// Add component
-						MetaComponent mc = self.addComponent(name);
-						LuaAccessable::copy(mc, component);
-						return;
-					}
-					self.removeComponent(name);
-				});
-
-			SA_DEBUG_LOG_INFO("Registered Lua property for ", getComponentName<Comp>());
-		}
-
-		
-
-	}
-
-	
 
 }
 

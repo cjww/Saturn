@@ -1,6 +1,7 @@
 ﻿#pragma once
 
 #include "ECS/Entity.h"
+#include "Lua/LuaAccessable.h"
 
 namespace sa {
 	class Ref {
