@@ -10,23 +10,26 @@
 
 namespace sa {
 	void registerAllComponents();
+
+	template<typename Comp, std::enable_if_t<std::is_base_of_v<sa::ComponentBase, std::decay_t<Comp>>, bool> = true>
+	void registerComponentType();
+
+	
+
+
+	template<typename Comp, std::enable_if_t<std::is_base_of_v<sa::ComponentBase, std::decay_t<Comp>>, bool>>
+	inline void registerComponentType() {
+		static bool registered = false;
+		if (registered)
+			return;
+
+		registered = true;
+
+		Entity::registerMetaFunctions<Comp>();
+		ComponentType::registerComponent<Comp>();
+
+		registerComponentLua<Comp>();
+	}
 }
 
-namespace comp {
-	struct Script /*: public sa::LuaAccessable */ {
-		sol::environment env;
-		/*
-		static void reg() {
-			auto type = registerType<Script>();
-			type["__index"] = [](const comp::Script& script, const std::string& key) {
-				return script.env[key];
-			};
-			type["__newindex"] = [](comp::Script& script, const std::string& key, const sol::lua_value& value) {
-				script.env[key] = value;
-			};
-
-		}
-		*/
-	};
-};
 

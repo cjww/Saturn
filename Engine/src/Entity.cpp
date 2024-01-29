@@ -5,62 +5,6 @@
 #include "Scene.h"
 
 namespace sa {
-    void Entity::reg() {
-        auto type = getType();
-     
-        type["id"] = sol::readonly_property(&Entity::operator entt::id_type);
-        type["name"] = sol::property(
-            [](const Entity& e) -> std::string { return e.getComponent<comp::Name>()->name; },
-            [](const Entity& e, const std::string& str) { e.getComponent<comp::Name>()->name = str; }
-        );
-
-        type["addScript"] = [](Entity& self, const std::string& filepath) { self.addScript(filepath); };
-        type["removeScript"] = &removeScript;
-
-        type["addComponent"] = [](Entity& self, const std::string& name) {
-            self.addComponent(name);
-        };
-        type["removeComponent"] = &removeScript;
-
-        type["clone"] = [](Entity& self) { return self.clone(); };
-
-        type["parent"] = sol::property(
-            [](const Entity& self) -> sol::lua_value {
-                const Entity& parent = self.getParent();
-                if (parent.isNull()) {
-                    return sol::nil;
-                }
-                return parent;
-            },
-            [](Entity& self, const sol::lua_value& parent) {
-                if (parent.is<sol::nil_t>()) {
-                    self.orphan();
-                    return;
-                }
-                self.setParent(parent.as<Entity>());
-            }
-
-        );
-        
-        type["__index"] = [](Entity& self, std::string key) -> sol::lua_value {
-        	EntityScript* pScript = self.getScript(key);
-            if (!pScript)
-                return sol::nil;
-            
-            return pScript->env;
-        };
-
-        type[sol::meta_function::to_string] = [](const Entity& self) { return self.toString(); };
-
-        type["Get"] = [](const Entity& entity) -> const Entity& {
-	        return entity;
-        };
-    }
-
-    sol::usertype<Entity>& Entity::getType() {
-        static sol::usertype<Entity> type = LuaAccessable::registerType<Entity>();
-        return type;
-    }
 
     Entity::Entity(Scene* pScene, entt::entity entity)
         : m_pScene(pScene)
@@ -131,7 +75,8 @@ namespace sa {
             MetaComponent mt = addComponent(compName);
             ComponentBase** comp = (ComponentBase**)mt.data();
             (*comp)->deserialize(&compObj);
-            (*comp)->onUpdate(this);
+            ComponentType type = getComponentType(mt.getTypeName());
+            updateComponent(type);
         }
 
         for (object script : obj["scripts"]) {
@@ -189,6 +134,15 @@ namespace sa {
     void Entity::removeComponent(const std::string& name) {
         ComponentType type = getComponentType(name);
         removeComponent(type);
+    }
+
+    void Entity::updateComponent(ComponentType type) {
+        type.invoke("update", *this);
+    }
+
+    void Entity::updateComponent(const std::string& name) {
+        ComponentType type = getComponentType(name);
+        updateComponent(type);
     }
 
     EntityScript* Entity::addScript(const std::filesystem::path& path, const EntityScript* inheritSerializedData) {

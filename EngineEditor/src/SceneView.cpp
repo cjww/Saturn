@@ -18,18 +18,24 @@ void SceneView::onSceneSet(const sa::engine_event::SceneSet& e) {
 	m_selectedEntity = {};
 	m_camera.setPosition(sa::Vector3(0, 2, 10));
 	m_camera.setForward(sa::Vector3(0, 0, -1));
+	if (m_sceneCollection.getMode() == sa::SceneCollection::CollectionMode::REACTIVE)
+		m_sceneCollection.listen(e.newScene);
 }
 
 void SceneView::onRender(const sa::engine_event::OnRender& e) {
 	if (m_isOpen && m_pEngine->getCurrentScene()) {
-		m_sceneCollection.clear();
-		m_sceneCollection.collect(m_pEngine->getCurrentScene());
+		if (m_sceneCollection.getMode() == sa::SceneCollection::CollectionMode::CONTINUOUS) {
+			m_sceneCollection.clear();
+			m_sceneCollection.collect(m_pEngine->getCurrentScene());
+		}
+
 		e.pRenderPipeline->render(*e.pContext, &m_camera, &m_renderTarget, m_sceneCollection);
 	}
 }
 
 SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderWindow* pWindow)
 	: EditorModule(pEngine, pEditor, "Scene View", false)
+	, m_sceneCollection(sa::SceneCollection::CollectionMode::CONTINUOUS)
 {
 	m_pWindow = pWindow;
 	m_isFocused = false;
@@ -40,8 +46,7 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 	m_camera.lookAt(sa::Vector3(0, 0, 0));
 	m_camera.setOrthoWidth(10.f);
 	
-	m_renderTarget.initialize(pWindow->getCurrentExtent());
-	m_renderTarget.setRenderDebugHeatmap(true);
+	m_renderTarget.initialize(pEngine, pWindow->getCurrentExtent());
 
 	//m_camera.setViewport(sa::Rect{ { 0, 0 }, m_renderTarget.extent });
 
@@ -205,9 +210,10 @@ void SceneView::onImGui() {
 				ImGui::DragFloat("Snap Distance", &snapDistance, 0.5f, 0.0f, 100.f, "%.1f m");
 				ImGui::DragFloat("Snap Angle", &snapAngle, 1.f, 1.f, 180.f, "%.0f degrees");
 
-				sa::ForwardPlus* forwardPlusTechnique = dynamic_cast<sa::ForwardPlus*>(m_pEngine->getRenderPipeline().getRenderTechnique());
-				if (forwardPlusTechnique) {
-					ImGui::Checkbox("Show Light Heatmap", &showLightHeatmap);
+				auto pForwardPlus = m_pEngine->getRenderPipeline().getLayer<sa::ForwardPlus>();
+				if (pForwardPlus) {
+					ImGui::Checkbox("Show Light Heatmap", 
+						&pForwardPlus->getRenderTargetData(m_renderTarget.getID()).renderDebugHeatmap);
 				}
 
 				ImGui::Checkbox("Show Icons", &showIcons);
@@ -245,11 +251,17 @@ void SceneView::onImGui() {
 		else if (m_renderTarget.isReady()) {
 
 			ImGui::Image(m_renderTarget.getOutputTexture(), imAvailSize);
-			if (showLightHeatmap) {
-				auto heatmap = m_renderTarget.getMainRenderData().debugLightHeatmap.getTexture();
-				if (heatmap.isValid()) {
-					ImGui::SetCursorPos(ImGui::GetWindowContentRegionMin());
-					ImGui::Image(heatmap, imAvailSize);
+			
+			auto pForwardPlus = m_pEngine->getRenderPipeline().getLayer<sa::ForwardPlus>();
+			if (pForwardPlus) {
+				auto renderData = pForwardPlus->getRenderTargetData(m_renderTarget.getID());
+
+				if (renderData.renderDebugHeatmap) {
+					auto heatmap = renderData.debugLightHeatmap.getTexture();
+					if (heatmap.isValid()) {
+						ImGui::SetCursorPos(ImGui::GetWindowContentRegionMin());
+						ImGui::Image(heatmap, imAvailSize);
+					}
 				}
 			}
 		}
@@ -342,6 +354,7 @@ void SceneView::onImGui() {
 						if (transform->hasParent) {
 							transform->relativePosition += transform->position - oldPosition;
 						}
+						//m_selectedEntity.updateComponents<comp::Light>();
 					}
 					if (ImGuizmo::IsOver() && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
 						isOperating = true;

@@ -24,16 +24,4 @@ namespace comp {
 
 	}
 
-	void Model::onDestroy(sa::Entity* e) {
-
-	}
-
-
-	void Model::reg() {
-		auto type = registerType<Model>("",
-			sol::constructors<Model()>()
-			);
-
-		//type["id"] = &comp::Model::model.getID();
-	}
 }

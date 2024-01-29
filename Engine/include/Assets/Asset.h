@@ -16,7 +16,7 @@ namespace sa {
 	struct AssetHeader {
 		UUID id;
 		size_t size = 0;
-		std::streampos offset = 0;
+		std::streampos contentOffset = sizeof(AssetHeader);
 		AssetTypeID type;
 		uint16_t version = SA_ASSET_VERSION;
 	};
@@ -71,8 +71,6 @@ namespace sa {
 
 		virtual ~Asset();
 
-		static void reg();
-
 		bool create(const std::string& name, const std::filesystem::path& assetDirectory);
 		bool importFromFile(const std::filesystem::path& path, const std::filesystem::path& assetDirectory);
 
@@ -98,10 +96,12 @@ namespace sa {
 		bool release();
 
 		bool isLoaded() const;
+		
 		const ProgressView<bool>& getProgress() const;
 		AssetTypeID getType() const;
 
 		const std::string& getName() const;
+		void setName(const std::string& name);
 		const std::filesystem::path& getAssetPath() const;
 		void setAssetPath(const std::filesystem::path& assetPath);
 
@@ -112,8 +112,11 @@ namespace sa {
 
 		uint32_t getReferenceCount() const;
 
-		static AssetHeader readHeader(std::ifstream& file);
-		static void writeHeader(const AssetHeader& header, std::ofstream& file);
+		bool isFromPackage() const;
+		bool isFromPackage(const std::filesystem::path& packagePath) const;
+
+		static AssetHeader ReadHeader(std::ifstream& file);
+		static void WriteHeader(const AssetHeader& header, std::ofstream& file);
 
 		static void waitAllAssets();
 

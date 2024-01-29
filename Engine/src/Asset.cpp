@@ -46,36 +46,6 @@ namespace sa {
 		m_progress.wait();
 	}
 
-	void Asset::reg() {
-		{
-			
-			auto type = LuaAccessable::registerType<ProgressView<bool>>("AssetProgressView",
-				sol::no_constructor);
-			type["getCompletion"] = &ProgressView<bool>::getCompletion;
-			type["isDone"] = &ProgressView<bool>::isDone;
-			type["isAllDone"] = &ProgressView<bool>::isAllDone;
-			type["value"] = sol::property(&ProgressView<bool>::getValue);
-
-
-		}
-		{
-			auto type = sa::LuaAccessable::registerType<Asset>("Asset",
-				sol::no_constructor);
-			type["hold"] = &Asset::hold;
-			type["write"] = &Asset::write;
-			type["release"] = &Asset::release;
-
-			type["isLoaded"] = &Asset::isLoaded;
-
-			type["progress"] = sol::property([](const Asset& self) { return &self.getProgress(); });
-			type["name"] = sol::property(&Asset::getName);
-			type["id"] = sol::property(&Asset::getID);
-			type["referenceCount"] = sol::property(&Asset::getReferenceCount);
-			type["path"] = sol::property([](const Asset& self) { return self.getAssetPath().generic_string(); });
-		}
-
-	}
-
 	bool Asset::create(const std::string& name, const std::filesystem::path& assetDirectory) {
 		m_name = name;
 		m_assetPath.clear();
@@ -104,41 +74,30 @@ namespace sa {
 	}
 
 	bool Asset::hold() {
-		++m_refCount;
-		if (m_isLoaded)
-			return false;
-		return load();
+		if (++m_refCount == 1) {
+			return load();
+		}
+		return false;
 	}
 
 	bool Asset::load(AssetLoadFlags flags) {
-
 		if (m_assetPath.empty())
 			return false;
-		
 		auto path = m_assetPath;
 		auto future = s_taskExecutor.async([=]() {
 			try
 			{
-				if (!m_mutex.try_lock()) {
-					SA_DEBUG_LOG_WARNING("A thread was already loading ", m_name);
-					return false; // already a thread loading
-				}
-				m_mutex.unlock();
 				std::lock_guard<std::mutex> lock(m_mutex);
-				
-				SA_DEBUG_LOG_INFO("Began Loading ", m_name, " from ", path);
 				m_progress.reset();
+				SA_DEBUG_LOG_INFO("Began Loading ", m_name, " from ", path);
+				
 				std::ifstream file(path, std::ios::binary);
 				if (!file.good()) {
 					file.close();
 					throw std::runtime_error("Failed to open file " + path.generic_string());
 				}
-				m_header = readHeader(file);
-				if (m_header.version != SA_ASSET_VERSION) {
-					SA_DEBUG_LOG_WARNING("Asset versions do not match! ", path, " (", m_header.version, " vs ", SA_ASSET_VERSION, ")");
-					m_header.version = SA_ASSET_VERSION;
-				}
 
+				file.seekg(m_header.contentOffset);
 				m_isLoaded = onLoad(file, flags);
 
 				file.close();
@@ -156,19 +115,24 @@ namespace sa {
 	}
 
 	bool Asset::write(AssetWriteFlags flags) {
+		std::lock_guard<std::mutex> lock(m_mutex);
 		if (!m_isLoaded)
 			return false;
 		if (m_assetPath.empty())
 			return false;
+		if (isFromPackage()) {
+			throw std::runtime_error("Can not write asset to asset package! Recreate the asset package instead or set new asset path");
+		}
+
 		auto path = m_assetPath;
 		auto future = s_taskExecutor.async([=]() {
 			try
 			{
 				std::lock_guard<std::mutex> lock(m_mutex);
+				m_progress.reset();
 				if (!m_isLoaded)
 					return false;
 				SA_DEBUG_LOG_INFO("Began Writing ", m_name, " to ", path);
-				m_progress.reset();
 
 				std::ofstream file(path, std::ios::binary);
 				if (!file.good()) {
@@ -177,18 +141,16 @@ namespace sa {
 				}
 
 				const auto headerPos = file.tellp();
-				writeHeader(m_header, file);
-				
-				const auto contentPos = file.tellp();
+				const std::streampos contentPos = sizeof(AssetHeader);
+
+				file.seekp(contentPos);
 				const bool success = onWrite(file, flags);
 
-				// Calculate size and overwrite header
-				const auto pos = file.tellp();
-				m_header.size = pos - contentPos;
+				// Calculate size and write header
+				m_header.size = file.tellp() - contentPos;
+				m_header.contentOffset = contentPos;
 				file.seekp(headerPos);
-				writeHeader(m_header, file);
-				file.seekp(pos);
-				
+				WriteHeader(m_header, file);
 
 				file.close();
 				SA_DEBUG_LOG_INFO("Finished Writing ", m_name, " to ", path);
@@ -205,8 +167,10 @@ namespace sa {
 	}
 
 	bool Asset::release() {
-		if (m_refCount > 0) {
-			m_refCount--;
+		auto value = m_refCount.load();
+		while (value > 0) {
+			if (m_refCount.compare_exchange_weak(value, value - 1, std::memory_order_relaxed))
+				break;
 		}
 		if(m_refCount == 0 && m_isLoaded) {
 			m_progress.wait();
@@ -233,13 +197,18 @@ namespace sa {
 		return m_name;
 	}
 
+	void Asset::setName(const std::string& name) {
+		m_name = name;
+	}
+
 	const std::filesystem::path& Asset::getAssetPath() const {
 		return m_assetPath;
 	}
 
 	void Asset::setAssetPath(const std::filesystem::path& assetPath) {
 		m_assetPath = assetPath;
-		m_name = m_assetPath.filename().replace_extension().generic_string();
+		if(!isFromPackage())
+			m_name = m_assetPath.filename().replace_extension().generic_string();
 	}
 
 	void Asset::setHeader(const AssetHeader& header) {
@@ -258,14 +227,22 @@ namespace sa {
 		return m_refCount;
 	}
 
-	AssetHeader Asset::readHeader(std::ifstream& file) {
+	bool Asset::isFromPackage() const {
+		return m_assetPath.extension() == SA_ASSET_PACKAGE_EXTENSION;
+	}
+
+	bool Asset::isFromPackage(const std::filesystem::path& packagePath) const {
+		return isFromPackage() && m_assetPath == packagePath;
+	}
+
+	AssetHeader Asset::ReadHeader(std::ifstream& file) {
 		AssetHeader header = {};
-		file.read((char*)&header, sizeof(AssetHeader));
+		file.read(reinterpret_cast<char*>(&header), sizeof(AssetHeader));
 		return header;
 	}
 
-	void Asset::writeHeader(const AssetHeader& header, std::ofstream& file) {
-		file.write((char*)&header, sizeof(AssetHeader));
+	void Asset::WriteHeader(const AssetHeader& header, std::ofstream& file) {
+		file.write(reinterpret_cast<const char*>(&header), sizeof(AssetHeader));
 	}
 
 	void Asset::waitAllAssets() {

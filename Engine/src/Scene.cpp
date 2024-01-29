@@ -90,27 +90,6 @@ namespace sa {
 			m_pPhysicsScene->release();
 	}
 
-	void Scene::reg() {
-
-		auto type = registerType<Scene>("Scene",
-			sol::no_constructor,
-			sol::base_classes, sol::bases<Asset>());
-		type["findEntitiesByName"] = [](Scene& self, const std::string& name) {
-			std::vector<Entity> entities;
-			for (auto [e] : self.m_reg.storage<entt::entity>().each()) {
-				if (self.m_reg.get<comp::Name>(e).name == name) {
-					entities.emplace_back(&self, e);
-				}
-			}
-			return sol::as_table(entities);
-		};
-
-		type["createEntity"] = &Scene::createEntity;
-		type["destroyEntity"] = &Scene::destroyEntity;
-
-
-	}
-
 	bool Scene::onLoad(std::ifstream& file, AssetLoadFlags flags) {
 		simdjson::padded_string jsonStr(getHeader().size);
 		file.read(jsonStr.data(), jsonStr.length());

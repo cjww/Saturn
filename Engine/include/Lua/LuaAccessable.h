@@ -16,9 +16,11 @@ namespace sa {
 		static sol::state& getState();
 
 		template<typename T, typename ...Args>
-		static sol::usertype<T> registerType(const std::string& customName = "", Args&&... args);
+		static sol::usertype<T>& userType(const std::string& customName = "", Args&&... args);
 
-		template<typename T>
+
+
+		template<typename Comp>
 		static void registerComponent();
 
 		static sol::lua_value cast(sa::MetaComponent& metaComponent);
@@ -26,30 +28,40 @@ namespace sa {
 
 		static std::vector<std::string> getRegisteredComponents();
 
+
+
+		template<typename T>
+		static bool registerType();
 	};
 
 
 	// ----------------------------
 
 	template<typename T, typename ...Args>
-	inline sol::usertype<T> LuaAccessable::registerType(const std::string& customName, Args&&... args) {
+	inline sol::usertype<T>& LuaAccessable::userType(const std::string& customName, Args&&... args) {
 		std::string name = (customName.empty()) ? sa::getComponentName<T>() : customName;
-		auto type = getState().new_usertype<T>(name, args...);
+		static auto type = getState().new_usertype<T>(name, args...);
 		getState().set(type, name);
 		return type;
 	}
 
-	template<typename T>
+	template<typename Comp>
 	inline void LuaAccessable::registerComponent() {
-		std::string key = sa::getComponentName<T>();
+		std::string key = sa::getComponentName<Comp>();
 
 		s_casters[key] = [](sa::MetaComponent& comp) -> sol::lua_value {
-			return comp.cast<T>();
+			return comp.cast<Comp>();
 		};
 
 		s_copyCasters[key] = [](sa::MetaComponent& mc, sol::lua_value component) {
-			*mc.cast<T>() = component.as<T>();
+			*mc.cast<Comp>() = component.as<Comp>();
 		};
+	}
+
+
+	template <typename T>
+	bool LuaAccessable::registerType() {
+		return false;
 	}
 
 	// ----------------------------

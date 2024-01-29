@@ -19,8 +19,26 @@ namespace sa {
 		alignas(16) TonemapPreferences tonemapPreferences = {};
 	};
 	
+	struct BloomData {
+		bool isInitialized = false;
 
-	class BloomRenderLayer : public IRenderLayer {
+		ResourceID filterDescriptorSet = NULL_RESOURCE;
+		std::vector<ResourceID> blurDescriptorSets;
+		std::vector<ResourceID> upsampleDescriptorSets;
+		ResourceID compositeDescriptorSet = NULL_RESOURCE;
+
+		DynamicTexture2D bloomTexture;
+		std::vector<DynamicTexture2D> bloomMipTextures;
+
+		DynamicTexture2D bufferTexture;
+		std::vector<DynamicTexture2D> bufferMipTextures;
+
+		DynamicTexture2D outputTexture;
+
+	};
+
+	class BloomRenderLayer : public IRenderLayer<BloomData, BloomPreferences>{
+	public:
 	private:
 		
 		ShaderSet m_bloomShader;
@@ -37,16 +55,22 @@ namespace sa {
 
 		bool m_wasResized;
 		
-	public:
-		virtual void init() override;
-	
-		virtual void cleanup() override;
-		
-		virtual const Texture& render(RenderContext& context, SceneCamera* pCamera, RenderTarget* rendertarget, SceneCollection& sceneCollection) override;
-		
-		const BloomPreferences& getBloomPreferences() const;
-		void setBloomPreferences(const BloomPreferences& bloomPreferences);
 
+		void initializeBloomData(const UUID& renderTargetID, RenderContext& context, Extent extent, const DynamicTexture* colorTexture);
+		void cleanupBloomData(const UUID& renderTargetID);
+
+	public:
+
+		virtual void init() override;
+		virtual void cleanup() override;
+
+		virtual void onRenderTargetResize(UUID renderTargetID, Extent oldExtent, Extent newExtent) override;
+
+		virtual bool preRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) override;
+		virtual bool render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) override;
+		virtual bool postRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) override;
+
+		void setBloomPreferences(const BloomPreferences& bloomPreferences);
 
 	};
 }

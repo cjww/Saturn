@@ -40,7 +40,7 @@ namespace sa {
 
 	struct Color {
 		float r, g, b, a;
-		bool operator==(const Color& other) {
+		bool operator==(const Color& other) const {
 			return utils::equals(r, other.r) &&
 				utils::equals(g, other.g) &&
 				utils::equals(b, other.b) &&

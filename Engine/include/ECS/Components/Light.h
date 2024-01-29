@@ -3,7 +3,6 @@
 #include "Tools\Vector.h"
 
 #include "ECS/ComponentBase.h"
-#include "Lua/LuaAccessable.h"
 
 namespace sa {
 
@@ -21,12 +20,14 @@ namespace sa {
 		glm::vec4 position = glm::vec4(0, 0, 0, 7);		// vec3 position, float attenuationRadius
 		glm::vec4 direction = glm::vec4(1, 0, 0, glm::radians(12.5f));	// vec3 direction, float spotLightAngle
 		LightType type = LightType::POINT;
+
+		bool operator==(const LightData&) const = default;
 	};
 
 }
 
 namespace comp {
-	class Light : public sa::ComponentBase, sa::LuaAccessable {
+	class Light : public sa::ComponentBase {
 	public:
 		unsigned int index;
 		sa::LightData values;
@@ -41,7 +42,5 @@ namespace comp {
 		virtual void serialize(sa::Serializer& s) override;
 		virtual void deserialize(void* pDoc) override;
 
-
-		static void reg();
 	};
 }

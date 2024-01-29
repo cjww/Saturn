@@ -4,10 +4,10 @@
 #include "Assets/ModelAsset.h"
 
 #include "ECS/ComponentBase.h"
-#include "Lua/LuaAccessable.h"
 
 namespace comp {
-	class Model : public sa::ComponentBase, sa::LuaAccessable {
+	class Model : public sa::ComponentBase {
+
 	public:
 		sa::AssetHolder<sa::ModelAsset> model;
 
@@ -21,10 +21,6 @@ namespace comp {
 		virtual void serialize(sa::Serializer& s) override;
 		virtual void deserialize(void* pDoc) override;
 
-		virtual void onDestroy(sa::Entity* e) override;
-
-
-		static void reg();
-
+		
 	};
 }

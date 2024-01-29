@@ -25,13 +25,15 @@ namespace sa {
 		AssetHolder& operator=(const UUID& id);
 		AssetHolder& operator=(T* pAsset);
 
+		bool isHolding() const;
 
-		operator bool();
+		operator bool() const;
 
 		T* getAsset() const;
 
 		const ProgressView<bool>* getProgress() const;
 		const char* getName() const;
+		const std::filesystem::path& getAssetPath() const;
 
 		const UUID& getID() const;
 		static AssetTypeID getTypeID();
@@ -173,8 +175,13 @@ namespace sa {
 	}
 
 	template <typename T>
-	AssetHolder<T>::operator bool() {
+	bool AssetHolder<T>::isHolding() const {
 		return m_pAsset != nullptr;
+	}
+
+	template <typename T>
+	AssetHolder<T>::operator bool() const {
+		return isHolding();
 	}
 
 	template <typename T>
@@ -196,6 +203,13 @@ namespace sa {
 		if (m_pAsset)
 			return m_pAsset->getName();
 		return "None";
+	}
+
+	template <typename T>
+	const std::filesystem::path& AssetHolder<T>::getAssetPath() const {
+		if (m_pAsset)
+			return m_pAsset->getAssetPath();
+		return {};
 	}
 
 	template <typename T>

@@ -25,6 +25,12 @@ namespace sa {
 			Extent newExtent;
 		};
 
+		struct RenderTargetResized {
+			UUID renderTargetID;
+			Extent oldExtent;
+			Extent newExtent;
+		};
+
 	}
 	namespace scene_event {
 
@@ -65,13 +71,17 @@ namespace sa {
 		template<typename T>
 		struct ComponentCreated {
 			Entity entity;
-			T& component;
+		};
+
+		template<typename T>
+		struct ComponentUpdated {
+			Entity entity;
 		};
 
 		template<typename T>
 		struct ComponentDestroyed {
 			Entity entity;
-			T& component;
 		};
+
 	}
 }

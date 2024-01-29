@@ -2,9 +2,104 @@
 #include "Graphics/RenderLayers/BloomRenderLayer.h"
 #include "Engine.h"
 namespace sa {
+	void BloomRenderLayer::initializeBloomData(const UUID& renderTargetID, RenderContext& context, Extent extent, const DynamicTexture* colorTexture) {
+		BloomData& data = getRenderTargetData(renderTargetID);
+
+		//Textures
+		data.bloomTexture = DynamicTexture2D(TextureTypeFlagBits::STORAGE | TextureTypeFlagBits::SAMPLED, extent, 1U, 6U);
+		data.bloomMipTextures = data.bloomTexture.createMipLevelTextures();
+
+		data.bufferTexture = DynamicTexture2D(TextureTypeFlagBits::STORAGE | TextureTypeFlagBits::SAMPLED, extent, 1U, data.bloomMipTextures.size() - 1);
+		data.bufferMipTextures = data.bufferTexture.createMipLevelTextures();
+
+		//bloomData.outputTexture = DynamicTexture2D(TextureTypeFlagBits::STORAGE | TextureTypeFlagBits::SAMPLED, tex.getExtent(), sa::FormatPrecisionFlagBits::e8Bit, sa::FormatDimensionFlagBits::e4, sa::FormatTypeFlagBits::UNORM);
+		data.outputTexture = DynamicTexture2D(TextureTypeFlagBits::STORAGE | TextureTypeFlagBits::SAMPLED, colorTexture->getExtent());
+
+		// DescriptorSets
+		if (data.filterDescriptorSet == NULL_RESOURCE)
+			data.filterDescriptorSet = m_bloomShader.allocateDescriptorSet(0);
+
+		if (data.blurDescriptorSets.empty()) {
+			data.blurDescriptorSets.resize(data.bloomMipTextures.size() - 1);
+			for (size_t i = 0; i < data.blurDescriptorSets.size(); i++) {
+				data.blurDescriptorSets[i] = m_bloomShader.allocateDescriptorSet(0);
+			}
+		}
+
+		if (data.upsampleDescriptorSets.empty()) {
+			data.upsampleDescriptorSets.resize(data.bloomMipTextures.size() - 1);
+			for (size_t i = 0; i < data.upsampleDescriptorSets.size(); i++) {
+				data.upsampleDescriptorSets[i] = m_bloomShader.allocateDescriptorSet(0);
+			}
+		}
+
+		if (data.compositeDescriptorSet == NULL_RESOURCE)
+			data.compositeDescriptorSet = m_bloomShader.allocateDescriptorSet(0);
+
+
+
+		for (int i = 0; i < data.bloomTexture.getTextureCount(); i++) {
+			context.transitionTexture(data.bloomTexture.getTexture(i), sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_WRITE);
+			context.transitionTexture(data.bufferTexture.getTexture(i), sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_WRITE);
+			context.transitionTexture(data.outputTexture.getTexture(i), sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_WRITE);
+		}
+
+		m_renderer.updateDescriptorSet(data.filterDescriptorSet, 0, *colorTexture, m_sampler);
+		m_renderer.updateDescriptorSet(data.filterDescriptorSet, 1, data.bloomMipTextures[0]);
+		m_renderer.updateDescriptorSet(data.filterDescriptorSet, 2, data.bloomMipTextures[0]);
+		m_renderer.updateDescriptorSet(data.filterDescriptorSet, 3, data.bloomMipTextures[0]);
+		for (size_t i = 0; i < data.bloomMipTextures.size() - 1; i++) {
+			m_renderer.updateDescriptorSet(data.blurDescriptorSets[i], 0, data.bloomMipTextures[i], m_sampler);
+			m_renderer.updateDescriptorSet(data.blurDescriptorSets[i], 1, data.bloomMipTextures[i]);
+			m_renderer.updateDescriptorSet(data.blurDescriptorSets[i], 2, data.bloomMipTextures[i]);
+			m_renderer.updateDescriptorSet(data.blurDescriptorSets[i], 3, data.bloomMipTextures[i + 1]);
+		}
+
+		DynamicTexture2D smallImage = data.bloomMipTextures[data.bloomMipTextures.size() - 1];
+		DynamicTexture2D bigImage = data.bloomMipTextures[data.bloomMipTextures.size() - 2];
+		for (int i = (int)data.bufferMipTextures.size() - 1; i >= 0; i--) {
+			m_renderer.updateDescriptorSet(data.upsampleDescriptorSets[i], 0, *colorTexture, m_sampler);
+			m_renderer.updateDescriptorSet(data.upsampleDescriptorSets[i], 1, smallImage);
+			m_renderer.updateDescriptorSet(data.upsampleDescriptorSets[i], 2, bigImage);
+			m_renderer.updateDescriptorSet(data.upsampleDescriptorSets[i], 3, data.bufferMipTextures[i]);
+			if (i > 0) {
+				smallImage = data.bufferMipTextures[i];
+				bigImage = data.bloomMipTextures[i - 1];
+			}
+		}
+
+		m_renderer.updateDescriptorSet(data.compositeDescriptorSet, 0, *colorTexture, m_sampler);
+		m_renderer.updateDescriptorSet(data.compositeDescriptorSet, 1, data.bufferMipTextures[0]);
+		m_renderer.updateDescriptorSet(data.compositeDescriptorSet, 2, data.bufferMipTextures[0]);
+		m_renderer.updateDescriptorSet(data.compositeDescriptorSet, 3, data.outputTexture);
+
+		data.isInitialized = true;
+
+		SA_DEBUG_LOG_INFO("Initialized Bloom data for RenderTarget UUID: ", renderTargetID);
+	}
+
+	void BloomRenderLayer::cleanupBloomData(const UUID& renderTargetID) {
+		BloomData& data = getRenderTargetData(renderTargetID);
+
+		if (data.bloomTexture.isValid()) {
+			for (auto& tex : data.bloomMipTextures) {
+				tex.destroy();
+			}
+			data.bloomTexture.destroy();
+		}
+		if (data.bufferTexture.isValid()) {
+			for (auto& tex : data.bufferMipTextures) {
+				tex.destroy();
+			}
+			data.bufferTexture.destroy();
+		}
+		if (data.outputTexture.isValid())
+			data.outputTexture.destroy();
+	}
 
 	void BloomRenderLayer::init() {
-
+		if (m_isInitialized)
+			return;
 		auto code = ReadSPVFile((Engine::getShaderDirectory() / "BloomShader.comp.spv").generic_string().c_str());
 
 		m_bloomShader.create({ code });
@@ -28,26 +123,44 @@ namespace sa {
 		m_sampler = m_renderer.createSampler(samplerInfo);
 
 		m_stackSize = 0;
+
+		m_isInitialized = true;
 	}
 
 	void BloomRenderLayer::cleanup() {
 		m_bloomShader.destroy();
 	}
 
+	void BloomRenderLayer::onRenderTargetResize(UUID renderTargetID, Extent oldExtent, Extent newExtent) {
+		BloomData& bd = getRenderTargetData(renderTargetID);
+		bd.isInitialized = false;
+	}
 
-	const Texture& BloomRenderLayer::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) {
+	bool BloomRenderLayer::preRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget,
+	                                 SceneCollection& sceneCollection)
+	{
+		return true;
+	}
+
+
+	bool BloomRenderLayer::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) {
 		SA_PROFILE_FUNCTION();
 
-		const DynamicTexture* tex = &pRenderTarget->getMainRenderData().colorTexture;
-		Extent extent = { std::ceil(tex->getExtent().width * 0.5f), std::ceil(tex->getExtent().height * 0.5f) };
-		
-		const RenderTarget::BloomData& bd = pRenderTarget->getBloomData();
+		const DynamicTexture* tex = pRenderTarget->getOutputTextureDynamic();
+		if (!tex)
+			return false;
+		Extent extent = {
+			static_cast<uint32_t>(std::ceil(tex->getExtent().width * 0.5f)),
+			static_cast<uint32_t>(std::ceil(tex->getExtent().height * 0.5f))
+		};
+
+		const BloomData& bd = getRenderTargetData(pRenderTarget->getID());
 		
 		if (!bd.isInitialized) {
 			// Free old data
-			pRenderTarget->cleanupBloomData();
+			cleanupBloomData(pRenderTarget->getID());
 			// Initialize
-			pRenderTarget->initializeBloomData(context, extent, tex, m_bloomShader, m_sampler);
+			initializeBloomData(pRenderTarget->getID(), context, extent, tex);
 		}
 		
 
@@ -103,11 +216,17 @@ namespace sa {
 
 		pRenderTarget->setOutputTexture(bd.outputTexture);
 
-		return bd.outputTexture.getTexture();
+		return true;
 	}
 
-	const BloomPreferences& BloomRenderLayer::getBloomPreferences() const {
-		return m_bloomPreferences;
+	bool BloomRenderLayer::postRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget,
+		SceneCollection& sceneCollection)
+	{
+		BloomData& data = getRenderTargetData(pRenderTarget->getID());
+		if (data.isInitialized) {
+			data.outputTexture.swap();
+		}
+		return true;
 	}
 
 	void BloomRenderLayer::setBloomPreferences(const BloomPreferences& bloomPreferences) {

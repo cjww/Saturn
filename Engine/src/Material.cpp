@@ -179,15 +179,6 @@ namespace sa {
 
 		}
 
-		for (uint32_t i = 0; i < typeCount; i++) {
-			sa::MaterialTextureType type;
-			file.read(reinterpret_cast<char*>(&type), sizeof(type));
-			uint32_t blendCount = 0;
-			file.read(reinterpret_cast<char*>(&blendCount), sizeof(blendCount));
-			m_blending[type].resize(blendCount);
-			file.read(reinterpret_cast<char*>(m_blending[type].data()), sizeof(std::pair<sa::TextureBlendOp, float>) * blendCount);
-		}
-
 		return true;
 	}
 
@@ -210,14 +201,6 @@ namespace sa {
 			for (auto& textureID : assets) {
 				file.write(reinterpret_cast<const char*>(&textureID.getID()), sizeof(UUID));
 			}
-		}
-
-		for (auto& [type, blendings] : m_blending) {
-			file.write(reinterpret_cast<const char*>(&type), sizeof(type));
-			uint32_t blendingCount = blendings.size();
-			file.write(reinterpret_cast<const char*>(&blendingCount), sizeof(blendingCount));
-			if (blendingCount > 0)
-				file.write(reinterpret_cast<const char*>(blendings.data()), sizeof(std::pair<sa::TextureBlendOp, float>));
 		}
 
 		return true;

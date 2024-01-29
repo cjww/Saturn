@@ -2,6 +2,7 @@
 #include "MetaComponent.h"
 
 #include "Tools\utils.h"
+#include "ComponentBase.h"
 
 namespace sa{
 
@@ -30,7 +31,7 @@ namespace sa{
 			return m_type;
 		}
 
-		template<typename T>
+		template<typename Comp, std::enable_if_t<std::is_base_of_v<sa::ComponentBase, std::decay_t<Comp>>, bool> = true>
 		static void registerComponent();
 
 		static std::vector<ComponentType>& getRegisteredComponents();
@@ -67,9 +68,9 @@ namespace sa{
 		return { func.invoke({}, args...), m_name };
 	}
 
-	template<typename T>
+	template<typename Comp, std::enable_if_t<std::is_base_of_v<sa::ComponentBase, std::decay_t<Comp>>, bool>>
 	inline void ComponentType::registerComponent() {
-		s_registeredComponents.push_back(getComponentType<T>());
+		s_registeredComponents.push_back(getComponentType<Comp>());
 	}
 
 }

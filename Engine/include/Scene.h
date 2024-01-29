@@ -23,7 +23,7 @@
 
 
 namespace sa {
-	class Scene : public entt::dispatcher, public Serializable, public Asset, LuaAccessable {
+	class Scene : public entt::dispatcher, public Serializable, public Asset {
 	private:
 		
 		entt::registry m_reg;
@@ -64,8 +64,6 @@ namespace sa {
 		Scene(const AssetHeader& header);
 		virtual ~Scene() override;
 
-		static void reg();
-		
 		virtual bool onLoad(std::ifstream& file, AssetLoadFlags flags) override; // Asset
 		virtual bool onWrite(std::ofstream& file, AssetWriteFlags flags) override; // Asset
 		virtual bool onUnload() override; // Asset
@@ -94,8 +92,6 @@ namespace sa {
 		void reloadScripts();
 		void reloadScript(EntityScript* pScript);
 
-
-
 		// Hierarchy
 		EntityHierarchy& getHierarchy();
 
@@ -112,20 +108,27 @@ namespace sa {
 	template<typename T>
 	inline void Scene::onComponentConstruct(entt::registry& reg, entt::entity e) {
 		Entity entity(this, e);
-		reg.get<T>(e).onConstruct(&entity);
+		T& comp = reg.get<T>(e);
+		comp.onConstruct(&entity);
+		trigger<scene_event::ComponentCreated<T>>(scene_event::ComponentCreated<T>{ entity });
 	}
 
 	template<typename T>
 	inline void Scene::onComponentUpdate(entt::registry& reg, entt::entity e) {
 		Entity entity(this, e);
-		reg.get<T>(e).onUpdate(&entity);
+		T& comp = reg.get<T>(e);
+		comp.onUpdate(&entity);
+		trigger<scene_event::ComponentUpdated<T>>(scene_event::ComponentUpdated<T>{ entity });
 	}
 
 	template<typename T>
 	inline void Scene::onComponentDestroy(entt::registry& reg, entt::entity e) {
 		Entity entity(this, e);
-		reg.get<T>(e).onDestroy(&entity);
+		T& comp = reg.get<T>(e);
+		comp.onDestroy(&entity);
+		trigger<scene_event::ComponentDestroyed<T>>(scene_event::ComponentDestroyed<T>{ entity });
 	}
+
 
 	template<typename T>
 	inline void Scene::registerComponentCallBack() {

@@ -5,7 +5,7 @@
 
 namespace sa {
 	MaterialShaderCollection::MaterialShaderCollection(MaterialShader* pMaterialShader) {
-		m_pMaterialShader = pMaterialShader;
+		m_materialShaderID = pMaterialShader->getID();
 		m_objectCount = 0;
 		m_vertexCount = 0;
 		m_indexCount = 0;
@@ -24,7 +24,7 @@ namespace sa {
 		m_currentExtent = { 0, 0 };
 	}
 
-	void MaterialShaderCollection::addMesh(ModelAsset* pModelAsset, uint32_t meshIndex, const ObjectData& objectData) {
+	void MaterialShaderCollection::addMesh(ModelAsset* pModelAsset, uint32_t meshIndex, const Entity& entity) {
 
 		auto it = std::find(m_models.begin(), m_models.end(), pModelAsset);
 		size_t modelIndex = std::distance(m_models.begin(), it);
@@ -35,14 +35,14 @@ namespace sa {
 			m_meshes.push_back({});
 			if (m_objects.size() >= m_models.size()) {
 				m_objects[modelIndex].clear();
-				m_objects[modelIndex].push_back(objectData);
+				m_objects[modelIndex].push_back(entity);
 			}
 			else {
-				m_objects.push_back({ objectData });
+				m_objects.push_back({ entity });
 			}
 		}
 		else {
-			m_objects[modelIndex].push_back(objectData);
+			m_objects[modelIndex].push_back(entity);
 		}
 		m_objectCount++;
 			
@@ -57,6 +57,28 @@ namespace sa {
 			}
 		}
 		
+	}
+
+	void MaterialShaderCollection::removeMesh(const ModelAsset* pModelAsset, uint32_t meshIndex, const Entity& entity) {
+		const auto modelIt = std::find(m_models.begin(), m_models.end(), pModelAsset);
+		if (modelIt == m_models.end())
+			throw std::runtime_error("Model not found in collection");
+		const size_t modelIndex = std::distance(m_models.begin(), modelIt);
+
+		std::erase(m_objects[modelIndex], entity);
+		m_objectCount--;
+		if(m_objects[modelIndex].empty()) { // if erased every object using this model
+			m_models.erase(modelIt); // remove model
+			for(const auto& index : m_meshes[modelIndex]) {
+				const Mesh& mesh = pModelAsset->data.meshes[index];
+				m_vertexCount -= mesh.vertices.size();
+				m_indexCount -= mesh.indices.size();
+				m_uniqueMeshCount--;
+			}
+			m_meshes.erase(m_meshes.begin() + modelIndex); // erase all meshes connected to model
+			m_objects.erase(m_objects.begin() + modelIndex); // erase vector that was empty
+		}
+
 	}
 
 	void MaterialShaderCollection::clear() {
@@ -83,22 +105,28 @@ namespace sa {
 		m_materialIndicesBuffer.swap();
 	}
 
-	void MaterialShaderCollection::readyDescriptorSets() {
-		if (!m_pMaterialShader->isLoaded())
-			return;
+	bool MaterialShaderCollection::readyDescriptorSets() {
+		const auto pMaterialShader = getMaterialShader();
+		if (!pMaterialShader || !pMaterialShader->isLoaded())
+			return false;
 
-		if (m_sceneDescriptorSetColorPass == NULL_RESOURCE || !m_pMaterialShader->m_colorShaderSet.hasAllocatedDescriptorSet(m_sceneDescriptorSetColorPass)) {
-			m_sceneDescriptorSetColorPass = m_pMaterialShader->m_colorShaderSet.allocateDescriptorSet(SET_PER_FRAME);
+		if (m_sceneDescriptorSetColorPass == NULL_RESOURCE || !pMaterialShader->m_colorShaderSet.hasAllocatedDescriptorSet(m_sceneDescriptorSetColorPass)) {
+			m_sceneDescriptorSetColorPass = pMaterialShader->m_colorShaderSet.allocateDescriptorSet(SET_PER_FRAME);
 		}
 
-		if (m_sceneDescriptorSetDepthPass == NULL_RESOURCE || !m_pMaterialShader->m_depthShaderSet.hasAllocatedDescriptorSet(m_sceneDescriptorSetDepthPass)) {
-			m_sceneDescriptorSetDepthPass = m_pMaterialShader->m_depthShaderSet.allocateDescriptorSet(SET_PER_FRAME);
+		if (m_sceneDescriptorSetDepthPass == NULL_RESOURCE || !pMaterialShader->m_depthShaderSet.hasAllocatedDescriptorSet(m_sceneDescriptorSetDepthPass)) {
+			m_sceneDescriptorSetDepthPass = pMaterialShader->m_depthShaderSet.allocateDescriptorSet(SET_PER_FRAME);
 		}
+
+		return true;
 	}
 
 
 	void MaterialShaderCollection::recreatePipelines(ResourceID colorRenderProgram, ResourceID depthRenderProgram, Extent extent) {
-		if (extent == m_currentExtent && !m_pMaterialShader->m_recompiled)
+		const auto pMaterialShader = getMaterialShader();
+		if (!pMaterialShader)
+			return;
+		if (extent == m_currentExtent && !pMaterialShader->m_recompiled)
 			return;
 
 		PipelineSettings settings = {};
@@ -112,10 +140,11 @@ namespace sa {
 			renderer.destroyPipeline(m_depthPipeline);
 		}
 
-		m_colorPipeline = renderer.createGraphicsPipeline(colorRenderProgram, 0, extent, m_pMaterialShader->m_colorShaderSet, settings);
-		m_depthPipeline = renderer.createGraphicsPipeline(depthRenderProgram, 0, extent, m_pMaterialShader->m_depthShaderSet, settings);
+		m_colorPipeline = renderer.createGraphicsPipeline(colorRenderProgram, 0, extent, pMaterialShader->m_colorShaderSet, settings);
+		m_depthPipeline = renderer.createGraphicsPipeline(depthRenderProgram, 0, extent, pMaterialShader->m_depthShaderSet, settings);
 		m_currentExtent = extent;
-		m_pMaterialShader->m_recompiled = false;
+
+		pMaterialShader->m_recompiled = false;
 	}
 
 	void MaterialShaderCollection::bindColorPipeline(RenderContext& context) {
@@ -128,9 +157,6 @@ namespace sa {
 
 	
 	MaterialShaderCollection& SceneCollection::getMaterialShaderCollection(MaterialShader* pMaterialShader) {
-		if (!pMaterialShader)
-			pMaterialShader = AssetManager::get().getDefaultMaterialShader();
-
 		const auto it = std::find_if(m_materialShaderCollections.begin(), m_materialShaderCollections.end(), 
 			[&](const MaterialShaderCollection& collection) { return collection.getMaterialShader() == pMaterialShader; });
 		if (it == m_materialShaderCollections.end()) {
@@ -176,16 +202,91 @@ namespace sa {
 	}
 
 	MaterialShader* MaterialShaderCollection::getMaterialShader() const {
-		return m_pMaterialShader;
+		return AssetManager::get().getAsset<MaterialShader>(m_materialShaderID);
 	}
 
-	SceneCollection::SceneCollection() {
+	void SceneCollection::addQueuedEntities() {
+		for (auto it = m_entitiesToAdd.begin(); it != m_entitiesToAdd.end();) {
+			const Entity& entity = *it;
+
+			if (m_entityModels.count(entity)) { // if already added, remove old one
+				ModelAsset* pModelAsset = AssetManager::get().getAsset<ModelAsset>(m_entityModels[entity]);
+				removeObject(entity, pModelAsset);
+			}
+
+			ModelAsset* pModelAsset = entity.getComponent<comp::Model>()->model.getAsset();
+			if (pModelAsset) { // if has asset and is done loading
+				addObject(entity, pModelAsset);
+				m_entityModels[entity] = pModelAsset->getID();
+				it = m_entitiesToAdd.erase(it);
+				continue;
+			}
+
+			it++;
+		}
+	}
+
+	void SceneCollection::onModelConstruct(const scene_event::ComponentCreated<comp::Model>& e) {
+		m_entitiesToAdd.insert(e.entity);
+	}
+
+	void SceneCollection::onModelUpdate(const scene_event::ComponentUpdated<comp::Model>& e) {
+		m_entitiesToAdd.insert(e.entity);
+	}
+
+	void SceneCollection::onModelDestroy(const scene_event::ComponentDestroyed<comp::Model>& e) {
+		m_entitiesToAdd.erase(e.entity);
+
+		if (m_entityModels.count(e.entity)) {
+			sa::ModelAsset* pModelAsset = AssetManager::get().getAsset<sa::ModelAsset>(m_entityModels[e.entity]);
+			removeObject(e.entity, pModelAsset);
+			m_entityModels.erase(e.entity);
+		}
+	}
+
+	void SceneCollection::onLightConstruct(const scene_event::ComponentCreated<comp::Light>& e) {
+		if (m_entityLights.count(e.entity)) {
+			const LightData& data = m_entityLights[e.entity];
+			removeLight(data);
+			m_entityLights.erase(e.entity);
+		}
+		const auto& data = e.entity.getComponent<comp::Light>()->values;
+		addLight(data);
+		m_entityLights[e.entity] = data;
+	}
+
+	void SceneCollection::onLightUpdate(const scene_event::ComponentUpdated<comp::Light>& e) {
+		if (m_entityLights.count(e.entity)) {
+			const LightData& data = m_entityLights[e.entity];
+			removeLight(data);
+			m_entityLights.erase(e.entity);
+		}
+		const auto& data = e.entity.getComponent<comp::Light>()->values;
+		addLight(data);
+		m_entityLights[e.entity] = data;
+	}
+
+	void SceneCollection::onLightDestroy(const scene_event::ComponentDestroyed<comp::Light>& e) {
+		if (m_entityLights.count(e.entity)) {
+			const LightData& data = m_entityLights[e.entity];
+			removeLight(data);
+			m_entityLights.erase(e.entity);
+		}
+	}
+
+	SceneCollection::SceneCollection(CollectionMode mode)
+		: m_mode(mode)
+	{
 		sa::Renderer& renderer = sa::Renderer::get();
 
 		uint32_t lightCount = 0U;
 		m_lightBuffer = renderer.createDynamicBuffer(BufferType::STORAGE, sizeof(uint32_t), &lightCount);
 
 		SA_DEBUG_LOG_INFO("SceneCollection created");
+	}
+
+	SceneCollection::~SceneCollection() {
+		stopListen();
 	}
 
 	void SceneCollection::clear() {
@@ -196,32 +297,76 @@ namespace sa {
 	}
 
 	void SceneCollection::collect(Scene* pScene) {
-		pScene->forEach<comp::Transform, comp::Model>([&](const comp::Transform& transform, const comp::Model& model) {
+		if (m_mode != CollectionMode::CONTINUOUS)
+			throw std::runtime_error("Mode has to be CONTINUOUS to call collect");
+		
+		pScene->forEach<comp::Transform, comp::Model>([&](const Entity& entity, const comp::Transform& transform, const comp::Model& model) {
 			sa::ModelAsset* pModel = model.model.getAsset();
 			if(pModel)
-				addObject(transform.getMatrix(), pModel);
+				addObject(entity, pModel);
 		});
 		pScene->forEach<comp::Light>([&](const comp::Light& light) {
 			addLight(light.values);
 		});
 	}
 
-	void SceneCollection::addObject(glm::mat4 transformation, ModelAsset* pModelAsset) {
+	void SceneCollection::listen(Scene* pScene) {
+		if (m_mode != CollectionMode::REACTIVE)
+			throw std::runtime_error("Mode has to be REACTIVE to call listen");
+		stopListen();
+		m_connections.emplace_back(pScene->sink<scene_event::ComponentCreated<comp::Model>>().connect<&SceneCollection::onModelConstruct>(this));
+		m_connections.emplace_back(pScene->sink<scene_event::ComponentDestroyed<comp::Model>>().connect<&SceneCollection::onModelDestroy>(this));
+		m_connections.emplace_back(pScene->sink<scene_event::ComponentUpdated<comp::Model>>().connect<&SceneCollection::onModelUpdate>(this));
+
+		m_connections.emplace_back(pScene->sink<scene_event::ComponentCreated<comp::Light>>().connect<&SceneCollection::onLightConstruct>(this));
+		m_connections.emplace_back(pScene->sink<scene_event::ComponentDestroyed<comp::Light>>().connect<&SceneCollection::onLightDestroy>(this));
+		m_connections.emplace_back(pScene->sink<scene_event::ComponentUpdated<comp::Light>>().connect<&SceneCollection::onLightUpdate>(this));
+
+	}
+
+	void SceneCollection::stopListen() {
+		for (auto conn : m_connections) {
+			conn.release();
+		}
+		m_connections.clear();
+	}
+
+	void SceneCollection::setMode(CollectionMode mode) {
+		m_mode = mode;
+		switch (m_mode) {
+		case CollectionMode::CONTINUOUS:
+			stopListen();
+			break;
+		default:
+			break;
+		}
+	}
+
+	SceneCollection::CollectionMode SceneCollection::getMode() const {
+		return m_mode;
+	}
+
+	void SceneCollection::addObject(const Entity& entity, ModelAsset* pModelAsset) {
 		SA_PROFILE_FUNCTION();
 
 		if (!pModelAsset || !pModelAsset->isLoaded())
 			return;
 		ModelData* pModel = &pModelAsset->data;
 
-		ObjectData objectBuffer = {};
-		objectBuffer.worldMat = transformation;
-
 		// make sure all collection exists
 		uint32_t i = 0;
 		for (const auto& mesh : pModel->meshes) {
 			Material* pMaterial = mesh.material.getAsset();
-			MaterialShaderCollection& collection = getMaterialShaderCollection(pMaterial ? pMaterial->getMaterialShader().getAsset() : nullptr);
-			collection.addMesh(pModelAsset, i, objectBuffer);
+
+			MaterialShader* pMaterialShader;
+			if(pMaterial && pMaterial->getMaterialShader().getAsset()) {
+				pMaterialShader = pMaterial->getMaterialShader().getAsset();
+			}
+			else {
+				pMaterialShader = AssetManager::get().getDefaultMaterialShader();
+			}
+			MaterialShaderCollection& collection = getMaterialShaderCollection(pMaterialShader);
+			collection.addMesh(pModelAsset, i, entity);
 			i++;
 		}
 	}
@@ -230,9 +375,40 @@ namespace sa {
 		m_lights.push_back(light);
 	}
 
+	void SceneCollection::removeObject(const Entity& entity, ModelAsset* pModelAsset) {
+		SA_PROFILE_FUNCTION();
+		if (!pModelAsset || !pModelAsset->isLoaded())
+			return;
+		ModelData* pModel = &pModelAsset->data;
+
+		
+		uint32_t i = 0;
+		for (const auto& mesh : pModel->meshes) {
+			Material* pMaterial = mesh.material.getAsset();
+
+			MaterialShader* pMaterialShader;
+			if (pMaterial && pMaterial->getMaterialShader().getAsset()) {
+				pMaterialShader = pMaterial->getMaterialShader().getAsset();
+			}
+			else {
+				pMaterialShader = AssetManager::get().getDefaultMaterialShader();
+			}
+			MaterialShaderCollection& collection = getMaterialShaderCollection(pMaterialShader);
+			collection.removeMesh(pModelAsset, i, entity);
+			i++;
+		}
+	}
+
+	void SceneCollection::removeLight(const LightData& light) {
+		std::erase(m_lights, light);
+	}
+
 	void SceneCollection::makeRenderReady() {
 		SA_PROFILE_FUNCTION();
-		
+		if(m_mode == CollectionMode::REACTIVE) {
+			addQueuedEntities();
+		}
+
 
 		//Ligths
 		m_lightBuffer.clear();
@@ -240,9 +416,9 @@ namespace sa {
 		m_lightBuffer.append(m_lights, 16);
 
 
-		// Clear Dynamic buffers
 		for (auto& collection : m_materialShaderCollections) {
 
+			// Clear Dynamic buffers
 			collection.m_objectBuffer.clear();
 			collection.m_indirectIndexedBuffer.clear();
 			collection.m_vertexBuffer.clear();
@@ -270,8 +446,13 @@ namespace sa {
 				ModelAsset* pModelAsset = collection.m_models.at(i);
 				if(!pModelAsset->isLoaded())
 					continue;
-				for (const auto& objectBuffer : collection.m_objects[i]) {
-					collection.m_objectBuffer << objectBuffer;
+				for (const auto& entity : collection.m_objects[i]) {
+					auto pTransform = entity.getComponent<comp::Transform>();
+					if(!pTransform) {
+						collection.m_objectBuffer << glm::mat4(1);
+						continue;
+					}
+					collection.m_objectBuffer << pTransform->getMatrix();
 				}
 				ModelData* pModel = &collection.m_models[i]->data;
 				for (const auto& meshIndex : collection.m_meshes[i]) {

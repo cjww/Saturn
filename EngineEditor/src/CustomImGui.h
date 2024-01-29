@@ -51,7 +51,6 @@ namespace ImGui {
 
 	void Component(sa::Entity entity, comp::Transform* transform);
 	void Component(sa::Entity entity, comp::Model* model);
-	void Component(sa::Entity entity, comp::Script* script);
 	void Component(sa::Entity entity, comp::Light* light);
 	void Component(sa::Entity entity, comp::RigidBody* rb);
 	void Component(sa::Entity entity, comp::BoxCollider* bc);

@@ -123,15 +123,17 @@ namespace sa {
 			m_pEngine->setScene(scene);
 		}
 
-		std::filesystem::path projectPath = path;
+		m_pEngine->trigger<editor_event::ProjectOpened>(editor_event::ProjectOpened{ path });
+		SA_DEBUG_LOG_INFO("Opened Project: ", path);
+
+		// Save as recent project
+		auto projectPath = path;
 		auto it = std::find(m_recentProjectPaths.begin(), m_recentProjectPaths.end(), projectPath);
 		if (it != m_recentProjectPaths.end()) {
 			m_recentProjectPaths.erase(it);
 		}
 		m_recentProjectPaths.push_back(projectPath);
 
-		m_pEngine->trigger<editor_event::ProjectOpened>(editor_event::ProjectOpened{ path });
-		SA_DEBUG_LOG_INFO("Opened Project: ", path);
 		return true;
 	}
 
@@ -362,6 +364,7 @@ namespace sa {
 	void EngineEditor::onAttach(sa::Engine& engine, sa::RenderWindow& renderWindow) {
 		m_pEngine = &engine;
 		m_pWindow = &renderWindow;
+
 		
 		s_editorPath = std::filesystem::current_path();
 		
@@ -369,6 +372,7 @@ namespace sa {
 			m_pEngine->trigger<editor_event::DragDropped>({ static_cast<uint32_t>(count), paths });
 		});
 
+		m_pEngine->setupDefaultRenderPipeline();
 		m_pEngine->setWindowRenderer(new ImGuiRenderLayer(m_pWindow));
 
 		ImGui::SetupImGuiStyle();

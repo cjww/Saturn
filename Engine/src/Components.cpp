@@ -3,8 +3,10 @@
 
 #include <ECS/Entity.h>
 
-namespace sa {
+#include "Lua\LuaTypes.h"
 
+namespace sa {
+	
 	void registerAllComponents() {
 		registerComponentType<comp::Name>();
 		registerComponentType<comp::Transform>();

@@ -15,7 +15,7 @@ namespace comp {
 		sa::SceneCamera camera;
 		bool autoCollectScene = true;
 
-		Camera() = default;
+		Camera();
 		Camera(const Camera&) = default;
 		Camera(Camera&&) = default;
 		Camera& operator=(const Camera&) = default;

@@ -2,18 +2,18 @@
 #include "Graphics/IRenderLayer.h"
 
 namespace sa {
-	IRenderLayer::IRenderLayer()
+	BasicRenderLayer::BasicRenderLayer()
 		: m_renderer(Renderer::get())
 		, m_isActive(true)
+		, m_isInitialized(false)
 	{
 	}
 
-
-	bool IRenderLayer::isActive() const {
+	bool BasicRenderLayer::isActive() const {
 		return m_isActive;
 	}
 
-	void IRenderLayer::setActive(bool active) {
+	void BasicRenderLayer::setActive(bool active) {
 		m_isActive = active;
 	}
 

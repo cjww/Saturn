@@ -167,10 +167,13 @@ void DirectoryView::onImGui() {
 				else if(entry.path().extension() == ".lua") {
 					icon = m_luaScriptIcon;
 				}
-
-				sa::Asset* pAsset = sa::AssetManager::get().findAssetByPath(entry.path());
-				if (pAsset) {
-					icon = ImGui::GetAssetInfo(pAsset->getType()).icon;
+				
+				sa::Asset* pAsset = nullptr;
+				if(sa::AssetManager::IsAsset(entry)) {
+					pAsset = sa::AssetManager::get().findAssetByPath(entry.path());
+					if (pAsset) {
+						icon = ImGui::GetAssetInfo(pAsset->getType()).icon;
+					}
 				}
 
 				ImGui::DirectoryEntry(entry, iconSize, selectedItems, lastSelected, wasChanged, editedFile, editingName, icon);
@@ -182,7 +185,6 @@ void DirectoryView::onImGui() {
 						m_openDirectory = entry.path();
 						break;
 					}
-					sa::Asset* pAsset = sa::AssetManager::get().findAssetByPath(entry.path());
 					if (pAsset) {
 						if (sa::AssetManager::get().isType<sa::Scene>(pAsset)) {
 							m_pEngine->setScene(pAsset->cast<sa::Scene>());
@@ -228,7 +230,7 @@ void DirectoryView::onImGui() {
 		auto& assets = sa::AssetManager::get().getAssets();
 		static sa::Asset* selected = nullptr;
 
-		if (ImGui::Button("Load Asset") && selected) {
+		if (ImGui::Button("Hold Asset") && selected) {
 			selected->hold();
 		}
 		ImGui::SameLine();
@@ -239,6 +241,12 @@ void DirectoryView::onImGui() {
 		if (ImGui::Button("Write Asset") && selected) {
 			selected->write();
 		}
+		ImGui::SameLine();
+		if (ImGui::Button("Properties") && selected) {
+			selected->hold();
+			m_openAssetProperties.insert(selected);
+		}
+
 
 		if (selected && selected->isLoaded()) {
 			if (selected->getType() == sa::AssetManager::get().getAssetTypeID<sa::ModelAsset>()) {

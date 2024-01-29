@@ -210,6 +210,10 @@ target_compile_definitions(${PROJECT_NAME} PRIVATE
 ################################################################################
 if(MSVC)
     target_compile_options(${PROJECT_NAME} PRIVATE
+        $<$<CONFIG:Debug>:
+            /Od;
+            /Gy
+        >
         $<$<CONFIG:Optimized>:
             /Oi;
             /Gy

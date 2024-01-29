@@ -24,7 +24,8 @@ namespace sa {
 		bool loadAssimpModel(const std::filesystem::path& path);
 	public:
 		using Asset::Asset;
-		
+
+
 		static bool isExtensionSupported(const std::string& extension);
 
 		//Data

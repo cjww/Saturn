@@ -9,12 +9,11 @@
 #include "glm\gtx/quaternion.hpp"
 
 #include "PhysicsSystem.h"
-#include "Lua/LuaAccessable.h"
 
 
 namespace comp {
 
-	class Transform : public sa::ComponentBase, sa::LuaAccessable {
+	class Transform : public sa::ComponentBase {
 	public:
 		sa::Vector3 position = sa::Vector3(0);
 		glm::quat rotation = glm::quat_identity<float, glm::packed_highp>();
@@ -40,6 +39,5 @@ namespace comp {
 
 		sa::Matrix4x4 getMatrix() const;
 
-		static void reg();
 	};
 }
