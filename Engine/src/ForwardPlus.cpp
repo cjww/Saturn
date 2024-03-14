@@ -110,7 +110,7 @@ namespace sa {
 		// ----------------------------------
 
 		data.isInitialized = true;
-		SA_DEBUG_LOG_INFO("Initialized Forward plus data for RenderTarget UUID: ", renderTargetID);
+		SA_DEBUG_LOG_INFO("Initialized Forward plus data for RenderTarget UUID: ", renderTargetID, " with extent { w:", extent.width, ", h:", extent.height, " }");
 	}
 
 	void ForwardPlus::cleanupMainRenderData(const UUID& renderTargetID) {
@@ -187,9 +187,7 @@ namespace sa {
 		m_lightCullingShader.destroy();
 	}
 
-	bool ForwardPlus::preRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget,
-		SceneCollection& sceneCollection)
-	{
+	bool ForwardPlus::preRender(RenderContext& context, SceneCollection& sceneCollection) {
 		return true;
 	}
 
@@ -225,22 +223,11 @@ namespace sa {
 
 		context.beginRenderProgram(m_depthPreRenderProgram, data.depthFramebuffer, SubpassContents::DIRECT);
 		for (auto& collection : sc) {
-			if (!collection.readyDescriptorSets()) {
+			if (!collection.readyDescriptorSets(context)) {
 				continue;
 			}
 
 			collection.recreatePipelines(m_colorRenderProgram, m_depthPreRenderProgram, pRenderTarget->getExtent());
-
-
-			context.updateDescriptorSet(collection.getSceneDescriptorSetDepthPass(), 0, collection.getObjectBuffer());
-
-			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 0, collection.getObjectBuffer());
-			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 1, sc.getLightBuffer());
-			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 2, collection.getMaterialBuffer());
-			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 3, collection.getMaterialIndicesBuffer());
-			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 4, data.lightIndexBuffer.getBuffer());
-			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 5, m_linearSampler);
-			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 6, collection.getTextures(), 0);
 
 			// Depth prepass
 			collection.bindDepthPipeline(context);
@@ -249,7 +236,9 @@ namespace sa {
 			context.bindIndexBuffer(collection.getIndexBuffer());
 
 			context.setViewport(viewport);
+
 			context.bindDescriptorSet(collection.getSceneDescriptorSetDepthPass());
+
 
 
 			if (collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>() > 0) {
@@ -276,11 +265,15 @@ namespace sa {
 		// Main color pass
 		context.beginRenderProgram(m_colorRenderProgram, data.colorFramebuffer, SubpassContents::DIRECT);
 		for (auto& collection : sc) {
-			if (!collection.readyDescriptorSets()) {
+			if (!collection.readyDescriptorSets(context)) {
 				continue;
 			}
 			collection.bindColorPipeline(context);
 
+			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 1, sc.getLightBuffer());
+			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 4, data.lightIndexBuffer.getBuffer());
+			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 5, m_linearSampler);
+			
 			context.bindDescriptorSet(collection.getSceneDescriptorSetColorPass());
 
 			context.setViewport(viewport);

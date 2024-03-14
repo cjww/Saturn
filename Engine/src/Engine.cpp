@@ -4,6 +4,9 @@
 #include <vulkan/vulkan_core.h>
 
 #include "Graphics/RenderTechniques/ForwardPlus.h"
+#include "Graphics/RenderLayers/BloomRenderLayer.h"
+#include "Graphics/RenderLayers/ShadowRenderLayer.h"
+
 #include "Lua/Ref.h"
 #include "Tools/Vector.h"
 #include "Tools/Profiler.h"
@@ -66,6 +69,7 @@ namespace sa {
 	void Engine::setupDefaultRenderPipeline() {
 		m_renderPipeline.addLayer(new ForwardPlus);
 		m_renderPipeline.addLayer(new BloomRenderLayer);
+		m_renderPipeline.addLayer(new ShadowRenderLayer);
 	}
 
 	void Engine::cleanup() {
@@ -89,23 +93,31 @@ namespace sa {
 		if (!context)
 			return;
 		
-		if (getCurrentScene()) {
+		Scene* pCurrentScene = getCurrentScene();
+		if (pCurrentScene) {
+			SceneCollection& sceneCollection = pCurrentScene->getDynamicSceneCollection();
+			sceneCollection.makeRenderReady();
 			
+			m_renderPipeline.preRender(context, sceneCollection);
+
 			bool renderedToMainRenderTarget = false;
 			m_currentScene.getAsset()->forEach<comp::Camera>([&](comp::Camera& camera) {
 				RenderTarget* pRenderTarget = camera.getRenderTarget().getAsset();
 				if (pRenderTarget) {
-					m_renderPipeline.render(context, &camera.camera, pRenderTarget, camera.getSceneCollection());
+					m_renderPipeline.render(context, &camera.camera, pRenderTarget, pCurrentScene->getDynamicSceneCollection());
 				}
 				else {
 					if(!renderedToMainRenderTarget)
-						m_renderPipeline.render(context, &camera.camera, &m_mainRenderTarget, camera.getSceneCollection());
+						m_renderPipeline.render(context, &camera.camera, &m_mainRenderTarget, pCurrentScene->getDynamicSceneCollection());
 					renderedToMainRenderTarget = true;
 				}
 			});
-			
+		
 		}
 		trigger<engine_event::OnRender>(engine_event::OnRender{ &context, &m_renderPipeline });
+
+		if (pCurrentScene)
+			pCurrentScene->getDynamicSceneCollection().swap();
 
 		m_pWindowRenderer->render(context, m_mainRenderTarget.getOutputTexture());
 		{

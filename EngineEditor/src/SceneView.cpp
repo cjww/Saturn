@@ -1,7 +1,7 @@
 #include "SceneView.h"
 
 #include "Graphics\RenderTechniques\ForwardPlus.h"
-
+#include "Graphics/RenderLayers/ShadowRenderLayer.h"
 #include <limits>
 
 #include "EngineEditor.h"
@@ -24,12 +24,14 @@ void SceneView::onSceneSet(const sa::engine_event::SceneSet& e) {
 
 void SceneView::onRender(const sa::engine_event::OnRender& e) {
 	if (m_isOpen && m_pEngine->getCurrentScene()) {
+		/*
 		if (m_sceneCollection.getMode() == sa::SceneCollection::CollectionMode::CONTINUOUS) {
 			m_sceneCollection.clear();
 			m_sceneCollection.collect(m_pEngine->getCurrentScene());
 		}
-
-		e.pRenderPipeline->render(*e.pContext, &m_camera, &m_renderTarget, m_sceneCollection);
+		*/
+		
+		e.pRenderPipeline->render(*e.pContext, &m_camera, &m_renderTarget, m_pEngine->getCurrentScene()->getDynamicSceneCollection());
 	}
 }
 
@@ -542,6 +544,25 @@ void SceneView::onImGui() {
 
 	}
 	ImGui::End();
+
+
+	if (m_pEngine->getCurrentScene()) {
+		m_pEngine->getCurrentScene()->forEach<comp::Light, comp::ShadowEmitter>([&](const sa::Entity& entity) {
+
+			sa::ShadowRenderLayer* pLayer = m_pEngine->getRenderPipeline().getLayer<sa::ShadowRenderLayer>();
+			if (pLayer) {
+				ImGui::Begin("Shadow pass");
+				ResourceID framebuffer = pLayer->getRenderTargetData(static_cast<uint32_t>(entity)).depthFramebuffer;
+				if (framebuffer != NULL_RESOURCE) {
+					sa::Texture tex = sa::Renderer::get().getFramebufferTexture(framebuffer, 0);
+					sa::Extent framebufferExtent = sa::Renderer::get().getFramebufferExtent(framebuffer);
+					ImGui::Image(tex, ImVec2(framebufferExtent.width, framebufferExtent.height));
+				}
+
+				ImGui::End();
+			}
+		});
+	}
 
 
 }

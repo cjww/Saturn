@@ -137,6 +137,10 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
             break;
         }
 
+        if(light.shadowMapCount == 0) {
+            radiance = vec3(1, 0, 0);
+        } 
+
         vec3 F0 = vec3(0.04);
         F0 = mix(F0, pow(albedo, vec3(2.2)), metallic);
 

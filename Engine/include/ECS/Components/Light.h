@@ -20,6 +20,8 @@ namespace sa {
 		glm::vec4 position = glm::vec4(0, 0, 0, 7);		// vec3 position, float attenuationRadius
 		glm::vec4 direction = glm::vec4(1, 0, 0, glm::radians(12.5f));	// vec3 direction, float spotLightAngle
 		LightType type = LightType::POINT;
+		uint32_t shadowMapIndex = 0;
+		uint32_t shadowMapCount = 0;
 
 		bool operator==(const LightData&) const = default;
 	};

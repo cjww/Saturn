@@ -10,7 +10,6 @@ namespace comp {
 	class Camera : public sa::ComponentBase {
 	private:
 		sa::AssetHolder<sa::RenderTarget> m_renderTarget;
-		sa::SceneCollection m_sceneCollection;
 	public:
 		sa::SceneCamera camera;
 		bool autoCollectScene = true;
@@ -31,7 +30,6 @@ namespace comp {
 		const sa::AssetHolder<sa::RenderTarget>& getRenderTarget() const;
 		void setRenderTarget(sa::RenderTarget* pRenderTarget);
 
-		sa::SceneCollection& getSceneCollection();
-
+		
 	};
 }

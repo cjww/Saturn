@@ -32,6 +32,8 @@ namespace sa {
 
 		EntityHierarchy m_hierarchy;
 		
+		SceneCollection m_dynamicSceneCollection;
+
 		bool m_runtime;
 
 		friend class comp::RigidBody;
@@ -94,6 +96,9 @@ namespace sa {
 
 		// Hierarchy
 		EntityHierarchy& getHierarchy();
+
+		
+		SceneCollection& getDynamicSceneCollection();
 
 		template<typename ...T, typename F>
 		void forEach(F func);

@@ -60,6 +60,8 @@ struct Light {
     vec4 position;  // vec3 position, float attenuationRadius
     vec4 direction; // vec3 direction
     uint type;
+    uint shadowMapIndex;
+    uint shadowMapCount;
 };
 
 layout(set = 0, binding = 1, std140) readonly buffer Lights {

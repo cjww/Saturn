@@ -5,6 +5,8 @@
 #include "ECS/Events.h"
 #include "ECS/Components/Model.h"
 #include "ECS\Components\Light.h"
+#include "ECS/Components/ShadowEmitter.h"
+#include "ECS/Components/Transform.h"
 
 namespace sa {
 	class Scene;
@@ -14,6 +16,15 @@ namespace sa {
 		bool operator==(const ObjectData&) const = default;
 	};
 	
+	struct ShadowData {
+		entt::entity entityID;
+		glm::mat4 lightMat;
+		LightType lightType;
+		float lightRange;
+		Texture2D shadowmaps[4];
+		uint32_t shadowMapCount;
+	};
+
 	class MaterialShaderCollection {
 	private:
 		friend class SceneCollection;
@@ -52,10 +63,13 @@ namespace sa {
 		ResourceID m_depthPipeline = NULL_RESOURCE;
 		Extent m_currentExtent;
 
+		bool m_updatedDescriptorSets;
 
 	public:
 
 		MaterialShaderCollection(MaterialShader* pMaterialShader);
+
+		MaterialShaderCollection& operator=(const MaterialShaderCollection) = delete;
 
 		void addMesh(ModelAsset* pModelAsset, uint32_t meshIndex, const Entity& entity);
 		void removeMesh(const ModelAsset* pModelAsset, uint32_t meshIndex, const Entity& entity);
@@ -63,8 +77,10 @@ namespace sa {
 		void clear();
 		void swap();
 
-		bool readyDescriptorSets();
+		bool readyDescriptorSets(RenderContext& context);
+		
 		void recreatePipelines(ResourceID colorRenderProgram, ResourceID depthRenderProgram, Extent extent);
+		bool arePipelinesReady() const;
 
 		void bindColorPipeline(RenderContext& context);
 		void bindDepthPipeline(RenderContext& context);
@@ -111,6 +127,14 @@ namespace sa {
 		std::unordered_set<Entity> m_entitiesToAdd;
 
 		std::unordered_map<Entity, LightData> m_entityLights;
+		
+		std::vector<ShadowData> m_shadowData;
+		std::unordered_map<Entity, ShadowData> m_shadowDataCache;
+
+		std::unordered_map<Entity, uint32_t> m_entityShadowDataIndices;
+
+
+
 
 		void addQueuedEntities();
 
@@ -119,8 +143,8 @@ namespace sa {
 		void onModelUpdate(const scene_event::ComponentUpdated<comp::Model>& e);
 		void onModelDestroy(const scene_event::ComponentDestroyed<comp::Model>& e);
 
-		void onLightConstruct(const scene_event::ComponentCreated<comp::Light>& e);
-		void onLightUpdate(const scene_event::ComponentUpdated<comp::Light>& e);
+		void onLightConstruct(scene_event::ComponentCreated<comp::Light>& e);
+		void onLightUpdate(scene_event::ComponentUpdated<comp::Light>& e);
 		void onLightDestroy(const scene_event::ComponentDestroyed<comp::Light>& e);
 
 
@@ -128,6 +152,9 @@ namespace sa {
 
 		SceneCollection(CollectionMode mode);
 		virtual ~SceneCollection();
+
+		SceneCollection(const SceneCollection&) = delete;
+		SceneCollection& operator=(const SceneCollection) = delete;
 
 		void clear();
 
@@ -141,8 +168,8 @@ namespace sa {
 
 
 		void addObject(const Entity& entity, ModelAsset* pModel);
-		void addLight(const LightData& light);
-
+		void addLight(LightData& light, const comp::Transform& transform, const Entity& entity);
+		
 		void removeObject(const Entity& entity, ModelAsset* pModel);
 		void removeLight(const LightData& light);
 
@@ -151,6 +178,9 @@ namespace sa {
 
 		const Buffer& getLightBuffer() const;
 		
+		std::vector<ShadowData>::iterator iterateShadowsBegin();
+		std::vector<ShadowData>::iterator iterateShadowsEnd();
+
 		std::vector<MaterialShaderCollection>::iterator begin();
 		std::vector<MaterialShaderCollection>::iterator end();
 

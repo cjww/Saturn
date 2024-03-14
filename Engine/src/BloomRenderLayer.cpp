@@ -75,7 +75,7 @@ namespace sa {
 
 		data.isInitialized = true;
 
-		SA_DEBUG_LOG_INFO("Initialized Bloom data for RenderTarget UUID: ", renderTargetID);
+		SA_DEBUG_LOG_INFO("Initialized Bloom data for RenderTarget UUID: ", renderTargetID, " with extent { w:", extent.width * 2, ", h:", extent.height * 2, " }");
 	}
 
 	void BloomRenderLayer::cleanupBloomData(const UUID& renderTargetID) {
@@ -136,9 +136,7 @@ namespace sa {
 		bd.isInitialized = false;
 	}
 
-	bool BloomRenderLayer::preRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget,
-	                                 SceneCollection& sceneCollection)
-	{
+	bool BloomRenderLayer::preRender(RenderContext& context, SceneCollection& sceneCollection) {
 		return true;
 	}
 

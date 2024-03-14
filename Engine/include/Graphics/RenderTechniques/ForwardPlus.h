@@ -69,7 +69,7 @@ namespace sa {
 		virtual void init() override;
 		virtual void cleanup() override;
 
-		virtual bool preRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) override;
+		virtual bool preRender(RenderContext& context, SceneCollection& sceneCollection) override;
 		virtual bool render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) override;
 		virtual bool postRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) override;
 

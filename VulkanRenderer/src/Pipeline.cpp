@@ -28,21 +28,24 @@ namespace sa {
 		auto& descriptorSetLayouts = shaderSet.getDescriptorSetLayouts();
 		std::vector<vk::DescriptorSetLayout> vk_descriptorSetLayouts;
 
-		auto back = descriptorSetLayouts.end();
-		back--;
-		uint32_t maxSet = back->first;
+		if (!descriptorSetLayouts.empty()) {
 
-		for (uint32_t i = 0; i <= maxSet; i++) {
-			if (!descriptorSetLayouts.count(i)) {
-				SA_DEBUG_LOG_ERROR("Set index ", i, " does not exist! All sets from 0 to ", maxSet, " must be used!");
-				throw std::runtime_error("Set index does not exist");
+			auto back = descriptorSetLayouts.end();
+			back--;
+			uint32_t maxSet = back->first;
+
+			for (uint32_t i = 0; i <= maxSet; i++) {
+				if (!descriptorSetLayouts.count(i)) {
+					SA_DEBUG_LOG_ERROR("Set index ", i, " does not exist! All sets from 0 to ", maxSet, " must be used!");
+					throw std::runtime_error("Set index does not exist");
+				}
+				vk::DescriptorSetLayout* pLayout = ResourceManager::get().get<vk::DescriptorSetLayout>(descriptorSetLayouts.at(i));
+				if (!pLayout) {
+					SA_DEBUG_LOG_ERROR("Invalid descriptor layout ID ", descriptorSetLayouts.at(i));
+					continue;
+				}
+				vk_descriptorSetLayouts.push_back(*pLayout);
 			}
-			vk::DescriptorSetLayout* pLayout = ResourceManager::get().get<vk::DescriptorSetLayout>(descriptorSetLayouts.at(i));
-			if (!pLayout) {
-				SA_DEBUG_LOG_ERROR("Invalid descriptor layout ID ", descriptorSetLayouts.at(i));
-				continue;
-			}
-			vk_descriptorSetLayouts.push_back(*pLayout);
 		}
 
 		layoutInfo.setPushConstantRanges(vk_pushConstantRanges);

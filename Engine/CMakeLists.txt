@@ -22,6 +22,7 @@ set(Header_Files
     "include/ECS/Components/RigidBody.h"
     "include/ECS/Components/SphereCollider.h"
     "include/ECS/Components/Transform.h"
+    "include/ECS/Components/ShadowEmitter.h"
     "include/ECS/ComponentType.h"
     "include/ECS/Entity.h"
     "include/ECS/Events.h"
@@ -33,6 +34,7 @@ set(Header_Files
     "include/Graphics/IRenderTechnique.h"
     "include/Graphics/Material.h"
     "include/Graphics/RenderLayers/BloomRenderLayer.h"
+    "include/Graphics/RenderLayers/ShadowRenderLayer.h"
     "include/Graphics/RenderPipeline.h"
     "include/Graphics/RenderTarget.h"
     "include/Graphics/RenderTechniques/ForwardPlus.h"
@@ -69,6 +71,7 @@ set(Source_Files
     "src/Asset.cpp"
     "src/AssetManager.cpp"
     "src/BloomRenderLayer.cpp"
+    "src/ShadowRenderLayer.cpp"
     "src/BoxCollider.cpp"
     "src/Camera.cpp"
     "src/Clock.cpp"
@@ -109,6 +112,7 @@ set(Source_Files
     "src/StopWatch.cpp"
     "src/TextureAsset.cpp"
     "src/Transform.cpp"
+    "src/ShadowEmitter.cpp"
     "src/utils.cpp"
     "src/UUID.cpp"
     "src/WindowRenderer.cpp"
@@ -396,7 +400,7 @@ foreach(source IN LISTS SHADERS)
       ${source}
     OUTPUT ${SHADER_BINARY_DIR}/${FILENAME}.spv
     DEPENDS ${source} ${SHADER_BINARY_DIR}
-    COMMENT "Compiling shader ${FILENAME} with ${glslc_executable}"
+    COMMENT "Compiling shader ${FILENAME} with ${glslc_executable} into ${SHADER_BINARY_DIR}"
   )
   list(APPEND SPV_SHADERS ${SHADER_BINARY_DIR}/${FILENAME}.spv)
 endforeach()

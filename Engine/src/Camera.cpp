@@ -7,9 +7,7 @@
 
 
 namespace comp {
-	Camera::Camera()
-		: m_sceneCollection(sa::SceneCollection::CollectionMode::CONTINUOUS)
-	{
+	Camera::Camera() {
 
 	}
 
@@ -40,8 +38,5 @@ namespace comp {
 		m_renderTarget = pRenderTarget;
 	}
 
-	sa::SceneCollection& Camera::getSceneCollection() {
-		return m_sceneCollection;
-	}
 
 }

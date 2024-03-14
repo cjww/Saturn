@@ -7,6 +7,7 @@
 #include "ECS/Components/BoxCollider.h"
 #include "ECS/Components/SphereCollider.h"
 #include "ECS/Components/Camera.h"
+#include "ECS/Components/ShadowEmitter.h"
 
 namespace sa {
 	void registerAllComponents();

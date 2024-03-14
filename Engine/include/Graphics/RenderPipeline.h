@@ -3,14 +3,13 @@
 #include "IRenderTechnique.h"
 #include "IRenderLayer.h"
 #include "Tools/Profiler.h"
-#include "RenderLayers\BloomRenderLayer.h"
 
 namespace sa {
 
 	class RenderPipeline {
 	private:
-		
 		std::vector<BasicRenderLayer*> m_renderLayers;
+		
 	public:
 		RenderPipeline();
 		virtual ~RenderPipeline();
@@ -21,6 +20,7 @@ namespace sa {
 		
 		void beginFrameImGUI();
 		
+		void preRender(RenderContext& context, SceneCollection& sceneCollection);
 		void render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection);
 
 		template<typename T>

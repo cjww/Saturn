@@ -15,6 +15,7 @@ namespace sa {
 		registerComponentCallBack<comp::BoxCollider>();
 		registerComponentCallBack<comp::SphereCollider>();
 		registerComponentCallBack<comp::Camera>();
+		registerComponentCallBack<comp::ShadowEmitter>();
 	}
 
 
@@ -57,28 +58,22 @@ namespace sa {
 			glm::vec3 forward = transform.rotation * glm::vec3(0, 0, 1);
 			camera.camera.lookAt(transform.position + forward);
 		});
-
-		m_reg.view<comp::Camera>().each([this](comp::Camera& camera) {
-			if (camera.autoCollectScene) {
-				camera.getSceneCollection().clear();
-				camera.getSceneCollection().collect(this);
-			}
-		});
-
-
 	}
 
 	void Scene::updateLightPositions() {
+		/*
 		m_reg.view<comp::Transform, comp::Light>().each([](comp::Transform& transform, comp::Light& light) {
 			light.values.position = glm::vec4(transform.position, light.values.position.w);
 			light.values.direction = glm::vec4(transform.rotation * glm::vec3(0, 0, 1), light.values.direction.w);
 		});
+		*/
 	}
 
 
 	Scene::Scene(const AssetHeader& header)
 		: Asset(header)
 		, m_scriptManager(*this)
+		, m_dynamicSceneCollection(sa::SceneCollection::CollectionMode::CONTINUOUS)
 	{
 		m_runtime = false;
 		m_pPhysicsScene = PhysicsSystem::get().createScene();
@@ -151,12 +146,20 @@ namespace sa {
 		updateChildPositions();
 		updateCameraPositions();
 		updateLightPositions();
+
+
+		m_dynamicSceneCollection.clear();
+		m_dynamicSceneCollection.collect(this);
+
 	}
 
 	void Scene::inEditorUpdate(float dt) {
 		updateChildPositions();
 		updateCameraPositions();
 		updateLightPositions();
+
+		m_dynamicSceneCollection.clear();
+		m_dynamicSceneCollection.collect(this);
 	}
 
 	void Scene::serialize(Serializer& s) {
@@ -281,6 +284,10 @@ namespace sa {
 
 	EntityHierarchy& Scene::getHierarchy() {
 		return m_hierarchy;
+	}
+
+	SceneCollection& Scene::getDynamicSceneCollection() {
+		return m_dynamicSceneCollection;
 	}
 
 	void Scene::forEachComponentType(std::function<void(ComponentType)> function) {

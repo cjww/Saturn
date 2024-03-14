@@ -22,6 +22,8 @@ namespace sa {
 		m_materialIndicesBuffer = renderer.createDynamicBuffer(BufferType::STORAGE);
 
 		m_currentExtent = { 0, 0 };
+
+		m_updatedDescriptorSets = false;
 	}
 
 	void MaterialShaderCollection::addMesh(ModelAsset* pModelAsset, uint32_t meshIndex, const Entity& entity) {
@@ -103,9 +105,10 @@ namespace sa {
 		m_objectBuffer.swap();
 		m_materialBuffer.swap();
 		m_materialIndicesBuffer.swap();
+		m_updatedDescriptorSets = false;
 	}
 
-	bool MaterialShaderCollection::readyDescriptorSets() {
+	bool MaterialShaderCollection::readyDescriptorSets(RenderContext& context) {
 		const auto pMaterialShader = getMaterialShader();
 		if (!pMaterialShader || !pMaterialShader->isLoaded())
 			return false;
@@ -118,9 +121,20 @@ namespace sa {
 			m_sceneDescriptorSetDepthPass = pMaterialShader->m_depthShaderSet.allocateDescriptorSet(SET_PER_FRAME);
 		}
 
+		if (!m_updatedDescriptorSets) {
+			context.updateDescriptorSet(getSceneDescriptorSetColorPass(), 0, getObjectBuffer());
+		
+			context.updateDescriptorSet(getSceneDescriptorSetColorPass(), 2, getMaterialBuffer());
+			context.updateDescriptorSet(getSceneDescriptorSetColorPass(), 3, getMaterialIndicesBuffer());
+		
+			context.updateDescriptorSet(getSceneDescriptorSetColorPass(), 6, getTextures(), 0);
+
+			context.updateDescriptorSet(getSceneDescriptorSetDepthPass(), 0, getObjectBuffer());
+			m_updatedDescriptorSets = true;
+		}
+
 		return true;
 	}
-
 
 	void MaterialShaderCollection::recreatePipelines(ResourceID colorRenderProgram, ResourceID depthRenderProgram, Extent extent) {
 		const auto pMaterialShader = getMaterialShader();
@@ -145,6 +159,16 @@ namespace sa {
 		m_currentExtent = extent;
 
 		pMaterialShader->m_recompiled = false;
+	}
+
+	bool MaterialShaderCollection::arePipelinesReady() const {
+		const auto pMaterialShader = getMaterialShader();
+		if (!pMaterialShader)
+			return false;
+		if (pMaterialShader->m_recompiled || m_colorPipeline == NULL_RESOURCE || m_depthPipeline == NULL_RESOURCE)
+			return false;
+
+		return true;
 	}
 
 	void MaterialShaderCollection::bindColorPipeline(RenderContext& context) {
@@ -244,25 +268,32 @@ namespace sa {
 		}
 	}
 
-	void SceneCollection::onLightConstruct(const scene_event::ComponentCreated<comp::Light>& e) {
+	void SceneCollection::onLightConstruct(scene_event::ComponentCreated<comp::Light>& e) {
 		if (m_entityLights.count(e.entity)) {
 			const LightData& data = m_entityLights[e.entity];
 			removeLight(data);
 			m_entityLights.erase(e.entity);
 		}
-		const auto& data = e.entity.getComponent<comp::Light>()->values;
-		addLight(data);
+		auto& data = e.entity.getComponent<comp::Light>()->values;
+		
+		auto pTransform = e.entity.getComponent<comp::Transform>();
+		pTransform = e.entity.addComponent<comp::Transform>();
+		addLight(data, *pTransform, e.entity);
+
 		m_entityLights[e.entity] = data;
 	}
 
-	void SceneCollection::onLightUpdate(const scene_event::ComponentUpdated<comp::Light>& e) {
+	void SceneCollection::onLightUpdate(scene_event::ComponentUpdated<comp::Light>& e) {
 		if (m_entityLights.count(e.entity)) {
 			const LightData& data = m_entityLights[e.entity];
 			removeLight(data);
 			m_entityLights.erase(e.entity);
 		}
-		const auto& data = e.entity.getComponent<comp::Light>()->values;
-		addLight(data);
+		auto& data = e.entity.getComponent<comp::Light>()->values;
+		auto pTransform = e.entity.getComponent<comp::Transform>();
+		pTransform = e.entity.addComponent<comp::Transform>();
+		addLight(data, *pTransform, e.entity);
+
 		m_entityLights[e.entity] = data;
 	}
 
@@ -294,6 +325,9 @@ namespace sa {
 		for (auto& collection : m_materialShaderCollections) {
 			collection.clear();
 		}
+
+		m_shadowData.clear();
+		m_entityShadowDataIndices.clear();
 	}
 
 	void SceneCollection::collect(Scene* pScene) {
@@ -305,9 +339,10 @@ namespace sa {
 			if(pModel)
 				addObject(entity, pModel);
 		});
-		pScene->forEach<comp::Light>([&](const comp::Light& light) {
-			addLight(light.values);
+		pScene->forEach<comp::Transform, comp::Light>([&](const Entity& entity, const comp::Transform& transform, comp::Light& light) {
+			addLight(light.values, transform, entity);
 		});
+
 	}
 
 	void SceneCollection::listen(Scene* pScene) {
@@ -371,9 +406,34 @@ namespace sa {
 		}
 	}
 
-	void SceneCollection::addLight(const LightData& light) {
+	void SceneCollection::addLight(LightData& light, const comp::Transform& transform, const Entity& entity) {
+		light.position = glm::vec4(transform.position, light.position.w);
+		light.direction = glm::vec4(transform.rotation * glm::vec3(0, 0, 1), light.direction.w);
+
+		const comp::ShadowEmitter* pShadowEmitter = entity.getComponent<comp::ShadowEmitter>();
+		if (pShadowEmitter) {
+			ShadowData data = {};
+			if (m_shadowDataCache.count(entity)) {
+				data = m_shadowDataCache[entity];
+			}
+
+			data.lightRange = light.position.w;
+			data.lightMat = glm::inverse(transform.getMatrix());
+			data.lightType = light.type;
+
+			memcpy(data.shadowmaps, pShadowEmitter->shadowmaps, sizeof(Texture2D) * 4);
+			data.shadowMapCount = pShadowEmitter->shadowMapCount;
+			light.shadowMapCount = pShadowEmitter->shadowMapCount;
+
+			data.entityID = entity;
+
+			m_shadowData.push_back(data);
+			m_shadowDataCache[entity] = data;
+			light.shadowMapIndex = m_shadowData.size() - 1;
+		}
 		m_lights.push_back(light);
 	}
+
 
 	void SceneCollection::removeObject(const Entity& entity, ModelAsset* pModelAsset) {
 		SA_PROFILE_FUNCTION();
@@ -401,6 +461,10 @@ namespace sa {
 
 	void SceneCollection::removeLight(const LightData& light) {
 		std::erase(m_lights, light);
+		
+		// WRONG ?
+		auto first = m_shadowData.begin() + light.shadowMapIndex;
+		m_shadowData.erase(first, first + light.shadowMapCount);
 	}
 
 	void SceneCollection::makeRenderReady() {
@@ -535,6 +599,16 @@ namespace sa {
 	const Buffer& SceneCollection::getLightBuffer() const {
 		return m_lightBuffer.getBuffer();
 	}
+
+
+	std::vector<ShadowData>::iterator SceneCollection::iterateShadowsBegin() {
+		return m_shadowData.begin();
+	}
+
+	std::vector<ShadowData>::iterator SceneCollection::iterateShadowsEnd() {
+		return m_shadowData.end();
+	}
+
 
 	std::vector<MaterialShaderCollection>::iterator SceneCollection::begin() {
 		return m_materialShaderCollections.begin();
