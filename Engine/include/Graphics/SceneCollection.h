@@ -18,7 +18,8 @@ namespace sa {
 	
 	struct ShadowData {
 		entt::entity entityID;
-		glm::mat4 lightMat;
+		glm::vec3 lightPosition;
+		glm::vec3 lightDirection;
 		LightType lightType;
 		float lightRange;
 		Texture2D shadowmaps[4];
@@ -129,7 +130,7 @@ namespace sa {
 		std::unordered_map<Entity, LightData> m_entityLights;
 		
 		std::vector<ShadowData> m_shadowData;
-		std::unordered_map<Entity, ShadowData> m_shadowDataCache;
+		std::vector<ShadowData> m_directionalShadowData;
 
 		std::unordered_map<Entity, uint32_t> m_entityShadowDataIndices;
 
@@ -180,6 +181,10 @@ namespace sa {
 		
 		std::vector<ShadowData>::iterator iterateShadowsBegin();
 		std::vector<ShadowData>::iterator iterateShadowsEnd();
+		
+		std::vector<ShadowData>::iterator iterateDirecionalShadowsBegin();
+		std::vector<ShadowData>::iterator iterateDirecionalShadowsEnd();
+
 
 		std::vector<MaterialShaderCollection>::iterator begin();
 		std::vector<MaterialShaderCollection>::iterator end();

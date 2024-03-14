@@ -166,7 +166,7 @@ namespace sa {
 		s.beginObject();
 		s.beginArray("entities");
 
-		forEach([&](Entity entity) {
+		forEachEntity([&](Entity entity) {
 			entity.serialize(s);
 		});
 
@@ -212,7 +212,7 @@ namespace sa {
 	Scene* Scene::clone(const std::string& name) {
 
 		auto clone = AssetManager::get().createAsset<Scene>(name, "");
-		forEach([&](Entity entity) {
+		forEachEntity([&](Entity entity) {
 			entity.clone(clone);
 		});
 		return clone;

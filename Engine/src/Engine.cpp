@@ -67,9 +67,9 @@ namespace sa {
 	}
 
 	void Engine::setupDefaultRenderPipeline() {
+		m_renderPipeline.addLayer(new ShadowRenderLayer);
 		m_renderPipeline.addLayer(new ForwardPlus);
 		m_renderPipeline.addLayer(new BloomRenderLayer);
-		m_renderPipeline.addLayer(new ShadowRenderLayer);
 	}
 
 	void Engine::cleanup() {

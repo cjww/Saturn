@@ -100,8 +100,18 @@ namespace sa {
 		
 		SceneCollection& getDynamicSceneCollection();
 
-		template<typename ...T, typename F>
+		template<typename ...T, typename F, std::enable_if_t<std::is_assignable_v<std::function<void(Entity, T&...)>, F>, bool> = true>
 		void forEach(F func);
+
+		template<typename ...T, typename F, std::enable_if_t<std::is_assignable_v<std::function<void(T&...)>, F>, bool> = true>
+		void forEach(F func);
+
+		template<typename ...T, typename F, std::enable_if_t<std::is_assignable_v<std::function<void(Entity)>, F>, bool> = true>
+		void forEach(F func);
+
+		template<typename F, std::enable_if_t<std::is_assignable_v<std::function<void(Entity)>, F>, bool> = true>
+		void forEachEntity(F func);
+
 
 		void forEachComponentType(std::function<void(ComponentType)> function);
 
@@ -142,28 +152,33 @@ namespace sa {
 		m_reg.on_destroy<T>().connect<&Scene::onComponentDestroy<T>>(this);
 	}
 
-	template<typename ...T, typename F>
+	template<typename ...T, typename F, std::enable_if_t<std::is_assignable_v<std::function<void(Entity, T&...)>, F>, bool>>
 	inline void Scene::forEach(F func) {
-		static_assert(
-			std::is_assignable_v<std::function<void(Entity, T&...)>, F> ||
-			std::is_assignable_v<std::function<void(T&...)>, F> ||
-			std::is_assignable_v<std::function<void(Entity)>, F> &&
-			"Not a valid function signature");
-		if constexpr (std::is_assignable_v<std::function<void(Entity)>, F>) {
-			for(auto [e] : m_reg.storage<entt::entity>().each()) {
-				Entity entity(this, e);
-				func(entity);
-			}
-		}
-		else if constexpr (std::is_assignable_v<std::function<void(Entity, T&...)>, F>) {
-			m_reg.view<T...>().each([&](entt::entity e, T&... comp) {
-				Entity entity(this, e);
-				func(entity, comp...);
-			});
-		}
-		else if constexpr (std::is_assignable_v<std::function<void(T&...)>, F>) {
-			m_reg.view<T...>().each(func);
-		}
-
+		m_reg.view<T...>().each([&](entt::entity e, T&... comp) {
+			Entity entity(this, e);
+			func(entity, comp...);
+		});
 	}
+
+	template<typename ...T, typename F, std::enable_if_t<std::is_assignable_v<std::function<void(T&...)>, F>, bool>>
+	inline void Scene::forEach(F func) {
+		m_reg.view<T...>().each(func);
+	}
+
+	template<typename ...T, typename F, std::enable_if_t<std::is_assignable_v<std::function<void(Entity)>, F>, bool>>
+	inline void Scene::forEach(F func) {
+		m_reg.view<T...>().each([&](entt::entity e, T&... comp) {
+			Entity entity(this, e);
+			func(entity);
+		});
+	}
+
+	template<typename F, std::enable_if_t<std::is_assignable_v<std::function<void(Entity)>, F>, bool>>
+	inline void Scene::forEachEntity(F func) {
+		for (auto [e] : m_reg.storage<entt::entity>().each()) {
+			Entity entity(this, e);
+			func(entity);
+		}
+	}
+
 }

@@ -552,7 +552,7 @@ void SceneView::onImGui() {
 			sa::ShadowRenderLayer* pLayer = m_pEngine->getRenderPipeline().getLayer<sa::ShadowRenderLayer>();
 			if (pLayer) {
 				ImGui::Begin("Shadow pass");
-				ResourceID framebuffer = pLayer->getRenderTargetData(static_cast<uint32_t>(entity)).depthFramebuffer;
+				ResourceID framebuffer = pLayer->getRenderTargetData(m_renderTarget.getID()).depthFramebuffer;
 				if (framebuffer != NULL_RESOURCE) {
 					sa::Texture tex = sa::Renderer::get().getFramebufferTexture(framebuffer, 0);
 					sa::Extent framebufferExtent = sa::Renderer::get().getFramebufferExtent(framebuffer);

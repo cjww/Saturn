@@ -328,7 +328,7 @@ namespace sa {
 
 		type["findEntitiesByName"] = [](Scene& self, const std::string& name) {
 			std::vector<Entity> entities;
-			self.forEach([&](const Entity& e) {
+			self.forEachEntity([&](const Entity& e) {
 				if (e.getComponent<comp::Name>()->name == name) {
 					entities.emplace_back(e);
 				}

@@ -187,10 +187,6 @@ namespace sa {
 		m_lightCullingShader.destroy();
 	}
 
-	bool ForwardPlus::preRender(RenderContext& context, SceneCollection& sceneCollection) {
-		return true;
-	}
-
 	bool ForwardPlus::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sc) {
 		SA_PROFILE_FUNCTION();
 		if (!pCamera)

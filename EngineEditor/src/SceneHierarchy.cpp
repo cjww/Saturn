@@ -194,7 +194,7 @@ void SceneHierarchy::onImGui() {
 
 		sa::Scene* pScene = m_pEngine->getCurrentScene();
 		if (pScene && ImGui::BeginListBox("##Entities", ImGui::GetContentRegionAvail())) {
-			pScene->forEach([&](sa::Entity e) {
+			pScene->forEachEntity([&](sa::Entity e) {
 				if (pScene->getHierarchy().hasParent(e))
 					return;
 				// only make trees from roots

@@ -327,6 +327,8 @@ namespace sa {
 		}
 
 		m_shadowData.clear();
+		m_directionalShadowData.clear();
+
 		m_entityShadowDataIndices.clear();
 	}
 
@@ -413,12 +415,12 @@ namespace sa {
 		const comp::ShadowEmitter* pShadowEmitter = entity.getComponent<comp::ShadowEmitter>();
 		if (pShadowEmitter) {
 			ShadowData data = {};
-			if (m_shadowDataCache.count(entity)) {
-				data = m_shadowDataCache[entity];
-			}
 
 			data.lightRange = light.position.w;
-			data.lightMat = glm::inverse(transform.getMatrix());
+
+			data.lightPosition = light.position;
+			data.lightDirection = light.direction;
+
 			data.lightType = light.type;
 
 			memcpy(data.shadowmaps, pShadowEmitter->shadowmaps, sizeof(Texture2D) * 4);
@@ -427,9 +429,15 @@ namespace sa {
 
 			data.entityID = entity;
 
-			m_shadowData.push_back(data);
-			m_shadowDataCache[entity] = data;
-			light.shadowMapIndex = m_shadowData.size() - 1;
+			if (data.lightType == LightType::DIRECTIONAL) {
+				m_directionalShadowData.push_back(data); 
+				light.shadowMapIndex = m_directionalShadowData.size() - 1;
+			}
+			else {
+				m_shadowData.push_back(data);
+				light.shadowMapIndex = m_directionalShadowData.size() + m_shadowData.size() - 1;
+			}
+
 		}
 		m_lights.push_back(light);
 	}
@@ -462,9 +470,15 @@ namespace sa {
 	void SceneCollection::removeLight(const LightData& light) {
 		std::erase(m_lights, light);
 		
-		// WRONG ?
-		auto first = m_shadowData.begin() + light.shadowMapIndex;
-		m_shadowData.erase(first, first + light.shadowMapCount);
+		// TODO: right?
+		if (light.shadowMapCount != 0) {
+			if (light.type == LightType::DIRECTIONAL) {
+				m_directionalShadowData.erase(m_directionalShadowData.begin() + light.shadowMapIndex);
+			}
+			else {
+				m_shadowData.erase(m_shadowData.begin() + (light.shadowMapIndex - m_directionalShadowData.size()));
+			}
+		}
 	}
 
 	void SceneCollection::makeRenderReady() {
@@ -609,6 +623,13 @@ namespace sa {
 		return m_shadowData.end();
 	}
 
+	std::vector<ShadowData>::iterator SceneCollection::iterateDirecionalShadowsBegin() {
+		return m_directionalShadowData.begin();
+	}
+
+	std::vector<ShadowData>::iterator SceneCollection::iterateDirecionalShadowsEnd() {
+		return m_directionalShadowData.end();
+	}
 
 	std::vector<MaterialShaderCollection>::iterator SceneCollection::begin() {
 		return m_materialShaderCollections.begin();

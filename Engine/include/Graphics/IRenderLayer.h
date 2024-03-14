@@ -26,7 +26,7 @@ namespace sa {
 
 		virtual void onRenderTargetResize(UUID renderTargetID, Extent oldExtent, Extent newExtent) = 0;
 
-		virtual bool preRender(RenderContext& context, SceneCollection& sceneCollection) = 0;
+		virtual bool preRender(RenderContext& context, SceneCollection& sceneCollection) { return true; };
 		virtual bool render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) = 0;
 		virtual bool postRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) = 0;
 

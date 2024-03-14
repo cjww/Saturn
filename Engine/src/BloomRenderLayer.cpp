@@ -136,11 +136,6 @@ namespace sa {
 		bd.isInitialized = false;
 	}
 
-	bool BloomRenderLayer::preRender(RenderContext& context, SceneCollection& sceneCollection) {
-		return true;
-	}
-
-
 	bool BloomRenderLayer::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) {
 		SA_PROFILE_FUNCTION();
 
