@@ -44,11 +44,9 @@ namespace sa {
 			case LightType::DIRECTIONAL:
 				camera.setAspectRatio(1.f);
 				camera.setProjectionMode(ProjectionMode::eOrthographic);
-				camera.setOrthoWidth(256 * 0.5f);
+				camera.setOrthoWidth(256);
 				camera.setPosition(origin - data.lightDirection * camera.getFar() * 0.5f);
-				//camera.setPosition(data.lightPosition);
 				camera.setForward(data.lightDirection);
-
 				break;
 			default:
 				break;

@@ -16,6 +16,11 @@ float GeometrySchlickGGX(float NdotV, float roughness);
 float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness);
 vec3 FresnelSchlick(vec3 V, vec3 H, vec3 F0);
 
+const mat4 biasMat = mat4( 
+	0.5, 0.0, 0.0, 0.0,
+	0.0, 0.5, 0.0, 0.0,
+	0.0, 0.0, 1.0, 0.0,
+	0.5, 0.5, 0.0, 1.0 );
 
 vec4 CalculatePBRColor(Material material) {
 
@@ -107,18 +112,18 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
             radiance = light.color.rgb * lightIntensity;
 
             ShadowMapData shadowData = shadowMapDataBuffer.shadowMaps[light.shadowMapDataIndex];
-            vec4 lightSpacePos = shadowData.lightMat * in_vertexPos;
-
-            vec3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
-            //projCoords = projCoords * 0.5 + 0.5;
-            float closestDepth = texture(sampler2D(textures[shadowData.mapIndex], samp), projCoords.xy).r;
-            float currentDepth = projCoords.z;
-
-            float bias = 0.005;
             
-            if(closestDepth < currentDepth) {
-                //radiance = vec3(0.0, 0.0, 0.0);
-                return vec4(0.0, 0.0, 0.0, 1.0);
+            vec4 lightSpacePos = biasMat * shadowData.lightMat * vec4(in_vertexWorldPos, 1.0);
+            vec3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
+            
+            if(projCoords.z < 1.0) {
+                float closestDepth = texture(sampler2D(textures[shadowData.mapIndex], samp), projCoords.xy).r;
+                float currentDepth = projCoords.z;
+
+                float bias = 0.005;
+                if(currentDepth - bias > closestDepth) {
+                    radiance = vec3(0.0, 0.0, 0.0);
+                }
             }
 
             break;

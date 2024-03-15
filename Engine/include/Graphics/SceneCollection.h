@@ -28,7 +28,7 @@ namespace sa {
 		uint32_t shaderDataIndex;
 	};
 
-	struct ShadowShaderData {
+	struct alignas(16) ShadowShaderData {
 		glm::mat4 lightMat;
 		uint32_t mapIndex;
 		uint32_t mapCount;
