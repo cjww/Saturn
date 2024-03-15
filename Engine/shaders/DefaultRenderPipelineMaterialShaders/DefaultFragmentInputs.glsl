@@ -14,8 +14,9 @@
 layout(location = 0) in vec2 in_vertexUV;
 layout(location = 1) in vec3 in_vertexWorldPos;
 layout(location = 2) in vec3 in_vertexWorldNormal;
-layout(location = 3) in flat vec3 in_viewPos;
-layout(location = 4) in flat uint in_meshIndex;
+layout(location = 3) in vec4 in_vertexPos;
+layout(location = 4) in flat vec3 in_viewPos;
+layout(location = 5) in flat uint in_meshIndex;
 
 struct Material {
     vec4 albedoColor;
@@ -60,8 +61,13 @@ struct Light {
     vec4 position;  // vec3 position, float attenuationRadius
     vec4 direction; // vec3 direction
     uint type;
-    uint shadowMapIndex;
-    uint shadowMapCount;
+    uint shadowMapDataIndex;
+};
+
+struct ShadowMapData {
+    mat4 lightMat;
+    uint mapIndex;
+    uint mapCount;
 };
 
 layout(set = 0, binding = 1, std140) readonly buffer Lights {
@@ -83,8 +89,14 @@ layout(set = 0, binding = 4) readonly buffer LightIndices {
 	uint data[];
 } lightIndices;
 
-layout(set = 0, binding = 5) uniform sampler samp;
-layout(set = 0, binding = 6) uniform texture2D textures[];
+layout(set = 0, binding = 5, std140) readonly buffer ShadowMaps {
+    ShadowMapData shadowMaps[];
+} shadowMapDataBuffer;
+
+layout(set = 0, binding = 6) uniform sampler samp;
+layout(set = 0, binding = 7) uniform texture2D textures[];
+
+
 
 layout(push_constant) uniform PushConstants {
     mat4 projView;

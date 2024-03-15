@@ -17,7 +17,7 @@ namespace sa {
 		data.isInitialized = true;
 	}
 
-	void ShadowRenderLayer::renderShadowMap(RenderContext& context, const glm::vec3& origin, ShadowData data, ResourceID framebuffer, SceneCollection& sceneCollection) {
+	void ShadowRenderLayer::renderShadowMap(RenderContext& context, const glm::vec3& origin, ShadowData& data, ResourceID framebuffer, SceneCollection& sceneCollection) {
 		
 		context.beginRenderProgram(m_depthRenderProgram, framebuffer, SubpassContents::DIRECT);
 
@@ -44,8 +44,9 @@ namespace sa {
 			case LightType::DIRECTIONAL:
 				camera.setAspectRatio(1.f);
 				camera.setProjectionMode(ProjectionMode::eOrthographic);
-				camera.setOrthoWidth(256);
+				camera.setOrthoWidth(256 * 0.5f);
 				camera.setPosition(origin - data.lightDirection * camera.getFar() * 0.5f);
+				//camera.setPosition(data.lightPosition);
 				camera.setForward(data.lightDirection);
 
 				break;
@@ -53,9 +54,11 @@ namespace sa {
 				break;
 			}
 
-			
+			data.lightMatrix = camera.getProjectionMatrix() * camera.getViewMatrix();
+			sceneCollection.updateLightMatrixData(data.shaderDataIndex, data.lightMatrix); // update light matrix for reading shadow map
+
 			PerFrameBuffer perFrame = {};
-			perFrame.projViewMatrix = camera.getProjectionMatrix() * camera.getViewMatrix();
+			perFrame.projViewMatrix = data.lightMatrix;
 			perFrame.viewPos = glm::vec4(0);
 
 			if (collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>() > 0) {
@@ -134,6 +137,7 @@ namespace sa {
 				SA_DEBUG_LOG_INFO("Created framebuffer ", renderData.depthFramebuffer);
 			}
 			renderShadowMap(context, pCamera->getPosition(), data, renderData.depthFramebuffer, sceneCollection);
+			
 		}
 		return true;
 	}

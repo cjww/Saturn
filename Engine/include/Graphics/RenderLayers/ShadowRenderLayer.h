@@ -24,7 +24,7 @@ namespace sa {
 		void cleanupRenderData(ShadowRenderData& data);
 		void initializeRenderData(const Texture2D& texture, ShadowRenderData& data);
 
-		void renderShadowMap(RenderContext& context, const glm::vec3& origin, ShadowData data, ResourceID framebuffer, SceneCollection& sceneCollection);
+		void renderShadowMap(RenderContext& context, const glm::vec3& origin, ShadowData& data, ResourceID framebuffer, SceneCollection& sceneCollection);
 
 
 	public:

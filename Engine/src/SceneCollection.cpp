@@ -127,7 +127,7 @@ namespace sa {
 			context.updateDescriptorSet(getSceneDescriptorSetColorPass(), 2, getMaterialBuffer());
 			context.updateDescriptorSet(getSceneDescriptorSetColorPass(), 3, getMaterialIndicesBuffer());
 		
-			context.updateDescriptorSet(getSceneDescriptorSetColorPass(), 6, getTextures(), 0);
+			context.updateDescriptorSet(getSceneDescriptorSetColorPass(), 7, getTextures(), 0);
 
 			context.updateDescriptorSet(getSceneDescriptorSetDepthPass(), 0, getObjectBuffer());
 			m_updatedDescriptorSets = true;
@@ -271,14 +271,14 @@ namespace sa {
 	void SceneCollection::onLightConstruct(scene_event::ComponentCreated<comp::Light>& e) {
 		if (m_entityLights.count(e.entity)) {
 			const LightData& data = m_entityLights[e.entity];
-			removeLight(data);
+			removeLight(e.entity, data);
 			m_entityLights.erase(e.entity);
 		}
 		auto& data = e.entity.getComponent<comp::Light>()->values;
 		
 		auto pTransform = e.entity.getComponent<comp::Transform>();
 		pTransform = e.entity.addComponent<comp::Transform>();
-		addLight(data, *pTransform, e.entity);
+		addLight(e.entity, data, *pTransform);
 
 		m_entityLights[e.entity] = data;
 	}
@@ -286,13 +286,13 @@ namespace sa {
 	void SceneCollection::onLightUpdate(scene_event::ComponentUpdated<comp::Light>& e) {
 		if (m_entityLights.count(e.entity)) {
 			const LightData& data = m_entityLights[e.entity];
-			removeLight(data);
+			removeLight(e.entity, data);
 			m_entityLights.erase(e.entity);
 		}
 		auto& data = e.entity.getComponent<comp::Light>()->values;
 		auto pTransform = e.entity.getComponent<comp::Transform>();
 		pTransform = e.entity.addComponent<comp::Transform>();
-		addLight(data, *pTransform, e.entity);
+		addLight(e.entity, data, *pTransform);
 
 		m_entityLights[e.entity] = data;
 	}
@@ -300,10 +300,11 @@ namespace sa {
 	void SceneCollection::onLightDestroy(const scene_event::ComponentDestroyed<comp::Light>& e) {
 		if (m_entityLights.count(e.entity)) {
 			const LightData& data = m_entityLights[e.entity];
-			removeLight(data);
+			removeLight(e.entity, data);
 			m_entityLights.erase(e.entity);
 		}
 	}
+
 
 	SceneCollection::SceneCollection(CollectionMode mode)
 		: m_mode(mode)
@@ -312,6 +313,8 @@ namespace sa {
 
 		uint32_t lightCount = 0U;
 		m_lightBuffer = renderer.createDynamicBuffer(BufferType::STORAGE, sizeof(uint32_t), &lightCount);
+
+		m_shadowShaderDataBuffer = renderer.createDynamicBuffer(BufferType::STORAGE);
 
 		SA_DEBUG_LOG_INFO("SceneCollection created");
 	}
@@ -342,7 +345,7 @@ namespace sa {
 				addObject(entity, pModel);
 		});
 		pScene->forEach<comp::Transform, comp::Light>([&](const Entity& entity, const comp::Transform& transform, comp::Light& light) {
-			addLight(light.values, transform, entity);
+			addLight(entity, light.values, transform);
 		});
 
 	}
@@ -408,7 +411,7 @@ namespace sa {
 		}
 	}
 
-	void SceneCollection::addLight(LightData& light, const comp::Transform& transform, const Entity& entity) {
+	void SceneCollection::addLight(const Entity& entity, LightData& light, const comp::Transform& transform) {
 		light.position = glm::vec4(transform.position, light.position.w);
 		light.direction = glm::vec4(transform.rotation * glm::vec3(0, 0, 1), light.direction.w);
 
@@ -425,19 +428,24 @@ namespace sa {
 
 			memcpy(data.shadowmaps, pShadowEmitter->shadowmaps, sizeof(Texture2D) * 4);
 			data.shadowMapCount = pShadowEmitter->shadowMapCount;
-			light.shadowMapCount = pShadowEmitter->shadowMapCount;
 
 			data.entityID = entity;
 
 			if (data.lightType == LightType::DIRECTIONAL) {
-				m_directionalShadowData.push_back(data); 
-				light.shadowMapIndex = m_directionalShadowData.size() - 1;
+				m_directionalShadowData.push_back(data); 	
 			}
 			else {
 				m_shadowData.push_back(data);
-				light.shadowMapIndex = m_directionalShadowData.size() + m_shadowData.size() - 1;
 			}
 
+			data.shaderDataIndex = m_shadowShaderData.size();
+			
+			ShadowShaderData shaderData = {};
+			shaderData.mapIndex = 0;
+			shaderData.mapCount = pShadowEmitter->shadowMapCount;
+			shaderData.lightMat = glm::mat4(1);
+			m_shadowShaderData.push_back(shaderData);
+			
 		}
 		m_lights.push_back(light);
 	}
@@ -448,7 +456,6 @@ namespace sa {
 		if (!pModelAsset || !pModelAsset->isLoaded())
 			return;
 		ModelData* pModel = &pModelAsset->data;
-
 		
 		uint32_t i = 0;
 		for (const auto& mesh : pModel->meshes) {
@@ -467,18 +474,44 @@ namespace sa {
 		}
 	}
 
-	void SceneCollection::removeLight(const LightData& light) {
+	void SceneCollection::removeLight(const Entity& entity, const LightData& light) {
 		std::erase(m_lights, light);
 		
+
 		// TODO: right?
-		if (light.shadowMapCount != 0) {
+		if (entity.hasComponents<comp::ShadowEmitter>()) {
 			if (light.type == LightType::DIRECTIONAL) {
-				m_directionalShadowData.erase(m_directionalShadowData.begin() + light.shadowMapIndex);
+				auto it = std::find_if(m_shadowData.begin(), m_shadowData.end(), [&](const ShadowData& data) {
+					return data.entityID == static_cast<entt::entity>(entity);
+					});
+
+				if (it == m_shadowData.end())
+					return;
+
+				ShadowData& data = *it;
+				m_shadowShaderData.erase(m_shadowShaderData.begin() + data.shaderDataIndex);
+				// erase shadowData
+				m_shadowData.erase(it);
 			}
 			else {
-				m_shadowData.erase(m_shadowData.begin() + (light.shadowMapIndex - m_directionalShadowData.size()));
+				auto it = std::find_if(m_shadowData.begin(), m_shadowData.end(), [&](const ShadowData& data) {
+					return data.entityID == static_cast<entt::entity>(entity);
+				});
+
+				if (it == m_shadowData.end())
+					return;
+				
+				ShadowData& data = *it;
+				m_shadowShaderData.erase(m_shadowShaderData.begin() + data.shaderDataIndex);
+
+				// erase shadowData
+				m_shadowData.erase(it);
 			}
 		}
+	}
+
+	void SceneCollection::updateLightMatrixData(uint32_t dataIndex, const glm::mat4& lightMat) {
+		m_shadowShaderData.at(dataIndex).lightMat = lightMat;
 	}
 
 	void SceneCollection::makeRenderReady() {
@@ -493,8 +526,17 @@ namespace sa {
 		m_lightBuffer.write(static_cast<uint32_t>(m_lights.size()));
 		m_lightBuffer.append(m_lights, 16);
 
-
+		m_shadowShaderDataBuffer.clear();
+		m_shadowShaderDataBuffer.write(m_shadowShaderData);
+		
 		for (auto& collection : m_materialShaderCollections) {
+			for (ShadowData& data : m_directionalShadowData) {
+				ShadowShaderData& shaderData = m_shadowShaderData.at(data.shaderDataIndex);
+				shaderData.mapIndex = collection.m_textures.size();
+				for (uint32_t i = 0; i < data.shadowMapCount; i++) {
+					collection.m_textures.push_back(data.shadowmaps[i]);
+				}
+			}
 
 			// Clear Dynamic buffers
 			collection.m_objectBuffer.clear();
@@ -604,6 +646,7 @@ namespace sa {
 
 	void SceneCollection::swap() {
 		m_lightBuffer.swap();
+		m_shadowShaderDataBuffer.swap();
 
 		for (auto& collection : m_materialShaderCollections) {
 			collection.swap();
@@ -614,6 +657,9 @@ namespace sa {
 		return m_lightBuffer.getBuffer();
 	}
 
+	const Buffer& SceneCollection::getShadowDataBuffer() const {
+		return m_shadowShaderDataBuffer.getBuffer();
+	}
 
 	std::vector<ShadowData>::iterator SceneCollection::iterateShadowsBegin() {
 		return m_shadowData.begin();

@@ -222,7 +222,7 @@ namespace sa {
 			if (!collection.readyDescriptorSets(context)) {
 				continue;
 			}
-
+			
 			collection.recreatePipelines(m_colorRenderProgram, m_depthPreRenderProgram, pRenderTarget->getExtent());
 
 			// Depth prepass
@@ -268,8 +268,10 @@ namespace sa {
 
 			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 1, sc.getLightBuffer());
 			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 4, data.lightIndexBuffer.getBuffer());
-			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 5, m_linearSampler);
+			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 5, sc.getShadowDataBuffer());
+			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 6, m_linearSampler);
 			
+
 			context.bindDescriptorSet(collection.getSceneDescriptorSetColorPass());
 
 			context.setViewport(viewport);

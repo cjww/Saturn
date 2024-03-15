@@ -22,8 +22,16 @@ namespace sa {
 		glm::vec3 lightDirection;
 		LightType lightType;
 		float lightRange;
+		glm::mat4 lightMatrix;
 		Texture2D shadowmaps[4];
 		uint32_t shadowMapCount;
+		uint32_t shaderDataIndex;
+	};
+
+	struct ShadowShaderData {
+		glm::mat4 lightMat;
+		uint32_t mapIndex;
+		uint32_t mapCount;
 	};
 
 	class MaterialShaderCollection {
@@ -134,8 +142,9 @@ namespace sa {
 
 		std::unordered_map<Entity, uint32_t> m_entityShadowDataIndices;
 
+		std::vector<ShadowShaderData> m_shadowShaderData;
 
-
+		DynamicBuffer m_shadowShaderDataBuffer;
 
 		void addQueuedEntities();
 
@@ -147,7 +156,6 @@ namespace sa {
 		void onLightConstruct(scene_event::ComponentCreated<comp::Light>& e);
 		void onLightUpdate(scene_event::ComponentUpdated<comp::Light>& e);
 		void onLightDestroy(const scene_event::ComponentDestroyed<comp::Light>& e);
-
 
 	public:
 
@@ -169,16 +177,19 @@ namespace sa {
 
 
 		void addObject(const Entity& entity, ModelAsset* pModel);
-		void addLight(LightData& light, const comp::Transform& transform, const Entity& entity);
+		void addLight(const Entity& entity, LightData& light, const comp::Transform& transform);
 		
 		void removeObject(const Entity& entity, ModelAsset* pModel);
-		void removeLight(const LightData& light);
+		void removeLight(const Entity& entity, const LightData& light);
+
+		void updateLightMatrixData(uint32_t dataIndex, const glm::mat4& lightMat);
 
 		void makeRenderReady();
 		void swap();
 
 		const Buffer& getLightBuffer() const;
-		
+		const Buffer& getShadowDataBuffer() const;
+
 		std::vector<ShadowData>::iterator iterateShadowsBegin();
 		std::vector<ShadowData>::iterator iterateShadowsEnd();
 		

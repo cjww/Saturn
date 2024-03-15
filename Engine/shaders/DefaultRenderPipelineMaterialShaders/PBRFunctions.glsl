@@ -96,7 +96,6 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
             
             radiance = light.color.rgb * attenuation * lightIntensity;
 
-
             break;
         }
         case LIGHT_TYPE_DIRECTIONAL: {
@@ -106,6 +105,21 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
             halfVector = normalize(viewDir + lightDir);
 
             radiance = light.color.rgb * lightIntensity;
+
+            ShadowMapData shadowData = shadowMapDataBuffer.shadowMaps[light.shadowMapDataIndex];
+            vec4 lightSpacePos = shadowData.lightMat * in_vertexPos;
+
+            vec3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
+            //projCoords = projCoords * 0.5 + 0.5;
+            float closestDepth = texture(sampler2D(textures[shadowData.mapIndex], samp), projCoords.xy).r;
+            float currentDepth = projCoords.z;
+
+            float bias = 0.005;
+            
+            if(closestDepth < currentDepth) {
+                //radiance = vec3(0.0, 0.0, 0.0);
+                return vec4(0.0, 0.0, 0.0, 1.0);
+            }
 
             break;
         }
@@ -137,10 +151,6 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
             break;
         }
 
-        if(light.shadowMapCount == 0) {
-            radiance = vec3(1, 0, 0);
-        } 
-
         vec3 F0 = vec3(0.04);
         F0 = mix(F0, pow(albedo, vec3(2.2)), metallic);
 
@@ -165,7 +175,6 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
 
     vec3 ambient = vec3(0.01) * albedo * occlusion;
     vec3 color = ambient + emission + Lo;
-
     return vec4(color, alpha);
 }
 
