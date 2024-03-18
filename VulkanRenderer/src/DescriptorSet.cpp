@@ -107,8 +107,8 @@ namespace sa {
 
 	}
 
-	void DescriptorSet::update(uint32_t binding, uint32_t firstElement, const std::vector<Texture>& textures, vk::Sampler* pSampler, uint32_t indexToUpdate) {
-		if (textures.empty()) 
+	void DescriptorSet::update(uint32_t binding, uint32_t firstElement, const Texture* textures, uint32_t textureCount, vk::Sampler* pSampler, uint32_t indexToUpdate) {
+		if (textureCount == 0 || textures == nullptr)
 			return;
 
 		if (!m_writes.count(binding)) {
@@ -118,14 +118,15 @@ namespace sa {
 
 		vk::ImageLayout imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 		if (getDescriptorType(binding) == vk::DescriptorType::eStorageImage || 
-			(textures.front().getTypeFlags() & sa::TextureTypeFlagBits::STORAGE) == sa::TextureTypeFlagBits::STORAGE) 
+			(textures[0].getTypeFlags() & sa::TextureTypeFlagBits::STORAGE) == sa::TextureTypeFlagBits::STORAGE)
 		{
 			imageLayout = vk::ImageLayout::eGeneral;
 		}
 
 		std::vector<vk::DescriptorImageInfo> imageInfos;
-		imageInfos.reserve(textures.size());
-		for (const Texture& tex : textures) {
+		imageInfos.reserve(textureCount);
+		for (uint32_t i = 0; i < textureCount; i++) {
+			const Texture& tex = textures[i];
 			imageInfos.push_back(vk::DescriptorImageInfo {
 				.sampler = (pSampler) ? *pSampler : nullptr,
 				.imageView = *tex.getView(),
@@ -138,8 +139,8 @@ namespace sa {
 		update(binding, firstElement, indexToUpdate);
 	}
 
-	void DescriptorSet::update(uint32_t binding, uint32_t firstElement, const std::vector<Buffer>& buffers, uint32_t indexToUpdate) {
-		if (buffers.empty())
+	void DescriptorSet::update(uint32_t binding, uint32_t firstElement, const Buffer* buffers, uint32_t bufferCount, uint32_t indexToUpdate) {
+		if (bufferCount == 0 || buffers == nullptr)
 			return;
 
 		if (!m_writes.count(binding)) {
@@ -150,7 +151,8 @@ namespace sa {
 
 		std::vector<vk::DescriptorBufferInfo> bufferInfos;
 		std::vector<vk::BufferView> bufferViews;
-		for (const Buffer& buffer : buffers) {
+		for (uint32_t i = 0; i < bufferCount; i++) {
+			const Buffer& buffer = buffers[i];
 			if (buffer.getType() == BufferType::UNIFORM_TEXEL || buffer.getType() == BufferType::STORAGE_TEXEL) {
 				bufferViews.push_back(*buffer.getView());
 				m_writes[binding].setTexelBufferView(bufferViews);

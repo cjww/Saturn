@@ -68,7 +68,7 @@ namespace sa {
 
 	void Engine::setupDefaultRenderPipeline() {
 		m_renderPipeline.addLayer(new ShadowRenderLayer);
-		m_renderPipeline.addLayer(new ForwardPlus);
+		m_renderPipeline.addLayer(new ForwardPlus(m_renderPipeline.getLayer<ShadowRenderLayer>()));
 		m_renderPipeline.addLayer(new BloomRenderLayer);
 	}
 
@@ -95,24 +95,7 @@ namespace sa {
 		
 		Scene* pCurrentScene = getCurrentScene();
 		if (pCurrentScene) {
-			SceneCollection& sceneCollection = pCurrentScene->getDynamicSceneCollection();
-			sceneCollection.makeRenderReady();
-			
-			m_renderPipeline.preRender(context, sceneCollection);
-
-			bool renderedToMainRenderTarget = false;
-			m_currentScene.getAsset()->forEach<comp::Camera>([&](comp::Camera& camera) {
-				RenderTarget* pRenderTarget = camera.getRenderTarget().getAsset();
-				if (pRenderTarget) {
-					m_renderPipeline.render(context, &camera.camera, pRenderTarget, pCurrentScene->getDynamicSceneCollection());
-				}
-				else {
-					if(!renderedToMainRenderTarget)
-						m_renderPipeline.render(context, &camera.camera, &m_mainRenderTarget, pCurrentScene->getDynamicSceneCollection());
-					renderedToMainRenderTarget = true;
-				}
-			});
-		
+			pCurrentScene->render(context, m_renderPipeline, m_mainRenderTarget);
 		}
 		trigger<engine_event::OnRender>(engine_event::OnRender{ &context, &m_renderPipeline });
 

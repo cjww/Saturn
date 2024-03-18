@@ -147,10 +147,6 @@ namespace sa {
 		updateCameraPositions();
 		updateLightPositions();
 
-
-		m_dynamicSceneCollection.clear();
-		m_dynamicSceneCollection.collect(this);
-
 	}
 
 	void Scene::inEditorUpdate(float dt) {
@@ -158,8 +154,26 @@ namespace sa {
 		updateCameraPositions();
 		updateLightPositions();
 
+	}
+
+	void Scene::render(RenderContext& context, RenderPipeline& renderPipeline, RenderTarget& mainRenderTarget) {
 		m_dynamicSceneCollection.clear();
 		m_dynamicSceneCollection.collect(this);
+		m_dynamicSceneCollection.makeRenderReady();
+		renderPipeline.preRender(context, m_dynamicSceneCollection);
+
+		bool renderedToMainRenderTarget = false;
+		forEach<comp::Camera>([&](comp::Camera& camera) {
+			RenderTarget* pRenderTarget = camera.getRenderTarget().getAsset();
+			if (pRenderTarget) {
+				renderPipeline.render(context, &camera.camera, pRenderTarget, m_dynamicSceneCollection);
+			}
+			else {
+				if (!renderedToMainRenderTarget)
+					renderPipeline.render(context, &camera.camera, &mainRenderTarget, m_dynamicSceneCollection);
+				renderedToMainRenderTarget = true;
+			}
+		});
 	}
 
 	void Scene::serialize(Serializer& s) {

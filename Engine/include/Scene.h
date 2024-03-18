@@ -21,6 +21,7 @@
 
 #include "Assets/Asset.h"
 
+#include "Graphics/RenderPipeline.h"
 
 namespace sa {
 	class Scene : public entt::dispatcher, public Serializable, public Asset {
@@ -75,6 +76,8 @@ namespace sa {
 
 		virtual void runtimeUpdate(float dt);
 		virtual void inEditorUpdate(float dt);
+
+		void render(RenderContext& context, RenderPipeline& renderPipeline, RenderTarget& mainRenderTarget);
 
 		void serialize(Serializer& s) override;
 		void deserialize(void* pDoc) override;

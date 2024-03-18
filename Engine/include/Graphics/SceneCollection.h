@@ -23,15 +23,6 @@ namespace sa {
 		LightType lightType;
 		float lightRange;
 		glm::mat4 lightMatrix;
-		Texture2D shadowmaps[4];
-		uint32_t shadowMapCount;
-		uint32_t shaderDataIndex;
-	};
-
-	struct alignas(16) ShadowShaderData {
-		glm::mat4 lightMat;
-		uint32_t mapIndex;
-		uint32_t mapCount;
 	};
 
 	class MaterialShaderCollection {
@@ -142,10 +133,6 @@ namespace sa {
 
 		std::unordered_map<Entity, uint32_t> m_entityShadowDataIndices;
 
-		std::vector<ShadowShaderData> m_shadowShaderData;
-
-		DynamicBuffer m_shadowShaderDataBuffer;
-
 		void addQueuedEntities();
 
 
@@ -182,13 +169,10 @@ namespace sa {
 		void removeObject(const Entity& entity, ModelAsset* pModel);
 		void removeLight(const Entity& entity, const LightData& light);
 
-		void updateLightMatrixData(uint32_t dataIndex, const glm::mat4& lightMat);
-
 		void makeRenderReady();
 		void swap();
 
 		const Buffer& getLightBuffer() const;
-		const Buffer& getShadowDataBuffer() const;
 
 		std::vector<ShadowData>::iterator iterateShadowsBegin();
 		std::vector<ShadowData>::iterator iterateShadowsEnd();

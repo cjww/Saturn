@@ -350,13 +350,24 @@ namespace sa {
 
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement) {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
-		pDescriptorSet->update(binding, firstElement, textures, nullptr, UINT32_MAX);
+		pDescriptorSet->update(binding, firstElement, textures.data(), textures.size(), nullptr, UINT32_MAX);
 	}
 
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, ResourceID sampler, uint32_t firstElement) {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
-		pDescriptorSet->update(binding, firstElement, textures, pSampler, UINT32_MAX);
+		pDescriptorSet->update(binding, firstElement, textures.data(), textures.size(), pSampler, UINT32_MAX);
+	}
+
+	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture* textures, uint32_t textureCount, ResourceID sampler, uint32_t firstElement) {
+		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
+		pDescriptorSet->update(binding, firstElement, textures, textureCount, pSampler, UINT32_MAX);
+	}
+
+	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture* textures, uint32_t textureCount, uint32_t firstElement) {
+		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+		pDescriptorSet->update(binding, firstElement, textures, textureCount, nullptr, UINT32_MAX);
 	}
 
 

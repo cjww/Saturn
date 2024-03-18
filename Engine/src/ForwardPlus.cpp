@@ -1,5 +1,6 @@
 #include "pch.h"
 #include "Graphics/RenderTechniques/ForwardPlus.h"
+#include "Graphics\RenderLayers\ShadowRenderLayer.h"
 
 #include "Engine.h"
 
@@ -55,10 +56,8 @@ namespace sa {
 		
 	}
 
-	void ForwardPlus::initializeMainRenderData(const UUID& renderTargetID, Extent extent)
+	void ForwardPlus::initializeMainRenderData(ForwardPlusRenderData& data, Extent extent)
 	{
-		ForwardPlusRenderData& data = getRenderTargetData(renderTargetID);
-
 		Format colorFormat = m_renderer.getAttachmentFormat(m_colorRenderProgram, 0);
 		Format depthFormat = m_renderer.getAttachmentFormat(m_colorRenderProgram, 1);
 
@@ -110,11 +109,9 @@ namespace sa {
 		// ----------------------------------
 
 		data.isInitialized = true;
-		SA_DEBUG_LOG_INFO("Initialized Forward plus data for RenderTarget UUID: ", renderTargetID, " with extent { w:", extent.width, ", h:", extent.height, " }");
 	}
 
-	void ForwardPlus::cleanupMainRenderData(const UUID& renderTargetID) {
-		ForwardPlusRenderData& data = getRenderTargetData(renderTargetID);
+	void ForwardPlus::cleanupMainRenderData(ForwardPlusRenderData& data) {
 		if (data.colorTexture.isValid())
 			data.colorTexture.destroy();
 		if (data.depthTexture.isValid())
@@ -156,9 +153,14 @@ namespace sa {
 
 	}
 
+	ForwardPlus::ForwardPlus(ShadowRenderLayer* pShadowRenderLayer) : IRenderLayer() {
+		m_pShadowRenderLayer = pShadowRenderLayer;
+	}
+
 	void ForwardPlus::onRenderTargetResize(UUID renderTargetID, Extent oldExtent, Extent newExtent) {
-		cleanupMainRenderData(renderTargetID);
-		initializeMainRenderData(renderTargetID, newExtent);
+		ForwardPlusRenderData& renderTargetData = getRenderTargetData(renderTargetID);
+		cleanupMainRenderData(renderTargetData);
+		initializeMainRenderData(renderTargetData, newExtent);
 	}
 
 
@@ -170,7 +172,15 @@ namespace sa {
 		createColorPass();
 
 		// Samplers
-		m_linearSampler = m_renderer.createSampler(FilterMode::LINEAR);
+		SamplerInfo info = {};
+		info.addressModeU = SamplerAddressMode::CLAMP_TO_BORDER;
+		info.addressModeV = SamplerAddressMode::CLAMP_TO_BORDER;
+		info.addressModeW = SamplerAddressMode::CLAMP_TO_BORDER;
+		info.borderColor = sa::BorderColor::FLOAT_OPAQUE_WHITE;
+		info.magFilter = FilterMode::LINEAR;
+		info.minFilter = FilterMode::LINEAR;
+
+		m_linearSampler = m_renderer.createSampler(info);
 		m_nearestSampler = m_renderer.createSampler(FilterMode::NEAREST);
 
 
@@ -191,10 +201,10 @@ namespace sa {
 		SA_PROFILE_FUNCTION();
 		if (!pCamera)
 			return false;
-		const ForwardPlusRenderData& data = getRenderTargetData(pRenderTarget->getID());
+		ForwardPlusRenderData& data = getRenderTargetData(pRenderTarget->getID());
 		if (!data.isInitialized) {
-			cleanupMainRenderData(pRenderTarget->getID());
-			initializeMainRenderData(pRenderTarget->getID(), pRenderTarget->getExtent());
+			cleanupMainRenderData(data);
+			initializeMainRenderData(data, pRenderTarget->getExtent());
 		}
 		Rectf cameraViewport = pCamera->getViewport();
 		Rect viewport = {
@@ -268,7 +278,11 @@ namespace sa {
 
 			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 1, sc.getLightBuffer());
 			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 4, data.lightIndexBuffer.getBuffer());
-			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 5, sc.getShadowDataBuffer());
+			if (m_pShadowRenderLayer && m_pShadowRenderLayer->isActive()) {
+				context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 5, m_pShadowRenderLayer->getShadowDataBuffer());
+				context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 7,
+					m_pShadowRenderLayer->getShadowTextures().data(), m_pShadowRenderLayer->getShadowTextureCount(), m_linearSampler, 0);
+			}
 			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 6, m_linearSampler);
 			
 

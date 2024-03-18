@@ -5,8 +5,6 @@
 namespace comp {
 
 	struct ShadowEmitter : public sa::ComponentBase {
-		sa::Texture2D shadowmaps[4];
-		uint32_t shadowMapCount;
 		
 		virtual void serialize(sa::Serializer& s) override;
 		virtual void deserialize(void* pDoc) override;

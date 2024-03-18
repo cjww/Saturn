@@ -16,6 +16,8 @@ float GeometrySchlickGGX(float NdotV, float roughness);
 float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness);
 vec3 FresnelSchlick(vec3 V, vec3 H, vec3 F0);
 
+float InShadow(vec3 worldPos, Light light);
+
 const mat4 biasMat = mat4( 
 	0.5, 0.0, 0.0, 0.0,
 	0.0, 0.5, 0.0, 0.0,
@@ -111,20 +113,8 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
 
             radiance = light.color.rgb * lightIntensity;
 
-            ShadowMapData shadowData = shadowMapDataBuffer.shadowMaps[light.shadowMapDataIndex];
             
-            vec4 lightSpacePos = biasMat * shadowData.lightMat * vec4(in_vertexWorldPos, 1.0);
-            vec3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
-            
-            if(projCoords.z < 1.0) {
-                float closestDepth = texture(sampler2D(textures[shadowData.mapIndex], samp), projCoords.xy).r;
-                float currentDepth = projCoords.z;
-
-                float bias = 0.005;
-                if(currentDepth - bias > closestDepth) {
-                    radiance = vec3(0.0, 0.0, 0.0);
-                }
-            }
+            radiance *= 1 - InShadow(in_vertexWorldPos, light);
 
             break;
         }
@@ -240,5 +230,34 @@ vec3 FresnelSchlick(vec3 V, vec3 H, vec3 F0) {
     float cosTheta = max(dot(H, V), 0.0);
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }  
+
+float InShadow(vec3 worldPos, Light light) {
+            
+    ShadowMapData shadowData = shadowMapDataBuffer.shadowMaps[light.shadowMapDataIndex];
+    vec4 lightSpacePos = biasMat * shadowData.lightMat * vec4(worldPos, 1.0);
+    vec3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
+    
+    vec2 texSize = textureSize(shadowTextures[shadowData.mapIndex], 0);
+    vec2 texelSize = 1.0 / texSize;
+    float currentDepth = projCoords.z;
+    const float bias = 0.00001;
+    
+    if(currentDepth > 1.0) {
+        return 0.0;
+    }
+
+    float shadow = 0.0;
+    for(int u = -1; u <= 1; u++) {
+        for(int v = -1; v <= 1; v++) {
+            vec3 uv = vec3(projCoords.xy + vec2(u, v) * texelSize, 0.0);
+            float closestDepth = texture(shadowTextures[shadowData.mapIndex], uv.xy).r;
+            if(currentDepth - bias > closestDepth) {
+                shadow += 1.0;
+            }
+        }
+    }
+
+    return shadow /= 9;
+}
 
 #endif

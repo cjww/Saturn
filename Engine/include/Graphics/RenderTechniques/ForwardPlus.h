@@ -14,6 +14,8 @@
 
 namespace sa {
 
+	class ShadowRenderLayer;
+
 	struct ForwardPlusRenderData {
 		DynamicTexture colorTexture;
 		DynamicTexture depthTexture;
@@ -55,14 +57,18 @@ namespace sa {
 
 		ShaderSet m_debugHeatmapShaderSet;
 
+		ShadowRenderLayer* m_pShadowRenderLayer;
+
 		void createPreDepthPass();
 		void createLightCullingShader();
 		void createColorPass();
 
-		void initializeMainRenderData(const UUID& renderTargetID, Extent extent);
-		void cleanupMainRenderData(const UUID& renderTargetID);
+		void initializeMainRenderData(ForwardPlusRenderData& data, Extent extent);
+		void cleanupMainRenderData(ForwardPlusRenderData& data);
 
 	public:
+
+		ForwardPlus(ShadowRenderLayer* pShadowRenderLayer);
 
 		virtual void onRenderTargetResize(UUID renderTargetID, Extent oldExtent, Extent newExtent) override;
 
@@ -71,7 +77,6 @@ namespace sa {
 
 		virtual bool render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) override;
 		virtual bool postRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) override;
-
 
 	};
 }

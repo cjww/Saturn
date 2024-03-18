@@ -445,10 +445,14 @@ namespace sa {
 			std::vector<vk::DescriptorBindingFlags> flags(info.bindings.size(), (vk::DescriptorBindingFlags)0);
 
 			for (size_t i = 0; i < flags.size(); i++) {
-				if (info.bindings[i].descriptorCount == 0) {
+				if (info.bindings[i].descriptorCount > 1) {
+					flags[i] |= vk::DescriptorBindingFlagBits::ePartiallyBound; // allow use to not bind all descriptors if not needed
+				}
+				else if (info.bindings[i].descriptorCount == 0) {
 					info.bindings[i].descriptorCount = MAX_VARIABLE_DESCRIPTOR_COUNT;
 					flags[i] = vk::DescriptorBindingFlagBits::eVariableDescriptorCount | vk::DescriptorBindingFlagBits::ePartiallyBound;
-					if (info.bindings[i].binding != info.bindings.size() - 1) {
+					auto it = std::max_element(info.bindings.begin(), info.bindings.end(), [](const auto& highest, const auto& next) { return highest.binding < next.binding; });
+					if (info.bindings[i].binding != it->binding) {
 						throw std::runtime_error("Variable count descriptors has to be on the last binding");
 					}
 				}
