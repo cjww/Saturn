@@ -3,6 +3,8 @@
 
 #include "internal/debugFunctions.hpp" // for checkError and debugCallback
 
+PFN_vkCreateShadersEXT vkCreateShadersEXT_ = nullptr;
+
 namespace sa {
 	void VulkanCore::fillFormats() {
 		m_formats.push_back({ FormatPrecisionFlagBits::e32Bit, FormatDimensionFlagBits::e4, FormatTypeFlagBits::SFLOAT, vk::Format::eR32G32B32A32Sfloat });
@@ -197,19 +199,24 @@ namespace sa {
 		m_deviceExtensions.push_back(VK_KHR_SWAPCHAIN_EXTENSION_NAME);
 		m_deviceExtensions.push_back(VK_KHR_SHADER_DRAW_PARAMETERS_EXTENSION_NAME);
 		m_deviceExtensions.push_back(VK_EXT_MEMORY_BUDGET_EXTENSION_NAME);
+		m_deviceExtensions.push_back(VK_EXT_SHADER_OBJECT_EXTENSION_NAME);
 
 		m_queueInfo = getQueueInfo(vk::QueueFlagBits::eGraphics | vk::QueueFlagBits::eCompute, FRAMES_IN_FLIGHT + 1);
 		
 		std::vector<QueueInfo> queueInfos = { m_queueInfo };
 	
 		vk::PhysicalDeviceFeatures features = m_physicalDevice.getFeatures();
-		vk::PhysicalDeviceDescriptorIndexingFeatures indexingFeatures;
 
+		vk::PhysicalDeviceDescriptorIndexingFeatures indexingFeatures;
 		indexingFeatures.shaderSampledImageArrayNonUniformIndexing = VK_TRUE;
 		indexingFeatures.runtimeDescriptorArray = VK_TRUE;
 		indexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
 		indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
 		
+		vk::PhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = {};
+		shaderObjectFeatures.shaderObject = VK_TRUE;
+
+		indexingFeatures.pNext = &shaderObjectFeatures;
 
 		std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
 		for (const auto& queueInfo : queueInfos) {
@@ -241,6 +248,9 @@ namespace sa {
 		for (uint32_t i = 0; i < dedicatedRenderQueueCount; i++) {
 			m_queues[i] = m_device.getQueue(m_queueInfo.family, i);
 		}
+
+		//Load extension functions
+		vkCreateShadersEXT_ = (PFN_vkCreateShadersEXT)m_device.getProcAddr("vkCreateShadersEXT");
 	}
 
 	void VulkanCore::createCommandPool() {

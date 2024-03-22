@@ -124,6 +124,10 @@ set(ADDITIONAL_LIBRARY_DEPENDENCIES
 )
 
 target_link_libraries(${PROJECT_NAME} PRIVATE "${ADDITIONAL_LIBRARY_DEPENDENCIES}")
+target_link_libraries(${PROJECT_NAME} PRIVATE 
+    VulkanRenderer
+)
+
 
 target_link_directories(${PROJECT_NAME} PRIVATE
     "${CMAKE_SOURCE_DIR}//VulkanRenderer/lib"

@@ -545,6 +545,7 @@ namespace sa {
 		}
 
 		createDescriptorPoolAndLayouts();
+
 	}
 
 	void ShaderSet::create(const std::vector<ShaderStageInfo>& stageInfos) {

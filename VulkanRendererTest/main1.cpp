@@ -181,12 +181,15 @@ std::array<uint32_t, 36> boxIndices = {
 	7, 6, 3, 6, 2, 3
 };
 
+#include <filesystem>
+
 int main() {
 
 #ifdef _WIN32
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
 
+	std::filesystem::current_path("../../VulkanRendererTest/");
 
 	try {
 		const int WIDTH = 1400, HEIGHT = 800;
@@ -220,6 +223,7 @@ int main() {
 		std::vector<sa::DynamicTexture> attachments;
 		ResourceID framebuffer = renderer.createSwapchainFramebuffer(renderProgram, window.getSwapchainID(), attachments);
 
+		
 		auto vshaderCode = sa::ReadSPVFile("Passthrough.vert.spv");
 		auto fshaderCode = sa::ReadSPVFile("Passthrough.frag.spv");
 
@@ -228,7 +232,10 @@ int main() {
 		sa::PipelineSettings pipelineSettings = {};
 		pipelineSettings.cullMode = sa::CullModeFlagBits::BACK;
 
-		ResourceID pipeline = renderer.createGraphicsPipeline(renderProgram, 0, window.getCurrentExtent(), shaderSet, pipelineSettings);
+		//ResourceID pipeline = renderer.createGraphicsPipeline(renderProgram, 0, window.getCurrentExtent(), shaderSet, pipelineSettings);
+
+		sa::Shader vertexShader;
+		vertexShader.create(vshaderCode);
 
 		ResourceID sceneDescriptorSet = shaderSet.allocateDescriptorSet(0);
 		ResourceID objectDescriptorSet = shaderSet.allocateDescriptorSet(1);
@@ -334,7 +341,8 @@ int main() {
 			if (context) {
 
 				context.beginRenderProgram(renderProgram, framebuffer, sa::SubpassContents::DIRECT);
-				context.bindPipeline(pipeline);
+				//context.bindPipeline(pipeline);
+				context.bindShader(vertexShader);
 
 				context.bindDescriptorSet(sceneDescriptorSet);
 				context.bindDescriptorSet(objectDescriptorSet);

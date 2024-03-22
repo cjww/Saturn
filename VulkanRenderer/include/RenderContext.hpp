@@ -6,6 +6,7 @@
 #include "Resources/Texture.hpp"
 #include "Resources/DynamicBuffer.hpp"
 #include "ShaderSet.hpp"
+#include "Shader.hpp"
 
 namespace vk {
 	class Sampler;
@@ -97,6 +98,7 @@ namespace sa {
 		void executeSubContext(const sa::SubContext& context);
 
 		void bindPipeline(ResourceID pipeline);
+		void bindShader(const Shader& shader);
 		void bindVertexBuffers(uint32_t firstBinding, const std::vector<Buffer>& buffers);
 		void bindIndexBuffer(const Buffer& buffer);
 

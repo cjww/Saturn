@@ -103,6 +103,14 @@ namespace sa {
 		pPipeline->bind(m_pCommandBufferSet);
 	}
 
+	void RenderContext::bindShader(const Shader& shader) {
+		vk::ShaderEXT* pShader = ResourceManager::get().get<vk::ShaderEXT>(shader.getShaderID());
+		if (!pShader)
+			throw std::runtime_error("Nonexistent shader: " + shader.getShaderID());
+
+		//m_pCommandBufferSet->getBuffer().bindShadersEXT({ vk::ShaderStageFlagBits::eVertex }, { *pShader });
+	}
+
 	void RenderContext::bindVertexBuffers(uint32_t firstBinding, const std::vector<Buffer>& buffers) {
 		if (buffers.empty())
 			return;

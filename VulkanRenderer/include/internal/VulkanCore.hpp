@@ -214,3 +214,6 @@ namespace sa {
 
 
 }
+
+extern PFN_vkCreateShadersEXT vkCreateShadersEXT_;
+#define vkCreateShadersEXT vkCreateShadersEXT_
