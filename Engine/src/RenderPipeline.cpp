@@ -25,6 +25,12 @@ namespace sa {
 		}
 	}
 
+	void RenderPipeline::updatePreferences() {
+		for (auto& layer : m_renderLayers) {
+			layer->onPreferencesUpdated();
+		}
+	}
+
 	void RenderPipeline::beginFrameImGUI() {
 		Renderer::get().newImGuiFrame();
 	}

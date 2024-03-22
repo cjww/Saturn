@@ -179,8 +179,11 @@ namespace sa {
 		info.borderColor = sa::BorderColor::FLOAT_OPAQUE_WHITE;
 		info.magFilter = FilterMode::LINEAR;
 		info.minFilter = FilterMode::LINEAR;
+		info.compareEnable = true;
+		info.compareOp = CompareOp::GREATER;
 
-		m_linearSampler = m_renderer.createSampler(info);
+		m_shadowSampler = m_renderer.createSampler(info);
+		m_linearSampler = m_renderer.createSampler(FilterMode::LINEAR);
 		m_nearestSampler = m_renderer.createSampler(FilterMode::NEAREST);
 
 
@@ -281,7 +284,7 @@ namespace sa {
 			if (m_pShadowRenderLayer && m_pShadowRenderLayer->isActive()) {
 				context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 5, m_pShadowRenderLayer->getShadowDataBuffer());
 				context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 7,
-					m_pShadowRenderLayer->getShadowTextures().data(), m_pShadowRenderLayer->getShadowTextureCount(), m_linearSampler, 0);
+					m_pShadowRenderLayer->getShadowTextures().data(), m_pShadowRenderLayer->getShadowTextureCount(), m_shadowSampler, 0);
 			}
 			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 6, m_linearSampler);
 			

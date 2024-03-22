@@ -231,6 +231,14 @@ namespace sa {
 		m_pCommandBufferSet->getBuffer().setViewport(0, vp);
 	}
 
+	void RenderContext::setDepthBias(float constantFactor, float clamp, float slopeFactor) {
+		m_pCommandBufferSet->getBuffer().setDepthBias(constantFactor, clamp, slopeFactor);
+	}
+
+	void RenderContext::setDepthBiasEnable(bool enable) {
+		m_pCommandBufferSet->getBuffer().setDepthBiasEnable(enable);
+	}
+
 
 	void RenderContext::draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) {
 		m_pCommandBufferSet->getBuffer().draw(vertexCount, instanceCount, firstVertex, firstInstance);

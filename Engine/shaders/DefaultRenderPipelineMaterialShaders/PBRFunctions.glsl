@@ -114,7 +114,7 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
             radiance = light.color.rgb * lightIntensity;
 
             
-            radiance *= 1 - InShadow(in_vertexWorldPos, light);
+            radiance *= 1.0 - InShadow(in_vertexWorldPos, light);
 
             break;
         }
@@ -140,6 +140,7 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
             attenuation *= spot;
             radiance = light.color.rgb * attenuation * lightIntensity;
 
+            radiance *= 1.0 - InShadow(in_vertexWorldPos, light);
             break;
         }
         default:
@@ -232,32 +233,64 @@ vec3 FresnelSchlick(vec3 V, vec3 H, vec3 F0) {
 }  
 
 float InShadow(vec3 worldPos, Light light) {
-            
+    if(light.shadowMapDataIndex == ~0) {
+        return 0.0;
+    }
+
     ShadowMapData shadowData = shadowMapDataBuffer.shadowMaps[light.shadowMapDataIndex];
     vec4 lightSpacePos = biasMat * shadowData.lightMat * vec4(worldPos, 1.0);
     vec3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
-    
-    vec2 texSize = textureSize(shadowTextures[shadowData.mapIndex], 0);
-    vec2 texelSize = 1.0 / texSize;
+    /*
+    vec4 texCoord;
+    texCoord.xyw = projCoords.xyz;
+    texCoord.z = 0.0;
+
+    return texture(shadowTextures[shadowData.mapIndex], texCoord).r;
+    */
+    vec3 texSize = textureSize(shadowTextures[shadowData.mapIndex], 0);
+    vec2 texelSize = 1.0 / texSize.xy;
+
+    float gaussianKernel[3][3] = {
+        { 0.0625, 0.125,  0.0625 },
+        { 0.125,  0.25,   0.125 },
+        { 0.0625, 0.125,  0.0625 }
+    };
+
+    float shadow = 0.0;
+    for(int u = -1; u <= 1; u++) {
+        for(int v = -1; v <= 1; v++) {
+            vec4 uv = vec4(projCoords.xy + vec2(u, v) * texelSize, 0.0, projCoords.z);
+            float gauss = gaussianKernel[u + 1][v + 1];
+            shadow += texture(shadowTextures[shadowData.mapIndex], uv).r * gauss;
+        }
+    }
+    return shadow;
+
+    /*
     float currentDepth = projCoords.z;
-    const float bias = 0.00001;
     
     if(currentDepth > 1.0) {
         return 0.0;
     }
 
+
     float shadow = 0.0;
-    for(int u = -1; u <= 1; u++) {
-        for(int v = -1; v <= 1; v++) {
+    int sampleRadius = 1;
+    for(int u = -sampleRadius; u <= sampleRadius; u++) {
+        for(int v = -sampleRadius; v <= sampleRadius; v++) {
+    
             vec3 uv = vec3(projCoords.xy + vec2(u, v) * texelSize, 0.0);
-            float closestDepth = texture(shadowTextures[shadowData.mapIndex], uv.xy).r;
-            if(currentDepth - bias > closestDepth) {
-                shadow += 1.0;
+            float closestDepth = texture(shadowTextures[shadowData.mapIndex], uv).r;
+            if(currentDepth > closestDepth) {
+                float gauss = gaussianKernel[u + 1][v + 1];
+                shadow += gauss;
             }
         }
     }
 
-    return shadow /= 9;
+    
+    return shadow;
+    */
 }
 
 #endif

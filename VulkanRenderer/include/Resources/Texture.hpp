@@ -76,22 +76,22 @@ namespace sa {
 		
 	private:
 		
-		void create(TextureTypeFlags type, Extent extent, uint32_t sampleCount, uint32_t mipLevels);
+		void create(TextureTypeFlags type, Extent extent, uint32_t sampleCount, uint32_t mipLevels, uint32_t arrayLayers);
 		void create(TextureTypeFlags type, Extent extent,
-			FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, uint32_t sampleCount, uint32_t mipLevels);
+			FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, uint32_t sampleCount, uint32_t mipLevels, uint32_t arrayLayers);
 		void create(TextureTypeFlags type, Extent extent, Swapchain* pSwapchain, uint32_t sampleCount);
-		void create(TextureTypeFlags type, Extent extent, Format format, uint32_t sampleCount, uint32_t mipLevels);
+		void create(TextureTypeFlags type, Extent extent, Format format, uint32_t sampleCount, uint32_t mipLevels, uint32_t arrayLayers);
 
 		Texture2D(TextureTypeFlags type, Extent extent,
 			Swapchain* pSwapchain, uint32_t sampleCount = 1);
 		Texture2D(ResourceID imageView);
 
 	public:
-		Texture2D(TextureTypeFlags type, Extent extent, uint32_t sampleCount = 1, uint32_t mipLevels = 1);
+		Texture2D(TextureTypeFlags type, Extent extent, uint32_t sampleCount = 1, uint32_t mipLevels = 1, uint32_t arrayLayers = 1);
 		Texture2D(TextureTypeFlags type, Extent extent,
-			FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, uint32_t sampleCount = 1, uint32_t mipLevels = 1);
+			FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, uint32_t sampleCount = 1, uint32_t mipLevels = 1, uint32_t arrayLayers = 1);
 
-		Texture2D(TextureTypeFlags type, Extent extent, Format format, uint32_t sampleCount = 1, uint32_t mipLevels = 1);
+		Texture2D(TextureTypeFlags type, Extent extent, Format format, uint32_t sampleCount = 1, uint32_t mipLevels = 1, uint32_t arrayLayers = 1);
 
 		Texture2D(const Image& image, bool generateMipmaps);
 		

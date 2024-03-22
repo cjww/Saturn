@@ -17,7 +17,8 @@ namespace sa {
 		void addLayer(BasicRenderLayer* pLayer);
 
 		void onRenderTargetResize(UUID renderTargetID, Extent oldExtent, Extent newExtent);
-		
+		void updatePreferences();
+
 		void beginFrameImGUI();
 		
 		void preRender(RenderContext& context, SceneCollection& sceneCollection);

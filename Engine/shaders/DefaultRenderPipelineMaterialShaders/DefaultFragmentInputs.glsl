@@ -95,7 +95,7 @@ layout(set = 0, binding = 5, std140) readonly buffer ShadowMaps {
 
 layout(set = 0, binding = 6) uniform sampler samp;
 
-layout(set = 0, binding = 7) uniform sampler2D shadowTextures[8];
+layout(set = 0, binding = 7) uniform sampler2DArrayShadow shadowTextures[8];
 layout(set = 0, binding = 8) uniform texture2D textures[];
 
 

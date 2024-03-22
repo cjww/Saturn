@@ -25,6 +25,7 @@ namespace sa {
 		virtual void cleanup() = 0;
 
 		virtual void onRenderTargetResize(UUID renderTargetID, Extent oldExtent, Extent newExtent) = 0;
+		virtual void onPreferencesUpdated() {};
 
 		virtual bool preRender(RenderContext& context, SceneCollection& sceneCollection) { return true; };
 		virtual bool render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) = 0;
@@ -43,11 +44,14 @@ namespace sa {
 		Preferences m_preferences;
 		
 	public:
+		using PreferencesType = Preferences;
+		using RenderDataType = RenderData;
+
 		IRenderLayer();
 		virtual ~IRenderLayer() = default;
 
-		RenderData& getRenderTargetData(const UUID& renderTargetID);
-		Preferences& getPreferences();
+		RenderDataType& getRenderTargetData(const UUID& renderTargetID);
+		PreferencesType& getPreferences();
 
 	};
 

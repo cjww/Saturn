@@ -127,6 +127,8 @@ namespace sa {
 
 		void setScissor(Rect scissor);
 		void setViewport(Rect viewport);
+		void setDepthBias(float constantFactor, float clamp, float slopeFactor);
+		void setDepthBiasEnable(bool enable);
 
 		void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex = 0, uint32_t firstInstance = 0);
 		void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0);

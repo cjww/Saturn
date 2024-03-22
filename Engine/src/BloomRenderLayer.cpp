@@ -108,7 +108,8 @@ namespace sa {
 
 		m_bloomPreferencesDescriptorSet = m_bloomShader.allocateDescriptorSet(1);
 
-		m_bloomPreferencesBuffer = m_renderer.createBuffer(BufferType::UNIFORM, sizeof(BloomPreferences), &m_bloomPreferences);
+		BloomPreferences& prefs = getPreferences();
+		m_bloomPreferencesBuffer = m_renderer.createBuffer(BufferType::UNIFORM, sizeof(BloomPreferences), &prefs);
 		m_renderer.updateDescriptorSet(m_bloomPreferencesDescriptorSet, 0, m_bloomPreferencesBuffer);
 
 
@@ -134,6 +135,12 @@ namespace sa {
 	void BloomRenderLayer::onRenderTargetResize(UUID renderTargetID, Extent oldExtent, Extent newExtent) {
 		BloomData& bd = getRenderTargetData(renderTargetID);
 		bd.isInitialized = false;
+	}
+
+	void BloomRenderLayer::onPreferencesUpdated() {
+		BloomPreferences& prefs = getPreferences();
+		m_bloomPreferencesBuffer.write(prefs);
+		m_renderer.updateDescriptorSet(m_bloomPreferencesDescriptorSet, 0, m_bloomPreferencesBuffer);
 	}
 
 	bool BloomRenderLayer::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) {
@@ -222,9 +229,4 @@ namespace sa {
 		return true;
 	}
 
-	void BloomRenderLayer::setBloomPreferences(const BloomPreferences& bloomPreferences) {
-		m_bloomPreferences = bloomPreferences;
-		m_bloomPreferencesBuffer.write(m_bloomPreferences);
-		m_renderer.updateDescriptorSet(m_bloomPreferencesDescriptorSet, 0, m_bloomPreferencesBuffer);
-	}
 }

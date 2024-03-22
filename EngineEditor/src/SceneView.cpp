@@ -73,6 +73,7 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 			m_zoom = y;
 		}
 	});
+
 }
 
 SceneView::~SceneView() {
@@ -542,6 +543,7 @@ void SceneView::onImGui() {
 			
 		}
 
+		
 	}
 	ImGui::End();
 
@@ -556,7 +558,11 @@ void SceneView::onImGui() {
 				if (framebuffer != NULL_RESOURCE) {
 					sa::Texture tex = sa::Renderer::get().getFramebufferTexture(framebuffer, 0);
 					sa::Extent framebufferExtent = sa::Renderer::get().getFramebufferExtent(framebuffer);
-					//ImGui::Image(tex, ImVec2(framebufferExtent.width, framebufferExtent.height));
+					
+					ImVec2 imAvailSize = ImGui::GetContentRegionAvail();
+					glm::vec2 availSize(imAvailSize.x, imAvailSize.y);
+					
+					ImGui::Image(tex, ImVec2(availSize.x, availSize.x));
 				}
 
 				ImGui::End();

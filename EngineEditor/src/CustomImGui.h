@@ -10,6 +10,10 @@
 
 #include "FileTemplates.h"
 
+#include "Graphics/RenderPipeline.h"
+#include "Graphics/RenderLayers/BloomRenderLayer.h"
+#include "Graphics/RenderLayers/ShadowRenderLayer.h"
+
 #include <glm\gtx\matrix_decompose.hpp>
 #include <glm\gtc\quaternion.hpp>
 
@@ -60,6 +64,12 @@ namespace ImGui {
 	template<typename T>
 	void Component(const sa::Entity& entity);
 	bool Script(sa::EntityScript* pScript, bool* visable);
+
+	bool RenderLayerPreferences(sa::ShadowRenderLayer* pLayer, sa::ShadowRenderLayer::PreferencesType& prefs);
+	bool RenderLayerPreferences(sa::BloomRenderLayer* pLayer, sa::BloomRenderLayer::PreferencesType& prefs);
+
+	template<typename T, std::enable_if_t<std::is_base_of_v<sa::BasicRenderLayer, T>, bool> = true>
+	bool RenderLayerPreferences(const char* title, const sa::RenderPipeline& renderPipeline);
 
 
 	AssetEditorInfo GetAssetInfo(sa::AssetTypeID type);
@@ -145,5 +155,31 @@ void ImGui::Component(const sa::Entity& entity) {
 		payload.type = sa::getComponentType<T>();
 		visable = true;
 	}
+}
+
+template<typename T, std::enable_if_t<std::is_base_of_v<sa::BasicRenderLayer, T>, bool>>
+bool ImGui::RenderLayerPreferences(const char* title, const sa::RenderPipeline& renderPipeline) {
+	T* pLayer = renderPipeline.getLayer<T>();
+	if (!pLayer)
+		return false;
+	ImGui::PushID(title);
+	bool active = pLayer->isActive();
+	if (ImGui::Checkbox("##active", &active)) {
+		pLayer->setActive(active);
+	}
+
+	ImGui::SameLine();
+	bool changed = false;
+	auto& prefs = pLayer->getPreferences();
+	if (ImGui::CollapsingHeader(title)) {
+		changed = ImGui::RenderLayerPreferences(pLayer, prefs);
+
+		if (ImGui::Button("Reset")) {
+			prefs = {}; // TODO read from file
+			changed = true;
+		}
+	}
+	ImGui::PopID();
+	return changed;
 }
 

@@ -16,7 +16,7 @@ private:
 	sa::RenderTarget m_renderTarget;
 	sa::SceneCollection m_sceneCollection;
 	sa::SceneCamera m_camera;
-
+	
 	sa::RenderWindow* m_pWindow;
 	
 	bool m_isFocused;

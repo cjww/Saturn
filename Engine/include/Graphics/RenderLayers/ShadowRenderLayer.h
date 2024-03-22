@@ -15,7 +15,11 @@ namespace sa {
 	};
 
 	struct ShadowPreferences {
-
+		uint32_t directionalResolution = 1024;
+		float depthBiasConstant = 0.0f;
+		float depthBiasSlope = 0.4f;
+		float depthNear = 1.0f;
+		float depthFar = 100.f;
 	};
 
 	struct alignas(16) ShadowShaderData {

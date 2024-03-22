@@ -45,7 +45,6 @@ namespace sa {
 		ResourceID m_bloomPipeline;
 
 		Buffer m_bloomPreferencesBuffer;
-		BloomPreferences m_bloomPreferences = {};
 		ResourceID m_bloomPreferencesDescriptorSet;
 		
 		ResourceID m_sampler;
@@ -65,11 +64,11 @@ namespace sa {
 		virtual void cleanup() override;
 
 		virtual void onRenderTargetResize(UUID renderTargetID, Extent oldExtent, Extent newExtent) override;
+		virtual void onPreferencesUpdated() override;
+
 
 		virtual bool render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) override;
 		virtual bool postRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) override;
-
-		void setBloomPreferences(const BloomPreferences& bloomPreferences);
 
 	};
 }

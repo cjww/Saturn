@@ -48,6 +48,8 @@ namespace sa {
 		ResourceID m_colorRenderProgram = NULL_RESOURCE;
 		
 		ResourceID m_linearSampler = NULL_RESOURCE;
+		ResourceID m_shadowSampler = NULL_RESOURCE;
+
 		ResourceID m_nearestSampler = NULL_RESOURCE;
 
 		ResourceID m_depthPreRenderProgram = NULL_RESOURCE;

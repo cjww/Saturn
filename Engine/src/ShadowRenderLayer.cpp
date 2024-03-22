@@ -36,17 +36,31 @@ namespace sa {
 			Rect viewPort = {};
 			viewPort.extent = Renderer::get().getFramebufferExtent(framebuffer);
 			viewPort.offset = { 0, 0 };
-
+			
 			context.setViewport(viewPort);
+			context.setDepthBiasEnable(true);
+			const auto& prefs = getPreferences();
+			context.setDepthBias(prefs.depthBiasConstant, 0.0f, prefs.depthBiasSlope);
 
 			SceneCamera camera;
+			camera.setAspectRatio(1.f);
+			camera.setNear(prefs.depthNear);
+			camera.setFar(prefs.depthFar);
 			switch (data.lightType) {
 			case LightType::DIRECTIONAL:
-				camera.setAspectRatio(1.f);
 				camera.setProjectionMode(ProjectionMode::eOrthographic);
 				camera.setOrthoWidth(64);
-				camera.setPosition(origin - data.lightDirection * camera.getFar() * 0.5f);
+				camera.setPosition(origin - glm::vec3(data.lightDirection) * camera.getFar() * 0.5f);
 				camera.setForward(data.lightDirection);
+				break;
+			case LightType::POINT:
+				break;
+			case LightType::SPOT:
+				camera.setProjectionMode(ProjectionMode::ePerspective);
+				camera.setFOVDegrees(45.f);
+				camera.setPosition(data.lightPosition);
+				camera.setForward(data.lightDirection);
+
 				break;
 			default:
 				break;
@@ -64,7 +78,7 @@ namespace sa {
 			}
 
 		}
-
+		
 		context.endRenderProgram(m_depthRenderProgram);
 	}
 
@@ -87,8 +101,15 @@ namespace sa {
 
 		PipelineSettings settings = {};
 		settings.dynamicStates.push_back(DynamicState::VIEWPORT);
+		settings.dynamicStates.push_back(DynamicState::DEPTH_BIAS);
+		settings.dynamicStates.push_back(DynamicState::DEPTH_BIAS_ENABLE);
 		settings.cullMode = CullModeFlagBits::FRONT;
-		m_pipeline = m_renderer.createGraphicsPipeline(m_depthRenderProgram, 0, { 1024, 1024 }, m_shaderSet, settings);
+		
+		ShadowPreferences& prefs = getPreferences();
+		prefs.directionalResolution = 526;
+
+		
+		m_pipeline = m_renderer.createGraphicsPipeline(m_depthRenderProgram, 0, { prefs.directionalResolution, prefs.directionalResolution }, m_shaderSet, settings);
 	
 		m_shadowShaderDataBuffer = m_renderer.createDynamicBuffer(BufferType::STORAGE);
 		m_shadowTextureCount = 0;
@@ -115,30 +136,52 @@ namespace sa {
 	bool ShadowRenderLayer::preRender(RenderContext& context, SceneCollection& sceneCollection) {
 		SA_PROFILE_FUNCTION();
 		for (auto it = sceneCollection.iterateShadowsBegin(); it != sceneCollection.iterateShadowsEnd(); it++) {
+			if (m_shadowTextureCount >= MAX_SHADOW_TEXTURE_COUNT)
+				break; 
+
 			sa::ShadowData& data = *it;
+			if (data.lightType == LightType::DIRECTIONAL)
+				continue;
+
 			ShadowRenderData& renderData = getRenderTargetData(static_cast<uint32_t>(data.entityID));
-			/*
-			if (renderData.depthFramebuffer == NULL_RESOURCE) {
-				renderData.depthFramebuffer = Renderer::get().createFramebuffer(m_depthRenderProgram, { renderData. });
-				SA_DEBUG_LOG_INFO("Created framebuffer ", renderData.depthFramebuffer);
+
+			if (!renderData.isInitialized) {
+				ShadowPreferences& prefs = getPreferences();
+				renderData.depthTextures[0] = Texture2D(TextureTypeFlagBits::DEPTH_ATTACHMENT | TextureTypeFlagBits::SAMPLED, { prefs.directionalResolution, prefs.directionalResolution });
+				renderData.depthTextureCount = 1;
+				renderData.depthFramebuffer = Renderer::get().createFramebuffer(m_depthRenderProgram, { renderData.depthTextures[0] });
+				renderData.isInitialized = true;
 			}
+
 			renderShadowMap(context, data.lightPosition, data, renderData.depthFramebuffer, sceneCollection);
-			*/
+
+			ShadowShaderData shaderData = {};
+			shaderData.lightMat = data.lightMatrix;
+			shaderData.mapIndex = m_shadowTextureCount;
+			shaderData.mapCount = 1;
+			m_shadowShaderDataBuffer << shaderData;
+
+			m_shadowTextures[m_shadowTextureCount++] = renderData.depthTextures[0];
 		}
 		return true;
 	}
 	
 	bool ShadowRenderLayer::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) {
 		SA_PROFILE_FUNCTION();
-		for (auto it = sceneCollection.iterateDirecionalShadowsBegin(); it != sceneCollection.iterateDirecionalShadowsEnd(); it++) {
+		for (auto it = sceneCollection.iterateShadowsBegin(); it != sceneCollection.iterateShadowsEnd(); it++) {
 			if (m_shadowTextureCount >= MAX_SHADOW_TEXTURE_COUNT)
 				break;
-			
+
 			sa::ShadowData& data = *it;
+			if (data.lightType != LightType::DIRECTIONAL)
+				continue;
+
 			ShadowRenderData& renderData = getRenderTargetData(pRenderTarget->getID() ^ static_cast<uint32_t>(data.entityID));
 
 			if (!renderData.isInitialized) {
-				renderData.depthTextures[0] = Texture2D(TextureTypeFlagBits::DEPTH_ATTACHMENT | TextureTypeFlagBits::SAMPLED, { 1024, 1024 });
+				ShadowPreferences& prefs = getPreferences();
+
+				renderData.depthTextures[0] = Texture2D(TextureTypeFlagBits::DEPTH_ATTACHMENT | TextureTypeFlagBits::SAMPLED, { prefs.directionalResolution, prefs.directionalResolution });
 				renderData.depthTextureCount = 1;
 				renderData.depthFramebuffer = Renderer::get().createFramebuffer(m_depthRenderProgram, { renderData.depthTextures[0] });
 				renderData.isInitialized = true;
@@ -160,6 +203,7 @@ namespace sa {
 	bool ShadowRenderLayer::postRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) {
 		m_shadowShaderDataBuffer.swap();
 		m_shadowShaderDataBuffer.clear();
+		m_shadowTextureCount = 0;
 		return true;
 	}
 	

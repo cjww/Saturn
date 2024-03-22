@@ -469,7 +469,47 @@ namespace ImGui {
 		}
 		return false;
 	}
+	
+	bool RenderLayerPreferences(sa::ShadowRenderLayer* pLayer, sa::ShadowRenderLayer::PreferencesType& prefs) {
+		bool changed = false;
+		changed |= ImGui::SliderFloat("depthBiasConstant", &prefs.depthBiasConstant, 0.0f, 10.0f);
+		changed |= ImGui::SliderFloat("depthBiasSlope", &prefs.depthBiasSlope, 0.0f, 10.0f);
+		changed |= ImGui::SliderFloat("depthNear", &prefs.depthNear, 0.01f, 1.0f);
+		changed |= ImGui::SliderFloat("depthFar", &prefs.depthFar, 1.0f, 1000.0f);
 
+		return changed;
+	}
+
+	bool RenderLayerPreferences(sa::BloomRenderLayer* pLayer, sa::BloomRenderLayer::PreferencesType& prefs) {
+		bool changed = false;
+
+		if (ImGui::DragFloat("Threshold", &prefs.threshold, 0.1f)) {
+			prefs.threshold = std::max(prefs.threshold, 0.0f);
+			changed = true;
+		}
+
+		if (ImGui::DragFloat("Intensity", &prefs.intensity, 0.1f)) {
+			prefs.intensity = std::max(prefs.intensity, 0.0f);
+			changed = true;
+		}
+
+		if (ImGui::DragFloat("Spread", &prefs.spread, 0.1f)) {
+			prefs.spread = std::max(prefs.spread, 0.0f);
+			changed = true;
+		}
+
+		//Tone mapping
+		if (ImGui::DragFloat("Exposure", &prefs.tonemapPreferences.exposure, 0.1f)) {
+			prefs.tonemapPreferences.exposure = std::max(prefs.tonemapPreferences.exposure, 0.0f);
+			changed = true;
+		}
+		if (ImGui::DragFloat("Gamma", &prefs.tonemapPreferences.gamma, 0.1f)) {
+			prefs.tonemapPreferences.gamma = std::max(prefs.tonemapPreferences.gamma, 0.0f);
+			changed = true;
+		}
+		return changed;
+	}
+	
 	AssetEditorInfo GetAssetInfo(sa::AssetTypeID type) {
 		sa::AssetManager& am = sa::AssetManager::get();
 		const static std::unordered_map<sa::AssetTypeID, AssetEditorInfo> map = {

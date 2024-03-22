@@ -36,6 +36,7 @@ namespace sa {
 		void updateProjection();
 
 	public:
+		
 		SceneCamera();
 		
 		SceneCamera(const SceneCamera&) = default;
@@ -77,14 +78,15 @@ namespace sa {
 
 		Bounds getOrthoBounds() const;
 		void setOrthoBounds(Bounds bounds);
-		
+
 		float getOrthoWidth() const;
 		void setOrthoWidth(float width);
-
 
 		ProjectionMode getProjectionMode() const;
 		void setProjectionMode(ProjectionMode projectionMode);
 
+		void calculateFrustumBounds(glm::vec3* pOutPoints);
+		bool intersectsFrustum() const;
 		
 	};
 }

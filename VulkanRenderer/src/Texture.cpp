@@ -83,23 +83,23 @@ namespace sa {
 	}
 
 
-	Texture2D::Texture2D(TextureTypeFlags type, Extent extent, uint32_t sampleCount, uint32_t mipLevels)
+	Texture2D::Texture2D(TextureTypeFlags type, Extent extent, uint32_t sampleCount, uint32_t mipLevels, uint32_t arrayLayers)
 		: Texture()
 	{
 		m_type = type;
-		create(type, extent, sampleCount, mipLevels);
+		create(type, extent, sampleCount, mipLevels, arrayLayers);
 	}
 
-	Texture2D::Texture2D(TextureTypeFlags type, Extent extent, FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, uint32_t sampleCount, uint32_t mipLevels)
+	Texture2D::Texture2D(TextureTypeFlags type, Extent extent, FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, uint32_t sampleCount, uint32_t mipLevels, uint32_t arrayLayers)
 		: Texture()
 	{
 		m_type = type;
-		create(type, extent, precisions, dimensions, types, sampleCount, mipLevels);
+		create(type, extent, precisions, dimensions, types, sampleCount, mipLevels, arrayLayers);
 	}
 
-	Texture2D::Texture2D(TextureTypeFlags type, Extent extent, Format format, uint32_t sampleCount, uint32_t mipLevels) {
+	Texture2D::Texture2D(TextureTypeFlags type, Extent extent, Format format, uint32_t sampleCount, uint32_t mipLevels, uint32_t arrayLayers) {
 		m_type = type;
-		create(type, extent, format, sampleCount, mipLevels);
+		create(type, extent, format, sampleCount, mipLevels, arrayLayers);
 	}
 
 	Texture2D::Texture2D(TextureTypeFlags type, Extent extent, Swapchain* pSwapchain, uint32_t sampleCount) 
@@ -127,7 +127,8 @@ namespace sa {
 			sa::FormatDimensionFlagBits::e4, 
 			sa::FormatTypeFlagBits::ANY_TYPE, 
 			1, 
-			mipLevels);
+			mipLevels,
+			1);
 		
 		m_pStagingBuffer = m_pCore->createBuffer(
 			vk::BufferUsageFlagBits::eTransferSrc,
@@ -178,7 +179,7 @@ namespace sa {
 		return textures;
 	}
 	
-	void Texture2D::create(TextureTypeFlags type, Extent extent, uint32_t sampleCount, uint32_t mipLevels) {
+	void Texture2D::create(TextureTypeFlags type, Extent extent, uint32_t sampleCount, uint32_t mipLevels, uint32_t arrayLayers) {
 
 		vk::ImageUsageFlags usage = (vk::ImageUsageFlags)type;
 		vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
@@ -221,7 +222,7 @@ namespace sa {
 			usage,
 			(vk::SampleCountFlagBits)sampleCount,
 			mipLevels,
-			1
+			arrayLayers
 		);
 
 
@@ -232,13 +233,13 @@ namespace sa {
 			aspect,
 			mipLevels,
 			0,
-			1,
+			arrayLayers,
 			0
 		));
 
 	}
 
-	void Texture2D::create(TextureTypeFlags type, Extent extent, FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, uint32_t sampleCount, uint32_t mipLevels) {
+	void Texture2D::create(TextureTypeFlags type, Extent extent, FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, uint32_t sampleCount, uint32_t mipLevels, uint32_t arrayLayers) {
 		vk::ImageUsageFlags usage = (vk::ImageUsageFlags)type;
 		vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
 
@@ -282,7 +283,7 @@ namespace sa {
 			usage,
 			(vk::SampleCountFlagBits)sampleCount,
 			mipLevels,
-			1
+			arrayLayers
 		);
 
 		m_view = ResourceManager::get().insert<vk::ImageView>(m_pCore->createImageView(
@@ -292,13 +293,13 @@ namespace sa {
 			aspect,
 			mipLevels,
 			0,
-			1,
+			arrayLayers,
 			0
 		));
 
 	}
 
-	void Texture2D::create(TextureTypeFlags type, Extent extent, Format format, uint32_t sampleCount, uint32_t mipLevels) {
+	void Texture2D::create(TextureTypeFlags type, Extent extent, Format format, uint32_t sampleCount, uint32_t mipLevels, uint32_t arrayLayers) {
 		vk::ImageUsageFlags usage = (vk::ImageUsageFlags)type;
 		vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
 
@@ -315,7 +316,7 @@ namespace sa {
 			usage,
 			(vk::SampleCountFlagBits)sampleCount,
 			mipLevels,
-			1
+			arrayLayers
 		);
 
 		m_view = ResourceManager::get().insert<vk::ImageView>(m_pCore->createImageView(
@@ -325,7 +326,7 @@ namespace sa {
 			aspect,
 			mipLevels,
 			0,
-			1,
+			arrayLayers,
 			0
 		));
 	}

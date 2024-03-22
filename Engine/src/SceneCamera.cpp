@@ -15,6 +15,7 @@ namespace sa {
             return;
         }
         m_projMat[1][1] *= -1;
+
     }
 
     SceneCamera::SceneCamera()
@@ -151,7 +152,6 @@ namespace sa {
         updateProjection();
     }
 
-
     ProjectionMode SceneCamera::getProjectionMode() const {
         return m_projectionMode;
     }
@@ -159,5 +159,30 @@ namespace sa {
     void SceneCamera::setProjectionMode(ProjectionMode projectionMode) {
         m_projectionMode = projectionMode;
         updateProjection();
+    }
+
+    void SceneCamera::calculateFrustumBounds(glm::vec3* pOutPoints) {
+        glm::mat4 inv = glm::inverse(m_projMat);
+        int i = 0;
+        for (uint32_t x = 0; x < 2; x++) {
+            for (uint32_t y = 0; y < 2; y++) {
+                for (uint32_t z = 0; z < 2; z++) {
+                    glm::vec4 point = inv * glm::vec4(
+                        2.0f * x - 1.0f,
+                        2.0f * y - 1.0f,
+                        z,
+                        1.0f);
+                    point /= point.w;
+                    pOutPoints[i] = point;
+
+                    i++;
+                }
+            }
+        }
+    }
+
+    bool SceneCamera::intersectsFrustum() const {
+
+        return false;
     }
 }
