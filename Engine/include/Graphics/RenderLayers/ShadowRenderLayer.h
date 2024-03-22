@@ -16,6 +16,8 @@ namespace sa {
 
 	struct ShadowPreferences {
 		uint32_t directionalResolution = 1024;
+		uint32_t cascadeCount = 3;
+
 		float depthBiasConstant = 0.0f;
 		float depthBiasSlope = 0.4f;
 		float depthNear = 1.0f;
@@ -43,12 +45,11 @@ namespace sa {
 
 
 		void cleanupRenderData(ShadowRenderData& data);
-		void initializeRenderData(const Texture2D& texture, ShadowRenderData& data);
+		void initializeRenderData(ShadowRenderData& data);
 
 		
 		void renderShadowMap(RenderContext& context, const glm::vec3& origin, ShadowData& data, ResourceID framebuffer, SceneCollection& sceneCollection);
-
-
+		
 	public:
 
 		virtual void init() override;

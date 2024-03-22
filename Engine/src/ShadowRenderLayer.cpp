@@ -6,14 +6,20 @@
 namespace sa {
 
 	void ShadowRenderLayer::cleanupRenderData(ShadowRenderData& data) {
+		data.depthTextures[0].destroy();
+		data.depthTextureCount = 0;
 		if (data.depthFramebuffer != NULL_RESOURCE) {
 			m_renderer.destroyFramebuffer(data.depthFramebuffer);
 		}
+
 		data.isInitialized = false;
 	}
 
-	void ShadowRenderLayer::initializeRenderData(const Texture2D& texture, ShadowRenderData& data) {
-		data.depthFramebuffer = m_renderer.createFramebuffer(m_depthRenderProgram, { texture });
+	void ShadowRenderLayer::initializeRenderData(ShadowRenderData& data) {
+		ShadowPreferences& prefs = getPreferences();
+		data.depthTextures[0] = Texture2D(TextureTypeFlagBits::DEPTH_ATTACHMENT | TextureTypeFlagBits::SAMPLED, { prefs.directionalResolution, prefs.directionalResolution });
+		data.depthTextureCount = 1;
+		data.depthFramebuffer = Renderer::get().createFramebuffer(m_depthRenderProgram, { data.depthTextures[0] });
 		data.isInitialized = true;
 	}
 
@@ -144,13 +150,8 @@ namespace sa {
 				continue;
 
 			ShadowRenderData& renderData = getRenderTargetData(static_cast<uint32_t>(data.entityID));
-
 			if (!renderData.isInitialized) {
-				ShadowPreferences& prefs = getPreferences();
-				renderData.depthTextures[0] = Texture2D(TextureTypeFlagBits::DEPTH_ATTACHMENT | TextureTypeFlagBits::SAMPLED, { prefs.directionalResolution, prefs.directionalResolution });
-				renderData.depthTextureCount = 1;
-				renderData.depthFramebuffer = Renderer::get().createFramebuffer(m_depthRenderProgram, { renderData.depthTextures[0] });
-				renderData.isInitialized = true;
+				initializeRenderData(renderData);
 			}
 
 			renderShadowMap(context, data.lightPosition, data, renderData.depthFramebuffer, sceneCollection);
@@ -177,14 +178,8 @@ namespace sa {
 				continue;
 
 			ShadowRenderData& renderData = getRenderTargetData(pRenderTarget->getID() ^ static_cast<uint32_t>(data.entityID));
-
 			if (!renderData.isInitialized) {
-				ShadowPreferences& prefs = getPreferences();
-
-				renderData.depthTextures[0] = Texture2D(TextureTypeFlagBits::DEPTH_ATTACHMENT | TextureTypeFlagBits::SAMPLED, { prefs.directionalResolution, prefs.directionalResolution });
-				renderData.depthTextureCount = 1;
-				renderData.depthFramebuffer = Renderer::get().createFramebuffer(m_depthRenderProgram, { renderData.depthTextures[0] });
-				renderData.isInitialized = true;
+				initializeRenderData(renderData);
 			}
 
 			renderShadowMap(context, pCamera->getPosition(), data, renderData.depthFramebuffer, sceneCollection);
