@@ -3,7 +3,12 @@
 
 #include "internal/debugFunctions.hpp" // for checkError and debugCallback
 
-PFN_vkCreateShadersEXT vkCreateShadersEXT_ = nullptr;
+EXT_INITIALIZATION(vkCreateShadersEXT);
+EXT_INITIALIZATION(vkDestroyShaderEXT);
+EXT_INITIALIZATION(vkCmdBindShadersEXT);
+EXT_INITIALIZATION(vkCmdSetVertexInputEXT);
+EXT_INITIALIZATION(vkCmdSetPatchControlPointsEXT);
+
 
 namespace sa {
 	void VulkanCore::fillFormats() {
@@ -122,6 +127,7 @@ namespace sa {
 			glfwInit();
 			glfwExtensions = glfwGetRequiredInstanceExtensions(&count);
 		}
+
 		for (uint32_t i = 0; i < count; i++) {
 			m_instanceExtensions.push_back(glfwExtensions[i]);
 		}
@@ -162,6 +168,7 @@ namespace sa {
 			vk::createInstance(&instanceInfo, nullptr, &m_instance),
 			"Failed to create instance"
 		);
+
 	}
 
 	void VulkanCore::findPhysicalDevice() {
@@ -249,8 +256,14 @@ namespace sa {
 			m_queues[i] = m_device.getQueue(m_queueInfo.family, i);
 		}
 
-		//Load extension functions
-		vkCreateShadersEXT_ = (PFN_vkCreateShadersEXT)m_device.getProcAddr("vkCreateShadersEXT");
+		//load extension functions
+		EXT_LOAD_FUNC(vkCreateShadersEXT);
+		EXT_LOAD_FUNC(vkDestroyShaderEXT);
+		EXT_LOAD_FUNC(vkCmdBindShadersEXT);
+		EXT_LOAD_FUNC(vkCmdSetVertexInputEXT);
+		EXT_LOAD_FUNC(vkCmdSetPatchControlPointsEXT);
+
+
 	}
 
 	void VulkanCore::createCommandPool() {

@@ -357,6 +357,7 @@ set(target_shared_libs
 
 target_link_libraries(${PROJECT_NAME} PUBLIC ${target_shared_libs} "${ADDITIONAL_LIBRARY_DEPENDENCIES}")
 
+# unset(glslc_executable CACHE)
 find_package(Vulkan REQUIRED COMPONENTS glslc)
 find_program(glslc_executable NAMES glslc HINTS Vulkan::glslc)
 

@@ -1,6 +1,5 @@
 #pragma once
 
-
 #ifndef IMGUI_DISABLE
 #include "imgui_impl_vulkan.h"
 #include "imgui_impl_glfw.h"
@@ -14,6 +13,27 @@
 #include "internal/DeviceMemoryManager.hpp"
 
 #include "FormatFlags.hpp"
+
+#define EXT_DECLARATION(f) \
+	extern PFN_##f f##_
+
+#define EXT_INITIALIZATION(f) \
+	PFN_##f f##_ = nullptr
+
+#define EXT_LOAD_FUNC(f) \
+	f##_ = reinterpret_cast<PFN_##f>(vkGetDeviceProcAddr(m_device, #f))
+
+EXT_DECLARATION(vkCreateShadersEXT);
+#define vkCreateShadersEXT vkCreateShadersEXT_
+EXT_DECLARATION(vkDestroyShaderEXT);
+#define vkDestroyShaderEXT vkDestroyShaderEXT_
+EXT_DECLARATION(vkCmdBindShadersEXT);
+#define vkCmdBindShadersEXT vkCmdBindShadersEXT_
+EXT_DECLARATION(vkCmdSetVertexInputEXT);
+#define vkCmdSetVertexInputEXT vkCmdSetVertexInputEXT_
+EXT_DECLARATION(vkCmdSetPatchControlPointsEXT);
+#define vkCmdSetPatchControlPointsEXT vkCmdSetPatchControlPointsEXT_
+
 
 namespace sa {
 
@@ -102,7 +122,7 @@ namespace sa {
 		vk::DescriptorPool m_imGuiDescriptorPool;
 		std::unordered_map<VkImageView, VkDescriptorSet> m_imGuiImages;
 		vk::Sampler m_imGuiImageSampler;
-
+		
 		void fillFormats();
 
 		uint32_t getQueueFamilyIndex(vk::QueueFlags capabilities, vk::QueueFamilyProperties* prop);
@@ -215,5 +235,3 @@ namespace sa {
 
 }
 
-extern PFN_vkCreateShadersEXT vkCreateShadersEXT_;
-#define vkCreateShadersEXT vkCreateShadersEXT_

@@ -33,7 +33,8 @@ namespace sa {
 			}
 
 			// TODO: Can I copy materialshader pipeline, but with custom extent? PS. maybe binding shaders
-			context.bindPipeline(m_pipeline);
+			context.bindPipelineLayout(m_pipelineLayout);
+			context.bindPipeline(m_depthPipeline);
 			context.bindDescriptorSet(collection.getSceneDescriptorSetDepthPass());
 
 			context.bindVertexBuffers(0, { collection.getVertexBuffer() });
@@ -101,9 +102,12 @@ namespace sa {
 			.endSubpass()
 			.end();
 
-		m_shaderSet.create({
-			sa::ReadSPVFile((Engine::getShaderDirectory() / "ShadowPass.vert.spv").generic_string().c_str())
-			});
+
+		m_vertexShader.create(
+		sa::ReadSPVFile((Engine::getShaderDirectory() / "ShadowPass.vert.spv").generic_string().c_str()),
+			ShaderStageFlagBits::VERTEX);
+
+		m_pipelineLayout.createFromShaders({ m_vertexShader });
 
 		PipelineSettings settings = {};
 		settings.dynamicStates.push_back(DynamicState::VIEWPORT);
@@ -115,7 +119,8 @@ namespace sa {
 		prefs.directionalResolution = 526;
 
 		
-		m_pipeline = m_renderer.createGraphicsPipeline(m_depthRenderProgram, 0, { prefs.directionalResolution, prefs.directionalResolution }, m_shaderSet, settings);
+		m_depthPipeline = m_renderer.createGraphicsPipeline(m_pipelineLayout,
+			&m_vertexShader, 1, m_depthRenderProgram, 0,{ prefs.directionalResolution, prefs.directionalResolution }, settings);
 	
 		m_shadowShaderDataBuffer = m_renderer.createDynamicBuffer(BufferType::STORAGE);
 		m_shadowTextureCount = 0;
@@ -126,12 +131,12 @@ namespace sa {
 			m_renderer.destroyRenderProgram(m_depthRenderProgram);
 			m_depthRenderProgram = NULL_RESOURCE;
 		}
-		if (m_pipeline != NULL_RESOURCE) {
-			m_renderer.destroyPipeline(m_pipeline);
-			m_pipeline = NULL_RESOURCE;
+		if (m_depthPipeline != NULL_RESOURCE) {
+			m_renderer.destroyPipeline(m_depthPipeline);
+			m_depthPipeline = NULL_RESOURCE;
 		}
-		if (m_shaderSet.isValid()) {
-			m_shaderSet.destroy();
+		if (m_vertexShader.isValid()) {
+			m_vertexShader.destroy();
 		}
 	}
 	

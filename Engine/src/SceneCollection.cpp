@@ -113,12 +113,12 @@ namespace sa {
 		if (!pMaterialShader || !pMaterialShader->isLoaded())
 			return false;
 
-		if (m_sceneDescriptorSetColorPass == NULL_RESOURCE || !pMaterialShader->m_colorShaderSet.hasAllocatedDescriptorSet(m_sceneDescriptorSetColorPass)) {
-			m_sceneDescriptorSetColorPass = pMaterialShader->m_colorShaderSet.allocateDescriptorSet(SET_PER_FRAME);
+		if (m_sceneDescriptorSetColorPass == NULL_RESOURCE || !pMaterialShader->m_colorPipelineLayout.hasAllocatedDescriptorSet(m_sceneDescriptorSetColorPass)) {
+			m_sceneDescriptorSetColorPass = pMaterialShader->m_colorPipelineLayout.allocateDescriptorSet(SET_PER_FRAME);
 		}
 
-		if (m_sceneDescriptorSetDepthPass == NULL_RESOURCE || !pMaterialShader->m_depthShaderSet.hasAllocatedDescriptorSet(m_sceneDescriptorSetDepthPass)) {
-			m_sceneDescriptorSetDepthPass = pMaterialShader->m_depthShaderSet.allocateDescriptorSet(SET_PER_FRAME);
+		if (m_sceneDescriptorSetDepthPass == NULL_RESOURCE || !pMaterialShader->m_depthPipelineLayout.hasAllocatedDescriptorSet(m_sceneDescriptorSetDepthPass)) {
+			m_sceneDescriptorSetDepthPass = pMaterialShader->m_depthPipelineLayout.allocateDescriptorSet(SET_PER_FRAME);
 		}
 
 		if (!m_updatedDescriptorSets) {
@@ -154,8 +154,22 @@ namespace sa {
 			renderer.destroyPipeline(m_depthPipeline);
 		}
 
-		m_colorPipeline = renderer.createGraphicsPipeline(colorRenderProgram, 0, extent, pMaterialShader->m_colorShaderSet, settings);
-		m_depthPipeline = renderer.createGraphicsPipeline(depthRenderProgram, 0, extent, pMaterialShader->m_depthShaderSet, settings);
+		m_colorPipeline = renderer.createGraphicsPipeline(
+			pMaterialShader->m_colorPipelineLayout, 
+			pMaterialShader->m_shaders.data(),
+			pMaterialShader->m_shaders.size(),
+			colorRenderProgram, 
+			0, 
+			extent, 
+			settings);
+		m_depthPipeline = renderer.createGraphicsPipeline(
+			pMaterialShader->m_depthPipelineLayout, 
+			&pMaterialShader->m_shaders[0],
+			1,
+			depthRenderProgram, 
+			0, 
+			extent, 
+			settings);
 		m_currentExtent = extent;
 
 		pMaterialShader->m_recompiled = false;
@@ -172,10 +186,12 @@ namespace sa {
 	}
 
 	void MaterialShaderCollection::bindColorPipeline(RenderContext& context) {
+		context.bindPipelineLayout(getMaterialShader()->m_colorPipelineLayout);
 		context.bindPipeline(m_colorPipeline);
 	}
 
 	void MaterialShaderCollection::bindDepthPipeline(RenderContext& context) {
+		context.bindPipelineLayout(getMaterialShader()->m_depthPipelineLayout);
 		context.bindPipeline(m_depthPipeline);
 	}
 

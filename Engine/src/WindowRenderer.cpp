@@ -20,7 +20,11 @@ namespace sa {
 		auto& renderer = sa::Renderer::get();
 		auto vertexCode = ReadSPVFile((Engine::getShaderDirectory() / "TransferToSwapchain.vert.spv").generic_string().c_str());
 		auto fragmentCode = ReadSPVFile((Engine::getShaderDirectory() / "TransferToSwapchain.frag.spv").generic_string().c_str());
-		m_swapchainShader.create({ vertexCode, fragmentCode });
+
+		m_vertexShader.create(vertexCode, VERTEX);
+		m_fragmentShader.create(fragmentCode, FRAGMENT);
+
+		m_swapchainPipelineLayout.createFromShaders({ m_vertexShader, m_fragmentShader });
 
 		onWindowResize(m_pWindow->getCurrentExtent());
 		m_sampler = renderer.createSampler(FilterMode::LINEAR);
@@ -48,12 +52,13 @@ namespace sa {
 			.end();
 
 
-		m_swapchainPipeline = renderer.createGraphicsPipeline(m_swapchainRenderProgram, 0, extent, m_swapchainShader);
+		std::array<sa::Shader, 2> shaders = { m_vertexShader, m_fragmentShader };
+		m_swapchainPipeline = renderer.createGraphicsPipeline(m_swapchainPipelineLayout, shaders.data(), shaders.size(), m_swapchainRenderProgram, 0, extent);
 
 
 		std::vector<Texture> textures;
 		m_swapchainFramebuffer = renderer.createSwapchainFramebuffer(m_swapchainRenderProgram, m_pWindow->getSwapchainID(), textures);
-		m_swapchainDescriptorSet = m_swapchainShader.allocateDescriptorSet(0);
+		m_swapchainDescriptorSet = m_swapchainPipelineLayout.allocateDescriptorSet(0);
 	}
 
 	void WindowRenderer::render(RenderContext& context, const Texture& texture) {
@@ -63,6 +68,7 @@ namespace sa {
 		// render texture to swapchain
 		context.updateDescriptorSet(m_swapchainDescriptorSet, 0, texture, m_sampler);
 		context.beginRenderProgram(m_swapchainRenderProgram, m_swapchainFramebuffer, SubpassContents::DIRECT);
+		context.bindPipelineLayout(m_swapchainPipelineLayout);
 		context.bindPipeline(m_swapchainPipeline);
 		context.bindDescriptorSet(m_swapchainDescriptorSet);
 		context.draw(6, 1);

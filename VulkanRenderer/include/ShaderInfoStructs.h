@@ -29,8 +29,8 @@ namespace sa {
 	std::string to_string(sa::ShaderStageFlagBits stage);
 
 	struct ShaderStageInfo {
-		char* pName;
-		uint32_t* pCode;
+		const char* pName;
+		const uint32_t* pCode;
 		size_t codeLength;
 		ShaderStageFlagBits stage;
 	};
@@ -58,4 +58,5 @@ namespace sa {
 		ResourceID moduleID;
 		std::string entryPointName;
 	};
+
 }

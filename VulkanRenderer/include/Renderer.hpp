@@ -21,6 +21,8 @@
 
 #include <mutex>
 
+#include "Resources/DynamicBuffer.hpp"
+
 namespace sa {
 
 	class VulkanCore;
@@ -168,9 +170,8 @@ namespace sa {
 		Extent getFramebufferExtent(ResourceID framebuffer) const;
 		void swapFramebuffer(ResourceID framebuffer);
 
-		ResourceID createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const ShaderSet& shaderSet, PipelineSettings settings = {});
-
-		ResourceID createComputePipeline(const ShaderSet& computeShader);
+		ResourceID createComputePipeline(const Shader& shader, const PipelineLayout& layout);
+		ResourceID createGraphicsPipeline(PipelineLayout& layout, Shader* pShaders, uint32_t shaderCount, ResourceID renderProgram, uint32_t subpassIndex, Extent extent, PipelineSettings settings = {});
 		void destroyPipeline(ResourceID pipeline);
 
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Buffer& buffer);

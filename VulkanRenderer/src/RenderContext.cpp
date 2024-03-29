@@ -32,8 +32,8 @@ namespace sa {
 		return pFramebufferSet;
 	}
 
-	Pipeline* RenderContext::getPipeline(ResourceID id) {
-		Pipeline* pPipeline = ResourceManager::get().get<Pipeline>(id);
+	vk::Pipeline* RenderContext::getPipeline(ResourceID id) {
+		vk::Pipeline* pPipeline = ResourceManager::get().get<vk::Pipeline>(id);
 		if (!pPipeline)
 			throw std::runtime_error("Nonexistent pipeline: " + id);
 		return pPipeline;
@@ -53,21 +53,62 @@ namespace sa {
 		return pSampler;
 	}
 
+	vk::PipelineLayout* RenderContext::getPipelineLayout(ResourceID id) {
+		vk::PipelineLayout* pLayout = ResourceManager::get().get<vk::PipelineLayout>(id);
+		if (!pLayout)
+			throw std::runtime_error("Nonexistent pipeline layout: " + id);
+		return pLayout;
+	}
+
+	void RenderContext::bindVertexInput(const PipelineLayout& layout) const {
+		const auto& vertexInputs = m_pLastPipelineLayout->getVertexBindings();
+
+		//TODO: inefficient to allocate memory every call
+		std::vector<VkVertexInputBindingDescription2EXT> bindingDesc;
+		bindingDesc.reserve(vertexInputs.size());
+		for (const auto& input : vertexInputs) {
+			vk::VertexInputBindingDescription2EXT binding = {};
+			binding.binding = input.binding;
+			binding.inputRate = vk::VertexInputRate::eVertex;
+			binding.divisor = 1;
+			binding.stride = input.stride;
+			bindingDesc.push_back(binding);
+		}
+
+		const auto& vertexAttributes = m_pLastPipelineLayout->getVertexAttributes();
+		std::vector<VkVertexInputAttributeDescription2EXT> attribDesc;
+		attribDesc.reserve(vertexAttributes.size());
+		for (const auto& input : vertexAttributes) {
+			vk::VertexInputAttributeDescription2EXT attribute = {};
+			attribute.binding = input.binding;
+			attribute.offset = input.offset;
+			attribute.format = static_cast<vk::Format>(input.format);
+			attribute.location = input.location;
+			attribDesc.push_back(attribute);
+		}
+
+		//m_pCommandBufferSet->getBuffer().setVertexInputEXT(bindingDesc, attribDesc);
+		vkCmdSetVertexInputEXT(m_pCommandBufferSet->getBuffer(), bindingDesc.size(), bindingDesc.data(), attribDesc.size(), attribDesc.data());
+
+	}
+
 	RenderContext::RenderContext()
 		: m_pCommandBufferSet(nullptr)
-		, m_boundPipeline(NULL_RESOURCE)
+		, m_pCore(nullptr)
+		, m_pLastPipelineLayout(nullptr)
 	{
 	}
 
 	RenderContext::RenderContext(VulkanCore* pCore, CommandBufferSet* pCommandBufferSet)
 		: m_pCommandBufferSet(pCommandBufferSet)
 		, m_pCore(pCore)
+		, m_pLastPipelineLayout(nullptr)
 	{
 	
 	}
 
 #ifndef IMGUI_DISABLE
-	void RenderContext::renderImGuiFrame() {
+	void RenderContext::renderImGuiFrame() const {
 		ImGui::Render();
 		ImGui_ImplVulkan_RenderDrawData(ImGui::GetDrawData(), m_pCommandBufferSet->getBuffer());
 
@@ -78,40 +119,93 @@ namespace sa {
 		}
 	}
 #endif
-	void RenderContext::beginRenderProgram(ResourceID renderProgram, ResourceID framebuffer, SubpassContents contents, Rect renderArea) {
+	void RenderContext::beginRenderProgram(ResourceID renderProgram, ResourceID framebuffer, SubpassContents contents, Rect renderArea) const {
 		RenderProgram* pRenderProgram = getRenderProgram(renderProgram);
 		FramebufferSet* pFramebuffer = getFramebufferSet(framebuffer);
 		pRenderProgram->begin(m_pCommandBufferSet, pFramebuffer, (vk::SubpassContents)contents, renderArea);
 	}
 
-	void RenderContext::nextSubpass(SubpassContents contentType) {
+	
+	void RenderContext::beginRendering(const std::vector<Texture2D>& colorAttachments, const std::vector<Texture2D>& depthAttachments) {
+		/*
+		vk::RenderingAttachmentInfo attachmentInfo = {};
+		attachmentInfo.
+
+		vk::RenderingInfo info = {};
+		info.
+
+		m_pCommandBufferSet->getBuffer().beginRendering();
+		*/
+	}
+
+	void RenderContext::nextSubpass(SubpassContents contentType) const {
 		m_pCommandBufferSet->getBuffer().nextSubpass((vk::SubpassContents)contentType);
 	}
 
-	void RenderContext::endRenderProgram(ResourceID renderProgram) {
+	void RenderContext::endRenderProgram(ResourceID renderProgram) const {
 		RenderProgram* pRenderProgram = getRenderProgram(renderProgram);
 		pRenderProgram->end(m_pCommandBufferSet);
 	}
 
-	void RenderContext::executeSubContext(const sa::SubContext& context) {
+	void RenderContext::executeSubContext(const sa::SubContext& context) const {
 		m_pCommandBufferSet->getBuffer().executeCommands(context.m_pCommandBufferSet->getBuffer(m_pCommandBufferSet->getBufferIndex()));
 	}
 
-	void RenderContext::bindPipeline(ResourceID pipeline) {
-		m_boundPipeline = pipeline;
-		Pipeline* pPipeline = getPipeline(pipeline);
-		pPipeline->bind(m_pCommandBufferSet);
+	void RenderContext::bindPipelineLayout(const PipelineLayout& pipelineLayout) {
+		m_pLastPipelineLayout = const_cast<PipelineLayout*>(&pipelineLayout);
 	}
 
-	void RenderContext::bindShader(const Shader& shader) {
-		vk::ShaderEXT* pShader = ResourceManager::get().get<vk::ShaderEXT>(shader.getShaderID());
+	void RenderContext::bindPipeline(ResourceID pipeline) const {
+		vk::PipelineBindPoint bindPoint = vk::PipelineBindPoint::eCompute;
+		if (m_pLastPipelineLayout->isGraphicsPipeline())
+			bindPoint = vk::PipelineBindPoint::eGraphics;
+
+		vk::Pipeline* pPipeline = getPipeline(pipeline);
+		m_pCommandBufferSet->getBuffer().bindPipeline(bindPoint, *pPipeline);
+	}
+
+	void RenderContext::bindShader(const Shader& shader) const {
+		const VkShaderEXT* pShader = ResourceManager::get().get<VkShaderEXT>(shader.getShaderObjectID());
 		if (!pShader)
-			throw std::runtime_error("Nonexistent shader: " + shader.getShaderID());
+			throw std::runtime_error("Nonexistent shader: " + shader.getShaderObjectID());
 
-		//m_pCommandBufferSet->getBuffer().bindShadersEXT({ vk::ShaderStageFlagBits::eVertex }, { *pShader });
+		const VkShaderStageFlagBits stage = static_cast<VkShaderStageFlagBits>(shader.getStage());
+		vkCmdBindShadersEXT(m_pCommandBufferSet->getBuffer(), 1, &stage, pShader);
+
+		if(shader.getStage() == sa::ShaderStageFlagBits::VERTEX) {
+			bindVertexInput(*m_pLastPipelineLayout);
+		}
+
 	}
 
-	void RenderContext::bindVertexBuffers(uint32_t firstBinding, const std::vector<Buffer>& buffers) {
+	void RenderContext::bindShaders(const std::vector<Shader>& shaders) const {
+		std::array<VkShaderEXT, 5> vkShaders = { VK_NULL_HANDLE };
+		std::array<VkShaderStageFlagBits, 5> stages = {
+			VK_SHADER_STAGE_VERTEX_BIT,
+			VK_SHADER_STAGE_GEOMETRY_BIT,
+			VK_SHADER_STAGE_FRAGMENT_BIT,
+			VK_SHADER_STAGE_TESSELLATION_CONTROL_BIT,
+			VK_SHADER_STAGE_TESSELLATION_EVALUATION_BIT
+		};
+		
+		for (size_t i = 0; i < stages.size(); i++) {
+			for(size_t j = 0; j < shaders.size(); j++) {
+				if(shaders[j].getStage() == stages[i]) {
+					const VkShaderEXT* pShader = ResourceManager::get().get<VkShaderEXT>(shaders[j].getShaderObjectID());
+					vkShaders[i] = pShader ? *pShader : VK_NULL_HANDLE;
+				}
+			}
+		}
+
+		vkCmdBindShadersEXT(m_pCommandBufferSet->getBuffer(), stages.size(), stages.data(), vkShaders.data());
+
+		if (vkShaders[0] != VK_NULL_HANDLE) {
+			bindVertexInput(*m_pLastPipelineLayout);
+		}
+
+	}
+
+	void RenderContext::bindVertexBuffers(uint32_t firstBinding, const std::vector<Buffer>& buffers) const {
 		if (buffers.empty())
 			return;
 
@@ -129,12 +223,12 @@ namespace sa {
 		m_pCommandBufferSet->getBuffer().bindVertexBuffers(firstBinding, vkBuffers, offsets);
 	}
 
-	void RenderContext::bindIndexBuffer(const Buffer& buffer) {
+	void RenderContext::bindIndexBuffer(const Buffer& buffer) const {
 		const DeviceBuffer* deviceBuffer = (const DeviceBuffer*)buffer;
 		m_pCommandBufferSet->getBuffer().bindIndexBuffer(deviceBuffer->buffer, 0, vk::IndexType::eUint32);
 	}
 
-	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Buffer& buffer) {
+	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Buffer& buffer) const {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		const DeviceBuffer* pDeviceBuffer = (const DeviceBuffer*)buffer;
 		vk::BufferView* pView = nullptr;
@@ -144,7 +238,7 @@ namespace sa {
 		pDescriptorSet->update(binding, pDeviceBuffer->buffer, pDeviceBuffer->size, 0, pView, m_pCommandBufferSet->getBufferIndex());
 	}
 
-	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture, ResourceID sampler) {
+	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture, ResourceID sampler) const {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
 		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
@@ -155,7 +249,7 @@ namespace sa {
 		pDescriptorSet->update(binding, *texture.getView(), layout, pSampler, m_pCommandBufferSet->getBufferIndex());
 	}
 
-	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture) {
+	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture) const {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
 		if ((texture.getTypeFlags() & sa::TextureTypeFlagBits::STORAGE) == sa::TextureTypeFlagBits::STORAGE) {
@@ -165,70 +259,92 @@ namespace sa {
 		pDescriptorSet->update(binding, *texture.getView(), layout, nullptr, m_pCommandBufferSet->getBufferIndex());
 	}
 
-	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement) {
+	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement) const {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		pDescriptorSet->update(binding, firstElement, textures.data(), textures.size(), nullptr, m_pCommandBufferSet->getBufferIndex());
 	}
 
-	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, ResourceID sampler, uint32_t firstElement) {
+	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, ResourceID sampler, uint32_t firstElement) const {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
 		pDescriptorSet->update(binding, firstElement, textures.data(), textures.size(), pSampler, m_pCommandBufferSet->getBufferIndex());
 	}
 
-	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture* textures, uint32_t textureCount, ResourceID sampler, uint32_t firstElement) {
+	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture* textures, uint32_t textureCount, ResourceID sampler, uint32_t firstElement) const {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
 		pDescriptorSet->update(binding, firstElement, textures, textureCount, pSampler, m_pCommandBufferSet->getBufferIndex());
 	}
 
-	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture* textures, uint32_t textureCount, uint32_t firstElement) {
+	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture* textures, uint32_t textureCount, uint32_t firstElement) const {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		pDescriptorSet->update(binding, firstElement, textures, textureCount, nullptr, m_pCommandBufferSet->getBufferIndex());
 	}
 
-	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, ResourceID sampler) {
+	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, ResourceID sampler) const {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
 		pDescriptorSet->update(binding, VK_NULL_HANDLE, vk::ImageLayout::eUndefined, pSampler, m_pCommandBufferSet->getBufferIndex());
 	}
 
-	void RenderContext::bindDescriptorSet(ResourceID descriptorSet) {
-		Pipeline* pPipeline = getPipeline(m_boundPipeline);
-		DescriptorSet* pDescriptorSet = getDescriptorSet(descriptorSet);
-		pPipeline->bindDescriptorSet(m_pCommandBufferSet, pDescriptorSet);
-	}
-
-	void RenderContext::pushConstants(ShaderStageFlags stages, uint32_t offset, uint32_t size, void* data) {
-		Pipeline* pPipeline = getPipeline(m_boundPipeline);
-		if (offset != UINT32_MAX) {
-			pPipeline->pushConstants(m_pCommandBufferSet, (vk::ShaderStageFlags)stages, offset, size, data);
-		}
-		else {
-			pPipeline->pushConstants(m_pCommandBufferSet, (vk::ShaderStageFlags)stages, size, data);
-		}
-	}
-
-	void RenderContext::bindDescriptorSets(const std::vector<ResourceID>& descriptorSets) {
-		Pipeline* pPipeline = getPipeline(m_boundPipeline);
+	void RenderContext::bindDescriptorSets(const std::vector<ResourceID>& descriptorSets) const {
 		std::vector<vk::DescriptorSet> sets;
 		sets.reserve(descriptorSets.size());
 		uint32_t firstSet = UINT32_MAX;
-		for (auto id : descriptorSets) {
-			DescriptorSet* pDescriptorSet = getDescriptorSet(id);
+		for (const auto id : descriptorSets) {
+			const DescriptorSet* pDescriptorSet = getDescriptorSet(id);
 			if (firstSet == UINT32_MAX)
 				firstSet = pDescriptorSet->getSetIndex();
 			sets.push_back(pDescriptorSet->getSet(m_pCommandBufferSet->getBufferIndex()));
 		}
 
-		pPipeline->bindDescriptorSets(m_pCommandBufferSet, firstSet, sets);
+		vk::PipelineBindPoint bindPoint = vk::PipelineBindPoint::eCompute;
+		if (m_pLastPipelineLayout->isGraphicsPipeline()) {
+			bindPoint = vk::PipelineBindPoint::eGraphics;
+		}
+		vk::PipelineLayout* pLayout = getPipelineLayout(m_pLastPipelineLayout->getLayoutID());
+
+		m_pCommandBufferSet->getBuffer().bindDescriptorSets(bindPoint, *pLayout, firstSet, sets, nullptr);
 	}
 
-	void RenderContext::setScissor(Rect scissor) {
-		m_pCommandBufferSet->getBuffer().setScissor(0, vk::Rect2D{ { scissor.offset.x, scissor.offset.y }, { scissor.extent.width, scissor.extent.height } });
+	void RenderContext::bindDescriptorSet(ResourceID descriptorSet) const {
+		DescriptorSet* pDescriptorSet = getDescriptorSet(descriptorSet);
+		
+		vk::PipelineBindPoint bindPoint = vk::PipelineBindPoint::eCompute;
+		if (m_pLastPipelineLayout->isGraphicsPipeline()) {
+			bindPoint = vk::PipelineBindPoint::eGraphics;
+		}
+		const vk::PipelineLayout* pLayout = getPipelineLayout(m_pLastPipelineLayout->getLayoutID());
+
+		const vk::DescriptorSet set = pDescriptorSet->getSet(m_pCommandBufferSet->getBufferIndex());
+		m_pCommandBufferSet->getBuffer().bindDescriptorSets(bindPoint, *pLayout, pDescriptorSet->getSetIndex(), 1U, &set, 0, nullptr);
 	}
 
-	void RenderContext::setViewport(Rect viewport) {
+	void RenderContext::pushConstants(ShaderStageFlags stages, uint32_t offset, uint32_t size, const void* data) const {
+		vk::PipelineLayout* pLayout = getPipelineLayout(m_pLastPipelineLayout->getLayoutID());
+
+		if (offset != UINT32_MAX) {
+			m_pCommandBufferSet->getBuffer().pushConstants(*pLayout, static_cast<vk::ShaderStageFlags>(stages), offset, size, data);
+		}
+		else {
+			const auto& pushConstantRanges = m_pLastPipelineLayout->getPushConstantRanges();
+			for (auto range : pushConstantRanges) {
+				if (range.stageFlags & stages) {
+					if (range.offset < offset)
+						offset = range.offset;
+				}
+			}
+			m_pCommandBufferSet->getBuffer().pushConstants(*pLayout, static_cast<vk::ShaderStageFlags>(stages), offset, size, data);
+		}
+	}
+
+	void RenderContext::setScissor(Rect scissor) const {
+		vk::Rect2D rect { { scissor.offset.x, scissor.offset.y }, { scissor.extent.width, scissor.extent.height } };
+
+		m_pCommandBufferSet->getBuffer().setScissorWithCount(1, &rect);
+	}
+
+	void RenderContext::setViewport(Rect viewport) const {
 		vk::Viewport vp = {};
 		vp.width = viewport.extent.width;
 		vp.height = viewport.extent.height;
@@ -236,54 +352,86 @@ namespace sa {
 		vp.minDepth = 0.0f;
 		vp.x = viewport.offset.x;
 		vp.y = viewport.offset.y;
-		m_pCommandBufferSet->getBuffer().setViewport(0, vp);
+		m_pCommandBufferSet->getBuffer().setViewport(0, 1, &vp);
 	}
 
-	void RenderContext::setDepthBias(float constantFactor, float clamp, float slopeFactor) {
+	void RenderContext::setViewports(const Rect* pViewports, uint32_t viewportCount) const {
+		std::array<vk::Viewport, 8> viewports;
+		if (viewportCount > viewports.size())
+			throw std::runtime_error("viewportCount was more than maximum number of viewports");
+		for(uint32_t i = 0; i < viewportCount; i++) {
+			vk::Viewport vp = {};
+			vp.width = pViewports[i].extent.width;
+			vp.height = pViewports[i].extent.height;
+			vp.maxDepth = 1.0f;
+			vp.minDepth = 0.0f;
+			vp.x = pViewports[i].offset.x;
+			vp.y = pViewports[i].offset.y;
+			viewports[i] = vp;
+		}
+		m_pCommandBufferSet->getBuffer().setViewportWithCount(viewportCount, viewports.data());
+	}
+
+	void RenderContext::setDepthBias(float constantFactor, float clamp, float slopeFactor) const {
 		m_pCommandBufferSet->getBuffer().setDepthBias(constantFactor, clamp, slopeFactor);
 	}
 
-	void RenderContext::setDepthBiasEnable(bool enable) {
+	void RenderContext::setDepthBiasEnable(bool enable) const {
 		m_pCommandBufferSet->getBuffer().setDepthBiasEnable(enable);
 	}
 
+	void RenderContext::setPrimitiveTopology(Topology topology) const {
+		m_pCommandBufferSet->getBuffer().setPrimitiveTopology(static_cast<vk::PrimitiveTopology>(topology));
+	}
 
-	void RenderContext::draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) {
+	void RenderContext::setPatchControlPoints(uint32_t points) const {
+		vkCmdSetPatchControlPointsEXT(m_pCommandBufferSet->getBuffer(), points);
+	}
+
+	void RenderContext::setPrimitiveRestartEnable(bool enable) const {
+		m_pCommandBufferSet->getBuffer().setPrimitiveRestartEnable(enable);
+	}
+
+	void RenderContext::setRasterizerDiscardEnable(bool enable) const {
+		m_pCommandBufferSet->getBuffer().setRasterizerDiscardEnable(enable);
+	}
+
+	void RenderContext::draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) const {
 		m_pCommandBufferSet->getBuffer().draw(vertexCount, instanceCount, firstVertex, firstInstance);
 	}
 
-	void RenderContext::drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance) {
+	void RenderContext::drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex, uint32_t vertexOffset, uint32_t firstInstance) const {
 		m_pCommandBufferSet->getBuffer().drawIndexed(indexCount, instanceCount, firstIndex, vertexOffset, firstInstance);
 	}
 
-	void RenderContext::drawIndexedIndirect(const Buffer& buffer, uint32_t offset, uint32_t drawCount, uint32_t stride) {
+	void RenderContext::drawIndexedIndirect(const Buffer& buffer, uint32_t offset, uint32_t drawCount, uint32_t stride) const {
 		const DeviceBuffer* pBuffer = (const DeviceBuffer*)buffer;
 		m_pCommandBufferSet->getBuffer().drawIndexedIndirect(pBuffer->buffer, offset, drawCount, stride);
 	}
 
-	void RenderContext::drawIndexedIndirect(const Buffer& buffer, size_t offset, const Buffer& countBuffer, size_t countOffset, uint32_t stride, uint32_t maxDrawCount) {
+	void RenderContext::drawIndexedIndirect(const Buffer& buffer, size_t offset, const Buffer& countBuffer, size_t countOffset, uint32_t stride, uint32_t maxDrawCount) const {
 		const DeviceBuffer* pBuffer = (const DeviceBuffer*)buffer;
 		const DeviceBuffer* pCountBuffer = (const DeviceBuffer*)countBuffer;
 
 		m_pCommandBufferSet->getBuffer().drawIndexedIndirectCount(pBuffer->buffer, offset, pCountBuffer->buffer, countOffset, maxDrawCount, stride);
 	}
 
-	void RenderContext::drawIndirect(const Buffer& buffer, uint32_t offset, uint32_t drawCount, uint32_t stride) {
+	void RenderContext::drawIndirect(const Buffer& buffer, uint32_t offset, uint32_t drawCount, uint32_t stride) const {
 		const DeviceBuffer* pBuffer = (const DeviceBuffer*)buffer;
 		m_pCommandBufferSet->getBuffer().drawIndirect(pBuffer->buffer, offset, drawCount, stride);
 	}
 
-	void RenderContext::drawIndirect(const Buffer& buffer, size_t offset, const Buffer& countBuffer, size_t countOffset, uint32_t stride, uint32_t maxDrawCount) {
+	void RenderContext::drawIndirect(const Buffer& buffer, size_t offset, const Buffer& countBuffer, size_t countOffset, uint32_t stride, uint32_t maxDrawCount) const {
 		const DeviceBuffer* pBuffer = (const DeviceBuffer*)buffer;
 		const DeviceBuffer* pCountBuffer = (const DeviceBuffer*)countBuffer;
 		m_pCommandBufferSet->getBuffer().drawIndirectCount(pBuffer->buffer, offset, pCountBuffer->buffer, countOffset, maxDrawCount, stride);
 	}
 
-	void RenderContext::dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) {
+	void RenderContext::dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) const {
 		m_pCommandBufferSet->getBuffer().dispatch(groupCountX, groupCountY, groupCountZ);
 	}
 
-	void RenderContext::barrierColorAttachment(const Texture& texture) {
+	void RenderContext::barrierColorAttachment(const Texture& texture) const {
 
 		DeviceImage* pImage = (DeviceImage*)texture;
 		vk::ImageLayout newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
@@ -319,7 +467,7 @@ namespace sa {
 			imageBarrier);
 	}
 
-	void RenderContext::barrierColorCompute(const Texture& texture) {
+	void RenderContext::barrierColorCompute(const Texture& texture) const {
 
 		DeviceImage* pImage = (DeviceImage*)texture;
 		vk::ImageLayout newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
@@ -354,7 +502,7 @@ namespace sa {
 			imageBarrier);
 	}
 
-	void RenderContext::barrierColorCompute(const Buffer& buffer) {
+	void RenderContext::barrierColorCompute(const Buffer& buffer) const {
 
 		const DeviceBuffer* pBuffer = (const DeviceBuffer*)buffer;
 		
@@ -377,7 +525,7 @@ namespace sa {
 			nullptr);
 	}
 
-	void RenderContext::transitionTexture(const Texture& texture, Transition src, Transition dst) {
+	void RenderContext::transitionTexture(const Texture& texture, Transition src, Transition dst) const {
 
 		vk::AccessFlags srcAccess;
 		vk::AccessFlags dstAccess;
@@ -495,7 +643,7 @@ namespace sa {
 		pImage->layout = newLayout;
 	}
 
-	void RenderContext::copyImageToImageColor(const Texture& src, const Texture& dst) {
+	void RenderContext::copyImageToImageColor(const Texture& src, const Texture& dst) const {
 		const DeviceImage* pSrc = src;
 		const DeviceImage* pDst = dst;
 
@@ -520,7 +668,7 @@ namespace sa {
 		m_pCommandBufferSet->getBuffer().copyImage(pSrc->image, pSrc->layout, pDst->image, pDst->layout, region);
 	}
 	
-	void RenderContext::copyImageToSwapchain(const Texture& src, ResourceID swapchain) {
+	void RenderContext::copyImageToSwapchain(const Texture& src, ResourceID swapchain) const {
 		const DeviceImage* pSrc = src;
 		Swapchain* pSwapchain = getSwapchain(swapchain);
 		vk::Image swapchainImage = pSwapchain->getImage(pSwapchain->getImageIndex());

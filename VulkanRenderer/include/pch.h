@@ -12,6 +12,12 @@
 #include <chrono>
 
 //#define VK_USE_PLATFORM_WIN32_KHR
+#if !defined(WIN32) and defined( _WIN32 )
+#define WIN32
+#endif
+
+
+
 #define VULKAN_HPP_NO_STRUCT_CONSTRUCTORS
 #include <vulkan\vulkan.hpp>
 

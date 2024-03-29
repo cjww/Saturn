@@ -8,13 +8,14 @@
 #include "internal/Swapchain.hpp"
 #include "internal/RenderProgram.hpp"
 #include "internal/FramebufferSet.hpp"
-#include "internal/Pipeline.hpp"
+
 #include "internal/DescriptorSet.hpp"
 
 #include "imgui_impl_glfw.h"
 #include "imgui_impl_vulkan.h"
 
 namespace sa {
+
 
 	PipelineConfig toConfig(PipelineSettings userSettings) {
 		PipelineConfig config = {};
@@ -29,7 +30,6 @@ namespace sa {
 
 		return std::move(config);
 	}
-
 
 	Renderer::Renderer() {
 		try {
@@ -48,7 +48,8 @@ namespace sa {
 			ResourceManager::get().setCleanupFunction<Swapchain>([](Swapchain* p) { p->destroy(); });
 			ResourceManager::get().setCleanupFunction<FramebufferSet>([](FramebufferSet* p) { p->destroy(); });
 			ResourceManager::get().setCleanupFunction<RenderProgram>([](RenderProgram* p) { p->destroy(); });
-			ResourceManager::get().setCleanupFunction<Pipeline>([](Pipeline* p) { p->destroy(); });
+			ResourceManager::get().setCleanupFunction<vk::Pipeline>([&](vk::Pipeline* p) { m_pCore->getDevice().destroyPipeline(*p); });
+			ResourceManager::get().setCleanupFunction<vk::PipelineLayout>([&](vk::PipelineLayout* p) { m_pCore->getDevice().destroyPipelineLayout(*p); });
 			ResourceManager::get().setCleanupFunction<vk::ShaderModule>([&](vk::ShaderModule* p) { m_pCore->getDevice().destroyShaderModule(*p); });
 			ResourceManager::get().setCleanupFunction<vk::DescriptorSetLayout>([&](vk::DescriptorSetLayout* p) { m_pCore->getDevice().destroyDescriptorSetLayout(*p); });
 			ResourceManager::get().setCleanupFunction<vk::DescriptorPool>([&](vk::DescriptorPool* p) { m_pCore->getDevice().destroyDescriptorPool(*p); });
@@ -87,7 +88,8 @@ namespace sa {
 		ResourceManager::get().clearContainer<vk::DescriptorPool>();
 		ResourceManager::get().clearContainer<vk::DescriptorSetLayout>();
 		ResourceManager::get().clearContainer<vk::ShaderModule>();
-		ResourceManager::get().clearContainer<Pipeline>();
+		ResourceManager::get().clearContainer<vk::Pipeline>();
+		ResourceManager::get().clearContainer<vk::PipelineLayout>();
 		ResourceManager::get().clearContainer<RenderProgram>();
 		ResourceManager::get().clearContainer<FramebufferSet>();
 		ResourceManager::get().clearContainer<Swapchain>();
@@ -262,19 +264,105 @@ namespace sa {
 		pFramebufferSet->swap();
 	}
 
+	/*
 	ResourceID Renderer::createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const ShaderSet& shaderSet, PipelineSettings settings) {
 		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
 		PipelineConfig config = toConfig(settings);
 		return pRenderProgram->createPipeline(shaderSet, subpassIndex, extent, config);
 	}
 
-	ResourceID Renderer::createComputePipeline(const ShaderSet& shaderSet) {
-		PipelineConfig config = {};
-		return ResourceManager::get().insert<Pipeline>(m_pCore.get(), shaderSet, config);
+	*/
+	ResourceID Renderer::createComputePipeline(const Shader& shader, const PipelineLayout& layout) {
+		vk::PipelineShaderStageCreateInfo vk_shaderStageInfo;
+		
+		ShaderStageInfo stageInfo = shader.getShaderStageInfo();
+		const vk::ShaderModule* pModule = ResourceManager::get().get<vk::ShaderModule>(shader.getShaderModuleID());
+		if (!pModule)
+			throw std::runtime_error("Invalid ShaderModule ID");
+
+		vk_shaderStageInfo.module = *pModule;
+		vk_shaderStageInfo.pName = stageInfo.pName;
+		vk_shaderStageInfo.stage = static_cast<vk::ShaderStageFlagBits>(stageInfo.stage);
+		vk_shaderStageInfo.pSpecializationInfo = nullptr;
+
+
+		const vk::PipelineLayout* pLayout = RenderContext::getPipelineLayout(layout.getLayoutID());
+
+		vk::ComputePipelineCreateInfo createInfo = {};
+		createInfo.layout = *pLayout;
+		createInfo.stage = vk_shaderStageInfo;
+		createInfo.basePipelineHandle = VK_NULL_HANDLE;
+		createInfo.basePipelineIndex = 0;
+
+		const auto pipeline = m_pCore->getDevice().createComputePipeline(VK_NULL_HANDLE, createInfo);
+		return ResourceManager::get().insert(pipeline.value);
+	}
+
+	ResourceID Renderer::createGraphicsPipeline(PipelineLayout& layout, Shader* pShaders, uint32_t shaderCount, ResourceID renderProgram, uint32_t subpassIndex, Extent extent, PipelineSettings settings) {
+
+		std::vector<vk::PipelineShaderStageCreateInfo> vk_shaderStageInfos(shaderCount);
+		for (uint32_t i = 0; i < shaderCount; i++) {
+			ShaderStageInfo stageInfo = pShaders[i].getShaderStageInfo();
+			const vk::ShaderModule* pModule = ResourceManager::get().get<vk::ShaderModule>(pShaders[i].getShaderModuleID());
+			if (!pModule)
+				throw std::runtime_error("Invalid ShaderModule ID");
+			vk_shaderStageInfos[i].module = *pModule;
+			vk_shaderStageInfos[i].pName = stageInfo.pName;
+			vk_shaderStageInfos[i].stage = static_cast<vk::ShaderStageFlagBits>(stageInfo.stage);
+			vk_shaderStageInfos[i].pSpecializationInfo = nullptr;
+		}
+
+		const vk::PipelineLayout* pLayout = RenderContext::getPipelineLayout(layout.getLayoutID());
+		
+		auto& vertexAttributes = layout.getVertexAttributes();
+		std::vector<vk::VertexInputAttributeDescription> vk_vertexAttributes(vertexAttributes.size());
+		for (int i = 0; i < vk_vertexAttributes.size(); i++) {
+			vk_vertexAttributes[i].binding = vertexAttributes[i].binding;
+			vk_vertexAttributes[i].format = static_cast<vk::Format>(vertexAttributes[i].format);
+			vk_vertexAttributes[i].location = vertexAttributes[i].location;
+			vk_vertexAttributes[i].offset = vertexAttributes[i].offset;
+		}
+
+
+		auto& vertexBindings = layout.getVertexBindings();
+		std::vector<vk::VertexInputBindingDescription> vk_vertexBindings(vertexBindings.size());
+		for (int i = 0; i < vk_vertexBindings.size(); i++) {
+			vk_vertexBindings[i].binding = vertexBindings[i].binding;
+			vk_vertexBindings[i].stride = vertexBindings[i].stride;
+			vk_vertexBindings[i].inputRate = vk::VertexInputRate::eVertex;
+		}
+
+		vk::PipelineVertexInputStateCreateInfo vertexInput;
+		vertexInput
+			.setVertexAttributeDescriptions(vk_vertexAttributes)
+			.setVertexBindingDescriptions(vk_vertexBindings);
+
+		PipelineConfig config = toConfig(settings);
+
+		RenderProgram* pRenderProgram = ResourceManager::get().get<RenderProgram>(renderProgram);
+		config.multisample = {
+			.sampleShadingEnable = true,
+			.minSampleShading = 0.2f,
+			.sampleCount = pRenderProgram->getSubpass(subpassIndex).getSampleCount(),
+		};
+
+		config.colorBlends.resize(pRenderProgram->getSubpass(subpassIndex).getColorAttachments().size());
+
+		vk::Pipeline vkPipeline = m_pCore->createGraphicsPipeline(
+			*pLayout,
+			pRenderProgram->getRenderPass(),
+			subpassIndex,
+			{ extent.width, extent.height },
+			vk_shaderStageInfos,
+			vertexInput,
+			nullptr,
+			config
+		);
+		return ResourceManager::get().insert(vkPipeline);
 	}
 
 	void Renderer::destroyPipeline(ResourceID pipeline) {
-		ResourceManager::get().remove<Pipeline>(pipeline);
+		ResourceManager::get().remove<vk::Pipeline>(pipeline);
 	}
 
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Buffer& buffer) {

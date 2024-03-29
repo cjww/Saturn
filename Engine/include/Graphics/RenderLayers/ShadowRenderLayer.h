@@ -34,9 +34,10 @@ namespace sa {
 	private:
 
 		ResourceID m_depthRenderProgram = NULL_RESOURCE;
-		ShaderSet m_shaderSet;
-		ResourceID m_pipeline;
+		Shader m_vertexShader;
 
+		PipelineLayout m_pipelineLayout;
+		ResourceID m_depthPipeline;
 
 		std::array<Texture, MAX_SHADOW_TEXTURE_COUNT> m_shadowTextures;
 		uint32_t m_shadowTextureCount;

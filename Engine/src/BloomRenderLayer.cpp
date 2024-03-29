@@ -17,24 +17,24 @@ namespace sa {
 
 		// DescriptorSets
 		if (data.filterDescriptorSet == NULL_RESOURCE)
-			data.filterDescriptorSet = m_bloomShader.allocateDescriptorSet(0);
+			data.filterDescriptorSet = m_pipelineLayout.allocateDescriptorSet(0);
 
 		if (data.blurDescriptorSets.empty()) {
 			data.blurDescriptorSets.resize(data.bloomMipTextures.size() - 1);
 			for (size_t i = 0; i < data.blurDescriptorSets.size(); i++) {
-				data.blurDescriptorSets[i] = m_bloomShader.allocateDescriptorSet(0);
+				data.blurDescriptorSets[i] = m_pipelineLayout.allocateDescriptorSet(0);
 			}
 		}
 
 		if (data.upsampleDescriptorSets.empty()) {
 			data.upsampleDescriptorSets.resize(data.bloomMipTextures.size() - 1);
 			for (size_t i = 0; i < data.upsampleDescriptorSets.size(); i++) {
-				data.upsampleDescriptorSets[i] = m_bloomShader.allocateDescriptorSet(0);
+				data.upsampleDescriptorSets[i] = m_pipelineLayout.allocateDescriptorSet(0);
 			}
 		}
 
 		if (data.compositeDescriptorSet == NULL_RESOURCE)
-			data.compositeDescriptorSet = m_bloomShader.allocateDescriptorSet(0);
+			data.compositeDescriptorSet = m_pipelineLayout.allocateDescriptorSet(0);
 
 
 
@@ -102,11 +102,13 @@ namespace sa {
 			return;
 		auto code = ReadSPVFile((Engine::getShaderDirectory() / "BloomShader.comp.spv").generic_string().c_str());
 
-		m_bloomShader.create({ code });
 
-		m_bloomPipeline = m_renderer.createComputePipeline(m_bloomShader);
+		m_bloomShader.create(code, ShaderStageFlagBits::COMPUTE);
+		m_pipelineLayout.createFromShaders({ m_bloomShader });
 
-		m_bloomPreferencesDescriptorSet = m_bloomShader.allocateDescriptorSet(1);
+		m_bloomPipeline = m_renderer.createComputePipeline(m_bloomShader, m_pipelineLayout);
+
+		m_bloomPreferencesDescriptorSet = m_pipelineLayout.allocateDescriptorSet(1);
 
 		BloomPreferences& prefs = getPreferences();
 		m_bloomPreferencesBuffer = m_renderer.createBuffer(BufferType::UNIFORM, sizeof(BloomPreferences), &prefs);
@@ -129,7 +131,9 @@ namespace sa {
 	}
 
 	void BloomRenderLayer::cleanup() {
+		m_pipelineLayout.destroy();
 		m_bloomShader.destroy();
+		m_renderer.destroyPipeline(m_bloomPipeline);
 	}
 
 	void BloomRenderLayer::onRenderTargetResize(UUID renderTargetID, Extent oldExtent, Extent newExtent) {
@@ -170,6 +174,7 @@ namespace sa {
 		m_threadCountStack[m_stackSize++] = { threadX, threadY };
 
 		// Filter
+		context.bindPipelineLayout(m_pipelineLayout);
 		context.bindPipeline(m_bloomPipeline);
 		context.bindDescriptorSet(m_bloomPreferencesDescriptorSet);
 

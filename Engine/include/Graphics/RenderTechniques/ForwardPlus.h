@@ -54,10 +54,14 @@ namespace sa {
 
 		ResourceID m_depthPreRenderProgram = NULL_RESOURCE;
 		ResourceID m_lightCullingPipeline = NULL_RESOURCE;
-		
-		ShaderSet m_lightCullingShader;
 
-		ShaderSet m_debugHeatmapShaderSet;
+
+		PipelineLayout m_lightCullingLayout;
+		Shader m_lightCullingShader;
+
+		PipelineLayout m_debugHeatmapLayout;
+		Shader m_debugHeatmapVertexShader;
+		Shader m_debugHeatmapFragmentShader;
 
 		ShadowRenderLayer* m_pShadowRenderLayer;
 

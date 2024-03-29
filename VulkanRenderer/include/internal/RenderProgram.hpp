@@ -73,9 +73,7 @@ namespace sa {
 		void setClearColor(Color color);
 
 		void addSubpassDependency(vk::SubpassDependency dependency);
-
-		ResourceID createPipeline(const ShaderSet& shaders, uint32_t subpassIndex, Extent extent, PipelineConfig config);
-
+		
 		void create(VulkanCore* pCore);
 		void destroy();
 
@@ -84,5 +82,6 @@ namespace sa {
 		void end(CommandBufferSet* cmd);
 
 		vk::RenderPass getRenderPass() const;
+		const Subpass& getSubpass(uint32_t index) const;
 	};
 }

@@ -232,11 +232,8 @@ int main() {
 		sa::PipelineSettings pipelineSettings = {};
 		pipelineSettings.cullMode = sa::CullModeFlagBits::BACK;
 
-		//ResourceID pipeline = renderer.createGraphicsPipeline(renderProgram, 0, window.getCurrentExtent(), shaderSet, pipelineSettings);
-
-		sa::Shader vertexShader;
-		vertexShader.create(vshaderCode);
-
+		ResourceID pipeline = renderer.createGraphicsPipeline(renderProgram, 0, window.getCurrentExtent(), shaderSet, pipelineSettings);
+		
 		ResourceID sceneDescriptorSet = shaderSet.allocateDescriptorSet(0);
 		ResourceID objectDescriptorSet = shaderSet.allocateDescriptorSet(1);
 
@@ -341,9 +338,8 @@ int main() {
 			if (context) {
 
 				context.beginRenderProgram(renderProgram, framebuffer, sa::SubpassContents::DIRECT);
-				//context.bindPipeline(pipeline);
-				context.bindShader(vertexShader);
-
+				context.bindPipeline(pipeline);
+				
 				context.bindDescriptorSet(sceneDescriptorSet);
 				context.bindDescriptorSet(objectDescriptorSet);
 				

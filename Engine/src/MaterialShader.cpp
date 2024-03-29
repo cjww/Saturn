@@ -4,11 +4,11 @@
 #include "Engine.h"
 
 void sa::MaterialShader::create(const std::vector<ShaderSourceFile>& sourceFiles) {
-    if (m_colorShaderSet.isValid())
-        m_colorShaderSet.destroy();
+    if (m_colorPipelineLayout.isValid())
+        m_colorPipelineLayout.destroy();
 
-    if (m_depthShaderSet.isValid())
-        m_depthShaderSet.destroy();
+    if (m_depthPipelineLayout.isValid())
+        m_depthPipelineLayout.destroy();
 
     m_sourceFiles = sourceFiles;
     for (auto& source : m_sourceFiles) {
@@ -19,24 +19,42 @@ void sa::MaterialShader::create(const std::vector<ShaderSourceFile>& sourceFiles
             source.stage, 
             "main", 
             source.filePath.generic_string().c_str());
-    	m_code.push_back(code);
+
+        m_code.push_back(code);
+    	
+        Shader shader;
+        shader.create(code, source.stage);
+        m_shaders.push_back(shader);
         std::filesystem::current_path(path);
     }
-    m_colorShaderSet.create(m_code);
-    m_depthShaderSet.create({ m_code[0] });
+    
+    m_colorPipelineLayout.createFromShaders(m_shaders);
+    m_depthPipelineLayout.createFromShaders({ m_shaders[0] });
+
     m_recompiled = true;
 }
 
-void sa::MaterialShader::create(const std::vector<std::vector<uint32_t>>& code) {
-    if (m_colorShaderSet.isValid())
-        m_colorShaderSet.destroy();
+void sa::MaterialShader::create(const std::vector<std::vector<uint32_t>>& sourceCode) {
+    m_code = sourceCode;
+    create();
+}
 
-    if (m_depthShaderSet.isValid())
-        m_depthShaderSet.destroy();
+void sa::MaterialShader::create() {
+    if (m_colorPipelineLayout.isValid())
+        m_colorPipelineLayout.destroy();
 
-    m_code = code;
-    m_colorShaderSet.create(m_code);
-    m_depthShaderSet.create({ m_code[0] });
+    if (m_depthPipelineLayout.isValid())
+        m_depthPipelineLayout.destroy();
+
+    m_shaders.reserve(m_code.size());
+    for (const auto& code : m_code) {
+        Shader shader;
+        shader.create(code);
+        m_shaders.push_back(shader);
+    }
+
+    m_colorPipelineLayout.createFromShaders(m_shaders);
+    m_depthPipelineLayout.createFromShaders({ m_shaders[0] });
     m_recompiled = true;
 }
 
@@ -64,7 +82,7 @@ void sa::MaterialShader::compileSource() {
 }
 
 bool sa::MaterialShader::isCompiled() const {
-    return m_code.empty();
+    return m_shaders.empty();
 }
 
 bool sa::MaterialShader::onLoad(std::ifstream& file, AssetLoadFlags flags) {
@@ -106,7 +124,7 @@ bool sa::MaterialShader::onLoad(std::ifstream& file, AssetLoadFlags flags) {
         return true;
     }
 
-    create(m_code);
+    create();
 
     return true;
 }
@@ -130,6 +148,7 @@ bool sa::MaterialShader::onWrite(std::ofstream& file, AssetWriteFlags flags) {
     file.write((char*)&codeCount, sizeof(uint32_t));
 
     for (auto& code : m_code) {
+
         size_t codeSize = code.size();
         file.write((char*)&codeSize, sizeof(size_t));
         file.write((char*)code.data(), code.size() * sizeof(uint32_t));
@@ -138,12 +157,17 @@ bool sa::MaterialShader::onWrite(std::ofstream& file, AssetWriteFlags flags) {
 }
 
 bool sa::MaterialShader::onUnload() {
+    for(auto& shader : m_shaders) {
+        shader.destroy();
+    }
     m_code.clear();
     m_code.shrink_to_fit();
+    m_shaders.clear();
+    m_shaders.shrink_to_fit();
     m_sourceFiles.clear();
     m_sourceFiles.shrink_to_fit();
 
-    m_colorShaderSet.destroy();
-    m_depthShaderSet.destroy();
+    m_colorPipelineLayout.destroy();
+    m_depthPipelineLayout.destroy();
     return true;
 }

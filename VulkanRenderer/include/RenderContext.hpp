@@ -4,14 +4,14 @@
 #include "structs.hpp"
 #include "Resources/Buffer.hpp"
 #include "Resources/Texture.hpp"
-#include "Resources/DynamicBuffer.hpp"
-#include "ShaderSet.hpp"
 #include "Shader.hpp"
 
 namespace vk {
 	class Sampler;
 	class Queue;
 	class Fence;
+	class Pipeline;
+	class PipelineLayout;
 }
 
 namespace sa {
@@ -72,54 +72,61 @@ namespace sa {
 		CommandBufferSet* m_pCommandBufferSet;
 		VulkanCore* m_pCore;
 
-		ResourceID m_boundPipeline;
+		PipelineLayout* m_pLastPipelineLayout;
 
 		friend class RenderProgramFactory;
 		friend class Renderer;
 		static Swapchain* getSwapchain(ResourceID id);
 		static RenderProgram* getRenderProgram(ResourceID id);
 		static FramebufferSet* getFramebufferSet(ResourceID id);
-		static Pipeline* getPipeline(ResourceID id);
+		static vk::Pipeline* getPipeline(ResourceID id);
 		static DescriptorSet* getDescriptorSet(ResourceID id);
 		static vk::Sampler* getSampler(ResourceID id);
+		static vk::PipelineLayout* getPipelineLayout(ResourceID id);
+
+		void bindVertexInput(const PipelineLayout& layout) const;
 
 	public:
 		RenderContext();
 
 		RenderContext(VulkanCore* pCore, CommandBufferSet* pCommandBufferSet);
 #ifndef IMGUI_DISABLE
-		void renderImGuiFrame();
+		void renderImGuiFrame() const;
 #endif
 
-		void beginRenderProgram(ResourceID renderProgram, ResourceID framebuffer, SubpassContents contents, Rect renderArea = { {0, 0}, {0, 0} });
-		void nextSubpass(SubpassContents contentType);
-		void endRenderProgram(ResourceID renderProgram);
+		void beginRenderProgram(ResourceID renderProgram, ResourceID framebuffer, SubpassContents contents, Rect renderArea = { {0, 0}, {0, 0} }) const;
+		void nextSubpass(SubpassContents contentType) const;
+		void endRenderProgram(ResourceID renderProgram) const;
 
-		void executeSubContext(const sa::SubContext& context);
+		void beginRendering(const std::vector<Texture2D>& colorAttachments, const std::vector<Texture2D>& depthAttachments);
 
-		void bindPipeline(ResourceID pipeline);
-		void bindShader(const Shader& shader);
-		void bindVertexBuffers(uint32_t firstBinding, const std::vector<Buffer>& buffers);
-		void bindIndexBuffer(const Buffer& buffer);
+		void executeSubContext(const sa::SubContext& context) const;
 
-		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Buffer& buffer);
+		void bindPipelineLayout(const PipelineLayout& pipelineLayout);
+		void bindPipeline(ResourceID pipeline) const;
+		void bindShader(const Shader& shader) const;
+		void bindShaders(const std::vector<Shader>& shaders) const;
+		void bindVertexBuffers(uint32_t firstBinding, const std::vector<Buffer>& buffers) const;
+		void bindIndexBuffer(const Buffer& buffer) const;
+
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Buffer& buffer) const;
 		
-		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture, ResourceID sampler);
-		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture);
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture, ResourceID sampler) const;
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture) const;
 
-		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement);
-		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, ResourceID sampler, uint32_t firstElement);
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement) const;
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, ResourceID sampler, uint32_t firstElement) const;
 
-		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture* textures, uint32_t textureCount, ResourceID sampler, uint32_t firstElement);
-		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture* textures, uint32_t textureCount, uint32_t firstElement);
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture* textures, uint32_t textureCount, ResourceID sampler, uint32_t firstElement) const;
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture* textures, uint32_t textureCount, uint32_t firstElement) const;
 
-		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, ResourceID sampler);
+		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, ResourceID sampler) const;
 
 
-		void bindDescriptorSets(const std::vector<ResourceID>& descriptorSets);
-		void bindDescriptorSet(ResourceID descriptorSet);
+		void bindDescriptorSets(const std::vector<ResourceID>& descriptorSets) const;
+		void bindDescriptorSet(ResourceID descriptorSet) const;
 
-		void pushConstants(ShaderStageFlags stages, uint32_t offset, uint32_t size, void* data);
+		void pushConstants(ShaderStageFlags stages, uint32_t offset, uint32_t size, const void* data) const;
 
 		template<typename T>
 		void pushConstants(ShaderStageFlags stages, const std::vector<T>& values, uint32_t offset = UINT32_MAX);
@@ -127,29 +134,82 @@ namespace sa {
 		template<typename T>
 		void pushConstant(ShaderStageFlags stages, const T& value, uint32_t offset = UINT32_MAX);
 
-		void setScissor(Rect scissor);
-		void setViewport(Rect viewport);
-		void setDepthBias(float constantFactor, float clamp, float slopeFactor);
-		void setDepthBiasEnable(bool enable);
+		void setScissor(Rect scissor) const;
+		void setViewport(Rect viewport) const;
+		void setViewports(const Rect* pViewports, uint32_t viewportCount) const;
 
-		void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex = 0, uint32_t firstInstance = 0);
-		void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0);
-		void drawIndexedIndirect(const Buffer& buffer, uint32_t offset, uint32_t drawCount, uint32_t stride);
-		void drawIndexedIndirect(const Buffer& buffer, size_t offset, const Buffer& countBuffer, size_t countOffset, uint32_t stride, uint32_t maxDrawCount = 0);
-		void drawIndirect(const Buffer& buffer, uint32_t offset, uint32_t drawCount, uint32_t stride);
-		void drawIndirect(const Buffer& buffer, size_t offset, const Buffer& countBuffer, size_t countOffset, uint32_t stride, uint32_t maxDrawCount = 0);
+		void setDepthBias(float constantFactor, float clamp, float slopeFactor) const;
+		void setDepthBiasEnable(bool enable) const;
+		void setPrimitiveTopology(Topology topology) const;
+		void setPatchControlPoints(uint32_t points) const;
+		void setPrimitiveRestartEnable(bool enable) const;
+		void setRasterizerDiscardEnable(bool enable) const;
 
-		void dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ);
+		/*
+		void setRasterizerDiscardEnable() const;
+		void setColorBlend() const;
+		void setTessellationDomainOrigin() const;
 
-		void barrierColorAttachment(const Texture& texture);
+		void setRasterizationSamples() const;
+		void setSampleMask() const;
+		void setAlphaToCoverageEnable() const;
+		void setAlphaToOneEnable() const;
+		void setPolygonMode() const;
+		void setLineWidth() const;
+		void setCullMode() const;
+		void setFrontFace() const;
+		void setDepthTestEnable() const;
+		void setDepthWriteEnable() const;
+		void setDepthCompareOp() const;
+		void setDepthBoundsTestEnable() const;
+		void setDepthBounds() const;
+		void setDepthClampEnableEXT() const;
+		void setStencilTestEnable() const;
+		void setStencilOp() const;
+		void setStencilCompareMask() const;
+		void setStencilWriteMask() const;
+		void setStencilReference() const;
 
-		void barrierColorCompute(const Texture& texture);
-		void barrierColorCompute(const Buffer& buffer);
+		void setLogicOpEnable() const;
+		void setLogicOp() const;
+		void setColorBlendEnable() const;
+		void setColorWriteMask() const;
+		void setColorBlendEquation() const;
+		void setColorBlendAdvanced() const;
+		void setBlendConstants() const;
+		 */
+		/*
+		void setFragmentShadingRate() const;
+		void setRasterizationStream() const;
 
-		void transitionTexture(const Texture& texture, Transition src, Transition dst);
+		void setDiscardRectangleEnable() const;
+		void setDiscardRectangleMode() const;
+		void setDiscardRectangle() const;
 
-		void copyImageToImageColor(const Texture& src, const Texture& dst);
-		void copyImageToSwapchain(const Texture& src, ResourceID swapchain);
+		void setConservativeRasterizationMode() const;
+		void setExtraPrimitiveOverestimationSize() const;
+
+		void setDepthClipEnable() const;
+		*/
+
+		void draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex = 0, uint32_t firstInstance = 0) const;
+		void drawIndexed(uint32_t indexCount, uint32_t instanceCount, uint32_t firstIndex = 0, uint32_t vertexOffset = 0, uint32_t firstInstance = 0) const;
+		void drawIndexedIndirect(const Buffer& buffer, uint32_t offset, uint32_t drawCount, uint32_t stride) const;
+		void drawIndexedIndirect(const Buffer& buffer, size_t offset, const Buffer& countBuffer, size_t countOffset, uint32_t stride, uint32_t maxDrawCount = 0) const;
+		void drawIndirect(const Buffer& buffer, uint32_t offset, uint32_t drawCount, uint32_t stride) const;
+		void drawIndirect(const Buffer& buffer, size_t offset, const Buffer& countBuffer, size_t countOffset, uint32_t stride, uint32_t maxDrawCount = 0) const;
+
+		void dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) const;
+
+		void barrierColorAttachment(const Texture& texture) const;
+
+		void barrierColorCompute(const Texture& texture) const;
+		void barrierColorCompute(const Buffer& buffer) const;
+
+		void transitionTexture(const Texture& texture, Transition src, Transition dst) const;
+
+		void copyImageToImageColor(const Texture& src, const Texture& dst) const;
+		void copyImageToSwapchain(const Texture& src, ResourceID swapchain) const;
 
 
 		uint32_t getFrameIndex() const;

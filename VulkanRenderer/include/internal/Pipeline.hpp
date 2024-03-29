@@ -5,21 +5,18 @@
 #include "VulkanCore.hpp"
 
 namespace sa {
-
+	/*
 	class Pipeline {
 	private:
 		VulkanCore* m_pCore;
 
 		vk::Pipeline m_pipeline;
-		vk::PipelineLayout m_layout;
-		ShaderSet* m_pShaderSet;
 
 	public:
-		Pipeline(VulkanCore* pCore, vk::RenderPass renderPass, const ShaderSet& shaderSet, uint32_t subpassIndex, Extent extent, PipelineConfig config);
-		Pipeline(VulkanCore* pCore, const ShaderSet& shaderSet, PipelineConfig config);
+		Pipeline();
 
-		void create(VulkanCore* pCore, vk::RenderPass renderPass, const ShaderSet& shaderSet, uint32_t subpassIndex, Extent extent, PipelineConfig config);
-		void create(VulkanCore* pCore, const ShaderSet& shaderSet, PipelineConfig config);
+		void create(vk::RenderPass renderPass, const ShaderSet& shaderSet, uint32_t subpassIndex, Extent extent, PipelineConfig config);
+		void create(const ShaderSet& shaderSet, PipelineConfig config);
 
 		void destroy();
 	
@@ -35,6 +32,7 @@ namespace sa {
 
 		bool isCompute();
 	};
+	*/
 
 
 }

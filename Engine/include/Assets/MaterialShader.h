@@ -16,11 +16,12 @@ namespace sa {
 		friend class MaterialShaderCollection;
 
 		std::vector<ShaderSourceFile> m_sourceFiles;
-
+		
 		std::vector<std::vector<uint32_t>> m_code;
+		std::vector<Shader> m_shaders;
+		PipelineLayout m_colorPipelineLayout;
+		PipelineLayout m_depthPipelineLayout;
 
-		ShaderSet m_colorShaderSet;
-		ShaderSet m_depthShaderSet;
 
 		bool m_recompiled = false;
 
@@ -28,7 +29,9 @@ namespace sa {
 		using Asset::Asset;
 
 		void create(const std::vector<ShaderSourceFile>& sourceFiles);
-		void create(const std::vector<std::vector<uint32_t>>& code);
+		void create(const std::vector<std::vector<uint32_t>>& sourceCode);
+
+		void create();
 
 		
 		const std::vector<ShaderSourceFile>& getShaderSourceFiles() const;

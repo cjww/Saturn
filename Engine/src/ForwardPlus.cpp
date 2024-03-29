@@ -29,8 +29,9 @@ namespace sa {
 		}
 
 		auto code = ReadSPVFile((Engine::getShaderDirectory() / "LightCulling.comp.spv").generic_string().c_str());
-		m_lightCullingShader.create({ code });
-		m_lightCullingPipeline = m_renderer.createComputePipeline(m_lightCullingShader);
+		m_lightCullingLayout.createFromShaders({ code });
+		m_lightCullingShader.create({ code }, ShaderStageFlagBits::COMPUTE);
+		m_lightCullingPipeline = m_renderer.createComputePipeline(m_lightCullingShader, m_lightCullingLayout);
 		
 	}
 
@@ -76,7 +77,7 @@ namespace sa {
 
 		size_t totalTileCount = data.tileCount.x * data.tileCount.y;
 		if (data.lightCullingDescriptorSet == NULL_RESOURCE)
-			data.lightCullingDescriptorSet = m_lightCullingShader.allocateDescriptorSet(0);
+			data.lightCullingDescriptorSet = m_lightCullingLayout.allocateDescriptorSet(0);
 
 		data.lightIndexBuffer = m_renderer.createDynamicBuffer(BufferType::STORAGE, sizeof(uint32_t) * MAX_LIGHTS_PER_TILE * totalTileCount);
 
@@ -98,13 +99,17 @@ namespace sa {
 
 
 		data.debugLightHeatmapFramebuffer = m_renderer.createFramebuffer(data.debugLightHeatmapRenderProgram, { data.debugLightHeatmap });
+		std::array<sa::Shader, 2> shaders = { m_debugHeatmapVertexShader, m_debugHeatmapFragmentShader };
 		data.debugLightHeatmapPipeline = m_renderer.createGraphicsPipeline(
+			m_debugHeatmapLayout,
+			shaders.data(),
+			shaders.size(),
 			data.debugLightHeatmapRenderProgram,
 			0,
-			{ data.tileCount.x, data.tileCount.y },
-			m_debugHeatmapShaderSet);
+			{ data.tileCount.x, data.tileCount.y }
+		);
 
-		data.debugLightHeatmapDescriptorSet = m_debugHeatmapShaderSet.allocateDescriptorSet(0);
+		data.debugLightHeatmapDescriptorSet = m_debugHeatmapLayout.allocateDescriptorSet(0);
 		m_renderer.updateDescriptorSet(data.debugLightHeatmapDescriptorSet, 0, data.lightIndexBuffer);
 		// ----------------------------------
 
@@ -148,9 +153,7 @@ namespace sa {
 			m_renderer.destroyRenderProgram(data.debugLightHeatmapRenderProgram);
 			data.debugLightHeatmapRenderProgram = NULL_RESOURCE;
 		}
-
-
-
+		
 	}
 
 	ForwardPlus::ForwardPlus(ShadowRenderLayer* pShadowRenderLayer) : IRenderLayer() {
@@ -188,16 +191,20 @@ namespace sa {
 
 
 		//DEBUG
-		m_debugHeatmapShaderSet.create({
-			sa::ReadSPVFile((Engine::getShaderDirectory() / "DebugHeatmap.vert.spv").generic_string().c_str()),
-			sa::ReadSPVFile((Engine::getShaderDirectory() / "DebugHeatmap.frag.spv").generic_string().c_str())
-		});
+		
+		m_debugHeatmapVertexShader.create(sa::ReadSPVFile((Engine::getShaderDirectory() / "DebugHeatmap.vert.spv").generic_string().c_str()), ShaderStageFlagBits::VERTEX);
+		m_debugHeatmapFragmentShader.create(sa::ReadSPVFile((Engine::getShaderDirectory() / "DebugHeatmap.frag.spv").generic_string().c_str()), ShaderStageFlagBits::FRAGMENT);
+		m_debugHeatmapLayout.createFromShaders({ m_debugHeatmapVertexShader, m_debugHeatmapFragmentShader });
+
+
 
 		m_isInitialized = true;
 	}
 
 	void ForwardPlus::cleanup() {
 		m_lightCullingShader.destroy();
+		m_debugHeatmapVertexShader.destroy();
+		m_debugHeatmapFragmentShader.destroy();
 	}
 
 	bool ForwardPlus::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sc) {
@@ -239,6 +246,7 @@ namespace sa {
 			collection.recreatePipelines(m_colorRenderProgram, m_depthPreRenderProgram, pRenderTarget->getExtent());
 
 			// Depth prepass
+			
 			collection.bindDepthPipeline(context);
 
 			context.bindVertexBuffers(0, { collection.getVertexBuffer() });
@@ -263,6 +271,7 @@ namespace sa {
 		context.updateDescriptorSet(data.lightCullingDescriptorSet, 2, sc.getLightBuffer());
 
 		// Light culling
+		context.bindPipelineLayout(m_lightCullingLayout);
 		context.bindPipeline(m_lightCullingPipeline);
 		context.bindDescriptorSet(data.lightCullingDescriptorSet);
 

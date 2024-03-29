@@ -41,18 +41,17 @@ namespace sa {
 	public:
 	private:
 		
-		ShaderSet m_bloomShader;
-		ResourceID m_bloomPipeline;
+		Shader m_bloomShader;
+		PipelineLayout m_pipelineLayout;
+		ResourceID m_bloomPipeline = NULL_RESOURCE;
 
 		Buffer m_bloomPreferencesBuffer;
-		ResourceID m_bloomPreferencesDescriptorSet;
+		ResourceID m_bloomPreferencesDescriptorSet = NULL_RESOURCE;
 		
-		ResourceID m_sampler;
+		ResourceID m_sampler = NULL_RESOURCE;
 
 		Extent m_threadCountStack[7];
-		uint8_t m_stackSize;
-
-		bool m_wasResized;
+		uint8_t m_stackSize = 0;
 		
 
 		void initializeBloomData(const UUID& renderTargetID, RenderContext& context, Extent extent, const DynamicTexture* colorTexture);

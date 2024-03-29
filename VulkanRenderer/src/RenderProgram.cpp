@@ -61,17 +61,6 @@ namespace sa {
 		m_dependencies.push_back(dependency);
 	}
 
-	ResourceID RenderProgram::createPipeline(const ShaderSet& shaders, uint32_t subpassIndex, Extent extent, PipelineConfig config) {
-		config.multisample = {
-			.sampleShadingEnable = true,
-			.minSampleShading = 0.2f,
-			.sampleCount = m_subpasses[subpassIndex].getSampleCount(),
-		};
-		
-		config.colorBlends.resize(m_subpasses.at(subpassIndex).getColorAttachments().size());
-		return ResourceManager::get().insert<Pipeline>(m_pCore, m_renderPass, shaders, subpassIndex, extent, config);
-	}
-
 	void RenderProgram::create(VulkanCore* pCore) {
 		m_pCore = pCore;
 
@@ -127,7 +116,11 @@ namespace sa {
 	vk::RenderPass RenderProgram::getRenderPass() const {
 		return m_renderPass;
 	}
-	
+
+	const Subpass& RenderProgram::getSubpass(uint32_t index) const {
+		return m_subpasses.at(index);
+	}
+
 	Subpass::Subpass()
 		: m_sampleCount(vk::SampleCountFlagBits::e1)
 	{

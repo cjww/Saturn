@@ -18,8 +18,10 @@ namespace sa {
 		RenderWindow* m_pWindow;
 
 		ResourceID m_swapchainFramebuffer;
-		
-		ShaderSet m_swapchainShader;
+
+		Shader m_vertexShader;
+		Shader m_fragmentShader;
+		PipelineLayout m_swapchainPipelineLayout;
 		ResourceID m_swapchainPipeline;
 		
 		ResourceID m_swapchainRenderProgram;

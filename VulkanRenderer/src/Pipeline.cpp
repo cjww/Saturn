@@ -1,13 +1,21 @@
 #include "pch.h"
 #include "internal/Pipeline.hpp"
 
+#include "Renderer.hpp"
+
 namespace sa {
+	/*
 	Pipeline::Pipeline(VulkanCore* pCore, vk::RenderPass renderPass, const ShaderSet& shaderSet, uint32_t subpassIndex, Extent extent, PipelineConfig config) {
 		create(pCore, renderPass, shaderSet, subpassIndex, extent, config);
 	}
 
 	Pipeline::Pipeline(VulkanCore* pCore, const ShaderSet& shaderSet, PipelineConfig config) {
 		create(pCore, shaderSet, config);
+	}
+
+	Pipeline::Pipeline()
+		: m_pCore(Renderer::get().getCore())
+	{
 	}
 
 	void Pipeline::create(VulkanCore* pCore, vk::RenderPass renderPass, const ShaderSet& shaderSet, uint32_t subpassIndex, Extent extent, PipelineConfig config) {
@@ -224,4 +232,5 @@ namespace sa {
 	bool Pipeline::isCompute() {
 		return !m_pShaderSet->isGraphicsSet();
 	}
+	*/
 }
