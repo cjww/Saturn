@@ -89,28 +89,37 @@ namespace sa {
 		m_renderer.updateDescriptorSet(data.lightCullingDescriptorSet, 1, data.lightIndexBuffer);		// write what lights are in what tiles
 
 		// ----------- DEBUG -------------------
-		data.debugLightHeatmap = DynamicTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, { data.tileCount.x, data.tileCount.y });
-		data.debugLightHeatmapRenderProgram = m_renderer.createRenderProgram()
-			.addColorAttachment(AttachmentFlagBits::eClear | AttachmentFlagBits::eSampled | AttachmentFlagBits::eStore, data.debugLightHeatmap)
-			.beginSubpass()
-			.addAttachmentReference(0, SubpassAttachmentUsage::ColorTarget)
-			.endSubpass()
-			.end();
 
+		data.debugLightHeatmap = DynamicTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, { data.tileCount.x, data.tileCount.y });
+		if(data.debugLightHeatmapRenderProgram == NULL_RESOURCE) {
+			data.debugLightHeatmapRenderProgram = m_renderer.createRenderProgram()
+				.addColorAttachment(AttachmentFlagBits::eClear | AttachmentFlagBits::eSampled | AttachmentFlagBits::eStore,data.debugLightHeatmap)
+				.beginSubpass()
+				.addAttachmentReference(0, SubpassAttachmentUsage::ColorTarget)
+				.endSubpass()
+				.end();
+		}
+
+		if(data.debugLightHeatmapPipeline == NULL_RESOURCE) {
+			sa::PipelineSettings settings = {};
+			settings.dynamicStates.push_back(sa::DynamicState::VIEWPORT);
+			std::array<sa::Shader, 2> shaders = { m_debugHeatmapVertexShader, m_debugHeatmapFragmentShader };
+			data.debugLightHeatmapPipeline = m_renderer.createGraphicsPipeline(
+				m_debugHeatmapLayout,
+				shaders.data(),
+				shaders.size(),
+				data.debugLightHeatmapRenderProgram,
+				0,
+				{ data.tileCount.x, data.tileCount.y },
+				settings
+			);
+		}
+		if(data.debugLightHeatmapDescriptorSet == NULL_RESOURCE) {
+			data.debugLightHeatmapDescriptorSet = m_debugHeatmapLayout.allocateDescriptorSet(0);
+		}
+		m_renderer.updateDescriptorSet(data.debugLightHeatmapDescriptorSet, 0, data.lightIndexBuffer);
 
 		data.debugLightHeatmapFramebuffer = m_renderer.createFramebuffer(data.debugLightHeatmapRenderProgram, { data.debugLightHeatmap });
-		std::array<sa::Shader, 2> shaders = { m_debugHeatmapVertexShader, m_debugHeatmapFragmentShader };
-		data.debugLightHeatmapPipeline = m_renderer.createGraphicsPipeline(
-			m_debugHeatmapLayout,
-			shaders.data(),
-			shaders.size(),
-			data.debugLightHeatmapRenderProgram,
-			0,
-			{ data.tileCount.x, data.tileCount.y }
-		);
-
-		data.debugLightHeatmapDescriptorSet = m_debugHeatmapLayout.allocateDescriptorSet(0);
-		m_renderer.updateDescriptorSet(data.debugLightHeatmapDescriptorSet, 0, data.lightIndexBuffer);
 		// ----------------------------------
 
 		data.isInitialized = true;
@@ -142,16 +151,6 @@ namespace sa {
 		if (data.debugLightHeatmapFramebuffer != NULL_RESOURCE) {
 			m_renderer.destroyFramebuffer(data.debugLightHeatmapFramebuffer);
 			data.debugLightHeatmapFramebuffer = NULL_RESOURCE;
-		}
-
-		if (data.debugLightHeatmapPipeline != NULL_RESOURCE) {
-			m_renderer.destroyPipeline(data.debugLightHeatmapPipeline);
-			data.debugLightHeatmapPipeline = NULL_RESOURCE;
-		}
-
-		if (data.debugLightHeatmapRenderProgram != NULL_RESOURCE) {
-			m_renderer.destroyRenderProgram(data.debugLightHeatmapRenderProgram);
-			data.debugLightHeatmapRenderProgram = NULL_RESOURCE;
 		}
 		
 	}
@@ -315,7 +314,12 @@ namespace sa {
 		
 		if(data.renderDebugHeatmap) {
 			context.beginRenderProgram(data.debugLightHeatmapRenderProgram, data.debugLightHeatmapFramebuffer, SubpassContents::DIRECT);
+			context.bindPipelineLayout(m_debugHeatmapLayout);
 			context.bindPipeline(data.debugLightHeatmapPipeline);
+			Rect vp = {};
+			vp.offset = { 0, 0 };
+			vp.extent = { data.tileCount.x, data.tileCount.y };
+			context.setViewport(vp);
 			context.bindDescriptorSet(data.debugLightHeatmapDescriptorSet);
 			context.pushConstant(ShaderStageFlagBits::FRAGMENT, data.tileCount.x);
 			context.draw(6, 1);

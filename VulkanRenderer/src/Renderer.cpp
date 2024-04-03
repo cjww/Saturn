@@ -231,6 +231,18 @@ namespace sa {
 			layers);
 	}
 
+	ResourceID Renderer::createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, uint32_t layers) {
+		Swapchain* pSwapchain = RenderContext::getSwapchain(swapchain);
+		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
+		std::vector<Texture> textures;
+		return ResourceManager::get().insert<FramebufferSet>(
+			m_pCore.get(),
+			pRenderProgram->getRenderPass(),
+			pSwapchain,
+			textures,
+			layers);
+	}
+
 	void Renderer::destroyFramebuffer(ResourceID framebuffer) {
 		ResourceManager::get().remove<FramebufferSet>(framebuffer);
 	}

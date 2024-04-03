@@ -160,6 +160,8 @@ namespace sa {
 		ResourceID createFramebuffer(ResourceID renderProgram, const std::vector<Texture>& attachmentTextures, uint32_t layers = 1ui32);
 		ResourceID createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<Texture>& additionalAttachmentTextures, uint32_t layers = 1ui32);
 
+		ResourceID createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, uint32_t layers = 1ui32);
+
 		void destroyFramebuffer(ResourceID framebuffer);
 
 		Texture getFramebufferTexture(ResourceID framebuffer, uint32_t attachmentIndex) const;

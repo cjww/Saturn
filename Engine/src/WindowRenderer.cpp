@@ -26,22 +26,7 @@ namespace sa {
 
 		m_swapchainPipelineLayout.createFromShaders({ m_vertexShader, m_fragmentShader });
 
-		onWindowResize(m_pWindow->getCurrentExtent());
 		m_sampler = renderer.createSampler(FilterMode::LINEAR);
-		
-	}
-
-	void WindowRenderer::onWindowResize(Extent extent) {
-		auto& renderer = Renderer::get();
-		if (m_swapchainDescriptorSet != NULL_RESOURCE)
-			renderer.freeDescriptorSet(m_swapchainDescriptorSet);
-		if (m_swapchainPipeline != NULL_RESOURCE)
-			renderer.destroyPipeline(m_swapchainPipeline);
-		if (m_swapchainFramebuffer != NULL_RESOURCE)
-			renderer.destroyFramebuffer(m_swapchainFramebuffer);
-		if (m_swapchainRenderProgram != NULL_RESOURCE)
-			renderer.destroyRenderProgram(m_swapchainRenderProgram);
-
 
 		m_swapchainRenderProgram = renderer.createRenderProgram()
 			.addSwapchainAttachment(m_pWindow->getSwapchainID())
@@ -53,12 +38,27 @@ namespace sa {
 
 
 		std::array<sa::Shader, 2> shaders = { m_vertexShader, m_fragmentShader };
-		m_swapchainPipeline = renderer.createGraphicsPipeline(m_swapchainPipelineLayout, shaders.data(), shaders.size(), m_swapchainRenderProgram, 0, extent);
-
-
-		std::vector<Texture> textures;
-		m_swapchainFramebuffer = renderer.createSwapchainFramebuffer(m_swapchainRenderProgram, m_pWindow->getSwapchainID(), textures);
+		sa::PipelineSettings settings = {};
+		settings.dynamicStates.push_back(sa::DynamicState::VIEWPORT);
+		m_swapchainPipeline = renderer.createGraphicsPipeline(
+			m_swapchainPipelineLayout, 
+			shaders.data(), 
+			shaders.size(), 
+			m_swapchainRenderProgram, 
+			0, 
+			m_pWindow->getCurrentExtent());
 		m_swapchainDescriptorSet = m_swapchainPipelineLayout.allocateDescriptorSet(0);
+		
+		onWindowResize(m_pWindow->getCurrentExtent());
+	}
+
+	void WindowRenderer::onWindowResize(Extent extent) {
+		auto& renderer = Renderer::get();
+		if (m_swapchainFramebuffer != NULL_RESOURCE)
+			renderer.destroyFramebuffer(m_swapchainFramebuffer);
+
+		
+		m_swapchainFramebuffer = renderer.createSwapchainFramebuffer(m_swapchainRenderProgram, m_pWindow->getSwapchainID());
 	}
 
 	void WindowRenderer::render(RenderContext& context, const Texture& texture) {
@@ -70,6 +70,10 @@ namespace sa {
 		context.beginRenderProgram(m_swapchainRenderProgram, m_swapchainFramebuffer, SubpassContents::DIRECT);
 		context.bindPipelineLayout(m_swapchainPipelineLayout);
 		context.bindPipeline(m_swapchainPipeline);
+		Rect viewport = {};
+		viewport.offset = { 0, 0 };
+		viewport.extent = m_pWindow->getCurrentExtent();
+		context.setViewport(viewport);
 		context.bindDescriptorSet(m_swapchainDescriptorSet);
 		context.draw(6, 1);
 		context.endRenderProgram(m_swapchainRenderProgram);
