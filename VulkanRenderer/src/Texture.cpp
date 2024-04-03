@@ -52,6 +52,12 @@ namespace sa {
 		return m_view != NULL_RESOURCE;
 	}
 
+	bool Texture::isSampleReady() const {
+		return isValidImage() && 
+			(m_pImage->layout == vk::ImageLayout::eShaderReadOnlyOptimal ||
+			m_pImage->layout == vk::ImageLayout::eGeneral);
+	}
+
 	void Texture::destroy() {
 		m_pCore->getDevice().waitIdle();
 		if (m_pDataTransfer) {

@@ -66,6 +66,10 @@ namespace sa {
 		return !m_textures.empty() && getTexture().isValidView();
 	}
 
+	bool DynamicTexture::isSampleReady() const {
+		return !m_textures.empty() && getTexture().isSampleReady();
+	}
+
 	void DynamicTexture::destroy() {
 		for (auto& tex : m_textures) {
 			tex.texture.destroy();

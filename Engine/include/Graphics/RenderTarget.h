@@ -40,7 +40,7 @@ namespace sa {
 		void resize(Extent extent);
 		bool wasResized() const;
 
-		bool isReady() const;
+		bool isSampleReady() const;
 
 		const Extent& getExtent() const;
 

@@ -203,7 +203,9 @@ namespace sa{
 	}
 
 	size_t FramebufferSet::getTextureCount() const {
-		return m_images.size();
+		return m_isDynamic ?
+			m_dynamicImages.size() :
+			m_images.size();
 	}
 
 	Swapchain* FramebufferSet::getSwapchain() const {

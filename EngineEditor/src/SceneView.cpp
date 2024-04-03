@@ -251,7 +251,7 @@ void SceneView::onImGui() {
 				m_displayedSize = availSize;
 			}
 		}
-		else if (m_renderTarget.isReady()) {
+		else if (m_renderTarget.isSampleReady()) {
 
 			ImGui::Image(m_renderTarget.getOutputTexture(), imAvailSize);
 			
@@ -260,8 +260,8 @@ void SceneView::onImGui() {
 				auto renderData = pForwardPlus->getRenderTargetData(m_renderTarget.getID());
 
 				if (renderData.renderDebugHeatmap) {
-					auto heatmap = renderData.debugLightHeatmap.getTexture();
-					if (heatmap.isValid()) {
+					const sa::Texture& heatmap = renderData.debugLightHeatmap.getTexture();
+					if (heatmap.isSampleReady()) {
 						ImGui::SetCursorPos(ImGui::GetWindowContentRegionMin());
 						ImGui::Image(heatmap, imAvailSize);
 					}

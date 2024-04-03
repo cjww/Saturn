@@ -227,18 +227,23 @@ int main() {
 		auto vshaderCode = sa::ReadSPVFile("Passthrough.vert.spv");
 		auto fshaderCode = sa::ReadSPVFile("Passthrough.frag.spv");
 
-		sa::ShaderSet shaderSet({ vshaderCode, fshaderCode });
+		sa::Shader shaders[2];
+		shaders[0].create(vshaderCode, sa::ShaderStageFlagBits::VERTEX);
+		shaders[1].create(fshaderCode, sa::ShaderStageFlagBits::FRAGMENT);
+
+		sa::PipelineLayout pipelineLayout;
+		pipelineLayout.createFromShaders(shaders, 2);
 
 		sa::PipelineSettings pipelineSettings = {};
 		pipelineSettings.cullMode = sa::CullModeFlagBits::BACK;
 
-		ResourceID pipeline = renderer.createGraphicsPipeline(renderProgram, 0, window.getCurrentExtent(), shaderSet, pipelineSettings);
+		ResourceID pipeline = renderer.createGraphicsPipeline(pipelineLayout, shaders, 2, renderProgram, 0, window.getCurrentExtent(), pipelineSettings);
 		
-		ResourceID sceneDescriptorSet = shaderSet.allocateDescriptorSet(0);
-		ResourceID objectDescriptorSet = shaderSet.allocateDescriptorSet(1);
+		ResourceID sceneDescriptorSet = pipelineLayout.allocateDescriptorSet(0);
+		ResourceID objectDescriptorSet = pipelineLayout.allocateDescriptorSet(1);
 
-		sa::ShaderAttribute timeAttrib = shaderSet.getShaderAttribute("object.material.time");
-		sa::ShaderAttribute colorAttrib = shaderSet.getShaderAttribute("object.material.color");
+		sa::ShaderAttribute timeAttrib = pipelineLayout.getShaderAttribute("object.material.time");
+		sa::ShaderAttribute colorAttrib = pipelineLayout.getShaderAttribute("object.material.color");
 
 		sa::Buffer vertexBuffer = renderer.createBuffer(sa::BufferType::VERTEX);
 		vertexBuffer.write(box);
@@ -338,6 +343,7 @@ int main() {
 			if (context) {
 
 				context.beginRenderProgram(renderProgram, framebuffer, sa::SubpassContents::DIRECT);
+				context.bindPipelineLayout(pipelineLayout);
 				context.bindPipeline(pipeline);
 				
 				context.bindDescriptorSet(sceneDescriptorSet);

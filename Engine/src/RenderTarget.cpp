@@ -76,10 +76,10 @@ namespace sa {
 		return m_wasResized;
 	}
 
-	bool RenderTarget::isReady() const {
+	bool RenderTarget::isSampleReady() const {
 		return
 			m_pOutputTexture != nullptr &&
-			m_pOutputTexture->isValid();
+			m_pOutputTexture->isSampleReady();
 	}
 
 	const Extent& RenderTarget::getExtent() const {

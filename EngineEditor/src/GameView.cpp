@@ -44,7 +44,7 @@ void GameView::onImGui() {
 			ImGui::EndMenuBar();
 		}
 
-		if (m_pEngine->getMainRenderTarget().isReady()) {
+		if (m_pEngine->getMainRenderTarget().isSampleReady()) {
 			// render outputTexture with constant aspect ratio
 			sa::Extent extent = m_pEngine->getMainRenderTarget().getExtent();
 			float aspect = (float)extent.height / extent.width;

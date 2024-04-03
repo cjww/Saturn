@@ -80,6 +80,8 @@ namespace sa {
 		bool isValidImage() const;
 		bool isValidView() const;
 
+		bool isSampleReady() const;
+
 		void destroy();
 
 		void swap();
