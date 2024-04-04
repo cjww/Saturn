@@ -221,7 +221,7 @@ namespace sa {
 		vk::Format getSupportedDepthFormat();
 		vk::Format getFormat(const std::vector<vk::Format>& candidates, vk::FormatFeatureFlags features, vk::ImageTiling tilling);
 		vk::Format getFormat(FormatPrecisionFlags precision, FormatDimensionFlags dimensions, FormatTypeFlags type, vk::FormatFeatureFlags features, vk::ImageTiling tilling);
-
+		
 		vk::SampleCountFlags getSupportedColorSampleCounts() const;
 		vk::SampleCountFlags getSupportedDepthSampleCounts() const;
 

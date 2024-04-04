@@ -341,7 +341,7 @@ namespace sa {
 	void RenderContext::setScissor(Rect scissor) const {
 		vk::Rect2D rect { { scissor.offset.x, scissor.offset.y }, { scissor.extent.width, scissor.extent.height } };
 
-		m_pCommandBufferSet->getBuffer().setScissorWithCount(1, &rect);
+		m_pCommandBufferSet->getBuffer().setScissor(0, 1, &rect);
 	}
 
 	void RenderContext::setViewport(Rect viewport) const {

@@ -647,6 +647,28 @@ namespace sa {
 		return (Format)m_pCore->getFormat(candidates, features, vk::ImageTiling::eOptimal);
 	}
 
+	Format Renderer::selectFormat(TextureTypeFlags textureType) const {
+		vk::FormatFeatureFlags features = (vk::FormatFeatureFlagBits)0;
+
+		if (textureType & TextureTypeFlagBits::DEPTH_ATTACHMENT) {
+			features |= vk::FormatFeatureFlagBits::eDepthStencilAttachment;
+		}
+		if (textureType & TextureTypeFlagBits::SAMPLED) {
+			features |= vk::FormatFeatureFlagBits::eSampledImage;
+		}
+		if (textureType & TextureTypeFlagBits::COLOR_ATTACHMENT) {
+			features |= vk::FormatFeatureFlagBits::eColorAttachment;
+		}
+		if (textureType & TextureTypeFlagBits::STORAGE) {
+			features |= vk::FormatFeatureFlagBits::eStorageImage;
+		}
+		if (textureType & TextureTypeFlagBits::TRANSFER_DST) {
+			features |= vk::FormatFeatureFlagBits::eTransferDst;
+		}
+
+		return (Format)m_pCore->getFormat(FormatPrecisionFlagBits::ANY_PRECISION, FormatDimensionFlagBits::ANY_DIMENSION, sa::FormatTypeFlagBits::ANY_TYPE, features, vk::ImageTiling::eOptimal);
+	}
+
 	Format Renderer::getAttachmentFormat(ResourceID renderProgram, uint32_t attachmentIndex) const {
 		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
 		vk::AttachmentDescription attachment = pRenderProgram->getAttachment(attachmentIndex);

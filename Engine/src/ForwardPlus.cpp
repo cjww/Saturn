@@ -30,7 +30,7 @@ namespace sa {
 
 		auto code = ReadSPVFile((Engine::getShaderDirectory() / "LightCulling.comp.spv").generic_string().c_str());
 		m_lightCullingLayout.createFromShaders({ code });
-		m_lightCullingShader.create({ code }, ShaderStageFlagBits::COMPUTE);
+		m_lightCullingShader.create(code, ShaderStageFlagBits::COMPUTE);
 		m_lightCullingPipeline = m_renderer.createComputePipeline(m_lightCullingShader, m_lightCullingLayout);
 		
 	}
@@ -90,36 +90,13 @@ namespace sa {
 
 		// ----------- DEBUG -------------------
 
-		data.debugLightHeatmap = DynamicTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, { data.tileCount.x, data.tileCount.y });
-		if(data.debugLightHeatmapRenderProgram == NULL_RESOURCE) {
-			data.debugLightHeatmapRenderProgram = m_renderer.createRenderProgram()
-				.addColorAttachment(AttachmentFlagBits::eClear | AttachmentFlagBits::eSampled | AttachmentFlagBits::eStore,data.debugLightHeatmap)
-				.beginSubpass()
-				.addAttachmentReference(0, SubpassAttachmentUsage::ColorTarget)
-				.endSubpass()
-				.end();
-		}
-
-		if(data.debugLightHeatmapPipeline == NULL_RESOURCE) {
-			sa::PipelineSettings settings = {};
-			settings.dynamicStates.push_back(sa::DynamicState::VIEWPORT);
-			std::array<sa::Shader, 2> shaders = { m_debugHeatmapVertexShader, m_debugHeatmapFragmentShader };
-			data.debugLightHeatmapPipeline = m_renderer.createGraphicsPipeline(
-				m_debugHeatmapLayout,
-				shaders.data(),
-				shaders.size(),
-				data.debugLightHeatmapRenderProgram,
-				0,
-				{ data.tileCount.x, data.tileCount.y },
-				settings
-			);
-		}
+		data.debugLightHeatmap = DynamicTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, { data.tileCount.x, data.tileCount.y }, m_debugTextureFormat);
 		if(data.debugLightHeatmapDescriptorSet == NULL_RESOURCE) {
 			data.debugLightHeatmapDescriptorSet = m_debugHeatmapLayout.allocateDescriptorSet(0);
 		}
 		m_renderer.updateDescriptorSet(data.debugLightHeatmapDescriptorSet, 0, data.lightIndexBuffer);
 
-		data.debugLightHeatmapFramebuffer = m_renderer.createFramebuffer(data.debugLightHeatmapRenderProgram, { data.debugLightHeatmap });
+		data.debugLightHeatmapFramebuffer = m_renderer.createFramebuffer(m_debugLightHeatmapRenderProgram, { data.debugLightHeatmap });
 		// ----------------------------------
 
 		data.isInitialized = true;
@@ -195,15 +172,39 @@ namespace sa {
 		m_debugHeatmapFragmentShader.create(sa::ReadSPVFile((Engine::getShaderDirectory() / "DebugHeatmap.frag.spv").generic_string().c_str()), ShaderStageFlagBits::FRAGMENT);
 		m_debugHeatmapLayout.createFromShaders({ m_debugHeatmapVertexShader, m_debugHeatmapFragmentShader });
 
+		m_debugTextureFormat = sa::Format::R8G8B8A8_UNORM;
+		m_debugLightHeatmapRenderProgram = m_renderer.createRenderProgram()
+			.addColorAttachment(AttachmentFlagBits::eClear | AttachmentFlagBits::eSampled | AttachmentFlagBits::eStore, m_debugTextureFormat)
+			.beginSubpass()
+			.addAttachmentReference(0, SubpassAttachmentUsage::ColorTarget)
+			.endSubpass()
+			.end();
 
+		sa::PipelineSettings settings = {};
+		settings.dynamicStates.push_back(sa::DynamicState::VIEWPORT);
+		settings.dynamicStates.push_back(sa::DynamicState::SCISSOR);
+		std::array<sa::Shader, 2> shaders = { m_debugHeatmapVertexShader, m_debugHeatmapFragmentShader };
+		m_debugLightHeatmapPipeline = m_renderer.createGraphicsPipeline(
+			m_debugHeatmapLayout,
+			shaders.data(),
+			shaders.size(),
+			m_debugLightHeatmapRenderProgram,
+			0,
+			{ 32, 32 },
+			settings
+		);
 
 		m_isInitialized = true;
 	}
 
 	void ForwardPlus::cleanup() {
 		m_lightCullingShader.destroy();
+
+		m_debugHeatmapLayout.destroy();
 		m_debugHeatmapVertexShader.destroy();
 		m_debugHeatmapFragmentShader.destroy();
+		m_renderer.destroyPipeline(m_debugLightHeatmapPipeline);
+		m_renderer.destroyRenderProgram(m_debugLightHeatmapRenderProgram);
 	}
 
 	bool ForwardPlus::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sc) {
@@ -313,17 +314,18 @@ namespace sa {
 
 		
 		if(data.renderDebugHeatmap) {
-			context.beginRenderProgram(data.debugLightHeatmapRenderProgram, data.debugLightHeatmapFramebuffer, SubpassContents::DIRECT);
+			context.beginRenderProgram(m_debugLightHeatmapRenderProgram, data.debugLightHeatmapFramebuffer, SubpassContents::DIRECT);
 			context.bindPipelineLayout(m_debugHeatmapLayout);
-			context.bindPipeline(data.debugLightHeatmapPipeline);
+			context.bindPipeline(m_debugLightHeatmapPipeline);
 			Rect vp = {};
 			vp.offset = { 0, 0 };
 			vp.extent = { data.tileCount.x, data.tileCount.y };
 			context.setViewport(vp);
+			context.setScissor(vp);
 			context.bindDescriptorSet(data.debugLightHeatmapDescriptorSet);
 			context.pushConstant(ShaderStageFlagBits::FRAGMENT, data.tileCount.x);
 			context.draw(6, 1);
-			context.endRenderProgram(data.debugLightHeatmapRenderProgram);
+			context.endRenderProgram(m_debugLightHeatmapRenderProgram);
 		}
 		
 

@@ -29,9 +29,7 @@ namespace sa {
 		ResourceID lightCullingDescriptorSet = NULL_RESOURCE;
 
 		DynamicTexture2D debugLightHeatmap;
-		ResourceID debugLightHeatmapRenderProgram = NULL_RESOURCE;
 		ResourceID debugLightHeatmapFramebuffer = NULL_RESOURCE;
-		ResourceID debugLightHeatmapPipeline = NULL_RESOURCE;
 		ResourceID debugLightHeatmapDescriptorSet = NULL_RESOURCE;
 		bool renderDebugHeatmap = false;
 
@@ -62,6 +60,10 @@ namespace sa {
 		PipelineLayout m_debugHeatmapLayout;
 		Shader m_debugHeatmapVertexShader;
 		Shader m_debugHeatmapFragmentShader;
+		Format m_debugTextureFormat;
+		ResourceID m_debugLightHeatmapRenderProgram = NULL_RESOURCE;
+		ResourceID m_debugLightHeatmapPipeline = NULL_RESOURCE;
+
 
 		ShadowRenderLayer* m_pShadowRenderLayer;
 

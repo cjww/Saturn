@@ -212,6 +212,7 @@ namespace sa {
 		SubContext createSubContext(ResourceID contextPool = NULL_RESOURCE);
 		
 		Format selectFormat(const std::vector<Format>& formatCandidates, TextureTypeFlags textureType) const;
+		Format selectFormat(TextureTypeFlags textureType) const;
 		Format getAttachmentFormat(ResourceID renderProgram, uint32_t attachmentIndex) const;
 
 	};

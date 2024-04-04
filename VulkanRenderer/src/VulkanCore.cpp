@@ -98,8 +98,7 @@ namespace sa {
 		m_validationLayers = {
 			"VK_LAYER_KHRONOS_validation",
 			"VK_LAYER_KHRONOS_synchronization2",
-			"VK_LAYER_LUNARG_monitor",
-			"VK_LAYER_GOOGLE_threading"
+			"VK_LAYER_LUNARG_monitor"
 		};
 
 		std::vector<vk::LayerProperties> layerProperties = vk::enumerateInstanceLayerProperties();
