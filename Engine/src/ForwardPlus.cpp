@@ -190,7 +190,7 @@ namespace sa {
 			shaders.size(),
 			m_debugLightHeatmapRenderProgram,
 			0,
-			{ 32, 32 },
+			{ 0, 0 },
 			settings
 		);
 
@@ -253,9 +253,12 @@ namespace sa {
 			context.bindIndexBuffer(collection.getIndexBuffer());
 
 			context.setViewport(viewport);
+			context.setScissor(viewport);
+			context.setDepthBiasEnable(false);
+			context.setDepthBias(0.0f, 0.0f, 0.0f);
+			context.setCullMode(sa::CullModeFlagBits::BACK);
 
 			context.bindDescriptorSet(collection.getSceneDescriptorSetDepthPass());
-
 
 
 			if (collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>() > 0) {

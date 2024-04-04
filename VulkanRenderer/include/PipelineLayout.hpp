@@ -14,9 +14,9 @@ namespace spirv_cross
 namespace sa {
 
 	// OBS: Will cause memory leak! This a an issue with shaderc_compiler
-	[[nodiscard]] std::vector<uint32_t> CompileGLSLFromFile(const char* glslPath, ShaderStageFlagBits shaderStage, const char* entryPointName = "main", const char* tag = "Unamned Source");
+	[[nodiscard]] std::vector<uint32_t> CompileGLSLFromFile(const char* glslPath, ShaderStageFlagBits shaderStage, const char* entryPointName, const char* additionalIncludeDirectory);
 	// OBS: Will cause memory leak! This a an issue with shaderc_compiler
-	[[nodiscard]] std::vector<uint32_t> CompileGLSLFromMemory(const char* glslCode, ShaderStageFlagBits shaderStage, const char* entryPointName = "main", const char* tag = "Unamned Source");
+	[[nodiscard]] std::vector<uint32_t> CompileGLSLFromMemory(const char* glslCode, ShaderStageFlagBits shaderStage, const char* entryPointName, const char* additionalIncludeDirectory, const char* tag = "Unamed Source");
 
 	[[nodiscard]] std::vector<uint32_t> ReadSPVFile(const char* spvPath);
 

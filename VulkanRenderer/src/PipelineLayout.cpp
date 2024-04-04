@@ -291,6 +291,14 @@ namespace sa {
 	}
 
 	class ShaderIncluder : public shaderc::CompileOptions::IncluderInterface {
+	private:
+		std::filesystem::path m_additionalIncludeDirectory;
+
+	public:
+		ShaderIncluder(const char* additionalIncludeDirectory) : shaderc::CompileOptions::IncluderInterface() {
+			m_additionalIncludeDirectory = additionalIncludeDirectory;
+		}
+
 		shaderc_include_result* GetInclude(
 			const char* requested_source,
 			shaderc_include_type type,
@@ -298,10 +306,14 @@ namespace sa {
 			size_t include_depth)
 		{
 
-			std::filesystem::path source = requested_source;
+			std::filesystem::path sourceName = requested_source;
 			std::filesystem::path includer = requesting_source;
 
-			source = includer.parent_path() / source;
+			auto source = includer.parent_path() / sourceName;
+			if (!std::filesystem::exists(source)) {
+				// check include dir
+				source =  m_additionalIncludeDirectory / sourceName;
+			}
 
 			const std::string contents = ReadFile(source.generic_string().c_str());
 
@@ -328,7 +340,7 @@ namespace sa {
 		};
 	};
 
-	std::vector<uint32_t> CompileGLSLFromFile(const char* glslPath, ShaderStageFlagBits shaderStage, const char* entryPointName, const char* tag) {
+	std::vector<uint32_t> CompileGLSLFromFile(const char* glslPath, ShaderStageFlagBits shaderStage, const char* entryPointName, const char* additionalIncludeDirectory) {
 		std::ifstream file(glslPath, std::ios::in);
 		if (!file.is_open()) {
 			throw std::runtime_error("Failed to open file " + std::string(glslPath));
@@ -345,15 +357,15 @@ namespace sa {
 
 		file.close();
 
-		return CompileGLSLFromMemory(buffer.c_str(), shaderStage, entryPointName, tag);
+		return CompileGLSLFromMemory(buffer.c_str(), shaderStage, entryPointName, additionalIncludeDirectory, glslPath);
 	}
 
-	std::vector<uint32_t> CompileGLSLFromMemory(const char* glslCode, ShaderStageFlagBits shaderStage, const char* entryPointName, const char* tag) {
+	std::vector<uint32_t> CompileGLSLFromMemory(const char* glslCode, ShaderStageFlagBits shaderStage, const char* entryPointName, const char* additionalIncludeDirectory, const char* tag) {
 		shaderc::CompileOptions options;
 		options.SetAutoBindUniforms(true);
 		options.SetAutoMapLocations(true);
 		options.SetTargetEnvironment(shaderc_target_env_vulkan, SA_VK_API_VERSION);
-		options.SetIncluder(std::make_unique<ShaderIncluder>());
+		options.SetIncluder(std::make_unique<ShaderIncluder>(additionalIncludeDirectory));
 
 		shaderc::Compiler compiler;
 		shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(glslCode, ToShadercKind(shaderStage), tag, entryPointName, options);
@@ -750,4 +762,5 @@ namespace sa {
 	ResourceID PipelineLayout::getLayoutID() const {
 		return m_layout;
 	}
+	
 }

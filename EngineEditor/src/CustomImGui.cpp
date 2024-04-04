@@ -700,6 +700,7 @@ namespace ImGui {
 	bool MaterialShaderProperties(sa::Asset* pAsset) {
 		sa::MaterialShader* pMaterialShader = static_cast<sa::MaterialShader*>(pAsset);
 		ImVec2 size = ImGui::GetContentRegionAvail();
+		static std::string errorMsg;
 
 		if (ImGui::BeginListBox("Source Files", ImVec2(size.x, 0.0f))) {
 			int i = 0;
@@ -771,7 +772,20 @@ namespace ImGui {
 		}
 
 		if (ImGui::Button("Compile")) {
-			pMaterialShader->compileSource();
+			try {
+				errorMsg.clear();
+				pMaterialShader->compileSource();
+			}
+			catch (const std::exception& e) {
+				SA_DEBUG_LOG_ERROR(e.what());
+				errorMsg = e.what();
+			}
+		}
+
+		if (!errorMsg.empty()) {
+			ImGui::PushStyleColor(ImGuiCol_Text, IMGUI_COLOR_ERROR_RED);
+			ImGui::Text("Error: %s", errorMsg.c_str());
+			ImGui::PopStyleColor();
 		}
 
 

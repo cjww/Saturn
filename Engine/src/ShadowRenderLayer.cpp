@@ -32,23 +32,29 @@ namespace sa {
 				continue;
 			}
 
-			// TODO: Can I copy materialshader pipeline, but with custom extent? PS. maybe binding shaders
-			context.bindPipelineLayout(m_pipelineLayout);
-			context.bindPipeline(m_depthPipeline);
+			if (!collection.arePipelinesReady()) {
+				continue;
+			}
+
+			collection.bindDepthPipeline(context);
 			context.bindDescriptorSet(collection.getSceneDescriptorSetDepthPass());
 
 			context.bindVertexBuffers(0, { collection.getVertexBuffer() });
 			context.bindIndexBuffer(collection.getIndexBuffer());
 
-			Rect viewPort = {};
-			viewPort.extent = Renderer::get().getFramebufferExtent(framebuffer);
-			viewPort.offset = { 0, 0 };
+			Rect viewport = {};
+			viewport.extent = Renderer::get().getFramebufferExtent(framebuffer);
+			viewport.offset = { 0, 0 };
 			
-			context.setViewport(viewPort);
+			context.setViewport(viewport);
+			context.setScissor(viewport);
+
 			context.setDepthBiasEnable(true);
 			const auto& prefs = getPreferences();
 			context.setDepthBias(prefs.depthBiasConstant, 0.0f, prefs.depthBiasSlope);
 
+			context.setCullMode(sa::CullModeFlagBits::FRONT);
+			
 			SceneCamera camera;
 			camera.setAspectRatio(1.f);
 			camera.setNear(prefs.depthNear);
@@ -101,26 +107,6 @@ namespace sa {
 			.addAttachmentReference(0, SubpassAttachmentUsage::DepthTarget)
 			.endSubpass()
 			.end();
-
-
-		m_vertexShader.create(
-		sa::ReadSPVFile((Engine::getShaderDirectory() / "ShadowPass.vert.spv").generic_string().c_str()),
-			ShaderStageFlagBits::VERTEX);
-
-		m_pipelineLayout.createFromShaders({ m_vertexShader });
-
-		PipelineSettings settings = {};
-		settings.dynamicStates.push_back(DynamicState::VIEWPORT);
-		settings.dynamicStates.push_back(DynamicState::DEPTH_BIAS);
-		settings.dynamicStates.push_back(DynamicState::DEPTH_BIAS_ENABLE);
-		settings.cullMode = CullModeFlagBits::FRONT;
-		
-		ShadowPreferences& prefs = getPreferences();
-		prefs.directionalResolution = 526;
-
-		
-		m_depthPipeline = m_renderer.createGraphicsPipeline(m_pipelineLayout,
-			&m_vertexShader, 1, m_depthRenderProgram, 0,{ prefs.directionalResolution, prefs.directionalResolution }, settings);
 	
 		m_shadowShaderDataBuffer = m_renderer.createDynamicBuffer(BufferType::STORAGE);
 		m_shadowTextureCount = 0;
@@ -130,13 +116,6 @@ namespace sa {
 		if (m_depthRenderProgram != NULL_RESOURCE) {
 			m_renderer.destroyRenderProgram(m_depthRenderProgram);
 			m_depthRenderProgram = NULL_RESOURCE;
-		}
-		if (m_depthPipeline != NULL_RESOURCE) {
-			m_renderer.destroyPipeline(m_depthPipeline);
-			m_depthPipeline = NULL_RESOURCE;
-		}
-		if (m_vertexShader.isValid()) {
-			m_vertexShader.destroy();
 		}
 	}
 	

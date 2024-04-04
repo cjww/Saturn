@@ -13,14 +13,14 @@ namespace sa {
 
 	class MaterialShader : public Asset {
 	private:
-		friend class MaterialShaderCollection;
-
 		std::vector<ShaderSourceFile> m_sourceFiles;
 		
 		std::vector<std::vector<uint32_t>> m_code;
 		std::vector<Shader> m_shaders;
 		PipelineLayout m_colorPipelineLayout;
 		PipelineLayout m_depthPipelineLayout;
+		ResourceID m_depthPipeline = NULL_RESOURCE;
+		ResourceID m_colorPipeline = NULL_RESOURCE;
 
 
 		bool m_recompiled = false;
@@ -33,7 +33,15 @@ namespace sa {
 
 		void create();
 
-		
+		void recreatePipelines(ResourceID colorRenderProgram, ResourceID depthRenderProgram);
+		bool arePipelinesReady() const;
+
+		void bindDepthPipeline(RenderContext& context) const;
+		void bindColorPipeline(RenderContext& context) const;
+
+		PipelineLayout& getDepthPipelineLayout();
+		PipelineLayout& getColorPipelineLayout();
+
 		const std::vector<ShaderSourceFile>& getShaderSourceFiles() const;
 		std::vector<sa::ShaderSourceFile>& getShaderSourceFiles();
 

@@ -396,6 +396,10 @@ namespace sa {
 		m_pCommandBufferSet->getBuffer().setRasterizerDiscardEnable(enable);
 	}
 
+	void RenderContext::setCullMode(CullModeFlags cullMode) const {
+		m_pCommandBufferSet->getBuffer().setCullMode(static_cast<vk::CullModeFlags>(cullMode));
+	}
+
 	void RenderContext::draw(uint32_t vertexCount, uint32_t instanceCount, uint32_t firstVertex, uint32_t firstInstance) const {
 		m_pCommandBufferSet->getBuffer().draw(vertexCount, instanceCount, firstVertex, firstInstance);
 	}

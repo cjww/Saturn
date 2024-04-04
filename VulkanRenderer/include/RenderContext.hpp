@@ -145,6 +145,7 @@ namespace sa {
 		void setPrimitiveRestartEnable(bool enable) const;
 		void setRasterizerDiscardEnable(bool enable) const;
 
+		void setCullMode(CullModeFlags cullMode) const;
 		/*
 		void setRasterizerDiscardEnable() const;
 		void setColorBlend() const;

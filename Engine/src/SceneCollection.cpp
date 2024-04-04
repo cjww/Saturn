@@ -113,12 +113,12 @@ namespace sa {
 		if (!pMaterialShader || !pMaterialShader->isLoaded())
 			return false;
 
-		if (m_sceneDescriptorSetColorPass == NULL_RESOURCE || !pMaterialShader->m_colorPipelineLayout.hasAllocatedDescriptorSet(m_sceneDescriptorSetColorPass)) {
-			m_sceneDescriptorSetColorPass = pMaterialShader->m_colorPipelineLayout.allocateDescriptorSet(SET_PER_FRAME);
+		if (m_sceneDescriptorSetColorPass == NULL_RESOURCE || !pMaterialShader->getColorPipelineLayout().hasAllocatedDescriptorSet(m_sceneDescriptorSetColorPass)) {
+			m_sceneDescriptorSetColorPass = pMaterialShader->getColorPipelineLayout().allocateDescriptorSet(SET_PER_FRAME);
 		}
 
-		if (m_sceneDescriptorSetDepthPass == NULL_RESOURCE || !pMaterialShader->m_depthPipelineLayout.hasAllocatedDescriptorSet(m_sceneDescriptorSetDepthPass)) {
-			m_sceneDescriptorSetDepthPass = pMaterialShader->m_depthPipelineLayout.allocateDescriptorSet(SET_PER_FRAME);
+		if (m_sceneDescriptorSetDepthPass == NULL_RESOURCE || !pMaterialShader->getDepthPipelineLayout().hasAllocatedDescriptorSet(m_sceneDescriptorSetDepthPass)) {
+			m_sceneDescriptorSetDepthPass = pMaterialShader->getDepthPipelineLayout().allocateDescriptorSet(SET_PER_FRAME);
 		}
 
 		if (!m_updatedDescriptorSets) {
@@ -140,59 +140,25 @@ namespace sa {
 		const auto pMaterialShader = getMaterialShader();
 		if (!pMaterialShader)
 			return;
-		if (extent == m_currentExtent && !pMaterialShader->m_recompiled)
-			return;
 
-		PipelineSettings settings = {};
-		settings.dynamicStates.push_back(sa::VIEWPORT);
+		pMaterialShader->recreatePipelines(colorRenderProgram, depthRenderProgram);
 
-		auto& renderer = Renderer::get();
-		if (m_colorPipeline != NULL_RESOURCE) {
-			renderer.destroyPipeline(m_colorPipeline);
-		}
-		if (m_depthPipeline != NULL_RESOURCE) {
-			renderer.destroyPipeline(m_depthPipeline);
-		}
-
-		m_colorPipeline = renderer.createGraphicsPipeline(
-			pMaterialShader->m_colorPipelineLayout, 
-			pMaterialShader->m_shaders.data(),
-			pMaterialShader->m_shaders.size(),
-			colorRenderProgram, 
-			0, 
-			extent, 
-			settings);
-		m_depthPipeline = renderer.createGraphicsPipeline(
-			pMaterialShader->m_depthPipelineLayout, 
-			&pMaterialShader->m_shaders[0],
-			1,
-			depthRenderProgram, 
-			0, 
-			extent, 
-			settings);
 		m_currentExtent = extent;
-
-		pMaterialShader->m_recompiled = false;
 	}
 
 	bool MaterialShaderCollection::arePipelinesReady() const {
 		const auto pMaterialShader = getMaterialShader();
 		if (!pMaterialShader)
 			return false;
-		if (pMaterialShader->m_recompiled || m_colorPipeline == NULL_RESOURCE || m_depthPipeline == NULL_RESOURCE)
-			return false;
-
-		return true;
+		return pMaterialShader->arePipelinesReady();
 	}
 
 	void MaterialShaderCollection::bindColorPipeline(RenderContext& context) {
-		context.bindPipelineLayout(getMaterialShader()->m_colorPipelineLayout);
-		context.bindPipeline(m_colorPipeline);
+		getMaterialShader()->bindColorPipeline(context);
 	}
 
 	void MaterialShaderCollection::bindDepthPipeline(RenderContext& context) {
-		context.bindPipelineLayout(getMaterialShader()->m_depthPipelineLayout);
-		context.bindPipeline(m_depthPipeline);
+		getMaterialShader()->bindDepthPipeline(context);
 	}
 
 	

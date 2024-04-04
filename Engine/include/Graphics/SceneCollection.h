@@ -58,8 +58,6 @@ namespace sa {
 		ResourceID m_sceneDescriptorSetColorPass = NULL_RESOURCE;
 		ResourceID m_sceneDescriptorSetDepthPass = NULL_RESOURCE;
 
-		ResourceID m_colorPipeline = NULL_RESOURCE;
-		ResourceID m_depthPipeline = NULL_RESOURCE;
 		Extent m_currentExtent;
 
 		bool m_updatedDescriptorSets;
