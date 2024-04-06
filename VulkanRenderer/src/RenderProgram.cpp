@@ -108,8 +108,10 @@ namespace sa {
 
 		for (size_t i = 0; i < framebuffer->getTextureCount(); i++) {
 			const sa::Texture& tex = framebuffer->getTexture(i);
-			sa::DeviceImage* pImage = tex;
-			pImage->layout = m_attachments.at(i).finalLayout;
+			if (tex.isValidImage()) {
+				sa::DeviceImage* pImage = tex;
+				pImage->layout = m_attachments.at(i).finalLayout;
+			}
 		}
 
 		cmd->getBuffer().beginRenderPass(info, contents);

@@ -158,6 +158,7 @@ namespace sa {
 		ResourceID createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<DynamicTexture>& additionalAttachmentTextures, uint32_t layers = 1ui32);
 
 		ResourceID createFramebuffer(ResourceID renderProgram, const std::vector<Texture>& attachmentTextures, uint32_t layers = 1ui32);
+		ResourceID createFramebuffer(ResourceID renderProgram, const std::vector<Texture>& attachmentTextures, Extent extent, uint32_t layers = 1ui32);
 		ResourceID createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<Texture>& additionalAttachmentTextures, uint32_t layers = 1ui32);
 
 		ResourceID createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, uint32_t layers = 1ui32);
@@ -213,6 +214,8 @@ namespace sa {
 		
 		Format selectFormat(const std::vector<Format>& formatCandidates, TextureTypeFlags textureType) const;
 		Format selectFormat(TextureTypeFlags textureType) const;
+		Format selectFormat(FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, TextureTypeFlags textureType) const;
+
 		Format getAttachmentFormat(ResourceID renderProgram, uint32_t attachmentIndex) const;
 
 	};

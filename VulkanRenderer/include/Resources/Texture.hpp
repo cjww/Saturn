@@ -29,6 +29,16 @@ namespace sa {
 		INPUT_ATTACHMENT = 128,
 	};
 
+	enum TextureViewType {
+		VIEW_TYPE_1D,
+		VIEW_TYPE_2D,
+		VIEW_TYPE_3D,
+		VIEW_TYPE_CUBE,
+		VIEW_TYPE_1D_ARRAY,
+		VIEW_TYPE_2D_ARRAY,
+		VIEW_TYPE_CUBE_ARRAY
+	};
+
 	class Texture {
 	protected:
 		VulkanCore* m_pCore;
@@ -41,6 +51,11 @@ namespace sa {
 		TextureTypeFlags m_type;
 		
 		Texture(VulkanCore* pCore);
+
+
+		ResourceID createImageView(TextureViewType viewType, uint32_t mipLevels, uint32_t baseMipLevel, uint32_t layers, uint32_t baseArrayLevel);
+		
+
 	public:
 		Texture();
 
@@ -48,6 +63,9 @@ namespace sa {
 		virtual uint32_t getDepth() const;
 		vk::ImageView* getView() const;
 		TextureTypeFlags getTypeFlags() const;
+
+		uint32_t getArrayLayerCount() const;
+		uint32_t getMipLevelCount() const;
 		
 		operator const DeviceImage* () const {
 			return m_pImage;
@@ -78,8 +96,6 @@ namespace sa {
 	private:
 		
 		void create(TextureTypeFlags type, Extent extent, uint32_t sampleCount, uint32_t mipLevels, uint32_t arrayLayers);
-		void create(TextureTypeFlags type, Extent extent,
-			FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, uint32_t sampleCount, uint32_t mipLevels, uint32_t arrayLayers);
 		void create(TextureTypeFlags type, Extent extent, Swapchain* pSwapchain, uint32_t sampleCount);
 		void create(TextureTypeFlags type, Extent extent, Format format, uint32_t sampleCount, uint32_t mipLevels, uint32_t arrayLayers);
 
@@ -89,9 +105,6 @@ namespace sa {
 
 	public:
 		Texture2D(TextureTypeFlags type, Extent extent, uint32_t sampleCount = 1, uint32_t mipLevels = 1, uint32_t arrayLayers = 1);
-		Texture2D(TextureTypeFlags type, Extent extent,
-			FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, uint32_t sampleCount = 1, uint32_t mipLevels = 1, uint32_t arrayLayers = 1);
-
 		Texture2D(TextureTypeFlags type, Extent extent, Format format, uint32_t sampleCount = 1, uint32_t mipLevels = 1, uint32_t arrayLayers = 1);
 
 		Texture2D(const Image& image, bool generateMipmaps);
@@ -101,16 +114,21 @@ namespace sa {
 		Texture2D& operator=(const Texture2D&) = default;
 		
 		std::vector<Texture2D> createMipLevelTextures();
+		void createMipLevelTextures(uint32_t* count, Texture2D* pTextures);
+
+		std::vector<Texture2D> createArrayLayerTextures();
+		void createArrayLayerTextures(uint32_t* count, Texture2D* pTextures);
+
 
 	};
 
 	class TextureCube : public Texture {
 	private:
-		void create(TextureTypeFlags type, Extent extent, uint32_t sampleCount, uint32_t mipLevels);
+		void create(TextureTypeFlags type, Extent extent, uint32_t sampleCount, uint32_t mipLevels, Format format);
 		
 	public:
-		TextureCube(const Image& image, bool generateMipmaps);
-		TextureCube(const std::vector<Image>& images, bool generateMipmaps);
+		TextureCube(const Image& image, bool generateMipmaps, Format format);
+		TextureCube(const std::vector<Image>& images, bool generateMipmaps, Format format);
 		TextureCube();
 
 		TextureCube(const TextureCube&) = default;
@@ -119,11 +137,9 @@ namespace sa {
 
 	class Texture3D : public Texture {
 	private:
-		void create(TextureTypeFlags type, Extent3D extent, uint32_t sampleCount, uint32_t mipLevels, FormatPrecisionFlags formatPrecisions, FormatDimensionFlags formatDimensions, FormatTypeFlags formatTypes);
-		
-
+		void create(TextureTypeFlags type, Extent3D extent, uint32_t sampleCount, uint32_t mipLevels, Format format);
 	public:
-		Texture3D(TextureTypeFlags type, Extent3D extent, uint32_t sampleCount, uint32_t mipLevels, FormatPrecisionFlags formatPrecisions, FormatDimensionFlags formatDimensions, FormatTypeFlags formatTypes);
+		Texture3D(TextureTypeFlags type, Extent3D extent, uint32_t sampleCount, uint32_t mipLevels, Format format);
 		Texture3D();
 
 		Texture3D(const Texture3D&) = default;

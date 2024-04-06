@@ -7,9 +7,10 @@
 namespace sa {
 
 	struct ShadowRenderData {
-		std::array<Texture2D, 4> depthTextures;
-		uint8_t depthTextureCount;
-		ResourceID depthFramebuffer = NULL_RESOURCE;
+		Texture2D depthTexture;
+		std::array<Texture2D, 6> depthTextureLayers;
+
+		std::array<ResourceID, 6> depthFramebuffers = { NULL_RESOURCE };
 	
 		bool isInitialized = false;
 	};
@@ -45,7 +46,7 @@ namespace sa {
 		void initializeRenderData(ShadowRenderData& data);
 
 		
-		void renderShadowMap(RenderContext& context, const glm::vec3& origin, ShadowData& data, ResourceID framebuffer, SceneCollection& sceneCollection);
+		void renderShadowMap(RenderContext& context, const glm::vec3& origin, ShadowData& data, const ShadowRenderData& renderData, SceneCollection& sceneCollection);
 		
 	public:
 

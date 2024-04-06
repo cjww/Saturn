@@ -209,13 +209,20 @@ namespace sa {
 		if (attachmentTextures.empty())
 			throw std::runtime_error("At least one attachmnet is required to create a framebuffer");
 
+		return createFramebuffer(renderProgram, attachmentTextures, attachmentTextures[0].getExtent(), layers);
+	}
+
+	ResourceID Renderer::createFramebuffer(ResourceID renderProgram, const std::vector<Texture>& attachmentTextures, Extent extent, uint32_t layers) {
+		if (attachmentTextures.empty())
+			throw std::runtime_error("At least one attachmnet is required to create a framebuffer");
+
 		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
 
 		return ResourceManager::get().insert<FramebufferSet>(
 			m_pCore.get(),
 			pRenderProgram->getRenderPass(),
 			attachmentTextures,
-			attachmentTextures[0].getExtent(),
+			extent,
 			layers);
 	}
 
@@ -648,6 +655,14 @@ namespace sa {
 	}
 
 	Format Renderer::selectFormat(TextureTypeFlags textureType) const {
+		return selectFormat(
+			FormatPrecisionFlagBits::ANY_PRECISION, 
+			FormatDimensionFlagBits::ANY_DIMENSION, 
+			sa::FormatTypeFlagBits::ANY_TYPE, 
+			textureType);
+	}
+
+	Format Renderer::selectFormat(FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, TextureTypeFlags textureType) const {
 		vk::FormatFeatureFlags features = (vk::FormatFeatureFlagBits)0;
 
 		if (textureType & TextureTypeFlagBits::DEPTH_ATTACHMENT) {
@@ -666,7 +681,13 @@ namespace sa {
 			features |= vk::FormatFeatureFlagBits::eTransferDst;
 		}
 
-		return (Format)m_pCore->getFormat(FormatPrecisionFlagBits::ANY_PRECISION, FormatDimensionFlagBits::ANY_DIMENSION, sa::FormatTypeFlagBits::ANY_TYPE, features, vk::ImageTiling::eOptimal);
+		return (Format)m_pCore->getFormat(
+			precisions, 
+			dimensions, 
+			types, 
+			features, 
+			vk::ImageTiling::eOptimal);
+
 	}
 
 	Format Renderer::getAttachmentFormat(ResourceID renderProgram, uint32_t attachmentIndex) const {

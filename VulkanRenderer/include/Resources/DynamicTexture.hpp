@@ -101,9 +101,6 @@ namespace sa {
 		DynamicTexture2D();
 
 		DynamicTexture2D(TextureTypeFlags type, Extent extent, uint32_t sampleCount = 1, uint32_t mipLevels = 1);
-		DynamicTexture2D(TextureTypeFlags type, Extent extent,
-			FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, uint32_t sampleCount = 1, uint32_t mipLevels = 1);
-
 		DynamicTexture2D(TextureTypeFlags type, Extent extent, Format format, uint32_t sampleCount = 1, uint32_t mipLevels = 1);
 
 		operator const Texture2D() const;

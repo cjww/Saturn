@@ -102,7 +102,7 @@ namespace sa{
 			framebufferViews[i][0] = swapchainViews[i];
 			for (uint32_t j = 1; j < (uint32_t)framebufferViews[i].size(); j++) {
 				auto& texture = images[j - 1].getTexture(i);
-				if (extent.width != texture.getExtent().width || extent.height != texture.getExtent().height) {
+				if (texture.isValidImage() && (extent.width != texture.getExtent().width || extent.height != texture.getExtent().height)) {
 					throw std::runtime_error("All attachments must be of the same size");
 				}
 				framebufferViews[i][j] = *texture.getView();
@@ -123,7 +123,7 @@ namespace sa{
 		std::vector<std::vector<vk::ImageView>> framebufferViews(pCore->getQueueCount());
 		for (uint32_t i = 0; i < (uint32_t)framebufferViews.size(); i++) {
 			for (auto& texture : images) {
-				if (extent.width != texture.getExtent().width || extent.height != texture.getExtent().height) {
+				if (texture.isValidImage() && (extent.width != texture.getExtent().width || extent.height != texture.getExtent().height)) {
 					throw std::runtime_error("All attachments must be of the same size");
 				}
 				framebufferViews[i].push_back(*texture.getView());

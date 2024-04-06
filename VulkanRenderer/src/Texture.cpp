@@ -20,6 +20,23 @@ namespace sa {
 	{
 	}
 
+	ResourceID Texture::createImageView(TextureViewType viewType, uint32_t mipLevels, uint32_t baseMipLevel, uint32_t layers, uint32_t baseArrayLevel) {
+		vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
+		if (m_type & TextureTypeFlagBits::DEPTH_ATTACHMENT) {
+			aspect = vk::ImageAspectFlagBits::eDepth;
+		}
+		return ResourceManager::get().insert<vk::ImageView>(m_pCore->createImageView(
+			(vk::ImageViewType)viewType,
+			m_pImage->image,
+			m_pImage->format,
+			aspect,
+			mipLevels,
+			baseMipLevel,
+			layers,
+			baseArrayLevel
+		));
+	}
+
 	Texture::Texture() : Texture(Renderer::get().m_pCore.get()) {
 
 	}
@@ -38,6 +55,14 @@ namespace sa {
 
 	TextureTypeFlags Texture::getTypeFlags() const {
 		return m_type;
+	}
+
+	uint32_t Texture::getArrayLayerCount() const {
+		return m_pImage->arrayLayers;
+	}
+
+	uint32_t Texture::getMipLevelCount() const {
+		return m_pImage->mipLevels;
 	}
 
 	bool Texture::isValid() const {
@@ -96,13 +121,6 @@ namespace sa {
 		create(type, extent, sampleCount, mipLevels, arrayLayers);
 	}
 
-	Texture2D::Texture2D(TextureTypeFlags type, Extent extent, FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, uint32_t sampleCount, uint32_t mipLevels, uint32_t arrayLayers)
-		: Texture()
-	{
-		m_type = type;
-		create(type, extent, precisions, dimensions, types, sampleCount, mipLevels, arrayLayers);
-	}
-
 	Texture2D::Texture2D(TextureTypeFlags type, Extent extent, Format format, uint32_t sampleCount, uint32_t mipLevels, uint32_t arrayLayers) {
 		m_type = type;
 		create(type, extent, format, sampleCount, mipLevels, arrayLayers);
@@ -128,10 +146,12 @@ namespace sa {
 
 		create(
 			m_type, 
-			image.getExtent(), 
-			sa::FormatPrecisionFlagBits::e8Bit, 
-			sa::FormatDimensionFlagBits::e4, 
-			sa::FormatTypeFlagBits::ANY_TYPE, 
+			image.getExtent(),
+			Renderer::get().selectFormat(
+				sa::FormatPrecisionFlagBits::e8Bit, 
+				sa::FormatDimensionFlagBits::e4, 
+				sa::FormatTypeFlagBits::ANY_TYPE,
+				m_type),
 			1, 
 			mipLevels,
 			1);
@@ -163,22 +183,49 @@ namespace sa {
 		assert(m_pImage && "This is not a full texture");
 		std::vector<Texture2D> textures(m_pImage->mipLevels);
 
-		vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
-		if (m_type & TextureTypeFlagBits::DEPTH_ATTACHMENT) {
-			aspect = vk::ImageAspectFlagBits::eDepth;
+		for (uint32_t i = 0; i < textures.size(); i++) {
+			textures[i] = Texture2D(createImageView(TextureViewType::VIEW_TYPE_2D, 1, i, 1, 0));
+			textures[i].m_type = m_type;
 		}
 
+		return textures;
+	}
+
+	void Texture2D::createMipLevelTextures(uint32_t* count, Texture2D* pTextures) {
+		assert(m_pImage && "This is not a full texture");
+
+		*count = getMipLevelCount();
+		if (!pTextures) {
+			return;
+		}
+
+		for (uint32_t i = 0; i < *count; i++) {
+			pTextures[i] = Texture2D(createImageView(TextureViewType::VIEW_TYPE_2D, 1, i, 1, 0));
+			pTextures[i].m_type = m_type;
+		}
+	}
+
+	void Texture2D::createArrayLayerTextures(uint32_t* count, Texture2D* pTextures) {
+		assert(m_pImage && "This is not a full texture");
+
+		*count = getArrayLayerCount();
+		if (!pTextures) {
+			return;
+		}
+
+		for (uint32_t i = 0; i < *count; i++) {
+			pTextures[i] = Texture2D(createImageView(TextureViewType::VIEW_TYPE_2D, 1, 0, 1, i));
+			pTextures[i].m_type = m_type;
+		}
+
+	}
+
+	std::vector<Texture2D> Texture2D::createArrayLayerTextures() {
+		assert(m_pImage && "This is not a full texture");
+		std::vector<Texture2D> textures(m_pImage->arrayLayers);
+
 		for (uint32_t i = 0; i < textures.size(); i++) {
-			textures[i] = Texture2D(ResourceManager::get().insert<vk::ImageView>(m_pCore->createImageView(
-				vk::ImageViewType::e2D,
-				m_pImage->image,
-				m_pImage->format,
-				aspect,
-				1,
-				i,
-				1,
-				0
-			)));
+			textures[i] = Texture2D(createImageView(TextureViewType::VIEW_TYPE_2D, 1, 0, 1, i));
 			textures[i].m_type = m_type;
 		}
 
@@ -191,32 +238,12 @@ namespace sa {
 		vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
 
 		vk::Format format = vk::Format::eUndefined;
-		vk::FormatFeatureFlags features;
 		if (type & TextureTypeFlagBits::DEPTH_ATTACHMENT) {
-			features |= vk::FormatFeatureFlagBits::eDepthStencilAttachment;
 			aspect = vk::ImageAspectFlagBits::eDepth;// | vk::ImageAspectFlagBits::eStencil;
 			format = m_pCore->getDefaultDepthFormat();
 		}
 		else {
-			if (type & TextureTypeFlagBits::SAMPLED) {
-				features |= vk::FormatFeatureFlagBits::eSampledImage;
-			}
-			if (type & TextureTypeFlagBits::COLOR_ATTACHMENT) {
-				features |= vk::FormatFeatureFlagBits::eColorAttachment;
-			}
-			if (type & TextureTypeFlagBits::STORAGE) {
-				features |= vk::FormatFeatureFlagBits::eStorageImage;
-			}
-			if (type & TextureTypeFlagBits::TRANSFER_DST) {
-				features |= vk::FormatFeatureFlagBits::eTransferDst;
-			}
-
-			format = m_pCore->getFormat(
-				FormatPrecisionFlagBits::ANY_PRECISION,
-				FormatDimensionFlagBits::ANY_DIMENSION,
-				FormatTypeFlagBits::ANY_TYPE,
-				features,
-				vk::ImageTiling::eOptimal);
+			format = (vk::Format)Renderer::get().selectFormat(type);
 		}
 		extent = { std::max(extent.width, 1U), std::max(extent.height, 1U) };
 		mipLevels = std::min(mipLevels, (uint32_t)floor(log2(std::max(extent.width, extent.height))) + 1);
@@ -231,69 +258,14 @@ namespace sa {
 			arrayLayers
 		);
 
+		vk::ImageViewType viewType = vk::ImageViewType::e2D;
+		if (arrayLayers > 1) {
+			viewType = vk::ImageViewType::e2DArray;
+		}
+
 
 		m_view = ResourceManager::get().insert<vk::ImageView>(m_pCore->createImageView(
-			vk::ImageViewType::e2D,
-			m_pImage->image,
-			format,
-			aspect,
-			mipLevels,
-			0,
-			arrayLayers,
-			0
-		));
-
-	}
-
-	void Texture2D::create(TextureTypeFlags type, Extent extent, FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, uint32_t sampleCount, uint32_t mipLevels, uint32_t arrayLayers) {
-		vk::ImageUsageFlags usage = (vk::ImageUsageFlags)type;
-		vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
-
-		vk::Format format = vk::Format::eUndefined;
-		vk::FormatFeatureFlags features;
-		if (type & TextureTypeFlagBits::DEPTH_ATTACHMENT) {
-			features |= vk::FormatFeatureFlagBits::eDepthStencilAttachment;
-			aspect = vk::ImageAspectFlagBits::eDepth;
-		}
-		if(type & TextureTypeFlagBits::SAMPLED) {
-			features |= vk::FormatFeatureFlagBits::eSampledImage;
-		}
-		if (type & TextureTypeFlagBits::COLOR_ATTACHMENT) {
-			features |= vk::FormatFeatureFlagBits::eColorAttachment;
-		}
-		if (type & TextureTypeFlagBits::STORAGE) {
-			features |= vk::FormatFeatureFlagBits::eStorageImage;
-		}
-		if (type & TextureTypeFlagBits::TRANSFER_DST) {
-			features |= vk::FormatFeatureFlagBits::eTransferDst;
-		}
-
-		format = m_pCore->getFormat(precisions, dimensions, types, 
-			features, vk::ImageTiling::eOptimal);
-		if (format == vk::Format::eUndefined) {
-			SA_DEBUG_LOG_WARNING("No supported format found, using default format");
-			if (aspect == vk::ImageAspectFlagBits::eColor) {
-				format = m_pCore->getDefaultColorFormat();
-			}
-			else {
-				format = m_pCore->getDefaultDepthFormat();
-			}
-		}
-		extent = { std::max(extent.width, 1U), std::max(extent.height, 1U) };
-		mipLevels = std::min(mipLevels, (uint32_t)floor(log2(std::max(extent.width, extent.height))) + 1);
-
-		SA_DEBUG_LOG_INFO("Created 2D texture\nExtent: { w:", extent.width, " h:", extent.height, "}\nFormat: ", vk::to_string(format), "\nSampleCount: ", sampleCount);
-		m_pImage = m_pCore->createImage2D(
-			extent,
-			format,
-			usage,
-			(vk::SampleCountFlagBits)sampleCount,
-			mipLevels,
-			arrayLayers
-		);
-
-		m_view = ResourceManager::get().insert<vk::ImageView>(m_pCore->createImageView(
-			vk::ImageViewType::e2D,
+			viewType,
 			m_pImage->image,
 			format,
 			aspect,
@@ -325,8 +297,14 @@ namespace sa {
 			arrayLayers
 		);
 
+
+		vk::ImageViewType viewType = vk::ImageViewType::e2D;
+		if (arrayLayers > 1) {
+			viewType = vk::ImageViewType::e2DArray;
+		}
+
 		m_view = ResourceManager::get().insert<vk::ImageView>(m_pCore->createImageView(
-			vk::ImageViewType::e2D,
+			viewType,
 			m_pImage->image,
 			(vk::Format)format,
 			aspect,
@@ -354,7 +332,6 @@ namespace sa {
 			1
 		);
 
-
 		m_view = ResourceManager::get().insert<vk::ImageView>(m_pCore->createImageView(
 			vk::ImageViewType::e2D,
 			m_pImage->image,
@@ -368,7 +345,7 @@ namespace sa {
 
 	}
 
-	void TextureCube::create(TextureTypeFlags type, Extent extent, uint32_t sampleCount, uint32_t mipLevels) {
+	void TextureCube::create(TextureTypeFlags type, Extent extent, uint32_t sampleCount, uint32_t mipLevels, Format format) {
 
 		vk::ImageUsageFlags usage = (vk::ImageUsageFlags)type;
 		vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
@@ -377,13 +354,12 @@ namespace sa {
 			usage |= vk::ImageUsageFlagBits::eTransferSrc;
 		}
 
-		vk::Format format = m_pCore->getDefaultColorFormat();
 		extent = { std::max(extent.width, 1U), std::max(extent.height, 1U) };
 		mipLevels = std::min(mipLevels, (uint32_t)floor(log2(std::max(extent.width, extent.height))) + 1);
 
 		m_pImage = m_pCore->createImage2D(
 			extent,
-			format,
+			(vk::Format)format,
 			usage,
 			(vk::SampleCountFlagBits)sampleCount,
 			mipLevels,
@@ -395,7 +371,7 @@ namespace sa {
 		m_view = ResourceManager::get().insert<vk::ImageView>(m_pCore->createImageView(
 			vk::ImageViewType::eCube,
 			m_pImage->image,
-			format,
+			(vk::Format)format,
 			aspect,
 			mipLevels,
 			0,
@@ -406,7 +382,7 @@ namespace sa {
 
 	}
 
-	TextureCube::TextureCube(const Image& image, bool generateMipmaps) : Texture() {
+	TextureCube::TextureCube(const Image& image, bool generateMipmaps, Format format) : Texture() {
 		m_type = TextureTypeFlagBits::SAMPLED | TextureTypeFlagBits::TRANSFER_DST;
 
 		uint32_t mipLevels = 1;
@@ -416,7 +392,7 @@ namespace sa {
 		}
 
 		sa::Extent subExtent = { image.getWidth() / 4, image.getHeight() / 3 };
-		create(m_type, subExtent, 1, mipLevels);
+		create(m_type, subExtent, 1, mipLevels, format);
 
 		
 		m_pStagingBuffer = m_pCore->createBuffer(
@@ -449,7 +425,7 @@ namespace sa {
 		m_pDataTransfer = Renderer::get().queueTransfer(transfer);
 	}
 
-	TextureCube::TextureCube(const std::vector<Image>& images, bool generateMipmaps) : Texture() {
+	TextureCube::TextureCube(const std::vector<Image>& images, bool generateMipmaps, Format format) : Texture() {
 		m_type = TextureTypeFlagBits::SAMPLED | TextureTypeFlagBits::TRANSFER_DST;
 		if (images.size() != 6)
 			throw std::runtime_error("Must contain 6 images");
@@ -460,7 +436,7 @@ namespace sa {
 			m_type |= TextureTypeFlagBits::TRANSFER_SRC;
 		}
 
-		create(m_type, images[0].getExtent(), 1, mipLevels);
+		create(m_type, images[0].getExtent(), 1, mipLevels, format);
 
 		size_t layerSize = images[0].getWidth() * images[0].getHeight() * images[0].getChannelCount();
 		m_pStagingBuffer = m_pCore->createBuffer(
@@ -487,40 +463,14 @@ namespace sa {
 	
 	}
 	
-	void Texture3D::create(TextureTypeFlags type, Extent3D extent, uint32_t sampleCount, uint32_t mipLevels, FormatPrecisionFlags formatPrecisions, FormatDimensionFlags formatDimensions, FormatTypeFlags formatTypes) {
-
-		vk::Format format = vk::Format::eUndefined;
-		vk::FormatFeatureFlags features;
-		if (type & TextureTypeFlagBits::DEPTH_ATTACHMENT) {
-			features |= vk::FormatFeatureFlagBits::eDepthStencilAttachment;
-		}
-		if (type & TextureTypeFlagBits::SAMPLED) {
-			features |= vk::FormatFeatureFlagBits::eSampledImage;
-		}
-		if (type & TextureTypeFlagBits::COLOR_ATTACHMENT) {
-			features |= vk::FormatFeatureFlagBits::eColorAttachment;
-		}
-		if (type & TextureTypeFlagBits::STORAGE) {
-			features |= vk::FormatFeatureFlagBits::eStorageImage;
-		}
-		if (type & TextureTypeFlagBits::TRANSFER_DST) {
-			features |= vk::FormatFeatureFlagBits::eTransferDst;
-		}
-
-		format = m_pCore->getFormat(
-			formatPrecisions, formatDimensions, formatTypes, 
-			features, 
-			vk::ImageTiling::eOptimal);
-		if (format == vk::Format::eUndefined) {
-			throw std::runtime_error("No supported image format found");
-		}
+	void Texture3D::create(TextureTypeFlags type, Extent3D extent, uint32_t sampleCount, uint32_t mipLevels, Format format) {
 
 		extent = { std::max(extent.width, 1U), std::max(extent.height, 1U), std::max(extent.depth, 1U) };
 		mipLevels = std::min(mipLevels, (uint32_t)floor(log2(std::max(extent.width, std::max(extent.height, extent.depth)))) + 1);
 
 		m_pImage = m_pCore->createImage3D(
 			extent, 
-			format, 
+			(vk::Format)format, 
 			(vk::ImageUsageFlags)type, 
 			(vk::SampleCountFlagBits)sampleCount, 
 			1, 
@@ -530,7 +480,7 @@ namespace sa {
 		m_view = ResourceManager::get().insert<vk::ImageView>(m_pCore->createImageView(
 			vk::ImageViewType::e3D,
 			m_pImage->image,
-			format,
+			(vk::Format)format,
 			vk::ImageAspectFlagBits::eColor,
 			mipLevels,
 			0,
@@ -541,9 +491,9 @@ namespace sa {
 		//SA_DEBUG_LOG_INFO("Created 3D texture\nExtent: { w:", extent.width, " h:", extent.height, " d:", extent.depth, " }\nFormat:", vk::to_string(format), "\nSampleCount:", sampleCount);
 	}
 
-	Texture3D::Texture3D(TextureTypeFlags type, Extent3D extent, uint32_t sampleCount, uint32_t mipLevels, FormatPrecisionFlags formatPrecisions, FormatDimensionFlags formatDimensions, FormatTypeFlags formatTypes) : Texture() {
+	Texture3D::Texture3D(TextureTypeFlags type, Extent3D extent, uint32_t sampleCount, uint32_t mipLevels, Format format) : Texture() {
 		m_type = type;
-		create(type, extent, sampleCount, mipLevels, formatPrecisions, formatDimensions, formatTypes);
+		create(type, extent, sampleCount, mipLevels, format);
 	}
 
 	Texture3D::Texture3D() : Texture() {

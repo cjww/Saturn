@@ -6,26 +6,66 @@
 namespace sa {
 
 	void ShadowRenderLayer::cleanupRenderData(ShadowRenderData& data) {
-		data.depthTextures[0].destroy();
-		data.depthTextureCount = 0;
-		if (data.depthFramebuffer != NULL_RESOURCE) {
-			m_renderer.destroyFramebuffer(data.depthFramebuffer);
+		if (!data.isInitialized)
+			return;
+		data.depthTexture.destroy();
+		for (uint32_t i = 0; i < data.depthTextureLayers.size(); i++) {
+			data.depthTextureLayers[i].destroy();
+			m_renderer.destroyFramebuffer(data.depthFramebuffers[i]);
 		}
-
 		data.isInitialized = false;
 	}
 
 	void ShadowRenderLayer::initializeRenderData(ShadowRenderData& data) {
 		ShadowPreferences& prefs = getPreferences();
-		data.depthTextures[0] = Texture2D(TextureTypeFlagBits::DEPTH_ATTACHMENT | TextureTypeFlagBits::SAMPLED, { prefs.directionalResolution, prefs.directionalResolution });
-		data.depthTextureCount = 1;
-		data.depthFramebuffer = Renderer::get().createFramebuffer(m_depthRenderProgram, { data.depthTextures[0] });
+		
+		const uint32_t cascadeCount = data.depthTextureLayers.size();
+		data.depthTexture = Texture2D(
+			TextureTypeFlagBits::DEPTH_ATTACHMENT | TextureTypeFlagBits::SAMPLED, 
+			{ prefs.directionalResolution, prefs.directionalResolution },
+			1,
+			1,
+			cascadeCount
+		);
+
+		uint32_t count = cascadeCount;
+		data.depthTexture.createArrayLayerTextures(&count, data.depthTextureLayers.data());
+
+		for (uint32_t i = 0; i < cascadeCount; i++) {
+			data.depthFramebuffers[i] = m_renderer.createFramebuffer(m_depthRenderProgram, { data.depthTextureLayers[i] }, data.depthTexture.getExtent());
+		}
 		data.isInitialized = true;
 	}
 
-	void ShadowRenderLayer::renderShadowMap(RenderContext& context, const glm::vec3& origin, ShadowData& data, ResourceID framebuffer, SceneCollection& sceneCollection) {
+	void ShadowRenderLayer::renderShadowMap(RenderContext& context, const glm::vec3& origin, ShadowData& data, const ShadowRenderData& renderData, SceneCollection& sceneCollection) {
+			
+		const auto& prefs = getPreferences();
+
+		SceneCamera camera;
+		camera.setAspectRatio(1.f);
+		camera.setNear(prefs.depthNear);
+		camera.setFar(prefs.depthFar);
+		switch (data.lightType) {
+		case LightType::DIRECTIONAL:
+			camera.setProjectionMode(ProjectionMode::eOrthographic);
+			camera.setOrthoWidth(64);
+			camera.setPosition(origin - glm::vec3(data.lightDirection) * camera.getFar() * 0.5f);
+			camera.setForward(data.lightDirection);
+				
+			break;
+		case LightType::POINT:
+			break;
+		case LightType::SPOT:
+			camera.setProjectionMode(ProjectionMode::ePerspective);
+			camera.setFOVDegrees(45.f);
+			camera.setPosition(data.lightPosition);
+			camera.setForward(data.lightDirection);
+
+			break;
+		default:
+			break;
+		}
 		
-		context.beginRenderProgram(m_depthRenderProgram, framebuffer, SubpassContents::DIRECT);
 
 		for (auto& collection : sceneCollection) {
 			if (!collection.readyDescriptorSets(context)) {
@@ -35,64 +75,43 @@ namespace sa {
 			if (!collection.arePipelinesReady()) {
 				continue;
 			}
-
-			collection.bindDepthPipeline(context);
-			context.bindDescriptorSet(collection.getSceneDescriptorSetDepthPass());
-
-			context.bindVertexBuffers(0, { collection.getVertexBuffer() });
-			context.bindIndexBuffer(collection.getIndexBuffer());
-
-			Rect viewport = {};
-			viewport.extent = Renderer::get().getFramebufferExtent(framebuffer);
-			viewport.offset = { 0, 0 };
-			
-			context.setViewport(viewport);
-			context.setScissor(viewport);
-
-			context.setDepthBiasEnable(true);
-			const auto& prefs = getPreferences();
-			context.setDepthBias(prefs.depthBiasConstant, 0.0f, prefs.depthBiasSlope);
-
-			context.setCullMode(sa::CullModeFlagBits::FRONT);
-			
-			SceneCamera camera;
-			camera.setAspectRatio(1.f);
-			camera.setNear(prefs.depthNear);
-			camera.setFar(prefs.depthFar);
-			switch (data.lightType) {
-			case LightType::DIRECTIONAL:
-				camera.setProjectionMode(ProjectionMode::eOrthographic);
-				camera.setOrthoWidth(64);
+			for (uint32_t i = 0; i < renderData.depthTextureLayers.size(); i++) {
 				camera.setPosition(origin - glm::vec3(data.lightDirection) * camera.getFar() * 0.5f);
-				camera.setForward(data.lightDirection);
-				break;
-			case LightType::POINT:
-				break;
-			case LightType::SPOT:
-				camera.setProjectionMode(ProjectionMode::ePerspective);
-				camera.setFOVDegrees(45.f);
-				camera.setPosition(data.lightPosition);
-				camera.setForward(data.lightDirection);
 
-				break;
-			default:
-				break;
+
+				context.beginRenderProgram(m_depthRenderProgram, renderData.depthFramebuffers[i], SubpassContents::DIRECT);
+				collection.bindDepthPipeline(context);
+				context.bindDescriptorSet(collection.getSceneDescriptorSetDepthPass());
+
+				context.bindVertexBuffers(0, { collection.getVertexBuffer() });
+				context.bindIndexBuffer(collection.getIndexBuffer());
+
+				Rect viewport = {};
+				viewport.extent = Renderer::get().getFramebufferExtent(renderData.depthFramebuffers[i]);
+				viewport.offset = { 0, 0 };
+			
+				context.setViewport(viewport);
+				context.setScissor(viewport);
+
+				context.setDepthBiasEnable(true);
+				context.setDepthBias(prefs.depthBiasConstant, 0.0f, prefs.depthBiasSlope);
+
+				context.setCullMode(sa::CullModeFlagBits::FRONT);
+
+				data.lightMatrix = camera.getProjectionMatrix() * camera.getViewMatrix();
+
+				PerFrameBuffer perFrame = {};
+				perFrame.projViewMatrix = data.lightMatrix;
+				perFrame.viewPos = glm::vec4(0);
+
+				if (collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>() > 0) {
+					context.pushConstant(ShaderStageFlagBits::VERTEX, perFrame);
+					context.drawIndexedIndirect(collection.getDrawCommandBuffer(), 0, collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
+				}
+				context.endRenderProgram(m_depthRenderProgram);
 			}
-
-			data.lightMatrix = camera.getProjectionMatrix() * camera.getViewMatrix();
-
-			PerFrameBuffer perFrame = {};
-			perFrame.projViewMatrix = data.lightMatrix;
-			perFrame.viewPos = glm::vec4(0);
-
-			if (collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>() > 0) {
-				context.pushConstant(ShaderStageFlagBits::VERTEX, perFrame);
-				context.drawIndexedIndirect(collection.getDrawCommandBuffer(), 0, collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
-			}
-
 		}
 		
-		context.endRenderProgram(m_depthRenderProgram);
 	}
 
 	void ShadowRenderLayer::init() {
@@ -138,7 +157,7 @@ namespace sa {
 				initializeRenderData(renderData);
 			}
 
-			renderShadowMap(context, data.lightPosition, data, renderData.depthFramebuffer, sceneCollection);
+			renderShadowMap(context, data.lightPosition, data, renderData, sceneCollection);
 
 			ShadowShaderData shaderData = {};
 			shaderData.lightMat = data.lightMatrix;
@@ -146,7 +165,7 @@ namespace sa {
 			shaderData.mapCount = 1;
 			m_shadowShaderDataBuffer << shaderData;
 
-			m_shadowTextures[m_shadowTextureCount++] = renderData.depthTextures[0];
+			m_shadowTextures[m_shadowTextureCount++] = renderData.depthTextureLayers[0];
 		}
 		return true;
 	}
@@ -166,7 +185,7 @@ namespace sa {
 				initializeRenderData(renderData);
 			}
 
-			renderShadowMap(context, pCamera->getPosition(), data, renderData.depthFramebuffer, sceneCollection);
+			renderShadowMap(context, pCamera->getPosition(), data, renderData, sceneCollection);
 			
 			ShadowShaderData shaderData = {};
 			shaderData.lightMat = data.lightMatrix;
@@ -174,7 +193,7 @@ namespace sa {
 			shaderData.mapCount = 1;
 			m_shadowShaderDataBuffer << shaderData;
 
-			m_shadowTextures[m_shadowTextureCount++] = renderData.depthTextures[0];
+			m_shadowTextures[m_shadowTextureCount++] = renderData.depthTextureLayers[0];
 		}
 		return true;
 	}
