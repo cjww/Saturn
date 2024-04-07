@@ -213,14 +213,19 @@ int main() {
 
 		ResourceID renderProgram = renderer.createRenderProgram()
 			.addSwapchainAttachment(window.getSwapchainID())
+			.addDepthAttachment(sa::AttachmentFlagBits::eClear)
 			.beginSubpass()
 			.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
+			.addAttachmentReference(1, sa::SubpassAttachmentUsage::DepthTarget)
 			.endSubpass()
 			.end();
 
 		renderer.initImGui(window, renderProgram, 0);
 
-		std::vector<sa::DynamicTexture> attachments;
+		sa::DynamicTexture t;
+		t.create2D(sa::TextureUsageFlagBits::DEPTH_ATTACHMENT, {32, 32});
+
+		std::vector<sa::DynamicTexture> attachments = { t };
 		ResourceID framebuffer = renderer.createSwapchainFramebuffer(renderProgram, window.getSwapchainID(), attachments);
 
 		
@@ -275,10 +280,12 @@ int main() {
 		ResourceID sampler = renderer.createSampler();
 
 		sa::Image image("Box.png");
-		sa::Texture2D boxTexture(image, false);
+		sa::Texture boxTexture;
+		boxTexture.create2D(image, false);
 
 		sa::Image image2("Colored_Character_Animation.png");
-		sa::Texture2D characterTexture(image2, false);
+		sa::Texture characterTexture;
+		characterTexture.create2D(image2, false);
 
 		renderer.updateDescriptorSet(objectDescriptorSet, 1, { boxTexture, characterTexture }, sampler, 0);
 

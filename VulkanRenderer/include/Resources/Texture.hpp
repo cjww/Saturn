@@ -39,23 +39,6 @@ namespace sa {
 		TEXTURE_TYPE_CUBE_ARRAY
 	};
 
-	struct TextureInfo {
-		Extent extent;
-		uint32_t mipLevels;
-		uint32_t arrayLayers;
-		uint32_t samples;
-	};
-	/*
-	class TextureView {
-	private:
-		ResourceID m_view;
-	protected:
-		TextureView(ResourceID view);
-	public:
-
-	};
-	*/
-
 	class Texture {
 	private:
 		VulkanCore* m_pCore;
@@ -69,7 +52,7 @@ namespace sa {
 		TextureType m_type;
 		
 		Texture(VulkanCore* pCore);
-		Texture(ResourceID imageView, TextureUsageFlags usage);
+		Texture(ResourceID imageView, TextureUsageFlags usage, TextureType type);
 
 		ResourceID createImageView(TextureType viewType, uint32_t mipLevels, uint32_t baseMipLevel, uint32_t layers, uint32_t baseArrayLevel);
 		
@@ -95,6 +78,8 @@ namespace sa {
 		void createArrayLayerTextures(uint32_t* count, Texture* pTextures);
 
 		Extent getExtent() const;
+		Extent3D getExtent3D() const;
+
 		virtual uint32_t getDepth() const;
 		vk::ImageView* getView() const;
 		TextureUsageFlags getUsageFlags() const;
