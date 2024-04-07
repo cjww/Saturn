@@ -21,7 +21,7 @@ namespace sa {
             file.close();
 
             Image img(m_dataBuffer.data(), m_dataBuffer.size());
-            m_texture = Texture2D(img, true);
+            m_texture.create2D(img, true);
 
             AssetHeader header = getHeader();
             header.size = m_dataBuffer.size();
@@ -46,7 +46,7 @@ namespace sa {
 
         Image img(m_dataBuffer.data(), m_dataBuffer.size());
         incrementProgress();
-        m_texture = Texture2D(img, true);
+        m_texture.create2D(img, true);
         incrementProgress();
         AssetHeader header = getHeader();
         header.size = m_dataBuffer.size(); // update size

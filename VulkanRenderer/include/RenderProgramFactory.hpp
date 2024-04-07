@@ -65,13 +65,13 @@ namespace sa {
 		RenderProgramFactory(VulkanCore* pCore);
 		
 		RenderProgramFactory& addColorAttachment(AttachmentFlags flags, uint32_t sampleCount = 1U);
-		RenderProgramFactory& addColorAttachment(AttachmentFlags flags, const Texture2D& framebufferTexture);
+		RenderProgramFactory& addColorAttachment(AttachmentFlags flags, const Texture& framebufferTexture);;
 		RenderProgramFactory& addColorAttachment(AttachmentFlags flags, Format format, uint32_t sampleCount = 1U);
 
 
 		RenderProgramFactory& addSwapchainAttachment(ResourceID swapchain);
 		RenderProgramFactory& addDepthAttachment(AttachmentFlags flags, uint32_t sampleCount = 1U);
-		RenderProgramFactory& addDepthAttachment(AttachmentFlags flags, const Texture2D& framebufferTexture);
+		RenderProgramFactory& addDepthAttachment(AttachmentFlags flags, const Texture& framebufferTexture);
 		RenderProgramFactory& addDepthAttachment(AttachmentFlags flags, Format format, uint32_t sampleCount = 1U);
 
 

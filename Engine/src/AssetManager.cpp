@@ -110,49 +110,55 @@ namespace sa {
 		m_assets.clear();
 	}
 	
-	Texture2D* AssetManager::loadDefaultTexture() {
+	Texture* AssetManager::loadDefaultTexture() {
 		SA_PROFILE_FUNCTION();
 
-		Texture2D* tex = ResourceManager::get().get<Texture2D>("default_white");
-		if (tex)
-			return tex;
+		Texture* pTex = ResourceManager::get().get<Texture>("default_white");
+		if (pTex)
+			return pTex;
 
 		sa::Image img(2, 2, sa::Color{ 1, 1, 1, 1 });
-		ResourceID id = ResourceManager::get().insert<Texture2D>("default_white", Texture2D(img, false));
-		return ResourceManager::get().get<Texture2D>(id);
+		Texture texture;
+		texture.create2D(img, false);
+		ResourceID id = ResourceManager::get().insert<Texture>("default_white", texture);
+		return ResourceManager::get().get<Texture>(id);
 	}
 
-	Texture2D* AssetManager::loadDefaultBlackTexture() {
+	Texture* AssetManager::loadDefaultBlackTexture() {
 		SA_PROFILE_FUNCTION();
 
-		Texture2D* tex = ResourceManager::get().get<Texture2D>("default_black");
+		Texture* tex = ResourceManager::get().get<Texture>("default_black");
 		if (tex)
 			return tex;
 
 		sa::Image img(2, 2, sa::Color{ 0, 0, 0, 0 });
-		ResourceID id = ResourceManager::get().insert<Texture2D>("default_black", Texture2D(img, false));
-		return ResourceManager::get().get<Texture2D>(id);
+		Texture texture;
+		texture.create2D(img, false);
+		ResourceID id = ResourceManager::get().insert<Texture>("default_black", texture);
+		return ResourceManager::get().get<Texture>(id);
 	}
 
-	Texture2D* AssetManager::loadTexture(const std::filesystem::path& path, bool generateMipMaps) {
+	Texture* AssetManager::loadTexture(const std::filesystem::path& path, bool generateMipMaps) {
 		SA_PROFILE_FUNCTION();
-		ResourceID id = ResourceManager::get().keyToID<Texture2D>(path.generic_string());
+		ResourceID id = ResourceManager::get().keyToID<Texture>(path.generic_string());
 		if (m_textures.count(id)) {
 			return m_textures.at(id);
 		}
 
-		Texture2D* tex = ResourceManager::get().get<Texture2D>(id);
+		Texture* tex = ResourceManager::get().get<Texture>(id);
 
 		if (!tex) {
 			try {
 				Image img(path.generic_string());
-				id = ResourceManager::get().insert<Texture2D>(path.generic_string(), Texture2D(img, generateMipMaps));
+				Texture texture;
+				texture.create2D(img, generateMipMaps);
+				id = ResourceManager::get().insert<Texture>(path.generic_string(), texture);
 			}
 			catch (const std::exception& e) {
 				return nullptr;
 			}
 
-			Texture2D* tex = ResourceManager::get().get<Texture2D>(id);
+			Texture* tex = ResourceManager::get().get<Texture>(id);
 			m_textures[id] = tex;
 			return tex;
 		}
@@ -531,7 +537,7 @@ namespace sa {
 
 	AssetManager::AssetManager() {
 		loadDefaultTexture();
-		sa::ResourceManager::get().setCleanupFunction<Texture2D>([](Texture2D* pTexture) {
+		sa::ResourceManager::get().setCleanupFunction<Texture>([](Texture* pTexture) {
 			pTexture->destroy();
 		});
 
@@ -548,6 +554,6 @@ namespace sa {
 	}
 
 	AssetManager::~AssetManager() {
-		ResourceManager::get().clearContainer<Texture2D>();
+		ResourceManager::get().clearContainer<Texture>();
 	}
 }

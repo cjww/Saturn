@@ -96,15 +96,15 @@ namespace sa {
 		return *this;
 	}
 
-	RenderProgramFactory& RenderProgramFactory::addColorAttachment(AttachmentFlags flags, const Texture2D& framebufferTexture) {
+	RenderProgramFactory& RenderProgramFactory::addColorAttachment(AttachmentFlags flags, const Texture& framebufferTexture) {
 		const DeviceImage* pDeviceImage = (const DeviceImage*)framebufferTexture;
 		vk::ImageLayout finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
-		if ((framebufferTexture.getTypeFlags() & TextureTypeFlagBits::INPUT_ATTACHMENT ||
-			framebufferTexture.getTypeFlags() & TextureTypeFlagBits::SAMPLED) && 
+		if ((framebufferTexture.getUsageFlags() & TextureUsageFlagBits::INPUT_ATTACHMENT ||
+			framebufferTexture.getUsageFlags() & TextureUsageFlagBits::SAMPLED) && 
 			flags & AttachmentFlagBits::eSampled) {
 			finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 		}
-		if (framebufferTexture.getTypeFlags() & TextureTypeFlagBits::STORAGE) {
+		if (framebufferTexture.getUsageFlags() & TextureUsageFlagBits::STORAGE) {
 			finalLayout = vk::ImageLayout::eGeneral;
 		}
 		m_pProgram->addAttachment(
@@ -170,12 +170,12 @@ namespace sa {
 		return *this;
 	}
 
-	RenderProgramFactory& RenderProgramFactory::addDepthAttachment(AttachmentFlags flags, const Texture2D& framebufferTexture) {
+	RenderProgramFactory& RenderProgramFactory::addDepthAttachment(AttachmentFlags flags, const Texture& framebufferTexture) {
 		const DeviceImage* pDeviceImage = (const DeviceImage*)framebufferTexture;
 
 		vk::ImageLayout finalLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-		if ((framebufferTexture.getTypeFlags() & TextureTypeFlagBits::INPUT_ATTACHMENT ||
-			framebufferTexture.getTypeFlags() & TextureTypeFlagBits::SAMPLED) &&
+		if ((framebufferTexture.getUsageFlags() & TextureUsageFlagBits::INPUT_ATTACHMENT ||
+			framebufferTexture.getUsageFlags() & TextureUsageFlagBits::SAMPLED) &&
 			flags & AttachmentFlagBits::eSampled) {
 			finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 		}

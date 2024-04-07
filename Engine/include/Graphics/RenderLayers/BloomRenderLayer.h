@@ -27,13 +27,13 @@ namespace sa {
 		std::vector<ResourceID> upsampleDescriptorSets;
 		ResourceID compositeDescriptorSet = NULL_RESOURCE;
 
-		DynamicTexture2D bloomTexture;
-		std::vector<DynamicTexture2D> bloomMipTextures;
+		DynamicTexture bloomTexture;
+		std::vector<DynamicTexture> bloomMipTextures;
 
-		DynamicTexture2D bufferTexture;
-		std::vector<DynamicTexture2D> bufferMipTextures;
+		DynamicTexture bufferTexture;
+		std::vector<DynamicTexture> bufferMipTextures;
 
-		DynamicTexture2D outputTexture;
+		DynamicTexture outputTexture;
 
 	};
 

@@ -577,8 +577,10 @@ namespace ImGui {
 		return info;
 	}
 
-	sa::Texture2D LoadEditorIcon(const std::filesystem::path& path) {
-		return sa::Texture2D(sa::Image(sa::EngineEditor::MakeEditorRelative(path).generic_string().c_str()), true);
+	sa::Texture LoadEditorIcon(const std::filesystem::path& path) {
+		sa::Texture t;
+		t.create2D(sa::Image(sa::EngineEditor::MakeEditorRelative(path).generic_string().c_str()), true);
+		return t;
 	}
 
 	bool MaterialProperties(sa::Asset* pAsset) {

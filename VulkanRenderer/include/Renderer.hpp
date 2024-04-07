@@ -212,9 +212,12 @@ namespace sa {
 		SubContext createSubContext(ResourceID framebuffer, ResourceID renderProgram, uint32_t subpassIndex, ResourceID contextPool = NULL_RESOURCE);
 		SubContext createSubContext(ResourceID contextPool = NULL_RESOURCE);
 		
-		Format selectFormat(const std::vector<Format>& formatCandidates, TextureTypeFlags textureType) const;
-		Format selectFormat(TextureTypeFlags textureType) const;
-		Format selectFormat(FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, TextureTypeFlags textureType) const;
+		Format selectFormat(const std::vector<Format>& formatCandidates, TextureUsageFlags textureType) const;
+		Format selectFormat(TextureUsageFlags textureType) const;
+		Format selectFormat(FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, TextureUsageFlags textureType) const;
+
+		Format getDefaultDepthFormat() const;
+		Format gettDefaultColorFormat() const;
 
 		Format getAttachmentFormat(ResourceID renderProgram, uint32_t attachmentIndex) const;
 

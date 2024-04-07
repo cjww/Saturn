@@ -3,12 +3,61 @@
 #include "internal/VulkanCore.hpp"
 
 namespace sa {
+
+	DynamicTexture::DynamicTexture(const std::vector<Texture>& textures, uint32_t currentIndex) {
+		m_textures = textures;
+		m_currentTextureIndex = currentIndex;
+	}
+
 	DynamicTexture::DynamicTexture() 
 		: m_currentTextureIndex(0)
 		, m_pCore(Renderer::get().m_pCore.get())
 	{
 
 	}
+
+	void DynamicTexture::create2D(TextureUsageFlags usageFlags, Extent extent, Format format, uint32_t mipLevels, uint32_t arrayLayers, uint32_t samples) {
+		m_textures.resize(m_pCore->getQueueCount());
+		for (uint32_t i = 0; i < m_textures.size(); i++) {
+			m_textures[i].create2D(usageFlags, extent, format, mipLevels, arrayLayers, samples);
+		}
+	}
+	
+	void DynamicTexture::create2D(const Image& image, bool generateMipmaps) {
+		m_textures.resize(m_pCore->getQueueCount());
+		for (uint32_t i = 0; i < m_textures.size(); i++) {
+			m_textures[i].create2D(image, generateMipmaps);
+		}
+	}
+	
+	void DynamicTexture::createCube(TextureUsageFlags usageFlags, Extent extent, Format format, uint32_t mipLevels, uint32_t samples) {
+		m_textures.resize(m_pCore->getQueueCount());
+		for (uint32_t i = 0; i < m_textures.size(); i++) {
+			m_textures[i].createCube(usageFlags, extent, format, mipLevels, samples);
+		}
+	}
+	
+	void DynamicTexture::createCube(const Image& image, bool generateMipmaps) {
+		m_textures.resize(m_pCore->getQueueCount());
+		for (uint32_t i = 0; i < m_textures.size(); i++) {
+			m_textures[i].createCube(image, generateMipmaps);
+		}
+	}
+	
+	void DynamicTexture::createCube(const std::vector<Image>& images, bool generateMipmaps) {
+		m_textures.resize(m_pCore->getQueueCount());
+		for (uint32_t i = 0; i < m_textures.size(); i++) {
+			m_textures[i].createCube(images, generateMipmaps);
+		}
+	}
+	
+	void DynamicTexture::create3D(TextureUsageFlags usageFlags, Extent3D extent, Format format, uint32_t mipLevels, uint32_t arrayLayers, uint32_t samples) {
+		m_textures.resize(m_pCore->getQueueCount());
+		for (uint32_t i = 0; i < m_textures.size(); i++) {
+			m_textures[i].create3D(usageFlags, extent, format, mipLevels, arrayLayers, samples);
+		}
+	}
+
 
 	Extent DynamicTexture::getExtent() const {
 		return getTexture().getExtent();
@@ -22,12 +71,12 @@ namespace sa {
 		return getTexture().getView();
 	}
 
-	TextureTypeFlags DynamicTexture::getTypeFlags() const {
-		return getTexture().getTypeFlags();
+	TextureUsageFlags DynamicTexture::getUsageFlags() const {
+		return getTexture().getUsageFlags();
 	}
 	
 	const Texture& DynamicTexture::getTexture(uint32_t index) const {
-		return m_textures[(index == -1) ? m_currentTextureIndex : index].texture;
+		return m_textures[(index == -1) ? m_currentTextureIndex : index];
 	}
 
 	uint32_t DynamicTexture::getTextureIndex() const {
@@ -72,7 +121,7 @@ namespace sa {
 
 	void DynamicTexture::destroy() {
 		for (auto& tex : m_textures) {
-			tex.texture.destroy();
+			tex.destroy();
 		}
 		m_currentTextureIndex = 0;
 	}
@@ -85,7 +134,7 @@ namespace sa {
 			return false;
 		}
 		for (size_t i = 0; i < m_textures.size(); i++) {
-			if (m_textures[i].texture != other.m_textures[i].texture) {
+			if (m_textures[i] != other.m_textures[i]) {
 				return false;
 			}
 		}
@@ -95,61 +144,24 @@ namespace sa {
 	bool DynamicTexture::operator!=(const DynamicTexture& other) {
 		return !(*this == other);
 	}
-	
-	DynamicTexture2D::DynamicTexture2D(const std::vector<Texture2D>& textures, uint32_t currentIndex) {
-		m_textures.resize(textures.size());
-		for (size_t i = 0; i < textures.size(); i++) {
-			m_textures[i].texture2D = textures[i];
-			m_textures[i].activeBit = 2;
-		}
-		m_currentTextureIndex = currentIndex;
-	}
 
+	std::vector<DynamicTexture> DynamicTexture::createMipLevelTextures() {
+		std::vector<DynamicTexture> dynamicTextures;
 
-	DynamicTexture2D::DynamicTexture2D()
-		: DynamicTexture()
-	{
-	}
-
-	DynamicTexture2D::DynamicTexture2D(TextureTypeFlags type, Extent extent, uint32_t sampleCount, uint32_t mipLevels) : DynamicTexture() {
-		m_textures.resize(m_pCore->getQueueCount());
-		for (int i = 0; i < m_pCore->getQueueCount(); i++) {
-			m_textures[i].texture2D = Texture2D(type, extent, sampleCount, mipLevels);
-			m_textures[i].activeBit = 2;
-
-		}
-	}
-
-	DynamicTexture2D::DynamicTexture2D(TextureTypeFlags type, Extent extent, Format format, uint32_t sampleCount, uint32_t mipLevels) {
-		m_textures.resize(m_pCore->getQueueCount());
-		for (int i = 0; i < m_pCore->getQueueCount(); i++) {
-			m_textures[i].texture2D = Texture2D(type, extent, format, sampleCount, mipLevels);
-			m_textures[i].activeBit = 2;
-		}
-	}
-
-	DynamicTexture2D::operator const Texture2D() const {
-		return m_textures[m_currentTextureIndex].texture2D;
-	}
-
-	std::vector<DynamicTexture2D> DynamicTexture2D::createMipLevelTextures() {	
-		std::vector<DynamicTexture2D> dynamicTextures;
-
-		std::vector<std::vector<Texture2D>> textures;
+		std::vector<std::vector<Texture>> textures;
 		for (auto& tex : m_textures) {
-			std::vector<Texture2D> mipTextures = tex.texture2D.createMipLevelTextures();
+			std::vector<Texture> mipTextures = tex.createMipLevelTextures();
 			for (int i = 0; i < mipTextures.size(); i++) {
-				if (textures.empty()) 
+				if (textures.empty())
 					textures.resize(mipTextures.size());
 				textures[i].push_back(mipTextures[i]);
 			}
 		}
 
 		for (auto& texArray : textures) {
-			dynamicTextures.push_back(DynamicTexture2D(texArray, m_currentTextureIndex));
+			dynamicTextures.push_back(DynamicTexture(texArray, m_currentTextureIndex));
 		}
 
 		return dynamicTextures;
 	}
-
 }

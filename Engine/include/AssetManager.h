@@ -59,7 +59,7 @@ namespace sa {
 	private:	
 		mutable std::mutex m_mutex;
 
-		std::unordered_map<ResourceID, Texture2D*> m_textures;
+		std::unordered_map<ResourceID, Texture*> m_textures;
 
 		std::unordered_map<UUID, std::filesystem::path> m_importedAssets;
 
@@ -94,9 +94,9 @@ namespace sa {
 
 		void clear();
 
-		Texture2D* loadDefaultTexture();
-		Texture2D* loadDefaultBlackTexture();
-		Texture2D* loadTexture(const std::filesystem::path& path, bool generateMipMaps);
+		Texture* loadDefaultTexture();
+		Texture* loadDefaultBlackTexture();
+		Texture* loadTexture(const std::filesystem::path& path, bool generateMipMaps);
 
 		ModelAsset* getQuad();
 		ModelAsset* getCube();

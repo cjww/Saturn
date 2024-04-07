@@ -6,63 +6,33 @@
 namespace sa {
 
 	class DynamicTexture {
-	protected:
-		
-		struct TextureContainer {
-			uint8_t activeBit;
-			union {
-				Texture texture;		// 1
-				Texture2D texture2D;	// 2
-				Texture3D texture3D;	// 4
-				TextureCube textureCube;// 8
-			};
-			
-			TextureContainer() : activeBit(0) {}
-			TextureContainer(const Texture& texture) : texture(texture), activeBit(1) {}
-			TextureContainer(const Texture2D& texture) : texture2D(texture), activeBit(2) {}
-			TextureContainer(const Texture3D& texture) : texture3D(texture), activeBit(4) {}
-			TextureContainer(const TextureCube& texture) : textureCube(texture), activeBit(8) {}
-
-			TextureContainer(const TextureContainer& other) {
-				*this = other;
-			}
-
-			TextureContainer& operator=(const TextureContainer& other) {
-				switch (other.activeBit) {
-				case 1:
-					texture = other.texture;
-					break;
-				case 2:
-					texture2D = other.texture2D;
-					break;
-				case 4:
-					texture3D = other.texture3D;
-					break;
-				case 8:
-					textureCube = other.textureCube;
-					break;
-				default:
-					break;
-				}
-				activeBit = other.activeBit;
-				return *this;
-			}
-		};
-
-		std::vector<TextureContainer> m_textures;
+	private:
+		std::vector<Texture> m_textures;
 		uint32_t m_currentTextureIndex;
 		VulkanCore* m_pCore;
 
+		DynamicTexture(const std::vector<Texture>& textures, uint32_t currentIndex);
+		
 
 	public:
 		DynamicTexture();
 		DynamicTexture(const DynamicTexture& other) = default;
 		DynamicTexture& operator=(const DynamicTexture& other) = default;
 
+		void create2D(TextureUsageFlags usageFlags, Extent extent, Format format = Format::UNDEFINED, uint32_t mipLevels = 1, uint32_t arrayLayers = 1, uint32_t samples = 1);
+		void create2D(const Image& image, bool generateMipmaps);
+
+		void createCube(TextureUsageFlags usageFlags, Extent extent, Format format = Format::UNDEFINED, uint32_t mipLevels = 1, uint32_t samples = 1);
+		void createCube(const Image& image, bool generateMipmaps);
+		void createCube(const std::vector<Image>& images, bool generateMipmaps);
+
+		void create3D(TextureUsageFlags usageFlags, Extent3D extent, Format format = Format::UNDEFINED, uint32_t mipLevels = 1, uint32_t arrayLayers = 1, uint32_t samples = 1);
+
+
 		Extent getExtent() const;
 		virtual uint32_t getDepth() const;
 		vk::ImageView* getView() const;
-		TextureTypeFlags getTypeFlags() const;
+		TextureUsageFlags getUsageFlags() const;
 
 		const Texture& getTexture(uint32_t index = -1) const;
 
@@ -89,28 +59,9 @@ namespace sa {
 		bool operator==(const DynamicTexture& other);
 		bool operator!=(const DynamicTexture& other);
 
+		std::vector<DynamicTexture> createMipLevelTextures();
+
 
 	};
-
-	class DynamicTexture2D : public DynamicTexture {
-	private:
-
-		DynamicTexture2D(const std::vector<Texture2D>& textures, uint32_t currentIndex);
-
-	public:
-		DynamicTexture2D();
-
-		DynamicTexture2D(TextureTypeFlags type, Extent extent, uint32_t sampleCount = 1, uint32_t mipLevels = 1);
-		DynamicTexture2D(TextureTypeFlags type, Extent extent, Format format, uint32_t sampleCount = 1, uint32_t mipLevels = 1);
-
-		operator const Texture2D() const;
-
-		using DynamicTexture::operator Texture;
-
-
-		std::vector<DynamicTexture2D> createMipLevelTextures();
-
-	};
-
 
 }

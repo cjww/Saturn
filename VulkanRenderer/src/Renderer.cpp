@@ -122,7 +122,7 @@ namespace sa {
 
 	void Renderer::imGuiImage(sa::Texture texture, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& tint_col, const ImVec4& border_col) {
 		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
-		if (texture.getTypeFlags() & TextureTypeFlagBits::STORAGE) {
+		if (texture.getUsageFlags() & TextureUsageFlagBits::STORAGE) {
 			layout = vk::ImageLayout::eGeneral;
 		}
 		VkDescriptorSet descSet = m_pCore->getImGuiImageDescriptoSet(*texture.getView(), layout);
@@ -411,7 +411,7 @@ namespace sa {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
 		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
-		if ((texture.getTypeFlags() & sa::TextureTypeFlagBits::STORAGE) == sa::TextureTypeFlagBits::STORAGE) {
+		if ((texture.getUsageFlags() & sa::TextureUsageFlagBits::STORAGE) == sa::TextureUsageFlagBits::STORAGE) {
 			layout = vk::ImageLayout::eGeneral;
 		}
 
@@ -421,7 +421,7 @@ namespace sa {
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture) {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
-		if ((texture.getTypeFlags() & sa::TextureTypeFlagBits::STORAGE) == sa::TextureTypeFlagBits::STORAGE) {
+		if ((texture.getUsageFlags() & sa::TextureUsageFlagBits::STORAGE) == sa::TextureUsageFlagBits::STORAGE) {
 			layout = vk::ImageLayout::eGeneral;
 		}
 
@@ -433,7 +433,7 @@ namespace sa {
 		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
 
 		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
-		if ((texture.getTypeFlags() & sa::TextureTypeFlagBits::STORAGE) == sa::TextureTypeFlagBits::STORAGE) {
+		if ((texture.getUsageFlags() & sa::TextureUsageFlagBits::STORAGE) == sa::TextureUsageFlagBits::STORAGE) {
 			layout = vk::ImageLayout::eGeneral;
 		}
 
@@ -446,7 +446,7 @@ namespace sa {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 
 		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
-		if ((texture.getTypeFlags() & sa::TextureTypeFlagBits::STORAGE) == sa::TextureTypeFlagBits::STORAGE) {
+		if ((texture.getUsageFlags() & sa::TextureUsageFlagBits::STORAGE) == sa::TextureUsageFlagBits::STORAGE) {
 			layout = vk::ImageLayout::eGeneral;
 		}
 
@@ -630,22 +630,22 @@ namespace sa {
 		return SubContext(m_pCore.get(), nullptr, nullptr, 0, contextPool);
 	}
 
-	Format Renderer::selectFormat(const std::vector<Format>& formatCandidates, TextureTypeFlags textureType) const {
+	Format Renderer::selectFormat(const std::vector<Format>& formatCandidates, TextureUsageFlags textureType) const {
 		vk::FormatFeatureFlags features = (vk::FormatFeatureFlagBits)0;
 
-		if (textureType & TextureTypeFlagBits::DEPTH_ATTACHMENT) {
+		if (textureType & TextureUsageFlagBits::DEPTH_ATTACHMENT) {
 			features |= vk::FormatFeatureFlagBits::eDepthStencilAttachment;
 		}
-		if (textureType & TextureTypeFlagBits::SAMPLED) {
+		if (textureType & TextureUsageFlagBits::SAMPLED) {
 			features |= vk::FormatFeatureFlagBits::eSampledImage;
 		}
-		if (textureType & TextureTypeFlagBits::COLOR_ATTACHMENT) {
+		if (textureType & TextureUsageFlagBits::COLOR_ATTACHMENT) {
 			features |= vk::FormatFeatureFlagBits::eColorAttachment;
 		}
-		if (textureType & TextureTypeFlagBits::STORAGE) {
+		if (textureType & TextureUsageFlagBits::STORAGE) {
 			features |= vk::FormatFeatureFlagBits::eStorageImage;
 		}
-		if (textureType & TextureTypeFlagBits::TRANSFER_DST) {
+		if (textureType & TextureUsageFlagBits::TRANSFER_DST) {
 			features |= vk::FormatFeatureFlagBits::eTransferDst;
 		}
 		std::vector<vk::Format> candidates(formatCandidates.size());
@@ -654,7 +654,7 @@ namespace sa {
 		return (Format)m_pCore->getFormat(candidates, features, vk::ImageTiling::eOptimal);
 	}
 
-	Format Renderer::selectFormat(TextureTypeFlags textureType) const {
+	Format Renderer::selectFormat(TextureUsageFlags textureType) const {
 		return selectFormat(
 			FormatPrecisionFlagBits::ANY_PRECISION, 
 			FormatDimensionFlagBits::ANY_DIMENSION, 
@@ -662,22 +662,22 @@ namespace sa {
 			textureType);
 	}
 
-	Format Renderer::selectFormat(FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, TextureTypeFlags textureType) const {
+	Format Renderer::selectFormat(FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, TextureUsageFlags textureType) const {
 		vk::FormatFeatureFlags features = (vk::FormatFeatureFlagBits)0;
 
-		if (textureType & TextureTypeFlagBits::DEPTH_ATTACHMENT) {
+		if (textureType & TextureUsageFlagBits::DEPTH_ATTACHMENT) {
 			features |= vk::FormatFeatureFlagBits::eDepthStencilAttachment;
 		}
-		if (textureType & TextureTypeFlagBits::SAMPLED) {
+		if (textureType & TextureUsageFlagBits::SAMPLED) {
 			features |= vk::FormatFeatureFlagBits::eSampledImage;
 		}
-		if (textureType & TextureTypeFlagBits::COLOR_ATTACHMENT) {
+		if (textureType & TextureUsageFlagBits::COLOR_ATTACHMENT) {
 			features |= vk::FormatFeatureFlagBits::eColorAttachment;
 		}
-		if (textureType & TextureTypeFlagBits::STORAGE) {
+		if (textureType & TextureUsageFlagBits::STORAGE) {
 			features |= vk::FormatFeatureFlagBits::eStorageImage;
 		}
-		if (textureType & TextureTypeFlagBits::TRANSFER_DST) {
+		if (textureType & TextureUsageFlagBits::TRANSFER_DST) {
 			features |= vk::FormatFeatureFlagBits::eTransferDst;
 		}
 
@@ -689,6 +689,15 @@ namespace sa {
 			vk::ImageTiling::eOptimal);
 
 	}
+
+	Format Renderer::getDefaultDepthFormat() const {
+		return (Format)m_pCore->getDefaultDepthFormat();
+	}
+
+	Format Renderer::gettDefaultColorFormat() const {
+		return (Format)m_pCore->getDefaultColorFormat();
+	}
+
 
 	Format Renderer::getAttachmentFormat(ResourceID renderProgram, uint32_t attachmentIndex) const {
 		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);

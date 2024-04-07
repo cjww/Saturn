@@ -306,8 +306,8 @@ void SceneView::onImGui() {
 		glm::vec2 screenSize = { imageSize.x, imageSize.y };
 
 		if (m_pEngine->getCurrentScene() && showIcons) {
-			sa::Texture2D* tex = sa::AssetManager::get().loadTexture(m_pEditor->MakeEditorRelative("resources/lightbulb-icon.png"), true);
-			sa::Texture2D* sunTexture = sa::AssetManager::get().loadTexture(m_pEditor->MakeEditorRelative("resources/sun-icon.png"), true);
+			sa::Texture* tex = sa::AssetManager::get().loadTexture(m_pEditor->MakeEditorRelative("resources/lightbulb-icon.png"), true);
+			sa::Texture* sunTexture = sa::AssetManager::get().loadTexture(m_pEditor->MakeEditorRelative("resources/sun-icon.png"), true);
 			m_pEngine->getCurrentScene()->forEach<comp::Light>([&](const comp::Light& light) {
 				ImColor color(light.values.color);
 				switch (light.values.type) {

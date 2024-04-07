@@ -28,7 +28,7 @@ namespace sa {
 		DynamicBuffer lightIndexBuffer;
 		ResourceID lightCullingDescriptorSet = NULL_RESOURCE;
 
-		DynamicTexture2D debugLightHeatmap;
+		DynamicTexture debugLightHeatmap;
 		ResourceID debugLightHeatmapFramebuffer = NULL_RESOURCE;
 		ResourceID debugLightHeatmapDescriptorSet = NULL_RESOURCE;
 		bool renderDebugHeatmap = false;

@@ -98,7 +98,7 @@ namespace sa {
 		void nextSubpass(SubpassContents contentType) const;
 		void endRenderProgram(ResourceID renderProgram) const;
 
-		void beginRendering(const std::vector<Texture2D>& colorAttachments, const std::vector<Texture2D>& depthAttachments);
+		void beginRendering(const std::vector<Texture>& colorAttachments, const std::vector<Texture>& depthAttachments);
 
 		void executeSubContext(const sa::SubContext& context) const;
 

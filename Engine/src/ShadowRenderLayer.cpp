@@ -20,12 +20,13 @@ namespace sa {
 		ShadowPreferences& prefs = getPreferences();
 		
 		const uint32_t cascadeCount = data.depthTextureLayers.size();
-		data.depthTexture = Texture2D(
-			TextureTypeFlagBits::DEPTH_ATTACHMENT | TextureTypeFlagBits::SAMPLED, 
+		data.depthTexture.create2D(
+			TextureUsageFlagBits::DEPTH_ATTACHMENT | TextureUsageFlagBits::SAMPLED,
 			{ prefs.directionalResolution, prefs.directionalResolution },
+			m_renderer.getDefaultDepthFormat(),
 			1,
-			1,
-			cascadeCount
+			cascadeCount,
+			1
 		);
 
 		uint32_t count = cascadeCount;
@@ -121,7 +122,7 @@ namespace sa {
 		}
 
 		m_depthRenderProgram = m_renderer.createRenderProgram()
-			.addDepthAttachment(AttachmentFlagBits::eClear | AttachmentFlagBits::eSampled | AttachmentFlagBits::eStore)
+			.addDepthAttachment(AttachmentFlagBits::eClear | AttachmentFlagBits::eSampled | AttachmentFlagBits::eStore, m_renderer.getDefaultDepthFormat())
 			.beginSubpass()
 			.addAttachmentReference(0, SubpassAttachmentUsage::DepthTarget)
 			.endSubpass()

@@ -34,7 +34,7 @@ namespace sa {
 
 struct AssetEditorInfo {
 	bool inCreateMenu;
-	sa::Texture2D icon;
+	sa::Texture icon;
 	std::function<bool(sa::Asset*)> imGuiPropertiesFn;
 };
 
@@ -73,7 +73,7 @@ namespace ImGui {
 
 
 	AssetEditorInfo GetAssetInfo(sa::AssetTypeID type);
-	sa::Texture2D LoadEditorIcon(const std::filesystem::path& path);
+	sa::Texture LoadEditorIcon(const std::filesystem::path& path);
 
 	bool MaterialProperties(sa::Asset* pAsset);
 	bool ModelProperties(sa::Asset* pAsset);

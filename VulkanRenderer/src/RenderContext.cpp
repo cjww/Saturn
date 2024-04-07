@@ -126,7 +126,8 @@ namespace sa {
 	}
 
 	
-	void RenderContext::beginRendering(const std::vector<Texture2D>& colorAttachments, const std::vector<Texture2D>& depthAttachments) {
+	void RenderContext::beginRendering(const std::vector<Texture>& colorAttachments, const std::vector<Texture>& depthAttachments) {
+		throw std::runtime_error("Not implemented");
 		/*
 		vk::RenderingAttachmentInfo attachmentInfo = {};
 		attachmentInfo.
@@ -242,7 +243,7 @@ namespace sa {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
 		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
-		if ((texture.getTypeFlags() & sa::TextureTypeFlagBits::STORAGE) == sa::TextureTypeFlagBits::STORAGE) {
+		if ((texture.getUsageFlags() & sa::TextureUsageFlagBits::STORAGE) == sa::TextureUsageFlagBits::STORAGE) {
 			layout = vk::ImageLayout::eGeneral;
 		}
 
@@ -252,7 +253,7 @@ namespace sa {
 	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture) const {
 		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
 		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
-		if ((texture.getTypeFlags() & sa::TextureTypeFlagBits::STORAGE) == sa::TextureTypeFlagBits::STORAGE) {
+		if ((texture.getUsageFlags() & sa::TextureUsageFlagBits::STORAGE) == sa::TextureUsageFlagBits::STORAGE) {
 			layout = vk::ImageLayout::eGeneral;
 		}
 
@@ -439,7 +440,7 @@ namespace sa {
 
 		DeviceImage* pImage = (DeviceImage*)texture;
 		vk::ImageLayout newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-		if (texture.getTypeFlags() & sa::TextureTypeFlagBits::STORAGE)
+		if (texture.getUsageFlags() & sa::TextureUsageFlagBits::STORAGE)
 			newLayout = vk::ImageLayout::eGeneral;
 
 
@@ -475,7 +476,7 @@ namespace sa {
 
 		DeviceImage* pImage = (DeviceImage*)texture;
 		vk::ImageLayout newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-		if (texture.getTypeFlags() & sa::TextureTypeFlagBits::STORAGE)
+		if (texture.getUsageFlags() & sa::TextureUsageFlagBits::STORAGE)
 			newLayout = vk::ImageLayout::eGeneral;
 
 		vk::ImageMemoryBarrier imageBarrier{
@@ -600,28 +601,28 @@ namespace sa {
 		case sa::Transition::COMPUTE_SHADER_READ:
 			dstAccess = vk::AccessFlagBits::eShaderRead;
 			dstStage = vk::PipelineStageFlagBits::eComputeShader;
-			if (texture.getTypeFlags() & TextureTypeFlagBits::STORAGE) {
+			if (texture.getUsageFlags() & TextureUsageFlagBits::STORAGE) {
 				newLayout = vk::ImageLayout::eGeneral;
 			}
 			break;
 		case sa::Transition::COMPUTE_SHADER_WRITE:
 			dstAccess = vk::AccessFlagBits::eShaderWrite;
 			dstStage = vk::PipelineStageFlagBits::eComputeShader;
-			if (texture.getTypeFlags() & TextureTypeFlagBits::STORAGE) {
+			if (texture.getUsageFlags() & TextureUsageFlagBits::STORAGE) {
 				newLayout = vk::ImageLayout::eGeneral;
 			}
 			break;
 		case sa::Transition::FRAGMENT_SHADER_READ:
 			dstAccess = vk::AccessFlagBits::eShaderRead;
 			dstStage = vk::PipelineStageFlagBits::eFragmentShader;
-			if (texture.getTypeFlags() & TextureTypeFlagBits::STORAGE) {
+			if (texture.getUsageFlags() & TextureUsageFlagBits::STORAGE) {
 				newLayout = vk::ImageLayout::eGeneral;
 			}
 			break;
 		case sa::Transition::FRAGMENT_SHADER_WRITE:
 			dstAccess = vk::AccessFlagBits::eShaderWrite;
 			dstStage = vk::PipelineStageFlagBits::eFragmentShader;
-			if (texture.getTypeFlags() & TextureTypeFlagBits::STORAGE) {
+			if (texture.getUsageFlags() & TextureUsageFlagBits::STORAGE) {
 				newLayout = vk::ImageLayout::eGeneral;
 			}
 			break;

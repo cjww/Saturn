@@ -7,8 +7,8 @@
 namespace sa {
 
 	struct ShadowRenderData {
-		Texture2D depthTexture;
-		std::array<Texture2D, 6> depthTextureLayers;
+		Texture depthTexture;
+		std::array<Texture, 6> depthTextureLayers;
 
 		std::array<ResourceID, 6> depthFramebuffers = { NULL_RESOURCE };
 	

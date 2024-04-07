@@ -34,8 +34,8 @@ namespace sa {
 
 		std::vector<std::filesystem::path> m_recentProjectPaths;
 		
-		Texture2D m_logoTex;
-		Texture2D m_playPauseTex;
+		Texture m_logoTex;
+		Texture m_playPauseTex;
 
 		bool m_enterSceneNamePopup;
 

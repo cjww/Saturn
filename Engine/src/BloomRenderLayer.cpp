@@ -6,14 +6,14 @@ namespace sa {
 		BloomData& data = getRenderTargetData(renderTargetID);
 
 		//Textures
-		data.bloomTexture = DynamicTexture2D(TextureTypeFlagBits::STORAGE | TextureTypeFlagBits::SAMPLED, extent, 1U, 6U);
+		data.bloomTexture.create2D(TextureUsageFlagBits::STORAGE | TextureUsageFlagBits::SAMPLED, extent, Format::UNDEFINED, 6U);
 		data.bloomMipTextures = data.bloomTexture.createMipLevelTextures();
 
-		data.bufferTexture = DynamicTexture2D(TextureTypeFlagBits::STORAGE | TextureTypeFlagBits::SAMPLED, extent, 1U, data.bloomMipTextures.size() - 1);
+		data.bufferTexture.create2D(TextureUsageFlagBits::STORAGE | TextureUsageFlagBits::SAMPLED, extent, Format::UNDEFINED, data.bloomMipTextures.size() - 1);
 		data.bufferMipTextures = data.bufferTexture.createMipLevelTextures();
 
 		//bloomData.outputTexture = DynamicTexture2D(TextureTypeFlagBits::STORAGE | TextureTypeFlagBits::SAMPLED, tex.getExtent(), sa::FormatPrecisionFlagBits::e8Bit, sa::FormatDimensionFlagBits::e4, sa::FormatTypeFlagBits::UNORM);
-		data.outputTexture = DynamicTexture2D(TextureTypeFlagBits::STORAGE | TextureTypeFlagBits::SAMPLED, colorTexture->getExtent());
+		data.outputTexture.create2D(TextureUsageFlagBits::STORAGE | TextureUsageFlagBits::SAMPLED, colorTexture->getExtent());
 
 		// DescriptorSets
 		if (data.filterDescriptorSet == NULL_RESOURCE)
@@ -55,8 +55,8 @@ namespace sa {
 			m_renderer.updateDescriptorSet(data.blurDescriptorSets[i], 3, data.bloomMipTextures[i + 1]);
 		}
 
-		DynamicTexture2D smallImage = data.bloomMipTextures[data.bloomMipTextures.size() - 1];
-		DynamicTexture2D bigImage = data.bloomMipTextures[data.bloomMipTextures.size() - 2];
+		DynamicTexture smallImage = data.bloomMipTextures[data.bloomMipTextures.size() - 1];
+		DynamicTexture bigImage = data.bloomMipTextures[data.bloomMipTextures.size() - 2];
 		for (int i = (int)data.bufferMipTextures.size() - 1; i >= 0; i--) {
 			m_renderer.updateDescriptorSet(data.upsampleDescriptorSets[i], 0, *colorTexture, m_sampler);
 			m_renderer.updateDescriptorSet(data.upsampleDescriptorSets[i], 1, smallImage);

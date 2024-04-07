@@ -400,10 +400,10 @@ namespace sa {
 		//Application::get()->pushLayer(new TestLayer);
 
 		Image logo("resources/Logo-white.png");
-		m_logoTex = Texture2D(logo, true);
+		m_logoTex.create2D(logo, true);
 
 		Image playPauseButtons("resources/play-pause-buttons.png");
-		m_playPauseTex = Texture2D(playPauseButtons, true);
+		m_playPauseTex.create2D(playPauseButtons, true);
 
 		// read recent projects
 		std::ifstream recentProjectsFile(MakeEditorRelative("recent_projects.txt"));

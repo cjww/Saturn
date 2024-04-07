@@ -118,7 +118,7 @@ namespace sa {
 
 		vk::ImageLayout imageLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
 		if (getDescriptorType(binding) == vk::DescriptorType::eStorageImage || 
-			(textures[0].getTypeFlags() & sa::TextureTypeFlagBits::STORAGE) == sa::TextureTypeFlagBits::STORAGE)
+			(textures[0].getUsageFlags() & sa::TextureUsageFlagBits::STORAGE) == sa::TextureUsageFlagBits::STORAGE)
 		{
 			imageLayout = vk::ImageLayout::eGeneral;
 		}

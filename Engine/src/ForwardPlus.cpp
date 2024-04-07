@@ -42,7 +42,7 @@ namespace sa {
 			m_colorRenderProgram = NULL_RESOURCE;
 		}
 
-		Format colorFormat = m_renderer.selectFormat({ Format::R32G32B32A32_SFLOAT }, TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED);
+		Format colorFormat = m_renderer.selectFormat({ Format::R32G32B32A32_SFLOAT }, TextureUsageFlagBits::COLOR_ATTACHMENT | TextureUsageFlagBits::SAMPLED);
 
 		m_colorRenderProgram = m_renderer.createRenderProgram()
 			.addColorAttachment(AttachmentFlagBits::eClear | AttachmentFlagBits::eStore | AttachmentFlagBits::eSampled, colorFormat)
@@ -63,8 +63,8 @@ namespace sa {
 		Format depthFormat = m_renderer.getAttachmentFormat(m_colorRenderProgram, 1);
 
 
-		data.colorTexture = DynamicTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, extent, colorFormat);
-		data.depthTexture = DynamicTexture2D(TextureTypeFlagBits::DEPTH_ATTACHMENT | TextureTypeFlagBits::SAMPLED, extent, depthFormat);
+		data.colorTexture.create2D(TextureUsageFlagBits::COLOR_ATTACHMENT | TextureUsageFlagBits::SAMPLED, extent, colorFormat);
+		data.depthTexture.create2D(TextureUsageFlagBits::DEPTH_ATTACHMENT | TextureUsageFlagBits::SAMPLED, extent, depthFormat);
 
 
 		//Depth pre pass
@@ -90,7 +90,7 @@ namespace sa {
 
 		// ----------- DEBUG -------------------
 
-		data.debugLightHeatmap = DynamicTexture2D(TextureTypeFlagBits::COLOR_ATTACHMENT | TextureTypeFlagBits::SAMPLED, { data.tileCount.x, data.tileCount.y }, m_debugTextureFormat);
+		data.debugLightHeatmap.create2D(TextureUsageFlagBits::COLOR_ATTACHMENT | TextureUsageFlagBits::SAMPLED, { data.tileCount.x, data.tileCount.y }, m_debugTextureFormat);
 		if(data.debugLightHeatmapDescriptorSet == NULL_RESOURCE) {
 			data.debugLightHeatmapDescriptorSet = m_debugHeatmapLayout.allocateDescriptorSet(0);
 		}

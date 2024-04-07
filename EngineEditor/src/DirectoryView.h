@@ -5,9 +5,9 @@
 class DirectoryView : public EditorModule {
 private:
 	bool m_isAssetListOpen;
-	sa::Texture2D m_directoryIcon;
-	sa::Texture2D m_otherFileIcon;
-	sa::Texture2D m_luaScriptIcon;
+	sa::Texture m_directoryIcon;
+	sa::Texture m_otherFileIcon;
+	sa::Texture m_luaScriptIcon;
 
 	std::unordered_set<sa::Asset*> m_openAssetProperties;
 
