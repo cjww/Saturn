@@ -6,6 +6,7 @@
 #include "DescriptorSetStructs.h"
 
 #define MAX_VARIABLE_DESCRIPTOR_COUNT 1024
+#define VARIABLE_DESCRIPTOR_COUNT 0
 
 namespace sa {
 

@@ -194,7 +194,7 @@ namespace sa {
 			if (t.array.size() > 0) {
 				layoutBinding.descriptorCount = t.array[0];
 				if (layoutBinding.descriptorCount == 1) {
-					layoutBinding.descriptorCount = 0;
+					layoutBinding.descriptorCount = VARIABLE_DESCRIPTOR_COUNT;
 				}
 			}
 			else {
@@ -468,41 +468,42 @@ namespace sa {
 		std::vector<vk::DescriptorPoolSize> poolSizes;
 		for (auto& [set, info] : m_descriptorSetLayoutInfos) {
 
-			// to support variable descriptor counts
-			vk::DescriptorSetLayoutBindingFlagsCreateInfo flagCreateInfo;
 
+
+
+			vk::DescriptorSetLayoutBindingFlagsCreateInfo flagCreateInfo;
 			std::vector<vk::DescriptorBindingFlags> flags(info.bindings.size(), (vk::DescriptorBindingFlags)0);
 
-			for (size_t i = 0; i < flags.size(); i++) {
+			
+
+			std::vector<vk::DescriptorSetLayoutBinding> layoutBindings(info.bindings.size());
+			for (int i = 0; i < layoutBindings.size(); i++) {
+				layoutBindings[i].descriptorCount = info.bindings[i].descriptorCount;
+
 				if (info.bindings[i].descriptorCount > 1) {
 					flags[i] |= vk::DescriptorBindingFlagBits::ePartiallyBound; // allow use to not bind all descriptors if not needed
 				}
-				else if (info.bindings[i].descriptorCount == 0) {
-					info.bindings[i].descriptorCount = MAX_VARIABLE_DESCRIPTOR_COUNT;
+				else if (info.bindings[i].descriptorCount == VARIABLE_DESCRIPTOR_COUNT) {
+					// to support variable descriptor counts
+					layoutBindings[i].descriptorCount = MAX_VARIABLE_DESCRIPTOR_COUNT;
 					flags[i] = vk::DescriptorBindingFlagBits::eVariableDescriptorCount | vk::DescriptorBindingFlagBits::ePartiallyBound;
 					auto it = std::max_element(info.bindings.begin(), info.bindings.end(), [](const auto& highest, const auto& next) { return highest.binding < next.binding; });
 					if (info.bindings[i].binding != it->binding) {
 						throw std::runtime_error("Variable count descriptors has to be on the last binding");
 					}
 				}
-			}
-			flagCreateInfo.setBindingFlags(flags);
 
-
-			// Create descriptorSet layout create info
-			vk::DescriptorSetLayoutCreateInfo layoutInfo;
-			layoutInfo.setPNext(&flagCreateInfo);
-
-			std::vector<vk::DescriptorSetLayoutBinding> layoutBindings(info.bindings.size());
-			for (int i = 0; i < layoutBindings.size(); i++) {
 				layoutBindings[i].binding = info.bindings[i].binding;
-				layoutBindings[i].descriptorCount = info.bindings[i].descriptorCount;
 				layoutBindings[i].descriptorType = (vk::DescriptorType)info.bindings[i].type;
 				layoutBindings[i].pImmutableSamplers = info.bindings[i].pImmutableSamplers;
 				layoutBindings[i].stageFlags = (vk::ShaderStageFlags)info.bindings[i].stageFlags;
 			}
-
+			flagCreateInfo.setBindingFlags(flags);
+			
+			vk::DescriptorSetLayoutCreateInfo layoutInfo;
+			layoutInfo.setPNext(&flagCreateInfo);
 			layoutInfo.setBindings(layoutBindings);
+
 			m_descriptorSetLayouts[set] = ResourceManager::get().insert<vk::DescriptorSetLayout>(m_pCore->getDevice().createDescriptorSetLayout(layoutInfo));
 
 			for (const auto& binding : info.bindings) {

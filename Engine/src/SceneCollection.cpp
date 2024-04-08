@@ -127,7 +127,7 @@ namespace sa {
 			context.updateDescriptorSet(getSceneDescriptorSetColorPass(), 2, getMaterialBuffer());
 			context.updateDescriptorSet(getSceneDescriptorSetColorPass(), 3, getMaterialIndicesBuffer());
 		
-			context.updateDescriptorSet(getSceneDescriptorSetColorPass(), 8, getTextures(), 0);
+			context.updateDescriptorSet(getSceneDescriptorSetColorPass(), 32, getTextures(), 0);
 
 			context.updateDescriptorSet(getSceneDescriptorSetDepthPass(), 0, getObjectBuffer());
 			m_updatedDescriptorSets = true;

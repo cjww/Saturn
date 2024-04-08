@@ -6,9 +6,6 @@ namespace sa {
 	void DescriptorSet::create(vk::Device device, vk::DescriptorPool descriptorPool, uint32_t count, DescriptorSetLayoutInfo info, vk::DescriptorSetLayout layout, uint32_t setIndex) {
 		m_device = device;
 		m_descriptorPool = descriptorPool;
-		vk::DescriptorSetVariableDescriptorCountAllocateInfo varDescCountAllocInfo;
-		std::vector<uint32_t> counts(count, MAX_VARIABLE_DESCRIPTOR_COUNT);
-		varDescCountAllocInfo.setDescriptorCounts(counts);
 
 		std::vector<vk::DescriptorSetLayout> layouts(count, layout);
 		vk::DescriptorSetAllocateInfo allocInfo{
@@ -17,11 +14,15 @@ namespace sa {
 			.pSetLayouts = layouts.data(),
 		};
 
-		for (int i = 0; i < info.bindings.size(); i++) {
-			if (info.bindings[i].binding == info.bindings.size() - 1) {
-				if (info.bindings[i].descriptorCount == MAX_VARIABLE_DESCRIPTOR_COUNT) { // has a variable descriptor
-					allocInfo.setPNext(&varDescCountAllocInfo);
-				}
+		vk::DescriptorSetVariableDescriptorCountAllocateInfo varDescCountAllocInfo;
+		std::vector<uint32_t> counts;
+
+		auto it = std::max_element(info.bindings.begin(), info.bindings.end(), [](const auto& highest, const auto& next) { return highest.binding < next.binding; });
+		if (it != info.bindings.end()) {
+			if (it->descriptorCount == VARIABLE_DESCRIPTOR_COUNT) { // has a variable descriptor
+				counts.resize(count, MAX_VARIABLE_DESCRIPTOR_COUNT);
+				varDescCountAllocInfo.setDescriptorCounts(counts);
+				allocInfo.setPNext(&varDescCountAllocInfo);
 			}
 		}
 		
