@@ -59,6 +59,8 @@ namespace sa {
 
 		
 		m_swapchainFramebuffer = renderer.createSwapchainFramebuffer(m_swapchainRenderProgram, m_pWindow->getSwapchainID());
+
+		SA_DEBUG_LOG_INFO("Resized window renderer");
 	}
 
 	void WindowRenderer::render(RenderContext& context, const Texture& texture) {

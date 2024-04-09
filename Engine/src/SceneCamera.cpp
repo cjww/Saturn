@@ -161,8 +161,8 @@ namespace sa {
         updateProjection();
     }
 
-    void SceneCamera::calculateFrustumBounds(glm::vec3* pOutPoints) {
-        glm::mat4 inv = glm::inverse(m_projMat);
+    void SceneCamera::calculateFrustumBoundsWorldSpace(glm::vec3* pOutPoints) const {
+        glm::mat4 inv = glm::inverse(m_projMat * getViewMatrix());
         int i = 0;
         for (uint32_t x = 0; x < 2; x++) {
             for (uint32_t y = 0; y < 2; y++) {

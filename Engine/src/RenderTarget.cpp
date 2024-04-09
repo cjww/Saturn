@@ -40,10 +40,6 @@ namespace sa {
 	void RenderTarget::initialize(Engine* pEngine, Extent extent) {
 		m_extent = extent;
 		m_wasResized = true;
-		/*
-		m_mainRenderData.isInitialized = false; // initialize main data in main render pass
-		m_bloomData.isInitialized = false; // initialize bloom data in bloom pass
-		*/
 		m_pDispatcher = pEngine;
 		m_pOutputTexture = nullptr;
 	}
@@ -55,9 +51,6 @@ namespace sa {
 
 	void RenderTarget::destroy() {
 		m_windowResizedConnection.release();
-		//cleanupMainRenderData();
-		//cleanupBloomData();
-
 	}
 
 	void RenderTarget::resize(Extent extent) {

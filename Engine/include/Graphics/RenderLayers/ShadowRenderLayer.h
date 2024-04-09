@@ -9,7 +9,6 @@ namespace sa {
 	struct ShadowRenderData {
 		Texture depthTexture;
 		std::array<Texture, 6> depthTextureLayers;
-
 		std::array<ResourceID, 6> depthFramebuffers = { NULL_RESOURCE };
 	
 		bool isInitialized = false;
@@ -26,9 +25,8 @@ namespace sa {
 	};
 
 	struct alignas(16) ShadowShaderData {
-		glm::mat4 lightMat;
+		glm::mat4 lightMat[6];
 		uint32_t mapIndex;
-		uint32_t mapCount;
 	};
 
 	class ShadowRenderLayer : public IRenderLayer<ShadowRenderData, ShadowPreferences> {
@@ -41,12 +39,13 @@ namespace sa {
 
 		DynamicBuffer m_shadowShaderDataBuffer;
 
-
 		void cleanupRenderData(ShadowRenderData& data);
 		void initializeRenderData(ShadowRenderData& data);
 
 		
-		void renderShadowMap(RenderContext& context, const glm::vec3& origin, ShadowData& data, const ShadowRenderData& renderData, SceneCollection& sceneCollection);
+		void renderCascadedShadowMaps(RenderContext& context, const SceneCamera& sceneCamera, ShadowData& data, const ShadowRenderData& renderData, SceneCollection& sceneCollection);
+
+		void renderShadowMap(RenderContext& context, const SceneCamera& sceneCamera, ShadowData& data, const ShadowRenderData& renderData, SceneCollection& sceneCollection);
 		
 	public:
 

@@ -37,7 +37,6 @@ namespace sa {
 			data.compositeDescriptorSet = m_pipelineLayout.allocateDescriptorSet(0);
 
 
-
 		for (int i = 0; i < data.bloomTexture.getTextureCount(); i++) {
 			context.transitionTexture(data.bloomTexture.getTexture(i), sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_WRITE);
 			context.transitionTexture(data.bufferTexture.getTexture(i), sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_WRITE);

@@ -115,10 +115,12 @@ namespace sa {
 
 		if (m_sceneDescriptorSetColorPass == NULL_RESOURCE || !pMaterialShader->getColorPipelineLayout().hasAllocatedDescriptorSet(m_sceneDescriptorSetColorPass)) {
 			m_sceneDescriptorSetColorPass = pMaterialShader->getColorPipelineLayout().allocateDescriptorSet(SET_PER_FRAME);
+			SA_DEBUG_LOG_INFO("Scene descriptor set allocated for color pass, MaterialShader UUID: ", pMaterialShader->getID());
 		}
 
 		if (m_sceneDescriptorSetDepthPass == NULL_RESOURCE || !pMaterialShader->getDepthPipelineLayout().hasAllocatedDescriptorSet(m_sceneDescriptorSetDepthPass)) {
 			m_sceneDescriptorSetDepthPass = pMaterialShader->getDepthPipelineLayout().allocateDescriptorSet(SET_PER_FRAME);
+			SA_DEBUG_LOG_INFO("Scene descriptor set allocated for depth pass, MaterialShader UUID: ", pMaterialShader->getID());
 		}
 
 		if (!m_updatedDescriptorSets) {

@@ -100,6 +100,7 @@ namespace sa {
 		// ----------------------------------
 
 		data.isInitialized = true;
+
 	}
 
 	void ForwardPlus::cleanupMainRenderData(ForwardPlusRenderData& data) {
@@ -140,6 +141,8 @@ namespace sa {
 		ForwardPlusRenderData& renderTargetData = getRenderTargetData(renderTargetID);
 		cleanupMainRenderData(renderTargetData);
 		initializeMainRenderData(renderTargetData, newExtent);
+		SA_DEBUG_LOG_INFO("Initialized Forward Plus data for RenderTarget UUID: ", renderTargetID, " with extent { w:", newExtent.width, ", h:", newExtent.height, " }");
+
 	}
 
 
@@ -215,6 +218,7 @@ namespace sa {
 		if (!data.isInitialized) {
 			cleanupMainRenderData(data);
 			initializeMainRenderData(data, pRenderTarget->getExtent());
+			SA_DEBUG_LOG_INFO("Initialized Forward Plus data for RenderTarget UUID: ", pRenderTarget->getID(), " with extent { w:", pRenderTarget->getExtent().width, ", h:", pRenderTarget->getExtent().height, " }");
 		}
 		Rectf cameraViewport = pCamera->getViewport();
 		Rect viewport = {

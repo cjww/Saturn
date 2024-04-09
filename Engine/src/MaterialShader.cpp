@@ -89,6 +89,7 @@ namespace sa {
             settings);
 
         m_recompiled = false;
+        SA_DEBUG_LOG_INFO("Recreated pipelines, MaterialShader UUID: ", getID());
     }
 
     bool MaterialShader::arePipelinesReady() const {

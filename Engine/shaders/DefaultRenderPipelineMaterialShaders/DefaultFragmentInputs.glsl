@@ -65,9 +65,8 @@ struct Light {
 };
 
 struct ShadowMapData {
-    mat4 lightMat;
+    mat4 lightMat[6];
     uint mapIndex;
-    uint mapCount;
 };
 
 layout(set = 0, binding = 1, std140) readonly buffer Lights {

@@ -47,6 +47,7 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 	m_camera.setPosition(sa::Vector3(0, 0, 5));
 	m_camera.lookAt(sa::Vector3(0, 0, 0));
 	m_camera.setOrthoWidth(10.f);
+	m_camera.setFar(100.f);
 	
 	m_renderTarget.initialize(pEngine, pWindow->getCurrentExtent());
 
@@ -554,15 +555,18 @@ void SceneView::onImGui() {
 			sa::ShadowRenderLayer* pLayer = m_pEngine->getRenderPipeline().getLayer<sa::ShadowRenderLayer>();
 			if (pLayer) {
 				ImGui::Begin("Shadow pass");
-				ResourceID framebuffer = pLayer->getRenderTargetData(m_renderTarget.getID() ^ static_cast<uint32_t>(entity)).depthFramebuffers[0];
-				if (framebuffer != NULL_RESOURCE) {
-					sa::Texture tex = sa::Renderer::get().getFramebufferTexture(framebuffer, 0);
-					sa::Extent framebufferExtent = sa::Renderer::get().getFramebufferExtent(framebuffer);
+				const auto& renderData = pLayer->getRenderTargetData(m_renderTarget.getID() ^ static_cast<uint32_t>(entity));
+				for (uint32_t i = 0; i < renderData.depthFramebuffers.size(); i++) {
+					ResourceID framebuffer = renderData.depthFramebuffers[i];
+					if (framebuffer != NULL_RESOURCE) {
+						sa::Texture tex = sa::Renderer::get().getFramebufferTexture(framebuffer, 0);
+						sa::Extent framebufferExtent = sa::Renderer::get().getFramebufferExtent(framebuffer);
 					
-					ImVec2 imAvailSize = ImGui::GetContentRegionAvail();
-					glm::vec2 availSize(imAvailSize.x, imAvailSize.y);
+						ImVec2 imAvailSize = ImGui::GetContentRegionAvail();
+						glm::vec2 availSize(imAvailSize.x, imAvailSize.y);
 					
-					ImGui::Image(tex, ImVec2(availSize.x, availSize.x));
+						ImGui::Image(tex, ImVec2(availSize.x, availSize.x));
+					}
 				}
 
 				ImGui::End();

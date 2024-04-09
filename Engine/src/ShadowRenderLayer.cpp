@@ -38,35 +38,85 @@ namespace sa {
 		data.isInitialized = true;
 	}
 
-	void ShadowRenderLayer::renderShadowMap(RenderContext& context, const glm::vec3& origin, ShadowData& data, const ShadowRenderData& renderData, SceneCollection& sceneCollection) {
-			
+	void ShadowRenderLayer::renderCascadedShadowMaps(RenderContext& context, const SceneCamera& sceneCamera, ShadowData& data, const ShadowRenderData& renderData, SceneCollection& sceneCollection) {
 		const auto& prefs = getPreferences();
 
 		SceneCamera camera;
 		camera.setAspectRatio(1.f);
-		camera.setNear(prefs.depthNear);
-		camera.setFar(prefs.depthFar);
-		switch (data.lightType) {
-		case LightType::DIRECTIONAL:
-			camera.setProjectionMode(ProjectionMode::eOrthographic);
-			camera.setOrthoWidth(64);
-			camera.setPosition(origin - glm::vec3(data.lightDirection) * camera.getFar() * 0.5f);
-			camera.setForward(data.lightDirection);
-				
-			break;
-		case LightType::POINT:
-			break;
-		case LightType::SPOT:
-			camera.setProjectionMode(ProjectionMode::ePerspective);
-			camera.setFOVDegrees(45.f);
-			camera.setPosition(data.lightPosition);
-			camera.setForward(data.lightDirection);
+		camera.setProjectionMode(ProjectionMode::eOrthographic);
 
-			break;
-		default:
-			break;
+		const int cascadeCount = 4;
+		const float cascadeSplitLambda = 0.95f;
+
+		float clipRange = sceneCamera.getFar() - sceneCamera.getNear();
+		float clipRatio = sceneCamera.getFar() / sceneCamera.getNear();
+
+		// Based on method presented in https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch10.html
+		float cascadeSplits[cascadeCount];
+		for (uint32_t i = 0; i < cascadeCount; i++) {
+			float p = (i + 1) / static_cast<float>(cascadeCount);
+			float log = sceneCamera.getNear() * std::pow(clipRatio, p);
+			float uniform = sceneCamera.getNear() + clipRange * p;
+			//float d = cascadeSplitLambda * (log - uniform) + uniform;
+			//float d = cascadeSplitLambda * uniform + (1 - cascadeSplitLambda) * log;
+			float d = uniform;
+			cascadeSplits[i] = (d - sceneCamera.getNear()) / clipRange;
 		}
-		
+
+		glm::vec3 frustumPoints[8];
+		sceneCamera.calculateFrustumBoundsWorldSpace(frustumPoints);
+		float lastSplitDistance = 0.0f;
+		for (uint32_t i = 0; i < cascadeCount; i++) {
+			glm::vec3 cascadePoints[8];
+			memcpy(cascadePoints, frustumPoints, sizeof(glm::vec3) * 8);
+			const float splitDistance = cascadeSplits[i];
+
+			// calculate cascade corners
+			for (uint32_t j = 0; j < 4; j++) {
+				glm::vec3 dist = cascadePoints[j + 4] - cascadePoints[j];
+				cascadePoints[j + 4] = cascadePoints[j] + (dist * splitDistance);
+				cascadePoints[j] = cascadePoints[j] + (dist * lastSplitDistance);
+			}
+
+			// get center
+			glm::vec3 center(0.f);
+			for (uint32_t j = 0; j < 8; j++) {
+				center += cascadePoints[j];
+			}
+			center /= 8.0f;
+
+			// calculate encapsulation
+			float radius = 0.0f;
+			for (uint32_t j = 0; j < 8; j++) {
+				float distance = glm::length(cascadePoints[j] - center);
+				radius = glm::max(radius, distance);
+			}
+			radius = std::ceil(radius * 16.0f) / 16.0f;
+
+			const glm::vec3 maxExtents(radius);
+			const glm::vec3 minExtents(-maxExtents);
+
+			camera.lookAt(center);
+			camera.setPosition(center - glm::vec3(data.lightDirection) * -minExtents.z);
+			camera.setNear(0.0f);
+			camera.setFar(maxExtents.z - minExtents.z);
+			camera.setOrthoBounds(sa::Bounds{
+				.left = minExtents.x,
+				.right = maxExtents.x,
+				.top = maxExtents.y,
+				.bottom = minExtents.y
+			});
+
+			glm::mat4 lightViewMatrix = glm::lookAt(center - glm::vec3(data.lightDirection) * -minExtents.z, center, glm::vec3(0.0f, 1.0f, 0.0f));
+			glm::mat4 lightOrthoMatrix = glm::ortho(minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, 0.0f, maxExtents.z - minExtents.z);
+			lightOrthoMatrix[1][1] *= -1.0f;
+			//data.lightMatrices[i] = camera.getProjectionMatrix() * camera.getViewMatrix();
+			data.lightMatrices[i] = lightOrthoMatrix * lightViewMatrix;
+			data.lightMatrices[5][i].x = -(sceneCamera.getNear() + splitDistance * clipRange);
+
+			lastSplitDistance = splitDistance;
+		}
+
 
 		for (auto& collection : sceneCollection) {
 			if (!collection.readyDescriptorSets(context)) {
@@ -76,10 +126,8 @@ namespace sa {
 			if (!collection.arePipelinesReady()) {
 				continue;
 			}
-			for (uint32_t i = 0; i < renderData.depthTextureLayers.size(); i++) {
-				camera.setPosition(origin - glm::vec3(data.lightDirection) * camera.getFar() * 0.5f);
-
-
+			for (uint32_t i = 0; i < cascadeCount; i++) {
+				
 				context.beginRenderProgram(m_depthRenderProgram, renderData.depthFramebuffers[i], SubpassContents::DIRECT);
 				collection.bindDepthPipeline(context);
 				context.bindDescriptorSet(collection.getSceneDescriptorSetDepthPass());
@@ -90,7 +138,7 @@ namespace sa {
 				Rect viewport = {};
 				viewport.extent = Renderer::get().getFramebufferExtent(renderData.depthFramebuffers[i]);
 				viewport.offset = { 0, 0 };
-			
+
 				context.setViewport(viewport);
 				context.setScissor(viewport);
 
@@ -99,10 +147,8 @@ namespace sa {
 
 				context.setCullMode(sa::CullModeFlagBits::FRONT);
 
-				data.lightMatrix = camera.getProjectionMatrix() * camera.getViewMatrix();
-
 				PerFrameBuffer perFrame = {};
-				perFrame.projViewMatrix = data.lightMatrix;
+				perFrame.projViewMatrix = data.lightMatrices[i];
 				perFrame.viewPos = glm::vec4(0);
 
 				if (collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>() > 0) {
@@ -112,6 +158,24 @@ namespace sa {
 				context.endRenderProgram(m_depthRenderProgram);
 			}
 		}
+	}
+
+	void ShadowRenderLayer::renderShadowMap(RenderContext& context, const SceneCamera& sceneCamera, ShadowData& data, const ShadowRenderData& renderData, SceneCollection& sceneCollection) {
+		
+		switch(data.lightType) {
+		case LightType::DIRECTIONAL:
+			renderCascadedShadowMaps(context, sceneCamera, data, renderData, sceneCollection);
+			break;
+		case LightType::POINT:
+			break;
+		case LightType::SPOT:
+			
+			break;
+		default:
+			break;
+		}
+		
+
 		
 	}
 
@@ -145,29 +209,7 @@ namespace sa {
 
 	bool ShadowRenderLayer::preRender(RenderContext& context, SceneCollection& sceneCollection) {
 		SA_PROFILE_FUNCTION();
-		for (auto it = sceneCollection.iterateShadowsBegin(); it != sceneCollection.iterateShadowsEnd(); it++) {
-			if (m_shadowTextureCount >= MAX_SHADOW_TEXTURE_COUNT)
-				break; 
-
-			sa::ShadowData& data = *it;
-			if (data.lightType == LightType::DIRECTIONAL)
-				continue;
-
-			ShadowRenderData& renderData = getRenderTargetData(static_cast<uint32_t>(data.entityID));
-			if (!renderData.isInitialized) {
-				initializeRenderData(renderData);
-			}
-
-			renderShadowMap(context, data.lightPosition, data, renderData, sceneCollection);
-
-			ShadowShaderData shaderData = {};
-			shaderData.lightMat = data.lightMatrix;
-			shaderData.mapIndex = m_shadowTextureCount;
-			shaderData.mapCount = 1;
-			m_shadowShaderDataBuffer << shaderData;
-
-			m_shadowTextures[m_shadowTextureCount++] = renderData.depthTextureLayers[0];
-		}
+		//TODO point light shadows
 		return true;
 	}
 	
@@ -186,15 +228,14 @@ namespace sa {
 				initializeRenderData(renderData);
 			}
 
-			renderShadowMap(context, pCamera->getPosition(), data, renderData, sceneCollection);
+			renderShadowMap(context, *pCamera, data, renderData, sceneCollection);
 			
 			ShadowShaderData shaderData = {};
-			shaderData.lightMat = data.lightMatrix;
+			memcpy(shaderData.lightMat, data.lightMatrices.data(), data.lightMatrices.size() * sizeof(glm::mat4));
 			shaderData.mapIndex = m_shadowTextureCount;
-			shaderData.mapCount = 1;
 			m_shadowShaderDataBuffer << shaderData;
 
-			m_shadowTextures[m_shadowTextureCount++] = renderData.depthTextureLayers[0];
+			m_shadowTextures[m_shadowTextureCount++] = renderData.depthTexture;
 		}
 		return true;
 	}

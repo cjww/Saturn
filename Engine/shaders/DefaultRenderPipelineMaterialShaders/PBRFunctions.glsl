@@ -237,8 +237,10 @@ float InShadow(vec3 worldPos, Light light) {
         return 0.0;
     }
 
+    const int layer = 1;
+
     ShadowMapData shadowData = shadowMapDataBuffer.shadowMaps[light.shadowMapDataIndex];
-    vec4 lightSpacePos = biasMat * shadowData.lightMat * vec4(worldPos, 1.0);
+    vec4 lightSpacePos = biasMat * shadowData.lightMat[layer] * vec4(worldPos, 1.0);
     vec3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
     /*
     vec4 texCoord;
@@ -259,7 +261,7 @@ float InShadow(vec3 worldPos, Light light) {
     float shadow = 0.0;
     for(int u = -1; u <= 1; u++) {
         for(int v = -1; v <= 1; v++) {
-            vec4 uv = vec4(projCoords.xy + vec2(u, v) * texelSize, 0.0, projCoords.z);
+            vec4 uv = vec4(projCoords.xy + vec2(u, v) * texelSize, layer, projCoords.z);
             float gauss = gaussianKernel[u + 1][v + 1];
             shadow += texture(shadowTextures[shadowData.mapIndex], uv).r * gauss;
         }

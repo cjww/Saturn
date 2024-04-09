@@ -85,7 +85,7 @@ namespace sa {
 		ProjectionMode getProjectionMode() const;
 		void setProjectionMode(ProjectionMode projectionMode);
 
-		void calculateFrustumBounds(glm::vec3* pOutPoints);
+		void calculateFrustumBoundsWorldSpace(glm::vec3* pOutPoints) const;
 		bool intersectsFrustum() const;
 		
 	};
