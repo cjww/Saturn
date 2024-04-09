@@ -16,7 +16,7 @@ namespace sa {
 	const char* to_string(LightType type);
 
 	struct alignas(16) LightData {
-		Color color = SA_COLOR_WHITE;					// vec3 rgb, float intensity
+		Color color = Color::White;					// vec3 rgb, float intensity
 		glm::vec4 position = glm::vec4(0, 0, 0, 7);		// vec3 position, float attenuationRadius
 		glm::vec4 direction = glm::vec4(1, 0, 0, glm::radians(12.5f));	// vec3 direction, float spotLightAngle
 		LightType type = LightType::POINT;

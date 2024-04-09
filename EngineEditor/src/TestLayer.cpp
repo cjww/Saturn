@@ -14,7 +14,7 @@ namespace sa {
 	}
 
 
-	Entity createLight(Engine& engine, Vector3 position, Color color = SA_COLOR_WHITE) {
+	Entity createLight(Engine& engine, Vector3 position, Color color = Color::White) {
 		sa::Entity light = engine.getCurrentScene()->createEntity("Point Light");
 		light.addComponent<comp::Transform>()->position = position + Vector3(0, 0, -0.1f);
 

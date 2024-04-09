@@ -2,17 +2,6 @@
 #include <stdint.h>
 #include "Tools/utils.hpp"
 
-#define SA_COLOR_WHITE sa::Color{ 1, 1, 1, 1 }
-#define SA_COLOR_BLACK sa::Color{ 0, 0, 0, 1 }
-#define SA_COLOR_RED sa::Color{ 1, 0, 0, 1 }
-#define SA_COLOR_GREEN sa::Color{ 0, 1, 0, 1 }
-#define SA_COLOR_BLUE sa::Color{ 0, 0, 1, 1 }
-
-#define SA_COLOR_YELLOW sa::Color{ 1, 1, 0, 1 }
-#define SA_COLOR_CYAN sa::Color{ 0, 1, 1, 1 }
-#define SA_COLOR_MAGENTA sa::Color{ 1, 0, 1, 1 }
-
-
 namespace sa {
 	struct Extent {
 		uint32_t width, height;
@@ -39,6 +28,12 @@ namespace sa {
 
 
 	struct Color {
+		Color(float r, float g, float b, float a) {
+			this->r = r;
+			this->g = g;
+			this->b = b;
+			this->a = a;
+		}
 		float r, g, b, a;
 		bool operator==(const Color& other) const {
 			return utils::equals(r, other.r) &&
@@ -46,7 +41,24 @@ namespace sa {
 				utils::equals(b, other.b) &&
 				utils::equals(a, other.a);
 		}
+
+		static Color White;
+		static Color Black;
+		static Color Red;
+		static Color Green;
+		static Color Blue;
+		static Color Yellow;
+		static Color Cyan;
+		static Color Magenta;
 	};
+	inline Color Color::White = Color(1, 1, 1, 1);
+	inline Color Color::Black = Color(0, 0, 0, 1);
+	inline Color Color::Red = Color(1, 0, 0, 1);
+	inline Color Color::Green = Color(0, 1, 0, 1);
+	inline Color Color::Blue = Color(0, 0, 1, 1);
+	inline Color Color::Yellow = Color(1, 1, 0, 1);
+	inline Color Color::Cyan = Color(0, 1, 1, 1);
+	inline Color Color::Magenta = Color(1, 0, 1, 1);
 	
 	
 	struct Rect {

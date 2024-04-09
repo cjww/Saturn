@@ -1,5 +1,7 @@
 #include "pch.h"
 #include "Resources/DynamicBuffer.hpp"
+#include "Renderer.hpp"
+#include "internal\VulkanCore.hpp"
 
 namespace sa{
 
@@ -14,12 +16,17 @@ namespace sa{
 
 	}
 
-	DynamicBuffer::DynamicBuffer(VulkanCore* pCore, BufferType type, uint32_t bufferCount, size_t size, void* initialData) 
+	DynamicBuffer::DynamicBuffer(BufferType type, size_t size, void* initialData) 
 		: DynamicBuffer() 
 	{
+		create(type, size, initialData);
+	}
+
+	void DynamicBuffer::create(BufferType type, size_t size, void* initialData) {
+		uint32_t bufferCount = Renderer::get().getCore()->getQueueCount();
 		m_buffers.resize(bufferCount);
 		for (uint32_t i = 0; i < bufferCount; i++) {
-			m_buffers[i] = Buffer(pCore, type, size, initialData);
+			m_buffers[i] = Buffer(type, size, initialData);
 		}
 	}
 

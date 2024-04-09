@@ -38,9 +38,7 @@ namespace sa {
 	};
 
 	class BloomRenderLayer : public IRenderLayer<BloomData, BloomPreferences>{
-	public:
 	private:
-		
 		Shader m_bloomShader;
 		PipelineLayout m_pipelineLayout;
 		ResourceID m_bloomPipeline = NULL_RESOURCE;

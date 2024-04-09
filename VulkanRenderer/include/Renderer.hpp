@@ -192,9 +192,6 @@ namespace sa {
 
 		void freeDescriptorSet(ResourceID descriptorSet);
 
-		Buffer createBuffer(BufferType type, size_t size = 0ui64, void* initialData = nullptr);
-		DynamicBuffer createDynamicBuffer(BufferType type, size_t size = 0ui64, void* initialData = nullptr);
-
 		DeviceMemoryStats getGPUMemoryUsage() const;
 
 		DataTransfer* queueTransfer(const DataTransfer& transfer);
@@ -202,7 +199,8 @@ namespace sa {
 
 		ResourceID createSampler(FilterMode filterMode = FilterMode::NEAREST);
 		ResourceID createSampler(const SamplerInfo& samplerInfo);
-		
+		void destroySampler(ResourceID sampler);
+
 		RenderContext beginFrame(ResourceID swapchain);
 		void endFrame(ResourceID swapchain);
 

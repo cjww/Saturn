@@ -147,6 +147,34 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
             break;
         }
 
+        if(light.shadowMapDataIndex != ~0) {
+            ShadowMapData shadowData = shadowMapDataBuffer.shadowMaps[light.shadowMapDataIndex];
+
+            uint cascadeIndex = 0;
+            for(uint i = 0; i < shadowPrefs.cascadeCount - 1; ++i) {
+                if(in_vertexViewPos.z < shadowData.lightMat[5][i].x) {	
+                    cascadeIndex = i + 1;
+                }
+            }
+
+            switch(cascadeIndex) {
+                case 0:
+                    radiance *= vec3(1, 0, 0);
+                    break;
+                case 1:
+                    radiance *= vec3(0, 1, 0);
+                    break;
+                case 2:
+                    radiance *= vec3(0, 0, 1);
+                    break;
+                case 3:
+                    radiance *= vec3(0, 1, 1);
+                    break;
+            }
+        }
+
+
+
         vec3 F0 = vec3(0.04);
         F0 = mix(F0, pow(albedo, vec3(2.2)), metallic);
 
@@ -237,18 +265,25 @@ float InShadow(vec3 worldPos, Light light) {
         return 0.0;
     }
 
-    const int layer = 1;
-
     ShadowMapData shadowData = shadowMapDataBuffer.shadowMaps[light.shadowMapDataIndex];
-    vec4 lightSpacePos = biasMat * shadowData.lightMat[layer] * vec4(worldPos, 1.0);
-    vec3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
-    /*
-    vec4 texCoord;
-    texCoord.xyw = projCoords.xyz;
-    texCoord.z = 0.0;
 
-    return texture(shadowTextures[shadowData.mapIndex], texCoord).r;
-    */
+    
+    uint cascadeIndex = 0;
+	for(uint i = 0; i < shadowPrefs.cascadeCount - 1; ++i) {
+		if(in_vertexViewPos.z < shadowPrefs.cascadeSplits[i]) {
+			cascadeIndex = i + 1;
+		}
+	}
+    vec4 lightSpacePos = biasMat * shadowData.lightMat[cascadeIndex] * vec4(worldPos, 1.0);
+    vec3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
+    
+    if(!shadowPrefs.smoothShadows) {
+        vec4 texCoord;
+        texCoord.xyw = projCoords.xyz;
+        texCoord.z = cascadeIndex;
+        return texture(shadowTextures[shadowData.mapIndex], texCoord).r;
+    }
+    
     vec3 texSize = textureSize(shadowTextures[shadowData.mapIndex], 0);
     vec2 texelSize = 1.0 / texSize.xy;
 
@@ -261,38 +296,12 @@ float InShadow(vec3 worldPos, Light light) {
     float shadow = 0.0;
     for(int u = -1; u <= 1; u++) {
         for(int v = -1; v <= 1; v++) {
-            vec4 uv = vec4(projCoords.xy + vec2(u, v) * texelSize, layer, projCoords.z);
+            vec4 uv = vec4(projCoords.xy + vec2(u, v) * texelSize, cascadeIndex, projCoords.z);
             float gauss = gaussianKernel[u + 1][v + 1];
             shadow += texture(shadowTextures[shadowData.mapIndex], uv).r * gauss;
         }
     }
     return shadow;
-
-    /*
-    float currentDepth = projCoords.z;
-    
-    if(currentDepth > 1.0) {
-        return 0.0;
-    }
-
-
-    float shadow = 0.0;
-    int sampleRadius = 1;
-    for(int u = -sampleRadius; u <= sampleRadius; u++) {
-        for(int v = -sampleRadius; v <= sampleRadius; v++) {
-    
-            vec3 uv = vec3(projCoords.xy + vec2(u, v) * texelSize, 0.0);
-            float closestDepth = texture(shadowTextures[shadowData.mapIndex], uv).r;
-            if(currentDepth > closestDepth) {
-                float gauss = gaussianKernel[u + 1][v + 1];
-                shadow += gauss;
-            }
-        }
-    }
-
-    
-    return shadow;
-    */
 }
 
 #endif

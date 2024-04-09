@@ -47,8 +47,7 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 	m_camera.setPosition(sa::Vector3(0, 0, 5));
 	m_camera.lookAt(sa::Vector3(0, 0, 0));
 	m_camera.setOrthoWidth(10.f);
-	m_camera.setFar(100.f);
-	
+
 	m_renderTarget.initialize(pEngine, pWindow->getCurrentExtent());
 
 	//m_camera.setViewport(sa::Rect{ { 0, 0 }, m_renderTarget.extent });

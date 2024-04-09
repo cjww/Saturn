@@ -46,13 +46,10 @@ namespace sa {
 		ResourceID m_colorRenderProgram = NULL_RESOURCE;
 		
 		ResourceID m_linearSampler = NULL_RESOURCE;
-		ResourceID m_shadowSampler = NULL_RESOURCE;
-
 		ResourceID m_nearestSampler = NULL_RESOURCE;
 
 		ResourceID m_depthPreRenderProgram = NULL_RESOURCE;
 		ResourceID m_lightCullingPipeline = NULL_RESOURCE;
-
 
 		PipelineLayout m_lightCullingLayout;
 		Shader m_lightCullingShader;
@@ -63,7 +60,6 @@ namespace sa {
 		Format m_debugTextureFormat;
 		ResourceID m_debugLightHeatmapRenderProgram = NULL_RESOURCE;
 		ResourceID m_debugLightHeatmapPipeline = NULL_RESOURCE;
-
 
 		ShadowRenderLayer* m_pShadowRenderLayer;
 

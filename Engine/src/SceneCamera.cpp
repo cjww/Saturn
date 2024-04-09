@@ -163,21 +163,22 @@ namespace sa {
 
     void SceneCamera::calculateFrustumBoundsWorldSpace(glm::vec3* pOutPoints) const {
         glm::mat4 inv = glm::inverse(m_projMat * getViewMatrix());
-        int i = 0;
-        for (uint32_t x = 0; x < 2; x++) {
-            for (uint32_t y = 0; y < 2; y++) {
-                for (uint32_t z = 0; z < 2; z++) {
-                    glm::vec4 point = inv * glm::vec4(
-                        2.0f * x - 1.0f,
-                        2.0f * y - 1.0f,
-                        z,
-                        1.0f);
-                    point /= point.w;
-                    pOutPoints[i] = point;
+        
+        static const glm::vec3 frustumCorners[8] = {
+                glm::vec3(-1.0f,  1.0f, 0.0f),
+                glm::vec3(1.0f,  1.0f, 0.0f),
+                glm::vec3(1.0f, -1.0f, 0.0f),
+                glm::vec3(-1.0f, -1.0f, 0.0f),
+                glm::vec3(-1.0f,  1.0f,  1.0f),
+                glm::vec3(1.0f,  1.0f,  1.0f),
+                glm::vec3(1.0f, -1.0f,  1.0f),
+                glm::vec3(-1.0f, -1.0f,  1.0f),
+        };
 
-                    i++;
-                }
-            }
+        for (uint32_t i = 0; i < 8; i++) {
+            glm::vec4 point = inv * glm::vec4(frustumCorners[i], 1.0f);
+            point /= point.w;
+            pOutPoints[i] = point;            
         }
     }
 

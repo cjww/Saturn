@@ -13,13 +13,13 @@ namespace sa {
 
 		sa::Renderer& renderer = sa::Renderer::get();
 
-		m_indirectIndexedBuffer = renderer.createDynamicBuffer(BufferType::INDIRECT);
-		m_vertexBuffer = renderer.createDynamicBuffer(BufferType::VERTEX);
-		m_indexBuffer = renderer.createDynamicBuffer(BufferType::INDEX);
-		m_objectBuffer = renderer.createDynamicBuffer(BufferType::STORAGE);
+		m_indirectIndexedBuffer.create(BufferType::INDIRECT);
+		m_vertexBuffer.create(BufferType::VERTEX);
+		m_indexBuffer.create(BufferType::INDEX);
+		m_objectBuffer.create(BufferType::STORAGE);
 
-		m_materialBuffer = renderer.createDynamicBuffer(BufferType::STORAGE);
-		m_materialIndicesBuffer = renderer.createDynamicBuffer(BufferType::STORAGE);
+		m_materialBuffer.create(BufferType::STORAGE);
+		m_materialIndicesBuffer.create(BufferType::STORAGE);
 
 		m_currentExtent = { 0, 0 };
 
@@ -296,7 +296,7 @@ namespace sa {
 		sa::Renderer& renderer = sa::Renderer::get();
 
 		uint32_t lightCount = 0U;
-		m_lightBuffer = renderer.createDynamicBuffer(BufferType::STORAGE, sizeof(uint32_t), &lightCount);
+		m_lightBuffer.create(BufferType::STORAGE, sizeof(uint32_t), &lightCount);
 
 		SA_DEBUG_LOG_INFO("SceneCollection created");
 	}

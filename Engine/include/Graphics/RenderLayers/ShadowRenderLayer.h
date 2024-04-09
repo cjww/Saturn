@@ -2,35 +2,50 @@
 
 #include "../IRenderLayer.h"
 
-#define MAX_SHADOW_TEXTURE_COUNT 8U
+#define MAX_SHADOW_TEXTURE_COUNT 8u
 
 namespace sa {
 
-	struct ShadowRenderData {
-		Texture depthTexture;
-		std::array<Texture, 6> depthTextureLayers;
-		std::array<ResourceID, 6> depthFramebuffers = { NULL_RESOURCE };
-	
-		bool isInitialized = false;
-	};
 
 	struct ShadowPreferences {
-		uint32_t directionalResolution = 1024;
-		uint32_t cascadeCount = 3;
+		uint32_t directionalMapResolution = 4096u;
+		uint32_t omniMapResolution = 1024u;
+
+		uint32_t cascadeCount = 4u;
+		static const uint32_t MaxCascadeCount = 6u;
+
+		float cascadeSplitLambda = 0.8f;
+
+		bool smoothShadows = true;
 
 		float depthBiasConstant = 0.0f;
 		float depthBiasSlope = 0.4f;
-		float depthNear = 1.0f;
-		float depthFar = 100.f;
+	};
+
+	struct ShadowRenderData {
+		Texture depthTexture;
+		std::array<Texture, ShadowPreferences::MaxCascadeCount> depthTextureLayers;
+		std::array<ResourceID, ShadowPreferences::MaxCascadeCount> depthFramebuffers;
+	
+		bool isInitialized = false;
+
+		ShadowRenderData() {
+			depthFramebuffers.fill(NULL_RESOURCE);
+		}
 	};
 
 	struct alignas(16) ShadowShaderData {
-		glm::mat4 lightMat[6];
+		glm::mat4 lightMat[ShadowPreferences::MaxCascadeCount];
 		uint32_t mapIndex;
 	};
 
 	class ShadowRenderLayer : public IRenderLayer<ShadowRenderData, ShadowPreferences> {
 	private:
+		struct ShadowPreferencesShaderData {
+			bool smoothShadows;
+			uint32_t cascadeCount;
+			float cascadeSplits[6];
+		};
 
 		ResourceID m_depthRenderProgram = NULL_RESOURCE;
 		
@@ -38,9 +53,19 @@ namespace sa {
 		uint32_t m_shadowTextureCount;
 
 		DynamicBuffer m_shadowShaderDataBuffer;
+		
+		ResourceID m_shadowSampler = NULL_RESOURCE;
+
+		Buffer m_preferencesBuffer;
+
+		std::array<float, ShadowPreferences::MaxCascadeCount> m_cascadeSplits;
+
+		bool m_updateCascades;
+
+		void createSampler();
 
 		void cleanupRenderData(ShadowRenderData& data);
-		void initializeRenderData(ShadowRenderData& data);
+		void initializeRenderData(ShadowRenderData& data, LightType lightType);
 
 		
 		void renderCascadedShadowMaps(RenderContext& context, const SceneCamera& sceneCamera, ShadowData& data, const ShadowRenderData& renderData, SceneCollection& sceneCollection);
@@ -53,6 +78,7 @@ namespace sa {
 		virtual void cleanup() override;
 
 		virtual void onRenderTargetResize(UUID renderTargetID, Extent oldExtent, Extent newExtent) override;
+		virtual void onPreferencesUpdated() override;
 
 		virtual bool preRender(RenderContext& context, SceneCollection& sceneCollection) override;
 		virtual bool render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) override;
@@ -61,7 +87,8 @@ namespace sa {
 		const Buffer& getShadowDataBuffer() const;
 		const std::array<Texture, MAX_SHADOW_TEXTURE_COUNT>& getShadowTextures() const;
 		const uint32_t getShadowTextureCount() const;
-
+		const ResourceID getShadowSampler() const;
+		const Buffer& getPreferencesBuffer() const;
 
 	};
 

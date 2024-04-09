@@ -4,6 +4,8 @@
 
 #include "Engine.h"
 
+#include "Graphics\DebugRenderer.h"
+
 namespace sa {
 	void ForwardPlus::createPreDepthPass() {
 		
@@ -79,7 +81,7 @@ namespace sa {
 		if (data.lightCullingDescriptorSet == NULL_RESOURCE)
 			data.lightCullingDescriptorSet = m_lightCullingLayout.allocateDescriptorSet(0);
 
-		data.lightIndexBuffer = m_renderer.createDynamicBuffer(BufferType::STORAGE, sizeof(uint32_t) * MAX_LIGHTS_PER_TILE * totalTileCount);
+		data.lightIndexBuffer.create(BufferType::STORAGE, sizeof(uint32_t) * MAX_LIGHTS_PER_TILE * totalTileCount);
 
 		// Color pass
 		data.colorFramebuffer = m_renderer.createFramebuffer(m_colorRenderProgram, { (DynamicTexture)data.colorTexture, data.depthTexture });
@@ -154,17 +156,7 @@ namespace sa {
 		createColorPass();
 
 		// Samplers
-		SamplerInfo info = {};
-		info.addressModeU = SamplerAddressMode::CLAMP_TO_BORDER;
-		info.addressModeV = SamplerAddressMode::CLAMP_TO_BORDER;
-		info.addressModeW = SamplerAddressMode::CLAMP_TO_BORDER;
-		info.borderColor = sa::BorderColor::FLOAT_OPAQUE_WHITE;
-		info.magFilter = FilterMode::LINEAR;
-		info.minFilter = FilterMode::LINEAR;
-		info.compareEnable = true;
-		info.compareOp = CompareOp::GREATER;
-
-		m_shadowSampler = m_renderer.createSampler(info);
+		
 		m_linearSampler = m_renderer.createSampler(FilterMode::LINEAR);
 		m_nearestSampler = m_renderer.createSampler(FilterMode::NEAREST);
 
@@ -235,10 +227,10 @@ namespace sa {
 			return false;
 		}
 		pCamera->setAspectRatio((float)viewport.extent.width / viewport.extent.height);
-		Matrix4x4 projViewMat = pCamera->getProjectionMatrix() * pCamera->getViewMatrix();
-
+		
 		PerFrameBuffer perFrame;
-		perFrame.projViewMatrix = projViewMat;
+		perFrame.projMat = pCamera->getProjectionMatrix();
+		perFrame.viewMat = pCamera->getViewMatrix();
 		perFrame.viewPos = pCamera->getPosition();
 
 		context.beginRenderProgram(m_depthPreRenderProgram, data.depthFramebuffer, SubpassContents::DIRECT);
@@ -299,8 +291,14 @@ namespace sa {
 			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 4, data.lightIndexBuffer.getBuffer());
 			if (m_pShadowRenderLayer && m_pShadowRenderLayer->isActive()) {
 				context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 5, m_pShadowRenderLayer->getShadowDataBuffer());
-				context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 7,
-					m_pShadowRenderLayer->getShadowTextures().data(), m_pShadowRenderLayer->getShadowTextureCount(), m_shadowSampler, 0);
+
+				context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 
+					8,
+					m_pShadowRenderLayer->getShadowTextures().data(), 
+					m_pShadowRenderLayer->getShadowTextureCount(), 
+					m_pShadowRenderLayer->getShadowSampler(), 
+					0);
+				context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 7, m_pShadowRenderLayer->getPreferencesBuffer());
 			}
 			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 6, m_linearSampler);
 			
@@ -316,6 +314,13 @@ namespace sa {
 				context.drawIndexedIndirect(collection.getDrawCommandBuffer(), 0, collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
 			}
 		}
+
+		//Finally render debug stuff
+		if (!DebugRenderer::Get().isInitialized())
+			DebugRenderer::Get().initialize(m_colorRenderProgram);
+
+		DebugRenderer::Get().render(context, viewport.extent, *pCamera);
+
 
 		context.endRenderProgram(m_colorRenderProgram);
 

@@ -15,7 +15,8 @@ namespace sa {
 	};
 
 	struct PerFrameBuffer {
-		glm::mat4 projViewMatrix;
+		glm::mat4 viewMat;
+		glm::mat4 projMat;
 		Vector3 viewPos;
 	};
 }

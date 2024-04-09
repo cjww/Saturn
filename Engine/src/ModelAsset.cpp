@@ -152,7 +152,7 @@ namespace sa {
 		material.setTextures(textures, (MaterialTextureType)type);
 	}
 
-	sa::Color getColor(aiMaterial* pMaterial, const char* pKey, unsigned int type, unsigned int idx, sa::Color defaultColor = SA_COLOR_WHITE) {
+	sa::Color getColor(aiMaterial* pMaterial, const char* pKey, unsigned int type, unsigned int idx, sa::Color defaultColor = sa::Color::White) {
 		aiColor3D color = {};
 		pMaterial->Get(pKey, type, idx, color);
 		if (!color.IsBlack())
@@ -231,7 +231,7 @@ namespace sa {
 			pMaterial->values.albedoColor = getColor(aMaterial, AI_MATKEY_BASE_COLOR);
 			
 			// Emissive Color
-			pMaterial->values.emissiveColor = getColor(aMaterial, AI_MATKEY_COLOR_EMISSIVE, SA_COLOR_BLACK);
+			pMaterial->values.emissiveColor = getColor(aMaterial, AI_MATKEY_COLOR_EMISSIVE, Color::Black);
 
 			aMaterial->Get(AI_MATKEY_EMISSIVE_INTENSITY, pMaterial->values.emissiveColor.a);
 			aMaterial->Get(AI_MATKEY_OPACITY, pMaterial->values.opacity);

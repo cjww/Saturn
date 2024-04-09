@@ -2,6 +2,7 @@
 #include "Resources/Buffer.hpp"
 
 #include "internal/VulkanCore.hpp"
+#include "Renderer.hpp"
 
 namespace sa {
 	
@@ -21,7 +22,7 @@ namespace sa {
 
 	Buffer::Buffer()
 		: m_pBuffer(nullptr)
-		, m_pCore(nullptr)
+		, m_pCore(Renderer::get().getCore())
 		, m_size(0)
 		, m_type(BufferType::VERTEX)
 		, m_view(NULL_RESOURCE)
@@ -29,14 +30,13 @@ namespace sa {
 
 	}
 
-	Buffer::Buffer(VulkanCore* pCore, BufferType type, size_t size, void* initialData) : Buffer() {
-		m_pCore = pCore;
-		m_type = type;
-		m_size = (initialData) ? size : 0;
+	Buffer::Buffer(BufferType type, size_t size, void* initialData) : Buffer() {
 		create(type, size, initialData);
 	}
 
 	void Buffer::create(BufferType type, size_t size, void* initialData) {
+		m_type = type;
+		m_size = (initialData) ? size : 0;
 		if (size == 0)
 			size = 1;
 
@@ -89,12 +89,14 @@ namespace sa {
 	}
 
 	void Buffer::destroy() {
-		m_pCore->destroyBuffer(m_pBuffer);
+		if (m_pBuffer) {
+			m_pCore->destroyBuffer(m_pBuffer);
+			m_pBuffer = nullptr;
+		}
 		if (m_view != NULL_RESOURCE) {
 			ResourceManager::get().remove<vk::BufferView>(m_view);
 			m_view = NULL_RESOURCE;
 		}
-		m_pBuffer = nullptr;
 		m_size = 0;
 	}
 

@@ -3,36 +3,45 @@
 
 #include "Engine.h"
 
+#include "Graphics/DebugRenderer.h"
+
 namespace sa {
 
 	void ShadowRenderLayer::cleanupRenderData(ShadowRenderData& data) {
-		if (!data.isInitialized)
-			return;
-		data.depthTexture.destroy();
+		if (data.depthTexture.isValid())
+			data.depthTexture.destroy();
+
 		for (uint32_t i = 0; i < data.depthTextureLayers.size(); i++) {
-			data.depthTextureLayers[i].destroy();
-			m_renderer.destroyFramebuffer(data.depthFramebuffers[i]);
+			if(data.depthTextureLayers[i].isValidView())
+				data.depthTextureLayers[i].destroy();
+
+			if (data.depthFramebuffers[i] != NULL_RESOURCE) {
+				m_renderer.destroyFramebuffer(data.depthFramebuffers[i]);
+				data.depthFramebuffers[i] = NULL_RESOURCE;
+			}
 		}
 		data.isInitialized = false;
 	}
 
-	void ShadowRenderLayer::initializeRenderData(ShadowRenderData& data) {
+	void ShadowRenderLayer::initializeRenderData(ShadowRenderData& data, LightType lightType) {
 		ShadowPreferences& prefs = getPreferences();
 		
-		const uint32_t cascadeCount = data.depthTextureLayers.size();
+		uint32_t res = lightType == LightType::DIRECTIONAL ? prefs.directionalMapResolution : prefs.omniMapResolution;
+		Extent extent = { res, res };
+
 		data.depthTexture.create2D(
 			TextureUsageFlagBits::DEPTH_ATTACHMENT | TextureUsageFlagBits::SAMPLED,
-			{ prefs.directionalResolution, prefs.directionalResolution },
+			extent,
 			m_renderer.getDefaultDepthFormat(),
 			1,
-			cascadeCount,
+			ShadowPreferences::MaxCascadeCount,
 			1
 		);
 
-		uint32_t count = cascadeCount;
+		uint32_t count = ShadowPreferences::MaxCascadeCount;
 		data.depthTexture.createArrayLayerTextures(&count, data.depthTextureLayers.data());
 
-		for (uint32_t i = 0; i < cascadeCount; i++) {
+		for (uint32_t i = 0; i < ShadowPreferences::MaxCascadeCount; i++) {
 			data.depthFramebuffers[i] = m_renderer.createFramebuffer(m_depthRenderProgram, { data.depthTextureLayers[i] }, data.depthTexture.getExtent());
 		}
 		data.isInitialized = true;
@@ -41,35 +50,40 @@ namespace sa {
 	void ShadowRenderLayer::renderCascadedShadowMaps(RenderContext& context, const SceneCamera& sceneCamera, ShadowData& data, const ShadowRenderData& renderData, SceneCollection& sceneCollection) {
 		const auto& prefs = getPreferences();
 
-		SceneCamera camera;
-		camera.setAspectRatio(1.f);
-		camera.setProjectionMode(ProjectionMode::eOrthographic);
-
-		const int cascadeCount = 4;
-		const float cascadeSplitLambda = 0.95f;
+		const int cascadeCount = prefs.cascadeCount;
+		const float cascadeSplitLambda = prefs.cascadeSplitLambda;
 
 		float clipRange = sceneCamera.getFar() - sceneCamera.getNear();
 		float clipRatio = sceneCamera.getFar() / sceneCamera.getNear();
 
 		// Based on method presented in https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch10.html
-		float cascadeSplits[cascadeCount];
+		float cascadeSplits[ShadowPreferences::MaxCascadeCount];
 		for (uint32_t i = 0; i < cascadeCount; i++) {
 			float p = (i + 1) / static_cast<float>(cascadeCount);
 			float log = sceneCamera.getNear() * std::pow(clipRatio, p);
 			float uniform = sceneCamera.getNear() + clipRange * p;
-			//float d = cascadeSplitLambda * (log - uniform) + uniform;
-			//float d = cascadeSplitLambda * uniform + (1 - cascadeSplitLambda) * log;
-			float d = uniform;
+			float d = cascadeSplitLambda * (log - uniform) + uniform;
+			
 			cascadeSplits[i] = (d - sceneCamera.getNear()) / clipRange;
+			m_cascadeSplits[i] = -(sceneCamera.getNear() + cascadeSplits[i] * clipRange);
+		}
+		
+
+		static glm::vec3 frustumPoints[8];
+		if (m_updateCascades) {
+			sceneCamera.calculateFrustumBoundsWorldSpace(frustumPoints);
+			//m_updateCascades = false;
 		}
 
-		glm::vec3 frustumPoints[8];
-		sceneCamera.calculateFrustumBoundsWorldSpace(frustumPoints);
+
+		SceneCamera camera;
+		camera.setProjectionMode(ProjectionMode::eOrthographic);
 		float lastSplitDistance = 0.0f;
 		for (uint32_t i = 0; i < cascadeCount; i++) {
+			const float splitDistance = cascadeSplits[i];
+
 			glm::vec3 cascadePoints[8];
 			memcpy(cascadePoints, frustumPoints, sizeof(glm::vec3) * 8);
-			const float splitDistance = cascadeSplits[i];
 
 			// calculate cascade corners
 			for (uint32_t j = 0; j < 4; j++) {
@@ -96,10 +110,11 @@ namespace sa {
 			const glm::vec3 maxExtents(radius);
 			const glm::vec3 minExtents(-maxExtents);
 
+			const float distance = maxExtents.z * 10.f;
+			camera.setPosition(center - glm::vec3(data.lightDirection) * distance);
 			camera.lookAt(center);
-			camera.setPosition(center - glm::vec3(data.lightDirection) * -minExtents.z);
 			camera.setNear(0.0f);
-			camera.setFar(maxExtents.z - minExtents.z);
+			camera.setFar(distance - minExtents.z);
 			camera.setOrthoBounds(sa::Bounds{
 				.left = minExtents.x,
 				.right = maxExtents.x,
@@ -107,16 +122,12 @@ namespace sa {
 				.bottom = minExtents.y
 			});
 
-			glm::mat4 lightViewMatrix = glm::lookAt(center - glm::vec3(data.lightDirection) * -minExtents.z, center, glm::vec3(0.0f, 1.0f, 0.0f));
-			glm::mat4 lightOrthoMatrix = glm::ortho(minExtents.x, maxExtents.x, minExtents.y, maxExtents.y, 0.0f, maxExtents.z - minExtents.z);
-			lightOrthoMatrix[1][1] *= -1.0f;
-			//data.lightMatrices[i] = camera.getProjectionMatrix() * camera.getViewMatrix();
-			data.lightMatrices[i] = lightOrthoMatrix * lightViewMatrix;
-			data.lightMatrices[5][i].x = -(sceneCamera.getNear() + splitDistance * clipRange);
-
+			data.lightViewMatrices[i] = camera.getViewMatrix();
+			data.lightProjMatrices[i] = camera.getProjectionMatrix();
+			data.lightViewMatrices[5][i].x = -(sceneCamera.getNear() + cascadeSplits[i] * clipRange);
 			lastSplitDistance = splitDistance;
 		}
-
+		data.lightProjMatrices[5] = glm::mat4(1.f);
 
 		for (auto& collection : sceneCollection) {
 			if (!collection.readyDescriptorSets(context)) {
@@ -148,7 +159,8 @@ namespace sa {
 				context.setCullMode(sa::CullModeFlagBits::FRONT);
 
 				PerFrameBuffer perFrame = {};
-				perFrame.projViewMatrix = data.lightMatrices[i];
+				perFrame.viewMat = data.lightViewMatrices[i];
+				perFrame.projMat = data.lightProjMatrices[i];
 				perFrame.viewPos = glm::vec4(0);
 
 				if (collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>() > 0) {
@@ -158,6 +170,21 @@ namespace sa {
 				context.endRenderProgram(m_depthRenderProgram);
 			}
 		}
+	}
+
+	void ShadowRenderLayer::createSampler() {
+		const auto& prefs = getPreferences();
+		SamplerInfo info = {};
+		info.addressModeU = SamplerAddressMode::CLAMP_TO_BORDER;
+		info.addressModeV = SamplerAddressMode::CLAMP_TO_BORDER;
+		info.addressModeW = SamplerAddressMode::CLAMP_TO_BORDER;
+		info.borderColor = sa::BorderColor::FLOAT_OPAQUE_WHITE;
+		info.magFilter =  prefs.smoothShadows ? FilterMode::LINEAR : FilterMode::NEAREST;
+		info.minFilter = prefs.smoothShadows ? FilterMode::LINEAR : FilterMode::NEAREST;
+		info.compareEnable = true;
+		info.compareOp = CompareOp::GREATER;
+
+		m_shadowSampler = m_renderer.createSampler(info);
 	}
 
 	void ShadowRenderLayer::renderShadowMap(RenderContext& context, const SceneCamera& sceneCamera, ShadowData& data, const ShadowRenderData& renderData, SceneCollection& sceneCollection) {
@@ -192,8 +219,20 @@ namespace sa {
 			.endSubpass()
 			.end();
 	
-		m_shadowShaderDataBuffer = m_renderer.createDynamicBuffer(BufferType::STORAGE);
+		m_shadowShaderDataBuffer.create(BufferType::STORAGE);
 		m_shadowTextureCount = 0;
+
+		createSampler();
+
+		const auto& prefs = getPreferences();
+		ShadowPreferencesShaderData data = {
+			prefs.smoothShadows,
+			prefs.cascadeCount
+		}; 
+		m_preferencesBuffer.create(BufferType::UNIFORM, sizeof(data), &data);
+
+
+		m_updateCascades = true;
 	}
 
 	void ShadowRenderLayer::cleanup() {
@@ -205,6 +244,25 @@ namespace sa {
 	
 	void ShadowRenderLayer::onRenderTargetResize(UUID renderTargetID, Extent oldExtent, Extent newExtent) {
 
+	}
+
+	void ShadowRenderLayer::onPreferencesUpdated() {
+		
+		const auto& prefs = getPreferences();
+		ShadowPreferencesShaderData data = {
+			prefs.smoothShadows,
+			prefs.cascadeCount
+		};
+		std::copy(m_cascadeSplits.begin(), m_cascadeSplits.end(), data.cascadeSplits);
+		m_preferencesBuffer.write(data);
+
+
+		m_renderer.destroySampler(m_shadowSampler);
+		createSampler();
+
+		forEachRenderData([](ShadowRenderData& renderData) {
+			renderData.isInitialized = false;
+		});
 	}
 
 	bool ShadowRenderLayer::preRender(RenderContext& context, SceneCollection& sceneCollection) {
@@ -225,13 +283,16 @@ namespace sa {
 
 			ShadowRenderData& renderData = getRenderTargetData(pRenderTarget->getID() ^ static_cast<uint32_t>(data.entityID));
 			if (!renderData.isInitialized) {
-				initializeRenderData(renderData);
+				cleanupRenderData(renderData);
+				initializeRenderData(renderData, data.lightType);
 			}
 
 			renderShadowMap(context, *pCamera, data, renderData, sceneCollection);
 			
 			ShadowShaderData shaderData = {};
-			memcpy(shaderData.lightMat, data.lightMatrices.data(), data.lightMatrices.size() * sizeof(glm::mat4));
+			for (uint32_t i = 0; i < data.lightViewMatrices.size(); i++) {
+				shaderData.lightMat[i] = data.lightProjMatrices[i] * data.lightViewMatrices[i];
+			}
 			shaderData.mapIndex = m_shadowTextureCount;
 			m_shadowShaderDataBuffer << shaderData;
 
@@ -257,5 +318,11 @@ namespace sa {
 
 	const uint32_t ShadowRenderLayer::getShadowTextureCount() const {
 		return m_shadowTextureCount;
+	}
+	const ResourceID ShadowRenderLayer::getShadowSampler() const {
+		return m_shadowSampler;
+	}
+	const Buffer& ShadowRenderLayer::getPreferencesBuffer() const {
+		return m_preferencesBuffer;
 	}
 }

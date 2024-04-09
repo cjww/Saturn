@@ -488,14 +488,6 @@ namespace sa {
 		ResourceManager::get().remove<DescriptorSet>(descriptorSet);
 	}
 
-	Buffer Renderer::createBuffer(BufferType type, size_t size, void* initialData) {
-		return Buffer(m_pCore.get(), type, size, initialData);
-	}
-
-	DynamicBuffer Renderer::createDynamicBuffer(BufferType type, size_t size, void* initialData) {
-		return DynamicBuffer(m_pCore.get(), type, m_pCore->getQueueCount(), size, initialData);
-	}
-
 	DeviceMemoryStats Renderer::getGPUMemoryUsage() const {
 		return std::move(m_pCore->getGPUMemoryUsage());
 	}
@@ -549,6 +541,11 @@ namespace sa {
 
 		return ResourceManager::get().insert(m_pCore->createSampler(info));
 	}
+
+	void Renderer::destroySampler(ResourceID sampler) {
+		ResourceManager::get().remove<vk::Sampler>(sampler);
+	}
+
 
 	RenderContext Renderer::beginFrame(ResourceID swapchain) {
 		Swapchain* pSwapchain = RenderContext::getSwapchain(swapchain);

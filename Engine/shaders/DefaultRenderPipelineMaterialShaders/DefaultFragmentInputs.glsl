@@ -14,9 +14,10 @@
 layout(location = 0) in vec2 in_vertexUV;
 layout(location = 1) in vec3 in_vertexWorldPos;
 layout(location = 2) in vec3 in_vertexWorldNormal;
-layout(location = 3) in vec4 in_vertexPos;
-layout(location = 4) in flat vec3 in_viewPos;
-layout(location = 5) in flat uint in_meshIndex;
+layout(location = 3) in vec4 in_vertexViewPos;
+layout(location = 4) in vec4 in_vertexPos;
+layout(location = 5) in flat vec3 in_viewPos;
+layout(location = 6) in flat uint in_meshIndex;
 
 struct Material {
     vec4 albedoColor;
@@ -94,12 +95,20 @@ layout(set = 0, binding = 5, std140) readonly buffer ShadowMaps {
 
 layout(set = 0, binding = 6) uniform sampler samp;
 
-layout(set = 0, binding = 7) uniform sampler2DArrayShadow shadowTextures[8];
+layout(set = 0, binding = 7) uniform ShadowPreferences {
+    bool smoothShadows;
+    uint cascadeCount;
+    float cascadeSplits[6];
+} shadowPrefs;
+
+layout(set = 0, binding = 8) uniform sampler2DArrayShadow shadowTextures[8];
+
 layout(set = 0, binding = 32) uniform texture2D textures[];
 
 
 layout(push_constant) uniform PushConstants {
-    mat4 projView;
+    mat4 viewMat;
+    mat4 projMat;
     vec3 viewPos;
     uint tileCountX;
 } pc;

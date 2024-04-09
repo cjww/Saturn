@@ -44,9 +44,9 @@ namespace sa {
 	public:
 
 		Buffer();
-		Buffer(VulkanCore* pCore, BufferType type, size_t size, void* initialData);
+		Buffer(BufferType type, size_t size = 0, void* initialData = nullptr);
 
-		void create(BufferType type, size_t size, void* initialData);
+		void create(BufferType type, size_t size = 0, void* initialData = nullptr);
 		void destroy();
 
 		// Resizes the buffer

@@ -21,7 +21,9 @@ namespace sa {
 		glm::vec4 lightPosition;
 		glm::vec4 lightDirection;
 		LightType lightType;
-		std::array<glm::mat4, 6> lightMatrices;
+		std::array<glm::mat4, 6> lightProjMatrices = { glm::mat4(1.0f) };
+		std::array<glm::mat4, 6> lightViewMatrices = { glm::mat4(1.0f) };
+
 	};
 
 	class MaterialShaderCollection {

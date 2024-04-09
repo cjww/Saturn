@@ -53,6 +53,9 @@ namespace sa {
 		RenderDataType& getRenderTargetData(const UUID& renderTargetID);
 		PreferencesType& getPreferences();
 
+		template<typename F, std::enable_if_t<std::is_assignable_v<std::function<void(RenderData&)>, F>, bool> = true>
+		void forEachRenderData(F func);
+
 	};
 
 
@@ -73,5 +76,13 @@ namespace sa {
 		return m_preferences;
 	}
 
+
+	template<typename RenderData, typename Preferences>
+	template<typename F, std::enable_if_t<std::is_assignable_v<std::function<void(RenderData&)>, F>, bool>>
+	inline void IRenderLayer<RenderData, Preferences>::forEachRenderData(F func) {
+		for (auto& [key, value] : m_renderData) {
+			func(value);
+		}
+	}
 
 }

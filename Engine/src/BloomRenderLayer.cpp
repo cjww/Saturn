@@ -110,7 +110,7 @@ namespace sa {
 		m_bloomPreferencesDescriptorSet = m_pipelineLayout.allocateDescriptorSet(1);
 
 		BloomPreferences& prefs = getPreferences();
-		m_bloomPreferencesBuffer = m_renderer.createBuffer(BufferType::UNIFORM, sizeof(BloomPreferences), &prefs);
+		m_bloomPreferencesBuffer.create(BufferType::UNIFORM, sizeof(BloomPreferences), &prefs);
 		m_renderer.updateDescriptorSet(m_bloomPreferencesDescriptorSet, 0, m_bloomPreferencesBuffer);
 
 

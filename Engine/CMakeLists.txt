@@ -40,6 +40,7 @@ set(Header_Files
     "include/Graphics/RenderTechniques/ForwardPlus.h"
     "include/Graphics/SceneCollection.h"
     "include/Graphics/WindowRenderer.h"
+    "include/Graphics/DebugRenderer.h"
     "include/Lua/EntityScript.h"
     "include/Lua/LuaAccessable.h"
     "include/Lua/Ref.h"
@@ -116,6 +117,7 @@ set(Source_Files
     "src/utils.cpp"
     "src/UUID.cpp"
     "src/WindowRenderer.cpp"
+    "src/DebugRenderer.cpp"
 )
 source_group("Source Files" FILES ${Source_Files})
 

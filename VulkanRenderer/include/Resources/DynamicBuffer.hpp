@@ -14,8 +14,9 @@ namespace sa {
 	public:
 
 		DynamicBuffer();
-		DynamicBuffer(VulkanCore* pCore, BufferType type, uint32_t bufferCount, size_t size, void* initialData);
+		DynamicBuffer(BufferType type, size_t size = 0, void* initialData = nullptr);
 
+		void create(BufferType type, size_t size = 0, void* initialData = nullptr);
 		void destroy();
 
 		//bool setFormat(FormatPrecisionFlags precision, FormatDimensionFlags dimensions, FormatTypeFlags type);
