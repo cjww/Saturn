@@ -15,7 +15,8 @@ namespace sa {
 		static const uint32_t MaxCascadeCount = 6u;
 
 		float cascadeSplitLambda = 0.8f;
-
+		
+		bool showCascades = false;
 		bool smoothShadows = true;
 
 		float depthBiasConstant = 0.0f;
@@ -42,9 +43,10 @@ namespace sa {
 	class ShadowRenderLayer : public IRenderLayer<ShadowRenderData, ShadowPreferences> {
 	private:
 		struct ShadowPreferencesShaderData {
-			bool smoothShadows;
 			uint32_t cascadeCount;
-			float cascadeSplits[6];
+			uint32_t smoothShadows;
+			uint32_t showDebugCascades;
+			alignas(16) float cascadeSplits[6];
 		};
 
 		ResourceID m_depthRenderProgram = NULL_RESOURCE;
@@ -67,6 +69,8 @@ namespace sa {
 		void cleanupRenderData(ShadowRenderData& data);
 		void initializeRenderData(ShadowRenderData& data, LightType lightType);
 
+		void updateCascadeSplits(float near, float far);
+		void calculateCascadeMatrices(const SceneCamera& sceneCamera, ShadowData& data);
 		
 		void renderCascadedShadowMaps(RenderContext& context, const SceneCamera& sceneCamera, ShadowData& data, const ShadowRenderData& renderData, SceneCollection& sceneCollection);
 

@@ -484,6 +484,9 @@ namespace ImGui {
 		changed |= ImGui::Checkbox("SmoothShadows", &prefs.smoothShadows);
 
 
+		changed |= ImGui::Checkbox("Show cascades", &prefs.showCascades);
+
+
 		return changed;
 	}
 

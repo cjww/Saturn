@@ -96,9 +96,10 @@ layout(set = 0, binding = 5, std140) readonly buffer ShadowMaps {
 layout(set = 0, binding = 6) uniform sampler samp;
 
 layout(set = 0, binding = 7) uniform ShadowPreferences {
-    bool smoothShadows;
     uint cascadeCount;
-    float cascadeSplits[6];
+    uint smoothShadows;
+    uint showDebugCascades;
+    vec4 cascadeSplits[2];
 } shadowPrefs;
 
 layout(set = 0, binding = 8) uniform sampler2DArrayShadow shadowTextures[8];

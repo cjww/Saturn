@@ -47,40 +47,47 @@ namespace sa {
 		data.isInitialized = true;
 	}
 
-	void ShadowRenderLayer::renderCascadedShadowMaps(RenderContext& context, const SceneCamera& sceneCamera, ShadowData& data, const ShadowRenderData& renderData, SceneCollection& sceneCollection) {
+	void ShadowRenderLayer::updateCascadeSplits(float near, float far) {
 		const auto& prefs = getPreferences();
 
 		const int cascadeCount = prefs.cascadeCount;
 		const float cascadeSplitLambda = prefs.cascadeSplitLambda;
 
-		float clipRange = sceneCamera.getFar() - sceneCamera.getNear();
-		float clipRatio = sceneCamera.getFar() / sceneCamera.getNear();
+		float clipRange = far - near;
+		float clipRatio = far / near;
 
-		// Based on method presented in https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch10.html
 		float cascadeSplits[ShadowPreferences::MaxCascadeCount];
 		for (uint32_t i = 0; i < cascadeCount; i++) {
+			// Based on method presented in https://developer.nvidia.com/gpugems/GPUGems3/gpugems3_ch10.html
 			float p = (i + 1) / static_cast<float>(cascadeCount);
-			float log = sceneCamera.getNear() * std::pow(clipRatio, p);
-			float uniform = sceneCamera.getNear() + clipRange * p;
+			float log = near * std::pow(clipRatio, p);
+			float uniform = near + clipRange * p;
 			float d = cascadeSplitLambda * (log - uniform) + uniform;
-			
-			cascadeSplits[i] = (d - sceneCamera.getNear()) / clipRange;
-			m_cascadeSplits[i] = -(sceneCamera.getNear() + cascadeSplits[i] * clipRange);
+
+			m_cascadeSplits[i] = (d - near) / clipRange; // [0, 1] range
+			cascadeSplits[i] = -(near + m_cascadeSplits[i] * clipRange); // negative [near, far] range
 		}
-		
+
+		ShadowPreferencesShaderData data = {};
+		data.cascadeCount = prefs.cascadeCount;
+		data.smoothShadows = prefs.smoothShadows;
+		data.showDebugCascades = prefs.showCascades;
+		memcpy(data.cascadeSplits, cascadeSplits, sizeof(cascadeSplits));
+		m_preferencesBuffer.write(data);
+	}
+
+	void ShadowRenderLayer::calculateCascadeMatrices(const SceneCamera& sceneCamera, ShadowData& data) {
+		const auto& prefs = getPreferences();
+		const int cascadeCount = prefs.cascadeCount;
 
 		static glm::vec3 frustumPoints[8];
-		if (m_updateCascades) {
-			sceneCamera.calculateFrustumBoundsWorldSpace(frustumPoints);
-			//m_updateCascades = false;
-		}
-
+		sceneCamera.calculateFrustumBoundsWorldSpace(frustumPoints);
 
 		SceneCamera camera;
 		camera.setProjectionMode(ProjectionMode::eOrthographic);
 		float lastSplitDistance = 0.0f;
 		for (uint32_t i = 0; i < cascadeCount; i++) {
-			const float splitDistance = cascadeSplits[i];
+			const float splitDistance = m_cascadeSplits[i];
 
 			glm::vec3 cascadePoints[8];
 			memcpy(cascadePoints, frustumPoints, sizeof(glm::vec3) * 8);
@@ -120,15 +127,20 @@ namespace sa {
 				.right = maxExtents.x,
 				.top = maxExtents.y,
 				.bottom = minExtents.y
-			});
+				});
 
 			data.lightViewMatrices[i] = camera.getViewMatrix();
 			data.lightProjMatrices[i] = camera.getProjectionMatrix();
-			data.lightViewMatrices[5][i].x = -(sceneCamera.getNear() + cascadeSplits[i] * clipRange);
 			lastSplitDistance = splitDistance;
 		}
-		data.lightProjMatrices[5] = glm::mat4(1.f);
+	}
 
+
+	void ShadowRenderLayer::renderCascadedShadowMaps(RenderContext& context, const SceneCamera& sceneCamera, ShadowData& data, const ShadowRenderData& renderData, SceneCollection& sceneCollection) {
+		const auto& prefs = getPreferences();
+
+		const int cascadeCount = prefs.cascadeCount;
+		
 		for (auto& collection : sceneCollection) {
 			if (!collection.readyDescriptorSets(context)) {
 				continue;
@@ -191,7 +203,15 @@ namespace sa {
 		
 		switch(data.lightType) {
 		case LightType::DIRECTIONAL:
+
+			if (m_updateCascades) {
+				updateCascadeSplits(sceneCamera.getNear(), sceneCamera.getFar());
+				m_updateCascades = false;
+			}
+
+			calculateCascadeMatrices(sceneCamera, data);
 			renderCascadedShadowMaps(context, sceneCamera, data, renderData, sceneCollection);
+
 			break;
 		case LightType::POINT:
 			break;
@@ -248,14 +268,7 @@ namespace sa {
 
 	void ShadowRenderLayer::onPreferencesUpdated() {
 		
-		const auto& prefs = getPreferences();
-		ShadowPreferencesShaderData data = {
-			prefs.smoothShadows,
-			prefs.cascadeCount
-		};
-		std::copy(m_cascadeSplits.begin(), m_cascadeSplits.end(), data.cascadeSplits);
-		m_preferencesBuffer.write(data);
-
+		m_updateCascades = true;
 
 		m_renderer.destroySampler(m_shadowSampler);
 		createSampler();
@@ -315,6 +328,8 @@ namespace sa {
 	const std::array<Texture, MAX_SHADOW_TEXTURE_COUNT>& ShadowRenderLayer::getShadowTextures() const {
 		return m_shadowTextures;
 	}
+
+	
 
 	const uint32_t ShadowRenderLayer::getShadowTextureCount() const {
 		return m_shadowTextureCount;

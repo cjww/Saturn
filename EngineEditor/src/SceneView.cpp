@@ -415,6 +415,8 @@ void SceneView::onImGui() {
 				}
 			}
 
+
+
 		}
 		
 		ImVec2 viewManipSize = ImVec2(100, 100);
@@ -548,31 +550,34 @@ void SceneView::onImGui() {
 	ImGui::End();
 
 
-	if (m_pEngine->getCurrentScene()) {
-		m_pEngine->getCurrentScene()->forEach<comp::Light, comp::ShadowEmitter>([&](const sa::Entity& entity) {
 
+	if (m_pEngine->getCurrentScene() && !m_selectedEntity.isNull()) {
+		if (m_selectedEntity.hasComponents<comp::ShadowEmitter>()) {
 			sa::ShadowRenderLayer* pLayer = m_pEngine->getRenderPipeline().getLayer<sa::ShadowRenderLayer>();
 			if (pLayer) {
 				ImGui::Begin("Shadow pass");
-				const auto& renderData = pLayer->getRenderTargetData(m_renderTarget.getID() ^ static_cast<uint32_t>(entity));
-				for (uint32_t i = 0; i < renderData.depthFramebuffers.size(); i++) {
-					ResourceID framebuffer = renderData.depthFramebuffers[i];
-					if (framebuffer != NULL_RESOURCE) {
-						sa::Texture tex = sa::Renderer::get().getFramebufferTexture(framebuffer, 0);
-						sa::Extent framebufferExtent = sa::Renderer::get().getFramebufferExtent(framebuffer);
-					
-						ImVec2 imAvailSize = ImGui::GetContentRegionAvail();
-						glm::vec2 availSize(imAvailSize.x, imAvailSize.y);
-					
-						ImGui::Image(tex, ImVec2(availSize.x, availSize.x));
-					}
+				const auto& renderData = pLayer->getRenderTargetData(m_renderTarget.getID() ^ static_cast<uint32_t>(m_selectedEntity));
+				const auto& prefs = pLayer->getPreferences();
+				static int layer = 0;
+				ImGui::InputInt("Shadowmap layer", &layer);
+				layer = std::min(std::max(layer, 0), static_cast<int>(prefs.cascadeCount - 1));
+
+				ResourceID framebuffer = renderData.depthFramebuffers[layer];
+				if (framebuffer != NULL_RESOURCE) {
+					sa::Texture tex = sa::Renderer::get().getFramebufferTexture(framebuffer, 0);
+					sa::Extent framebufferExtent = sa::Renderer::get().getFramebufferExtent(framebuffer);
+
+					ImVec2 imAvailSize = ImGui::GetContentRegionAvail();
+					glm::vec2 availSize(imAvailSize.x, imAvailSize.y);
+
+					ImGui::Image(tex, ImVec2(availSize.x, availSize.x));
 				}
+				
 
 				ImGui::End();
 			}
-		});
+		}
 	}
-
 
 }
 

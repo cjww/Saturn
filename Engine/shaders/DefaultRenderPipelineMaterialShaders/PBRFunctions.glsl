@@ -116,6 +116,32 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
             
             radiance *= 1.0 - InShadow(in_vertexWorldPos, light);
 
+            if(light.shadowMapDataIndex != ~0 && shadowPrefs.showDebugCascades == 1) {
+                ShadowMapData shadowData = shadowMapDataBuffer.shadowMaps[light.shadowMapDataIndex];
+
+                uint cascadeIndex = 0;
+                for(uint i = 0; i < shadowPrefs.cascadeCount - 1; ++i) {
+                    if(in_vertexViewPos.z < shadowPrefs.cascadeSplits[i / 4][i % 4]) {	
+                        cascadeIndex = i + 1;
+                    }
+                }
+
+                switch(cascadeIndex) {
+                    case 0:
+                        radiance *= vec3(1, 0, 0);
+                        break;
+                    case 1:
+                        radiance *= vec3(0, 1, 0);
+                        break;
+                    case 2:
+                        radiance *= vec3(0, 0, 1);
+                        break;
+                    case 3:
+                        radiance *= vec3(0, 1, 1);
+                        break;
+                }
+            }
+
             break;
         }
         case LIGHT_TYPE_SPOT: {
@@ -147,31 +173,7 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
             break;
         }
 
-        if(light.shadowMapDataIndex != ~0) {
-            ShadowMapData shadowData = shadowMapDataBuffer.shadowMaps[light.shadowMapDataIndex];
-
-            uint cascadeIndex = 0;
-            for(uint i = 0; i < shadowPrefs.cascadeCount - 1; ++i) {
-                if(in_vertexViewPos.z < shadowData.lightMat[5][i].x) {	
-                    cascadeIndex = i + 1;
-                }
-            }
-
-            switch(cascadeIndex) {
-                case 0:
-                    radiance *= vec3(1, 0, 0);
-                    break;
-                case 1:
-                    radiance *= vec3(0, 1, 0);
-                    break;
-                case 2:
-                    radiance *= vec3(0, 0, 1);
-                    break;
-                case 3:
-                    radiance *= vec3(0, 1, 1);
-                    break;
-            }
-        }
+        
 
 
 
@@ -270,14 +272,14 @@ float InShadow(vec3 worldPos, Light light) {
     
     uint cascadeIndex = 0;
 	for(uint i = 0; i < shadowPrefs.cascadeCount - 1; ++i) {
-		if(in_vertexViewPos.z < shadowPrefs.cascadeSplits[i]) {
+		if(in_vertexViewPos.z < shadowPrefs.cascadeSplits[i / 4][i % 4]) {
 			cascadeIndex = i + 1;
 		}
 	}
     vec4 lightSpacePos = biasMat * shadowData.lightMat[cascadeIndex] * vec4(worldPos, 1.0);
     vec3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
     
-    if(!shadowPrefs.smoothShadows) {
+    if(shadowPrefs.smoothShadows == 0) {
         vec4 texCoord;
         texCoord.xyw = projCoords.xyz;
         texCoord.z = cascadeIndex;
