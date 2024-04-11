@@ -16,8 +16,11 @@ void SceneView::onEntityDeselected(const sa::editor_event::EntityDeselected& e) 
 
 void SceneView::onSceneSet(const sa::engine_event::SceneSet& e) {
 	m_selectedEntity = {};
-	m_camera.setPosition(sa::Vector3(0, 2, 10));
-	m_camera.setForward(sa::Vector3(0, 0, -1));
+	/*
+	m_camera.setPosition(sa::Vector3(0, 4, 10));
+	m_camera.lookAt(glm::vec3(0, 0, 0));
+	*/
+
 	if (m_sceneCollection.getMode() == sa::SceneCollection::CollectionMode::REACTIVE)
 		m_sceneCollection.listen(e.newScene);
 }
@@ -44,8 +47,6 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 	m_isWorldCoordinates = false;
 	m_selectedEntity = {};
 
-	m_camera.setPosition(sa::Vector3(0, 0, 5));
-	m_camera.lookAt(sa::Vector3(0, 0, 0));
 	m_camera.setOrthoWidth(10.f);
 
 	m_renderTarget.initialize(pEngine, pWindow->getCurrentExtent());
@@ -552,15 +553,21 @@ void SceneView::onImGui() {
 
 
 	if (m_pEngine->getCurrentScene() && !m_selectedEntity.isNull()) {
-		if (m_selectedEntity.hasComponents<comp::ShadowEmitter>()) {
+		if (m_selectedEntity.hasComponents<comp::ShadowEmitter, comp::Light>()) {
 			sa::ShadowRenderLayer* pLayer = m_pEngine->getRenderPipeline().getLayer<sa::ShadowRenderLayer>();
 			if (pLayer) {
 				ImGui::Begin("Shadow pass");
-				const auto& renderData = pLayer->getRenderTargetData(m_renderTarget.getID() ^ static_cast<uint32_t>(m_selectedEntity));
+				sa::UUID id = static_cast<uint32_t>(m_selectedEntity);
+				comp::Light* pLight = m_selectedEntity.getComponent<comp::Light>();
+				if(pLight->values.type == sa::LightType::DIRECTIONAL) {
+					id = id ^ m_renderTarget.getID();
+				}
+				const auto& renderData = pLayer->getRenderTargetData(id);
 				const auto& prefs = pLayer->getPreferences();
 				static int layer = 0;
 				ImGui::InputInt("Shadowmap layer", &layer);
-				layer = std::min(std::max(layer, 0), static_cast<int>(prefs.cascadeCount - 1));
+				int max = (pLight->values.type == sa::LightType::DIRECTIONAL) ? prefs.cascadeCount : sa::ShadowPreferences::MaxCascadeCount;
+				layer = std::min(std::max(layer, 0), max - 1);
 
 				ResourceID framebuffer = renderData.depthFramebuffers[layer];
 				if (framebuffer != NULL_RESOURCE) {
@@ -582,7 +589,7 @@ void SceneView::onImGui() {
 }
 
 void SceneView::imGuiDrawLine(glm::vec3 p1, glm::vec3 p2, const ImColor& color, float thickness) {
-	sa::SceneCamera& camera = m_camera;
+	const sa::SceneCamera& camera = m_camera;
 
 	ImVec2 contentMin = ImGui::GetWindowContentRegionMin();
 	ImVec2 windowPos = ImGui::GetWindowPos();
@@ -609,7 +616,7 @@ void SceneView::imGuiDrawLine(glm::vec3 p1, glm::vec3 p2, const ImColor& color, 
 }
 
 bool SceneView::imGuiDrawVector(glm::vec3 origin, glm::vec3 v, const ImColor& color, float thickness) {
-	sa::SceneCamera& camera = m_camera;
+	const sa::SceneCamera& camera = m_camera;
 
 	ImVec2 contentMin = ImGui::GetWindowContentRegionMin();
 	ImVec2 windowPos = ImGui::GetWindowPos();

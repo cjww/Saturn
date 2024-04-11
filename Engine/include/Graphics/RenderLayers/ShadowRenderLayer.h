@@ -49,10 +49,16 @@ namespace sa {
 			alignas(16) float cascadeSplits[6];
 		};
 
+		sa::Format m_depthFormat;
+
 		ResourceID m_depthRenderProgram = NULL_RESOURCE;
 		
 		std::array<Texture, MAX_SHADOW_TEXTURE_COUNT> m_shadowTextures;
 		uint32_t m_shadowTextureCount;
+
+		std::array<Texture, MAX_SHADOW_TEXTURE_COUNT> m_shadowCubeTextures;
+		uint32_t m_shadowCubeTextureCount;
+
 
 		DynamicBuffer m_shadowShaderDataBuffer;
 		
@@ -69,10 +75,15 @@ namespace sa {
 		void cleanupRenderData(ShadowRenderData& data);
 		void initializeRenderData(ShadowRenderData& data, LightType lightType);
 
+		void renderMaterialCollection(RenderContext& context, MaterialShaderCollection& collection, ShadowData& data, const ShadowRenderData& renderData, uint32_t layer);
+
+		// Directional lights
 		void updateCascadeSplits(float near, float far);
 		void calculateCascadeMatrices(const SceneCamera& sceneCamera, ShadowData& data);
-		
 		void renderCascadedShadowMaps(RenderContext& context, const SceneCamera& sceneCamera, ShadowData& data, const ShadowRenderData& renderData, SceneCollection& sceneCollection);
+
+		// Point lights
+		void renderCubeMapShadows(RenderContext& context, ShadowData& data, const ShadowRenderData& renderData, SceneCollection& sceneCollection);
 
 		void renderShadowMap(RenderContext& context, const SceneCamera& sceneCamera, ShadowData& data, const ShadowRenderData& renderData, SceneCollection& sceneCollection);
 		
@@ -89,8 +100,13 @@ namespace sa {
 		virtual bool postRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) override;
 
 		const Buffer& getShadowDataBuffer() const;
+		
 		const std::array<Texture, MAX_SHADOW_TEXTURE_COUNT>& getShadowTextures() const;
 		const uint32_t getShadowTextureCount() const;
+
+		const std::array<Texture, MAX_SHADOW_TEXTURE_COUNT>& getShadowCubeTextures() const;
+		const uint32_t getShadowCubeTextureCount() const;
+
 		const ResourceID getShadowSampler() const;
 		const Buffer& getPreferencesBuffer() const;
 

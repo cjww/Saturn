@@ -26,25 +26,80 @@ namespace sa {
 	void ShadowRenderLayer::initializeRenderData(ShadowRenderData& data, LightType lightType) {
 		ShadowPreferences& prefs = getPreferences();
 		
-		uint32_t res = lightType == LightType::DIRECTIONAL ? prefs.directionalMapResolution : prefs.omniMapResolution;
-		Extent extent = { res, res };
-
-		data.depthTexture.create2D(
-			TextureUsageFlagBits::DEPTH_ATTACHMENT | TextureUsageFlagBits::SAMPLED,
-			extent,
-			m_renderer.getDefaultDepthFormat(),
-			1,
-			ShadowPreferences::MaxCascadeCount,
-			1
-		);
-
 		uint32_t count = ShadowPreferences::MaxCascadeCount;
+		switch (lightType) {
+		case LightType::DIRECTIONAL:
+			
+			data.depthTexture.create2D(
+				TextureUsageFlagBits::DEPTH_ATTACHMENT | TextureUsageFlagBits::SAMPLED,
+				{ prefs.directionalMapResolution, prefs.directionalMapResolution },
+				m_depthFormat,
+				1,
+				count,
+				1
+			);
+			break;
+		case LightType::POINT:
+			data.depthTexture.createCube(
+				TextureUsageFlagBits::DEPTH_ATTACHMENT | TextureUsageFlagBits::SAMPLED,
+				{ prefs.omniMapResolution, prefs.omniMapResolution },
+				m_depthFormat,
+				1,
+				1
+			);
+			break;
+		default:
+			data.depthTexture.create2D(
+				TextureUsageFlagBits::DEPTH_ATTACHMENT | TextureUsageFlagBits::SAMPLED,
+				{ prefs.directionalMapResolution, prefs.directionalMapResolution },
+				m_depthFormat,
+				1,
+				count,
+				1
+			);
+			break;
+		}
+
 		data.depthTexture.createArrayLayerTextures(&count, data.depthTextureLayers.data());
 
-		for (uint32_t i = 0; i < ShadowPreferences::MaxCascadeCount; i++) {
+		for (uint32_t i = 0; i < count; i++) {
 			data.depthFramebuffers[i] = m_renderer.createFramebuffer(m_depthRenderProgram, { data.depthTextureLayers[i] }, data.depthTexture.getExtent());
 		}
 		data.isInitialized = true;
+	}
+
+	void ShadowRenderLayer::renderMaterialCollection(RenderContext& context, MaterialShaderCollection& collection, ShadowData& data, const ShadowRenderData& renderData, uint32_t layer) {
+		const auto& prefs = getPreferences();
+
+		context.beginRenderProgram(m_depthRenderProgram, renderData.depthFramebuffers[layer], SubpassContents::DIRECT);
+		collection.bindDepthPipeline(context);
+		context.bindDescriptorSet(collection.getSceneDescriptorSetDepthPass());
+
+		context.bindVertexBuffers(0, { collection.getVertexBuffer() });
+		context.bindIndexBuffer(collection.getIndexBuffer());
+
+		Rect viewport = {};
+		viewport.extent = Renderer::get().getFramebufferExtent(renderData.depthFramebuffers[layer]);
+		viewport.offset = { 0, 0 };
+
+		context.setViewport(viewport);
+		context.setScissor(viewport);
+
+		context.setDepthBiasEnable(true);
+		context.setDepthBias(prefs.depthBiasConstant, 0.0f, prefs.depthBiasSlope);
+
+		context.setCullMode(sa::CullModeFlagBits::FRONT);
+
+		PerFrameBuffer perFrame = {};
+		perFrame.viewMat = data.lightViewMatrices[layer];
+		perFrame.projMat = data.lightProjMatrices[layer];
+		perFrame.viewPos = glm::vec4(0);
+
+		if (collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>() > 0) {
+			context.pushConstant(ShaderStageFlagBits::VERTEX, perFrame);
+			context.drawIndexedIndirect(collection.getDrawCommandBuffer(), 0, collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
+		}
+		context.endRenderProgram(m_depthRenderProgram);
 	}
 
 	void ShadowRenderLayer::updateCascadeSplits(float near, float far) {
@@ -150,36 +205,7 @@ namespace sa {
 				continue;
 			}
 			for (uint32_t i = 0; i < cascadeCount; i++) {
-				
-				context.beginRenderProgram(m_depthRenderProgram, renderData.depthFramebuffers[i], SubpassContents::DIRECT);
-				collection.bindDepthPipeline(context);
-				context.bindDescriptorSet(collection.getSceneDescriptorSetDepthPass());
-
-				context.bindVertexBuffers(0, { collection.getVertexBuffer() });
-				context.bindIndexBuffer(collection.getIndexBuffer());
-
-				Rect viewport = {};
-				viewport.extent = Renderer::get().getFramebufferExtent(renderData.depthFramebuffers[i]);
-				viewport.offset = { 0, 0 };
-
-				context.setViewport(viewport);
-				context.setScissor(viewport);
-
-				context.setDepthBiasEnable(true);
-				context.setDepthBias(prefs.depthBiasConstant, 0.0f, prefs.depthBiasSlope);
-
-				context.setCullMode(sa::CullModeFlagBits::FRONT);
-
-				PerFrameBuffer perFrame = {};
-				perFrame.viewMat = data.lightViewMatrices[i];
-				perFrame.projMat = data.lightProjMatrices[i];
-				perFrame.viewPos = glm::vec4(0);
-
-				if (collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>() > 0) {
-					context.pushConstant(ShaderStageFlagBits::VERTEX, perFrame);
-					context.drawIndexedIndirect(collection.getDrawCommandBuffer(), 0, collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
-				}
-				context.endRenderProgram(m_depthRenderProgram);
+				renderMaterialCollection(context, collection, data, renderData, i);
 			}
 		}
 	}
@@ -199,6 +225,129 @@ namespace sa {
 		m_shadowSampler = m_renderer.createSampler(info);
 	}
 
+	void ShadowRenderLayer::renderCubeMapShadows(RenderContext& context, ShadowData& data, const ShadowRenderData& renderData, SceneCollection& sceneCollection) {
+		static const std::array<glm::vec3, 6> faces = {
+			glm::vec3(1, 0, 0),
+			glm::vec3(-1, 0, 0),
+			glm::vec3(0, 1, 0),
+			glm::vec3(0, -1, 0),
+			glm::vec3(0, 0, 1),
+			glm::vec3(0, 0, -1),
+		};
+		static const std::array<glm::vec3, 6> ups = {
+			glm::vec3(0, -1, 0),
+			glm::vec3(0, -1, 0),
+			glm::vec3(0, 0, 1),
+			glm::vec3(0, 0, -1),
+			glm::vec3(0, -1, 0),
+			glm::vec3(0, -1, 0),
+		};
+
+		SceneCamera camera;
+		camera.setProjectionMode(ProjectionMode::ePerspective);
+		camera.setFOVDegrees(90.f);
+		camera.setFar(data.lightPosition.w);
+		camera.setNear(0.1f);
+		camera.setPosition(data.lightPosition);
+		
+		glm::mat4 projMat = camera.getProjectionMatrix();
+
+		
+		for (uint32_t i = 0; i < faces.size(); i++) {
+			glm::mat4 viewMat = glm::mat4(1.0f);
+			glm::vec3 pos = data.lightPosition;
+			switch (i) {
+			case 0: // +X
+				viewMat = glm::rotate(viewMat, glm::radians(90.f), glm::vec3(0, 1, 0));
+				viewMat = glm::rotate(viewMat, glm::radians(180.f), glm::vec3(1, 0, 0));
+				/*
+				*/
+				viewMat = glm::lookAt(pos, pos + glm::vec3(1, 0, 0), glm::vec3(0, 1, 0));
+				
+				camera.setUp(glm::vec3(0, -1, 0));
+				//camera.setForward(glm::vec3(1, 0, 0));
+				camera.setForward(glm::vec3(-1, 0, 0));
+
+				
+				break;
+			case 1: // -X
+				viewMat = glm::rotate(viewMat, glm::radians(-90.f), glm::vec3(0, 1, 0));
+				viewMat = glm::rotate(viewMat, glm::radians(180.f), glm::vec3(1, 0, 0));
+				
+				viewMat = glm::lookAt(pos, pos + glm::vec3(-1, 0, 0), glm::vec3(0, 1, 0));
+				
+				camera.setUp(glm::vec3(0, -1, 0));
+				//camera.setForward(glm::vec3(-1, 0, 0));
+				camera.setForward(glm::vec3(1, 0, 0));
+
+				break; 
+			case 2: // +Y
+				viewMat = glm::rotate(viewMat, glm::radians(-90.f), glm::vec3(1, 0, 0));
+				
+				viewMat = glm::lookAt(pos, pos + glm::vec3(0, 1, 0), glm::vec3(0, 0, 1));
+
+				camera.setUp(glm::vec3(0, 0, 1));
+				camera.setForward(glm::vec3(0, 1, 0));
+				
+				break;
+			case 3: // -Y
+				viewMat = glm::rotate(viewMat, glm::radians(90.f), glm::vec3(1, 0, 0));
+				
+				viewMat = glm::lookAt(pos, pos + glm::vec3(0, -1, 0), glm::vec3(0, 0, -1));
+
+
+				camera.setUp(glm::vec3(0, 0, -1));
+				camera.setForward(glm::vec3(0, -1, 0));
+
+				/*
+				camera.setUp(glm::vec3(0, 0, 1));
+				camera.setForward(glm::vec3(0, 1, 0));
+				*/
+
+				break;
+			case 4: // +Z
+				viewMat = glm::rotate(viewMat, glm::radians(180.f), glm::vec3(1, 0, 0));
+				/*
+				*/
+				viewMat = glm::lookAt(pos, pos + glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
+
+				camera.setUp(glm::vec3(0, -1, 0));
+				camera.setForward(glm::vec3(0, 0, 1));
+
+				break;
+			case 5: // -Z
+				viewMat = glm::rotate(viewMat, glm::radians(180.f), glm::vec3(0, 0, 1));
+				/*
+				*/
+				viewMat = glm::lookAt(pos, pos + glm::vec3(0, 0, -1), glm::vec3(0, 1, 0));
+
+				camera.setUp(glm::vec3(0, -1, 0));
+				camera.setForward(glm::vec3(0, 0, -1));
+				break;
+			}
+			//viewMat = glm::translate(viewMat, camera.getPosition());
+			viewMat = camera.getViewMatrix();
+			//viewMat = glm::lookAtLH(camera.getPosition(), camera.getPosition() + camera.getForward(), camera.getUp());
+			//viewMat = glm::lookAtRH(camera.getPosition(), camera.getPosition() + camera.getForward(), camera.getUp());
+			
+			data.lightProjMatrices[i] = projMat;
+			data.lightViewMatrices[i] = viewMat;
+
+			for (auto& collection : sceneCollection) {
+				if (!collection.readyDescriptorSets(context)) {
+					continue;
+				}
+
+				if (!collection.arePipelinesReady()) {
+					continue;
+				}
+				renderMaterialCollection(context, collection, data, renderData, i);
+			}
+
+		}
+
+	}
+
 	void ShadowRenderLayer::renderShadowMap(RenderContext& context, const SceneCamera& sceneCamera, ShadowData& data, const ShadowRenderData& renderData, SceneCollection& sceneCollection) {
 		
 		switch(data.lightType) {
@@ -214,6 +363,8 @@ namespace sa {
 
 			break;
 		case LightType::POINT:
+			renderCubeMapShadows(context, data, renderData, sceneCollection);
+
 			break;
 		case LightType::SPOT:
 			
@@ -227,20 +378,24 @@ namespace sa {
 	}
 
 	void ShadowRenderLayer::init() {
+		m_depthFormat = sa::Format::D16_UNORM;
+		
 		if (m_depthRenderProgram != NULL_RESOURCE) {
 			m_renderer.destroyRenderProgram(m_depthRenderProgram);
 			m_depthRenderProgram = NULL_RESOURCE;
 		}
 
 		m_depthRenderProgram = m_renderer.createRenderProgram()
-			.addDepthAttachment(AttachmentFlagBits::eClear | AttachmentFlagBits::eSampled | AttachmentFlagBits::eStore, m_renderer.getDefaultDepthFormat())
+			.addDepthAttachment(AttachmentFlagBits::eClear | AttachmentFlagBits::eSampled | AttachmentFlagBits::eStore, m_depthFormat)
 			.beginSubpass()
 			.addAttachmentReference(0, SubpassAttachmentUsage::DepthTarget)
 			.endSubpass()
 			.end();
 	
 		m_shadowShaderDataBuffer.create(BufferType::STORAGE);
+		
 		m_shadowTextureCount = 0;
+		m_shadowCubeTextureCount = 0;
 
 		createSampler();
 
@@ -280,7 +435,32 @@ namespace sa {
 
 	bool ShadowRenderLayer::preRender(RenderContext& context, SceneCollection& sceneCollection) {
 		SA_PROFILE_FUNCTION();
-		//TODO point light shadows
+		for (auto it = sceneCollection.iterateShadowsBegin(); it != sceneCollection.iterateShadowsEnd(); it++) {
+			if (m_shadowTextureCount >= MAX_SHADOW_TEXTURE_COUNT)
+				break;
+
+			sa::ShadowData& data = *it;
+			if (data.lightType == LightType::DIRECTIONAL)
+				continue;
+
+			ShadowRenderData& renderData = getRenderTargetData(static_cast<uint32_t>(data.entityID));
+			if (!renderData.isInitialized) {
+				cleanupRenderData(renderData);
+				initializeRenderData(renderData, data.lightType);
+			}
+
+			SceneCamera tmp;
+			renderShadowMap(context, tmp, data, renderData, sceneCollection);
+
+			ShadowShaderData shaderData = {};
+			for (uint32_t i = 0; i < data.lightViewMatrices.size(); i++) {
+				shaderData.lightMat[i] = data.lightProjMatrices[i] * data.lightViewMatrices[i];
+			}
+			shaderData.mapIndex = m_shadowCubeTextureCount;
+			m_shadowShaderDataBuffer << shaderData;
+
+			m_shadowCubeTextures[m_shadowCubeTextureCount++] = renderData.depthTexture;
+		}
 		return true;
 	}
 	
@@ -318,6 +498,7 @@ namespace sa {
 		m_shadowShaderDataBuffer.swap();
 		m_shadowShaderDataBuffer.clear();
 		m_shadowTextureCount = 0;
+		m_shadowCubeTextureCount = 0;
 		return true;
 	}
 	
@@ -329,14 +510,22 @@ namespace sa {
 		return m_shadowTextures;
 	}
 
-	
-
 	const uint32_t ShadowRenderLayer::getShadowTextureCount() const {
 		return m_shadowTextureCount;
 	}
+
+	const std::array<Texture, MAX_SHADOW_TEXTURE_COUNT>& ShadowRenderLayer::getShadowCubeTextures() const {
+		return m_shadowCubeTextures;
+	}
+
+	const uint32_t ShadowRenderLayer::getShadowCubeTextureCount() const {
+		return m_shadowCubeTextureCount;
+	}
+
 	const ResourceID ShadowRenderLayer::getShadowSampler() const {
 		return m_shadowSampler;
 	}
+	
 	const Buffer& ShadowRenderLayer::getPreferencesBuffer() const {
 		return m_preferencesBuffer;
 	}

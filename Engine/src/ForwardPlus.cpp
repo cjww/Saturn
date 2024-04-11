@@ -292,13 +292,22 @@ namespace sa {
 			if (m_pShadowRenderLayer && m_pShadowRenderLayer->isActive()) {
 				context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 5, m_pShadowRenderLayer->getShadowDataBuffer());
 
+				context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 7, m_pShadowRenderLayer->getPreferencesBuffer());
 				context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 
 					8,
 					m_pShadowRenderLayer->getShadowTextures().data(), 
 					m_pShadowRenderLayer->getShadowTextureCount(), 
 					m_pShadowRenderLayer->getShadowSampler(), 
-					0);
-				context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 7, m_pShadowRenderLayer->getPreferencesBuffer());
+					0
+				);
+				context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(),
+					9,
+					m_pShadowRenderLayer->getShadowCubeTextures().data(),
+					m_pShadowRenderLayer->getShadowCubeTextureCount(),
+					m_pShadowRenderLayer->getShadowSampler(),
+					0
+				);
+
 			}
 			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 6, m_linearSampler);
 			

@@ -122,6 +122,10 @@ namespace sa {
         return m_sourceFiles;
     }
 
+    const std::vector<Shader>& MaterialShader::getShaders() const {
+        return m_shaders;
+    }
+
     void MaterialShader::addShaderSourceFile(const ShaderSourceFile& sourceFile) {
         m_sourceFiles.push_back(sourceFile);
     }

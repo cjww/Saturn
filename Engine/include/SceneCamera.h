@@ -64,6 +64,7 @@ namespace sa {
 
 		void setForward(Vector3 forward);
 		Vector3 getForward() const;
+		void setUp(Vector3 up);
 		Vector3 getUp() const;
 		Vector3 getRight() const;
 

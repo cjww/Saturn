@@ -103,6 +103,7 @@ layout(set = 0, binding = 7) uniform ShadowPreferences {
 } shadowPrefs;
 
 layout(set = 0, binding = 8) uniform sampler2DArrayShadow shadowTextures[8];
+layout(set = 0, binding = 9) uniform samplerCube shadowCubeTextures[8];
 
 layout(set = 0, binding = 32) uniform texture2D textures[];
 

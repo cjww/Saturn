@@ -313,8 +313,8 @@ namespace sa {
 				viewType = TextureType::TEXTURE_TYPE_2D;
 				break;
 			case TextureType::TEXTURE_TYPE_CUBE_ARRAY:
-				viewType = TextureType::TEXTURE_TYPE_CUBE;
-				break;
+			case TextureType::TEXTURE_TYPE_CUBE:
+				viewType = TextureType::TEXTURE_TYPE_2D;
 		}
 
 		for (uint32_t i = 0; i < *count; i++) {

@@ -16,7 +16,9 @@ float GeometrySchlickGGX(float NdotV, float roughness);
 float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness);
 vec3 FresnelSchlick(vec3 V, vec3 H, vec3 F0);
 
-float InShadow(vec3 worldPos, Light light);
+float InShadowCascaded(vec3 worldPos, Light light);
+float InShadowCube(vec3 worldPos, Light light);
+float InShadow(vec3 worldPos, Light light, uint layer);
 
 const mat4 biasMat = mat4( 
 	0.5, 0.0, 0.0, 0.0,
@@ -102,7 +104,66 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
             */
             
             radiance = light.color.rgb * attenuation * lightIntensity;
+            //radiance *= 1.0 - InShadowCube(in_vertexWorldPos, light);
 
+            if(light.shadowMapDataIndex != ~0) {
+                ShadowMapData shadowData = shadowMapDataBuffer.shadowMaps[light.shadowMapDataIndex];
+                
+                vec3 lightDir = in_vertexWorldPos - vec3(light.position);
+
+                float near = 0.1;
+                float far = light.position.w;
+                
+                float currentDepth = length(lightDir);
+                /*
+                lightDir.y *= -1.0;
+                */
+                lightDir.x *= -1.0;
+                // nonlinearize
+                //lightDir = vec3(biasMat * vec4(lightDir, 0.0));
+                //currentDepth = (far + near - 2.0 * near * far / currentDepth) / (far - near);
+                //currentDepth = (currentDepth + 1.0) / 2.0;
+                //linear = zNear * zFar / (zFar - nonLinear * (zFar - zNear));
+                //linear = zNear * zFar / (zFar - nonLinear * (zFar - zNear));
+                //currentDepth = -((near * far - currentDepth * far) * currentDepth) / (far - near);
+
+
+                /*
+                float shadow = texture(shadowCubeTextures[shadowData.mapIndex], vec4(lightDir.xyz, currentDepth)).r;
+                */
+                lightDir = normalize(lightDir);
+                float sampledDist = texture(shadowCubeTextures[shadowData.mapIndex], lightDir).r;
+                // linearize
+                sampledDist = near * far / (far + sampledDist * (near - far));
+                
+                //currentDepth = near * (1.0 / currentDepth) + far;
+                /*
+                float maxValue = 0.0;
+                int maxComponent = 0;
+                for(int j = 0; j < 3; j++) {
+                    if(abs(lightDir[j]) > maxValue) {
+                        maxComponent = j;
+                        maxValue = abs(lightDir[j]);
+                    }
+                }
+                maxComponent *= 2;
+                if(lightDir[maxComponent] < 0) {
+                    maxComponent += 1;
+                }
+
+                vec4 p = biasMat * shadowData.lightMat[maxComponent] * vec4(in_vertexWorldPos, 1.0);
+                p.xyz /= p.w;
+                currentDepth = p.z;
+                */
+                
+                
+
+                float shadow = currentDepth > sampledDist ? 1.0 : 0.0;
+
+                radiance *= 1.0 - shadow;
+                //radiance = vec3(sampledDist / far);
+
+            }
             break;
         }
         case LIGHT_TYPE_DIRECTIONAL: {
@@ -113,8 +174,7 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
 
             radiance = light.color.rgb * lightIntensity;
 
-            
-            radiance *= 1.0 - InShadow(in_vertexWorldPos, light);
+            radiance *= 1.0 - InShadowCascaded(in_vertexWorldPos, light);
 
             if(light.shadowMapDataIndex != ~0 && shadowPrefs.showDebugCascades == 1) {
                 ShadowMapData shadowData = shadowMapDataBuffer.shadowMaps[light.shadowMapDataIndex];
@@ -166,7 +226,7 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
             attenuation *= spot;
             radiance = light.color.rgb * attenuation * lightIntensity;
 
-            radiance *= 1.0 - InShadow(in_vertexWorldPos, light);
+            radiance *= 1.0 - InShadow(in_vertexWorldPos, light, 0);
             break;
         }
         default:
@@ -262,27 +322,49 @@ vec3 FresnelSchlick(vec3 V, vec3 H, vec3 F0) {
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }  
 
-float InShadow(vec3 worldPos, Light light) {
-    if(light.shadowMapDataIndex == ~0) {
-        return 0.0;
-    }
-
-    ShadowMapData shadowData = shadowMapDataBuffer.shadowMaps[light.shadowMapDataIndex];
-
-    
+float InShadowCascaded(vec3 worldPos, Light light) {
     uint cascadeIndex = 0;
 	for(uint i = 0; i < shadowPrefs.cascadeCount - 1; ++i) {
 		if(in_vertexViewPos.z < shadowPrefs.cascadeSplits[i / 4][i % 4]) {
 			cascadeIndex = i + 1;
 		}
 	}
-    vec4 lightSpacePos = biasMat * shadowData.lightMat[cascadeIndex] * vec4(worldPos, 1.0);
+    return InShadow(worldPos, light, cascadeIndex);
+}
+
+float InShadowCube(vec3 worldPos, Light light) {
+    if(light.shadowMapDataIndex == ~0) {
+        return 0.0;
+    }
+    ShadowMapData shadowData = shadowMapDataBuffer.shadowMaps[light.shadowMapDataIndex];
+    
+    vec3 lightDir = worldPos - vec3(light.position);
+    
+    return 0.0;
+    //lightDir.y *= -1;
+    /*
+    float sampledDist = texture(shadowCubeTextures[shadowData.mapIndex], lightDir).r;
+    sampledDist *= far;
+    float currentDepth = length(lightDir);
+
+    return currentDepth - 0.05 > sampledDist ? 1.0 : 0.0;
+    */
+    //return texture(shadowCubeTextures[shadowData.mapIndex], vec4(lightDir, currentDepth)).r;
+}
+
+float InShadow(vec3 worldPos, Light light, uint layer) {
+    if(light.shadowMapDataIndex == ~0) {
+        return 0.0;
+    }
+    ShadowMapData shadowData = shadowMapDataBuffer.shadowMaps[light.shadowMapDataIndex];
+
+    vec4 lightSpacePos = biasMat * shadowData.lightMat[layer] * vec4(worldPos, 1.0);
     vec3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
     
     if(shadowPrefs.smoothShadows == 0) {
         vec4 texCoord;
         texCoord.xyw = projCoords.xyz;
-        texCoord.z = cascadeIndex;
+        texCoord.z = layer;
         return texture(shadowTextures[shadowData.mapIndex], texCoord).r;
     }
     
@@ -298,7 +380,7 @@ float InShadow(vec3 worldPos, Light light) {
     float shadow = 0.0;
     for(int u = -1; u <= 1; u++) {
         for(int v = -1; v <= 1; v++) {
-            vec4 uv = vec4(projCoords.xy + vec2(u, v) * texelSize, cascadeIndex, projCoords.z);
+            vec4 uv = vec4(projCoords.xy + vec2(u, v) * texelSize, layer, projCoords.z);
             float gauss = gaussianKernel[u + 1][v + 1];
             shadow += texture(shadowTextures[shadowData.mapIndex], uv).r * gauss;
         }

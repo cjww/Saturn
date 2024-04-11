@@ -93,6 +93,10 @@ namespace sa {
         return m_forward;
     }
 
+    void SceneCamera::setUp(Vector3 up) {
+        m_up = -up;
+    }
+
     Vector3 SceneCamera::getUp() const {
         return -m_up;
     }
