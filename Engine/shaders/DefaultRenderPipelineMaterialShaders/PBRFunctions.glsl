@@ -286,13 +286,9 @@ float InShadowCube(vec3 worldPos, Light light) {
     
     float currentDepth = length(lightDir);
     lightDir.x *= -1.0;
-
-    float sampledDist = texture(shadowCubeTextures[shadowData.mapIndex], lightDir).r;
-    // linearize
-    sampledDist *= far;
+    currentDepth /= far;
     
-    float shadow = currentDepth > sampledDist ? 1.0 : 0.0;
-    return shadow;
+    return texture(shadowCubeTextures[shadowData.mapIndex], vec4(lightDir, currentDepth)).r;
 }
 
 float InShadow(vec3 worldPos, Light light, uint layer) {
