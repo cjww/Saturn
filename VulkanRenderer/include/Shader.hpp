@@ -25,7 +25,7 @@ namespace sa {
 		~Shader();
 
 		Shader(const Shader&);
-		Shader& operator=(const Shader&) = delete;
+		Shader& operator=(const Shader& other);
 		
 
 		void create(const ShaderStageInfo& stageInfo);

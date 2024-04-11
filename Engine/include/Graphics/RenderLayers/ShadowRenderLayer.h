@@ -68,9 +68,19 @@ namespace sa {
 
 		std::array<float, ShadowPreferences::MaxCascadeCount> m_cascadeSplits;
 
+		struct MaterialShadowPipeline {
+			PipelineLayout pipelineLayout;
+			ResourceID pipeline;
+			bool isInitialized = false;
+		};
+
+		std::unordered_map<UUID, MaterialShadowPipeline> m_materialShaderPipelines;
+
 		bool m_updateCascades;
 
 		void createSampler();
+
+		void initMaterialShadowPipeline(MaterialShader* pMaterialShader, MaterialShadowPipeline& data);
 
 		void cleanupRenderData(ShadowRenderData& data);
 		void initializeRenderData(ShadowRenderData& data, LightType lightType);

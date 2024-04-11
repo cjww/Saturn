@@ -231,7 +231,7 @@ namespace sa {
 		PerFrameBuffer perFrame;
 		perFrame.projMat = pCamera->getProjectionMatrix();
 		perFrame.viewMat = pCamera->getViewMatrix();
-		perFrame.viewPos = pCamera->getPosition();
+		perFrame.viewPos = glm::vec4(pCamera->getPosition(), 1.0f);
 
 		context.beginRenderProgram(m_depthPreRenderProgram, data.depthFramebuffer, SubpassContents::DIRECT);
 		for (auto& collection : sc) {

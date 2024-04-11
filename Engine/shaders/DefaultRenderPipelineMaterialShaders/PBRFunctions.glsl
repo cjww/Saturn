@@ -62,7 +62,7 @@ vec4 CalculatePBRColor(Material material) {
 }
 
 vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float roughness, float occlusion, float alpha, float alphaClipThreshold) {
-    vec3 viewDir = normalize(in_viewPos - in_vertexWorldPos);
+    vec3 viewDir = normalize(pc.viewPos.xyz - in_vertexWorldPos);
     normal = normalize(normal);
 
     vec3 Lo = vec3(0);
@@ -104,66 +104,8 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
             */
             
             radiance = light.color.rgb * attenuation * lightIntensity;
-            //radiance *= 1.0 - InShadowCube(in_vertexWorldPos, light);
+            radiance *= 1.0 - InShadowCube(in_vertexWorldPos, light);
 
-            if(light.shadowMapDataIndex != ~0) {
-                ShadowMapData shadowData = shadowMapDataBuffer.shadowMaps[light.shadowMapDataIndex];
-                
-                vec3 lightDir = in_vertexWorldPos - vec3(light.position);
-
-                float near = 0.1;
-                float far = light.position.w;
-                
-                float currentDepth = length(lightDir);
-                /*
-                lightDir.y *= -1.0;
-                */
-                lightDir.x *= -1.0;
-                // nonlinearize
-                //lightDir = vec3(biasMat * vec4(lightDir, 0.0));
-                //currentDepth = (far + near - 2.0 * near * far / currentDepth) / (far - near);
-                //currentDepth = (currentDepth + 1.0) / 2.0;
-                //linear = zNear * zFar / (zFar - nonLinear * (zFar - zNear));
-                //linear = zNear * zFar / (zFar - nonLinear * (zFar - zNear));
-                //currentDepth = -((near * far - currentDepth * far) * currentDepth) / (far - near);
-
-
-                /*
-                float shadow = texture(shadowCubeTextures[shadowData.mapIndex], vec4(lightDir.xyz, currentDepth)).r;
-                */
-                lightDir = normalize(lightDir);
-                float sampledDist = texture(shadowCubeTextures[shadowData.mapIndex], lightDir).r;
-                // linearize
-                sampledDist = near * far / (far + sampledDist * (near - far));
-                
-                //currentDepth = near * (1.0 / currentDepth) + far;
-                /*
-                float maxValue = 0.0;
-                int maxComponent = 0;
-                for(int j = 0; j < 3; j++) {
-                    if(abs(lightDir[j]) > maxValue) {
-                        maxComponent = j;
-                        maxValue = abs(lightDir[j]);
-                    }
-                }
-                maxComponent *= 2;
-                if(lightDir[maxComponent] < 0) {
-                    maxComponent += 1;
-                }
-
-                vec4 p = biasMat * shadowData.lightMat[maxComponent] * vec4(in_vertexWorldPos, 1.0);
-                p.xyz /= p.w;
-                currentDepth = p.z;
-                */
-                
-                
-
-                float shadow = currentDepth > sampledDist ? 1.0 : 0.0;
-
-                radiance *= 1.0 - shadow;
-                //radiance = vec3(sampledDist / far);
-
-            }
             break;
         }
         case LIGHT_TYPE_DIRECTIONAL: {
@@ -339,17 +281,18 @@ float InShadowCube(vec3 worldPos, Light light) {
     ShadowMapData shadowData = shadowMapDataBuffer.shadowMaps[light.shadowMapDataIndex];
     
     vec3 lightDir = worldPos - vec3(light.position);
+     
+    float far = light.position.w;
     
-    return 0.0;
-    //lightDir.y *= -1;
-    /*
-    float sampledDist = texture(shadowCubeTextures[shadowData.mapIndex], lightDir).r;
-    sampledDist *= far;
     float currentDepth = length(lightDir);
+    lightDir.x *= -1.0;
 
-    return currentDepth - 0.05 > sampledDist ? 1.0 : 0.0;
-    */
-    //return texture(shadowCubeTextures[shadowData.mapIndex], vec4(lightDir, currentDepth)).r;
+    float sampledDist = texture(shadowCubeTextures[shadowData.mapIndex], lightDir).r;
+    // linearize
+    sampledDist *= far;
+    
+    float shadow = currentDepth > sampledDist ? 1.0 : 0.0;
+    return shadow;
 }
 
 float InShadow(vec3 worldPos, Light light, uint layer) {

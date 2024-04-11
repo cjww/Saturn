@@ -17,8 +17,10 @@ namespace sa {
 		
 		std::vector<std::vector<uint32_t>> m_code;
 		std::vector<Shader> m_shaders;
-		PipelineLayout m_colorPipelineLayout;
+
 		PipelineLayout m_depthPipelineLayout;
+		PipelineLayout m_colorPipelineLayout;
+
 		ResourceID m_depthPipeline = NULL_RESOURCE;
 		ResourceID m_colorPipeline = NULL_RESOURCE;
 
@@ -44,6 +46,11 @@ namespace sa {
 
 		const std::vector<ShaderSourceFile>& getShaderSourceFiles() const;
 		std::vector<sa::ShaderSourceFile>& getShaderSourceFiles();
+
+		const std::vector<Shader>& getShaders() const;
+		bool hasStage(ShaderStageFlagBits stage) const;
+		const sa::Shader* getShaderStage(ShaderStageFlagBits stage) const;
+
 
 		void addShaderSourceFile(const ShaderSourceFile& sourceFile);
 		void removeShaderSourceFile(ShaderStageFlagBits stage);

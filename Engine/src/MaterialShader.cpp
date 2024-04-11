@@ -4,7 +4,7 @@
 #include "Engine.h"
 
 namespace sa {
-
+    
     void MaterialShader::create(const std::vector<ShaderSourceFile>& sourceFiles) {
         if (sourceFiles.empty()) {
             throw std::runtime_error("Invalid sources");
@@ -124,6 +124,24 @@ namespace sa {
 
     const std::vector<Shader>& MaterialShader::getShaders() const {
         return m_shaders;
+    }
+
+    bool MaterialShader::hasStage(ShaderStageFlagBits stage) const {
+        for (const auto& shader : m_shaders) {
+            if (shader.getStage() == stage) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    const sa::Shader* MaterialShader::getShaderStage(ShaderStageFlagBits stage) const {
+        for (const auto& shader : m_shaders) {
+            if (shader.getStage() == stage) {
+                return &shader;
+            }
+        }
+        return nullptr;
     }
 
     void MaterialShader::addShaderSourceFile(const ShaderSourceFile& sourceFile) {

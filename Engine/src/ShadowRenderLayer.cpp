@@ -7,6 +7,36 @@
 
 namespace sa {
 
+	void ShadowRenderLayer::initMaterialShadowPipeline(MaterialShader* pMaterialShader, MaterialShadowPipeline& data) {
+		Shader vertexShader;
+		if (pMaterialShader->hasStage(ShaderStageFlagBits::VERTEX)) {
+			vertexShader = *pMaterialShader->getShaderStage(ShaderStageFlagBits::VERTEX);
+		}
+		else {
+			auto code = ReadSPVFile((Engine::getShaderDirectory() / "ForwardPlusColorPass.vert.spv").generic_string().c_str());
+			vertexShader.create(code, ShaderStageFlagBits::VERTEX);
+		}
+
+
+		Shader fragmentShader;
+		auto code = ReadSPVFile((Engine::getShaderDirectory() / "ShadowPass.frag.spv").generic_string().c_str());
+		fragmentShader.create(code, ShaderStageFlagBits::FRAGMENT);
+
+		Shader shaders[] = { vertexShader, fragmentShader };
+		data.pipelineLayout.createFromShaders(shaders, 2);
+
+		PipelineSettings settings = {};
+		settings.dynamicStates.push_back(DynamicState::VIEWPORT);
+		settings.dynamicStates.push_back(DynamicState::SCISSOR);
+		settings.dynamicStates.push_back(DynamicState::DEPTH_BIAS);
+		settings.dynamicStates.push_back(DynamicState::DEPTH_BIAS_ENABLE);
+		settings.dynamicStates.push_back(DynamicState::CULL_MODE);
+
+		data.pipeline = Renderer::get().createGraphicsPipeline(data.pipelineLayout, shaders, 2, m_depthRenderProgram, 0, { 0, 0 }, settings);
+		
+		data.isInitialized = true;
+	}
+
 	void ShadowRenderLayer::cleanupRenderData(ShadowRenderData& data) {
 		if (data.depthTexture.isValid())
 			data.depthTexture.destroy();
@@ -69,10 +99,22 @@ namespace sa {
 	}
 
 	void ShadowRenderLayer::renderMaterialCollection(RenderContext& context, MaterialShaderCollection& collection, ShadowData& data, const ShadowRenderData& renderData, uint32_t layer) {
+		MaterialShader* pMaterialShader = collection.getMaterialShader();
+		if (!pMaterialShader)
+			return;
+		MaterialShadowPipeline& materialPipeline = m_materialShaderPipelines[pMaterialShader->getID()];
+		if (!materialPipeline.isInitialized)
+			initMaterialShadowPipeline(pMaterialShader, materialPipeline);
+
+
 		const auto& prefs = getPreferences();
 
 		context.beginRenderProgram(m_depthRenderProgram, renderData.depthFramebuffers[layer], SubpassContents::DIRECT);
-		collection.bindDepthPipeline(context);
+		
+		//collection.bindDepthPipeline(context);
+		context.bindPipelineLayout(materialPipeline.pipelineLayout);
+		context.bindPipeline(materialPipeline.pipeline);
+
 		context.bindDescriptorSet(collection.getSceneDescriptorSetDepthPass());
 
 		context.bindVertexBuffers(0, { collection.getVertexBuffer() });
@@ -93,10 +135,12 @@ namespace sa {
 		PerFrameBuffer perFrame = {};
 		perFrame.viewMat = data.lightViewMatrices[layer];
 		perFrame.projMat = data.lightProjMatrices[layer];
-		perFrame.viewPos = glm::vec4(0);
+		perFrame.viewPos = data.lightPosition;
 
 		if (collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>() > 0) {
-			context.pushConstant(ShaderStageFlagBits::VERTEX, perFrame);
+			context.pushConstant(ShaderStageFlagBits::VERTEX | ShaderStageFlagBits::FRAGMENT, perFrame);
+			uint32_t linearizeDepth = data.lightType == LightType::DIRECTIONAL ? 0u : 1u;
+			context.pushConstant(ShaderStageFlagBits::FRAGMENT, linearizeDepth, sizeof(perFrame));
 			context.drawIndexedIndirect(collection.getDrawCommandBuffer(), 0, collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
 		}
 		context.endRenderProgram(m_depthRenderProgram);
@@ -227,12 +271,12 @@ namespace sa {
 
 	void ShadowRenderLayer::renderCubeMapShadows(RenderContext& context, ShadowData& data, const ShadowRenderData& renderData, SceneCollection& sceneCollection) {
 		static const std::array<glm::vec3, 6> faces = {
-			glm::vec3(1, 0, 0),
-			glm::vec3(-1, 0, 0),
-			glm::vec3(0, 1, 0),
-			glm::vec3(0, -1, 0),
-			glm::vec3(0, 0, 1),
-			glm::vec3(0, 0, -1),
+			glm::vec3(-1, 0, 0),	// +X
+			glm::vec3(1, 0, 0),		// -X
+			glm::vec3(0, 1, 0),		// +Y
+			glm::vec3(0, -1, 0),	// -Y
+			glm::vec3(0, 0, 1),		// +Z
+			glm::vec3(0, 0, -1),	// -Z
 		};
 		static const std::array<glm::vec3, 6> ups = {
 			glm::vec3(0, -1, 0),
@@ -247,91 +291,17 @@ namespace sa {
 		camera.setProjectionMode(ProjectionMode::ePerspective);
 		camera.setFOVDegrees(90.f);
 		camera.setFar(data.lightPosition.w);
-		camera.setNear(0.1f);
+		camera.setNear(0.001f);
 		camera.setPosition(data.lightPosition);
 		
 		glm::mat4 projMat = camera.getProjectionMatrix();
 
-		
 		for (uint32_t i = 0; i < faces.size(); i++) {
-			glm::mat4 viewMat = glm::mat4(1.0f);
-			glm::vec3 pos = data.lightPosition;
-			switch (i) {
-			case 0: // +X
-				viewMat = glm::rotate(viewMat, glm::radians(90.f), glm::vec3(0, 1, 0));
-				viewMat = glm::rotate(viewMat, glm::radians(180.f), glm::vec3(1, 0, 0));
-				/*
-				*/
-				viewMat = glm::lookAt(pos, pos + glm::vec3(1, 0, 0), glm::vec3(0, 1, 0));
-				
-				camera.setUp(glm::vec3(0, -1, 0));
-				//camera.setForward(glm::vec3(1, 0, 0));
-				camera.setForward(glm::vec3(-1, 0, 0));
+			camera.setUp(ups[i]);
+			camera.setForward(faces[i]);
 
-				
-				break;
-			case 1: // -X
-				viewMat = glm::rotate(viewMat, glm::radians(-90.f), glm::vec3(0, 1, 0));
-				viewMat = glm::rotate(viewMat, glm::radians(180.f), glm::vec3(1, 0, 0));
-				
-				viewMat = glm::lookAt(pos, pos + glm::vec3(-1, 0, 0), glm::vec3(0, 1, 0));
-				
-				camera.setUp(glm::vec3(0, -1, 0));
-				//camera.setForward(glm::vec3(-1, 0, 0));
-				camera.setForward(glm::vec3(1, 0, 0));
-
-				break; 
-			case 2: // +Y
-				viewMat = glm::rotate(viewMat, glm::radians(-90.f), glm::vec3(1, 0, 0));
-				
-				viewMat = glm::lookAt(pos, pos + glm::vec3(0, 1, 0), glm::vec3(0, 0, 1));
-
-				camera.setUp(glm::vec3(0, 0, 1));
-				camera.setForward(glm::vec3(0, 1, 0));
-				
-				break;
-			case 3: // -Y
-				viewMat = glm::rotate(viewMat, glm::radians(90.f), glm::vec3(1, 0, 0));
-				
-				viewMat = glm::lookAt(pos, pos + glm::vec3(0, -1, 0), glm::vec3(0, 0, -1));
-
-
-				camera.setUp(glm::vec3(0, 0, -1));
-				camera.setForward(glm::vec3(0, -1, 0));
-
-				/*
-				camera.setUp(glm::vec3(0, 0, 1));
-				camera.setForward(glm::vec3(0, 1, 0));
-				*/
-
-				break;
-			case 4: // +Z
-				viewMat = glm::rotate(viewMat, glm::radians(180.f), glm::vec3(1, 0, 0));
-				/*
-				*/
-				viewMat = glm::lookAt(pos, pos + glm::vec3(0, 0, 1), glm::vec3(0, 1, 0));
-
-				camera.setUp(glm::vec3(0, -1, 0));
-				camera.setForward(glm::vec3(0, 0, 1));
-
-				break;
-			case 5: // -Z
-				viewMat = glm::rotate(viewMat, glm::radians(180.f), glm::vec3(0, 0, 1));
-				/*
-				*/
-				viewMat = glm::lookAt(pos, pos + glm::vec3(0, 0, -1), glm::vec3(0, 1, 0));
-
-				camera.setUp(glm::vec3(0, -1, 0));
-				camera.setForward(glm::vec3(0, 0, -1));
-				break;
-			}
-			//viewMat = glm::translate(viewMat, camera.getPosition());
-			viewMat = camera.getViewMatrix();
-			//viewMat = glm::lookAtLH(camera.getPosition(), camera.getPosition() + camera.getForward(), camera.getUp());
-			//viewMat = glm::lookAtRH(camera.getPosition(), camera.getPosition() + camera.getForward(), camera.getUp());
-			
 			data.lightProjMatrices[i] = projMat;
-			data.lightViewMatrices[i] = viewMat;
+			data.lightViewMatrices[i] = camera.getViewMatrix();
 
 			for (auto& collection : sceneCollection) {
 				if (!collection.readyDescriptorSets(context)) {

@@ -8,7 +8,7 @@ layout(location = 1) out vec3 out_vertexWorldPos;
 layout(location = 2) out vec3 out_vertexWorldNormal;
 layout(location = 3) out vec4 out_vertexViewPos;
 layout(location = 4) out vec4 out_vertexPos;
-layout(location = 5) out flat vec3 out_viewPos;
+
 layout(location = 6) out flat uint out_meshIndex;
 
 void DefaultPassThrough() {
@@ -23,7 +23,6 @@ void DefaultPassThrough() {
     out_vertexPos = in_vertexPosition;
 
     out_meshIndex = gl_DrawID;
-    out_viewPos = camera.viewPos;
 }
 
 #endif

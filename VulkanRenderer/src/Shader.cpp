@@ -143,6 +143,17 @@ namespace sa {
 		m_shaderObject = other.m_shaderObject;
 	}
 
+	Shader& Shader::operator=(const Shader& other) {
+		this->~Shader();
+		m_pCore = other.m_pCore;
+		m_stageInfo = other.m_stageInfo;
+		m_stageInfo.pCode = new uint32_t[other.m_stageInfo.codeLength];
+		memcpy(const_cast<uint32_t*>(m_stageInfo.pCode), other.m_stageInfo.pCode, m_stageInfo.codeLength * sizeof(uint32_t));
+		m_shaderModule = other.m_shaderModule;
+		m_shaderObject = other.m_shaderObject;
+		return *this;
+	}
+
 	void Shader::create(const ShaderStageInfo& stageInfo) {
 		m_stageInfo = stageInfo;
 		createModule();

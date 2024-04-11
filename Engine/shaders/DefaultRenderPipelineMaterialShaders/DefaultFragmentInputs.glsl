@@ -16,7 +16,7 @@ layout(location = 1) in vec3 in_vertexWorldPos;
 layout(location = 2) in vec3 in_vertexWorldNormal;
 layout(location = 3) in vec4 in_vertexViewPos;
 layout(location = 4) in vec4 in_vertexPos;
-layout(location = 5) in flat vec3 in_viewPos;
+
 layout(location = 6) in flat uint in_meshIndex;
 
 struct Material {
@@ -111,7 +111,7 @@ layout(set = 0, binding = 32) uniform texture2D textures[];
 layout(push_constant) uniform PushConstants {
     mat4 viewMat;
     mat4 projMat;
-    vec3 viewPos;
+    vec4 viewPos;
     uint tileCountX;
 } pc;
 

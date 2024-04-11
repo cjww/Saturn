@@ -18,7 +18,7 @@ layout(set = 0, binding = 0) readonly buffer Objects {
 layout(push_constant) uniform Camera {
     mat4 viewMat;
     mat4 projMat;
-    vec3 viewPos;
+    vec4 viewPos;
 } camera;
 
 Object GetObject() {
