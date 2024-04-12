@@ -406,7 +406,7 @@ namespace sa {
 	bool ShadowRenderLayer::preRender(RenderContext& context, SceneCollection& sceneCollection) {
 		SA_PROFILE_FUNCTION();
 		for (auto it = sceneCollection.iterateShadowsBegin(); it != sceneCollection.iterateShadowsEnd(); it++) {
-			if (m_shadowTextureCount >= MAX_SHADOW_TEXTURE_COUNT)
+			if (m_shadowCubeTextureCount >= MAX_SHADOW_TEXTURE_COUNT)
 				break;
 
 			sa::ShadowData& data = *it;
@@ -427,7 +427,9 @@ namespace sa {
 				shaderData.lightMat[i] = data.lightProjMatrices[i] * data.lightViewMatrices[i];
 			}
 			shaderData.mapIndex = m_shadowCubeTextureCount;
-			m_shadowShaderDataBuffer << shaderData;
+			
+			uint32_t index = it - sceneCollection.iterateShadowsBegin();
+			m_shadowShaderDataBuffer.write(&shaderData, sizeof(shaderData), sizeof(ShadowShaderData) * index);
 
 			m_shadowCubeTextures[m_shadowCubeTextureCount++] = renderData.depthTexture;
 		}
@@ -457,7 +459,9 @@ namespace sa {
 				shaderData.lightMat[i] = data.lightProjMatrices[i] * data.lightViewMatrices[i];
 			}
 			shaderData.mapIndex = m_shadowTextureCount;
-			m_shadowShaderDataBuffer << shaderData;
+
+			uint32_t index = it - sceneCollection.iterateShadowsBegin();
+			m_shadowShaderDataBuffer.write(&shaderData, sizeof(shaderData), sizeof(ShadowShaderData) * index);
 
 			m_shadowTextures[m_shadowTextureCount++] = renderData.depthTexture;
 		}
