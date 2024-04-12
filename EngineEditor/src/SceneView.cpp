@@ -551,14 +551,13 @@ void SceneView::onImGui() {
 	ImGui::End();
 
 
-
 	if (m_pEngine->getCurrentScene() && !m_selectedEntity.isNull()) {
-		if (m_selectedEntity.hasComponents<comp::ShadowEmitter, comp::Light>()) {
+		comp::Light* pLight = m_selectedEntity.getComponent<comp::Light>();
+		if (pLight && pLight->values.emitShadows) {
 			sa::ShadowRenderLayer* pLayer = m_pEngine->getRenderPipeline().getLayer<sa::ShadowRenderLayer>();
 			if (pLayer) {
 				ImGui::Begin("Shadow pass");
 				sa::UUID id = static_cast<uint32_t>(m_selectedEntity);
-				comp::Light* pLight = m_selectedEntity.getComponent<comp::Light>();
 				if(pLight->values.type == sa::LightType::DIRECTIONAL) {
 					id = id ^ m_renderTarget.getID();
 				}

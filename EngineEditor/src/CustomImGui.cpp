@@ -306,6 +306,12 @@ namespace ImGui {
 			light->values.direction.w = glm::radians(cutoff);
 		}
 
+		bool emitShadows = light->values.emitShadows;
+		if (ImGui::Checkbox("Emit Shadows", &emitShadows)) {
+			light->values.emitShadows = emitShadows;
+		}
+
+
 	}
 
 	void Component(sa::Entity entity, comp::RigidBody* rb) {

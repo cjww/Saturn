@@ -111,7 +111,6 @@ namespace sa {
 
 		context.beginRenderProgram(m_depthRenderProgram, renderData.depthFramebuffers[layer], SubpassContents::DIRECT);
 		
-		//collection.bindDepthPipeline(context);
 		context.bindPipelineLayout(materialPipeline.pipelineLayout);
 		context.bindPipeline(materialPipeline.pipeline);
 
@@ -139,7 +138,7 @@ namespace sa {
 
 		if (collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>() > 0) {
 			context.pushConstant(ShaderStageFlagBits::VERTEX | ShaderStageFlagBits::FRAGMENT, perFrame);
-			uint32_t linearizeDepth = data.lightType == LightType::DIRECTIONAL ? 0u : 1u;
+			uint32_t linearizeDepth = data.lightType == LightType::POINT ? 1u : 0u;
 			context.pushConstant(ShaderStageFlagBits::FRAGMENT, linearizeDepth, sizeof(perFrame));
 			context.drawIndexedIndirect(collection.getDrawCommandBuffer(), 0, collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
 		}
@@ -318,6 +317,35 @@ namespace sa {
 
 	}
 
+	void ShadowRenderLayer::renderSingleDirectedShadow(RenderContext& context, ShadowData& data, const ShadowRenderData& renderData, SceneCollection& sceneCollection) {
+		
+		SceneCamera camera;
+		camera.setProjectionMode(ProjectionMode::ePerspective);
+		camera.setAspectRatio(1.f);
+		camera.setFar(data.lightPosition.w);
+		camera.setNear(0.1f);
+		camera.setFOVRadians(data.lightDirection.w * 2);
+
+		data.lightProjMatrices[0] = camera.getProjectionMatrix();
+
+		camera.setPosition(data.lightPosition);
+		camera.setForward(data.lightDirection);
+		
+		data.lightViewMatrices[0] = camera.getViewMatrix();
+
+		for (auto& collection : sceneCollection) {
+			if (!collection.readyDescriptorSets(context)) {
+				continue;
+			}
+
+			if (!collection.arePipelinesReady()) {
+				continue;
+			}
+			renderMaterialCollection(context, collection, data, renderData, 0);
+		}
+	}
+
+
 	void ShadowRenderLayer::renderShadowMap(RenderContext& context, const SceneCamera& sceneCamera, ShadowData& data, const ShadowRenderData& renderData, SceneCollection& sceneCollection) {
 		
 		switch(data.lightType) {
@@ -337,18 +365,17 @@ namespace sa {
 
 			break;
 		case LightType::SPOT:
-			
+			renderSingleDirectedShadow(context, data, renderData, sceneCollection);
 			break;
 		default:
 			break;
 		}
 		
-
-		
 	}
 
 	void ShadowRenderLayer::init() {
-		m_depthFormat = sa::Format::D16_UNORM;
+		//m_depthFormat = sa::Format::D16_UNORM;
+		m_depthFormat = m_renderer.getDefaultDepthFormat();
 		
 		if (m_depthRenderProgram != NULL_RESOURCE) {
 			m_renderer.destroyRenderProgram(m_depthRenderProgram);
@@ -403,67 +430,101 @@ namespace sa {
 		});
 	}
 
+	void ShadowRenderLayer::renderShadowMap(
+		RenderContext& context,
+		const SceneCamera& sceneCamera,
+		ShadowData& data,
+		ShadowRenderData& renderData,
+		SceneCollection& sceneCollection,
+		uint32_t& shadowCount,
+		std::array<Texture, MAX_SHADOW_TEXTURE_COUNT>& shadowTextures,
+		uint32_t layerCount,
+		uint32_t index)
+	{
+
+		if (shadowCount >= MAX_SHADOW_TEXTURE_COUNT) {
+			SA_DEBUG_LOG_WARNING("Exceeding maximum limit of ", MAX_SHADOW_TEXTURE_COUNT, " shadowmaps");
+			return;
+		}
+
+		if (!renderData.isInitialized) {
+			cleanupRenderData(renderData);
+			initializeRenderData(renderData, data.lightType);
+		}
+
+		renderShadowMap(context, sceneCamera, data, renderData, sceneCollection);
+
+		ShadowShaderData shaderData = {};
+		for (uint32_t i = 0; i < layerCount; i++) {
+			shaderData.lightMat[i] = data.lightProjMatrices[i] * data.lightViewMatrices[i];
+		}
+		shaderData.mapIndex = shadowCount;
+
+		m_shadowShaderDataBuffer.write(&shaderData, sizeof(shaderData), sizeof(ShadowShaderData) * index);
+
+		shadowTextures[shadowCount++] = renderData.depthTexture;
+	}
+
 	bool ShadowRenderLayer::preRender(RenderContext& context, SceneCollection& sceneCollection) {
 		SA_PROFILE_FUNCTION();
 		for (auto it = sceneCollection.iterateShadowsBegin(); it != sceneCollection.iterateShadowsEnd(); it++) {
-			if (m_shadowCubeTextureCount >= MAX_SHADOW_TEXTURE_COUNT)
-				break;
-
 			sa::ShadowData& data = *it;
 			if (data.lightType == LightType::DIRECTIONAL)
 				continue;
 
 			ShadowRenderData& renderData = getRenderTargetData(static_cast<uint32_t>(data.entityID));
-			if (!renderData.isInitialized) {
-				cleanupRenderData(renderData);
-				initializeRenderData(renderData, data.lightType);
-			}
-
-			SceneCamera tmp;
-			renderShadowMap(context, tmp, data, renderData, sceneCollection);
-
-			ShadowShaderData shaderData = {};
-			for (uint32_t i = 0; i < data.lightViewMatrices.size(); i++) {
-				shaderData.lightMat[i] = data.lightProjMatrices[i] * data.lightViewMatrices[i];
-			}
-			shaderData.mapIndex = m_shadowCubeTextureCount;
-			
 			uint32_t index = it - sceneCollection.iterateShadowsBegin();
-			m_shadowShaderDataBuffer.write(&shaderData, sizeof(shaderData), sizeof(ShadowShaderData) * index);
 
-			m_shadowCubeTextures[m_shadowCubeTextureCount++] = renderData.depthTexture;
+			switch (data.lightType) {
+			case LightType::POINT:
+				renderShadowMap(context, 
+					SceneCamera(),
+					data,
+					renderData,
+					sceneCollection,
+					m_shadowCubeTextureCount,
+					m_shadowCubeTextures,
+					6,
+					index);
+				break;
+			case LightType::SPOT:
+				renderShadowMap(context,
+					SceneCamera(),
+					data,
+					renderData,
+					sceneCollection,
+					m_shadowTextureCount,
+					m_shadowTextures,
+					1,
+					index);
+				break;
+			default:
+				break;
+			}
+
 		}
 		return true;
 	}
 	
 	bool ShadowRenderLayer::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) {
 		SA_PROFILE_FUNCTION();
+		const auto& prefs = getPreferences();
 		for (auto it = sceneCollection.iterateShadowsBegin(); it != sceneCollection.iterateShadowsEnd(); it++) {
-			if (m_shadowTextureCount >= MAX_SHADOW_TEXTURE_COUNT)
-				break;
-
 			sa::ShadowData& data = *it;
 			if (data.lightType != LightType::DIRECTIONAL)
 				continue;
 
 			ShadowRenderData& renderData = getRenderTargetData(pRenderTarget->getID() ^ static_cast<uint32_t>(data.entityID));
-			if (!renderData.isInitialized) {
-				cleanupRenderData(renderData);
-				initializeRenderData(renderData, data.lightType);
-			}
+			renderShadowMap(context, 
+				*pCamera,
+				data,
+				renderData,
+				sceneCollection,
+				m_shadowTextureCount,
+				m_shadowTextures,
+				prefs.cascadeCount,
+				it - sceneCollection.iterateShadowsBegin());
 
-			renderShadowMap(context, *pCamera, data, renderData, sceneCollection);
-			
-			ShadowShaderData shaderData = {};
-			for (uint32_t i = 0; i < data.lightViewMatrices.size(); i++) {
-				shaderData.lightMat[i] = data.lightProjMatrices[i] * data.lightViewMatrices[i];
-			}
-			shaderData.mapIndex = m_shadowTextureCount;
-
-			uint32_t index = it - sceneCollection.iterateShadowsBegin();
-			m_shadowShaderDataBuffer.write(&shaderData, sizeof(shaderData), sizeof(ShadowShaderData) * index);
-
-			m_shadowTextures[m_shadowTextureCount++] = renderData.depthTexture;
 		}
 		return true;
 	}

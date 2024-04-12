@@ -15,7 +15,6 @@ namespace sa {
 		registerComponentCallBack<comp::BoxCollider>();
 		registerComponentCallBack<comp::SphereCollider>();
 		registerComponentCallBack<comp::Camera>();
-		registerComponentCallBack<comp::ShadowEmitter>();
 	}
 
 

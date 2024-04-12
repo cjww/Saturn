@@ -19,10 +19,11 @@ namespace comp {
 
 
 	void Light::serialize(sa::Serializer& s) {
-		s.value("color", *(glm::vec4*)&values.color);
+		s.value("color", *reinterpret_cast<glm::vec4*>(&values.color));
 		s.value("position", values.position);
 		s.value("direction", values.direction);
 		s.value("lightType", (int)values.type);
+		s.value("emitShadows", values.emitShadows);
 	}
 
 
@@ -44,5 +45,7 @@ namespace comp {
 		
 
 		values.type = (sa::LightType)obj["lightType"].get_int64().value();
+		values.emitShadows = obj["emitShadows"].get_uint64().value();
+
 	}
 }

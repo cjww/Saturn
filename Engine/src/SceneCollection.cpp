@@ -393,16 +393,14 @@ namespace sa {
 	void SceneCollection::addLight(const Entity& entity, LightData& light, const comp::Transform& transform) {
 		light.position = glm::vec4(transform.position, light.position.w);
 		light.direction = glm::vec4(transform.rotation * glm::vec3(0, 0, 1), light.direction.w);
-		light.shadowMapDataIndex = UINT32_MAX;
 		
-		const comp::ShadowEmitter* pShadowEmitter = entity.getComponent<comp::ShadowEmitter>();
-		if (pShadowEmitter) {
+		if (light.emitShadows) {
 			ShadowData data = {};
 			data.lightPosition = light.position;
 			data.lightDirection = light.direction;
 			data.lightType = light.type;
 			data.entityID = entity;
-
+			
 			light.shadowMapDataIndex = m_shadowData.size();
 			m_shadowData.push_back(data);
 		}
@@ -436,31 +434,17 @@ namespace sa {
 	void SceneCollection::removeLight(const Entity& entity, const LightData& light) {
 		std::erase(m_lights, light);
 		
-
 		// TODO: right?
-		if (entity.hasComponents<comp::ShadowEmitter>()) {
-			if (light.type == LightType::DIRECTIONAL) {
-				auto it = std::find_if(m_shadowData.begin(), m_shadowData.end(), [&](const ShadowData& data) {
-					return data.entityID == static_cast<entt::entity>(entity);
-				});
+		if (light.emitShadows) {
+			auto it = std::find_if(m_shadowData.begin(), m_shadowData.end(), [&](const ShadowData& data) {
+				return data.entityID == static_cast<entt::entity>(entity);
+			});
 
-				if (it == m_shadowData.end())
-					return;
-
-				// erase shadowData
-				m_shadowData.erase(it);
-			}
-			else {
-				auto it = std::find_if(m_shadowData.begin(), m_shadowData.end(), [&](const ShadowData& data) {
-					return data.entityID == static_cast<entt::entity>(entity);
-				});
-
-				if (it == m_shadowData.end())
-					return;
+			if (it == m_shadowData.end())
+				return;
 				
-				// erase shadowData
-				m_shadowData.erase(it);
-			}
+			// erase shadowData
+			m_shadowData.erase(it);
 		}
 	}
 

@@ -95,8 +95,23 @@ namespace sa {
 		// Point lights
 		void renderCubeMapShadows(RenderContext& context, ShadowData& data, const ShadowRenderData& renderData, SceneCollection& sceneCollection);
 
+		// Spot lights
+		void renderSingleDirectedShadow(RenderContext& context, ShadowData& data, const ShadowRenderData& renderData, SceneCollection& sceneCollection);
+
+
 		void renderShadowMap(RenderContext& context, const SceneCamera& sceneCamera, ShadowData& data, const ShadowRenderData& renderData, SceneCollection& sceneCollection);
 		
+		void renderShadowMap(
+			RenderContext& context,
+			const SceneCamera& sceneCamera,
+			ShadowData& data,
+			ShadowRenderData& renderData,
+			SceneCollection& sceneCollection,
+			uint32_t& shadowCount,
+			std::array<Texture, MAX_SHADOW_TEXTURE_COUNT>& shadowTextures,
+			uint32_t layerCount,
+			uint32_t index);
+
 	public:
 
 		virtual void init() override;

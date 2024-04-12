@@ -6,6 +6,8 @@
 #define MAX_LIGHTS_PER_TILE 1024
 #define TILE_SIZE 16
 
+#define MAX_SHADOW_MAP_COUNT 8
+
 #define LIGHT_TYPE_POINT 0
 #define LIGHT_TYPE_DIRECTIONAL 1
 #define LIGHT_TYPE_SPOT 2
@@ -62,6 +64,7 @@ struct Light {
     vec4 position;  // vec3 position, float attenuationRadius
     vec4 direction; // vec3 direction
     uint type;
+    uint emitShadows;
     uint shadowMapDataIndex;
 };
 
@@ -102,8 +105,8 @@ layout(set = 0, binding = 7) uniform ShadowPreferences {
     vec4 cascadeSplits[2];
 } shadowPrefs;
 
-layout(set = 0, binding = 8) uniform sampler2DArrayShadow shadowTextures[8];
-layout(set = 0, binding = 9) uniform samplerCubeShadow shadowCubeTextures[8];
+layout(set = 0, binding = 8) uniform sampler2DArrayShadow shadowTextures[MAX_SHADOW_MAP_COUNT];
+layout(set = 0, binding = 9) uniform samplerCubeShadow shadowCubeTextures[MAX_SHADOW_MAP_COUNT];
 
 layout(set = 0, binding = 32) uniform texture2D textures[];
 

@@ -74,6 +74,10 @@ namespace sa {
             std::string compName(compObj["type"].get_string().value());
             MetaComponent mt = addComponent(compName);
             ComponentBase** comp = (ComponentBase**)mt.data();
+            if (!comp) {
+                SA_DEBUG_LOG_ERROR("Entity ", static_cast<uint32_t>(m_entity),": Could not add Component of type ", compName);
+                continue;
+            }
             (*comp)->deserialize(&compObj);
             ComponentType type = getComponentType(mt.getTypeName());
             updateComponent(type);

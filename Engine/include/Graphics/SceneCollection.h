@@ -5,7 +5,6 @@
 #include "ECS/Events.h"
 #include "ECS/Components/Model.h"
 #include "ECS\Components\Light.h"
-#include "ECS/Components/ShadowEmitter.h"
 #include "ECS/Components/Transform.h"
 
 namespace sa {
@@ -175,7 +174,6 @@ namespace sa {
 		std::vector<ShadowData>::iterator iterateShadowsBegin();
 		std::vector<ShadowData>::iterator iterateShadowsEnd();
 		
-
 		std::vector<MaterialShaderCollection>::iterator begin();
 		std::vector<MaterialShaderCollection>::iterator end();
 
