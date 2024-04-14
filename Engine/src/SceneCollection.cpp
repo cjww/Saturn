@@ -108,6 +108,111 @@ namespace sa {
 		m_updatedDescriptorSets = false;
 	}
 
+	void MaterialShaderCollection::makeRenderReady() {
+		// Clear Dynamic buffers
+		m_objectBuffer.clear();
+		m_indirectIndexedBuffer.clear();
+		m_vertexBuffer.clear();
+		m_indexBuffer.clear();
+		m_materialBuffer.clear();
+		m_materialIndicesBuffer.clear();
+
+		// reserve dynamic buffers
+		{
+			SA_PROFILE_SCOPE("Reserve rendering buffers");
+			m_objectBuffer.reserve(m_objectCount * sizeof(ObjectData), IGNORE_CONTENT);
+			m_indirectIndexedBuffer.reserve(m_uniqueMeshCount * sizeof(DrawIndexedIndirectCommand), IGNORE_CONTENT);
+			m_vertexBuffer.reserve(m_vertexCount * sizeof(VertexNormalUV), IGNORE_CONTENT);
+			m_indexBuffer.reserve(m_indexCount * sizeof(uint32_t), IGNORE_CONTENT);
+			m_materialBuffer.reserve(m_uniqueMeshCount * sizeof(Material::Values), IGNORE_CONTENT);
+			m_materialIndicesBuffer.reserve(m_uniqueMeshCount * sizeof(int32_t), IGNORE_CONTENT);
+		}
+
+		uint32_t firstInstance = 0;
+
+		int32_t materialCount = 0;
+		uint32_t meshCount = 0;
+
+		for (size_t i = 0; i < m_models.size(); i++) {
+			ModelAsset* pModelAsset = m_models.at(i);
+			if (!pModelAsset->isLoaded())
+				continue;
+			for (const auto& entity : m_objects[i]) {
+				auto pTransform = entity.getComponent<comp::Transform>();
+				if (!pTransform) {
+					m_objectBuffer << glm::mat4(1);
+					continue;
+				}
+				m_objectBuffer << pTransform->getMatrix();
+			}
+			ModelData* pModel = &m_models[i]->data;
+			for (const auto& meshIndex : m_meshes[i]) {
+				const Mesh& mesh = pModel->meshes[meshIndex];
+				uint32_t vertexOffset = m_vertexBuffer.getElementCount<VertexNormalUV>();
+				{
+					SA_PROFILE_SCOPE("Append Vertex buffer");
+					// Push mesh into buffers
+					m_vertexBuffer << mesh.vertices;
+				}
+				uint32_t firstIndex = m_indexBuffer.getElementCount<uint32_t>();
+				{
+					SA_PROFILE_SCOPE("Append Index buffer");
+					m_indexBuffer << mesh.indices;
+
+				}
+
+				// Create a draw command for this mesh
+				DrawIndexedIndirectCommand cmd = {};
+				cmd.firstIndex = firstIndex;
+				cmd.indexCount = mesh.indices.size();
+				cmd.firstInstance = firstInstance;
+				cmd.instanceCount = m_objects[i].size();
+				cmd.vertexOffset = vertexOffset;
+				{
+					SA_PROFILE_SCOPE("Append Draw buffer");
+					m_indirectIndexedBuffer << cmd;
+				}
+
+				//Material
+				sa::Material* pMaterial = mesh.material.getAsset();
+				if (pMaterial) {
+					auto it = std::find(m_materials.begin(), m_materials.end(), pMaterial);
+					if (it == m_materials.end()) {
+						uint32_t textureOffset = m_textures.size();
+						const std::vector<Texture>& matTextures = pMaterial->fetchTextures();
+						m_textures.insert(m_textures.end(), matTextures.begin(), matTextures.end());
+
+						Material::Values values = pMaterial->values;
+						values.albedoMapFirst += textureOffset;
+						values.normalMapFirst += textureOffset;
+						values.metalnessMapFirst += textureOffset;
+						values.roughnessMapFirst += textureOffset;
+						values.emissiveMapFirst += textureOffset;
+						values.occlusionMapFirst += textureOffset;
+
+						m_materials.push_back(pMaterial);
+						m_materialData.push_back(values);
+						m_materialIndices.push_back(materialCount);
+						materialCount++;
+					}
+					else {
+						m_materialIndices.push_back(std::distance(m_materials.begin(), it));
+					}
+				}
+				else {
+					m_materialIndices.push_back(-1); // Default Material in shader
+				}
+				meshCount++;
+			}
+			firstInstance += m_objects[i].size();
+		}
+		{
+			SA_PROFILE_SCOPE("Write Materials");
+			m_materialBuffer.write(m_materialData);
+			m_materialIndicesBuffer.write(m_materialIndices);
+		}
+	}
+
 	bool MaterialShaderCollection::readyDescriptorSets(RenderContext& context) {
 		const auto pMaterialShader = getMaterialShader();
 		if (!pMaterialShader || !pMaterialShader->isLoaded())
@@ -463,108 +568,7 @@ namespace sa {
 
 		
 		for (auto& collection : m_materialShaderCollections) {
-			// Clear Dynamic buffers
-			collection.m_objectBuffer.clear();
-			collection.m_indirectIndexedBuffer.clear();
-			collection.m_vertexBuffer.clear();
-			collection.m_indexBuffer.clear();
-			collection.m_materialBuffer.clear();
-			collection.m_materialIndicesBuffer.clear();
-
-			// reserve dynamic buffers
-			{
-				SA_PROFILE_SCOPE("Reserve rendering buffers");
-				collection.m_objectBuffer.reserve(collection.m_objectCount * sizeof(ObjectData), IGNORE_CONTENT);
-				collection.m_indirectIndexedBuffer.reserve(collection.m_uniqueMeshCount * sizeof(DrawIndexedIndirectCommand), IGNORE_CONTENT);
-				collection.m_vertexBuffer.reserve(collection.m_vertexCount * sizeof(VertexNormalUV), IGNORE_CONTENT);
-				collection.m_indexBuffer.reserve(collection.m_indexCount * sizeof(uint32_t), IGNORE_CONTENT);
-				collection.m_materialBuffer.reserve(collection.m_uniqueMeshCount * sizeof(Material::Values), IGNORE_CONTENT);
-				collection.m_materialIndicesBuffer.reserve(collection.m_uniqueMeshCount * sizeof(int32_t), IGNORE_CONTENT);
-			}
-
-			uint32_t firstInstance = 0;
-
-			int32_t materialCount = 0;
-			uint32_t meshCount = 0;
-
-			for (size_t i = 0; i < collection.m_models.size(); i++) {
-				ModelAsset* pModelAsset = collection.m_models.at(i);
-				if(!pModelAsset->isLoaded())
-					continue;
-				for (const auto& entity : collection.m_objects[i]) {
-					auto pTransform = entity.getComponent<comp::Transform>();
-					if(!pTransform) {
-						collection.m_objectBuffer << glm::mat4(1);
-						continue;
-					}
-					collection.m_objectBuffer << pTransform->getMatrix();
-				}
-				ModelData* pModel = &collection.m_models[i]->data;
-				for (const auto& meshIndex : collection.m_meshes[i]) {
-					const Mesh& mesh = pModel->meshes[meshIndex];
-					uint32_t vertexOffset = collection.m_vertexBuffer.getElementCount<VertexNormalUV>();
-					{
-						SA_PROFILE_SCOPE("Append Vertex buffer");
-						// Push mesh into buffers
-						collection.m_vertexBuffer << mesh.vertices;
-					}
-					uint32_t firstIndex = collection.m_indexBuffer.getElementCount<uint32_t>();
-					{
-						SA_PROFILE_SCOPE("Append Index buffer");
-						collection.m_indexBuffer << mesh.indices;
-						
-					}
-
-					// Create a draw command for this mesh
-					DrawIndexedIndirectCommand cmd = {};
-					cmd.firstIndex = firstIndex;
-					cmd.indexCount = mesh.indices.size();
-					cmd.firstInstance = firstInstance;
-					cmd.instanceCount = collection.m_objects[i].size();
-					cmd.vertexOffset = vertexOffset;
-					{
-						SA_PROFILE_SCOPE("Append Draw buffer");
-						collection.m_indirectIndexedBuffer << cmd;
-					}
-						
-					//Material
-					sa::Material* pMaterial = mesh.material.getAsset();
-					if (pMaterial) {
-						auto it = std::find(collection.m_materials.begin(), collection.m_materials.end(), pMaterial);
-						if (it == collection.m_materials.end()) {
-							uint32_t textureOffset = collection.m_textures.size();
-							const std::vector<Texture>& matTextures = pMaterial->fetchTextures();
-							collection.m_textures.insert(collection.m_textures.end(), matTextures.begin(), matTextures.end());
-
-							Material::Values values = pMaterial->values;
-							values.albedoMapFirst += textureOffset;
-							values.normalMapFirst += textureOffset;
-							values.metalnessMapFirst += textureOffset;
-							values.roughnessMapFirst += textureOffset;
-							values.emissiveMapFirst += textureOffset;
-							values.occlusionMapFirst += textureOffset;
-
-							collection.m_materials.push_back(pMaterial);
-							collection.m_materialData.push_back(values);
-							collection.m_materialIndices.push_back(materialCount);
-							materialCount++;
-						}
-						else {
-							collection.m_materialIndices.push_back(std::distance(collection.m_materials.begin(), it));
-						}
-					}
-					else {
-						collection.m_materialIndices.push_back(-1); // Default Material in shader
-					}
-					meshCount++;
-				}
-				firstInstance += collection.m_objects[i].size();
-			}
-			{
-				SA_PROFILE_SCOPE("Write Materials");
-				collection.m_materialBuffer.write(collection.m_materialData);
-				collection.m_materialIndicesBuffer.write(collection.m_materialIndices);
-			}
+			collection.makeRenderReady();
 		}
 
 	}

@@ -27,8 +27,6 @@ namespace sa {
 
 	class MaterialShaderCollection {
 	private:
-		friend class SceneCollection;
-
 		
 		std::vector<ModelAsset*> m_models;
 		std::vector<std::vector<uint32_t>> m_meshes;
@@ -74,6 +72,8 @@ namespace sa {
 
 		void clear();
 		void swap();
+
+		void makeRenderReady();
 
 		bool readyDescriptorSets(RenderContext& context);
 		
