@@ -27,7 +27,7 @@ namespace sa {
 		Texture depthTexture;
 		std::array<Texture, ShadowPreferences::MaxCascadeCount> depthTextureLayers;
 		std::array<ResourceID, ShadowPreferences::MaxCascadeCount> depthFramebuffers;
-	
+		LightType lightType;
 		bool isInitialized = false;
 
 		ShadowRenderData() {

@@ -89,7 +89,7 @@ namespace sa {
 			);
 			break;
 		}
-
+		data.lightType = lightType;
 		data.depthTexture.createArrayLayerTextures(&count, data.depthTextureLayers.data());
 
 		for (uint32_t i = 0; i < count; i++) {
@@ -405,6 +405,7 @@ namespace sa {
 
 
 		m_updateCascades = true;
+
 	}
 
 	void ShadowRenderLayer::cleanup() {
@@ -447,6 +448,9 @@ namespace sa {
 			return;
 		}
 
+		if (renderData.lightType != data.lightType)
+			renderData.isInitialized = false;
+		
 		if (!renderData.isInitialized) {
 			cleanupRenderData(renderData);
 			initializeRenderData(renderData, data.lightType);
@@ -472,7 +476,7 @@ namespace sa {
 			if (data.lightType == LightType::DIRECTIONAL)
 				continue;
 
-			ShadowRenderData& renderData = getRenderTargetData(static_cast<uint32_t>(data.entityID));
+			ShadowRenderData& renderData = getRenderTargetData(static_cast<uint64_t>(data.entityID));
 			uint32_t index = it - sceneCollection.iterateShadowsBegin();
 
 			switch (data.lightType) {

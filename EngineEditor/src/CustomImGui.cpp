@@ -482,16 +482,19 @@ namespace ImGui {
 		const int resStep = 1024;
 		changed |= ImGui::InputScalar("Directional Resolution", ImGuiDataType_::ImGuiDataType_U32, &prefs.directionalMapResolution, &resStep, NULL, "%u");
 		prefs.directionalMapResolution = std::max(prefs.directionalMapResolution, (uint32_t)resStep);
+		
+		changed |= ImGui::InputScalar("Omnidirectional Resolution", ImGuiDataType_::ImGuiDataType_U32, &prefs.omniMapResolution, &resStep, NULL, "%u");
+		prefs.omniMapResolution = std::max(prefs.omniMapResolution, (uint32_t)resStep);
+		
 		changed |= ImGui::SliderFloat("Depth Bias Constant", &prefs.depthBiasConstant, 0.0f, 10.0f);
 		changed |= ImGui::SliderFloat("Depth Bias Slope", &prefs.depthBiasSlope, 0.0f, 10.0f);
 		changed |= ImGui::InputScalar("Cascade Count", ImGuiDataType_::ImGuiDataType_U32, &prefs.cascadeCount, &step, NULL, "%u");
 		prefs.cascadeCount = std::min(prefs.cascadeCount, prefs.MaxCascadeCount);
 		changed |= ImGui::SliderFloat("Cascade Split Lambda", &prefs.cascadeSplitLambda, 0.f, 1.0f);
+		
 		changed |= ImGui::Checkbox("SmoothShadows", &prefs.smoothShadows);
 
-
 		changed |= ImGui::Checkbox("Show cascades", &prefs.showCascades);
-
 
 		return changed;
 	}

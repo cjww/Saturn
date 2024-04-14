@@ -1,0 +1,29 @@
+#version 420
+#extension GL_ARB_compute_shader : enable
+layout (local_size_x = 32, local_size_y = 32) in;
+
+layout(set = 0, binding = 0, rgba8) uniform readonly image2D inputImage; // input
+layout(set = 0, binding = 1, rgba8) uniform writeonly image2D resultImage; // result
+
+layout(push_constant) uniform PushConstants {
+    int horizontal;
+} pc;
+
+void main() {
+    ivec2 pos = ivec2(gl_GlobalInvocationID.xy); // coordinates on result image
+
+    float kernel[] = { 0.3829, 0.2417, 0.0606, 0.0060, 0.0002 };
+
+    vec3 color = vec3(0);
+    for(int i = -4; i < 4; ++i) {
+        ivec2 offset = ivec2(0, i);
+        if(pc.horizontal == 1) {
+            offset = ivec2(i, 0);
+        }
+
+        float gauss = kernel[abs(i)];
+        color += imageLoad(inputImage, pos + offset).rgb * gauss;
+    }
+    
+	imageStore(resultImage, pos, vec4(color, 1.0));
+}

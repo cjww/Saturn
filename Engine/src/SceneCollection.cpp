@@ -437,7 +437,7 @@ namespace sa {
 		// TODO: right?
 		if (light.emitShadows) {
 			auto it = std::find_if(m_shadowData.begin(), m_shadowData.end(), [&](const ShadowData& data) {
-				return data.entityID == static_cast<entt::entity>(entity);
+				return data.entityID == entity;
 			});
 
 			if (it == m_shadowData.end())
