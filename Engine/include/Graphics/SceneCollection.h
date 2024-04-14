@@ -128,8 +128,6 @@ namespace sa {
 		
 		std::vector<ShadowData> m_shadowData;
 
-		std::unordered_map<Entity, uint32_t> m_entityShadowDataIndices;
-
 		void addQueuedEntities();
 
 

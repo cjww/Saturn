@@ -162,8 +162,10 @@ namespace sa {
 		tryCall(pScript->env, "onDestruction");
 
 		const Entity entity = pScript->env["this_entity"];
-		m_entityScripts.at(entity).erase(pScript->name);
-		
+		auto& entityScripts = m_entityScripts.at(entity);
+		EntityScript& script = entityScripts.at(pScript->name);
+		m_scriptsToBind.remove(&script);
+		entityScripts.erase(pScript->name);
 	}
 
 	void ScriptManager::clearEntity(const entt::entity& entity) {
@@ -173,6 +175,7 @@ namespace sa {
 		auto& entityScripts = m_entityScripts.at(entity);
 		for (auto& [name, script] : entityScripts) {
 			tryCall(script.env, "onDestruction");
+			m_scriptsToBind.remove(&script);
 		}
 		m_entityScripts.erase(entity);
 	}

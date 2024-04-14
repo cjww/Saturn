@@ -12,7 +12,6 @@ namespace comp {
 		sa::AssetHolder<sa::RenderTarget> m_renderTarget;
 	public:
 		sa::SceneCamera camera;
-		bool autoCollectScene = true;
 
 		Camera();
 		Camera(const Camera&) = default;

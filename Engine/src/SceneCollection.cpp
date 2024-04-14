@@ -417,7 +417,6 @@ namespace sa {
 		}
 
 		m_shadowData.clear();
-		m_entityShadowDataIndices.clear();
 	}
 
 	void SceneCollection::collect(Scene* pScene) {
