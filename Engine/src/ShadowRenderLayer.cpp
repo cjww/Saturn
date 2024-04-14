@@ -162,16 +162,9 @@ namespace sa {
 			float uniform = near + clipRange * p;
 			float d = cascadeSplitLambda * (log - uniform) + uniform;
 
-			m_cascadeSplits[i] = (d - near) / clipRange; // [0, 1] range
-			cascadeSplits[i] = -(near + m_cascadeSplits[i] * clipRange); // negative [near, far] range
+			m_cascadeSplitsNormalized[i] = (d - near) / clipRange; // [0, 1] range
+			m_cascadeSplits[i] = -(near + m_cascadeSplitsNormalized[i] * clipRange); // negative [near, far] range
 		}
-
-		ShadowPreferencesShaderData data = {};
-		data.cascadeCount = prefs.cascadeCount;
-		data.smoothShadows = prefs.smoothShadows;
-		data.showDebugCascades = prefs.showCascades;
-		memcpy(data.cascadeSplits, cascadeSplits, sizeof(cascadeSplits));
-		m_preferencesBuffer.write(data);
 	}
 
 	void ShadowRenderLayer::calculateCascadeMatrices(const SceneCamera& sceneCamera, ShadowData& data) {
@@ -185,11 +178,10 @@ namespace sa {
 		camera.setProjectionMode(ProjectionMode::eOrthographic);
 		float lastSplitDistance = 0.0f;
 		for (uint32_t i = 0; i < cascadeCount; i++) {
-			const float splitDistance = m_cascadeSplits[i];
+			const float splitDistance = m_cascadeSplitsNormalized[i];
 
 			glm::vec3 cascadePoints[8];
-			memcpy(cascadePoints, frustumPoints, sizeof(glm::vec3) * 8);
-
+			std::copy(std::begin(frustumPoints), std::end(frustumPoints), std::begin(cascadePoints));
 			// calculate cascade corners
 			for (uint32_t j = 0; j < 4; j++) {
 				glm::vec3 dist = cascadePoints[j + 4] - cascadePoints[j];
@@ -260,8 +252,8 @@ namespace sa {
 		info.addressModeV = SamplerAddressMode::CLAMP_TO_BORDER;
 		info.addressModeW = SamplerAddressMode::CLAMP_TO_BORDER;
 		info.borderColor = sa::BorderColor::FLOAT_OPAQUE_WHITE;
-		info.magFilter =  prefs.smoothShadows ? FilterMode::LINEAR : FilterMode::NEAREST;
-		info.minFilter = prefs.smoothShadows ? FilterMode::LINEAR : FilterMode::NEAREST;
+		info.magFilter =  prefs.softShadows ? FilterMode::LINEAR : FilterMode::NEAREST;
+		info.minFilter = prefs.softShadows ? FilterMode::LINEAR : FilterMode::NEAREST;
 		info.compareEnable = true;
 		info.compareOp = CompareOp::GREATER;
 
@@ -350,12 +342,6 @@ namespace sa {
 		
 		switch(data.lightType) {
 		case LightType::DIRECTIONAL:
-
-			if (m_updateCascades) {
-				updateCascadeSplits(sceneCamera.getNear(), sceneCamera.getFar());
-				m_updateCascades = false;
-			}
-
 			calculateCascadeMatrices(sceneCamera, data);
 			renderCascadedShadowMaps(context, sceneCamera, data, renderData, sceneCollection);
 
@@ -396,15 +382,17 @@ namespace sa {
 
 		createSampler();
 
+		SceneCamera temp;
+		updateCascadeSplits(temp.getNear(), temp.getFar()); // update cascades based on default camera near and far
+
 		const auto& prefs = getPreferences();
 		ShadowPreferencesShaderData data = {
-			prefs.smoothShadows,
-			prefs.cascadeCount
+			.cascadeCount = prefs.cascadeCount,
+			.softShadows = prefs.softShadows,
+			.showDebugCascades = prefs.showCascades
 		}; 
+		std::copy(m_cascadeSplits.begin(), m_cascadeSplits.end(), std::begin(data.cascadeSplits));
 		m_preferencesBuffer.create(BufferType::UNIFORM, sizeof(data), &data);
-
-
-		m_updateCascades = true;
 
 	}
 
@@ -421,9 +409,20 @@ namespace sa {
 
 	void ShadowRenderLayer::onPreferencesUpdated() {
 		
-		m_updateCascades = true;
+		SceneCamera temp;
+		updateCascadeSplits(temp.getNear(), temp.getFar()); // update cascades based on default camera near and far
+		
+		const auto& prefs = getPreferences();
+		
+		ShadowPreferencesShaderData data = {};
+		data.cascadeCount = prefs.cascadeCount;
+		data.softShadows = prefs.softShadows;
+		data.showDebugCascades = prefs.showCascades;
+		std::copy(m_cascadeSplits.begin(), m_cascadeSplits.end(), std::begin(data.cascadeSplits));
+		m_preferencesBuffer.write(data);
 
-		m_renderer.destroySampler(m_shadowSampler);
+		if (m_shadowSampler != NULL_RESOURCE)
+			m_renderer.destroySampler(m_shadowSampler);
 		createSampler();
 
 		forEachRenderData([](ShadowRenderData& renderData) {

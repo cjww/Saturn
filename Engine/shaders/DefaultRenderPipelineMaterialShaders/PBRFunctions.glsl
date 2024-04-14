@@ -104,7 +104,9 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
             */
             
             radiance = light.color.rgb * attenuation * lightIntensity;
-            radiance *= 1.0 - InShadowCube(in_vertexWorldPos, light);
+            if(shadowPrefs.shadowsEnabled == 1) {
+                radiance *= 1.0 - InShadowCube(in_vertexWorldPos, light);
+            }
 
             break;
         }
@@ -116,34 +118,36 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
 
             radiance = light.color.rgb * lightIntensity;
 
-            radiance *= 1.0 - InShadowCascaded(in_vertexWorldPos, light);
+            if(shadowPrefs.shadowsEnabled == 1) {
 
-            if(light.emitShadows == 1 && shadowPrefs.showDebugCascades == 1) {
-                ShadowMapData shadowData = shadowMapDataBuffer.shadowMaps[light.shadowMapDataIndex];
+                radiance *= 1.0 - InShadowCascaded(in_vertexWorldPos, light);
 
-                uint cascadeIndex = 0;
-                for(uint i = 0; i < shadowPrefs.cascadeCount - 1; ++i) {
-                    if(in_vertexViewPos.z < shadowPrefs.cascadeSplits[i / 4][i % 4]) {	
-                        cascadeIndex = i + 1;
+                if(light.emitShadows == 1 && shadowPrefs.showDebugCascades == 1) {
+                    ShadowMapData shadowData = shadowMapDataBuffer.shadowMaps[light.shadowMapDataIndex];
+
+                    uint cascadeIndex = 0;
+                    for(uint i = 0; i < shadowPrefs.cascadeCount - 1; ++i) {
+                        if(in_vertexViewPos.z < shadowPrefs.cascadeSplits[i / 4][i % 4]) {	
+                            cascadeIndex = i + 1;
+                        }
+                    }
+
+                    switch(cascadeIndex) {
+                        case 0:
+                            radiance *= vec3(1, 0, 0);
+                            break;
+                        case 1:
+                            radiance *= vec3(0, 1, 0);
+                            break;
+                        case 2:
+                            radiance *= vec3(0, 0, 1);
+                            break;
+                        case 3:
+                            radiance *= vec3(0, 1, 1);
+                            break;
                     }
                 }
-
-                switch(cascadeIndex) {
-                    case 0:
-                        radiance *= vec3(1, 0, 0);
-                        break;
-                    case 1:
-                        radiance *= vec3(0, 1, 0);
-                        break;
-                    case 2:
-                        radiance *= vec3(0, 0, 1);
-                        break;
-                    case 3:
-                        radiance *= vec3(0, 1, 1);
-                        break;
-                }
             }
-
             break;
         }
         case LIGHT_TYPE_SPOT: {
@@ -167,8 +171,9 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
             float attenuation = max(1.0 - distance / lightRadius, 0.0) / fallOff;
             attenuation *= spot;
             radiance = light.color.rgb * attenuation * lightIntensity;
-
-            radiance *= 1.0 - InShadow(in_vertexWorldPos, light, 0);
+            if(shadowPrefs.shadowsEnabled == 1) {
+                radiance *= 1.0 - InShadow(in_vertexWorldPos, light, 0);
+            }
             break;
         }
         default:

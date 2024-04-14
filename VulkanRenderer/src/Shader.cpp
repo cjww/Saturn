@@ -109,8 +109,9 @@ namespace sa {
 		const char* entryPointName)
 	{
 		m_stageInfo.codeLength = shaderCode.size();
-		m_stageInfo.pCode = new uint32_t[m_stageInfo.codeLength];
-		memcpy(const_cast<uint32_t*>(m_stageInfo.pCode), shaderCode.data(), m_stageInfo.codeLength * sizeof(uint32_t));
+		uint32_t* code = new uint32_t[m_stageInfo.codeLength];
+		memcpy(code, shaderCode.data(), m_stageInfo.codeLength * sizeof(uint32_t));
+		m_stageInfo.pCode = code;
 		m_stageInfo.stage = stage;
 		m_stageInfo.pName = entryPointName;
 	}
@@ -137,8 +138,9 @@ namespace sa {
 	Shader::Shader(const Shader& other) {
 		m_pCore = other.m_pCore;
 		m_stageInfo = other.m_stageInfo;
-		m_stageInfo.pCode = new uint32_t[other.m_stageInfo.codeLength];
-		memcpy(const_cast<uint32_t*>(m_stageInfo.pCode), other.m_stageInfo.pCode, m_stageInfo.codeLength * sizeof(uint32_t));
+		uint32_t* code = new uint32_t[other.m_stageInfo.codeLength];
+		memcpy(code, other.m_stageInfo.pCode, m_stageInfo.codeLength * sizeof(uint32_t));
+		m_stageInfo.pCode = code;
 		m_shaderModule = other.m_shaderModule;
 		m_shaderObject = other.m_shaderObject;
 	}
@@ -147,8 +149,9 @@ namespace sa {
 		this->~Shader();
 		m_pCore = other.m_pCore;
 		m_stageInfo = other.m_stageInfo;
-		m_stageInfo.pCode = new uint32_t[other.m_stageInfo.codeLength];
-		memcpy(const_cast<uint32_t*>(m_stageInfo.pCode), other.m_stageInfo.pCode, m_stageInfo.codeLength * sizeof(uint32_t));
+		uint32_t* code = new uint32_t[other.m_stageInfo.codeLength];
+		memcpy(code, other.m_stageInfo.pCode, m_stageInfo.codeLength * sizeof(uint32_t));
+		m_stageInfo.pCode = code;
 		m_shaderModule = other.m_shaderModule;
 		m_shaderObject = other.m_shaderObject;
 		return *this;

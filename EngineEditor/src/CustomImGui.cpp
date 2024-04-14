@@ -492,7 +492,7 @@ namespace ImGui {
 		prefs.cascadeCount = std::min(prefs.cascadeCount, prefs.MaxCascadeCount);
 		changed |= ImGui::SliderFloat("Cascade Split Lambda", &prefs.cascadeSplitLambda, 0.f, 1.0f);
 		
-		changed |= ImGui::Checkbox("SmoothShadows", &prefs.smoothShadows);
+		changed |= ImGui::Checkbox("Soft shadows", &prefs.softShadows);
 
 		changed |= ImGui::Checkbox("Show cascades", &prefs.showCascades);
 

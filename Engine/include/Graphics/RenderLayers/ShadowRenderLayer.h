@@ -17,7 +17,7 @@ namespace sa {
 		float cascadeSplitLambda = 0.8f;
 		
 		bool showCascades = false;
-		bool smoothShadows = true;
+		bool softShadows = true;
 
 		float depthBiasConstant = 0.0f;
 		float depthBiasSlope = 0.4f;
@@ -43,8 +43,9 @@ namespace sa {
 	class ShadowRenderLayer : public IRenderLayer<ShadowRenderData, ShadowPreferences> {
 	private:
 		struct ShadowPreferencesShaderData {
+			uint32_t shadowsEnabled = true;
 			uint32_t cascadeCount;
-			uint32_t smoothShadows;
+			uint32_t softShadows;
 			uint32_t showDebugCascades;
 			alignas(16) float cascadeSplits[6];
 		};
@@ -66,6 +67,7 @@ namespace sa {
 
 		Buffer m_preferencesBuffer;
 
+		std::array<float, ShadowPreferences::MaxCascadeCount> m_cascadeSplitsNormalized;
 		std::array<float, ShadowPreferences::MaxCascadeCount> m_cascadeSplits;
 
 		struct MaterialShadowPipeline {
@@ -75,8 +77,6 @@ namespace sa {
 		};
 
 		std::unordered_map<UUID, MaterialShadowPipeline> m_materialShaderPipelines;
-
-		bool m_updateCascades;
 
 		void createSampler();
 

@@ -309,6 +309,19 @@ namespace sa {
 				);
 
 			}
+			else {
+				if (!m_defaultShadowPreferencesBuffer.isValid()) {
+					uint32_t shadowsEnabled = false;
+					m_defaultShadowPreferencesBuffer.create(BufferType::UNIFORM, sizeof(shadowsEnabled), &shadowsEnabled);
+				}
+
+				if (!m_defaultShadowDataBuffer.isValid()) {
+					m_defaultShadowDataBuffer.create(BufferType::STORAGE);
+				}
+				context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 5, m_defaultShadowDataBuffer);
+				context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 7, m_defaultShadowPreferencesBuffer);
+					
+			}
 			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 6, m_linearSampler);
 			
 

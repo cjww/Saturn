@@ -62,6 +62,9 @@ namespace sa {
 		ResourceID m_debugLightHeatmapPipeline = NULL_RESOURCE;
 
 		ShadowRenderLayer* m_pShadowRenderLayer;
+		Buffer m_defaultShadowPreferencesBuffer;
+		Buffer m_defaultShadowDataBuffer;
+
 
 		void createPreDepthPass();
 		void createLightCullingShader();

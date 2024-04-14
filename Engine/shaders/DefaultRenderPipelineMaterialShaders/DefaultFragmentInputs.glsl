@@ -99,6 +99,7 @@ layout(set = 0, binding = 5, std140) readonly buffer ShadowMaps {
 layout(set = 0, binding = 6) uniform sampler samp;
 
 layout(set = 0, binding = 7) uniform ShadowPreferences {
+    uint shadowsEnabled;
     uint cascadeCount;
     uint smoothShadows;
     uint showDebugCascades;
