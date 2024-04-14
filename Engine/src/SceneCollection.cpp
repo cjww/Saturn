@@ -118,15 +118,14 @@ namespace sa {
 		m_materialIndicesBuffer.clear();
 
 		// reserve dynamic buffers
-		{
-			SA_PROFILE_SCOPE("Reserve rendering buffers");
-			m_objectBuffer.reserve(m_objectCount * sizeof(ObjectData), IGNORE_CONTENT);
-			m_indirectIndexedBuffer.reserve(m_uniqueMeshCount * sizeof(DrawIndexedIndirectCommand), IGNORE_CONTENT);
-			m_vertexBuffer.reserve(m_vertexCount * sizeof(VertexNormalUV), IGNORE_CONTENT);
-			m_indexBuffer.reserve(m_indexCount * sizeof(uint32_t), IGNORE_CONTENT);
-			m_materialBuffer.reserve(m_uniqueMeshCount * sizeof(Material::Values), IGNORE_CONTENT);
-			m_materialIndicesBuffer.reserve(m_uniqueMeshCount * sizeof(int32_t), IGNORE_CONTENT);
-		}
+			
+		m_objectBuffer.reserve(m_objectCount * sizeof(ObjectData), IGNORE_CONTENT);
+		m_indirectIndexedBuffer.reserve(m_uniqueMeshCount * sizeof(DrawIndexedIndirectCommand), IGNORE_CONTENT);
+		m_vertexBuffer.reserve(m_vertexCount * sizeof(VertexNormalUV), IGNORE_CONTENT);
+		m_indexBuffer.reserve(m_indexCount * sizeof(uint32_t), IGNORE_CONTENT);
+		m_materialBuffer.reserve(m_uniqueMeshCount * sizeof(Material::Values), IGNORE_CONTENT);
+		m_materialIndicesBuffer.reserve(m_uniqueMeshCount * sizeof(int32_t), IGNORE_CONTENT);
+		
 
 		uint32_t firstInstance = 0;
 
@@ -149,18 +148,11 @@ namespace sa {
 			for (const auto& meshIndex : m_meshes[i]) {
 				const Mesh& mesh = pModel->meshes[meshIndex];
 				uint32_t vertexOffset = m_vertexBuffer.getElementCount<VertexNormalUV>();
-				{
-					SA_PROFILE_SCOPE("Append Vertex buffer");
-					// Push mesh into buffers
-					m_vertexBuffer << mesh.vertices;
-				}
+				// Push mesh into buffers
+				m_vertexBuffer << mesh.vertices;
 				uint32_t firstIndex = m_indexBuffer.getElementCount<uint32_t>();
-				{
-					SA_PROFILE_SCOPE("Append Index buffer");
-					m_indexBuffer << mesh.indices;
-
-				}
-
+				m_indexBuffer << mesh.indices;
+				
 				// Create a draw command for this mesh
 				DrawIndexedIndirectCommand cmd = {};
 				cmd.firstIndex = firstIndex;
@@ -168,11 +160,8 @@ namespace sa {
 				cmd.firstInstance = firstInstance;
 				cmd.instanceCount = m_objects[i].size();
 				cmd.vertexOffset = vertexOffset;
-				{
-					SA_PROFILE_SCOPE("Append Draw buffer");
-					m_indirectIndexedBuffer << cmd;
-				}
-
+				m_indirectIndexedBuffer << cmd;
+				
 				//Material
 				sa::Material* pMaterial = mesh.material.getAsset();
 				if (pMaterial) {
@@ -206,11 +195,8 @@ namespace sa {
 			}
 			firstInstance += m_objects[i].size();
 		}
-		{
-			SA_PROFILE_SCOPE("Write Materials");
-			m_materialBuffer.write(m_materialData);
-			m_materialIndicesBuffer.write(m_materialIndices);
-		}
+		m_materialBuffer.write(m_materialData);
+		m_materialIndicesBuffer.write(m_materialIndices);
 	}
 
 	bool MaterialShaderCollection::readyDescriptorSets(RenderContext& context) {
@@ -420,6 +406,7 @@ namespace sa {
 	}
 
 	void SceneCollection::collect(Scene* pScene) {
+		SA_PROFILE_FUNCTION();
 		if (m_mode != CollectionMode::CONTINUOUS)
 			throw std::runtime_error("Mode has to be CONTINUOUS to call collect");
 		pScene->forEach<comp::Transform, comp::Model>([&](const Entity& entity, const comp::Transform& transform, const comp::Model& model) {
@@ -470,8 +457,7 @@ namespace sa {
 	}
 
 	void SceneCollection::addObject(const Entity& entity, ModelAsset* pModelAsset) {
-		SA_PROFILE_FUNCTION();
-
+		
 		if (!pModelAsset || !pModelAsset->isLoaded())
 			return;
 		ModelData* pModel = &pModelAsset->data;

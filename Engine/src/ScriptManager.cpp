@@ -266,6 +266,7 @@ namespace sa {
 	}
 
 	void ScriptManager::reloadScripts() {
+		SA_PROFILE_FUNCTION();
 		for(auto& [entity, scripts] : m_entityScripts) {
 			for (auto& [name, script] : scripts) {
 				std::error_code error;

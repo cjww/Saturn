@@ -134,10 +134,14 @@ namespace sa {
 			if (!pScript) {
 				throw sol::error("[Serialize] No such script! " + scriptName);
 			}
-
+			std::unordered_set<std::string> currentSerializedData;
+			for (const auto& [key, value] : pScript->serializedData) {
+				currentSerializedData.insert(key);
+			}
 			for (auto& [key, value] : t) {
 				sol::object v = value;
 				std::string variableName = key.as<std::string>();
+				currentSerializedData.erase(variableName);
 				// if stored load stored value
 				if (pScript->serializedData.count(variableName)) {
 					value = pScript->serializedData[variableName];
@@ -150,6 +154,9 @@ namespace sa {
 				}
 				// initialize variable with appropriate value
 				env[variableName] = value;
+			}
+			for (const auto& key : currentSerializedData) {
+				pScript->serializedData.erase(key);
 			}
 		};
 

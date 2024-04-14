@@ -41,6 +41,7 @@ namespace sa {
 		
 		Clock clock;
 		while (m_pWindow->isOpen()) {
+			SA_PROFILE_SCOPE("Frame");
 			m_pWindow->pollEvents();
 			float dt = clock.restart();
 

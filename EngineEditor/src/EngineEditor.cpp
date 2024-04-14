@@ -368,6 +368,10 @@ namespace sa {
 		
 		s_editorPath = std::filesystem::current_path();
 		
+		renderWindow.addFocusCallback([&](bool gainedFocus) {
+			if(gainedFocus)
+				m_pEngine->getCurrentScene()->reloadScripts();
+		});
 		renderWindow.addDragDropCallback([&](int count, const char** paths) {
 			m_pEngine->trigger<editor_event::DragDropped>({ static_cast<uint32_t>(count), paths });
 		});
@@ -551,9 +555,8 @@ namespace sa {
 	}
 
 	void EngineEditor::onUpdate(float dt) {
+		SA_PROFILE_FUNCTION();
 		if (m_pEngine->getCurrentScene()) {
-			m_pEngine->getCurrentScene()->reloadScripts();
-			
 			if (m_state == State::PLAYING) {
 				m_pEngine->getCurrentScene()->runtimeUpdate(dt);
 			}

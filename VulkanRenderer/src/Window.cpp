@@ -81,6 +81,13 @@ namespace sa {
 		}
 	}
 
+	void Window::onFocus(GLFWwindow* window, int hasGainedFocus) {
+		Window* thisWindow = (Window*)glfwGetWindowUserPointer(window);
+		for (auto& func : thisWindow->m_onFocusFunctions) {
+			func(hasGainedFocus);
+		}
+	}
+
 	void Window::onJoystickDetect(int jid, int state) {
 		if (s_onJoystickDetectFunction) {
 			if (state == GLFW_CONNECTED) {	
@@ -112,6 +119,7 @@ namespace sa {
 		glfwSetScrollCallback(m_window, &Window::onScroll);
 		glfwSetWindowCloseCallback(m_window, &Window::onClose);
 		glfwSetDropCallback(m_window, &Window::onDragDrop);
+		glfwSetWindowFocusCallback(m_window, &Window::onFocus);
 		
 		glfwSetJoystickCallback(&Window::onJoystickDetect);
 
@@ -506,6 +514,10 @@ namespace sa {
 
 	void Window::addDragDropCallback(DragDropCallback func) {
 		m_onDragDropFunctions.push_back(func);
+	}
+
+	void Window::addFocusCallback(FocusCallback func) {
+		m_onFocusFunctions.push_back(func);
 	}
 
 	void Window::addMouseButtonCallback(MouseButtonCallback func) {

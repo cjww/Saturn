@@ -38,13 +38,33 @@ namespace sa {
 		float getAxis(GamepadAxis axis) { return axes[(int)axis]; };
 	};
 
+	/*
+	* @param[in] key The key involved in the event.
+	* @param[in] inputAction The action that caused the event.
+	* @param[in] modKeyflags Modification flags indicating specific key states, i.e. if shift was held or num lock is enabled.
+	* @param[in] scancode The system-specific scancode of the key.
+	*/
 	typedef std::function<void(Key, InputAction, ModKeyFlags, int)> KeyCallback;
+	/*
+	* @param[in] button The mouse button involved in the event.
+	* @param[in] inputAction The action that caused the event.
+	* @param[in] modKeyflags Modification flags indicating specific key states, i.e. if shift was held or num lock is enabled.
+	*/
 	typedef std::function<void(MouseButton, InputAction, ModKeyFlags)> MouseButtonCallback;
-	typedef std::function<void(double x, double y)> ScrollCallback;
-
+	/// @param[in] x, y The scroll wheel difference.
+	typedef std::function<void(double, double)> ScrollCallback;
+	/*
+	* @param[in] joystick The ID of the joystick.
+	* @param[in] connectionState The connection state of the joystick, i.e. if it is connected or disconnected.
+	*/
 	typedef std::function<void(Joystick, ConnectionState)> JoystickConnectedCallback;
-
+	/*
+	* @param[in] count Number of strings in paths
+	* @param[in] paths Array of strings containing paths to dropped files
+	*/
 	typedef std::function<void(int, const char**)> DragDropCallback;
+	/// @param[in] focus True of focus was gained and False if focus was lost
+	typedef std::function<void(bool)> FocusCallback;
 
 
 	class Window {
@@ -65,6 +85,7 @@ namespace sa {
 		std::vector<MouseButtonCallback> m_onMouseButtonFunctions;
 		std::vector<ScrollCallback> m_onScrollFunctions;
 		std::vector<DragDropCallback> m_onDragDropFunctions;
+		std::vector<FocusCallback> m_onFocusFunctions;
 
 		
 	protected:
@@ -75,6 +96,8 @@ namespace sa {
 		static void onScroll(GLFWwindow* window, double x, double y);
 		static void onClose(GLFWwindow* window);
 		static void onDragDrop(GLFWwindow* window, int count, const char** pathUTF8);
+		static void onFocus(GLFWwindow* window, int hasGainedFocus);
+
 
 		static void onJoystickDetect(int jid, int state);
 
@@ -156,6 +179,7 @@ namespace sa {
 		void addMouseButtonCallback(MouseButtonCallback func);
 		void addScrollCallback(ScrollCallback func);
 		void addDragDropCallback(DragDropCallback func);
+		void addFocusCallback(FocusCallback func);
 
 		bool wasResized() const;
 		bool isIconified() const;

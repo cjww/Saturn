@@ -39,6 +39,7 @@ namespace sa {
 	}
 
 	void Scene::updateChildPositions() {
+		SA_PROFILE_FUNCTION();
 		m_hierarchy.forEachParent([&](const sa::Entity& parent) {
 			m_hierarchy.forEachChild(parent, [](const Entity& child, const Entity& parent) {
 				comp::Transform* transform = child.getComponent<comp::Transform>();
@@ -73,9 +74,9 @@ namespace sa {
 		: Asset(header)
 		, m_scriptManager(*this)
 		, m_dynamicSceneCollection(sa::SceneCollection::CollectionMode::CONTINUOUS)
+		, m_runtime(false)
+		, m_pPhysicsScene(PhysicsSystem::get().createScene())
 	{
-		m_runtime = false;
-		m_pPhysicsScene = PhysicsSystem::get().createScene();
 		registerComponentCallBacks();
 	}
 
