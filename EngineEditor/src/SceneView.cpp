@@ -33,8 +33,10 @@ void SceneView::onRender(const sa::engine_event::OnRender& e) {
 			m_sceneCollection.collect(m_pEngine->getCurrentScene());
 		}
 		*/
-		
-		e.pRenderPipeline->render(*e.pContext, &m_camera, &m_renderTarget, m_pEngine->getCurrentScene()->getDynamicSceneCollection());
+		m_sceneCollection.clear();
+		m_pEngine->getCurrentScene()->getDynamicSceneCollection().makeRenderReady(m_sceneCollection, nullptr);
+		e.pRenderPipeline->render(*e.pContext, &m_camera, &m_renderTarget, m_sceneCollection);
+		m_sceneCollection.swap();
 	}
 }
 

@@ -7,8 +7,32 @@
 
 
 namespace comp {
-	Camera::Camera() {
+	Camera::Camera() 
+		: sceneCollection(sa::SceneCollection::CollectionMode::CONTINUOUS)
+	{
 
+	}
+
+	Camera::Camera(const Camera& other) : Camera() {
+		camera = other.camera;
+		m_renderTarget = other.m_renderTarget;
+	}
+
+	Camera::Camera(Camera&& other) : Camera() {
+		camera = other.camera;
+		m_renderTarget = other.m_renderTarget;
+	}
+
+	Camera& Camera::operator=(const Camera& other) {
+		camera = other.camera;
+		m_renderTarget = other.m_renderTarget;
+		return *this;
+	}
+
+	Camera& Camera::operator=(Camera&& other) {
+		camera = other.camera;
+		m_renderTarget = other.m_renderTarget;
+		return *this;
 	}
 
 	void Camera::serialize(sa::Serializer& s) {

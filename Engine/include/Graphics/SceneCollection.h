@@ -74,6 +74,8 @@ namespace sa {
 		void swap();
 
 		void makeRenderReady();
+		void makeRenderReady(MaterialShaderCollection& subset, glm::vec3* pViewFrustumPoints);
+
 
 		bool readyDescriptorSets(RenderContext& context);
 		
@@ -165,6 +167,7 @@ namespace sa {
 		void removeLight(const Entity& entity, const LightData& light);
 
 		void makeRenderReady();
+		void makeRenderReady(SceneCollection& subset, glm::vec3* pViewFrustmumPoints);
 		void swap();
 
 		const Buffer& getLightBuffer() const;

@@ -164,15 +164,17 @@ namespace sa {
 
 		bool renderedToMainRenderTarget = false;
 		forEach<comp::Camera>([&](comp::Camera& camera) {
+			m_dynamicSceneCollection.makeRenderReady(camera.sceneCollection, nullptr);
 			RenderTarget* pRenderTarget = camera.getRenderTarget().getAsset();
 			if (pRenderTarget) {
-				renderPipeline.render(context, &camera.camera, pRenderTarget, m_dynamicSceneCollection);
+				renderPipeline.render(context, &camera.camera, pRenderTarget, camera.sceneCollection);
 			}
 			else {
 				if (!renderedToMainRenderTarget)
-					renderPipeline.render(context, &camera.camera, &mainRenderTarget, m_dynamicSceneCollection);
+					renderPipeline.render(context, &camera.camera, &mainRenderTarget, camera.sceneCollection);
 				renderedToMainRenderTarget = true;
 			}
+			camera.sceneCollection.swap();
 		});
 	}
 

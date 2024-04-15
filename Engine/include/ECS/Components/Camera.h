@@ -12,12 +12,13 @@ namespace comp {
 		sa::AssetHolder<sa::RenderTarget> m_renderTarget;
 	public:
 		sa::SceneCamera camera;
+		sa::SceneCollection sceneCollection;
 
 		Camera();
-		Camera(const Camera&) = default;
-		Camera(Camera&&) = default;
-		Camera& operator=(const Camera&) = default;
-		Camera& operator=(Camera&&) = default;
+		Camera(const Camera&);
+		Camera(Camera&&);
+		Camera& operator=(const Camera& other);
+		Camera& operator=(Camera&&);
 
 
 		virtual void serialize(sa::Serializer& s) override;
