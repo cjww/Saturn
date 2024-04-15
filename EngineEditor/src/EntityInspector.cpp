@@ -21,7 +21,7 @@ void EntityInspector::makePopups() {
 	}
 
 	if (ImGui::BeginPopup("Select Component")) {
-		for (auto type : sa::ComponentType::getRegisteredComponents()) {
+		for (auto type : sa::ComponentType::GetRegisteredComponents()) {
 			if (type == sa::getComponentType<comp::Name>())
 				continue;
 			if (ImGui::MenuItem(type.getName().c_str())) {

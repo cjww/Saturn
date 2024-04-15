@@ -3,7 +3,7 @@
 
 namespace sa {
 	BasicRenderLayer::BasicRenderLayer()
-		: m_renderer(Renderer::get())
+		: m_renderer(Renderer::Get())
 		, m_isActive(true)
 		, m_isInitialized(false)
 	{

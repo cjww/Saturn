@@ -293,7 +293,7 @@ namespace sa {
 		type["getCube"] = &AssetManager::getCube;
 		type["getQuad"] = &AssetManager::getQuad;
 
-		getState()["AssetManager"] = &AssetManager::get();
+		getState()["AssetManager"] = &AssetManager::Get();
 
 		return true;
 	}

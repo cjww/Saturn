@@ -86,7 +86,7 @@ namespace sa {
 
 		~AssetManager();
 	
-		static AssetManager& get();
+		static AssetManager& Get();
 		
 		static bool IsAsset(const std::filesystem::directory_entry& entry);
 		static bool IsAssetPackage(const std::filesystem::directory_entry& entry);

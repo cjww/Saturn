@@ -76,13 +76,13 @@ namespace sa {
 
 		friend class RenderProgramFactory;
 		friend class Renderer;
-		static Swapchain* getSwapchain(ResourceID id);
-		static RenderProgram* getRenderProgram(ResourceID id);
-		static FramebufferSet* getFramebufferSet(ResourceID id);
-		static vk::Pipeline* getPipeline(ResourceID id);
-		static DescriptorSet* getDescriptorSet(ResourceID id);
-		static vk::Sampler* getSampler(ResourceID id);
-		static vk::PipelineLayout* getPipelineLayout(ResourceID id);
+		static Swapchain* GetSwapchain(ResourceID id);
+		static RenderProgram* GetRenderProgram(ResourceID id);
+		static FramebufferSet* GetFramebufferSet(ResourceID id);
+		static vk::Pipeline* GetPipeline(ResourceID id);
+		static DescriptorSet* GetDescriptorSet(ResourceID id);
+		static vk::Sampler* GetSampler(ResourceID id);
+		static vk::PipelineLayout* GetPipelineLayout(ResourceID id);
 
 		void bindVertexInput(const PipelineLayout& layout) const;
 

@@ -24,7 +24,7 @@ namespace sa {
 	public:
 		
 		template<typename Comp, std::enable_if_t<std::is_base_of_v<sa::ComponentBase, std::decay_t<Comp>>, bool> = true>
-		static void registerMetaFunctions();
+		static void RegisterMetaFunctions();
 
 		Entity(Scene* pScene, entt::entity entity);
 		
@@ -122,7 +122,7 @@ namespace sa {
 	// ----------------- Definitions -----------------
 
 	template<typename Comp, std::enable_if_t<std::is_base_of_v<sa::ComponentBase, std::decay_t<Comp>>, bool>>
-	inline void Entity::registerMetaFunctions()
+	inline void Entity::RegisterMetaFunctions()
 	{	
 		using namespace entt::literals;
 		entt::meta<Comp>()

@@ -22,7 +22,7 @@ namespace sa {
 
 	Buffer::Buffer()
 		: m_pBuffer(nullptr)
-		, m_pCore(Renderer::get().getCore())
+		, m_pCore(Renderer::Get().getCore())
 		, m_size(0)
 		, m_type(BufferType::VERTEX)
 		, m_view(NULL_RESOURCE)
@@ -70,14 +70,14 @@ namespace sa {
 				VMA_MEMORY_USAGE_AUTO,
 				VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_SEQUENTIAL_WRITE_BIT | VMA_ALLOCATION_CREATE_WITHIN_BUDGET_BIT,
 				size, initialData);
-			m_view = ResourceManager::get().insert<vk::BufferView>(m_pCore->createBufferView(m_pBuffer->buffer, vk::Format::eR32Sfloat));
+			m_view = ResourceManager::Get().insert<vk::BufferView>(m_pCore->createBufferView(m_pBuffer->buffer, vk::Format::eR32Sfloat));
 			break;
 		case BufferType::STORAGE_TEXEL:
 			m_pBuffer = m_pCore->createBuffer(vk::BufferUsageFlagBits::eStorageTexelBuffer,
 				VMA_MEMORY_USAGE_AUTO,
 				VMA_ALLOCATION_CREATE_MAPPED_BIT | VMA_ALLOCATION_CREATE_HOST_ACCESS_RANDOM_BIT | VMA_ALLOCATION_CREATE_WITHIN_BUDGET_BIT,
 				size, initialData);
-			m_view = ResourceManager::get().insert<vk::BufferView>(m_pCore->createBufferView(m_pBuffer->buffer, vk::Format::eR32Sfloat));
+			m_view = ResourceManager::Get().insert<vk::BufferView>(m_pCore->createBufferView(m_pBuffer->buffer, vk::Format::eR32Sfloat));
 			break;
 		case BufferType::INDIRECT:
 			m_pBuffer = m_pCore->createBuffer(vk::BufferUsageFlagBits::eIndirectBuffer,
@@ -94,7 +94,7 @@ namespace sa {
 			m_pBuffer = nullptr;
 		}
 		if (m_view != NULL_RESOURCE) {
-			ResourceManager::get().remove<vk::BufferView>(m_view);
+			ResourceManager::Get().remove<vk::BufferView>(m_view);
 			m_view = NULL_RESOURCE;
 		}
 		m_size = 0;
@@ -138,8 +138,8 @@ namespace sa {
 
 		vk::Format format = m_pCore->getFormat(precision, dimensions, type, vk::FormatFeatureFlagBits::eUniformTexelBuffer | vk::FormatFeatureFlagBits::eStorageTexelBuffer, vk::ImageTiling::eOptimal);
 		if (format != vk::Format::eUndefined) {
-			ResourceManager::get().remove<vk::BufferView>(m_view);
-			m_view = ResourceManager::get().insert<vk::BufferView>(m_pCore->createBufferView(m_pBuffer->buffer, format));
+			ResourceManager::Get().remove<vk::BufferView>(m_view);
+			m_view = ResourceManager::Get().insert<vk::BufferView>(m_pCore->createBufferView(m_pBuffer->buffer, format));
 			return true;
 		}
 		return false;
@@ -154,7 +154,7 @@ namespace sa {
 	}
 
 	vk::BufferView* Buffer::getView() const {
-		return ResourceManager::get().get<vk::BufferView>(m_view);
+		return ResourceManager::Get().get<vk::BufferView>(m_view);
 	}
 
 	BufferType Buffer::getType() const {

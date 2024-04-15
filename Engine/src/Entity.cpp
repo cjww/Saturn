@@ -30,7 +30,7 @@ namespace sa {
             s.value("parent", (uint32_t)parent);
         
         s.beginArray("components");
-        auto& types = ComponentType::getRegisteredComponents();
+        auto& types = ComponentType::GetRegisteredComponents();
         for (auto& type : types) {
             if (!hasComponent(type))
                 continue;

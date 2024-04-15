@@ -12,12 +12,12 @@ namespace sa {
         m_sourceFiles = sourceFiles;
         for (auto& source : m_sourceFiles) {
             std::filesystem::path path = std::filesystem::current_path();
-            std::filesystem::current_path(Engine::getShaderDirectory());
+            std::filesystem::current_path(Engine::GetShaderDirectory());
             std::vector<uint32_t> code = CompileGLSLFromFile(
                 source.filePath.generic_string().c_str(),
                 source.stage,
                 "main",
-                sa::Engine::getShaderDirectory().generic_string().c_str());
+                sa::Engine::GetShaderDirectory().generic_string().c_str());
 
             m_code.push_back(code);
             std::filesystem::current_path(path);
@@ -53,7 +53,7 @@ namespace sa {
         if (!m_recompiled)
             return;
 
-        auto& renderer = Renderer::get();
+        auto& renderer = Renderer::Get();
         if (m_depthPipeline != NULL_RESOURCE)
             renderer.destroyPipeline(m_depthPipeline);
 

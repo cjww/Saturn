@@ -12,10 +12,10 @@ void DirectoryView::onDraggedDropped(const sa::editor_event::DragDropped& e) {
 		std::filesystem::path path = e.paths[i];
 		std::string extension = path.extension().generic_string();
 		if (sa::ModelAsset::isExtensionSupported(extension)) {
-			sa::AssetManager::get().importAsset<sa::ModelAsset>(path, m_openDirectory);
+			sa::AssetManager::Get().importAsset<sa::ModelAsset>(path, m_openDirectory);
 			continue;
 		}
-		auto pTextureAsset = sa::AssetManager::get().importAsset<sa::TextureAsset>(path, m_openDirectory);
+		auto pTextureAsset = sa::AssetManager::Get().importAsset<sa::TextureAsset>(path, m_openDirectory);
 		if(pTextureAsset)
 			continue;
 
@@ -55,7 +55,7 @@ void DirectoryView::onImGui() {
 	SA_PROFILE_FUNCTION();
 	for (auto it = m_openAssetProperties.begin(); it != m_openAssetProperties.end(); it++) {
 		sa::Asset* pAsset = *it;
-		SA_PROFILE_SCOPE(sa::AssetManager::get().getAssetTypeName(pAsset->getType()), " Properties Window");
+		SA_PROFILE_SCOPE(sa::AssetManager::Get().getAssetTypeName(pAsset->getType()), " Properties Window");
 		bool isOpen = true;
 		if(ImGui::Begin((pAsset->getName() + " Properties").c_str(), &isOpen)) {
 			ImGui::GetAssetInfo(pAsset->getType()).imGuiPropertiesFn(pAsset);
@@ -66,10 +66,10 @@ void DirectoryView::onImGui() {
 			if (ImGui::Button("Revert")) {
 				pAsset->load();
 			}
-			if(sa::AssetManager::get().wasImported(pAsset)) {
+			if(sa::AssetManager::Get().wasImported(pAsset)) {
 				ImGui::SameLine();
 				if (ImGui::Button("Reimport")) {
-					sa::AssetManager::get().reimportAsset(pAsset);
+					sa::AssetManager::Get().reimportAsset(pAsset);
 				}
 			}
 		}
@@ -139,12 +139,12 @@ void DirectoryView::onImGui() {
 
 			ImGui::Separator();
 			static std::vector<sa::AssetTypeID> types;
-			sa::AssetManager::get().getRegisteredAssetTypes(types);
+			sa::AssetManager::Get().getRegisteredAssetTypes(types);
 			for (auto type : types) {
 				if (ImGui::GetAssetInfo(type).inCreateMenu) {
-					std::string typeName = sa::AssetManager::get().getAssetTypeName(type);
+					std::string typeName = sa::AssetManager::Get().getAssetTypeName(type);
 					if (ImGui::MenuItem(typeName.c_str())) {
-						sa::Asset* pAsset = sa::AssetManager::get().createAsset(type, "New " + typeName + ".asset", m_openDirectory);
+						sa::Asset* pAsset = sa::AssetManager::Get().createAsset(type, "New " + typeName + ".asset", m_openDirectory);
 						editingName = pAsset->getName();
 						editedFile = pAsset->getAssetPath();
 					}
@@ -170,7 +170,7 @@ void DirectoryView::onImGui() {
 				
 				sa::Asset* pAsset = nullptr;
 				if(sa::AssetManager::IsAsset(entry)) {
-					pAsset = sa::AssetManager::get().findAssetByPath(entry.path());
+					pAsset = sa::AssetManager::Get().findAssetByPath(entry.path());
 					if (pAsset) {
 						icon = ImGui::GetAssetInfo(pAsset->getType()).icon;
 					}
@@ -186,7 +186,7 @@ void DirectoryView::onImGui() {
 						break;
 					}
 					if (pAsset) {
-						if (sa::AssetManager::get().isType<sa::Scene>(pAsset)) {
+						if (sa::AssetManager::Get().isType<sa::Scene>(pAsset)) {
 							m_pEngine->setScene(pAsset->cast<sa::Scene>());
 						}
 						else {
@@ -207,7 +207,7 @@ void DirectoryView::onImGui() {
 		}
 
 		if (wasChanged) {
-			sa::AssetManager::get().rescanAssets();
+			sa::AssetManager::Get().rescanAssets();
 		}
 
 	}
@@ -221,13 +221,13 @@ void DirectoryView::onImGui() {
 			ImGui::InputText("Path", &path);
 
 			if (ImGui::Button("Import")) {
-				sa::AssetManager::get().importAsset<sa::ModelAsset>(path);
+				sa::AssetManager::Get().importAsset<sa::ModelAsset>(path);
 			}
 		}
 
 		ImGui::Separator();
 
-		auto& assets = sa::AssetManager::get().getAssets();
+		auto& assets = sa::AssetManager::Get().getAssets();
 		static sa::Asset* selected = nullptr;
 
 		if (ImGui::Button("Hold Asset") && selected) {
@@ -249,14 +249,14 @@ void DirectoryView::onImGui() {
 
 
 		if (selected && selected->isLoaded()) {
-			if (selected->getType() == sa::AssetManager::get().getAssetTypeID<sa::ModelAsset>()) {
+			if (selected->getType() == sa::AssetManager::Get().getAssetTypeID<sa::ModelAsset>()) {
 				if (ImGui::Button("Spawn")) {
 					sa::Entity entity = m_pEngine->getCurrentScene()->createEntity();
 					entity.addComponent<comp::Transform>();
 					entity.addComponent<comp::Model>()->model = selected->getID();
 				}
 			}
-			else if (selected->getType() == sa::AssetManager::get().getAssetTypeID<sa::Scene>()) {
+			else if (selected->getType() == sa::AssetManager::Get().getAssetTypeID<sa::Scene>()) {
 				if (ImGui::Button("Set Scene")) {
 					m_pEngine->setScene(static_cast<sa::Scene*>(selected));
 				}
@@ -283,7 +283,7 @@ void DirectoryView::onImGui() {
 					}
 
 					ImGui::TableNextColumn();
-					ImGui::TextUnformatted(sa::AssetManager::get().getAssetTypeName(asset->getType()).c_str());
+					ImGui::TextUnformatted(sa::AssetManager::Get().getAssetTypeName(asset->getType()).c_str());
 
 					ImGui::TableNextColumn();
 					if (asset->isLoaded()) {

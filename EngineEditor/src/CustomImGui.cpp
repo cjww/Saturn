@@ -268,11 +268,11 @@ namespace ImGui {
 	void Component(sa::Entity entity, comp::Model* model) {
 		
 		sa::UUID id = model->model.getID();
-		if (AssetSlot(("Model##" + entity.getComponent<comp::Name>()->name).c_str(), id, sa::AssetManager::get().getAssetTypeID<sa::ModelAsset>())) {	
+		if (AssetSlot(("Model##" + entity.getComponent<comp::Name>()->name).c_str(), id, sa::AssetManager::Get().getAssetTypeID<sa::ModelAsset>())) {	
 			model->model = id;
 		}
 
-		sa::Asset* pAsset = sa::AssetManager::get().getAsset(id);
+		sa::Asset* pAsset = sa::AssetManager::Get().getAsset(id);
 		if (pAsset && !pAsset->getProgress().isAllDone()) {
 			ProgressBar(pAsset->getProgress().getAllCompletion());
 		}
@@ -417,8 +417,8 @@ namespace ImGui {
 
 		
 		sa::UUID id = camera->getRenderTarget().getID();
-		if (AssetSlot("RenderTarget", id, sa::AssetManager::get().getAssetTypeID<sa::RenderTarget>())) {
-			camera->setRenderTarget(sa::AssetManager::get().getAsset<sa::RenderTarget>(id));
+		if (AssetSlot("RenderTarget", id, sa::AssetManager::Get().getAssetTypeID<sa::RenderTarget>())) {
+			camera->setRenderTarget(sa::AssetManager::Get().getAsset<sa::RenderTarget>(id));
 		}
 
 	}
@@ -530,7 +530,7 @@ namespace ImGui {
 	}
 	
 	AssetEditorInfo GetAssetInfo(sa::AssetTypeID type) {
-		sa::AssetManager& am = sa::AssetManager::get();
+		sa::AssetManager& am = sa::AssetManager::Get();
 		const static std::unordered_map<sa::AssetTypeID, AssetEditorInfo> map = {
 			{
 				am.getAssetTypeID<sa::Material>(), 
@@ -606,7 +606,7 @@ namespace ImGui {
 		sa::Material* pMaterial = static_cast<sa::Material*>(pAsset);
 
 		sa::UUID id = pMaterial->getMaterialShader().getID();
-		if(AssetSlot("Material Shader", id, sa::AssetManager::get().getAssetTypeID<sa::MaterialShader>())) {
+		if(AssetSlot("Material Shader", id, sa::AssetManager::Get().getAssetTypeID<sa::MaterialShader>())) {
 			pMaterial->setMaterialShader(id);
 		}
 
@@ -623,7 +623,7 @@ namespace ImGui {
 		Checkbox("Two Sided", &pMaterial->twoSided);
 
 		auto& textures = pMaterial->getTextures();
-		sa::AssetTypeID textureAssetType = sa::AssetManager::get().getAssetTypeID<sa::TextureAsset>();
+		sa::AssetTypeID textureAssetType = sa::AssetManager::Get().getAssetTypeID<sa::TextureAsset>();
 		if (BeginListBox("Textures")) {
 			for (auto& [type, texArr] : textures) {
 				std::string textureTypeName = sa::to_string(type);
@@ -681,7 +681,7 @@ namespace ImGui {
 				PushID(i);
 
 				sa::UUID id = mesh.material.getID();
-				if (AssetSlot("Material", id, mesh.material.getTypeID())) {
+				if (AssetSlot("Material", id, mesh.material.GetTypeID())) {
 					mesh.material = id;
 				}
 				PopID();
@@ -825,7 +825,7 @@ namespace ImGui {
 	bool AssetSlot(const char* label, sa::UUID& assetID, sa::AssetTypeID typeID) {
 		std::string preview = "None";
 		{
-			sa::Asset* pAsset = sa::AssetManager::get().getAsset(assetID);
+			sa::Asset* pAsset = sa::AssetManager::Get().getAsset(assetID);
 			if (pAsset) {
 				preview = pAsset->getName();
 			}
@@ -834,7 +834,7 @@ namespace ImGui {
 		static std::string filter;
 		if(BeginCombo(label, preview.c_str())) {
 			std::vector<sa::Asset*> assets;
-			sa::AssetManager::get().getAssets(&assets, typeID);
+			sa::AssetManager::Get().getAssets(&assets, typeID);
 			PushID(label);
 			InputText("Filter", &filter, ImGuiInputTextFlags_AutoSelectAll);
 			
@@ -873,7 +873,7 @@ namespace ImGui {
 			if (payload && payload->IsDelivery()) {
 				std::filesystem::path* pPath = (std::filesystem::path*)payload->Data;
 				if (pPath->extension() == ".asset") {
-					sa::Asset* asset = sa::AssetManager::get().findAssetByPath(*pPath);
+					sa::Asset* asset = sa::AssetManager::Get().findAssetByPath(*pPath);
 					if (asset && asset->getID() != assetID && asset->getType() == typeID) {
 						assetID = asset->getID();
 						selected = true;
@@ -981,7 +981,7 @@ namespace ImGui {
 		ini_handler.ClearAllFn = NULL;
 		ini_handler.ReadOpenFn = [](ImGuiContext* ctx, ImGuiSettingsHandler* handler, const char* name) -> void* {
 			sa::EngineEditor* pEditor = (sa::EngineEditor*)handler->UserData;
-			//get module by name
+			//Get module by name
 			EditorModule* pModule = pEditor->getModuleByName(name);
 			// return module pointer
 			return (void*)pModule;
@@ -1196,7 +1196,7 @@ namespace ImGui {
 				Separator();
 
 				if(MenuItem("Open in code editor")) {
-					//TODO get code editor executable from editor settings
+					//TODO Get code editor executable from editor settings
 					if(!sa::FileDialogs::OpenFileInTextEditor("F:/Microsoft VS Code/Code.exe", openDirectory)) {
 						SA_DEBUG_LOG_ERROR("Failed to open in code editor");
 					}
@@ -1509,7 +1509,7 @@ namespace ImGui {
 			
 			iconSize /= glm::distance(worldPoint, pCamera->getPosition());
 			ImGui::GetWindowDrawList()->AddImageQuad(
-				sa::Renderer::get().getImGuiTexture(pTex),
+				sa::Renderer::Get().getImGuiTexture(pTex),
 				ImVec2(point.x - iconSize, point.y - iconSize),
 				ImVec2(point.x + iconSize, point.y - iconSize),
 				ImVec2(point.x + iconSize, point.y + iconSize),

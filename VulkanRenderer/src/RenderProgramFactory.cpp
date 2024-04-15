@@ -80,8 +80,8 @@ namespace sa {
 
 	RenderProgramFactory::RenderProgramFactory(VulkanCore* pCore) {
 		m_pCore = pCore;
-		m_id = ResourceManager::get().insert<RenderProgram>();
-		m_pProgram = ResourceManager::get().get<RenderProgram>(m_id);
+		m_id = ResourceManager::Get().insert<RenderProgram>();
+		m_pProgram = ResourceManager::Get().get<RenderProgram>(m_id);
 	}
 
 	RenderProgramFactory& RenderProgramFactory::addColorAttachment(AttachmentFlags flags, uint32_t sampleCount) {
@@ -136,7 +136,7 @@ namespace sa {
 
 
 	RenderProgramFactory& RenderProgramFactory::addSwapchainAttachment(ResourceID swapchain) {
-		Swapchain* pSwapChain = RenderContext::getSwapchain(swapchain);
+		Swapchain* pSwapChain = RenderContext::GetSwapchain(swapchain);
 		m_pProgram->addAttachment(
 			vk::ImageLayout::eUndefined,
 			vk::ImageLayout::ePresentSrcKHR,

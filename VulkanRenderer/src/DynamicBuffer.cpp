@@ -23,7 +23,7 @@ namespace sa{
 	}
 
 	void DynamicBuffer::create(BufferType type, size_t size, void* initialData) {
-		uint32_t bufferCount = Renderer::get().getCore()->getQueueCount();
+		uint32_t bufferCount = Renderer::Get().getCore()->getQueueCount();
 		m_buffers.resize(bufferCount);
 		for (uint32_t i = 0; i < bufferCount; i++) {
 			m_buffers[i] = Buffer(type, size, initialData);

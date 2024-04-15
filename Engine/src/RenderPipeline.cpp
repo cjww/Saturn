@@ -32,7 +32,7 @@ namespace sa {
 	}
 
 	void RenderPipeline::beginFrameImGUI() {
-		Renderer::get().newImGuiFrame();
+		Renderer::Get().newImGuiFrame();
 	}
 
 	void RenderPipeline::preRender(RenderContext& context, SceneCollection& sceneCollection) {

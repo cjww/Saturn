@@ -88,7 +88,7 @@ namespace sa {
 		file.close();
 	}
 
-	AssetManager& AssetManager::get() {
+	AssetManager& AssetManager::Get() {
 		static AssetManager instance;
 		return instance;
 	}
@@ -103,7 +103,7 @@ namespace sa {
 
 
 	void AssetManager::clear() {
-		Asset::waitAllAssets();
+		Asset::WaitAllAssets();
 		for (auto& [id, pAsset] : m_assets) {
 			while (!pAsset->release());
 		}
@@ -113,52 +113,52 @@ namespace sa {
 	Texture* AssetManager::loadDefaultTexture() {
 		SA_PROFILE_FUNCTION();
 
-		Texture* pTex = ResourceManager::get().get<Texture>("default_white");
+		Texture* pTex = ResourceManager::Get().get<Texture>("default_white");
 		if (pTex)
 			return pTex;
 
 		sa::Image img(2, 2, sa::Color{ 1, 1, 1, 1 });
 		Texture texture;
 		texture.create2D(img, false);
-		ResourceID id = ResourceManager::get().insert<Texture>("default_white", texture);
-		return ResourceManager::get().get<Texture>(id);
+		ResourceID id = ResourceManager::Get().insert<Texture>("default_white", texture);
+		return ResourceManager::Get().get<Texture>(id);
 	}
 
 	Texture* AssetManager::loadDefaultBlackTexture() {
 		SA_PROFILE_FUNCTION();
 
-		Texture* tex = ResourceManager::get().get<Texture>("default_black");
+		Texture* tex = ResourceManager::Get().get<Texture>("default_black");
 		if (tex)
 			return tex;
 
 		sa::Image img(2, 2, sa::Color{ 0, 0, 0, 0 });
 		Texture texture;
 		texture.create2D(img, false);
-		ResourceID id = ResourceManager::get().insert<Texture>("default_black", texture);
-		return ResourceManager::get().get<Texture>(id);
+		ResourceID id = ResourceManager::Get().insert<Texture>("default_black", texture);
+		return ResourceManager::Get().get<Texture>(id);
 	}
 
 	Texture* AssetManager::loadTexture(const std::filesystem::path& path, bool generateMipMaps) {
 		SA_PROFILE_FUNCTION();
-		ResourceID id = ResourceManager::get().keyToID<Texture>(path.generic_string());
+		ResourceID id = ResourceManager::Get().keyToID<Texture>(path.generic_string());
 		if (m_textures.count(id)) {
 			return m_textures.at(id);
 		}
 
-		Texture* tex = ResourceManager::get().get<Texture>(id);
+		Texture* tex = ResourceManager::Get().get<Texture>(id);
 
 		if (!tex) {
 			try {
 				Image img(path.generic_string());
 				Texture texture;
 				texture.create2D(img, generateMipMaps);
-				id = ResourceManager::get().insert<Texture>(path.generic_string(), texture);
+				id = ResourceManager::Get().insert<Texture>(path.generic_string(), texture);
 			}
 			catch (const std::exception& e) {
 				return nullptr;
 			}
 
-			Texture* tex = ResourceManager::get().get<Texture>(id);
+			Texture* tex = ResourceManager::Get().get<Texture>(id);
 			m_textures[id] = tex;
 			return tex;
 		}
@@ -290,8 +290,8 @@ namespace sa {
 
 		pMaterialShader = createAsset<MaterialShader>(SA_DEFAULT_MATERIAL_SHADER_NAME, SA_DEFAULT_MATERIAL_SHADER_ID);
 
-		auto vertexCode = ReadSPVFile((Engine::getShaderDirectory() / "ForwardPlusColorPass.vert.spv").generic_string().c_str());
-		auto fragmentCode = ReadSPVFile((Engine::getShaderDirectory() / "ForwardPlusColorPass.frag.spv").generic_string().c_str());
+		auto vertexCode = ReadSPVFile((Engine::GetShaderDirectory() / "ForwardPlusColorPass.vert.spv").generic_string().c_str());
+		auto fragmentCode = ReadSPVFile((Engine::GetShaderDirectory() / "ForwardPlusColorPass.frag.spv").generic_string().c_str());
 		pMaterialShader->create({ vertexCode, fragmentCode });
 
 		pMaterialShader->hold(); // Make sure this is not unloaded, because it can't be loaded again
@@ -537,7 +537,7 @@ namespace sa {
 
 	AssetManager::AssetManager() {
 		loadDefaultTexture();
-		sa::ResourceManager::get().setCleanupFunction<Texture>([](Texture* pTexture) {
+		sa::ResourceManager::Get().setCleanupFunction<Texture>([](Texture* pTexture) {
 			pTexture->destroy();
 		});
 
@@ -554,6 +554,6 @@ namespace sa {
 	}
 
 	AssetManager::~AssetManager() {
-		ResourceManager::get().clearContainer<Texture>();
+		ResourceManager::Get().clearContainer<Texture>();
 	}
 }

@@ -28,12 +28,48 @@ namespace sa {
 		m_renderPipeline.onRenderTargetResize(e.renderTargetID, e.oldExtent, e.newExtent);
 	}
 
-	const std::filesystem::path& Engine::getShaderDirectory() {
+	const std::filesystem::path& Engine::GetShaderDirectory() {
 		return s_shaderDirectory;
 	}
 
-	void Engine::setShaderDirectory(const std::filesystem::path& path) {
+	void Engine::SetShaderDirectory(const std::filesystem::path& path) {
 		s_shaderDirectory = std::filesystem::absolute(path);
+	}
+
+	EngineStatistics& Engine::GetEngineStatistics() {
+		static EngineStatistics stats;
+		return stats;
+	}
+
+	void Engine::collectStatistics(float dt) {
+		auto& stats = GetEngineStatistics();
+		
+		stats.frameTime = dt;
+		
+		m_statsQuery.frameTimes[m_statsQuery.frameTimeCount % m_statsQuery.frameTimes.size()] = dt;
+		m_statsQuery.frameTimeCount++;
+
+		m_statsQuery.frameQueryTimer += dt;
+		if (m_statsQuery.frameQueryTimer > 0.5f) {
+
+			m_statsQuery.frameTimeCount = std::min<uint32_t>(m_statsQuery.frameTimeCount, m_statsQuery.frameTimes.size());
+			int diff = m_statsQuery.frameTimes.size() - m_statsQuery.frameTimeCount;
+			float sum = std::accumulate(m_statsQuery.frameTimes.begin(), m_statsQuery.frameTimes.end() - diff, 0);
+			
+			stats.avgFrameTime = sum / m_statsQuery.frameTimeCount;
+
+			m_statsQuery.frameTimeCount = 0;
+			m_statsQuery.frameQueryTimer = 0.0f;
+		}
+
+		m_statsQuery.memoryQueryTimer += dt;
+		if (m_statsQuery.memoryQueryTimer > 1.5f) {
+
+			stats.gpuMemoryStats = Renderer::Get().getGPUMemoryUsage();
+
+			m_statsQuery.memoryQueryTimer = 0.0f;
+		}
+
 	}
 
 	void Engine::setup(sa::RenderWindow* pWindow, bool enableImgui) {
@@ -75,7 +111,7 @@ namespace sa {
 	void Engine::cleanup() {
 		if (m_pWindowRenderer)
 			delete m_pWindowRenderer;
-		AssetManager::get().clear();
+		AssetManager::Get().clear();
 	}
 
 	void Engine::recordImGui() {

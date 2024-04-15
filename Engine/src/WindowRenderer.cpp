@@ -17,9 +17,9 @@ namespace sa {
 		, m_swapchainDescriptorSet(NULL_RESOURCE)
 		, m_sampler(NULL_RESOURCE)
 	{
-		auto& renderer = sa::Renderer::get();
-		auto vertexCode = ReadSPVFile((Engine::getShaderDirectory() / "TransferToSwapchain.vert.spv").generic_string().c_str());
-		auto fragmentCode = ReadSPVFile((Engine::getShaderDirectory() / "TransferToSwapchain.frag.spv").generic_string().c_str());
+		auto& renderer = sa::Renderer::Get();
+		auto vertexCode = ReadSPVFile((Engine::GetShaderDirectory() / "TransferToSwapchain.vert.spv").generic_string().c_str());
+		auto fragmentCode = ReadSPVFile((Engine::GetShaderDirectory() / "TransferToSwapchain.frag.spv").generic_string().c_str());
 
 		m_vertexShader.create(vertexCode, VERTEX);
 		m_fragmentShader.create(fragmentCode, FRAGMENT);
@@ -53,7 +53,7 @@ namespace sa {
 	}
 
 	void WindowRenderer::onWindowResize(Extent extent) {
-		auto& renderer = Renderer::get();
+		auto& renderer = Renderer::Get();
 		if (m_swapchainFramebuffer != NULL_RESOURCE)
 			renderer.destroyFramebuffer(m_swapchainFramebuffer);
 

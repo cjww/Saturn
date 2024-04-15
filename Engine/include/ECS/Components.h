@@ -25,8 +25,8 @@ namespace sa {
 
 		registered = true;
 
-		Entity::registerMetaFunctions<Comp>();
-		ComponentType::registerComponent<Comp>();
+		Entity::RegisterMetaFunctions<Comp>();
+		ComponentType::RegisterComponent<Comp>();
 
 		registerComponentLua<Comp>();
 	}

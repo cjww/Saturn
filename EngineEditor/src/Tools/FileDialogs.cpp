@@ -15,7 +15,7 @@ bool sa::FileDialogs::OpenFile(const char* filter, std::filesystem::path& filePa
     OPENFILENAMEA ofn;
     ZeroMemory(&ofn, sizeof(OPENFILENAME));
     ofn.lStructSize = sizeof(OPENFILENAME);
-    ofn.hwndOwner = (HWND)Application::get()->getWindow()->getWin32WindowHandle();
+    ofn.hwndOwner = (HWND)Application::Get()->getWindow()->getWin32WindowHandle();
     ofn.lpstrFile = szfile;
     ofn.nMaxFile = sizeof(szfile);
     
@@ -42,7 +42,7 @@ bool sa::FileDialogs::SaveFile(const char* filter, std::filesystem::path& filePa
     OPENFILENAMEA ofn;
     ZeroMemory(&ofn, sizeof(OPENFILENAME));
     ofn.lStructSize = sizeof(OPENFILENAME);
-    ofn.hwndOwner = (HWND)Application::get()->getWindow()->getWin32WindowHandle();
+    ofn.hwndOwner = (HWND)Application::Get()->getWindow()->getWin32WindowHandle();
     ofn.lpstrFile = szfile;
     ofn.nMaxFile = sizeof(szfile);
 

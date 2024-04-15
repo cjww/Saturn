@@ -45,19 +45,19 @@ namespace sa {
 			
 			m_pCore->init(info, c_useVaildationLayers);
 			
-			ResourceManager::get().setCleanupFunction<Swapchain>([](Swapchain* p) { p->destroy(); });
-			ResourceManager::get().setCleanupFunction<FramebufferSet>([](FramebufferSet* p) { p->destroy(); });
-			ResourceManager::get().setCleanupFunction<RenderProgram>([](RenderProgram* p) { p->destroy(); });
-			ResourceManager::get().setCleanupFunction<vk::Pipeline>([&](vk::Pipeline* p) { m_pCore->getDevice().destroyPipeline(*p); });
-			ResourceManager::get().setCleanupFunction<vk::PipelineLayout>([&](vk::PipelineLayout* p) { m_pCore->getDevice().destroyPipelineLayout(*p); });
-			ResourceManager::get().setCleanupFunction<vk::ShaderModule>([&](vk::ShaderModule* p) { m_pCore->getDevice().destroyShaderModule(*p); });
-			ResourceManager::get().setCleanupFunction<vk::DescriptorSetLayout>([&](vk::DescriptorSetLayout* p) { m_pCore->getDevice().destroyDescriptorSetLayout(*p); });
-			ResourceManager::get().setCleanupFunction<vk::DescriptorPool>([&](vk::DescriptorPool* p) { m_pCore->getDevice().destroyDescriptorPool(*p); });
-			ResourceManager::get().setCleanupFunction<DescriptorSet>([](DescriptorSet* p) { p->destroy(); });
-			ResourceManager::get().setCleanupFunction<vk::Sampler>([&](vk::Sampler* p) { m_pCore->getDevice().destroySampler(*p); });
-			ResourceManager::get().setCleanupFunction<vk::ImageView>([&](vk::ImageView* p) { m_pCore->getDevice().destroyImageView(*p); });
-			ResourceManager::get().setCleanupFunction<vk::BufferView>([&](vk::BufferView* p) { m_pCore->getDevice().destroyBufferView(*p); });
-			ResourceManager::get().setCleanupFunction<CommandPool>([](CommandPool* p) { p->destroy(); });
+			ResourceManager::Get().setCleanupFunction<Swapchain>([](Swapchain* p) { p->destroy(); });
+			ResourceManager::Get().setCleanupFunction<FramebufferSet>([](FramebufferSet* p) { p->destroy(); });
+			ResourceManager::Get().setCleanupFunction<RenderProgram>([](RenderProgram* p) { p->destroy(); });
+			ResourceManager::Get().setCleanupFunction<vk::Pipeline>([&](vk::Pipeline* p) { m_pCore->getDevice().destroyPipeline(*p); });
+			ResourceManager::Get().setCleanupFunction<vk::PipelineLayout>([&](vk::PipelineLayout* p) { m_pCore->getDevice().destroyPipelineLayout(*p); });
+			ResourceManager::Get().setCleanupFunction<vk::ShaderModule>([&](vk::ShaderModule* p) { m_pCore->getDevice().destroyShaderModule(*p); });
+			ResourceManager::Get().setCleanupFunction<vk::DescriptorSetLayout>([&](vk::DescriptorSetLayout* p) { m_pCore->getDevice().destroyDescriptorSetLayout(*p); });
+			ResourceManager::Get().setCleanupFunction<vk::DescriptorPool>([&](vk::DescriptorPool* p) { m_pCore->getDevice().destroyDescriptorPool(*p); });
+			ResourceManager::Get().setCleanupFunction<DescriptorSet>([](DescriptorSet* p) { p->destroy(); });
+			ResourceManager::Get().setCleanupFunction<vk::Sampler>([&](vk::Sampler* p) { m_pCore->getDevice().destroySampler(*p); });
+			ResourceManager::Get().setCleanupFunction<vk::ImageView>([&](vk::ImageView* p) { m_pCore->getDevice().destroyImageView(*p); });
+			ResourceManager::Get().setCleanupFunction<vk::BufferView>([&](vk::BufferView* p) { m_pCore->getDevice().destroyBufferView(*p); });
+			ResourceManager::Get().setCleanupFunction<CommandPool>([](CommandPool* p) { p->destroy(); });
 
 
 		}
@@ -66,7 +66,7 @@ namespace sa {
 		}
 	}
 
-	Renderer& Renderer::get() {
+	Renderer& Renderer::Get() {
 		static Renderer instance;
 		return instance;
 	}
@@ -80,19 +80,19 @@ namespace sa {
 		}
 #endif
 		
-		ResourceManager::get().clearContainer<CommandPool>();
-		ResourceManager::get().clearContainer<vk::BufferView>();
-		ResourceManager::get().clearContainer<vk::ImageView>();
-		ResourceManager::get().clearContainer<vk::Sampler>();
-		ResourceManager::get().clearContainer<DescriptorSet>();
-		ResourceManager::get().clearContainer<vk::DescriptorPool>();
-		ResourceManager::get().clearContainer<vk::DescriptorSetLayout>();
-		ResourceManager::get().clearContainer<vk::ShaderModule>();
-		ResourceManager::get().clearContainer<vk::Pipeline>();
-		ResourceManager::get().clearContainer<vk::PipelineLayout>();
-		ResourceManager::get().clearContainer<RenderProgram>();
-		ResourceManager::get().clearContainer<FramebufferSet>();
-		ResourceManager::get().clearContainer<Swapchain>();
+		ResourceManager::Get().clearContainer<CommandPool>();
+		ResourceManager::Get().clearContainer<vk::BufferView>();
+		ResourceManager::Get().clearContainer<vk::ImageView>();
+		ResourceManager::Get().clearContainer<vk::Sampler>();
+		ResourceManager::Get().clearContainer<DescriptorSet>();
+		ResourceManager::Get().clearContainer<vk::DescriptorPool>();
+		ResourceManager::Get().clearContainer<vk::DescriptorSetLayout>();
+		ResourceManager::Get().clearContainer<vk::ShaderModule>();
+		ResourceManager::Get().clearContainer<vk::Pipeline>();
+		ResourceManager::Get().clearContainer<vk::PipelineLayout>();
+		ResourceManager::Get().clearContainer<RenderProgram>();
+		ResourceManager::Get().clearContainer<FramebufferSet>();
+		ResourceManager::Get().clearContainer<Swapchain>();
 
 		m_pCore->cleanup();
 	}
@@ -103,7 +103,7 @@ namespace sa {
 
 #ifndef IMGUI_DISABLE
 	void Renderer::initImGui(const Window& window, ResourceID renderProgram, uint32_t subpass) {
-		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
+		RenderProgram* pRenderProgram = RenderContext::GetRenderProgram(renderProgram);
 		m_pCore->initImGui(window.getWindowHandle(), pRenderProgram->getRenderPass(), subpass);
 	}
 	
@@ -141,7 +141,7 @@ namespace sa {
 #endif
 
 	ResourceID Renderer::createSwapchain(GLFWwindow* pWindow) {
-		return ResourceManager::get().insert<Swapchain>(m_pCore.get(), pWindow);
+		return ResourceManager::Get().insert<Swapchain>(m_pCore.get(), pWindow);
 	}
 
 	ResourceID Renderer::recreateSwapchain(GLFWwindow* pWindow, ResourceID oldSwapchain) {
@@ -151,11 +151,11 @@ namespace sa {
 	}
 
 	void Renderer::destroySwapchain(ResourceID id) {
-		ResourceManager::get().remove<Swapchain>(id);
+		ResourceManager::Get().remove<Swapchain>(id);
 	}
 
 	uint32_t Renderer::getSwapchainImageCount(ResourceID swapchain) {
-		Swapchain* pSwapchain = RenderContext::getSwapchain(swapchain);
+		Swapchain* pSwapchain = RenderContext::GetSwapchain(swapchain);
 		return pSwapchain->getImageCount();
 	}
 
@@ -164,17 +164,17 @@ namespace sa {
 	}
 
 	void Renderer::destroyRenderProgram(ResourceID renderProgram) {
-		ResourceManager::get().remove<RenderProgram>(renderProgram);
+		ResourceManager::Get().remove<RenderProgram>(renderProgram);
 	}
 
 
 	void Renderer::setClearColor(ResourceID renderProgram, Color color, uint32_t attachmentIndex) {
-		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
+		RenderProgram* pRenderProgram = RenderContext::GetRenderProgram(renderProgram);
 		pRenderProgram->setClearColor(attachmentIndex, color);
 	}
 
 	void Renderer::setClearColor(ResourceID renderProgram, Color color) {
-		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
+		RenderProgram* pRenderProgram = RenderContext::GetRenderProgram(renderProgram);
 		pRenderProgram->setClearColor(color);
 	}
 
@@ -182,9 +182,9 @@ namespace sa {
 		if (attachmentTextures.empty())
 			throw std::runtime_error("At least one attachmnet is required to create a framebuffer");
 
-		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
+		RenderProgram* pRenderProgram = RenderContext::GetRenderProgram(renderProgram);
 		
-		return ResourceManager::get().insert<FramebufferSet>(
+		return ResourceManager::Get().insert<FramebufferSet>(
 			m_pCore.get(),
 			pRenderProgram->getRenderPass(),
 			attachmentTextures,
@@ -193,10 +193,10 @@ namespace sa {
 	}
 
 	ResourceID Renderer::createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<DynamicTexture>& additionalAttachmentTextures, uint32_t layers) {
-		Swapchain* pSwapchain = RenderContext::getSwapchain(swapchain);
-		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
+		Swapchain* pSwapchain = RenderContext::GetSwapchain(swapchain);
+		RenderProgram* pRenderProgram = RenderContext::GetRenderProgram(renderProgram);
 
-		return ResourceManager::get().insert<FramebufferSet>(
+		return ResourceManager::Get().insert<FramebufferSet>(
 			m_pCore.get(),
 			pRenderProgram->getRenderPass(),
 			pSwapchain,
@@ -216,9 +216,9 @@ namespace sa {
 		if (attachmentTextures.empty())
 			throw std::runtime_error("At least one attachmnet is required to create a framebuffer");
 
-		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
+		RenderProgram* pRenderProgram = RenderContext::GetRenderProgram(renderProgram);
 
-		return ResourceManager::get().insert<FramebufferSet>(
+		return ResourceManager::Get().insert<FramebufferSet>(
 			m_pCore.get(),
 			pRenderProgram->getRenderPass(),
 			attachmentTextures,
@@ -227,10 +227,10 @@ namespace sa {
 	}
 
 	ResourceID Renderer::createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<Texture>& additionalAttachmentTextures, uint32_t layers) {
-		Swapchain* pSwapchain = RenderContext::getSwapchain(swapchain);
-		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
+		Swapchain* pSwapchain = RenderContext::GetSwapchain(swapchain);
+		RenderProgram* pRenderProgram = RenderContext::GetRenderProgram(renderProgram);
 
-		return ResourceManager::get().insert<FramebufferSet>(
+		return ResourceManager::Get().insert<FramebufferSet>(
 			m_pCore.get(),
 			pRenderProgram->getRenderPass(),
 			pSwapchain,
@@ -239,10 +239,10 @@ namespace sa {
 	}
 
 	ResourceID Renderer::createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, uint32_t layers) {
-		Swapchain* pSwapchain = RenderContext::getSwapchain(swapchain);
-		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
+		Swapchain* pSwapchain = RenderContext::GetSwapchain(swapchain);
+		RenderProgram* pRenderProgram = RenderContext::GetRenderProgram(renderProgram);
 		std::vector<Texture> textures;
-		return ResourceManager::get().insert<FramebufferSet>(
+		return ResourceManager::Get().insert<FramebufferSet>(
 			m_pCore.get(),
 			pRenderProgram->getRenderPass(),
 			pSwapchain,
@@ -251,41 +251,41 @@ namespace sa {
 	}
 
 	void Renderer::destroyFramebuffer(ResourceID framebuffer) {
-		ResourceManager::get().remove<FramebufferSet>(framebuffer);
+		ResourceManager::Get().remove<FramebufferSet>(framebuffer);
 	}
 
 	Texture Renderer::getFramebufferTexture(ResourceID framebuffer, uint32_t attachmentIndex) const {
-		return RenderContext::getFramebufferSet(framebuffer)->getTexture(attachmentIndex);
+		return RenderContext::GetFramebufferSet(framebuffer)->getTexture(attachmentIndex);
 	}
 	
 	DynamicTexture Renderer::getFramebufferDynamicTexture(ResourceID framebuffer, uint32_t attachmentIndex) const {
-		return RenderContext::getFramebufferSet(framebuffer)->getDynamicTexture(attachmentIndex);
+		return RenderContext::GetFramebufferSet(framebuffer)->getDynamicTexture(attachmentIndex);
 	}
 
 	DynamicTexture* Renderer::getFramebufferDynamicTexturePtr(ResourceID framebuffer, uint32_t attachmentIndex) const {
-		return RenderContext::getFramebufferSet(framebuffer)->getDynamicTexturePtr(attachmentIndex);
+		return RenderContext::GetFramebufferSet(framebuffer)->getDynamicTexturePtr(attachmentIndex);
 	}
 	
 	void Renderer::waitForFrame(ResourceID swapchains) {
-		RenderContext::getSwapchain(swapchains)->waitForFrame();
+		RenderContext::GetSwapchain(swapchains)->waitForFrame();
 	}
 
 	size_t Renderer::getFramebufferTextureCount(ResourceID framebuffer) const {
-		return RenderContext::getFramebufferSet(framebuffer)->getTextureCount();
+		return RenderContext::GetFramebufferSet(framebuffer)->getTextureCount();
 	}
 
 	Extent Renderer::getFramebufferExtent(ResourceID framebuffer) const {
-		return RenderContext::getFramebufferSet(framebuffer)->getExtent();
+		return RenderContext::GetFramebufferSet(framebuffer)->getExtent();
 	}
 
 	void Renderer::swapFramebuffer(ResourceID framebuffer) {
-		FramebufferSet* pFramebufferSet = RenderContext::getFramebufferSet(framebuffer);
+		FramebufferSet* pFramebufferSet = RenderContext::GetFramebufferSet(framebuffer);
 		pFramebufferSet->swap();
 	}
 
 	/*
 	ResourceID Renderer::createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const ShaderSet& shaderSet, PipelineSettings settings) {
-		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
+		RenderProgram* pRenderProgram = RenderContext::GetRenderProgram(renderProgram);
 		PipelineConfig config = toConfig(settings);
 		return pRenderProgram->createPipeline(shaderSet, subpassIndex, extent, config);
 	}
@@ -295,7 +295,7 @@ namespace sa {
 		vk::PipelineShaderStageCreateInfo vk_shaderStageInfo;
 		
 		ShaderStageInfo stageInfo = shader.getShaderStageInfo();
-		const vk::ShaderModule* pModule = ResourceManager::get().get<vk::ShaderModule>(shader.getShaderModuleID());
+		const vk::ShaderModule* pModule = ResourceManager::Get().get<vk::ShaderModule>(shader.getShaderModuleID());
 		if (!pModule)
 			throw std::runtime_error("Invalid ShaderModule ID");
 
@@ -305,7 +305,7 @@ namespace sa {
 		vk_shaderStageInfo.pSpecializationInfo = nullptr;
 
 
-		const vk::PipelineLayout* pLayout = RenderContext::getPipelineLayout(layout.getLayoutID());
+		const vk::PipelineLayout* pLayout = RenderContext::GetPipelineLayout(layout.getLayoutID());
 
 		vk::ComputePipelineCreateInfo createInfo = {};
 		createInfo.layout = *pLayout;
@@ -314,7 +314,7 @@ namespace sa {
 		createInfo.basePipelineIndex = 0;
 
 		const auto pipeline = m_pCore->getDevice().createComputePipeline(VK_NULL_HANDLE, createInfo);
-		return ResourceManager::get().insert(pipeline.value);
+		return ResourceManager::Get().insert(pipeline.value);
 	}
 
 	ResourceID Renderer::createGraphicsPipeline(PipelineLayout& layout, Shader* pShaders, uint32_t shaderCount, ResourceID renderProgram, uint32_t subpassIndex, Extent extent, PipelineSettings settings) {
@@ -322,7 +322,7 @@ namespace sa {
 		std::vector<vk::PipelineShaderStageCreateInfo> vk_shaderStageInfos(shaderCount);
 		for (uint32_t i = 0; i < shaderCount; i++) {
 			ShaderStageInfo stageInfo = pShaders[i].getShaderStageInfo();
-			const vk::ShaderModule* pModule = ResourceManager::get().get<vk::ShaderModule>(pShaders[i].getShaderModuleID());
+			const vk::ShaderModule* pModule = ResourceManager::Get().get<vk::ShaderModule>(pShaders[i].getShaderModuleID());
 			if (!pModule)
 				throw std::runtime_error("Invalid ShaderModule ID");
 			vk_shaderStageInfos[i].module = *pModule;
@@ -331,7 +331,7 @@ namespace sa {
 			vk_shaderStageInfos[i].pSpecializationInfo = nullptr;
 		}
 
-		const vk::PipelineLayout* pLayout = RenderContext::getPipelineLayout(layout.getLayoutID());
+		const vk::PipelineLayout* pLayout = RenderContext::GetPipelineLayout(layout.getLayoutID());
 		
 		auto& vertexAttributes = layout.getVertexAttributes();
 		std::vector<vk::VertexInputAttributeDescription> vk_vertexAttributes(vertexAttributes.size());
@@ -358,7 +358,7 @@ namespace sa {
 
 		PipelineConfig config = toConfig(settings);
 
-		RenderProgram* pRenderProgram = ResourceManager::get().get<RenderProgram>(renderProgram);
+		RenderProgram* pRenderProgram = ResourceManager::Get().get<RenderProgram>(renderProgram);
 		config.multisample = {
 			.sampleShadingEnable = true,
 			.minSampleShading = 0.2f,
@@ -377,15 +377,15 @@ namespace sa {
 			nullptr,
 			config
 		);
-		return ResourceManager::get().insert(vkPipeline);
+		return ResourceManager::Get().insert(vkPipeline);
 	}
 
 	void Renderer::destroyPipeline(ResourceID pipeline) {
-		ResourceManager::get().remove<vk::Pipeline>(pipeline);
+		ResourceManager::Get().remove<vk::Pipeline>(pipeline);
 	}
 
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Buffer& buffer) {
-		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+		DescriptorSet* pDescriptorSet = RenderContext::GetDescriptorSet(descriptorSet);
 		const DeviceBuffer* pDeviceBuffer = (const DeviceBuffer*)buffer;
 		vk::BufferView* pView = nullptr;
 		if (buffer.getType() == BufferType::UNIFORM_TEXEL|| buffer.getType() == BufferType::STORAGE_TEXEL) {
@@ -395,7 +395,7 @@ namespace sa {
 	}
 	
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, DynamicBuffer& buffer) {
-		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+		DescriptorSet* pDescriptorSet = RenderContext::GetDescriptorSet(descriptorSet);
 		for (uint32_t i = 0; i < buffer.getBufferCount(); i++) {
 			auto& b = buffer.getBuffer(i);
 			const DeviceBuffer* pDeviceBuffer = (const DeviceBuffer*)b;
@@ -408,8 +408,8 @@ namespace sa {
 	}
 
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture, ResourceID sampler) {
-		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
-		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
+		DescriptorSet* pDescriptorSet = RenderContext::GetDescriptorSet(descriptorSet);
+		vk::Sampler* pSampler = RenderContext::GetSampler(sampler);
 		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
 		if ((texture.getUsageFlags() & sa::TextureUsageFlagBits::STORAGE) == sa::TextureUsageFlagBits::STORAGE) {
 			layout = vk::ImageLayout::eGeneral;
@@ -419,7 +419,7 @@ namespace sa {
 	}
 
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture) {
-		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+		DescriptorSet* pDescriptorSet = RenderContext::GetDescriptorSet(descriptorSet);
 		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
 		if ((texture.getUsageFlags() & sa::TextureUsageFlagBits::STORAGE) == sa::TextureUsageFlagBits::STORAGE) {
 			layout = vk::ImageLayout::eGeneral;
@@ -429,8 +429,8 @@ namespace sa {
 	}
 
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const DynamicTexture& texture, ResourceID sampler) {
-		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
-		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
+		DescriptorSet* pDescriptorSet = RenderContext::GetDescriptorSet(descriptorSet);
+		vk::Sampler* pSampler = RenderContext::GetSampler(sampler);
 
 		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
 		if ((texture.getUsageFlags() & sa::TextureUsageFlagBits::STORAGE) == sa::TextureUsageFlagBits::STORAGE) {
@@ -443,7 +443,7 @@ namespace sa {
 	}
 
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const DynamicTexture& texture) {
-		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+		DescriptorSet* pDescriptorSet = RenderContext::GetDescriptorSet(descriptorSet);
 
 		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
 		if ((texture.getUsageFlags() & sa::TextureUsageFlagBits::STORAGE) == sa::TextureUsageFlagBits::STORAGE) {
@@ -456,36 +456,36 @@ namespace sa {
 	}
 
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement) {
-		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+		DescriptorSet* pDescriptorSet = RenderContext::GetDescriptorSet(descriptorSet);
 		pDescriptorSet->update(binding, firstElement, textures.data(), textures.size(), nullptr, UINT32_MAX);
 	}
 
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, ResourceID sampler, uint32_t firstElement) {
-		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
-		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
+		DescriptorSet* pDescriptorSet = RenderContext::GetDescriptorSet(descriptorSet);
+		vk::Sampler* pSampler = RenderContext::GetSampler(sampler);
 		pDescriptorSet->update(binding, firstElement, textures.data(), textures.size(), pSampler, UINT32_MAX);
 	}
 
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture* textures, uint32_t textureCount, ResourceID sampler, uint32_t firstElement) {
-		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
-		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
+		DescriptorSet* pDescriptorSet = RenderContext::GetDescriptorSet(descriptorSet);
+		vk::Sampler* pSampler = RenderContext::GetSampler(sampler);
 		pDescriptorSet->update(binding, firstElement, textures, textureCount, pSampler, UINT32_MAX);
 	}
 
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture* textures, uint32_t textureCount, uint32_t firstElement) {
-		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+		DescriptorSet* pDescriptorSet = RenderContext::GetDescriptorSet(descriptorSet);
 		pDescriptorSet->update(binding, firstElement, textures, textureCount, nullptr, UINT32_MAX);
 	}
 
 
 	void Renderer::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, ResourceID sampler) {
-		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
-		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
+		DescriptorSet* pDescriptorSet = RenderContext::GetDescriptorSet(descriptorSet);
+		vk::Sampler* pSampler = RenderContext::GetSampler(sampler);
 		pDescriptorSet->update(binding, VK_NULL_HANDLE, vk::ImageLayout::eUndefined, pSampler, UINT32_MAX);
 	}
 
 	void Renderer::freeDescriptorSet(ResourceID descriptorSet) {
-		ResourceManager::get().remove<DescriptorSet>(descriptorSet);
+		ResourceManager::Get().remove<DescriptorSet>(descriptorSet);
 	}
 
 	DeviceMemoryStats Renderer::getGPUMemoryUsage() const {
@@ -517,7 +517,7 @@ namespace sa {
 			.minLod = 0,
 			.maxLod = 9,
 		};
-		return ResourceManager::get().insert(m_pCore->createSampler(info));
+		return ResourceManager::Get().insert(m_pCore->createSampler(info));
 	}
 
 	ResourceID Renderer::createSampler(const SamplerInfo& samplerInfo) {
@@ -539,16 +539,16 @@ namespace sa {
 		info.borderColor = (vk::BorderColor)samplerInfo.borderColor;
 		info.unnormalizedCoordinates = samplerInfo.unnormalizedCoordinates;
 
-		return ResourceManager::get().insert(m_pCore->createSampler(info));
+		return ResourceManager::Get().insert(m_pCore->createSampler(info));
 	}
 
 	void Renderer::destroySampler(ResourceID sampler) {
-		ResourceManager::get().remove<vk::Sampler>(sampler);
+		ResourceManager::Get().remove<vk::Sampler>(sampler);
 	}
 
 
 	RenderContext Renderer::beginFrame(ResourceID swapchain) {
-		Swapchain* pSwapchain = RenderContext::getSwapchain(swapchain);
+		Swapchain* pSwapchain = RenderContext::GetSwapchain(swapchain);
 
 		CommandBufferSet* pCommandBufferSet = pSwapchain->beginFrame();
 		if (!pCommandBufferSet) {
@@ -602,13 +602,13 @@ namespace sa {
 	}
 
 	void Renderer::endFrame(ResourceID swapchain) {
-		Swapchain* pSwapchain = RenderContext::getSwapchain(swapchain);
+		Swapchain* pSwapchain = RenderContext::GetSwapchain(swapchain);
 		pSwapchain->endFrame();
 	}
 
 	ResourceID Renderer::createContextPool() {
-		ResourceID id = ResourceManager::get().insert<CommandPool>();
-		ResourceManager::get().get<CommandPool>(id)->create(m_pCore->getDevice(), m_pCore->getQueueFamily(), vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
+		ResourceID id = ResourceManager::Get().insert<CommandPool>();
+		ResourceManager::Get().get<CommandPool>(id)->create(m_pCore->getDevice(), m_pCore->getQueueFamily(), vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
 		return id;
 	}
 
@@ -617,8 +617,8 @@ namespace sa {
 	}
 
 	SubContext Renderer::createSubContext(ResourceID framebuffer, ResourceID renderProgram, uint32_t subpassIndex, ResourceID contextPool) {
-		FramebufferSet* pFramebufferSet = RenderContext::getFramebufferSet(framebuffer);
-		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
+		FramebufferSet* pFramebufferSet = RenderContext::GetFramebufferSet(framebuffer);
+		RenderProgram* pRenderProgram = RenderContext::GetRenderProgram(renderProgram);
 		
 		return SubContext(m_pCore.get(), pFramebufferSet, pRenderProgram, subpassIndex, contextPool);
 	}
@@ -697,7 +697,7 @@ namespace sa {
 
 
 	Format Renderer::getAttachmentFormat(ResourceID renderProgram, uint32_t attachmentIndex) const {
-		RenderProgram* pRenderProgram = RenderContext::getRenderProgram(renderProgram);
+		RenderProgram* pRenderProgram = RenderContext::GetRenderProgram(renderProgram);
 		vk::AttachmentDescription attachment = pRenderProgram->getAttachment(attachmentIndex);
 		return (Format)attachment.format;
 	}
@@ -707,10 +707,10 @@ namespace sa {
 
 namespace ImGui {
 	void Image(sa::Texture texture, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, const ImVec4& tint_col, const ImVec4& border_col) {
-		sa::Renderer::get().imGuiImage(texture, size, uv0, uv1, tint_col, border_col);
+		sa::Renderer::Get().imGuiImage(texture, size, uv0, uv1, tint_col, border_col);
 	}
 
 	bool ImageButton(sa::Texture texture, const ImVec2& size, const ImVec2& uv0, const ImVec2& uv1, int frame_padding, const ImVec4& bg_col, const ImVec4& tint_col) {
-		return sa::Renderer::get().imGuiImageButton(texture, size, uv0, uv1, frame_padding, bg_col, tint_col);
+		return sa::Renderer::Get().imGuiImageButton(texture, size, uv0, uv1, frame_padding, bg_col, tint_col);
 	}
 }

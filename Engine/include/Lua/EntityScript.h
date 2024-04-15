@@ -32,7 +32,7 @@ namespace sa {
 		virtual void deserialize(void* pDoc) override;
 
 		template<typename ...Args>
-		static void call(const sol::safe_function func, Args&& ...args);
+		static void Call(const sol::safe_function func, Args&& ...args);
 
 		template<typename Event, auto ...values>
 		void listener(const Event& e);
@@ -45,7 +45,7 @@ namespace sa {
 
 
 	template <typename ... Args>
-	void EntityScript::call(const sol::safe_function func, Args&&... args) {
+	void EntityScript::Call(const sol::safe_function func, Args&&... args) {
 		auto result = func(args...);
 		if (result.status() != sol::call_status::ok) {
 			sol::error error = result;
@@ -57,7 +57,7 @@ namespace sa {
 	void EntityScript::listener(const Event& e) {
 		sol::safe_function function = env[Event::CallbackName];
 		env.set_on(function);
-		call(function, ((&e)->*values) ...);
+		Call(function, ((&e)->*values) ...);
 	}
 
 	template <typename Event, auto... values>

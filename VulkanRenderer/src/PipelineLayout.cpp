@@ -504,7 +504,7 @@ namespace sa {
 			layoutInfo.setPNext(&flagCreateInfo);
 			layoutInfo.setBindings(layoutBindings);
 
-			m_descriptorSetLayouts[set] = ResourceManager::get().insert<vk::DescriptorSetLayout>(m_pCore->getDevice().createDescriptorSetLayout(layoutInfo));
+			m_descriptorSetLayouts[set] = ResourceManager::Get().insert<vk::DescriptorSetLayout>(m_pCore->getDevice().createDescriptorSetLayout(layoutInfo));
 
 			for (const auto& binding : info.bindings) {
 				if (!descriptorTypes.count((vk::DescriptorType)binding.type)) {
@@ -524,7 +524,7 @@ namespace sa {
 					.maxSets = UINT16_MAX,
 			};
 			poolInfo.setPoolSizes(poolSizes);
-			m_descriptorPool = ResourceManager::get().insert<vk::DescriptorPool>(m_pCore->getDevice().createDescriptorPool(poolInfo));
+			m_descriptorPool = ResourceManager::Get().insert<vk::DescriptorPool>(m_pCore->getDevice().createDescriptorPool(poolInfo));
 		}
 		
 	}
@@ -555,7 +555,7 @@ namespace sa {
 					SA_DEBUG_LOG_ERROR("Set index ", i, " does not exist! All sets from 0 to ", maxSet, " must be used!");
 					throw std::runtime_error("Set index does not exist");
 				}
-				const vk::DescriptorSetLayout* pLayout = ResourceManager::get().get<vk::DescriptorSetLayout>(descriptorSetLayouts.at(i));
+				const vk::DescriptorSetLayout* pLayout = ResourceManager::Get().get<vk::DescriptorSetLayout>(descriptorSetLayouts.at(i));
 				if (!pLayout) {
 					SA_DEBUG_LOG_ERROR("Invalid descriptor layout ID ", descriptorSetLayouts.at(i));
 					continue;
@@ -567,12 +567,12 @@ namespace sa {
 		layoutInfo.setPushConstantRanges(vk_pushConstantRanges);
 		layoutInfo.setSetLayouts(vk_descriptorSetLayouts);
 		vk::PipelineLayout l = m_pCore->getDevice().createPipelineLayout(layoutInfo);
-		m_layout = ResourceManager::get().insert(l);
+		m_layout = ResourceManager::Get().insert(l);
 	}
 
 	PipelineLayout::~PipelineLayout() {
 		if(m_layout != NULL_RESOURCE)
-			ResourceManager::get().remove<vk::PipelineLayout>(m_layout);
+			ResourceManager::Get().remove<vk::PipelineLayout>(m_layout);
 	}
 
 	DescriptorSetFactory PipelineLayout::beginDescriptorSet(uint32_t setIndex) {
@@ -580,7 +580,7 @@ namespace sa {
 	}
 
 	PipelineLayout::PipelineLayout()
-		: m_pCore(Renderer::get().getCore())
+		: m_pCore(Renderer::Get().getCore())
 		, m_layout(NULL_RESOURCE)
 		, m_descriptorPool(NULL_RESOURCE)
 		, m_isGraphicsPipeline(true)
@@ -653,23 +653,23 @@ namespace sa {
 
 	void PipelineLayout::destroy() {
 		for (auto id : m_allocatedDescriptorSets) {
-			ResourceManager::get().remove<DescriptorSet>(id);
+			ResourceManager::Get().remove<DescriptorSet>(id);
 		}
 		m_allocatedDescriptorSets.clear();
 		std::set<ResourceID> allocatedDescSets;
 		m_allocatedDescriptorSets.swap(allocatedDescSets);
 
 		for (const auto& [set, layout] : m_descriptorSetLayouts) {
-			ResourceManager::get().remove<vk::DescriptorSetLayout>(layout);
+			ResourceManager::Get().remove<vk::DescriptorSetLayout>(layout);
 		}
 
 		if (m_descriptorPool != NULL_RESOURCE) {
-			ResourceManager::get().remove<vk::DescriptorPool>(m_descriptorPool);
+			ResourceManager::Get().remove<vk::DescriptorPool>(m_descriptorPool);
 		}
 		m_descriptorPool = NULL_RESOURCE;
 
 		if(m_layout != NULL_RESOURCE) {
-			ResourceManager::get().remove<vk::PipelineLayout>(m_layout);
+			ResourceManager::Get().remove<vk::PipelineLayout>(m_layout);
 		}
 		m_layout = NULL_RESOURCE;
 
@@ -736,8 +736,8 @@ namespace sa {
 			throw std::runtime_error("Invalid set index!");
 		}
 
-		vk::DescriptorPool* pDescriptorPool = ResourceManager::get().get<vk::DescriptorPool>(m_descriptorPool);
-		vk::DescriptorSetLayout* pLayout = ResourceManager::get().get<vk::DescriptorSetLayout>(m_descriptorSetLayouts.at(setIndex));
+		vk::DescriptorPool* pDescriptorPool = ResourceManager::Get().get<vk::DescriptorPool>(m_descriptorPool);
+		vk::DescriptorSetLayout* pLayout = ResourceManager::Get().get<vk::DescriptorSetLayout>(m_descriptorSetLayouts.at(setIndex));
 
 		if (!pDescriptorPool) {
 			SA_DEBUG_LOG_ERROR("Invalid descriptor pool ID", m_descriptorPool);
@@ -751,7 +751,7 @@ namespace sa {
 
 		DescriptorSet descriptorSet;
 		descriptorSet.create(m_pCore->getDevice(), *pDescriptorPool, m_pCore->getQueueCount(), m_descriptorSetLayoutInfos.at(setIndex), *pLayout, setIndex);
-		ResourceID id = ResourceManager::get().insert<DescriptorSet>(descriptorSet);
+		ResourceID id = ResourceManager::Get().insert<DescriptorSet>(descriptorSet);
 		m_allocatedDescriptorSets.insert(id);
 		return id;
 	}

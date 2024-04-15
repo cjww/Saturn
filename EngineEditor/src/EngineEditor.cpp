@@ -31,7 +31,7 @@ namespace sa {
 			ImGui::Spacing();
 			if (ImGui::Button("Create") || pressedEnter) {
 				if (!name.empty()) {
-					Scene* scene = AssetManager::get().createAsset<Scene>(name);
+					Scene* scene = AssetManager::Get().createAsset<Scene>(name);
 					m_pEngine->setScene(scene);
 					ImGui::CloseCurrentPopup();
 					erromsg = "";
@@ -247,7 +247,7 @@ namespace sa {
 		Scene* pScene = m_pEditingScene;
 
 		m_pEngine->setScene(pScene);
-		AssetManager::get().removeAsset(pSandbox->getID());
+		AssetManager::Get().removeAsset(pSandbox->getID());
 		pSandbox = nullptr;
 		*/
 
@@ -345,7 +345,7 @@ namespace sa {
 		
 		m_editorModules.push_back(std::make_unique<DirectoryView>(&engine, this));
 
-		//Application::get()->pushLayer(new TestLayer);
+		//Application::Get()->pushLayer(new TestLayer);
 
 		Image logo("resources/Logo-white.png");
 		m_logoTex.create2D(logo, true);
@@ -500,6 +500,7 @@ namespace sa {
 
 	void EngineEditor::onUpdate(float dt) {
 		SA_PROFILE_FUNCTION();
+		m_pEngine->collectStatistics(dt);
 		if (m_pEngine->getCurrentScene()) {
 			if (m_state == State::PLAYING) {
 				m_pEngine->getCurrentScene()->runtimeUpdate(dt);
@@ -527,7 +528,7 @@ namespace sa {
 
 		m_pEngine->setScene(nullptr);
 		m_pEngine->trigger<editor_event::EntityDeselected>({});
-		AssetManager::get().clear();
+		AssetManager::Get().clear();
 
 		// Load Project
 		using namespace simdjson;
@@ -548,16 +549,16 @@ namespace sa {
 
 		ImGui::LoadIniSettingsFromDisk("imgui.ini");
 
-		AssetManager::get().rescanAssets();
+		AssetManager::Get().rescanAssets();
 
 		if (doc["startScene"].error() == SUCCESS) {
 			std::string_view startScene = doc["startScene"].get_string().take_value();
 			char* endStr;
 			UUID sceneID = strtoull(startScene.data(), &endStr, 10);
-			Scene* scene = AssetManager::get().getAsset<Scene>(sceneID);
+			Scene* scene = AssetManager::Get().getAsset<Scene>(sceneID);
 			if (!scene) {
 				SA_DEBUG_LOG_WARNING("No startup scene");
-				scene = AssetManager::get().createAsset<Scene>("Default Scene");
+				scene = AssetManager::Get().createAsset<Scene>("Default Scene");
 			}
 			m_pEngine->setScene(scene);
 		}

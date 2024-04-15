@@ -29,7 +29,7 @@ namespace sa {
 
 		comp::Model* model = entity.addComponent<comp::Model>();
 
-		m_completions.insert({ entity, sa::AssetManager::get().importAsset<ModelAsset>(modelPath) });
+		m_completions.insert({ entity, sa::AssetManager::Get().importAsset<ModelAsset>(modelPath) });
 		
 		//m_completions.at(entity).wait();
 
@@ -55,7 +55,7 @@ namespace sa {
 		box.addComponent<comp::Transform>()->position = position;
 		box.addComponent<comp::RigidBody>(false);
 		box.addComponent<comp::BoxCollider>(Vector3(scale, scale, scale));
-		box.addComponent<comp::Model>()->model = AssetManager::get().getCube();
+		box.addComponent<comp::Model>()->model = AssetManager::Get().getCube();
 
 		return box;
 	}
@@ -69,7 +69,7 @@ namespace sa {
 		
 		/*
 		Entity groundEntity = engine.getCurrentScene()->createEntity("Ground");
-		groundEntity.addComponent<comp::Model>()->modelID = AssetManager::get().loadQuad();
+		groundEntity.addComponent<comp::Model>()->modelID = AssetManager::Get().loadQuad();
 		comp::Transform* transform = groundEntity.addComponent<comp::Transform>();
 		transform->scale = { 500, 500, 1 };
 		transform->rotation = glm::rotate(transform->rotation, glm::radians(-90.f), { 1, 0, 0 });

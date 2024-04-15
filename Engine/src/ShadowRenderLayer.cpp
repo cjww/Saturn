@@ -13,13 +13,13 @@ namespace sa {
 			vertexShader = *pMaterialShader->getShaderStage(ShaderStageFlagBits::VERTEX);
 		}
 		else {
-			auto code = ReadSPVFile((Engine::getShaderDirectory() / "ForwardPlusColorPass.vert.spv").generic_string().c_str());
+			auto code = ReadSPVFile((Engine::GetShaderDirectory() / "ForwardPlusColorPass.vert.spv").generic_string().c_str());
 			vertexShader.create(code, ShaderStageFlagBits::VERTEX);
 		}
 
 
 		Shader fragmentShader;
-		auto code = ReadSPVFile((Engine::getShaderDirectory() / "ShadowPass.frag.spv").generic_string().c_str());
+		auto code = ReadSPVFile((Engine::GetShaderDirectory() / "ShadowPass.frag.spv").generic_string().c_str());
 		fragmentShader.create(code, ShaderStageFlagBits::FRAGMENT);
 
 		Shader shaders[] = { vertexShader, fragmentShader };
@@ -32,7 +32,7 @@ namespace sa {
 		settings.dynamicStates.push_back(DynamicState::DEPTH_BIAS_ENABLE);
 		settings.dynamicStates.push_back(DynamicState::CULL_MODE);
 
-		data.pipeline = Renderer::get().createGraphicsPipeline(data.pipelineLayout, shaders, 2, m_depthRenderProgram, 0, { 0, 0 }, settings);
+		data.pipeline = Renderer::Get().createGraphicsPipeline(data.pipelineLayout, shaders, 2, m_depthRenderProgram, 0, { 0, 0 }, settings);
 		
 		data.isInitialized = true;
 	}
@@ -120,7 +120,7 @@ namespace sa {
 		context.bindIndexBuffer(collection.getIndexBuffer());
 
 		Rect viewport = {};
-		viewport.extent = Renderer::get().getFramebufferExtent(renderData.depthFramebuffers[layer]);
+		viewport.extent = Renderer::Get().getFramebufferExtent(renderData.depthFramebuffers[layer]);
 		viewport.offset = { 0, 0 };
 
 		context.setViewport(viewport);
@@ -189,7 +189,7 @@ namespace sa {
 				cascadePoints[j] = cascadePoints[j] + (dist * lastSplitDistance);
 			}
 
-			// get center
+			// Get center
 			glm::vec3 center(0.f);
 			for (uint32_t j = 0; j < 8; j++) {
 				center += cascadePoints[j];

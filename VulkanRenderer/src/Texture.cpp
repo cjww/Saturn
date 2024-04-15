@@ -32,7 +32,7 @@ namespace sa {
 		if (m_usage & TextureUsageFlagBits::DEPTH_ATTACHMENT) {
 			aspect = vk::ImageAspectFlagBits::eDepth;
 		}
-		return ResourceManager::get().insert<vk::ImageView>(m_pCore->createImageView(
+		return ResourceManager::Get().insert<vk::ImageView>(m_pCore->createImageView(
 			(vk::ImageViewType)viewType,
 			m_pImage->image,
 			m_pImage->format,
@@ -44,7 +44,7 @@ namespace sa {
 		));
 	}
 
-	Texture::Texture() : Texture(Renderer::get().m_pCore.get()) {
+	Texture::Texture() : Texture(Renderer::Get().m_pCore.get()) {
 
 	}
 
@@ -56,7 +56,7 @@ namespace sa {
 		if (m_usage & TextureUsageFlagBits::DEPTH_ATTACHMENT) {
 			aspect = vk::ImageAspectFlagBits::eDepth;
 			if (format == Format::UNDEFINED) {
-				format = Renderer::get().getDefaultDepthFormat();
+				format = Renderer::Get().getDefaultDepthFormat();
 			}
 		}
 
@@ -64,7 +64,7 @@ namespace sa {
 		mipLevels = std::min(mipLevels, (uint32_t)floor(log2(std::max(extent.width, extent.height))) + 1);
 
 		if (format == Format::UNDEFINED) {
-			format = Renderer::get().selectFormat(m_usage);
+			format = Renderer::Get().selectFormat(m_usage);
 		}
 
 		m_pImage = m_pCore->createImage2D(
@@ -94,7 +94,7 @@ namespace sa {
 			usage |= TextureUsageFlagBits::TRANSFER_SRC;
 		}
 
-		Format format = Renderer::get().selectFormat(
+		Format format = Renderer::Get().selectFormat(
 			sa::FormatPrecisionFlagBits::e8Bit,
 			sa::FormatDimensionFlagBits::e4,
 			sa::FormatTypeFlagBits::ANY_TYPE,
@@ -120,7 +120,7 @@ namespace sa {
 			.srcBuffer = m_pStagingBuffer,
 			.dstImage = m_pImage,
 		};
-		m_pDataTransfer = Renderer::get().queueTransfer(transfer);
+		m_pDataTransfer = Renderer::Get().queueTransfer(transfer);
 	}
 
 
@@ -139,7 +139,7 @@ namespace sa {
 
 		sa::Extent subExtent = { image.getWidth() / 4, image.getHeight() / 3 };
 
-		Format format = Renderer::get().selectFormat(
+		Format format = Renderer::Get().selectFormat(
 			sa::FormatPrecisionFlagBits::e8Bit,
 			sa::FormatDimensionFlagBits::e4,
 			sa::FormatTypeFlagBits::ANY_TYPE,
@@ -183,7 +183,7 @@ namespace sa {
 			.srcBuffer = m_pStagingBuffer,
 			.dstImage = m_pImage,
 		};
-		m_pDataTransfer = Renderer::get().queueTransfer(transfer);
+		m_pDataTransfer = Renderer::Get().queueTransfer(transfer);
 	}
 
 	void Texture::createCube(const std::vector<Image>& images, bool generateMipmaps) {
@@ -197,7 +197,7 @@ namespace sa {
 			usage |= TextureUsageFlagBits::TRANSFER_SRC;
 		}
 
-		Format format = Renderer::get().selectFormat(
+		Format format = Renderer::Get().selectFormat(
 			sa::FormatPrecisionFlagBits::e8Bit,
 			sa::FormatDimensionFlagBits::e4,
 			sa::FormatTypeFlagBits::ANY_TYPE,
@@ -231,7 +231,7 @@ namespace sa {
 			.srcBuffer = m_pStagingBuffer,
 			.dstImage = m_pImage,
 		};
-		m_pDataTransfer = Renderer::get().queueTransfer(transfer);
+		m_pDataTransfer = Renderer::Get().queueTransfer(transfer);
 	}
 
 
@@ -243,7 +243,7 @@ namespace sa {
 		mipLevels = std::min(mipLevels, (uint32_t)floor(log2(std::max(extent.width, std::max(extent.height, extent.depth)))) + 1);
 
 		if (format == Format::UNDEFINED) {
-			format = Renderer::get().selectFormat(m_usage);
+			format = Renderer::Get().selectFormat(m_usage);
 		}
 
 		m_pImage = m_pCore->createImage3D(
@@ -255,7 +255,7 @@ namespace sa {
 			arrayLayers);
 
 
-		m_view = ResourceManager::get().insert<vk::ImageView>(m_pCore->createImageView(
+		m_view = ResourceManager::Get().insert<vk::ImageView>(m_pCore->createImageView(
 			vk::ImageViewType::e3D,
 			m_pImage->image,
 			(vk::Format)format,
@@ -336,7 +336,7 @@ namespace sa {
 	}
 
 	vk::ImageView* Texture::getView() const {
-		return ResourceManager::get().get<vk::ImageView>(m_view);
+		return ResourceManager::Get().get<vk::ImageView>(m_view);
 	}
 
 	TextureUsageFlags Texture::getUsageFlags() const {
@@ -376,12 +376,12 @@ namespace sa {
 	void Texture::destroy() {
 		m_pCore->getDevice().waitIdle();
 		if (m_pDataTransfer) {
-			if (sa::Renderer::get().cancelTransfer(m_pDataTransfer)) {
+			if (sa::Renderer::Get().cancelTransfer(m_pDataTransfer)) {
 				SA_DEBUG_LOG_INFO("Canceled image transfer");
 			}
 		}
 		if (isValidView()) {
-			ResourceManager::get().remove<vk::ImageView>(m_view);
+			ResourceManager::Get().remove<vk::ImageView>(m_view);
 			m_view = NULL_RESOURCE;
 		}
 		if (isValidImage()) {

@@ -32,7 +32,7 @@ namespace sa {
 		return m_type != other.m_type;
 	}
 
-	std::vector<ComponentType>& ComponentType::getRegisteredComponents() {
+	std::vector<ComponentType>& ComponentType::GetRegisteredComponents() {
 		return s_registeredComponents;
 	}
 

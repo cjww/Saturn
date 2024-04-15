@@ -36,15 +36,8 @@ private:
 	float m_zoom;
 	float m_focusPointDistance;
 
-	struct Statistics {
-		float frameTime;
-		sa::DeviceMemoryStats gpuMemoryStats;
-		size_t totalGPUMemoryUsage;
-		size_t totalGPUMemoryBudget;
-
-	} m_statistics;
-	float m_statsUpdateTime;
 	float m_statsTimer;
+
 	std::array<float, 100> m_frameTimeGraph;
 	std::array<float, 100> m_gpuMemoryData;
 

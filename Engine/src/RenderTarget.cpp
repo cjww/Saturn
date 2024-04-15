@@ -18,7 +18,7 @@ namespace sa {
 
 	RenderTarget::RenderTarget(const AssetHeader& header) 
 		: Asset(header)
-		, m_renderer(Renderer::get())
+		, m_renderer(Renderer::Get())
 		, m_isActive(true)
 		, m_extent({256, 256})
 		, m_pOutputTexture(nullptr)
@@ -86,7 +86,7 @@ namespace sa {
 	const Texture& RenderTarget::getOutputTexture() const {
 		if (m_pOutputTexture)
 			return m_pOutputTexture->getTexture();
-		return *sa::AssetManager::get().loadDefaultBlackTexture();
+		return *sa::AssetManager::Get().loadDefaultBlackTexture();
 	}
 
 	void RenderTarget::setOutputTexture(const DynamicTexture& dynamicTexture) {

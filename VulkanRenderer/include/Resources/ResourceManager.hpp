@@ -96,7 +96,7 @@ namespace sa {
 		ResourceManager() = default;
 	public:
 
-		static ResourceManager& get();
+		static ResourceManager& Get();
 		virtual ~ResourceManager();
 
 		template<typename T>

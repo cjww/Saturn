@@ -208,7 +208,7 @@ int main() {
 			});
 
 
-		sa::Renderer& renderer = sa::Renderer::get();
+		sa::Renderer& renderer = sa::Renderer::Get();
 
 
 		ResourceID renderProgram = renderer.createRenderProgram()

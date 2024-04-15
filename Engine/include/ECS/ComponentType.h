@@ -32,9 +32,9 @@ namespace sa{
 		}
 
 		template<typename Comp, std::enable_if_t<std::is_base_of_v<sa::ComponentBase, std::decay_t<Comp>>, bool> = true>
-		static void registerComponent();
+		static void RegisterComponent();
 
-		static std::vector<ComponentType>& getRegisteredComponents();
+		static std::vector<ComponentType>& GetRegisteredComponents();
 
 
 	};
@@ -69,7 +69,7 @@ namespace sa{
 	}
 
 	template<typename Comp, std::enable_if_t<std::is_base_of_v<sa::ComponentBase, std::decay_t<Comp>>, bool>>
-	inline void ComponentType::registerComponent() {
+	inline void ComponentType::RegisterComponent() {
 		s_registeredComponents.push_back(getComponentType<Comp>());
 	}
 

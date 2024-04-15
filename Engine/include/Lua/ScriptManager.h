@@ -66,10 +66,10 @@ namespace sa {
 
 
 		template<typename ...Args>
-		static void tryCall(const sol::environment& env, const std::string& functionName, Args&& ...args);
+		static void TryCall(const sol::environment& env, const std::string& functionName, Args&& ...args);
 
 		template<typename ...Args>
-		static void call(const sol::safe_function func, Args&& ...args);
+		static void Call(const sol::safe_function func, Args&& ...args);
 		
 
 	};
@@ -82,7 +82,7 @@ namespace sa {
 		pScript->env.set_on(function);
 		if (function != sol::nil) {
 			conn = m_eventEmitter.on<Event>([=](const Event& e, Scene&) {
-				call(function, ((&e)->*args)...);
+				Call(function, ((&e)->*args)...);
 			});
 		}
 		return conn;
@@ -90,7 +90,7 @@ namespace sa {
 	 */
 
 	template<typename ...Args>
-	inline void ScriptManager::tryCall(const sol::environment& env, const std::string& functionName, Args&& ...args) {
+	inline void ScriptManager::TryCall(const sol::environment& env, const std::string& functionName, Args&& ...args) {
 		sol::safe_function function = env[functionName];
 		if (function == sol::nil) {
 			return;
@@ -104,7 +104,7 @@ namespace sa {
 	}
 
 	template <typename ... Args>
-	void ScriptManager::call(const sol::safe_function func, Args&&... args) {
+	void ScriptManager::Call(const sol::safe_function func, Args&&... args) {
 		auto result = func(args...);
 		if (result.status() != sol::call_status::ok) {
 			sol::error error = result;

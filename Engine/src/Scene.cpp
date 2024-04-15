@@ -227,7 +227,7 @@ namespace sa {
 
 	Scene* Scene::clone(const std::string& name) {
 
-		auto clone = AssetManager::get().createAsset<Scene>(name, "");
+		auto clone = AssetManager::Get().createAsset<Scene>(name, "");
 		forEachEntity([&](Entity entity) {
 			entity.clone(clone);
 		});
@@ -262,7 +262,7 @@ namespace sa {
 		auto pScript = m_scriptManager.addScript(entity, path, serializedData);
 		if (pScript) {
 			if(m_runtime)
-				m_scriptManager.tryCall(pScript->env, scene_event::SceneStart::CallbackName);
+				m_scriptManager.TryCall(pScript->env, scene_event::SceneStart::CallbackName);
 		}
 		return pScript;
 	}

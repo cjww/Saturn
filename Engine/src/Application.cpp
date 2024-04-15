@@ -13,7 +13,7 @@ namespace sa {
 
 		m_engine.setup(m_pWindow.get(), m_imGuiEnabled);
 
-		m_thisInstance = this;
+		s_thisInstance = this;
 	}
 
 	Application::~Application() {
@@ -22,8 +22,8 @@ namespace sa {
 		}
 	}
 
-	Application* Application::get() {
-		return m_thisInstance;
+	Application* Application::Get() {
+		return s_thisInstance;
 	}
 	
 	void Application::pushLayer(IApplicationLayer* layer) {

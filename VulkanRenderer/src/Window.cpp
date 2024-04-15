@@ -192,7 +192,7 @@ namespace sa {
 		if (!pCursor) {
 			return NULL_RESOURCE;
 		}
-		return ResourceManager::get().insert<GLFWcursor*>(pCursor);
+		return ResourceManager::Get().insert<GLFWcursor*>(pCursor);
 	}
 
 	ResourceID Window::CreateCursor(StandardCursor cursor) {
@@ -200,7 +200,7 @@ namespace sa {
 		if (!pCursor) {
 			return NULL_RESOURCE;
 		}
-		return ResourceManager::get().insert<GLFWcursor*>(pCursor);
+		return ResourceManager::Get().insert<GLFWcursor*>(pCursor);
 	}
 
 	Window::Window(uint32_t width, uint32_t height, const char* title) {
@@ -208,7 +208,7 @@ namespace sa {
 			if (!glfwInit()) {
 				throw std::runtime_error("Failed to initialize GLFW!");
 			}
-			ResourceManager::get().setCleanupFunction<GLFWcursor*>([](GLFWcursor** p) { glfwDestroyCursor(*p); });
+			ResourceManager::Get().setCleanupFunction<GLFWcursor*>([](GLFWcursor** p) { glfwDestroyCursor(*p); });
 		}
 		s_windowCount++;
 		create(width, height, title, nullptr);
@@ -219,7 +219,7 @@ namespace sa {
 			if (!glfwInit()) {
 				throw std::runtime_error("Failed to initialize GLFW!");
 			}
-			ResourceManager::get().setCleanupFunction<GLFWcursor*>([](GLFWcursor** p) { glfwDestroyCursor(*p); });
+			ResourceManager::Get().setCleanupFunction<GLFWcursor*>([](GLFWcursor** p) { glfwDestroyCursor(*p); });
 		}
 		s_windowCount++;
 
@@ -242,7 +242,7 @@ namespace sa {
 
 			s_windowCount--;
 			if (s_windowCount == 0) {
-				ResourceManager::get().clearContainer<GLFWcursor*>();
+				ResourceManager::Get().clearContainer<GLFWcursor*>();
 				glfwTerminate();
 			}
 		}
@@ -496,7 +496,7 @@ namespace sa {
 			glfwSetCursor(m_window, NULL);
 			return;
 		}
-		GLFWcursor** pCursor = ResourceManager::get().get<GLFWcursor*>(cursor);
+		GLFWcursor** pCursor = ResourceManager::Get().get<GLFWcursor*>(cursor);
 		if (!pCursor) {
 			SA_DEBUG_LOG_WARNING("Tried to set invalid cursor");
 			return;

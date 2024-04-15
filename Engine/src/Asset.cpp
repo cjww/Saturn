@@ -245,7 +245,7 @@ namespace sa {
 		file.write(reinterpret_cast<const char*>(&header), sizeof(AssetHeader));
 	}
 
-	void Asset::waitAllAssets() {
+	void Asset::WaitAllAssets() {
 		s_taskExecutor.wait_for_all();
 	}
 

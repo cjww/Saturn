@@ -15,7 +15,7 @@ namespace sa {
 
 		//SA_PROFILER_BEGIN_SESSION();
 
-		Scene* pScene = sa::AssetManager::get().createAsset<Scene>("MyScene");
+		Scene* pScene = sa::AssetManager::Get().createAsset<Scene>("MyScene");
 		
 		Entity cameraEntity = pScene->createEntity("MainCamera");
 		comp::Transform* cameraTransform = cameraEntity.addComponent<comp::Transform>();
@@ -24,7 +24,7 @@ namespace sa {
 
 		Entity box = pScene->createEntity("Box");
 		box.addComponent<comp::Transform>();
-		box.addComponent<comp::Model>()->modelID = sa::AssetManager::get().loadCube()->getID();
+		box.addComponent<comp::Model>()->modelID = sa::AssetManager::Get().loadCube()->getID();
 		box.addScript("test2.lua");
 
 		Entity light = pScene->createEntity("Light");

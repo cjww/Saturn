@@ -1,7 +1,7 @@
 #include "ImGuiRenderLayer.h"
 
 ImGuiRenderLayer::ImGuiRenderLayer(sa::RenderWindow* pWindow)
-	: m_renderer(sa::Renderer::get())
+	: m_renderer(sa::Renderer::Get())
 	, m_pWindow(pWindow)
 {
 	init();
@@ -39,7 +39,7 @@ void ImGuiRenderLayer::render(sa::RenderContext& context, const sa::Texture& tex
 }
 
 void ImGuiRenderLayer::onWindowResize(sa::Extent newExtent) {
-	sa::Renderer::get().cleanupImGui();
+	sa::Renderer::Get().cleanupImGui();
 	cleanup();
 	init();
 }

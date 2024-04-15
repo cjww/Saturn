@@ -10,8 +10,8 @@ namespace sa {
         : m_isInitialized(false)
         , m_pipeline(NULL_RESOURCE)
     {
-        m_shaders[0].create(ReadSPVFile((Engine::getShaderDirectory() / "DebugDrawing.vert.spv").generic_string().c_str()));
-        m_shaders[1].create(ReadSPVFile((Engine::getShaderDirectory() / "DebugDrawing.frag.spv").generic_string().c_str()));
+        m_shaders[0].create(ReadSPVFile((Engine::GetShaderDirectory() / "DebugDrawing.vert.spv").generic_string().c_str()));
+        m_shaders[1].create(ReadSPVFile((Engine::GetShaderDirectory() / "DebugDrawing.frag.spv").generic_string().c_str()));
 
         m_pipelineLayout.createFromShaders(m_shaders.data(), m_shaders.size());
 
@@ -33,11 +33,11 @@ namespace sa {
         settings.dynamicStates.push_back(DynamicState::VIEWPORT);
         settings.dynamicStates.push_back(DynamicState::SCISSOR);
 
-        m_pipeline = Renderer::get().createGraphicsPipeline(m_pipelineLayout, m_shaders.data(), m_shaders.size(), renderProgram, 0, { 0, 0 }, settings);
+        m_pipeline = Renderer::Get().createGraphicsPipeline(m_pipelineLayout, m_shaders.data(), m_shaders.size(), renderProgram, 0, { 0, 0 }, settings);
 
         settings.polygonMode = PolygonMode::LINE;
         settings.topology = Topology::LINE_LIST;
-        m_wireframePipeline = Renderer::get().createGraphicsPipeline(m_pipelineLayout, m_shaders.data(), m_shaders.size(), renderProgram, 0, { 0, 0 }, settings);
+        m_wireframePipeline = Renderer::Get().createGraphicsPipeline(m_pipelineLayout, m_shaders.data(), m_shaders.size(), renderProgram, 0, { 0, 0 }, settings);
         
         m_isInitialized = true;
     }

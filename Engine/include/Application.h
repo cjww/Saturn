@@ -32,14 +32,14 @@ namespace sa {
 	
 		friend int ::main(int argc, char** argv);
 		
-		inline static Application* m_thisInstance = nullptr;
+		inline static Application* s_thisInstance = nullptr;
 
 	public:
 
 		Application(bool enableImGui);
 		virtual ~Application();
 
-		static Application* get();
+		static Application* Get();
 
 		void pushLayer(IApplicationLayer* layer);
 		void pushOverlay(IApplicationLayer* overlay);
@@ -54,7 +54,7 @@ namespace sa {
 
 	};
 	
-	static Application* createApplication(int argc, char** argv);
+	static Application* CreateApplication(int argc, char** argv);
 
 
 }

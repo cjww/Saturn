@@ -30,7 +30,7 @@ namespace sa {
 			m_lightCullingPipeline = NULL_RESOURCE;
 		}
 
-		auto code = ReadSPVFile((Engine::getShaderDirectory() / "LightCulling.comp.spv").generic_string().c_str());
+		auto code = ReadSPVFile((Engine::GetShaderDirectory() / "LightCulling.comp.spv").generic_string().c_str());
 		m_lightCullingLayout.createFromShaders({ code });
 		m_lightCullingShader.create(code, ShaderStageFlagBits::COMPUTE);
 		m_lightCullingPipeline = m_renderer.createComputePipeline(m_lightCullingShader, m_lightCullingLayout);
@@ -163,8 +163,8 @@ namespace sa {
 
 		//DEBUG
 		
-		m_debugHeatmapVertexShader.create(sa::ReadSPVFile((Engine::getShaderDirectory() / "DebugHeatmap.vert.spv").generic_string().c_str()), ShaderStageFlagBits::VERTEX);
-		m_debugHeatmapFragmentShader.create(sa::ReadSPVFile((Engine::getShaderDirectory() / "DebugHeatmap.frag.spv").generic_string().c_str()), ShaderStageFlagBits::FRAGMENT);
+		m_debugHeatmapVertexShader.create(sa::ReadSPVFile((Engine::GetShaderDirectory() / "DebugHeatmap.vert.spv").generic_string().c_str()), ShaderStageFlagBits::VERTEX);
+		m_debugHeatmapFragmentShader.create(sa::ReadSPVFile((Engine::GetShaderDirectory() / "DebugHeatmap.frag.spv").generic_string().c_str()), ShaderStageFlagBits::FRAGMENT);
 		m_debugHeatmapLayout.createFromShaders({ m_debugHeatmapVertexShader, m_debugHeatmapFragmentShader });
 
 		m_debugTextureFormat = sa::Format::R8G8B8A8_UNORM;

@@ -10,6 +10,14 @@
 
 namespace sa {
 
+	struct EngineStatistics {
+		float frameTime = 0.0f;
+		float avgFrameTime = 0.0f;
+		sa::DeviceMemoryStats gpuMemoryStats = {};
+		size_t drawCalls = 0;
+		size_t dispatchCalls = 0;
+	};
+
 
 	class Engine : public entt::dispatcher {
 	private:
@@ -24,14 +32,25 @@ namespace sa {
 		RenderWindow* m_pWindow;
 
 		AssetHolder<Scene> m_currentScene;
-		
+
+		struct {
+			float frameQueryTimer;
+			float memoryQueryTimer;
+			std::array<float, 60> frameTimes;
+			uint32_t frameTimeCount;
+		} m_statsQuery;
+
+
 		void onWindowResize(Extent newExtent);
 		void onRenderTargetResize(sa::engine_event::RenderTargetResized e);
 
 	public:
-		static const std::filesystem::path& getShaderDirectory();
-		static void setShaderDirectory(const std::filesystem::path& path);
+		static const std::filesystem::path& GetShaderDirectory();
+		static void SetShaderDirectory(const std::filesystem::path& path);
+		
+		static EngineStatistics& GetEngineStatistics();
 
+		void collectStatistics(float dt);
 
 		// Call this to set up engine
 		void setup(sa::RenderWindow* pWindow = nullptr, bool enableImgui = false);

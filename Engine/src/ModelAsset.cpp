@@ -136,7 +136,7 @@ namespace sa {
 				continue;
 			}
 
-			TextureAsset* tex = AssetManager::get().importAsset<TextureAsset>(finalPath, textureDir);
+			TextureAsset* tex = AssetManager::Get().importAsset<TextureAsset>(finalPath, textureDir);
 			if (!tex) {
 				SA_DEBUG_LOG_ERROR("Failed to create texture, ", finalPath.generic_string());
 				continue;
@@ -222,9 +222,9 @@ namespace sa {
 			SA_PROFILE_SCOPE(path.generic_string() + ", Load material [" + std::to_string(i) + "] " + aMaterial->GetName().C_Str());
 			SA_DEBUG_LOG_INFO("Load material: ", path.generic_string(), "-", aMaterial->GetName().C_Str());
 
-			Material* pMaterial = AssetManager::get().findAssetByPath<Material>(materialDir / aMaterial->GetName().C_Str());
+			Material* pMaterial = AssetManager::Get().findAssetByPath<Material>(materialDir / aMaterial->GetName().C_Str());
 			if(!pMaterial)
-				pMaterial = AssetManager::get().createAsset<Material>(aMaterial->GetName().C_Str(), materialDir);
+				pMaterial = AssetManager::Get().createAsset<Material>(aMaterial->GetName().C_Str(), materialDir);
 
 			// Base Color
 			//pMaterial->values.albedoColor = getColor(aMaterial, AI_MATKEY_COLOR_DIFFUSE);

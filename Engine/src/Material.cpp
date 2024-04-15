@@ -123,7 +123,7 @@ namespace sa {
 					m_allTextures.push_back(asset->getTexture());
 				}
 				else {
-					m_allTextures.push_back(*AssetManager::get().loadDefaultTexture());
+					m_allTextures.push_back(*AssetManager::Get().loadDefaultTexture());
 					m_allTexturesLoaded = false;
 				}
 			}

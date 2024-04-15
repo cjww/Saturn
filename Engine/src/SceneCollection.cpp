@@ -11,7 +11,7 @@ namespace sa {
 		m_indexCount = 0;
 		m_uniqueMeshCount = 0;
 
-		sa::Renderer& renderer = sa::Renderer::get();
+		sa::Renderer& renderer = sa::Renderer::Get();
 
 		m_indirectIndexedBuffer.create(BufferType::INDIRECT);
 		m_vertexBuffer.create(BufferType::VERTEX);
@@ -305,7 +305,7 @@ namespace sa {
 	}
 
 	MaterialShader* MaterialShaderCollection::getMaterialShader() const {
-		return AssetManager::get().getAsset<MaterialShader>(m_materialShaderID);
+		return AssetManager::Get().getAsset<MaterialShader>(m_materialShaderID);
 	}
 
 	void SceneCollection::addQueuedEntities() {
@@ -313,7 +313,7 @@ namespace sa {
 			const Entity& entity = *it;
 
 			if (m_entityModels.count(entity)) { // if already added, remove old one
-				ModelAsset* pModelAsset = AssetManager::get().getAsset<ModelAsset>(m_entityModels[entity]);
+				ModelAsset* pModelAsset = AssetManager::Get().getAsset<ModelAsset>(m_entityModels[entity]);
 				removeObject(entity, pModelAsset);
 			}
 
@@ -341,7 +341,7 @@ namespace sa {
 		m_entitiesToAdd.erase(e.entity);
 
 		if (m_entityModels.count(e.entity)) {
-			sa::ModelAsset* pModelAsset = AssetManager::get().getAsset<sa::ModelAsset>(m_entityModels[e.entity]);
+			sa::ModelAsset* pModelAsset = AssetManager::Get().getAsset<sa::ModelAsset>(m_entityModels[e.entity]);
 			removeObject(e.entity, pModelAsset);
 			m_entityModels.erase(e.entity);
 		}
@@ -388,7 +388,7 @@ namespace sa {
 	SceneCollection::SceneCollection(CollectionMode mode)
 		: m_mode(mode)
 	{
-		sa::Renderer& renderer = sa::Renderer::get();
+		sa::Renderer& renderer = sa::Renderer::Get();
 
 		uint32_t lightCount = 0U;
 		m_lightBuffer.create(BufferType::STORAGE, sizeof(uint32_t), &lightCount);
@@ -480,7 +480,7 @@ namespace sa {
 				pMaterialShader = pMaterial->getMaterialShader().getAsset();
 			}
 			else {
-				pMaterialShader = AssetManager::get().getDefaultMaterialShader();
+				pMaterialShader = AssetManager::Get().getDefaultMaterialShader();
 			}
 			MaterialShaderCollection& collection = getMaterialShaderCollection(pMaterialShader);
 			collection.addMesh(pModelAsset, i, entity);
@@ -521,7 +521,7 @@ namespace sa {
 				pMaterialShader = pMaterial->getMaterialShader().getAsset();
 			}
 			else {
-				pMaterialShader = AssetManager::get().getDefaultMaterialShader();
+				pMaterialShader = AssetManager::Get().getDefaultMaterialShader();
 			}
 			MaterialShaderCollection& collection = getMaterialShaderCollection(pMaterialShader);
 			collection.removeMesh(pModelAsset, i, entity);

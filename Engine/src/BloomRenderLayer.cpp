@@ -99,7 +99,7 @@ namespace sa {
 	void BloomRenderLayer::init() {
 		if (m_isInitialized)
 			return;
-		auto code = ReadSPVFile((Engine::getShaderDirectory() / "BloomShader.comp.spv").generic_string().c_str());
+		auto code = ReadSPVFile((Engine::GetShaderDirectory() / "BloomShader.comp.spv").generic_string().c_str());
 
 
 		m_bloomShader.create(code, ShaderStageFlagBits::COMPUTE);

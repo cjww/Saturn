@@ -18,8 +18,8 @@ namespace sa {
 
 	};
 
-	Application* createApplication(int argc, char** argv) {
-		Engine::setShaderDirectory("../Engine/shaders");
+	Application* CreateApplication(int argc, char** argv) {
+		Engine::SetShaderDirectory("../Engine/shaders");
 		return new EditorApp(argc, argv);
 	}
 

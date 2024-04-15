@@ -125,7 +125,7 @@ namespace sa {
 
 		Renderer();
 	public:
-		static Renderer& get();
+		static Renderer& Get();
 		virtual ~Renderer();
 
 		VulkanCore* getCore() const;

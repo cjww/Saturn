@@ -156,24 +156,33 @@ namespace sa {
 		VmaBudget* budgets = new VmaBudget[prop.memoryHeapCount];
 
 		vmaGetHeapBudgets(m_allocator, budgets);
-
-		DeviceMemoryStats deviceStats;
-		deviceStats.heaps.resize(prop.memoryHeapCount);
-		for (int i = 0; i < prop.memoryHeapCount; i++) {
-
+		DeviceMemoryStats deviceStats = {};
+		deviceStats.heapCount = prop.memoryHeapCount;
+		deviceStats.totalBudget = 0;
+		deviceStats.totalUsage = 0;
+		for (int i = 0; i < prop.memoryHeapCount; ++i) {
 			VmaBudget& budget = budgets[i];
 			HeapMemoryStats stats = {};
-			stats.flags = (uint32_t)prop.memoryHeaps[i].flags;
 			stats.usage = budget.usage;
 			stats.budget = budget.budget;
+			deviceStats.totalBudget += budget.budget;
+			deviceStats.totalUsage += budget.usage;
+
 			stats.allocationBytes = budget.statistics.allocationBytes;
 			stats.allocationCount = budget.statistics.allocationCount;
 			stats.blockBytes = budget.statistics.blockBytes;
 			stats.blockCount = budget.statistics.blockCount;
+			stats.propertyFlags = 0;
+
 			deviceStats.heaps[i] = std::move(stats);
 		}
-
 		delete[] budgets;
+
+		for (int i = 0; i < prop.memoryTypeCount; ++i) {
+			auto& type = prop.memoryTypes[i];
+			deviceStats.heaps[type.heapIndex].propertyFlags |= static_cast<sa::MemoryPropertyFlags>(type.propertyFlags);
+		}
+
 		return std::move(deviceStats);
 	}
 }

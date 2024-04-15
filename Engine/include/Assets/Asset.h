@@ -118,7 +118,7 @@ namespace sa {
 		static AssetHeader ReadHeader(std::ifstream& file);
 		static void WriteHeader(const AssetHeader& header, std::ofstream& file);
 
-		static void waitAllAssets();
+		static void WaitAllAssets();
 
 		template<typename T>
 		T* cast();

@@ -11,7 +11,7 @@ namespace sa {
 
 	DynamicTexture::DynamicTexture() 
 		: m_currentTextureIndex(0)
-		, m_pCore(Renderer::get().m_pCore.get())
+		, m_pCore(Renderer::Get().m_pCore.get())
 	{
 
 	}

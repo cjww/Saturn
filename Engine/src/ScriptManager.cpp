@@ -8,7 +8,7 @@ namespace sa {
 	void ScriptManager::setComponents(const entt::entity& entity, sol::environment& env, std::vector<ComponentType>& components) {
 		for (auto& type : components) {
 			/*
-			auto metaComp = type.invoke("get", entity);
+			auto metaComp = type.invoke("Get", entity);
 			std::string name = utils::toLower(type.getName());
 			env[name] = LuaAccessable::cast(metaComp);
 			*/
@@ -153,13 +153,13 @@ namespace sa {
 			SA_DEBUG_LOG_ERROR("Failed to run script ", path.generic_string(), ": ", err.what());
 		}
 
-		tryCall(env, "onCreation");
+		TryCall(env, "onCreation");
 		 
 		return &m_entityScripts[entity][scriptName];
 	}
 
 	void ScriptManager::removeScript(EntityScript* pScript) {
-		tryCall(pScript->env, "onDestruction");
+		TryCall(pScript->env, "onDestruction");
 
 		const Entity entity = pScript->env["this_entity"];
 		auto& entityScripts = m_entityScripts.at(entity);
@@ -174,7 +174,7 @@ namespace sa {
 
 		auto& entityScripts = m_entityScripts.at(entity);
 		for (auto& [name, script] : entityScripts) {
-			tryCall(script.env, "onDestruction");
+			TryCall(script.env, "onDestruction");
 			m_scriptsToBind.remove(&script);
 		}
 		m_entityScripts.erase(entity);
@@ -203,7 +203,7 @@ namespace sa {
 		
 		for (auto [entity, scripts] : m_entityScripts) {
 			for (auto& [name, script] : scripts) {
-				tryCall(script.env, "onDestruction");
+				TryCall(script.env, "onDestruction");
 			}
 		}
 		m_entityScripts.clear();

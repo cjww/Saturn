@@ -3,7 +3,7 @@
 
 namespace sa {
 
-	ResourceManager& ResourceManager::get() {
+	ResourceManager& ResourceManager::Get() {
 		static ResourceManager instance;
 		return instance;
 	}

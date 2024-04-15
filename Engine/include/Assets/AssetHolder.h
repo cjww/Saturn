@@ -11,7 +11,7 @@ namespace sa {
 		UUID m_id;
 		T* m_pAsset;
 
-		static T* getDefaultAsset();
+		static T* GetDefaultAsset();
 
 	public:
 		AssetHolder();
@@ -36,25 +36,25 @@ namespace sa {
 		const std::filesystem::path& getAssetPath() const;
 
 		const UUID& getID() const;
-		static AssetTypeID getTypeID();
+		static AssetTypeID GetTypeID();
 
 
 	};
 
 
 	template <typename T>
-	inline T* AssetHolder<T>::getDefaultAsset() {
+	inline T* AssetHolder<T>::GetDefaultAsset() {
 		return nullptr;
 	}
 
 	template <>
-	inline MaterialShader* AssetHolder<MaterialShader>::getDefaultAsset() {
-		return AssetManager::get().getDefaultMaterialShader();
+	inline MaterialShader* AssetHolder<MaterialShader>::GetDefaultAsset() {
+		return AssetManager::Get().getDefaultMaterialShader();
 	}
 
 	template <>
-	inline Material* AssetHolder<Material>::getDefaultAsset() {
-		return AssetManager::get().getDefaultMaterial();
+	inline Material* AssetHolder<Material>::GetDefaultAsset() {
+		return AssetManager::Get().getDefaultMaterial();
 	}
 
 	template <typename T>
@@ -68,7 +68,7 @@ namespace sa {
 	template <typename T>
 	AssetHolder<T>::AssetHolder(const UUID& id) {
 		m_id = id;
-		m_pAsset = AssetManager::get().getAsset<T>(id);
+		m_pAsset = AssetManager::Get().getAsset<T>(id);
 		if(m_pAsset)
 			m_pAsset->hold();
 	}
@@ -145,13 +145,13 @@ namespace sa {
 		if (m_pAsset)
 			m_pAsset->release();
 		m_id = id;
-		m_pAsset = AssetManager::get().getAsset<T>(id);
+		m_pAsset = AssetManager::Get().getAsset<T>(id);
 		if (m_pAsset) {
 			m_pAsset->hold();
 		}
 		else {
-			SA_DEBUG_LOG_WARNING("Invalid ", AssetManager::get().getAssetTypeName(getTypeID()), " Asset ID ", id, ", assigning default");
-			*this = getDefaultAsset();
+			SA_DEBUG_LOG_WARNING("Invalid ", AssetManager::Get().getAssetTypeName(GetTypeID()), " Asset ID ", id, ", assigning default");
+			*this = GetDefaultAsset();
 		}
 		return *this;
 	}
@@ -218,8 +218,8 @@ namespace sa {
 	}
 
 	template <typename T>
-	AssetTypeID AssetHolder<T>::getTypeID() {
-		return AssetManager::get().getAssetTypeID<T>();
+	AssetTypeID AssetHolder<T>::GetTypeID() {
+		return AssetManager::Get().getAssetTypeID<T>();
 	}
 
 }

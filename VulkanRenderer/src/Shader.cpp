@@ -17,7 +17,7 @@ namespace sa {
 		createInfo.pCode = m_stageInfo.pCode;
 		createInfo.codeSize = m_stageInfo.codeLength * sizeof(uint32_t);
 		const vk::ShaderModule shader = m_pCore->getDevice().createShaderModule(createInfo);
-		m_shaderModule = ResourceManager::get().insert(shader);
+		m_shaderModule = ResourceManager::Get().insert(shader);
 	}
 
 	void Shader::createObject(ShaderStageFlags nextStages, const PipelineLayout& layout) {
@@ -75,7 +75,7 @@ namespace sa {
 		std::vector<vk::DescriptorSetLayout> vkDescriptorSetLayouts;
 		vkDescriptorSetLayouts.reserve(descriptorSetLayouts.size());
 		for(const auto& [index, set] : descriptorSetLayouts) {
-			vk::DescriptorSetLayout* pLayout = ResourceManager::get().get<vk::DescriptorSetLayout>(set);
+			vk::DescriptorSetLayout* pLayout = ResourceManager::Get().get<vk::DescriptorSetLayout>(set);
 			if (!pLayout)
 				throw std::runtime_error("Invalid DescriptorSetLayout ID");
 			vkDescriptorSetLayouts.push_back(*pLayout);
@@ -102,7 +102,7 @@ namespace sa {
 		VkResult result = vkCreateShadersEXT(m_pCore->getDevice(), 1, &vkInfo, nullptr, &shader);
 		checkError(static_cast<vk::Result>(result), "Failed to create shader");
 
-		m_shaderObject = ResourceManager::get().insert(shader);
+		m_shaderObject = ResourceManager::Get().insert(shader);
 	}
 
 	void Shader::initShaderStageInfo(const std::vector<uint32_t>& shaderCode, ShaderStageFlagBits stage,
@@ -117,7 +117,7 @@ namespace sa {
 	}
 
 	Shader::Shader()
-		: m_pCore(Renderer::get().getCore())
+		: m_pCore(Renderer::Get().getCore())
 		, m_stageInfo({ 
 			.pName = "main",
 			.pCode = nullptr,
@@ -196,11 +196,11 @@ namespace sa {
 
 	void Shader::destroy() {
 		if(m_shaderModule != NULL_RESOURCE) {
-			ResourceManager::get().remove<vk::ShaderModule>(m_shaderModule);
+			ResourceManager::Get().remove<vk::ShaderModule>(m_shaderModule);
 		}
 		m_shaderModule = NULL_RESOURCE;
 		if (m_shaderObject != NULL_RESOURCE) {
-			ResourceManager::get().remove<VkShaderEXT>(m_shaderModule);
+			ResourceManager::Get().remove<VkShaderEXT>(m_shaderModule);
 		}
 		m_shaderObject = NULL_RESOURCE;
 

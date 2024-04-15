@@ -61,8 +61,7 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 	m_maxVelocityMagnitude = 30.0f;
 	m_acceleration = 0.5f;
 
-	m_statsUpdateTime = 0.1f;
-	m_statsTimer = m_statsUpdateTime;
+	m_statsTimer = 0.0f;
 
 	pEngine->sink<sa::engine_event::SceneSet>().connect<&SceneView::onSceneSet>(this);
 	pEngine->sink<sa::editor_event::EntitySelected>().connect<&SceneView::onEntitySelected>(this);
@@ -87,24 +86,15 @@ void SceneView::update(float dt) {
 	SA_PROFILE_FUNCTION();
 
 	m_deltaTime = dt;
-	m_statsTimer -= dt;
-	if (m_statsTimer < 0.0f) {
-		m_statsTimer = m_statsUpdateTime;
-		m_statistics.frameTime = dt;
-		m_statistics.gpuMemoryStats = sa::Renderer::get().getGPUMemoryUsage();
+	m_statsTimer += dt;
+	if (m_statsTimer > 0.5f) {
+		const auto& stats = sa::Engine::GetEngineStatistics();
 		
 		std::copy(m_frameTimeGraph.begin() + 1, m_frameTimeGraph.end(), m_frameTimeGraph.begin());
 		m_frameTimeGraph[m_frameTimeGraph.size() - 1] = dt * 1000;
 
-		m_statistics.totalGPUMemoryUsage = 0;
-		m_statistics.totalGPUMemoryBudget = 0;
-		for (auto& heap : m_statistics.gpuMemoryStats.heaps) {
-			m_statistics.totalGPUMemoryUsage += heap.usage / 1000000;
-			m_statistics.totalGPUMemoryBudget += heap.budget / 1000000;
-		}
-
 		std::copy(m_gpuMemoryData.begin() + 1, m_gpuMemoryData.end(), m_gpuMemoryData.begin());
-		m_gpuMemoryData[m_gpuMemoryData.size() - 1] = m_statistics.totalGPUMemoryUsage;
+		m_gpuMemoryData[m_gpuMemoryData.size() - 1] = stats.gpuMemoryStats.totalUsage / 1000000;
 	}
 
 	if (!m_isFocused) {
@@ -309,8 +299,8 @@ void SceneView::onImGui() {
 		glm::vec2 screenSize = { imageSize.x, imageSize.y };
 
 		if (m_pEngine->getCurrentScene() && showIcons) {
-			sa::Texture* tex = sa::AssetManager::get().loadTexture(m_pEditor->MakeEditorRelative("resources/lightbulb-icon.png"), true);
-			sa::Texture* sunTexture = sa::AssetManager::get().loadTexture(m_pEditor->MakeEditorRelative("resources/sun-icon.png"), true);
+			sa::Texture* tex = sa::AssetManager::Get().loadTexture(m_pEditor->MakeEditorRelative("resources/lightbulb-icon.png"), true);
+			sa::Texture* sunTexture = sa::AssetManager::Get().loadTexture(m_pEditor->MakeEditorRelative("resources/sun-icon.png"), true);
 			m_pEngine->getCurrentScene()->forEach<comp::Light>([&](const comp::Light& light) {
 				ImColor color(light.values.color);
 				switch (light.values.type) {
@@ -330,7 +320,7 @@ void SceneView::onImGui() {
 
 			});
 			
-			tex = sa::AssetManager::get().loadTexture(m_pEditor->MakeEditorRelative("resources/camera-transparent.png"), true);
+			tex = sa::AssetManager::Get().loadTexture(m_pEditor->MakeEditorRelative("resources/camera-transparent.png"), true);
 			m_pEngine->getCurrentScene()->forEach<comp::Camera>([&](const comp::Camera& camera) {
 				ImGui::GizmoIcon(tex, camera.camera.getPosition(), &m_camera, screenPos, screenSize, iconSize, ImColor(1.f, 1.f, 1.f, 1.f));
 			});
@@ -491,6 +481,8 @@ void SceneView::onImGui() {
 		*/
 		
 		if (showStats) {
+			const auto& stats = sa::Engine::GetEngineStatistics();
+
 			ImGui::SetCursorPosY(ImGui::GetCursorStartPos().y);
 			ImGui::Indent(ImGui::GetWindowWidth() - 400);
 			ImGui::Text("Camera Pos: %.2f, %.2f, %.2f", camera.getPosition().x, camera.getPosition().y, camera.getPosition().z);
@@ -499,7 +491,8 @@ void SceneView::onImGui() {
 			if(pScene)
 				ImGui::Text("Entity Count: %llu", pScene->getEntityCount());
 
-			ImGui::Text("FPS: %f", 1 / m_statistics.frameTime);
+			ImGui::Text("Average FPS: %f", 1 / stats.avgFrameTime);
+
 			ImVec4 bgColor = ImGui::GetStyleColorVec4(ImGuiCol_FrameBg);
 			bgColor.w = 0.5f;
 
@@ -527,21 +520,35 @@ void SceneView::onImGui() {
 				ImGui::VSliderFloat("Scale", ImVec2(15, 50), &scale, 1.f, 100.f, "%.0f");
 
 				ImGui::PopStyleColor();
-				ImGui::Text("Frame time: %f ms", m_statistics.frameTime * 1000);
+				ImGui::Text("Frame time: %f ms", stats.frameTime * 1000);
 
 			}
 			if (ImGui::CollapsingHeader("Memory")) {
 				ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(1.f, 1.f, 1.f, 1.f));
-				ImGui::PlotHistogram("##VRAMPlot", m_gpuMemoryData.data(), m_gpuMemoryData.size(), 0, "GPU Memory usage", 0.f, m_statistics.totalGPUMemoryBudget, ImVec2(300, 50));
+				ImGui::PlotHistogram("##VRAMPlot", m_gpuMemoryData.data(), m_gpuMemoryData.size(), 0, "GPU Memory usage", 0.f, stats.gpuMemoryStats.totalBudget / 1000000, ImVec2(300, 50));
 				ImGui::PopStyleColor();
 			
 				ImGui::Text("GPU Memory Heaps");
 				ImGui::Indent();
-				for (auto& heap : m_statistics.gpuMemoryStats.heaps) {
-					ImGui::Text("%llu MB / %llu MB, flags: %u", heap.usage / 1000000, heap.budget / 1000000, heap.flags);
+				for (uint8_t i = 0; i < stats.gpuMemoryStats.heapCount; ++i) {
+					auto& heap = stats.gpuMemoryStats.heaps[i];
+
+					ImGui::Text("%llu MB / %llu MB", heap.usage / 1000000, heap.budget / 1000000);
+					if (ImGui::IsItemHovered()) {
+						ImGui::BeginTooltip();
+						ImGui::Text("Memory heap properties:");
+						for (uint32_t i = 0; i < sa::MemoryPropertyFlagBits::MEMORY_PROPERTY_MAX_ENUM_COUNT; ++i) {
+							sa::MemoryPropertyFlagBits bit = static_cast<sa::MemoryPropertyFlagBits>(1 << i);
+							if (heap.propertyFlags & bit) {
+								ImGui::Text("%s", sa::MemoryPropertyName(bit));
+							}
+						}
+						ImGui::EndTooltip();
+					}
+					
 				}
-				ImGui::Text("Total: %llu MB / %llu MB", m_statistics.totalGPUMemoryUsage, m_statistics.totalGPUMemoryBudget);
 				ImGui::Unindent();
+				ImGui::Text("Total: %llu MB / %llu MB", stats.gpuMemoryStats.totalUsage / 1000000, stats.gpuMemoryStats.totalBudget / 1000000);
 			}
 			ImGui::PopStyleColor(4);
 			ImGui::Unindent();
@@ -572,8 +579,8 @@ void SceneView::onImGui() {
 
 				ResourceID framebuffer = renderData.depthFramebuffers[layer];
 				if (framebuffer != NULL_RESOURCE) {
-					sa::Texture tex = sa::Renderer::get().getFramebufferTexture(framebuffer, 0);
-					sa::Extent framebufferExtent = sa::Renderer::get().getFramebufferExtent(framebuffer);
+					sa::Texture tex = sa::Renderer::Get().getFramebufferTexture(framebuffer, 0);
+					sa::Extent framebufferExtent = sa::Renderer::Get().getFramebufferExtent(framebuffer);
 
 					ImVec2 imAvailSize = ImGui::GetContentRegionAvail();
 					glm::vec2 availSize(imAvailSize.x, imAvailSize.y);

@@ -3,58 +3,58 @@
 
 #include "internal/RenderProgram.hpp"
 #include "internal/FramebufferSet.hpp"
-#include "internal/Pipeline.hpp"
 #include "internal/Swapchain.hpp"
+#include "internal/DescriptorSet.hpp"
 
 #include "imgui_impl_vulkan.h"
 #include "imgui_impl_glfw.h"
 
 namespace sa {
 
-	Swapchain* RenderContext::getSwapchain(ResourceID id) {
-		Swapchain* pSwapchain = ResourceManager::get().get<Swapchain>(id);
+	Swapchain* RenderContext::GetSwapchain(ResourceID id) {
+		Swapchain* pSwapchain = ResourceManager::Get().get<Swapchain>(id);
 		if (!pSwapchain)
 			throw std::runtime_error("Nonexistent swapchain: " + id);
 		return pSwapchain;
 	}
 
-	RenderProgram* RenderContext::getRenderProgram(ResourceID id) {
-		RenderProgram* pRenderProgram = ResourceManager::get().get<RenderProgram>(id);
+	RenderProgram* RenderContext::GetRenderProgram(ResourceID id) {
+		RenderProgram* pRenderProgram = ResourceManager::Get().get<RenderProgram>(id);
 		if (!pRenderProgram)
 			throw std::runtime_error("Nonexistent render program: " + id);
 		return pRenderProgram;
 	}
 
-	FramebufferSet* RenderContext::getFramebufferSet(ResourceID id) {
-		FramebufferSet* pFramebufferSet = ResourceManager::get().get<FramebufferSet>(id);
+	FramebufferSet* RenderContext::GetFramebufferSet(ResourceID id) {
+		FramebufferSet* pFramebufferSet = ResourceManager::Get().get<FramebufferSet>(id);
 		if (!pFramebufferSet)
 			throw std::runtime_error("Nonexistent framebuffer: " + id);
 		return pFramebufferSet;
 	}
 
-	vk::Pipeline* RenderContext::getPipeline(ResourceID id) {
-		vk::Pipeline* pPipeline = ResourceManager::get().get<vk::Pipeline>(id);
+	vk::Pipeline* RenderContext::GetPipeline(ResourceID id) {
+		vk::Pipeline* pPipeline = ResourceManager::Get().get<vk::Pipeline>(id);
 		if (!pPipeline)
 			throw std::runtime_error("Nonexistent pipeline: " + id);
 		return pPipeline;
 	}
 
-	DescriptorSet* RenderContext::getDescriptorSet(ResourceID id) {
-		DescriptorSet* pDescriptorSet = ResourceManager::get().get<DescriptorSet>(id);
+	DescriptorSet* RenderContext::GetDescriptorSet(ResourceID id) {
+		DescriptorSet* pDescriptorSet = ResourceManager::Get().get<DescriptorSet>(id);
 		if (!pDescriptorSet)
 			throw std::runtime_error("Nonexistent descriptor set: " + id);
 		return pDescriptorSet;
 	}
 
-	vk::Sampler* RenderContext::getSampler(ResourceID id) {
-		vk::Sampler* pSampler = ResourceManager::get().get<vk::Sampler>(id);
+	vk::Sampler* RenderContext::GetSampler(ResourceID id) {
+		vk::Sampler* pSampler = ResourceManager::Get().get<vk::Sampler>(id);
 		if (!pSampler)
 			throw std::runtime_error("Nonexistent sampler: " + id);
 		return pSampler;
 	}
 
-	vk::PipelineLayout* RenderContext::getPipelineLayout(ResourceID id) {
-		vk::PipelineLayout* pLayout = ResourceManager::get().get<vk::PipelineLayout>(id);
+	vk::PipelineLayout* RenderContext::GetPipelineLayout(ResourceID id) {
+		vk::PipelineLayout* pLayout = ResourceManager::Get().get<vk::PipelineLayout>(id);
 		if (!pLayout)
 			throw std::runtime_error("Nonexistent pipeline layout: " + id);
 		return pLayout;
@@ -63,7 +63,7 @@ namespace sa {
 	void RenderContext::bindVertexInput(const PipelineLayout& layout) const {
 		const auto& vertexInputs = m_pLastPipelineLayout->getVertexBindings();
 
-		//TODO: inefficient to allocate memory every call
+		//TODO: inefficient to allocate memory every Call
 		std::vector<VkVertexInputBindingDescription2EXT> bindingDesc;
 		bindingDesc.reserve(vertexInputs.size());
 		for (const auto& input : vertexInputs) {
@@ -120,8 +120,8 @@ namespace sa {
 	}
 #endif
 	void RenderContext::beginRenderProgram(ResourceID renderProgram, ResourceID framebuffer, SubpassContents contents, Rect renderArea) const {
-		RenderProgram* pRenderProgram = getRenderProgram(renderProgram);
-		FramebufferSet* pFramebuffer = getFramebufferSet(framebuffer);
+		RenderProgram* pRenderProgram = GetRenderProgram(renderProgram);
+		FramebufferSet* pFramebuffer = GetFramebufferSet(framebuffer);
 		pRenderProgram->begin(m_pCommandBufferSet, pFramebuffer, (vk::SubpassContents)contents, renderArea);
 	}
 
@@ -144,7 +144,7 @@ namespace sa {
 	}
 
 	void RenderContext::endRenderProgram(ResourceID renderProgram) const {
-		RenderProgram* pRenderProgram = getRenderProgram(renderProgram);
+		RenderProgram* pRenderProgram = GetRenderProgram(renderProgram);
 		pRenderProgram->end(m_pCommandBufferSet);
 	}
 
@@ -161,12 +161,12 @@ namespace sa {
 		if (m_pLastPipelineLayout->isGraphicsPipeline())
 			bindPoint = vk::PipelineBindPoint::eGraphics;
 
-		vk::Pipeline* pPipeline = getPipeline(pipeline);
+		vk::Pipeline* pPipeline = GetPipeline(pipeline);
 		m_pCommandBufferSet->getBuffer().bindPipeline(bindPoint, *pPipeline);
 	}
 
 	void RenderContext::bindShader(const Shader& shader) const {
-		const VkShaderEXT* pShader = ResourceManager::get().get<VkShaderEXT>(shader.getShaderObjectID());
+		const VkShaderEXT* pShader = ResourceManager::Get().get<VkShaderEXT>(shader.getShaderObjectID());
 		if (!pShader)
 			throw std::runtime_error("Nonexistent shader: " + shader.getShaderObjectID());
 
@@ -192,7 +192,7 @@ namespace sa {
 		for (size_t i = 0; i < stages.size(); i++) {
 			for(size_t j = 0; j < shaders.size(); j++) {
 				if(shaders[j].getStage() == stages[i]) {
-					const VkShaderEXT* pShader = ResourceManager::get().get<VkShaderEXT>(shaders[j].getShaderObjectID());
+					const VkShaderEXT* pShader = ResourceManager::Get().get<VkShaderEXT>(shaders[j].getShaderObjectID());
 					vkShaders[i] = pShader ? *pShader : VK_NULL_HANDLE;
 				}
 			}
@@ -231,7 +231,7 @@ namespace sa {
 	}
 
 	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Buffer& buffer) const {
-		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+		DescriptorSet* pDescriptorSet = RenderContext::GetDescriptorSet(descriptorSet);
 		const DeviceBuffer* pDeviceBuffer = (const DeviceBuffer*)buffer;
 		vk::BufferView* pView = nullptr;
 		if (buffer.getType() == BufferType::UNIFORM_TEXEL || buffer.getType() == BufferType::STORAGE_TEXEL) {
@@ -241,8 +241,8 @@ namespace sa {
 	}
 
 	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture, ResourceID sampler) const {
-		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
-		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
+		DescriptorSet* pDescriptorSet = RenderContext::GetDescriptorSet(descriptorSet);
+		vk::Sampler* pSampler = RenderContext::GetSampler(sampler);
 		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
 		if ((texture.getUsageFlags() & sa::TextureUsageFlagBits::STORAGE) == sa::TextureUsageFlagBits::STORAGE) {
 			layout = vk::ImageLayout::eGeneral;
@@ -252,7 +252,7 @@ namespace sa {
 	}
 
 	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture& texture) const {
-		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+		DescriptorSet* pDescriptorSet = RenderContext::GetDescriptorSet(descriptorSet);
 		vk::ImageLayout layout = vk::ImageLayout::eShaderReadOnlyOptimal;
 		if ((texture.getUsageFlags() & sa::TextureUsageFlagBits::STORAGE) == sa::TextureUsageFlagBits::STORAGE) {
 			layout = vk::ImageLayout::eGeneral;
@@ -262,30 +262,30 @@ namespace sa {
 	}
 
 	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, uint32_t firstElement) const {
-		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+		DescriptorSet* pDescriptorSet = RenderContext::GetDescriptorSet(descriptorSet);
 		pDescriptorSet->update(binding, firstElement, textures.data(), textures.size(), nullptr, m_pCommandBufferSet->getBufferIndex());
 	}
 
 	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const std::vector<Texture>& textures, ResourceID sampler, uint32_t firstElement) const {
-		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
-		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
+		DescriptorSet* pDescriptorSet = RenderContext::GetDescriptorSet(descriptorSet);
+		vk::Sampler* pSampler = RenderContext::GetSampler(sampler);
 		pDescriptorSet->update(binding, firstElement, textures.data(), textures.size(), pSampler, m_pCommandBufferSet->getBufferIndex());
 	}
 
 	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture* textures, uint32_t textureCount, ResourceID sampler, uint32_t firstElement) const {
-		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
-		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
+		DescriptorSet* pDescriptorSet = RenderContext::GetDescriptorSet(descriptorSet);
+		vk::Sampler* pSampler = RenderContext::GetSampler(sampler);
 		pDescriptorSet->update(binding, firstElement, textures, textureCount, pSampler, m_pCommandBufferSet->getBufferIndex());
 	}
 
 	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Texture* textures, uint32_t textureCount, uint32_t firstElement) const {
-		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
+		DescriptorSet* pDescriptorSet = RenderContext::GetDescriptorSet(descriptorSet);
 		pDescriptorSet->update(binding, firstElement, textures, textureCount, nullptr, m_pCommandBufferSet->getBufferIndex());
 	}
 
 	void RenderContext::updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, ResourceID sampler) const {
-		DescriptorSet* pDescriptorSet = RenderContext::getDescriptorSet(descriptorSet);
-		vk::Sampler* pSampler = RenderContext::getSampler(sampler);
+		DescriptorSet* pDescriptorSet = RenderContext::GetDescriptorSet(descriptorSet);
+		vk::Sampler* pSampler = RenderContext::GetSampler(sampler);
 		pDescriptorSet->update(binding, VK_NULL_HANDLE, vk::ImageLayout::eUndefined, pSampler, m_pCommandBufferSet->getBufferIndex());
 	}
 
@@ -294,7 +294,7 @@ namespace sa {
 		sets.reserve(descriptorSets.size());
 		uint32_t firstSet = UINT32_MAX;
 		for (const auto id : descriptorSets) {
-			const DescriptorSet* pDescriptorSet = getDescriptorSet(id);
+			const DescriptorSet* pDescriptorSet = GetDescriptorSet(id);
 			if (firstSet == UINT32_MAX)
 				firstSet = pDescriptorSet->getSetIndex();
 			sets.push_back(pDescriptorSet->getSet(m_pCommandBufferSet->getBufferIndex()));
@@ -304,26 +304,26 @@ namespace sa {
 		if (m_pLastPipelineLayout->isGraphicsPipeline()) {
 			bindPoint = vk::PipelineBindPoint::eGraphics;
 		}
-		vk::PipelineLayout* pLayout = getPipelineLayout(m_pLastPipelineLayout->getLayoutID());
+		vk::PipelineLayout* pLayout = GetPipelineLayout(m_pLastPipelineLayout->getLayoutID());
 
 		m_pCommandBufferSet->getBuffer().bindDescriptorSets(bindPoint, *pLayout, firstSet, sets, nullptr);
 	}
 
 	void RenderContext::bindDescriptorSet(ResourceID descriptorSet) const {
-		DescriptorSet* pDescriptorSet = getDescriptorSet(descriptorSet);
+		DescriptorSet* pDescriptorSet = GetDescriptorSet(descriptorSet);
 		
 		vk::PipelineBindPoint bindPoint = vk::PipelineBindPoint::eCompute;
 		if (m_pLastPipelineLayout->isGraphicsPipeline()) {
 			bindPoint = vk::PipelineBindPoint::eGraphics;
 		}
-		const vk::PipelineLayout* pLayout = getPipelineLayout(m_pLastPipelineLayout->getLayoutID());
+		const vk::PipelineLayout* pLayout = GetPipelineLayout(m_pLastPipelineLayout->getLayoutID());
 
 		const vk::DescriptorSet set = pDescriptorSet->getSet(m_pCommandBufferSet->getBufferIndex());
 		m_pCommandBufferSet->getBuffer().bindDescriptorSets(bindPoint, *pLayout, pDescriptorSet->getSetIndex(), 1U, &set, 0, nullptr);
 	}
 
 	void RenderContext::pushConstants(ShaderStageFlags stages, uint32_t offset, uint32_t size, const void* data) const {
-		vk::PipelineLayout* pLayout = getPipelineLayout(m_pLastPipelineLayout->getLayoutID());
+		vk::PipelineLayout* pLayout = GetPipelineLayout(m_pLastPipelineLayout->getLayoutID());
 
 		if (offset != UINT32_MAX) {
 			m_pCommandBufferSet->getBuffer().pushConstants(*pLayout, static_cast<vk::ShaderStageFlags>(stages), offset, size, data);
@@ -676,7 +676,7 @@ namespace sa {
 	
 	void RenderContext::copyImageToSwapchain(const Texture& src, ResourceID swapchain) const {
 		const DeviceImage* pSrc = src;
-		Swapchain* pSwapchain = getSwapchain(swapchain);
+		Swapchain* pSwapchain = GetSwapchain(swapchain);
 		vk::Image swapchainImage = pSwapchain->getImage(pSwapchain->getImageIndex());
 
 		vk::ImageCopy region = {
@@ -714,13 +714,13 @@ namespace sa {
 		m_pCore = pCore;
 
 		if (contextPool == NULL_RESOURCE) {
-			m_commandBufferSetID = ResourceManager::get().insert(m_pCore->allocateCommandBufferSet(vk::CommandBufferLevel::eSecondary));
+			m_commandBufferSetID = ResourceManager::Get().insert(m_pCore->allocateCommandBufferSet(vk::CommandBufferLevel::eSecondary));
 		}
 		else {
-			CommandPool* pool = ResourceManager::get().get<CommandPool>(contextPool);
-			m_commandBufferSetID = ResourceManager::get().insert(m_pCore->allocateCommandBufferSet(vk::CommandBufferLevel::eSecondary, *pool));
+			CommandPool* pool = ResourceManager::Get().get<CommandPool>(contextPool);
+			m_commandBufferSetID = ResourceManager::Get().insert(m_pCore->allocateCommandBufferSet(vk::CommandBufferLevel::eSecondary, *pool));
 		}
-		m_pCommandBufferSet = ResourceManager::get().get<CommandBufferSet>(m_commandBufferSetID);
+		m_pCommandBufferSet = ResourceManager::Get().get<CommandBufferSet>(m_commandBufferSetID);
 
 		m_pFramebufferSet = pFramebufferSet;
 		m_pRenderProgram = pRenderProgram;
@@ -752,7 +752,7 @@ namespace sa {
 	}
 
 	void SubContext::destroy() {
-		ResourceManager::get().remove<CommandBufferSet>(m_commandBufferSetID);
+		ResourceManager::Get().remove<CommandBufferSet>(m_commandBufferSetID);
 		m_pCommandBufferSet = nullptr;
 	}
 
@@ -760,15 +760,15 @@ namespace sa {
 		m_pCore = pCore;
 		
 		if (contextPool == NULL_RESOURCE) {
-			m_commandBufferSetID = ResourceManager::get().insert(m_pCore->allocateCommandBufferSet(vk::CommandBufferLevel::ePrimary));
+			m_commandBufferSetID = ResourceManager::Get().insert(m_pCore->allocateCommandBufferSet(vk::CommandBufferLevel::ePrimary));
 		}
 		else {
-			CommandPool* pool = ResourceManager::get().get<CommandPool>(contextPool);
-			m_commandBufferSetID = ResourceManager::get().insert(m_pCore->allocateCommandBufferSet(vk::CommandBufferLevel::ePrimary, *pool));
+			CommandPool* pool = ResourceManager::Get().get<CommandPool>(contextPool);
+			m_commandBufferSetID = ResourceManager::Get().insert(m_pCore->allocateCommandBufferSet(vk::CommandBufferLevel::ePrimary, *pool));
 		}
 
 
-		m_pCommandBufferSet = ResourceManager::get().get<CommandBufferSet>(m_commandBufferSetID);
+		m_pCommandBufferSet = ResourceManager::Get().get<CommandBufferSet>(m_commandBufferSetID);
 
 		m_pFence = std::shared_ptr<vk::Fence>(new vk::Fence, [=](vk::Fence* p) {
 			m_pCore->getDevice().destroyFence(*p);
@@ -796,7 +796,7 @@ namespace sa {
 	}
 
 	void DirectContext::destroy() {
-		ResourceManager::get().remove<CommandBufferSet>(m_commandBufferSetID);
+		ResourceManager::Get().remove<CommandBufferSet>(m_commandBufferSetID);
 		m_pCommandBufferSet = nullptr;
 	}
 
