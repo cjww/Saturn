@@ -4,17 +4,23 @@
 namespace sa {
 	class EditorApp : public Application {
 	public:
-		EditorApp(bool enableImgui = true)
+		EditorApp(int argc, char** argv, bool enableImgui = true)
 			: Application(enableImgui) 
 		{
-			pushLayer(new EngineEditor);
+			EngineEditor* pEditor = new EngineEditor;
+			pushLayer(pEditor);
+			if (argc > 1) {
+				std::filesystem::path projectPath = argv[1];
+				if (std::filesystem::exists(projectPath))
+					pEditor->openProject(projectPath);
+			}
 		}
 
 	};
 
-	Application* createApplication() {
+	Application* createApplication(int argc, char** argv) {
 		Engine::setShaderDirectory("../Engine/shaders");
-		return new EditorApp;
+		return new EditorApp(argc, argv);
 	}
 
 }

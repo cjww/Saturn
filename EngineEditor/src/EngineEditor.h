@@ -45,7 +45,6 @@ namespace sa {
 
 		void makePopups();
 
-		bool openProject(const std::filesystem::path& path);
 		bool openProject();
 
 		bool createProject(const std::filesystem::path& path);
@@ -68,6 +67,8 @@ namespace sa {
 		static std::filesystem::path MakeEditorRelative(const std::filesystem::path& editorRelativePath);
 		
 		EngineEditor() = default;
+		
+		bool openProject(const std::filesystem::path& path);
 		
 		void onAttach(sa::Engine& engine, sa::RenderWindow& renderWindow) override;
 		void onDetach() override;

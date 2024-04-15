@@ -54,7 +54,7 @@ namespace sa {
 
 	};
 	
-	static Application* createApplication();
+	static Application* createApplication(int argc, char** argv);
 
 
 }

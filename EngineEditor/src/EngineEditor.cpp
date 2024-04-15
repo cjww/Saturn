@@ -80,63 +80,6 @@ namespace sa {
 		}
 	}
 
-	bool EngineEditor::openProject(const std::filesystem::path& path) {
-		//unload project
-		if (!m_projectFile.empty()) {
-			ImGui::SaveIniSettingsToDisk("imgui.ini");
-		}
-
-		m_pEngine->setScene(nullptr);
-		m_pEngine->trigger<editor_event::EntityDeselected>({});
-		AssetManager::get().clear();
-
-		// Load Project
-		using namespace simdjson;
-		ondemand::parser parser;
-		auto json = padded_string::load(path.generic_string());
-		if (json.error()) {
-			return false;
-		}
-		ondemand::document doc = parser.iterate(json);
-		
-		auto version = doc["version"].get_uint64().value();
-		if (version != SA_VERSION) {
-			SA_DEBUG_LOG_ERROR("Project version missmatch:\n\tProject: ", version, "\n\tEngine: ", SA_VERSION);
-		}
-
-		m_projectFile = path.filename();
-		std::filesystem::current_path(path.parent_path());
-
-		ImGui::LoadIniSettingsFromDisk("imgui.ini");
-
-		AssetManager::get().rescanAssets();
-
-		if (doc["startScene"].error() == SUCCESS) {
-			std::string_view startScene = doc["startScene"].get_string().take_value();
-			char* endStr;
-			UUID sceneID = strtoull(startScene.data(), &endStr, 10);
-			Scene* scene = AssetManager::get().getAsset<Scene>(sceneID);
-			if (!scene) {
-				SA_DEBUG_LOG_WARNING("No startup scene");
-				scene = AssetManager::get().createAsset<Scene>("Default Scene");
-			}
-			m_pEngine->setScene(scene);
-		}
-
-		m_pEngine->trigger<editor_event::ProjectOpened>(editor_event::ProjectOpened{ path });
-		SA_DEBUG_LOG_INFO("Opened Project: ", path);
-
-		// Save as recent project
-		auto projectPath = path;
-		auto it = std::find(m_recentProjectPaths.begin(), m_recentProjectPaths.end(), projectPath);
-		if (it != m_recentProjectPaths.end()) {
-			m_recentProjectPaths.erase(it);
-		}
-		m_recentProjectPaths.push_back(projectPath);
-
-		return true;
-	}
-
 	bool EngineEditor::openProject() {
 		std::filesystem::path path;
 		if (FileDialogs::OpenFile("Saturn Project File (*.saproj)\0*.saproj\0", path, std::filesystem::current_path())) {
@@ -573,6 +516,64 @@ namespace sa {
 
 	std::filesystem::path EngineEditor::MakeEditorRelative(const std::filesystem::path& editorRelativePath) {
 		return s_editorPath / editorRelativePath;
+	}
+
+
+	bool EngineEditor::openProject(const std::filesystem::path& path) {
+		//unload project
+		if (!m_projectFile.empty()) {
+			ImGui::SaveIniSettingsToDisk("imgui.ini");
+		}
+
+		m_pEngine->setScene(nullptr);
+		m_pEngine->trigger<editor_event::EntityDeselected>({});
+		AssetManager::get().clear();
+
+		// Load Project
+		using namespace simdjson;
+		ondemand::parser parser;
+		auto json = padded_string::load(path.generic_string());
+		if (json.error()) {
+			return false;
+		}
+		ondemand::document doc = parser.iterate(json);
+
+		auto version = doc["version"].get_uint64().value();
+		if (version != SA_VERSION) {
+			SA_DEBUG_LOG_ERROR("Project version missmatch:\n\tProject: ", version, "\n\tEngine: ", SA_VERSION);
+		}
+
+		m_projectFile = path.filename();
+		std::filesystem::current_path(path.parent_path());
+
+		ImGui::LoadIniSettingsFromDisk("imgui.ini");
+
+		AssetManager::get().rescanAssets();
+
+		if (doc["startScene"].error() == SUCCESS) {
+			std::string_view startScene = doc["startScene"].get_string().take_value();
+			char* endStr;
+			UUID sceneID = strtoull(startScene.data(), &endStr, 10);
+			Scene* scene = AssetManager::get().getAsset<Scene>(sceneID);
+			if (!scene) {
+				SA_DEBUG_LOG_WARNING("No startup scene");
+				scene = AssetManager::get().createAsset<Scene>("Default Scene");
+			}
+			m_pEngine->setScene(scene);
+		}
+
+		m_pEngine->trigger<editor_event::ProjectOpened>(editor_event::ProjectOpened{ path });
+		SA_DEBUG_LOG_INFO("Opened Project: ", path);
+
+		// Save as recent project
+		auto projectPath = path;
+		auto it = std::find(m_recentProjectPaths.begin(), m_recentProjectPaths.end(), projectPath);
+		if (it != m_recentProjectPaths.end()) {
+			m_recentProjectPaths.erase(it);
+		}
+		m_recentProjectPaths.push_back(projectPath);
+
+		return true;
 	}
 
 	std::vector<std::filesystem::path> EngineEditor::fetchAllScriptsInProject() {
