@@ -106,7 +106,7 @@ namespace sa {
 		void bindPipeline(ResourceID pipeline) const;
 		void bindShader(const Shader& shader) const;
 		void bindShaders(const std::vector<Shader>& shaders) const;
-		void bindVertexBuffers(uint32_t firstBinding, const std::vector<Buffer>& buffers) const;
+		void bindVertexBuffers(uint32_t firstBinding, const Buffer* pBuffers, size_t bufferCount) const;
 		void bindIndexBuffer(const Buffer& buffer) const;
 
 		void updateDescriptorSet(ResourceID descriptorSet, uint32_t binding, const Buffer& buffer) const;

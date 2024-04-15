@@ -116,7 +116,7 @@ namespace sa {
 
 		context.bindDescriptorSet(collection.getSceneDescriptorSetDepthPass());
 
-		context.bindVertexBuffers(0, { collection.getVertexBuffer() });
+		context.bindVertexBuffers(0, &collection.getVertexBuffer(), 1);
 		context.bindIndexBuffer(collection.getIndexBuffer());
 
 		Rect viewport = {};
@@ -375,11 +375,6 @@ namespace sa {
 			.endSubpass()
 			.end();
 	
-		m_shadowShaderDataBuffer.create(BufferType::STORAGE);
-		
-		m_shadowTextureCount = 0;
-		m_shadowCubeTextureCount = 0;
-
 		createSampler();
 
 		SceneCamera temp;
@@ -436,16 +431,16 @@ namespace sa {
 		ShadowData& data,
 		ShadowRenderData& renderData,
 		SceneCollection& sceneCollection,
-		uint32_t& shadowCount,
-		std::array<Texture, MAX_SHADOW_TEXTURE_COUNT>& shadowTextures,
 		uint32_t layerCount,
 		uint32_t index)
 	{
 
-		if (shadowCount >= MAX_SHADOW_TEXTURE_COUNT) {
+		/*
+		if (sceneCollection.getShadowTextureCount() >= MAX_SHADOW_TEXTURE_COUNT) {
 			SA_DEBUG_LOG_WARNING("Exceeding maximum limit of ", MAX_SHADOW_TEXTURE_COUNT, " shadowmaps");
 			return;
 		}
+		*/
 
 		if (renderData.lightType != data.lightType)
 			renderData.isInitialized = false;
@@ -461,11 +456,7 @@ namespace sa {
 		for (uint32_t i = 0; i < layerCount; i++) {
 			shaderData.lightMat[i] = data.lightProjMatrices[i] * data.lightViewMatrices[i];
 		}
-		shaderData.mapIndex = shadowCount;
-
-		m_shadowShaderDataBuffer.write(&shaderData, sizeof(shaderData), sizeof(ShadowShaderData) * index);
-
-		shadowTextures[shadowCount++] = renderData.depthTexture;
+		sceneCollection.insertShaderData(shaderData, renderData.depthTexture, index);
 	}
 
 	bool ShadowRenderLayer::preRender(RenderContext& context, SceneCollection& sceneCollection) {
@@ -485,8 +476,6 @@ namespace sa {
 					data,
 					renderData,
 					sceneCollection,
-					m_shadowCubeTextureCount,
-					m_shadowCubeTextures,
 					6,
 					index);
 				break;
@@ -496,8 +485,6 @@ namespace sa {
 					data,
 					renderData,
 					sceneCollection,
-					m_shadowTextureCount,
-					m_shadowTextures,
 					1,
 					index);
 				break;
@@ -523,8 +510,6 @@ namespace sa {
 				data,
 				renderData,
 				sceneCollection,
-				m_shadowTextureCount,
-				m_shadowTextures,
 				prefs.cascadeCount,
 				it - sceneCollection.iterateShadowsBegin());
 
@@ -533,31 +518,8 @@ namespace sa {
 	}
 
 	bool ShadowRenderLayer::postRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) {
-		m_shadowShaderDataBuffer.swap();
-		m_shadowShaderDataBuffer.clear();
-		m_shadowTextureCount = 0;
-		m_shadowCubeTextureCount = 0;
+		
 		return true;
-	}
-	
-	const Buffer& ShadowRenderLayer::getShadowDataBuffer() const {
-		return m_shadowShaderDataBuffer.getBuffer();
-	}
-
-	const std::array<Texture, MAX_SHADOW_TEXTURE_COUNT>& ShadowRenderLayer::getShadowTextures() const {
-		return m_shadowTextures;
-	}
-
-	const uint32_t ShadowRenderLayer::getShadowTextureCount() const {
-		return m_shadowTextureCount;
-	}
-
-	const std::array<Texture, MAX_SHADOW_TEXTURE_COUNT>& ShadowRenderLayer::getShadowCubeTextures() const {
-		return m_shadowCubeTextures;
-	}
-
-	const uint32_t ShadowRenderLayer::getShadowCubeTextureCount() const {
-		return m_shadowCubeTextureCount;
 	}
 
 	const ResourceID ShadowRenderLayer::getShadowSampler() const {

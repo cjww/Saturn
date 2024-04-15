@@ -46,6 +46,12 @@ namespace sa {
 		Buffer();
 		Buffer(BufferType type, size_t size = 0, void* initialData = nullptr);
 
+		Buffer(const Buffer&) = default;
+		Buffer(Buffer&&) noexcept = default;
+
+		Buffer& operator=(const Buffer&) = default;
+
+
 		void create(BufferType type, size_t size = 0, void* initialData = nullptr);
 		void destroy();
 
@@ -89,7 +95,7 @@ namespace sa {
 		template<typename T, size_t Size>
 		void append(const std::array<T, Size>& data, int alignment = 0);
 		
-
+		void copy(const Buffer& other);
 
 		void* data() const;
 		void* data(uint32_t offset) const;

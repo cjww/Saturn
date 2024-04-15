@@ -392,6 +392,10 @@ namespace sa {
 
 		uint32_t lightCount = 0U;
 		m_lightBuffer.create(BufferType::STORAGE, sizeof(uint32_t), &lightCount);
+		
+		m_shadows.shaderDataBuffer.create(BufferType::STORAGE);
+		m_shadows.textureCount = 0;
+		m_shadows.cubeTextureCount = 0;
 
 		SA_DEBUG_LOG_INFO("SceneCollection created");
 	}
@@ -406,7 +410,7 @@ namespace sa {
 			collection.clear();
 		}
 
-		m_shadowData.clear();
+		m_shadows.data.clear();
 	}
 
 	void SceneCollection::collect(Scene* pScene) {
@@ -495,8 +499,8 @@ namespace sa {
 			data.lightType = light.type;
 			data.entityID = entity;
 			
-			light.shadowMapDataIndex = m_shadowData.size();
-			m_shadowData.push_back(data);
+			light.shadowMapDataIndex = m_shadows.data.size();
+			m_shadows.data.push_back(data);
 		}
 		m_lights.emplace_back(light);
 	}
@@ -530,15 +534,15 @@ namespace sa {
 		
 		// TODO: right?
 		if (light.emitShadows) {
-			auto it = std::find_if(m_shadowData.begin(), m_shadowData.end(), [&](const ShadowData& data) {
+			auto it = std::find_if(m_shadows.data.begin(), m_shadows.data.end(), [&](const ShadowData& data) {
 				return data.entityID == entity;
 			});
 
-			if (it == m_shadowData.end())
+			if (it == m_shadows.data.end())
 				return;
 				
 			// erase shadowData
-			m_shadowData.erase(it);
+			m_shadows.data.erase(it);
 		}
 	}
 
@@ -558,7 +562,17 @@ namespace sa {
 		subset.m_lightBuffer.write(static_cast<uint32_t>(m_lights.size()));
 		subset.m_lightBuffer.append(m_lights, 16);
 
-		subset.m_shadowData = m_shadowData;
+		//subset.m_shadows = m_shadows;
+
+		subset.m_shadows.textureCount = m_shadows.textureCount;
+		subset.m_shadows.textures = m_shadows.textures;
+
+		subset.m_shadows.cubeTextureCount = m_shadows.cubeTextureCount;
+		subset.m_shadows.cubeTextures = m_shadows.cubeTextures;
+
+		subset.m_shadows.data = m_shadows.data;
+
+		subset.m_shadows.shaderDataBuffer.copy(m_shadows.shaderDataBuffer);
 
 		for (uint32_t i = 0; i < m_materialShaderCollections.size(); ++i) {
 			auto& collection = subset.getMaterialShaderCollection(m_materialShaderCollections[i].getMaterialShader());
@@ -568,6 +582,11 @@ namespace sa {
 
 	void SceneCollection::swap() {
 		m_lightBuffer.swap();
+		
+		m_shadows.shaderDataBuffer.swap();
+		m_shadows.shaderDataBuffer.clear();
+		m_shadows.textureCount = 0;
+		m_shadows.cubeTextureCount = 0;
 
 		for (auto& collection : m_materialShaderCollections) {
 			collection.swap();
@@ -579,11 +598,11 @@ namespace sa {
 	}
 
 	std::vector<ShadowData>::iterator SceneCollection::iterateShadowsBegin() {
-		return m_shadowData.begin();
+		return m_shadows.data.begin();
 	}
 
 	std::vector<ShadowData>::iterator SceneCollection::iterateShadowsEnd() {
-		return m_shadowData.end();
+		return m_shadows.data.end();
 	}
 
 	std::vector<MaterialShaderCollection>::iterator SceneCollection::begin() {
@@ -593,4 +612,41 @@ namespace sa {
 	std::vector<MaterialShaderCollection>::iterator SceneCollection::end() {
 		return m_materialShaderCollections.end();
 	}
+
+	uint32_t SceneCollection::insertShaderData(ShadowShaderData& shaderData, const sa::Texture& depthTexture, uint32_t index) {
+		switch(depthTexture.getTextureType()){
+		case TextureType::TEXTURE_TYPE_CUBE:
+			shaderData.mapIndex = m_shadows.cubeTextureCount;
+			m_shadows.cubeTextures[m_shadows.cubeTextureCount++] = depthTexture;
+			break;
+		default:
+			shaderData.mapIndex = m_shadows.textureCount;
+			m_shadows.textures[m_shadows.textureCount++] = depthTexture;
+			break;
+		}
+		m_shadows.shaderDataBuffer.write(&shaderData, sizeof(shaderData), sizeof(ShadowShaderData) * index);
+		return shaderData.mapIndex;
+	}
+
+
+	const Buffer& SceneCollection::getShadowDataBuffer() const {
+		return m_shadows.shaderDataBuffer.getBuffer();
+	}
+
+	const std::array<Texture, MAX_SHADOW_TEXTURE_COUNT>& SceneCollection::getShadowTextures() const {
+		return m_shadows.textures;
+	}
+
+	const uint32_t SceneCollection::getShadowTextureCount() const {
+		return m_shadows.textureCount;
+	}
+
+	const std::array<Texture, MAX_SHADOW_TEXTURE_COUNT>& SceneCollection::getShadowCubeTextures() const {
+		return m_shadows.cubeTextures;
+	}
+
+	const uint32_t SceneCollection::getShadowCubeTextureCount() const {
+		return m_shadows.cubeTextureCount;
+	}
+
 }

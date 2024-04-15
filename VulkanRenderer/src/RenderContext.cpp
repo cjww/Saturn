@@ -206,14 +206,15 @@ namespace sa {
 
 	}
 
-	void RenderContext::bindVertexBuffers(uint32_t firstBinding, const std::vector<Buffer>& buffers) const {
-		if (buffers.empty())
+	void RenderContext::bindVertexBuffers(uint32_t firstBinding, const Buffer* pBuffers, size_t bufferCount) const {
+		if (bufferCount == 0)
 			return;
 
 		std::vector<vk::Buffer> vkBuffers;
-		std::vector<vk::DeviceSize> offsets(buffers.size(), 0);
-		vkBuffers.reserve(buffers.size());
-		for (const Buffer& buffer : buffers) {
+		std::vector<vk::DeviceSize> offsets(bufferCount, 0);
+		vkBuffers.reserve(bufferCount);
+		for (size_t i = 0; i < bufferCount; ++i) {
+			const Buffer& buffer = pBuffers[i];
 			if (buffer.getType() != BufferType::VERTEX) {
 				SA_DEBUG_LOG_ERROR("All buffers must be of VERTEX type");
 				return;

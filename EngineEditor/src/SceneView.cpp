@@ -260,7 +260,7 @@ void SceneView::onImGui() {
 			
 			auto pForwardPlus = m_pEngine->getRenderPipeline().getLayer<sa::ForwardPlus>();
 			if (pForwardPlus) {
-				auto renderData = pForwardPlus->getRenderTargetData(m_renderTarget.getID());
+				const auto& renderData = pForwardPlus->getRenderTargetData(m_renderTarget.getID());
 
 				if (renderData.renderDebugHeatmap) {
 					const sa::Texture& heatmap = renderData.debugLightHeatmap.getTexture();

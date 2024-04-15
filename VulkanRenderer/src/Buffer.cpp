@@ -201,6 +201,10 @@ namespace sa {
 		m_size = 0;
 	}
 
+	void Buffer::copy(const Buffer& other) {
+		write(other.m_pBuffer->mappedData, other.m_pBuffer->size);
+	}
+
 	void* Buffer::data() const {
 		return m_pBuffer->mappedData;
 	}

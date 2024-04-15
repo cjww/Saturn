@@ -2,8 +2,6 @@
 
 #include "../IRenderLayer.h"
 
-#define MAX_SHADOW_TEXTURE_COUNT 8u
-
 namespace sa {
 
 
@@ -35,10 +33,7 @@ namespace sa {
 		}
 	};
 
-	struct alignas(16) ShadowShaderData {
-		glm::mat4 lightMat[ShadowPreferences::MaxCascadeCount];
-		uint32_t mapIndex;
-	};
+	
 
 	class ShadowRenderLayer : public IRenderLayer<ShadowRenderData, ShadowPreferences> {
 	private:
@@ -53,15 +48,6 @@ namespace sa {
 		sa::Format m_depthFormat;
 
 		ResourceID m_depthRenderProgram = NULL_RESOURCE;
-		
-		std::array<Texture, MAX_SHADOW_TEXTURE_COUNT> m_shadowTextures;
-		uint32_t m_shadowTextureCount;
-
-		std::array<Texture, MAX_SHADOW_TEXTURE_COUNT> m_shadowCubeTextures;
-		uint32_t m_shadowCubeTextureCount;
-
-
-		DynamicBuffer m_shadowShaderDataBuffer;
 		
 		ResourceID m_shadowSampler = NULL_RESOURCE;
 
@@ -107,8 +93,6 @@ namespace sa {
 			ShadowData& data,
 			ShadowRenderData& renderData,
 			SceneCollection& sceneCollection,
-			uint32_t& shadowCount,
-			std::array<Texture, MAX_SHADOW_TEXTURE_COUNT>& shadowTextures,
 			uint32_t layerCount,
 			uint32_t index);
 
@@ -123,14 +107,6 @@ namespace sa {
 		virtual bool preRender(RenderContext& context, SceneCollection& sceneCollection) override;
 		virtual bool render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) override;
 		virtual bool postRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) override;
-
-		const Buffer& getShadowDataBuffer() const;
-		
-		const std::array<Texture, MAX_SHADOW_TEXTURE_COUNT>& getShadowTextures() const;
-		const uint32_t getShadowTextureCount() const;
-
-		const std::array<Texture, MAX_SHADOW_TEXTURE_COUNT>& getShadowCubeTextures() const;
-		const uint32_t getShadowCubeTextureCount() const;
 
 		const ResourceID getShadowSampler() const;
 		const Buffer& getPreferencesBuffer() const;

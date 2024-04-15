@@ -7,6 +7,10 @@
 #include "ECS\Components\Light.h"
 #include "ECS/Components/Transform.h"
 
+
+#define MAX_SHADOW_TEXTURE_COUNT 8u
+
+
 namespace sa {
 	class Scene;
 
@@ -23,6 +27,10 @@ namespace sa {
 		std::array<glm::mat4, 6> lightProjMatrices = { glm::mat4(1.0f) };
 		std::array<glm::mat4, 6> lightViewMatrices = { glm::mat4(1.0f) };
 
+	};
+	struct alignas(16) ShadowShaderData {
+		glm::mat4 lightMat[6];
+		uint32_t mapIndex;
 	};
 
 	class MaterialShaderCollection {
@@ -65,7 +73,7 @@ namespace sa {
 
 		MaterialShaderCollection(MaterialShader* pMaterialShader);
 
-		MaterialShaderCollection& operator=(const MaterialShaderCollection) = delete;
+		//MaterialShaderCollection& operator=(const MaterialShaderCollection) = delete;
 
 		void addMesh(ModelAsset* pModelAsset, uint32_t meshIndex, const Entity& entity);
 		void removeMesh(const ModelAsset* pModelAsset, uint32_t meshIndex, const Entity& entity);
@@ -128,7 +136,16 @@ namespace sa {
 
 		std::unordered_map<Entity, LightData> m_entityLights;
 		
-		std::vector<ShadowData> m_shadowData;
+		struct {
+			std::vector<ShadowData> data;
+			DynamicBuffer shaderDataBuffer;
+
+			std::array<Texture, MAX_SHADOW_TEXTURE_COUNT> textures;
+			uint32_t textureCount;
+
+			std::array<Texture, MAX_SHADOW_TEXTURE_COUNT> cubeTextures;
+			uint32_t cubeTextureCount;
+		} m_shadows;
 
 		void addQueuedEntities();
 
@@ -177,6 +194,16 @@ namespace sa {
 		
 		std::vector<MaterialShaderCollection>::iterator begin();
 		std::vector<MaterialShaderCollection>::iterator end();
+
+		uint32_t insertShaderData(ShadowShaderData& shaderData, const sa::Texture& depthTexture, uint32_t index);
+
+		const Buffer& getShadowDataBuffer() const;
+
+		const std::array<Texture, MAX_SHADOW_TEXTURE_COUNT>& getShadowTextures() const;
+		const uint32_t getShadowTextureCount() const;
+
+		const std::array<Texture, MAX_SHADOW_TEXTURE_COUNT>& getShadowCubeTextures() const;
+		const uint32_t getShadowCubeTextureCount() const;
 
 	};
 }

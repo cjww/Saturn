@@ -16,6 +16,10 @@ namespace sa {
 		DynamicBuffer();
 		DynamicBuffer(BufferType type, size_t size = 0, void* initialData = nullptr);
 
+		DynamicBuffer(const DynamicBuffer&) = delete;
+		DynamicBuffer(DynamicBuffer&&) = default;
+		DynamicBuffer& operator=(const DynamicBuffer&) = default;
+
 		void create(BufferType type, size_t size = 0, void* initialData = nullptr);
 		void destroy();
 
@@ -56,6 +60,8 @@ namespace sa {
 		template<typename T, size_t Size>
 		void append(const std::array<T, Size>& data, int alignment = 0);
 
+		void copy(const Buffer& other);
+
 		void resize(size_t newSize, BufferResizeFlags resizeFlags = PRESERVE_CONTENT);
 		void reserve(size_t capacity, BufferResizeFlags resizeFlags = PRESERVE_CONTENT);
 
@@ -82,8 +88,7 @@ namespace sa {
 		Buffer& operator<<(std::array<T, Size>& values);
 
 		operator const Buffer& ();
-		operator Buffer& ();
-
+		
 		template<typename T>
 		T& at(uint32_t index) const;
 

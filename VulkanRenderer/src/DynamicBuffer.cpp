@@ -78,6 +78,10 @@ namespace sa{
 		m_buffers[m_currentBufferIndex].append(data, size, alignment);
 	}
 
+	void DynamicBuffer::copy(const Buffer& other) {
+		m_buffers[m_currentBufferIndex].copy(other);
+	}
+
 	void DynamicBuffer::resize(size_t newSize, BufferResizeFlags resizeFlags) {
 		m_buffers[m_currentBufferIndex].resize(newSize, resizeFlags);
 	}
@@ -107,10 +111,6 @@ namespace sa{
 
 	DynamicBuffer::operator const Buffer& () {
 		return getBuffer();
-	}
-
-	DynamicBuffer::operator Buffer& () {
-		return m_buffers.at(m_currentBufferIndex);
 	}
 
 
