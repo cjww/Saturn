@@ -95,6 +95,8 @@ void SceneView::update(float dt) {
 
 		std::copy(m_gpuMemoryData.begin() + 1, m_gpuMemoryData.end(), m_gpuMemoryData.begin());
 		m_gpuMemoryData[m_gpuMemoryData.size() - 1] = stats.gpuMemoryStats.totalUsage / 1000000;
+		
+		m_statsTimer = 0.0f;
 	}
 
 	if (!m_isFocused) {
@@ -522,6 +524,9 @@ void SceneView::onImGui() {
 				ImGui::PopStyleColor();
 				ImGui::Text("Frame time: %f ms", stats.frameTime * 1000);
 
+				ImGui::Text("Draw calls: %u", stats.drawCalls);
+				ImGui::Text("Dispatch calls: %u", stats.dispatchCalls);
+
 			}
 			if (ImGui::CollapsingHeader("Memory")) {
 				ImGui::PushStyleColor(ImGuiCol_PlotHistogram, ImVec4(1.f, 1.f, 1.f, 1.f));
@@ -571,21 +576,23 @@ void SceneView::onImGui() {
 					id = id ^ m_renderTarget.getID();
 				}
 				const auto& renderData = pLayer->getRenderTargetData(id);
-				const auto& prefs = pLayer->getPreferences();
-				static int layer = 0;
-				ImGui::InputInt("Shadowmap layer", &layer);
-				int max = (pLight->values.type == sa::LightType::DIRECTIONAL) ? prefs.cascadeCount : sa::ShadowPreferences::MaxCascadeCount;
-				layer = std::min(std::max(layer, 0), max - 1);
+				if (renderData.isInitialized) {
+					const auto& prefs = pLayer->getPreferences();
+					static int layer = 0;
+					ImGui::InputInt("Shadowmap layer", &layer);
+					int max = (pLight->values.type == sa::LightType::DIRECTIONAL) ? prefs.cascadeCount : sa::ShadowPreferences::MaxCascadeCount;
+					layer = std::min(std::max(layer, 0), max - 1);
 
-				ResourceID framebuffer = renderData.depthFramebuffers[layer];
-				if (framebuffer != NULL_RESOURCE) {
-					sa::Texture tex = sa::Renderer::Get().getFramebufferTexture(framebuffer, 0);
-					sa::Extent framebufferExtent = sa::Renderer::Get().getFramebufferExtent(framebuffer);
+					ResourceID framebuffer = renderData.depthFramebuffers[layer];
+					if (framebuffer != NULL_RESOURCE) {
+						sa::Texture tex = sa::Renderer::Get().getFramebufferTexture(framebuffer, 0);
+						sa::Extent framebufferExtent = sa::Renderer::Get().getFramebufferExtent(framebuffer);
 
-					ImVec2 imAvailSize = ImGui::GetContentRegionAvail();
-					glm::vec2 availSize(imAvailSize.x, imAvailSize.y);
+						ImVec2 imAvailSize = ImGui::GetContentRegionAvail();
+						glm::vec2 availSize(imAvailSize.x, imAvailSize.y);
 
-					ImGui::Image(tex, ImVec2(availSize.x, availSize.x));
+						ImGui::Image(tex, ImVec2(availSize.x, availSize.x));
+					}
 				}
 				
 

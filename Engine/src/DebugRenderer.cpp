@@ -47,9 +47,12 @@ namespace sa {
     }
 
     void DebugRenderer::render(RenderContext& context, Extent extent, const SceneCamera& sceneCamera) {
-        if(!m_lineList.empty())
-            m_lineVertexBuffer.write(m_lineList);
+        
+        if (m_lineList.empty())
+            return;
             
+        m_lineVertexBuffer.write(m_lineList);
+        
         context.bindPipelineLayout(m_pipelineLayout);
         context.bindPipeline(m_wireframePipeline);
 
@@ -66,6 +69,7 @@ namespace sa {
         context.bindVertexBuffers(0, &m_lineVertexBuffer.getBuffer(), 1);
         
         context.draw(m_lineVertexBuffer.getElementCount<Vertex>(), 1);
+        Engine::GetEngineStatistics().drawCalls++;
 
         m_lineVertexBuffer.swap();
         m_lineList.clear();

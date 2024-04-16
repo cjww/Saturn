@@ -219,7 +219,7 @@ namespace sa {
 		context.dispatch(threadX, threadY, 1);
 
 		pRenderTarget->setOutputTexture(bd.outputTexture);
-
+		Engine::GetEngineStatistics().dispatchCalls += bd.bufferMipTextures.size() * 2 + 2;
 		return true;
 	}
 

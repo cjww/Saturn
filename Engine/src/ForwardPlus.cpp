@@ -259,7 +259,9 @@ namespace sa {
 
 			if (collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>() > 0) {
 				context.pushConstant(ShaderStageFlagBits::VERTEX, perFrame);
-				context.drawIndexedIndirect(collection.getDrawCommandBuffer(), 0, collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
+				size_t drawCallCount = collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>();
+				context.drawIndexedIndirect(collection.getDrawCommandBuffer(), 0, drawCallCount, sizeof(DrawIndexedIndirectCommand));
+				Engine::GetEngineStatistics().drawCalls += drawCallCount;
 			}
 
 		}
@@ -278,6 +280,7 @@ namespace sa {
 		context.pushConstant(ShaderStageFlagBits::COMPUTE, pCamera->getViewMatrix(), sizeof(Matrix4x4));
 
 		context.dispatch(data.tileCount.x, data.tileCount.y, 1);
+		Engine::GetEngineStatistics().dispatchCalls++;
 
 		// Main color pass
 		context.beginRenderProgram(m_colorRenderProgram, data.colorFramebuffer, SubpassContents::DIRECT);
@@ -332,8 +335,9 @@ namespace sa {
 			if (collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>() > 0) {
 				context.pushConstant(ShaderStageFlagBits::VERTEX | ShaderStageFlagBits::FRAGMENT, perFrame);
 				context.pushConstant(ShaderStageFlagBits::FRAGMENT, data.tileCount.x, sizeof(perFrame));
-
-				context.drawIndexedIndirect(collection.getDrawCommandBuffer(), 0, collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
+				size_t drawCallCount = collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>();
+				context.drawIndexedIndirect(collection.getDrawCommandBuffer(), 0, drawCallCount, sizeof(DrawIndexedIndirectCommand));
+				Engine::GetEngineStatistics().drawCalls += drawCallCount;
 			}
 		}
 
@@ -360,6 +364,8 @@ namespace sa {
 			context.pushConstant(ShaderStageFlagBits::FRAGMENT, data.tileCount.x);
 			context.draw(6, 1);
 			context.endRenderProgram(m_debugLightHeatmapRenderProgram);
+
+			Engine::GetEngineStatistics().drawCalls++;
 		}
 		
 

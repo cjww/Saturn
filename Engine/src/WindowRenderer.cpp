@@ -79,5 +79,6 @@ namespace sa {
 		context.bindDescriptorSet(m_swapchainDescriptorSet);
 		context.draw(6, 1);
 		context.endRenderProgram(m_swapchainRenderProgram);
+		Engine::GetEngineStatistics().drawCalls++;
 	}
 }

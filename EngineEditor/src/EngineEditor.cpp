@@ -333,17 +333,12 @@ namespace sa {
 		engine.sink<engine_event::SceneSet>().disconnect<&Engine::onSceneSet>(m_pEngine);
 		engine.sink<engine_event::SceneSet>().connect<&EngineEditor::onSceneSet>(this);
 
-		m_editorModules.push_back(std::make_unique<SceneView>(&engine, this, &renderWindow));
-
 		m_editorModules.push_back(std::make_unique<EntityInspector>(&engine, this));
-
 		m_editorModules.push_back(std::make_unique<SceneHierarchy>(&engine, this));
-
-		m_editorModules.push_back(std::make_unique<GameView>(&engine, this, &renderWindow));
-
 		m_editorModules.push_back(std::make_unique<RenderPipelinePreferences>(&engine, this));
-		
 		m_editorModules.push_back(std::make_unique<DirectoryView>(&engine, this));
+		m_editorModules.push_back(std::make_unique<GameView>(&engine, this, &renderWindow));
+		m_editorModules.push_back(std::make_unique<SceneView>(&engine, this, &renderWindow));
 
 		//Application::Get()->pushLayer(new TestLayer);
 

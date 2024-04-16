@@ -140,7 +140,10 @@ namespace sa {
 			context.pushConstant(ShaderStageFlagBits::VERTEX | ShaderStageFlagBits::FRAGMENT, perFrame);
 			uint32_t linearizeDepth = data.lightType == LightType::POINT ? 1u : 0u;
 			context.pushConstant(ShaderStageFlagBits::FRAGMENT, linearizeDepth, sizeof(perFrame));
-			context.drawIndexedIndirect(collection.getDrawCommandBuffer(), 0, collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>(), sizeof(DrawIndexedIndirectCommand));
+			size_t drawCallCount = collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>();
+			context.drawIndexedIndirect(collection.getDrawCommandBuffer(), 0, drawCallCount, sizeof(DrawIndexedIndirectCommand));
+			Engine::GetEngineStatistics().drawCalls += drawCallCount;
+
 		}
 		context.endRenderProgram(m_depthRenderProgram);
 	}
@@ -465,7 +468,7 @@ namespace sa {
 			sa::ShadowData& data = *it;
 			if (data.lightType == LightType::DIRECTIONAL)
 				continue;
-
+			
 			ShadowRenderData& renderData = getRenderTargetData(static_cast<uint64_t>(data.entityID));
 			uint32_t index = it - sceneCollection.iterateShadowsBegin();
 

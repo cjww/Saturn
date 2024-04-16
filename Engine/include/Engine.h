@@ -49,7 +49,6 @@ namespace sa {
 		static void SetShaderDirectory(const std::filesystem::path& path);
 		
 		static EngineStatistics& GetEngineStatistics();
-
 		void collectStatistics(float dt);
 
 		// Call this to set up engine

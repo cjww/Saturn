@@ -54,7 +54,7 @@ namespace sa {
 
 			m_statsQuery.frameTimeCount = std::min<uint32_t>(m_statsQuery.frameTimeCount, m_statsQuery.frameTimes.size());
 			int diff = m_statsQuery.frameTimes.size() - m_statsQuery.frameTimeCount;
-			float sum = std::accumulate(m_statsQuery.frameTimes.begin(), m_statsQuery.frameTimes.end() - diff, 0);
+			float sum = std::accumulate(m_statsQuery.frameTimes.begin(), m_statsQuery.frameTimes.end() - diff, 0.0f);
 			
 			stats.avgFrameTime = sum / m_statsQuery.frameTimeCount;
 
@@ -124,6 +124,10 @@ namespace sa {
 
 		if (!m_pWindow)
 			return;
+
+		auto& stats = GetEngineStatistics();
+		stats.drawCalls = 0;
+		stats.dispatchCalls = 0;
 
 		RenderContext context = m_pWindow->beginFrame();
 		if (!context)
