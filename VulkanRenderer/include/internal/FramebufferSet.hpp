@@ -23,18 +23,18 @@ namespace sa {
 
 	public:
 		FramebufferSet();
-		FramebufferSet(VulkanCore* pCore, vk::RenderPass renderPass, const std::vector<DynamicTexture>& images, Extent extent, uint32_t layers);
-		FramebufferSet(VulkanCore* pCore, vk::RenderPass renderPass, Swapchain* pSwapchain, const std::vector<DynamicTexture>& images, uint32_t layers);
+		FramebufferSet(VulkanCore* pCore, vk::RenderPass renderPass, const DynamicTexture* pImages, uint32_t imageCount, Extent extent, uint32_t layers);
+		FramebufferSet(VulkanCore* pCore, vk::RenderPass renderPass, Swapchain* pSwapchain, const DynamicTexture* pImages, uint32_t imageCount, uint32_t layers);
 
-		FramebufferSet(VulkanCore* pCore, vk::RenderPass renderPass, const std::vector<Texture>& images, Extent extent, uint32_t layers);
-		FramebufferSet(VulkanCore* pCore, vk::RenderPass renderPass, Swapchain* pSwapchain, const std::vector<Texture>& images, uint32_t layers);
+		FramebufferSet(VulkanCore* pCore, vk::RenderPass renderPass, const Texture* pImages, uint32_t imageCount, Extent extent, uint32_t layers);
+		FramebufferSet(VulkanCore* pCore, vk::RenderPass renderPass, Swapchain* pSwapchain, const Texture* pImages, uint32_t imageCount, uint32_t layers);
 
 
-		void create(VulkanCore* pCore, vk::RenderPass renderPass, const std::vector<DynamicTexture>& images, Extent extent, uint32_t layers);
-		void create(VulkanCore* pCore, vk::RenderPass renderPass, Swapchain* pSwapchain, const std::vector<DynamicTexture>& images, uint32_t layers);
+		void create(VulkanCore* pCore, vk::RenderPass renderPass, const DynamicTexture* pImages, uint32_t imageCount, Extent extent, uint32_t layers);
+		void create(VulkanCore* pCore, vk::RenderPass renderPass, Swapchain* pSwapchain, const DynamicTexture* pImages, uint32_t imageCount, uint32_t layers);
 		
-		void create(VulkanCore* pCore, vk::RenderPass renderPass, const std::vector<Texture>& images, Extent extent, uint32_t layers);
-		void create(VulkanCore* pCore, vk::RenderPass renderPass, Swapchain* pSwapchain, const std::vector<Texture>& images, uint32_t layers);
+		void create(VulkanCore* pCore, vk::RenderPass renderPass, const Texture* pImages, uint32_t imageCount, Extent extent, uint32_t layers);
+		void create(VulkanCore* pCore, vk::RenderPass renderPass, Swapchain* pSwapchain, const Texture* pImages, uint32_t imageCount, uint32_t layers);
 
 		void destroy();
 

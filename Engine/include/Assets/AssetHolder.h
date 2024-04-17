@@ -28,6 +28,8 @@ namespace sa {
 		bool isHolding() const;
 
 		operator bool() const;
+		operator T* () const;
+		T* operator ->() const;
 
 		T* getAsset() const;
 
@@ -38,6 +40,7 @@ namespace sa {
 		const UUID& getID() const;
 		static AssetTypeID GetTypeID();
 
+		bool isLoaded() const;
 
 	};
 
@@ -184,6 +187,16 @@ namespace sa {
 		return isHolding();
 	}
 
+	template<typename T>
+	inline AssetHolder<T>::operator T* () const {
+		return getAsset();
+	}
+
+	template<typename T>
+	inline T* AssetHolder<T>::operator->() const {
+		return m_pAsset;
+	}
+
 	template <typename T>
 	T* AssetHolder<T>::getAsset() const {
 		if (m_pAsset && m_pAsset->getProgress().isDone() && m_pAsset->isLoaded())
@@ -220,6 +233,13 @@ namespace sa {
 	template <typename T>
 	AssetTypeID AssetHolder<T>::GetTypeID() {
 		return AssetManager::Get().getAssetTypeID<T>();
+	}
+
+	template<typename T>
+	inline bool AssetHolder<T>::isLoaded() const {
+		if (!isHolding())
+			return false;
+		return m_pAsset->isLoaded();
 	}
 
 }

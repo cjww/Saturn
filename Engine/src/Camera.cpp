@@ -7,7 +7,14 @@
 
 
 namespace comp {
-	Camera::Camera() 
+	void Camera::onRendertargetResize(const sa::engine_event::RenderTargetResized& e) {
+		// reset aspect ratio if current rendertarget was resized
+		if (m_renderTarget.isHolding() && e.renderTargetID == m_renderTarget.getID()) {
+			camera.setAspectRatio(static_cast<float>(e.newExtent.width) / e.newExtent.height);
+		}
+	}
+
+	Camera::Camera()
 		: sceneCollection(sa::SceneCollection::CollectionMode::CONTINUOUS)
 	{
 
@@ -60,6 +67,8 @@ namespace comp {
 
 	void Camera::setRenderTarget(sa::RenderTarget* pRenderTarget) {
 		m_renderTarget = pRenderTarget;
+		if(pRenderTarget)
+			camera.setAspectRatio(static_cast<float>(pRenderTarget->getExtent().width) / pRenderTarget->getExtent().height);
 	}
 
 

@@ -11,70 +11,81 @@ namespace sa{
 	{
 	}
 
-	FramebufferSet::FramebufferSet(VulkanCore* pCore, vk::RenderPass renderPass, const std::vector<DynamicTexture>& images, Extent extent, uint32_t layers) 
+	FramebufferSet::FramebufferSet(VulkanCore* pCore, vk::RenderPass renderPass, const DynamicTexture* pImages, uint32_t imageCount, Extent extent, uint32_t layers)
 		: FramebufferSet()
 	{
 		m_isDynamic = true;
 		m_device = pCore->getDevice();
 		m_extent = extent;
 		
-		m_dynamicImages = images;
+		m_dynamicImages.resize(imageCount);
+		for (uint32_t i = 0; i < imageCount; ++i) {
+			m_dynamicImages[i] = pImages[i];
+		}
 
-		create(pCore, renderPass, images, extent, layers);
+		create(pCore, renderPass, pImages, imageCount, extent, layers);
 	}
 
 
-	FramebufferSet::FramebufferSet(VulkanCore* pCore, vk::RenderPass renderPass, Swapchain* pSwapchain, const std::vector<DynamicTexture>& images, uint32_t layers)
+	FramebufferSet::FramebufferSet(VulkanCore* pCore, vk::RenderPass renderPass, Swapchain* pSwapchain, const DynamicTexture* pImages, uint32_t imageCount, uint32_t layers)
 		: FramebufferSet()
 	{
 		m_isDynamic = true;
 		m_device = pCore->getDevice();
 		m_extent = pSwapchain->getExtent();
 
-		m_dynamicImages = images;
+		m_dynamicImages.resize(imageCount);
+		for (uint32_t i = 0; i < imageCount; ++i) {
+			m_dynamicImages[i] = pImages[i];
+		}
 
 		m_pSwapchain = pSwapchain;
-		create(pCore, renderPass, pSwapchain, images, layers);
+		create(pCore, renderPass, pSwapchain, pImages, imageCount, layers);
 	}
 
-	FramebufferSet::FramebufferSet(VulkanCore* pCore, vk::RenderPass renderPass, const std::vector<Texture>& images, Extent extent, uint32_t layers)
+	FramebufferSet::FramebufferSet(VulkanCore* pCore, vk::RenderPass renderPass, const Texture* pImages, uint32_t imageCount, Extent extent, uint32_t layers)
 		: FramebufferSet()
 	{
 		m_isDynamic = false;
 		m_device = pCore->getDevice();
 		m_extent = extent;
 
-		m_images = images;
+		m_images.resize(imageCount);
+		for (uint32_t i = 0; i < imageCount; ++i) {
+			m_images[i] = pImages[i];
+		}
 
-		create(pCore, renderPass, images, extent, layers);
+		create(pCore, renderPass, pImages, imageCount, extent, layers);
 	}
 
 
-	FramebufferSet::FramebufferSet(VulkanCore* pCore, vk::RenderPass renderPass, Swapchain* pSwapchain, const std::vector<Texture>& images, uint32_t layers)
+	FramebufferSet::FramebufferSet(VulkanCore* pCore, vk::RenderPass renderPass, Swapchain* pSwapchain, const Texture* pImages, uint32_t imageCount, uint32_t layers)
 		: FramebufferSet()
 	{
 		m_isDynamic = false;
 		m_device = pCore->getDevice();
 		m_extent = pSwapchain->getExtent();
 
-		m_images = images;
+		m_images.resize(imageCount);
+		for (uint32_t i = 0; i < imageCount; ++i) {
+			m_images[i] = pImages[i];
+		}
 
 		m_pSwapchain = pSwapchain;
-		create(pCore, renderPass, pSwapchain, images, layers);
+		create(pCore, renderPass, pSwapchain, pImages, imageCount, layers);
 	}
 
 
 
-	void FramebufferSet::create(VulkanCore* pCore, vk::RenderPass renderPass, const std::vector<DynamicTexture>& images, Extent extent, uint32_t layers) {
+	void FramebufferSet::create(VulkanCore* pCore, vk::RenderPass renderPass, const DynamicTexture* pImages, uint32_t imageCount, Extent extent, uint32_t layers) {
 		if (m_buffers.size() > 0)
 			destroy();
 		
 		std::vector<std::vector<vk::ImageView>> framebufferViews(pCore->getQueueCount());
 		for (uint32_t i = 0; i < (uint32_t)framebufferViews.size(); i++) {
-			framebufferViews[i].resize(images.size());
-			for (uint32_t j = 0; j < images.size(); j++) {
-				auto& texture = images[j].getTexture(i);
-				framebufferViews[i][j] = *texture.getView();
+			framebufferViews[i].resize(imageCount);
+			for (uint32_t j = 0; j < imageCount; j++) {
+				framebufferViews[i][j] = *pImages[j].getTexture(i).getView();
 			}
 		}
 
@@ -84,7 +95,7 @@ namespace sa{
 		}
 	}
 
-	void FramebufferSet::create(VulkanCore* pCore, vk::RenderPass renderPass, Swapchain* pSwapchain, const std::vector<DynamicTexture>& images, uint32_t layers) {
+	void FramebufferSet::create(VulkanCore* pCore, vk::RenderPass renderPass, Swapchain* pSwapchain, const DynamicTexture* pImages, uint32_t imageCount, uint32_t layers) {
 		if (m_buffers.size() > 0)
 			destroy();
 
@@ -94,10 +105,10 @@ namespace sa{
 		uint32_t count = static_cast<uint32_t>(swapchainViews.size());
 		std::vector<std::vector<vk::ImageView>> framebufferViews(count);
 		for (uint32_t i = 0; i < count; i++) {
-			framebufferViews[i].resize(images.size() + 1);
+			framebufferViews[i].resize(imageCount + 1);
 			framebufferViews[i][0] = swapchainViews[i];
 			for (uint32_t j = 1; j < (uint32_t)framebufferViews[i].size(); j++) {
-				auto& texture = images[j - 1].getTexture(i % images[j - 1].getTextureCount());
+				auto& texture = pImages[j - 1].getTexture(i % pImages[j - 1].getTextureCount());
 				framebufferViews[i][j] = *texture.getView();
 			}
 		}
@@ -109,14 +120,14 @@ namespace sa{
 	}
 
 
-	void FramebufferSet::create(VulkanCore* pCore, vk::RenderPass renderPass, const std::vector<Texture>& images, Extent extent, uint32_t layers) {
+	void FramebufferSet::create(VulkanCore* pCore, vk::RenderPass renderPass, const Texture* pImages, uint32_t imageCount, Extent extent, uint32_t layers) {
 		if (m_buffers.size() > 0)
 			destroy();
 
 		std::vector<std::vector<vk::ImageView>> framebufferViews(pCore->getQueueCount());
 		for (uint32_t i = 0; i < (uint32_t)framebufferViews.size(); i++) {
-			for (auto& texture : images) {
-				framebufferViews[i].push_back(*texture.getView());
+			for (uint32_t i = 0; i < imageCount; ++i) {
+				framebufferViews[i].push_back(*pImages[i].getView());
 			}
 		}
 
@@ -126,7 +137,7 @@ namespace sa{
 		}
 	}
 
-	void FramebufferSet::create(VulkanCore* pCore, vk::RenderPass renderPass, Swapchain* pSwapchain, const std::vector<Texture>& images, uint32_t layers) {
+	void FramebufferSet::create(VulkanCore* pCore, vk::RenderPass renderPass, Swapchain* pSwapchain, const Texture* pImages, uint32_t imageCount, uint32_t layers) {
 		if (m_buffers.size() > 0)
 			destroy();
 
@@ -136,11 +147,10 @@ namespace sa{
 		uint32_t count = static_cast<uint32_t>(swapchainViews.size());
 		std::vector<std::vector<vk::ImageView>> framebufferViews(count);
 		for (uint32_t i = 0; i < count; i++) {
-			framebufferViews[i].resize(images.size() + 1);
+			framebufferViews[i].resize(imageCount + 1);
 			framebufferViews[i][0] = swapchainViews[i];
 			for (uint32_t j = 1; j < (uint32_t)framebufferViews[i].size(); j++) {
-				Texture texture = images[j - 1];
-				framebufferViews[i][j] = *texture.getView();
+				framebufferViews[i][j] = *pImages[j - 1].getView();
 			}
 		}
 

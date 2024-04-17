@@ -178,42 +178,15 @@ namespace sa {
 		pRenderProgram->setClearColor(color);
 	}
 
-	ResourceID Renderer::createFramebuffer(ResourceID renderProgram, const std::vector<DynamicTexture>& attachmentTextures, uint32_t layers) {
-		if (attachmentTextures.empty())
+	ResourceID Renderer::createFramebuffer(ResourceID renderProgram, const DynamicTexture* pAttachmentTextures, uint32_t attachmentCount, uint32_t layers) {
+		if (attachmentCount == 0 || pAttachmentTextures == nullptr)
 			throw std::runtime_error("At least one attachmnet is required to create a framebuffer");
 
-		RenderProgram* pRenderProgram = RenderContext::GetRenderProgram(renderProgram);
-		
-		return ResourceManager::Get().insert<FramebufferSet>(
-			m_pCore.get(),
-			pRenderProgram->getRenderPass(),
-			attachmentTextures,
-			attachmentTextures[0].getExtent(),
-			layers);
+		return createFramebuffer(renderProgram, pAttachmentTextures, attachmentCount, pAttachmentTextures[0].getExtent(), layers);
 	}
 
-	ResourceID Renderer::createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<DynamicTexture>& additionalAttachmentTextures, uint32_t layers) {
-		Swapchain* pSwapchain = RenderContext::GetSwapchain(swapchain);
-		RenderProgram* pRenderProgram = RenderContext::GetRenderProgram(renderProgram);
-
-		return ResourceManager::Get().insert<FramebufferSet>(
-			m_pCore.get(),
-			pRenderProgram->getRenderPass(),
-			pSwapchain,
-			additionalAttachmentTextures,
-			layers);
-	}
-
-
-	ResourceID Renderer::createFramebuffer(ResourceID renderProgram, const std::vector<Texture>& attachmentTextures, uint32_t layers) {
-		if (attachmentTextures.empty())
-			throw std::runtime_error("At least one attachmnet is required to create a framebuffer");
-
-		return createFramebuffer(renderProgram, attachmentTextures, attachmentTextures[0].getExtent(), layers);
-	}
-
-	ResourceID Renderer::createFramebuffer(ResourceID renderProgram, const std::vector<Texture>& attachmentTextures, Extent extent, uint32_t layers) {
-		if (attachmentTextures.empty())
+	ResourceID Renderer::createFramebuffer(ResourceID renderProgram, const DynamicTexture* pAttachmentTextures, uint32_t attachmentCount, Extent extent, uint32_t layers) {
+		if (attachmentCount == 0 || pAttachmentTextures == nullptr)
 			throw std::runtime_error("At least one attachmnet is required to create a framebuffer");
 
 		RenderProgram* pRenderProgram = RenderContext::GetRenderProgram(renderProgram);
@@ -221,12 +194,14 @@ namespace sa {
 		return ResourceManager::Get().insert<FramebufferSet>(
 			m_pCore.get(),
 			pRenderProgram->getRenderPass(),
-			attachmentTextures,
+			pAttachmentTextures,
+			attachmentCount,
 			extent,
 			layers);
 	}
 
-	ResourceID Renderer::createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const std::vector<Texture>& additionalAttachmentTextures, uint32_t layers) {
+
+	ResourceID Renderer::createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const DynamicTexture* pAttachmentTextures, uint32_t attachmentCount, uint32_t layers) {
 		Swapchain* pSwapchain = RenderContext::GetSwapchain(swapchain);
 		RenderProgram* pRenderProgram = RenderContext::GetRenderProgram(renderProgram);
 
@@ -234,19 +209,56 @@ namespace sa {
 			m_pCore.get(),
 			pRenderProgram->getRenderPass(),
 			pSwapchain,
-			additionalAttachmentTextures,
+			pAttachmentTextures,
+			attachmentCount,
+			layers);
+	}
+
+
+	ResourceID Renderer::createFramebuffer(ResourceID renderProgram, const Texture* pAttachmentTextures, uint32_t attachmentCount, uint32_t layers) {
+		if (attachmentCount == 0 || pAttachmentTextures == nullptr)
+			throw std::runtime_error("At least one attachmnet is required to create a framebuffer");
+
+		return createFramebuffer(renderProgram, pAttachmentTextures, attachmentCount, pAttachmentTextures[0].getExtent(), layers);
+	}
+
+	ResourceID Renderer::createFramebuffer(ResourceID renderProgram, const Texture* pAttachmentTextures, uint32_t attachmentCount, Extent extent, uint32_t layers) {
+		if (attachmentCount == 0 || pAttachmentTextures == nullptr)
+			throw std::runtime_error("At least one attachmnet is required to create a framebuffer");
+
+		RenderProgram* pRenderProgram = RenderContext::GetRenderProgram(renderProgram);
+
+		return ResourceManager::Get().insert<FramebufferSet>(
+			m_pCore.get(),
+			pRenderProgram->getRenderPass(),
+			pAttachmentTextures,
+			attachmentCount,
+			extent,
+			layers);
+	}
+
+	ResourceID Renderer::createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const Texture* pAttachmentTextures, uint32_t attachmentCount, uint32_t layers) {
+		Swapchain* pSwapchain = RenderContext::GetSwapchain(swapchain);
+		RenderProgram* pRenderProgram = RenderContext::GetRenderProgram(renderProgram);
+
+		return ResourceManager::Get().insert<FramebufferSet>(
+			m_pCore.get(),
+			pRenderProgram->getRenderPass(),
+			pSwapchain,
+			pAttachmentTextures,
+			attachmentCount,
 			layers);
 	}
 
 	ResourceID Renderer::createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, uint32_t layers) {
 		Swapchain* pSwapchain = RenderContext::GetSwapchain(swapchain);
 		RenderProgram* pRenderProgram = RenderContext::GetRenderProgram(renderProgram);
-		std::vector<Texture> textures;
 		return ResourceManager::Get().insert<FramebufferSet>(
 			m_pCore.get(),
 			pRenderProgram->getRenderPass(),
 			pSwapchain,
-			textures,
+			(Texture*)nullptr,
+			0,
 			layers);
 	}
 

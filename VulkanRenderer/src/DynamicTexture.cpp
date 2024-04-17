@@ -74,6 +74,18 @@ namespace sa {
 	TextureUsageFlags DynamicTexture::getUsageFlags() const {
 		return getTexture().getUsageFlags();
 	}
+
+	TextureType DynamicTexture::getTextureType() const {
+		return m_textures.front().getTextureType();
+	}
+
+	uint32_t DynamicTexture::getArrayLayerCount() const {
+		return m_textures.front().getArrayLayerCount();
+	}
+
+	uint32_t DynamicTexture::getMipLevelCount() const {
+		return m_textures.front().getMipLevelCount();
+	}
 	
 	const Texture& DynamicTexture::getTexture(uint32_t index) const {
 		return m_textures[(index == -1) ? m_currentTextureIndex : index];
@@ -94,15 +106,11 @@ namespace sa {
 	uint32_t DynamicTexture::getTextureCount() const {
 		return m_textures.size();
 	}
-
-	DynamicTexture::operator const Texture() const {
+	
+	DynamicTexture::operator const Texture&() const {
 		return getTexture();
 	}
-
-	DynamicTexture::operator Texture() const {
-		return getTexture();
-	}
-
+	
 	bool DynamicTexture::isValid() const {
 		return !m_textures.empty() && getTexture().isValid();
 	}
@@ -146,22 +154,62 @@ namespace sa {
 	}
 
 	std::vector<DynamicTexture> DynamicTexture::createMipLevelTextures() {
-		std::vector<DynamicTexture> dynamicTextures;
+		uint32_t count = getMipLevelCount();
+		std::vector<DynamicTexture> dynamicTextures(count);
+		createMipLevelTextures(&count, dynamicTextures.data());
+		return std::move(dynamicTextures);
+	}
+
+	void DynamicTexture::createMipLevelTextures(uint32_t* count, DynamicTexture* pTextures) {
+		if (!pTextures) {
+			*count = getMipLevelCount();
+			return;
+		}
 
 		std::vector<std::vector<Texture>> textures;
 		for (auto& tex : m_textures) {
-			std::vector<Texture> mipTextures = tex.createMipLevelTextures();
-			for (int i = 0; i < mipTextures.size(); i++) {
-				if (textures.empty())
-					textures.resize(mipTextures.size());
+			uint32_t count = tex.getMipLevelCount();
+			std::vector<Texture> mipTextures(count);
+			tex.createMipLevelTextures(&count, mipTextures.data());
+			if (textures.empty())
+				textures.resize(mipTextures.size());
+			for (int i = 0; i < mipTextures.size(); ++i) {
 				textures[i].push_back(mipTextures[i]);
 			}
 		}
 
-		for (auto& texArray : textures) {
-			dynamicTextures.push_back(DynamicTexture(texArray, m_currentTextureIndex));
+		for (uint32_t i = 0; i < textures.size(); ++i) {
+			pTextures[i] = DynamicTexture(textures[i], m_currentTextureIndex);
+		}
+	}
+
+	std::vector<DynamicTexture> DynamicTexture::createArrayLayerTextures() {
+		uint32_t count = getArrayLayerCount();
+		std::vector<DynamicTexture> dynamicTextures(count);
+		createArrayLayerTextures(&count, dynamicTextures.data());
+		return std::move(dynamicTextures);
+	}
+
+	void DynamicTexture::createArrayLayerTextures(uint32_t* count, DynamicTexture* pTextures) {
+		if (!pTextures) {
+			*count = getArrayLayerCount();
+			return;
+		}
+		
+		std::vector<std::vector<Texture>> textures;
+		for (auto& tex : m_textures) {
+			uint32_t count = tex.getArrayLayerCount();
+			std::vector<Texture> arrayLayerTextures(count);
+			tex.createArrayLayerTextures(&count, arrayLayerTextures.data());
+			if (textures.empty())
+				textures.resize(arrayLayerTextures.size());
+			for (int i = 0; i < arrayLayerTextures.size(); i++) {
+				textures[i].push_back(arrayLayerTextures[i]);
+			}
 		}
 
-		return dynamicTextures;
+		for (uint32_t i = 0; i < textures.size(); ++i) {
+			pTextures[i] = DynamicTexture(textures[i], m_currentTextureIndex);
+		}
 	}
 }

@@ -170,8 +170,10 @@ namespace sa {
 				renderPipeline.render(context, &camera.camera, pRenderTarget, camera.sceneCollection);
 			}
 			else {
-				if (!renderedToMainRenderTarget)
+				if (!renderedToMainRenderTarget) {
+					camera.camera.setAspectRatio(static_cast<float>(mainRenderTarget.getExtent().width) / mainRenderTarget.getExtent().height);
 					renderPipeline.render(context, &camera.camera, &mainRenderTarget, camera.sceneCollection);
+				}
 				renderedToMainRenderTarget = true;
 			}
 			camera.sceneCollection.swap();

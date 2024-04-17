@@ -243,10 +243,11 @@ void SceneView::onImGui() {
 		if (availSize != m_displayedSize && !ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
 			if (availSize.x >= 1.f && availSize.y >= 1.f) {
 				m_renderTarget.resize({ (uint32_t)availSize.x, (uint32_t)availSize.y });
+				m_camera.setAspectRatio(availSize.x / availSize.y);
 				m_displayedSize = availSize;
 			}
 		}
-		else if (m_renderTarget.isSampleReady()) {
+		if (m_renderTarget.isSampleReady()) {
 
 			ImGui::Image(m_renderTarget.getOutputTexture(), imAvailSize);
 			

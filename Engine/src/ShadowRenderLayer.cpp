@@ -59,7 +59,7 @@ namespace sa {
 		uint32_t count = ShadowPreferences::MaxCascadeCount;
 		switch (lightType) {
 		case LightType::DIRECTIONAL:
-			
+			count = prefs.cascadeCount;
 			data.depthTexture.create2D(
 				TextureUsageFlagBits::DEPTH_ATTACHMENT | TextureUsageFlagBits::SAMPLED,
 				{ prefs.directionalMapResolution, prefs.directionalMapResolution },
@@ -70,6 +70,7 @@ namespace sa {
 			);
 			break;
 		case LightType::POINT:
+			count = 6;
 			data.depthTexture.createCube(
 				TextureUsageFlagBits::DEPTH_ATTACHMENT | TextureUsageFlagBits::SAMPLED,
 				{ prefs.omniMapResolution, prefs.omniMapResolution },
@@ -78,7 +79,8 @@ namespace sa {
 				1
 			);
 			break;
-		default:
+		case LightType::SPOT:
+			count = 1;
 			data.depthTexture.create2D(
 				TextureUsageFlagBits::DEPTH_ATTACHMENT | TextureUsageFlagBits::SAMPLED,
 				{ prefs.directionalMapResolution, prefs.directionalMapResolution },
@@ -88,12 +90,14 @@ namespace sa {
 				1
 			);
 			break;
+		default:
+			break;
 		}
 		data.lightType = lightType;
 		data.depthTexture.createArrayLayerTextures(&count, data.depthTextureLayers.data());
 
 		for (uint32_t i = 0; i < count; i++) {
-			data.depthFramebuffers[i] = m_renderer.createFramebuffer(m_depthRenderProgram, { data.depthTextureLayers[i] }, data.depthTexture.getExtent());
+			data.depthFramebuffers[i] = m_renderer.createFramebuffer(m_depthRenderProgram, &data.depthTextureLayers[i], 1, data.depthTexture.getExtent());
 		}
 		data.isInitialized = true;
 	}
@@ -459,7 +463,7 @@ namespace sa {
 		for (uint32_t i = 0; i < layerCount; i++) {
 			shaderData.lightMat[i] = data.lightProjMatrices[i] * data.lightViewMatrices[i];
 		}
-		sceneCollection.insertShaderData(shaderData, renderData.depthTexture, index);
+		sceneCollection.insertShaderData(shaderData, renderData.depthTexture.getTexture(), index);
 	}
 
 	bool ShadowRenderLayer::preRender(RenderContext& context, SceneCollection& sceneCollection) {
@@ -521,7 +525,29 @@ namespace sa {
 	}
 
 	bool ShadowRenderLayer::postRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) {
-		
+		for (auto it = sceneCollection.iterateShadowsBegin(); it != sceneCollection.iterateShadowsEnd(); it++) {
+			sa::ShadowData& data = *it;
+			
+			sa::UUID id;
+			switch (data.lightType) {
+			case LightType::DIRECTIONAL:
+				id = pRenderTarget->getID() ^ static_cast<uint64_t>(data.entityID);
+				break;
+			case LightType::POINT:
+			case LightType::SPOT:
+				id = static_cast<uint64_t>(data.entityID);
+				break;
+			default:
+				break;
+			}
+			ShadowRenderData& renderData = getRenderTargetData(id);
+			for (uint32_t i = 0; i < renderData.depthFramebuffers.size(); ++i) {
+				if (renderData.depthFramebuffers[i] != NULL_RESOURCE) {
+					m_renderer.swapFramebuffer(renderData.depthFramebuffers[i]);
+				}
+			}
+			renderData.depthTexture.swap();
+		}
 		return true;
 	}
 

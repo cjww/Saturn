@@ -70,7 +70,7 @@ namespace sa {
 
 
 		//Depth pre pass
-		data.depthFramebuffer = m_renderer.createFramebuffer(m_depthPreRenderProgram, { (DynamicTexture)data.depthTexture });
+		data.depthFramebuffer = m_renderer.createFramebuffer(m_depthPreRenderProgram, &data.depthTexture, 1);
 
 		// Light culling pass
 		data.tileCount = { extent.width, extent.height };
@@ -84,7 +84,8 @@ namespace sa {
 		data.lightIndexBuffer.create(BufferType::STORAGE, sizeof(uint32_t) * MAX_LIGHTS_PER_TILE * totalTileCount);
 
 		// Color pass
-		data.colorFramebuffer = m_renderer.createFramebuffer(m_colorRenderProgram, { (DynamicTexture)data.colorTexture, data.depthTexture });
+		const DynamicTexture textures[] = { data.colorTexture, data.depthTexture };
+		data.colorFramebuffer = m_renderer.createFramebuffer(m_colorRenderProgram, textures, 2);
 
 
 		m_renderer.updateDescriptorSet(data.lightCullingDescriptorSet, 0, data.depthTexture, m_linearSampler);	// read depth texture
@@ -98,7 +99,7 @@ namespace sa {
 		}
 		m_renderer.updateDescriptorSet(data.debugLightHeatmapDescriptorSet, 0, data.lightIndexBuffer);
 
-		data.debugLightHeatmapFramebuffer = m_renderer.createFramebuffer(m_debugLightHeatmapRenderProgram, { data.debugLightHeatmap });
+		data.debugLightHeatmapFramebuffer = m_renderer.createFramebuffer(m_debugLightHeatmapRenderProgram, &data.debugLightHeatmap, 1);
 		// ----------------------------------
 
 		data.isInitialized = true;
@@ -226,7 +227,7 @@ namespace sa {
 		if ((viewport.extent.height & viewport.extent.width) == 0) {
 			return false;
 		}
-		pCamera->setAspectRatio((float)viewport.extent.width / viewport.extent.height);
+		//pCamera->setAspectRatio((float)viewport.extent.width / viewport.extent.height);
 		
 		PerFrameBuffer perFrame;
 		perFrame.projMat = pCamera->getProjectionMatrix();

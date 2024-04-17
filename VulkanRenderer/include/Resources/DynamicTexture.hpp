@@ -33,6 +33,10 @@ namespace sa {
 		virtual uint32_t getDepth() const;
 		vk::ImageView* getView() const;
 		TextureUsageFlags getUsageFlags() const;
+		TextureType getTextureType() const;
+
+		uint32_t getArrayLayerCount() const;
+		uint32_t getMipLevelCount() const;
 
 		const Texture& getTexture(uint32_t index = -1) const;
 
@@ -43,9 +47,8 @@ namespace sa {
 
 		uint32_t getTextureCount() const;
 
-		operator const Texture() const;
-		operator Texture() const;
-
+		operator const Texture&() const;
+		
 		bool isValid() const;
 		bool isValidImage() const;
 		bool isValidView() const;
@@ -60,6 +63,11 @@ namespace sa {
 		bool operator!=(const DynamicTexture& other);
 
 		std::vector<DynamicTexture> createMipLevelTextures();
+		void createMipLevelTextures(uint32_t* count, DynamicTexture* pTextures);
+
+		std::vector<DynamicTexture> createArrayLayerTextures();
+		void createArrayLayerTextures(uint32_t* count, DynamicTexture* pTextures);
+
 
 
 	};

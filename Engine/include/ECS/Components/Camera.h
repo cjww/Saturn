@@ -10,6 +10,9 @@ namespace comp {
 	class Camera : public sa::ComponentBase {
 	private:
 		sa::AssetHolder<sa::RenderTarget> m_renderTarget;
+
+		void onRendertargetResize(const sa::engine_event::RenderTargetResized& e);
+
 	public:
 		sa::SceneCamera camera;
 		sa::SceneCollection sceneCollection;

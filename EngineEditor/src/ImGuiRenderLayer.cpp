@@ -16,8 +16,7 @@ void ImGuiRenderLayer::init() {
 		.endSubpass()
 		.end();
 
-	std::vector<sa::Texture> textures;
-	m_imGuiFramebuffer = m_renderer.createSwapchainFramebuffer(m_imGuiRenderProgram, m_pWindow->getSwapchainID(), textures);
+	m_imGuiFramebuffer = m_renderer.createSwapchainFramebuffer(m_imGuiRenderProgram, m_pWindow->getSwapchainID());
 	m_renderer.initImGui(*m_pWindow, m_imGuiRenderProgram, 0);
 }
 
