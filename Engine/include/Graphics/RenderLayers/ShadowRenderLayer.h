@@ -22,8 +22,8 @@ namespace sa {
 	};
 
 	struct ShadowRenderData {
-		DynamicTexture depthTexture;
-		std::array<DynamicTexture, ShadowPreferences::MaxCascadeCount> depthTextureLayers;
+		Texture depthTexture;
+		std::array<Texture, ShadowPreferences::MaxCascadeCount> depthTextureLayers;
 		std::array<ResourceID, ShadowPreferences::MaxCascadeCount> depthFramebuffers;
 		LightType lightType;
 		bool isInitialized = false;

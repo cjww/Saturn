@@ -463,7 +463,7 @@ namespace sa {
 		for (uint32_t i = 0; i < layerCount; i++) {
 			shaderData.lightMat[i] = data.lightProjMatrices[i] * data.lightViewMatrices[i];
 		}
-		sceneCollection.insertShaderData(shaderData, renderData.depthTexture.getTexture(), index);
+		sceneCollection.insertShaderData(shaderData, renderData.depthTexture, index);
 	}
 
 	bool ShadowRenderLayer::preRender(RenderContext& context, SceneCollection& sceneCollection) {
@@ -525,29 +525,6 @@ namespace sa {
 	}
 
 	bool ShadowRenderLayer::postRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) {
-		for (auto it = sceneCollection.iterateShadowsBegin(); it != sceneCollection.iterateShadowsEnd(); it++) {
-			sa::ShadowData& data = *it;
-			
-			sa::UUID id;
-			switch (data.lightType) {
-			case LightType::DIRECTIONAL:
-				id = pRenderTarget->getID() ^ static_cast<uint64_t>(data.entityID);
-				break;
-			case LightType::POINT:
-			case LightType::SPOT:
-				id = static_cast<uint64_t>(data.entityID);
-				break;
-			default:
-				break;
-			}
-			ShadowRenderData& renderData = getRenderTargetData(id);
-			for (uint32_t i = 0; i < renderData.depthFramebuffers.size(); ++i) {
-				if (renderData.depthFramebuffers[i] != NULL_RESOURCE) {
-					m_renderer.swapFramebuffer(renderData.depthFramebuffers[i]);
-				}
-			}
-			renderData.depthTexture.swap();
-		}
 		return true;
 	}
 

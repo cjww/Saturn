@@ -126,8 +126,9 @@ namespace sa{
 
 		std::vector<std::vector<vk::ImageView>> framebufferViews(pCore->getQueueCount());
 		for (uint32_t i = 0; i < (uint32_t)framebufferViews.size(); i++) {
-			for (uint32_t i = 0; i < imageCount; ++i) {
-				framebufferViews[i].push_back(*pImages[i].getView());
+			framebufferViews[i].resize(imageCount);
+			for (uint32_t j = 0; j < imageCount; ++j) {
+				framebufferViews[i][j] = *pImages[j].getView();
 			}
 		}
 
