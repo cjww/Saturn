@@ -133,8 +133,9 @@ namespace sa {
 		}
 		m_currentTextureIndex = 0;
 	}
-	void DynamicTexture::swap() {
-		m_currentTextureIndex = (m_currentTextureIndex + 1) % m_textures.size();
+
+	void DynamicTexture::sync(const RenderContext& context) {
+		m_currentTextureIndex = context.getFrameIndex();
 	}
 
 	bool DynamicTexture::operator==(const DynamicTexture& other) {

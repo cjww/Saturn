@@ -57,7 +57,7 @@ namespace sa {
 
 		void destroy();
 
-		void swap();
+		void sync(const RenderContext& context);
 		
 		bool operator==(const DynamicTexture& other);
 		bool operator!=(const DynamicTexture& other);

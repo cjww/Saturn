@@ -290,11 +290,6 @@ namespace sa {
 		return RenderContext::GetFramebufferSet(framebuffer)->getExtent();
 	}
 
-	void Renderer::swapFramebuffer(ResourceID framebuffer) {
-		FramebufferSet* pFramebufferSet = RenderContext::GetFramebufferSet(framebuffer);
-		pFramebufferSet->swap();
-	}
-
 	/*
 	ResourceID Renderer::createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const ShaderSet& shaderSet, PipelineSettings settings) {
 		RenderProgram* pRenderProgram = RenderContext::GetRenderProgram(renderProgram);

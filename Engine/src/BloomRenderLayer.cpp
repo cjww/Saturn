@@ -157,7 +157,7 @@ namespace sa {
 			static_cast<uint32_t>(std::ceil(tex->getExtent().height * 0.5f))
 		};
 
-		const BloomData& bd = getRenderTargetData(pRenderTarget->getID());
+		BloomData& bd = getRenderTargetData(pRenderTarget->getID());
 		
 		if (!bd.isInitialized) {
 			// Free old data
@@ -206,7 +206,8 @@ namespace sa {
 			context.bindDescriptorSet(bd.upsampleDescriptorSets[i]);
 			context.pushConstant(ShaderStageFlagBits::COMPUTE, 2);
 			context.dispatch(threadX, threadY, 1);
-			
+
+			bd.bloomMipTextures[i].sync(context);
 		}
 
 		threadX = m_threadCountStack[--m_stackSize].width;
@@ -217,6 +218,10 @@ namespace sa {
 		context.bindDescriptorSet(bd.compositeDescriptorSet);
 		context.pushConstant(ShaderStageFlagBits::COMPUTE, 3);
 		context.dispatch(threadX, threadY, 1);
+		
+		bd.outputTexture.sync(context);
+		bd.bloomTexture.sync(context);
+		bd.bufferTexture.sync(context);
 
 		pRenderTarget->setOutputTexture(bd.outputTexture);
 		Engine::GetEngineStatistics().dispatchCalls += bd.bufferMipTextures.size() * 2 + 2;
@@ -226,10 +231,6 @@ namespace sa {
 	bool BloomRenderLayer::postRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget,
 		SceneCollection& sceneCollection)
 	{
-		BloomData& data = getRenderTargetData(pRenderTarget->getID());
-		if (data.isInitialized) {
-			data.outputTexture.swap();
-		}
 		return true;
 	}
 

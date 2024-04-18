@@ -214,6 +214,7 @@ namespace sa {
 
 
 		uint32_t getFrameIndex() const;
+		void syncFramebuffer(ResourceID framebuffer);
 
 		operator bool() {
 			return m_pCommandBufferSet != nullptr;

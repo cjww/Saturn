@@ -264,7 +264,6 @@ namespace sa {
 				context.drawIndexedIndirect(collection.getDrawCommandBuffer(), 0, drawCallCount, sizeof(DrawIndexedIndirectCommand));
 				Engine::GetEngineStatistics().drawCalls += drawCallCount;
 			}
-
 		}
 
 		context.endRenderProgram(m_depthPreRenderProgram);
@@ -341,7 +340,7 @@ namespace sa {
 				Engine::GetEngineStatistics().drawCalls += drawCallCount;
 			}
 		}
-
+		
 		//Finally render debug stuff
 		if (!DebugRenderer::Get().isInitialized())
 			DebugRenderer::Get().initialize(m_colorRenderProgram);
@@ -367,8 +366,16 @@ namespace sa {
 			context.endRenderProgram(m_debugLightHeatmapRenderProgram);
 
 			Engine::GetEngineStatistics().drawCalls++;
+
+			data.debugLightHeatmap.sync(context);
 		}
 		
+		data.depthTexture.sync(context);
+		data.colorTexture.sync(context);
+
+		context.syncFramebuffer(data.colorFramebuffer);
+		context.syncFramebuffer(data.depthFramebuffer);
+		context.syncFramebuffer(data.debugLightHeatmapFramebuffer);
 
 		pRenderTarget->setOutputTexture(data.colorTexture);
 		return true;
@@ -379,15 +386,15 @@ namespace sa {
 	{
 		ForwardPlusRenderData& data = getRenderTargetData(pRenderTarget->getID());
 		if (data.isInitialized) {
-			data.colorTexture.swap();
-			data.depthTexture.swap();
+			//data.colorTexture.swap();
+			//data.depthTexture.swap();
 			data.lightIndexBuffer.swap();
 
-			m_renderer.swapFramebuffer(data.colorFramebuffer);
-			m_renderer.swapFramebuffer(data.depthFramebuffer);
+			//m_renderer.swapFramebuffer(data.colorFramebuffer);
+			//m_renderer.swapFramebuffer(data.depthFramebuffer);
 
-			data.debugLightHeatmap.swap();
-			m_renderer.swapFramebuffer(data.debugLightHeatmapFramebuffer);
+			//data.debugLightHeatmap.swap();
+			//m_renderer.swapFramebuffer(data.debugLightHeatmapFramebuffer);
 		}
 		return true;
 	}

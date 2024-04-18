@@ -172,8 +172,7 @@ namespace sa {
 
 		size_t getFramebufferTextureCount(ResourceID framebuffer) const;
 		Extent getFramebufferExtent(ResourceID framebuffer) const;
-		void swapFramebuffer(ResourceID framebuffer);
-
+		
 		ResourceID createComputePipeline(const Shader& shader, const PipelineLayout& layout);
 		ResourceID createGraphicsPipeline(PipelineLayout& layout, Shader* pShaders, uint32_t shaderCount, ResourceID renderProgram, uint32_t subpassIndex, Extent extent, PipelineSettings settings = {});
 		void destroyPipeline(ResourceID pipeline);

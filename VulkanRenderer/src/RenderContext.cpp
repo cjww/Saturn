@@ -704,6 +704,10 @@ namespace sa {
 		return m_pCommandBufferSet->getBufferIndex();
 	}
 
+	void RenderContext::syncFramebuffer(ResourceID framebuffer) {
+		FramebufferSet* pFramebufferSet = RenderContext::GetFramebufferSet(framebuffer);
+		pFramebufferSet->sync(*this);
+	}
 
 	SubContext::SubContext()
 		: RenderContext()
