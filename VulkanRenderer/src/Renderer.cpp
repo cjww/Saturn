@@ -698,10 +698,9 @@ namespace sa {
 		return (Format)m_pCore->getDefaultDepthFormat();
 	}
 
-	Format Renderer::gettDefaultColorFormat() const {
+	Format Renderer::getDefaultColorFormat() const {
 		return (Format)m_pCore->getDefaultColorFormat();
 	}
-
 
 	Format Renderer::getAttachmentFormat(ResourceID renderProgram, uint32_t attachmentIndex) const {
 		RenderProgram* pRenderProgram = RenderContext::GetRenderProgram(renderProgram);

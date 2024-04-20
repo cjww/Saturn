@@ -77,8 +77,10 @@ namespace sa {
 
 
 		SubpassFactory beginSubpass();
-		RenderProgramFactory& addColorDependency(uint32_t srcSubpass = SA_SUBPASS_EXTERNAL, uint32_t dstSubpass = SA_SUBPASS_EXTERNAL);
-		
+		RenderProgramFactory& addColorDependency(uint32_t srcSubpass, uint32_t dstSubpass = SA_SUBPASS_EXTERNAL);
+		RenderProgramFactory& addDepthDependency(uint32_t srcSubpass, uint32_t dstSubpass = SA_SUBPASS_EXTERNAL);
+		RenderProgramFactory& addSwapchainDependency(uint32_t srcSubpass, uint32_t dstSubpass = SA_SUBPASS_EXTERNAL);
+
 
 		ResourceID end();
 

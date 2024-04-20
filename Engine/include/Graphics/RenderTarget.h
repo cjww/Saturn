@@ -21,7 +21,8 @@ namespace sa {
 
 		entt::connection m_windowResizedConnection;
 
-		DynamicTexture* m_pOutputTexture = nullptr;
+		Transition m_lastTransition;
+		DynamicTexture* m_pOutputTexture;
 
 		entt::dispatcher* m_pDispatcher;
 
@@ -41,12 +42,13 @@ namespace sa {
 		bool wasResized() const;
 
 		bool isSampleReady() const;
+		void makeSampleReady(const RenderContext& context);
 
 		const Extent& getExtent() const;
 
 		const DynamicTexture* getOutputTextureDynamic() const;
 		const Texture& getOutputTexture() const;
-		void setOutputTexture(const DynamicTexture& dynamicTexture);
+		void setOutputTexture(const DynamicTexture& dynamicTexture, Transition lastTransition);
 
 		void setActive(bool isActive);
 		bool isActive() const;

@@ -4,6 +4,7 @@
 #include "structs.hpp"
 #include "Resources/Buffer.hpp"
 #include "Resources/Texture.hpp"
+#include "Resources/ImageTransitions.hpp"
 #include "Shader.hpp"
 
 namespace vk {
@@ -37,17 +38,6 @@ namespace sa {
 	enum class SubpassContents {
 		DIRECT,
 		SUB_CONTEXT
-	};
-
-	enum class Transition {
-		NONE,
-		RENDER_PROGRAM_INPUT,
-		RENDER_PROGRAM_OUTPUT,
-		RENDER_PROGRAM_DEPTH_OUTPUT,
-		COMPUTE_SHADER_READ,
-		COMPUTE_SHADER_WRITE,
-		FRAGMENT_SHADER_READ,
-		FRAGMENT_SHADER_WRITE,
 	};
 
 	class SubContext;
@@ -202,12 +192,20 @@ namespace sa {
 
 		void dispatch(uint32_t groupCountX, uint32_t groupCountY, uint32_t groupCountZ) const;
 
-		void barrierColorAttachment(const Texture& texture) const;
+		void barrierDepthAttachmentToCompute(const Texture& texture) const;
+		void barrierComputeToFragment(const Texture& texture) const;
 
 		void barrierColorCompute(const Texture& texture) const;
 		void barrierColorCompute(const Buffer& buffer) const;
 
-		void transitionTexture(const Texture& texture, Transition src, Transition dst) const;
+		void barrier(const Texture& texture, Transition src, Transition dst) const;
+		void barrier(uint32_t textureCount, const Texture* pTextures, Transition src, Transition dst) const;
+		void barrier(const Buffer& buffer, Transition src, Transition dst) const;
+
+		void barrier(Transition src, Transition dst) const;
+		void fullBarrier() const;
+
+
 
 		void copyImageToImageColor(const Texture& src, const Texture& dst) const;
 		void copyImageToSwapchain(const Texture& src, ResourceID swapchain) const;

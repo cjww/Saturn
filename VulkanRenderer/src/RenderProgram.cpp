@@ -22,7 +22,7 @@ namespace sa {
 		
 		if (desc.loadOp == vk::AttachmentLoadOp::eClear) {
 			vk::ClearValue value;
-			if (VulkanCore::isDepthFormat(desc.format)) {
+			if (VulkanCore::IsDepthFormat(desc.format)) {
 				value.depthStencil.depth = 1.0f;
 				value.depthStencil.stencil = 0;
 			}
@@ -49,7 +49,7 @@ namespace sa {
 		size_t clearIndex = 0;
 		for (size_t i = 0; i < m_attachments.size(); i++) {
 			if (m_attachments[i].loadOp == vk::AttachmentLoadOp::eClear) {
-				if (!VulkanCore::isDepthFormat(m_attachments[i].format)) {
+				if (!VulkanCore::IsDepthFormat(m_attachments[i].format)) {
 					m_clearValues[clearIndex].color = std::array<float, 4>{ color.r, color.g, color.b, color.a };
 				}
 				clearIndex++;

@@ -215,8 +215,8 @@ namespace sa {
 		Format selectFormat(FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, TextureUsageFlags textureType) const;
 
 		Format getDefaultDepthFormat() const;
-		Format gettDefaultColorFormat() const;
-
+		Format getDefaultColorFormat() const;
+		
 		Format getAttachmentFormat(ResourceID renderProgram, uint32_t attachmentIndex) const;
 
 	};

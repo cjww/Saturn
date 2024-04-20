@@ -3,6 +3,7 @@
 
 #include "internal/debugFunctions.hpp" // for checkError and debugCallback
 
+
 EXT_INITIALIZATION(vkCreateShadersEXT);
 EXT_INITIALIZATION(vkDestroyShaderEXT);
 EXT_INITIALIZATION(vkCmdBindShadersEXT);
@@ -219,10 +220,13 @@ namespace sa {
 		indexingFeatures.descriptorBindingVariableDescriptorCount = VK_TRUE;
 		indexingFeatures.descriptorBindingPartiallyBound = VK_TRUE;
 		
+		/*
+		// VK_EXT_shader_object
 		vk::PhysicalDeviceShaderObjectFeaturesEXT shaderObjectFeatures = {};
 		shaderObjectFeatures.shaderObject = VK_TRUE;
 
 		indexingFeatures.pNext = &shaderObjectFeatures;
+		*/
 
 		std::vector<vk::DeviceQueueCreateInfo> queueCreateInfos;
 		for (const auto& queueInfo : queueInfos) {
@@ -269,7 +273,7 @@ namespace sa {
 		m_mainCommandPool.create(m_device, m_queueInfo.family, vk::CommandPoolCreateFlagBits::eResetCommandBuffer);
 	}
 
-	bool VulkanCore::isDepthFormat(vk::Format format) {
+	bool VulkanCore::IsDepthFormat(vk::Format format) {
 		return format == vk::Format::eD16Unorm
 			|| format == vk::Format::eD16UnormS8Uint
 			|| format == vk::Format::eD24UnormS8Uint
@@ -277,8 +281,72 @@ namespace sa {
 			|| format == vk::Format::eD32SfloatS8Uint;
 	}
 
-	bool VulkanCore::isColorFormat(vk::Format format) {
-		return !isDepthFormat(format);
+	bool VulkanCore::IsColorFormat(vk::Format format) {
+		return !IsDepthFormat(format);
+	}
+
+	bool VulkanCore::HasStencilComponent(vk::Format format) {
+		return format == vk::Format::eD16UnormS8Uint
+			|| format == vk::Format::eD24UnormS8Uint
+			|| format == vk::Format::eD32SfloatS8Uint;
+	}
+
+	void VulkanCore::GetTransitionInfo(Transition transition, vk::PipelineStageFlags* pStage, vk::AccessFlags* pAccess, vk::ImageLayout* pLayout) {
+		switch (transition) {
+		case Transition::NONE:
+			*pAccess = vk::AccessFlagBits::eNone;
+			*pStage = vk::PipelineStageFlagBits::eTopOfPipe;
+			*pLayout = vk::ImageLayout::eUndefined;
+			break;
+		case Transition::RENDER_PROGRAM_INPUT:
+			*pAccess = vk::AccessFlagBits::eInputAttachmentRead;
+			*pStage = vk::PipelineStageFlagBits::eFragmentShader;
+			*pLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+			break;
+		case Transition::RENDER_PROGRAM_OUTPUT:
+			*pAccess = vk::AccessFlagBits::eColorAttachmentWrite;
+			*pStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
+			*pLayout = vk::ImageLayout::eColorAttachmentOptimal;
+			break;
+		case Transition::RENDER_PROGRAM_DEPTH_OUTPUT:
+			*pAccess = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+			*pStage = vk::PipelineStageFlagBits::eEarlyFragmentTests | vk::PipelineStageFlagBits::eLateFragmentTests;
+			*pLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
+			break;
+		case Transition::COMPUTE_SHADER_READ:
+			*pAccess = vk::AccessFlagBits::eShaderRead;
+			*pStage = vk::PipelineStageFlagBits::eComputeShader;
+			*pLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+			break;
+		case Transition::COMPUTE_SHADER_WRITE:
+			*pAccess = vk::AccessFlagBits::eShaderWrite;
+			*pStage = vk::PipelineStageFlagBits::eComputeShader;
+			*pLayout = vk::ImageLayout::eGeneral;
+			break;
+		case Transition::COMPUTE_SHADER_READ_WRITE:
+			*pAccess = vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite;
+			*pStage = vk::PipelineStageFlagBits::eComputeShader;
+			*pLayout = vk::ImageLayout::eGeneral;
+			break;
+		case Transition::FRAGMENT_SHADER_READ:
+			*pAccess = vk::AccessFlagBits::eShaderRead;
+			*pStage = vk::PipelineStageFlagBits::eFragmentShader;
+			*pLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+			break;
+		case Transition::FRAGMENT_SHADER_WRITE:
+			*pAccess = vk::AccessFlagBits::eShaderWrite;
+			*pStage = vk::PipelineStageFlagBits::eFragmentShader;
+			*pLayout = vk::ImageLayout::eGeneral;
+			break;
+		case Transition::FRAGMENT_SHADER_READ_WRITE:
+			*pAccess = vk::AccessFlagBits::eShaderRead | vk::AccessFlagBits::eShaderWrite;
+			*pStage = vk::PipelineStageFlagBits::eFragmentShader;
+			*pLayout = vk::ImageLayout::eGeneral;
+			break;
+		default:
+			throw std::runtime_error("Unimplemented transition");
+			break;
+		}
 	}
 
 	void VulkanCore::init(vk::ApplicationInfo appInfo, bool useVaildationLayers) {

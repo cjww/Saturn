@@ -33,7 +33,7 @@ namespace sa {
 			.beginSubpass()
 			.addAttachmentReference(0, SubpassAttachmentUsage::ColorTarget)
 			.endSubpass()
-			.addColorDependency(SA_SUBPASS_EXTERNAL, 0)
+			.addSwapchainDependency(SA_SUBPASS_EXTERNAL, 0)
 			.end();
 
 

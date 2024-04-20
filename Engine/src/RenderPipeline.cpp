@@ -65,7 +65,8 @@ namespace sa {
 			if (!layer->postRender(context, pCamera, pRenderTarget, sceneCollection))
 				return;
 		}
-		
+
+		pRenderTarget->makeSampleReady(context);
 		pRenderTarget->m_wasResized = false;
 	}
 

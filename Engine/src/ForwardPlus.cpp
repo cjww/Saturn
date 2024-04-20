@@ -15,7 +15,7 @@ namespace sa {
 		}
 	
 		m_depthPreRenderProgram = m_renderer.createRenderProgram()
-			.addDepthAttachment(AttachmentFlagBits::eClear | AttachmentFlagBits::eSampled | AttachmentFlagBits::eStore)
+			.addDepthAttachment(AttachmentFlagBits::eClear | AttachmentFlagBits::eStore)
 			.beginSubpass()
 			.addAttachmentReference(0, SubpassAttachmentUsage::DepthTarget)
 			.endSubpass()
@@ -47,7 +47,7 @@ namespace sa {
 		Format colorFormat = m_renderer.selectFormat({ Format::R32G32B32A32_SFLOAT }, TextureUsageFlagBits::COLOR_ATTACHMENT | TextureUsageFlagBits::SAMPLED);
 
 		m_colorRenderProgram = m_renderer.createRenderProgram()
-			.addColorAttachment(AttachmentFlagBits::eClear | AttachmentFlagBits::eStore | AttachmentFlagBits::eSampled, colorFormat)
+			.addColorAttachment(AttachmentFlagBits::eClear | AttachmentFlagBits::eStore, colorFormat)
 			.addDepthAttachment(AttachmentFlagBits::eClear)
 			.beginSubpass()
 			.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
@@ -68,6 +68,7 @@ namespace sa {
 		data.colorTexture.create2D(TextureUsageFlagBits::COLOR_ATTACHMENT | TextureUsageFlagBits::SAMPLED, extent, colorFormat);
 		data.depthTexture.create2D(TextureUsageFlagBits::DEPTH_ATTACHMENT | TextureUsageFlagBits::SAMPLED, extent, depthFormat);
 
+		
 
 		//Depth pre pass
 		data.depthFramebuffer = m_renderer.createFramebuffer(m_depthPreRenderProgram, &data.depthTexture, 1);
@@ -212,7 +213,15 @@ namespace sa {
 			cleanupMainRenderData(data);
 			initializeMainRenderData(data, pRenderTarget->getExtent());
 			SA_DEBUG_LOG_INFO("Initialized Forward Plus data for RenderTarget UUID: ", pRenderTarget->getID(), " with extent { w:", pRenderTarget->getExtent().width, ", h:", pRenderTarget->getExtent().height, " }");
+		
 		}
+		data.depthTexture.sync(context);
+		data.colorTexture.sync(context);
+
+		context.syncFramebuffer(data.colorFramebuffer);
+		context.syncFramebuffer(data.depthFramebuffer);
+		context.syncFramebuffer(data.debugLightHeatmapFramebuffer);
+
 		Rectf cameraViewport = pCamera->getViewport();
 		Rect viewport = {
 			{
@@ -227,12 +236,13 @@ namespace sa {
 		if ((viewport.extent.height & viewport.extent.width) == 0) {
 			return false;
 		}
-		//pCamera->setAspectRatio((float)viewport.extent.width / viewport.extent.height);
-		
+
 		PerFrameBuffer perFrame;
 		perFrame.projMat = pCamera->getProjectionMatrix();
 		perFrame.viewMat = pCamera->getViewMatrix();
 		perFrame.viewPos = glm::vec4(pCamera->getPosition(), 1.0f);
+
+		
 
 		context.beginRenderProgram(m_depthPreRenderProgram, data.depthFramebuffer, SubpassContents::DIRECT);
 		for (auto& collection : sc) {
@@ -268,6 +278,9 @@ namespace sa {
 
 		context.endRenderProgram(m_depthPreRenderProgram);
 
+		
+		context.barrier(data.depthTexture, Transition::RENDER_PROGRAM_DEPTH_OUTPUT, Transition::COMPUTE_SHADER_READ);
+
 		context.updateDescriptorSet(data.lightCullingDescriptorSet, 1, data.lightIndexBuffer.getBuffer());
 		context.updateDescriptorSet(data.lightCullingDescriptorSet, 2, sc.getLightBuffer());
 
@@ -282,6 +295,9 @@ namespace sa {
 		context.dispatch(data.tileCount.x, data.tileCount.y, 1);
 		Engine::GetEngineStatistics().dispatchCalls++;
 
+		context.barrier(data.depthTexture, Transition::COMPUTE_SHADER_READ, Transition::RENDER_PROGRAM_DEPTH_OUTPUT);
+		context.barrier(data.lightIndexBuffer, Transition::COMPUTE_SHADER_WRITE, Transition::FRAGMENT_SHADER_READ);
+		
 		// Main color pass
 		context.beginRenderProgram(m_colorRenderProgram, data.colorFramebuffer, SubpassContents::DIRECT);
 		for (auto& collection : sc) {
@@ -345,13 +361,13 @@ namespace sa {
 		if (!DebugRenderer::Get().isInitialized())
 			DebugRenderer::Get().initialize(m_colorRenderProgram);
 
-		DebugRenderer::Get().render(context, viewport.extent, *pCamera);
-
+		//DebugRenderer::Get().render(context, viewport.extent, *pCamera);
 
 		context.endRenderProgram(m_colorRenderProgram);
 
-		
+
 		if(data.renderDebugHeatmap) {
+			data.debugLightHeatmap.sync(context);
 			context.beginRenderProgram(m_debugLightHeatmapRenderProgram, data.debugLightHeatmapFramebuffer, SubpassContents::DIRECT);
 			context.bindPipelineLayout(m_debugHeatmapLayout);
 			context.bindPipeline(m_debugLightHeatmapPipeline);
@@ -367,17 +383,9 @@ namespace sa {
 
 			Engine::GetEngineStatistics().drawCalls++;
 
-			data.debugLightHeatmap.sync(context);
 		}
 		
-		data.depthTexture.sync(context);
-		data.colorTexture.sync(context);
-
-		context.syncFramebuffer(data.colorFramebuffer);
-		context.syncFramebuffer(data.depthFramebuffer);
-		context.syncFramebuffer(data.debugLightHeatmapFramebuffer);
-
-		pRenderTarget->setOutputTexture(data.colorTexture);
+		pRenderTarget->setOutputTexture(data.colorTexture, Transition::RENDER_PROGRAM_OUTPUT);
 		return true;
 	}
 
@@ -386,15 +394,7 @@ namespace sa {
 	{
 		ForwardPlusRenderData& data = getRenderTargetData(pRenderTarget->getID());
 		if (data.isInitialized) {
-			//data.colorTexture.swap();
-			//data.depthTexture.swap();
 			data.lightIndexBuffer.swap();
-
-			//m_renderer.swapFramebuffer(data.colorFramebuffer);
-			//m_renderer.swapFramebuffer(data.depthFramebuffer);
-
-			//data.debugLightHeatmap.swap();
-			//m_renderer.swapFramebuffer(data.debugLightHeatmapFramebuffer);
 		}
 		return true;
 	}

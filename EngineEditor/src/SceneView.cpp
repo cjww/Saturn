@@ -247,6 +247,7 @@ void SceneView::onImGui() {
 				m_displayedSize = availSize;
 			}
 		}
+		
 		if (m_renderTarget.isSampleReady()) {
 
 			ImGui::Image(m_renderTarget.getOutputTexture(), imAvailSize);
@@ -257,13 +258,12 @@ void SceneView::onImGui() {
 
 				if (renderData.renderDebugHeatmap) {
 					const sa::Texture& heatmap = renderData.debugLightHeatmap.getTexture();
-					if (heatmap.isSampleReady()) {
-						ImGui::SetCursorPos(ImGui::GetWindowContentRegionMin());
-						ImGui::Image(heatmap, imAvailSize);
-					}
+					ImGui::SetCursorPos(ImGui::GetWindowContentRegionMin());
+					ImGui::Image(heatmap, imAvailSize);
 				}
 			}
 		}
+
 		ImVec2 imageMin = ImGui::GetItemRectMin();
 		ImVec2 imageSize = ImGui::GetItemRectSize();
 
@@ -586,13 +586,13 @@ void SceneView::onImGui() {
 
 					ResourceID framebuffer = renderData.depthFramebuffers[layer];
 					if (framebuffer != NULL_RESOURCE) {
-						sa::Texture tex = sa::Renderer::Get().getFramebufferTexture(framebuffer, 0);
+						sa::DynamicTexture tex = sa::Renderer::Get().getFramebufferDynamicTexture(framebuffer, 0);
 						sa::Extent framebufferExtent = sa::Renderer::Get().getFramebufferExtent(framebuffer);
 
 						ImVec2 imAvailSize = ImGui::GetContentRegionAvail();
 						glm::vec2 availSize(imAvailSize.x, imAvailSize.y);
 
-						ImGui::Image(tex, ImVec2(availSize.x, availSize.x));
+						ImGui::Image(tex.getTexture(tex.getNextTextureIndex()), ImVec2(availSize.x, availSize.x));
 					}
 				}
 				
