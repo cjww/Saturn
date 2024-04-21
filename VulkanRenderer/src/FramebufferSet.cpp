@@ -167,9 +167,9 @@ namespace sa{
 		}
 	}
 
-	void FramebufferSet::swap() {
+	void FramebufferSet::sync(const RenderContext& context) {
 		for (auto& image : m_dynamicImages) {
-			image.swap();
+			image.sync(context);
 		}
 	}
 

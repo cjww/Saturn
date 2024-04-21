@@ -14,34 +14,42 @@ namespace sa {
 		: m_pCore(pCore)
 		, m_pImage(nullptr)
 		, m_pStagingBuffer(nullptr)
-		, m_view(NULL_RESOURCE)
 		, m_usage(0)
 		, m_pDataTransfer(nullptr)
 	{
 	}
 
-	Texture::Texture(ResourceID imageView, TextureUsageFlags usage, TextureType type) : Texture() {
+	Texture::Texture(ImageView imageView, TextureUsageFlags usage, TextureType type) : Texture() {
 		m_view = imageView;
 		m_usage = usage;
 		m_type = type;
 	}
 
 
-	ResourceID Texture::createImageView(TextureType viewType, uint32_t mipLevels, uint32_t baseMipLevel, uint32_t layers, uint32_t baseArrayLevel) {
+	ImageView Texture::createImageView(TextureType viewType, uint32_t mipLevels, uint32_t baseMipLevel, uint32_t layers, uint32_t baseArrayLevel) {
+		vk::ImageViewType type = static_cast<vk::ImageViewType>(viewType);
+
 		vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
-		if (m_usage & TextureUsageFlagBits::DEPTH_ATTACHMENT) {
+		if (VulkanCore::IsDepthFormat(m_pImage->format)) {
 			aspect = vk::ImageAspectFlagBits::eDepth;
+			/*
+			if (VulkanCore::HasStencilComponent(m_pImage->format)) {
+				aspect |= vk::ImageAspectFlagBits::eStencil;
+			}
+			*/
 		}
-		return ResourceManager::Get().insert<vk::ImageView>(m_pCore->createImageView(
-			(vk::ImageViewType)viewType,
-			m_pImage->image,
-			m_pImage->format,
-			aspect,
+
+		uint32_t aspectInt = static_cast<uint32_t>(aspect);
+		ImageView view;
+		view.create(
+			m_pImage,
+			&type,
+			&aspectInt,
 			mipLevels,
 			baseMipLevel,
 			layers,
-			baseArrayLevel
-		));
+			baseArrayLevel);
+		return view;
 	}
 
 	Texture::Texture() : Texture(Renderer::Get().m_pCore.get()) {
@@ -255,16 +263,7 @@ namespace sa {
 			arrayLayers);
 
 
-		m_view = ResourceManager::Get().insert<vk::ImageView>(m_pCore->createImageView(
-			vk::ImageViewType::e3D,
-			m_pImage->image,
-			(vk::Format)format,
-			vk::ImageAspectFlagBits::eColor,
-			mipLevels,
-			0,
-			arrayLayers,
-			0
-		));
+		m_view = createImageView(TextureType::TEXTURE_TYPE_3D, mipLevels, 0, arrayLayers, 0);
 
 		//SA_DEBUG_LOG_INFO("Created 3D texture\nExtent: { w:", extent.width, " h:", extent.height, " d:", extent.depth, " }\nFormat:", vk::to_string(format), "\nSampleCount:", sampleCount);
 	}
@@ -288,6 +287,7 @@ namespace sa {
 			pTextures[i] = Texture(createImageView(m_type, 1, i, 1, 0), m_usage, m_type);
 		}
 	}
+
 
 	std::vector<Texture> Texture::createArrayLayerTextures() {
 		uint32_t count = getArrayLayerCount();
@@ -322,6 +322,9 @@ namespace sa {
 		}
 	}
 
+	void* Texture::getImageHandle() const {
+		return m_pImage->image;
+	}
 
 	Extent Texture::getExtent() const {
 		return { m_pImage->extent.width, m_pImage->extent.height };
@@ -332,11 +335,11 @@ namespace sa {
 	}
 
 	uint32_t Texture::getDepth() const {
-		return 1;
+		return m_pImage->extent.depth;
 	}
 
-	vk::ImageView* Texture::getView() const {
-		return ResourceManager::Get().get<vk::ImageView>(m_view);
+	const ImageView& Texture::getView() const {
+		return m_view;
 	}
 
 	TextureUsageFlags Texture::getUsageFlags() const {
@@ -355,6 +358,10 @@ namespace sa {
 		return m_pImage->mipLevels;
 	}
 
+	Format Texture::getFormat() const {
+		return static_cast<Format>(m_pImage->format);
+	}
+
 	bool Texture::isValid() const {
 		return isValidImage() && isValidView();
 	}
@@ -364,13 +371,7 @@ namespace sa {
 	}
 
 	bool Texture::isValidView() const {
-		return m_view != NULL_RESOURCE;
-	}
-
-	bool Texture::isSampleReady() const {
-		return isValidImage() && 
-			(m_pImage->layout == vk::ImageLayout::eShaderReadOnlyOptimal ||
-			m_pImage->layout == vk::ImageLayout::eGeneral);
+		return m_view.isValid();
 	}
 
 	void Texture::destroy() {
@@ -381,8 +382,7 @@ namespace sa {
 			}
 		}
 		if (isValidView()) {
-			ResourceManager::Get().remove<vk::ImageView>(m_view);
-			m_view = NULL_RESOURCE;
+			m_view.destroy();
 		}
 		if (isValidImage()) {
 			if (m_pStagingBuffer)

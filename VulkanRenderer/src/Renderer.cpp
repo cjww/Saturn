@@ -290,11 +290,6 @@ namespace sa {
 		return RenderContext::GetFramebufferSet(framebuffer)->getExtent();
 	}
 
-	void Renderer::swapFramebuffer(ResourceID framebuffer) {
-		FramebufferSet* pFramebufferSet = RenderContext::GetFramebufferSet(framebuffer);
-		pFramebufferSet->swap();
-	}
-
 	/*
 	ResourceID Renderer::createGraphicsPipeline(ResourceID renderProgram, uint32_t subpassIndex, Extent extent, const ShaderSet& shaderSet, PipelineSettings settings) {
 		RenderProgram* pRenderProgram = RenderContext::GetRenderProgram(renderProgram);
@@ -703,10 +698,9 @@ namespace sa {
 		return (Format)m_pCore->getDefaultDepthFormat();
 	}
 
-	Format Renderer::gettDefaultColorFormat() const {
+	Format Renderer::getDefaultColorFormat() const {
 		return (Format)m_pCore->getDefaultColorFormat();
 	}
-
 
 	Format Renderer::getAttachmentFormat(ResourceID renderProgram, uint32_t attachmentIndex) const {
 		RenderProgram* pRenderProgram = RenderContext::GetRenderProgram(renderProgram);

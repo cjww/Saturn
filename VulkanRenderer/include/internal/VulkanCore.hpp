@@ -13,6 +13,7 @@
 #include "internal/DeviceMemoryManager.hpp"
 
 #include "FormatFlags.hpp"
+#include "Resources/ImageTransitions.hpp"
 
 #define EXT_DECLARATION(f) \
 	extern PFN_##f f##_
@@ -139,8 +140,14 @@ namespace sa {
 	public:
 		static const unsigned int FRAMES_IN_FLIGHT = 2;
 
-		static bool isDepthFormat(vk::Format format);
-		static bool isColorFormat(vk::Format format);
+		static bool IsDepthFormat(vk::Format format);
+		static bool IsColorFormat(vk::Format format);
+		static bool HasStencilComponent(vk::Format format);
+
+		static void GetTransitionInfo(Transition transition, 
+			vk::PipelineStageFlags* pStage, 
+			vk::AccessFlags* pAccess, 
+			vk::ImageLayout* pLayout);
 
 		void init(vk::ApplicationInfo appInfo, bool useVaildationLayers);
 		void cleanup();

@@ -16,13 +16,14 @@ namespace sa {
 		m_extent = e.newExtent;
 	}
 
-	RenderTarget::RenderTarget(const AssetHeader& header) 
+	RenderTarget::RenderTarget(const AssetHeader& header)
 		: Asset(header)
 		, m_renderer(Renderer::Get())
 		, m_isActive(true)
-		, m_extent({256, 256})
+		, m_extent({ 256, 256 })
 		, m_pOutputTexture(nullptr)
 		, m_pDispatcher(nullptr)
+		, m_lastTransition(Transition::NONE)
 	{
 
 	}
@@ -63,6 +64,7 @@ namespace sa {
 		m_extent = extent;
 		m_wasResized = true;
 		m_pOutputTexture = nullptr;
+		m_lastTransition = Transition::NONE;
 	}
 
 	bool RenderTarget::wasResized() const {
@@ -72,7 +74,21 @@ namespace sa {
 	bool RenderTarget::isSampleReady() const {
 		return
 			m_pOutputTexture != nullptr &&
-			m_pOutputTexture->isSampleReady();
+			m_lastTransition == Transition::FRAGMENT_SHADER_READ;
+	}
+
+	void RenderTarget::sync(const RenderContext& context) {
+		if (!m_pOutputTexture)
+			return;
+		m_pOutputTexture->sync(context);
+	}
+
+
+	void RenderTarget::makeSampleReady(const RenderContext& context) {
+		if (!m_pOutputTexture)
+			return;
+		context.barrier(m_pOutputTexture->getTexture(), m_lastTransition, Transition::FRAGMENT_SHADER_READ);
+		m_lastTransition = Transition::FRAGMENT_SHADER_READ;
 	}
 
 	const Extent& RenderTarget::getExtent() const {
@@ -85,12 +101,13 @@ namespace sa {
 
 	const Texture& RenderTarget::getOutputTexture() const {
 		if (m_pOutputTexture)
-			return m_pOutputTexture->getTexture();
+			return m_pOutputTexture->getTexture(m_pOutputTexture->getNextTextureIndex());
 		return *sa::AssetManager::Get().loadDefaultBlackTexture();
 	}
 
-	void RenderTarget::setOutputTexture(const DynamicTexture& dynamicTexture) {
+	void RenderTarget::setOutputTexture(const DynamicTexture& dynamicTexture, Transition lastTransition) {
 		m_pOutputTexture = (DynamicTexture*)&dynamicTexture;
+		m_lastTransition = lastTransition;
 	}
 
 	void RenderTarget::setActive(bool isActive) {

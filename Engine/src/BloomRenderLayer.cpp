@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Graphics/RenderLayers/BloomRenderLayer.h"
 #include "Engine.h"
+
 namespace sa {
 	void BloomRenderLayer::initializeBloomData(const UUID& renderTargetID, RenderContext& context, Extent extent, const DynamicTexture* colorTexture) {
 		BloomData& data = getRenderTargetData(renderTargetID);
@@ -35,13 +36,6 @@ namespace sa {
 
 		if (data.compositeDescriptorSet == NULL_RESOURCE)
 			data.compositeDescriptorSet = m_pipelineLayout.allocateDescriptorSet(0);
-
-
-		for (int i = 0; i < data.bloomTexture.getTextureCount(); i++) {
-			context.transitionTexture(data.bloomTexture.getTexture(i), sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_WRITE);
-			context.transitionTexture(data.bufferTexture.getTexture(i), sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_WRITE);
-			context.transitionTexture(data.outputTexture.getTexture(i), sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_WRITE);
-		}
 
 		m_renderer.updateDescriptorSet(data.filterDescriptorSet, 0, *colorTexture, m_sampler);
 		m_renderer.updateDescriptorSet(data.filterDescriptorSet, 1, data.bloomMipTextures[0]);
@@ -149,28 +143,38 @@ namespace sa {
 	bool BloomRenderLayer::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sceneCollection) {
 		SA_PROFILE_FUNCTION();
 
-		const DynamicTexture* tex = pRenderTarget->getOutputTextureDynamic();
-		if (!tex)
+		const DynamicTexture* pTex = pRenderTarget->getOutputTextureDynamic();
+		if (!pTex)
 			return false;
 		Extent extent = {
-			static_cast<uint32_t>(std::ceil(tex->getExtent().width * 0.5f)),
-			static_cast<uint32_t>(std::ceil(tex->getExtent().height * 0.5f))
+			static_cast<uint32_t>(std::ceil(pTex->getExtent().width * 0.5f)),
+			static_cast<uint32_t>(std::ceil(pTex->getExtent().height * 0.5f))
 		};
 
-		const BloomData& bd = getRenderTargetData(pRenderTarget->getID());
+		BloomData& bd = getRenderTargetData(pRenderTarget->getID());
 		
 		if (!bd.isInitialized) {
 			// Free old data
 			cleanupBloomData(pRenderTarget->getID());
 			// Initialize
-			initializeBloomData(pRenderTarget->getID(), context, extent, tex);
+			initializeBloomData(pRenderTarget->getID(), context, extent, pTex);
 		}
-		
+
+		bd.outputTexture.sync(context);
+		bd.bloomTexture.sync(context);
+		bd.bufferTexture.sync(context);
+
+		context.barrier(bd.bloomTexture, sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_READ_WRITE);
+		context.barrier(bd.bufferTexture, sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_READ_WRITE);
+		context.barrier(bd.outputTexture, sa::Transition::NONE, sa::Transition::COMPUTE_SHADER_READ_WRITE);
+
 
 		uint32_t threadX = std::ceil(extent.width / 32.f);
 		uint32_t threadY = std::ceil(extent.height / 32.f);
 		m_threadCountStack[m_stackSize++] = { threadX << 1, threadY << 1 };
 		m_threadCountStack[m_stackSize++] = { threadX, threadY };
+
+		context.barrier(*pTex, Transition::RENDER_PROGRAM_OUTPUT, Transition::COMPUTE_SHADER_READ);
 
 		// Filter
 		context.bindPipelineLayout(m_pipelineLayout);
@@ -181,9 +185,12 @@ namespace sa {
 		context.pushConstant(ShaderStageFlagBits::COMPUTE, 0);
 		context.dispatch(threadX, threadY, 1);
 
-		
 		// Downsample + blur
 		for (size_t i = 0; i < bd.bloomMipTextures.size() - 1; i++) {
+			bd.bloomMipTextures[i].sync(context);
+			context.barrier(bd.bloomMipTextures[i], sa::Transition::COMPUTE_SHADER_WRITE, sa::Transition::COMPUTE_SHADER_READ);
+
+
 			threadX += threadX % 2;
 			threadX = threadX >> 1;
 
@@ -198,38 +205,42 @@ namespace sa {
 		// Upsample + combine
 
 		m_stackSize--;
+		DynamicTexture smallImage = bd.bloomMipTextures[bd.bloomMipTextures.size() - 1];
+		smallImage.sync(context);
 		for (int i = (int)bd.bufferMipTextures.size() - 1; i >= 0; i--) {
+			bd.bufferMipTextures[i].sync(context);
+			context.barrier(smallImage, sa::Transition::COMPUTE_SHADER_WRITE, sa::Transition::COMPUTE_SHADER_READ);
+
 			m_stackSize--;
 			threadX = m_threadCountStack[m_stackSize].width;
 			threadY = m_threadCountStack[m_stackSize].height;
-
 			context.bindDescriptorSet(bd.upsampleDescriptorSets[i]);
 			context.pushConstant(ShaderStageFlagBits::COMPUTE, 2);
 			context.dispatch(threadX, threadY, 1);
-			
+
+			if (i > 0) {
+				smallImage = bd.bufferMipTextures[i];
+			}
 		}
 
 		threadX = m_threadCountStack[--m_stackSize].width;
 		threadY = m_threadCountStack[m_stackSize].height;
 
 		// Composite + Tonemap
+		context.barrier(bd.bufferMipTextures[0], Transition::COMPUTE_SHADER_WRITE, Transition::COMPUTE_SHADER_READ);
 		
 		context.bindDescriptorSet(bd.compositeDescriptorSet);
 		context.pushConstant(ShaderStageFlagBits::COMPUTE, 3);
 		context.dispatch(threadX, threadY, 1);
-
-		pRenderTarget->setOutputTexture(bd.outputTexture);
 		Engine::GetEngineStatistics().dispatchCalls += bd.bufferMipTextures.size() * 2 + 2;
+		
+		pRenderTarget->setOutputTexture(bd.outputTexture, Transition::COMPUTE_SHADER_WRITE);
 		return true;
 	}
 
 	bool BloomRenderLayer::postRender(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget,
 		SceneCollection& sceneCollection)
 	{
-		BloomData& data = getRenderTargetData(pRenderTarget->getID());
-		if (data.isInitialized) {
-			data.outputTexture.swap();
-		}
 		return true;
 	}
 

@@ -123,9 +123,13 @@ namespace sa {
 	}
 
 	RenderProgramFactory& RenderProgramFactory::addColorAttachment(AttachmentFlags flags, Format format, uint32_t sampleCount) {
+		vk::ImageLayout finalLayout = vk::ImageLayout::eColorAttachmentOptimal;
+		if (flags & AttachmentFlagBits::eSampled) {
+			finalLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		}
 		m_pProgram->addAttachment(
 			(flags & AttachmentFlagBits::eLoad) ? vk::ImageLayout::eColorAttachmentOptimal : vk::ImageLayout::eUndefined,
-			vk::ImageLayout::eShaderReadOnlyOptimal,
+			finalLayout,
 			(vk::Format)format,
 			(flags & AttachmentFlagBits::eClear) ? vk::AttachmentLoadOp::eClear : vk::AttachmentLoadOp::eDontCare,
 			(flags & AttachmentFlagBits::eStore) ? vk::AttachmentStoreOp::eStore : vk::AttachmentStoreOp::eDontCare,
@@ -221,6 +225,7 @@ namespace sa {
 	}
 
 	RenderProgramFactory& RenderProgramFactory::addColorDependency(uint32_t srcSubpass, uint32_t dstSubpass) {
+
 		vk::SubpassDependency dep{
 			.srcSubpass = srcSubpass,
 			.dstSubpass = dstSubpass,
@@ -228,6 +233,33 @@ namespace sa {
 			.dstStageMask = vk::PipelineStageFlagBits::eFragmentShader,
 			.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite,
 			.dstAccessMask = vk::AccessFlagBits::eShaderRead,
+		};
+
+		m_pProgram->addSubpassDependency(dep);
+		return *this;
+	}
+
+	RenderProgramFactory& RenderProgramFactory::addDepthDependency(uint32_t srcSubpass, uint32_t dstSubpass) {
+		vk::SubpassDependency dep{
+			.srcSubpass = srcSubpass,
+			.dstSubpass = dstSubpass,
+			.srcStageMask = vk::PipelineStageFlagBits::eEarlyFragmentTests | vk::PipelineStageFlagBits::eLateFragmentTests,
+			.dstStageMask = vk::PipelineStageFlagBits::eFragmentShader,
+			.srcAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentWrite,
+			.dstAccessMask = vk::AccessFlagBits::eShaderRead,
+		};
+		m_pProgram->addSubpassDependency(dep);
+		return *this;
+	}
+
+	RenderProgramFactory& RenderProgramFactory::addSwapchainDependency(uint32_t srcSubpass, uint32_t dstSubpass) {
+		vk::SubpassDependency dep{
+			.srcSubpass = srcSubpass,
+			.dstSubpass = dstSubpass,
+			.srcStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput,
+			.dstStageMask = vk::PipelineStageFlagBits::eColorAttachmentOutput,
+			.srcAccessMask = vk::AccessFlagBits::eNone,
+			.dstAccessMask = vk::AccessFlagBits::eColorAttachmentWrite,
 		};
 		m_pProgram->addSubpassDependency(dep);
 		return *this;

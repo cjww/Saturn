@@ -172,8 +172,7 @@ namespace sa {
 
 		size_t getFramebufferTextureCount(ResourceID framebuffer) const;
 		Extent getFramebufferExtent(ResourceID framebuffer) const;
-		void swapFramebuffer(ResourceID framebuffer);
-
+		
 		ResourceID createComputePipeline(const Shader& shader, const PipelineLayout& layout);
 		ResourceID createGraphicsPipeline(PipelineLayout& layout, Shader* pShaders, uint32_t shaderCount, ResourceID renderProgram, uint32_t subpassIndex, Extent extent, PipelineSettings settings = {});
 		void destroyPipeline(ResourceID pipeline);
@@ -216,8 +215,8 @@ namespace sa {
 		Format selectFormat(FormatPrecisionFlags precisions, FormatDimensionFlags dimensions, FormatTypeFlags types, TextureUsageFlags textureType) const;
 
 		Format getDefaultDepthFormat() const;
-		Format gettDefaultColorFormat() const;
-
+		Format getDefaultColorFormat() const;
+		
 		Format getAttachmentFormat(ResourceID renderProgram, uint32_t attachmentIndex) const;
 
 	};

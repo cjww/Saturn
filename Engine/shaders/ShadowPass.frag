@@ -2,6 +2,8 @@
 
 layout(location = 1) in vec3 in_vertexWorldPos;
 
+layout(location = 6) in flat uint in_meshIndex; // unused, added due to validation performance warning
+
 layout(push_constant) uniform PushConstants {
     mat4 viewMat;
     mat4 projMat;

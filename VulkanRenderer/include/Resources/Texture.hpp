@@ -5,10 +5,7 @@
 #include "FormatFlags.hpp"
 #include "Format.hpp"
 #include "ResourceManager.hpp"
-
-namespace vk {
-	class ImageView;
-}
+#include "ImageView.hpp"
 
 namespace sa {
 	struct DeviceImage;
@@ -44,7 +41,7 @@ namespace sa {
 		VulkanCore* m_pCore;
 		DeviceImage* m_pImage;
 		DeviceBuffer* m_pStagingBuffer;
-		ResourceID m_view;
+		ImageView m_view;
 
 		DataTransfer* m_pDataTransfer;
 
@@ -52,15 +49,14 @@ namespace sa {
 		TextureType m_type;
 		
 		Texture(VulkanCore* pCore);
-		Texture(ResourceID imageView, TextureUsageFlags usage, TextureType type);
+		Texture(ImageView imageView, TextureUsageFlags usage, TextureType type);
 
-		ResourceID createImageView(TextureType viewType, uint32_t mipLevels, uint32_t baseMipLevel, uint32_t layers, uint32_t baseArrayLevel);
+		ImageView createImageView(TextureType viewType, uint32_t mipLevels, uint32_t baseMipLevel, uint32_t layers, uint32_t baseArrayLevel);
 		
 		void create2D(TextureType type, TextureUsageFlags usageFlags, Extent extent, Format format, uint32_t mipLevels, uint32_t arrayLayers, uint32_t samples, uint32_t imageCreateFlags);
 
 	public:
 		Texture();
-
 
 		void create2D(TextureUsageFlags usageFlags, Extent extent, Format format = Format::UNDEFINED, uint32_t mipLevels = 1, uint32_t arrayLayers = 1, uint32_t samples = 1);
 		void create2D(const Image& image, bool generateMipmaps);
@@ -81,13 +77,15 @@ namespace sa {
 		Extent3D getExtent3D() const;
 
 		virtual uint32_t getDepth() const;
-		vk::ImageView* getView() const;
+		const ImageView& getView() const;
 		TextureUsageFlags getUsageFlags() const;
 		TextureType getTextureType() const;
 
 		uint32_t getArrayLayerCount() const;
 		uint32_t getMipLevelCount() const;
 		
+		Format getFormat() const;
+
 		operator const DeviceImage* () const {
 			return m_pImage;
 		}
@@ -96,11 +94,11 @@ namespace sa {
 			return m_pImage;
 		}
 		
+		void* getImageHandle() const;
+
 		bool isValid() const;
 		bool isValidImage() const;
 		bool isValidView() const;
-
-		bool isSampleReady() const;
 
 		void destroy();
 

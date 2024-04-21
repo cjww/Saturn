@@ -53,11 +53,9 @@ namespace sa {
 		bool isValidImage() const;
 		bool isValidView() const;
 
-		bool isSampleReady() const;
-
 		void destroy();
 
-		void swap();
+		void sync(const RenderContext& context);
 		
 		bool operator==(const DynamicTexture& other);
 		bool operator!=(const DynamicTexture& other);

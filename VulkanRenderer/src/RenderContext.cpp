@@ -437,40 +437,86 @@ namespace sa {
 		m_pCommandBufferSet->getBuffer().dispatch(groupCountX, groupCountY, groupCountZ);
 	}
 
-	void RenderContext::barrierColorAttachment(const Texture& texture) const {
+	void RenderContext::barrierDepthAttachmentToCompute(const Texture& texture) const {
+		DeviceImage* pImage = texture;
+		vk::ImageMemoryBarrier imageBarrier = {};
+		imageBarrier.srcAccessMask = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
+		imageBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+		imageBarrier.oldLayout = pImage->layout;
+		imageBarrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		if (pImage->usage & vk::ImageUsageFlagBits::eStorage) {
+			imageBarrier.newLayout = vk::ImageLayout::eGeneral;
+		}
+		
+		imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
 
-		DeviceImage* pImage = (DeviceImage*)texture;
-		vk::ImageLayout newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
-		if (texture.getUsageFlags() & sa::TextureUsageFlagBits::STORAGE)
-			newLayout = vk::ImageLayout::eGeneral;
-
-
-		vk::ImageMemoryBarrier imageBarrier{
-			.srcAccessMask = vk::AccessFlagBits::eColorAttachmentWrite,
-			.dstAccessMask = vk::AccessFlagBits::eShaderRead,
-			.oldLayout = pImage->layout,
-			.newLayout = newLayout,
-			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
-			.image = pImage->image,
-			.subresourceRange{
-				.aspectMask = vk::ImageAspectFlagBits::eColor,
+		vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eDepth;
+		if (VulkanCore::HasStencilComponent(pImage->format)) {
+			aspect |= vk::ImageAspectFlagBits::eStencil;
+		}
+		
+		imageBarrier.image = pImage->image;
+		imageBarrier.subresourceRange = {
+				.aspectMask = aspect,
 				.baseMipLevel = 0,
 				.levelCount = pImage->mipLevels,
 				.baseArrayLayer = 0,
 				.layerCount = pImage->arrayLayers,
-			},
 		};
 
-		pImage->layout = newLayout;
+		m_pCommandBufferSet->getBuffer().pipelineBarrier(
+			vk::PipelineStageFlagBits::eEarlyFragmentTests | vk::PipelineStageFlagBits::eLateFragmentTests,
+			vk::PipelineStageFlagBits::eComputeShader,
+			(vk::DependencyFlags)0, 
+			0, nullptr,
+			0, nullptr, 
+			1, &imageBarrier);
+
+		pImage->layout = imageBarrier.newLayout;
+	}
+
+	void RenderContext::barrierComputeToFragment(const Texture& texture) const {
+		DeviceImage* pImage = texture;
+		vk::ImageMemoryBarrier imageBarrier = {};
+		imageBarrier.srcAccessMask = vk::AccessFlagBits::eShaderWrite;
+		imageBarrier.dstAccessMask = vk::AccessFlagBits::eShaderRead;
+		imageBarrier.oldLayout = pImage->layout;
+		imageBarrier.newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		if (pImage->usage & vk::ImageUsageFlagBits::eStorage) {
+			imageBarrier.newLayout = vk::ImageLayout::eGeneral;
+		}
+
+		imageBarrier.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+		imageBarrier.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED;
+
+		vk::ImageAspectFlags aspect = vk::ImageAspectFlagBits::eColor;
+		if (VulkanCore::IsDepthFormat(pImage->format)) {
+			aspect = vk::ImageAspectFlagBits::eDepth;
+			
+			if (VulkanCore::HasStencilComponent(pImage->format)) {
+				aspect |= vk::ImageAspectFlagBits::eStencil;
+			}
+		}
+
+		imageBarrier.image = pImage->image;
+		imageBarrier.subresourceRange = {
+				.aspectMask = aspect,
+				.baseMipLevel = 0,
+				.levelCount = pImage->mipLevels,
+				.baseArrayLayer = 0,
+				.layerCount = pImage->arrayLayers,
+		};
 
 		m_pCommandBufferSet->getBuffer().pipelineBarrier(
-			vk::PipelineStageFlagBits::eColorAttachmentOutput,
+			vk::PipelineStageFlagBits::eComputeShader,
 			vk::PipelineStageFlagBits::eFragmentShader,
 			(vk::DependencyFlags)0,
-			nullptr,
-			nullptr,
-			imageBarrier);
+			0, nullptr,
+			0, nullptr,
+			1, &imageBarrier);
+
+		pImage->layout = imageBarrier.newLayout;
 	}
 
 	void RenderContext::barrierColorCompute(const Texture& texture) const {
@@ -531,122 +577,200 @@ namespace sa {
 			nullptr);
 	}
 
-	void RenderContext::transitionTexture(const Texture& texture, Transition src, Transition dst) const {
+	void RenderContext::barrier(const Texture& texture, Transition src, Transition dst) const {
+		const ImageView& imageView = texture.getView();
+		const DeviceImage* pImage = imageView.getImage();
+		
 
 		vk::AccessFlags srcAccess;
 		vk::AccessFlags dstAccess;
 		vk::PipelineStageFlags srcStage;
 		vk::PipelineStageFlags dstStage;
-		vk::ImageLayout newLayout = vk::ImageLayout::eShaderReadOnlyOptimal;
+		vk::ImageLayout oldLayout = vk::ImageLayout::eUndefined;
+		vk::ImageLayout newLayout = vk::ImageLayout::eUndefined;
+
+		VulkanCore::GetTransitionInfo(src, &srcStage, &srcAccess, &oldLayout);
+		VulkanCore::GetTransitionInfo(dst, &dstStage, &dstAccess, &newLayout);
+
+		vk::Format vkFormat = static_cast<vk::Format>(imageView.getFormat());
 
 		vk::ImageAspectFlags aspectFlags = vk::ImageAspectFlagBits::eColor;
-
-		switch (src) {
-		case sa::Transition::NONE:
-			srcAccess = (vk::AccessFlags)0;
-			srcStage = vk::PipelineStageFlagBits::eTopOfPipe;
-			break;
-		case sa::Transition::RENDER_PROGRAM_INPUT:
-			srcAccess = vk::AccessFlagBits::eInputAttachmentRead;
-			srcStage = vk::PipelineStageFlagBits::eFragmentShader;
-			break;
-		case sa::Transition::RENDER_PROGRAM_OUTPUT:
-			srcAccess = vk::AccessFlagBits::eColorAttachmentWrite;
-			srcStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-			break;
-		case sa::Transition::RENDER_PROGRAM_DEPTH_OUTPUT:
-			srcAccess = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
-			srcStage = vk::PipelineStageFlagBits::eEarlyFragmentTests;
-			aspectFlags = vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil;
-			break;
-		case sa::Transition::COMPUTE_SHADER_READ:
-			srcAccess = vk::AccessFlagBits::eShaderRead;
-			srcStage = vk::PipelineStageFlagBits::eComputeShader;
-			break;
-		case sa::Transition::COMPUTE_SHADER_WRITE:
-			srcAccess = vk::AccessFlagBits::eShaderWrite;
-			srcStage = vk::PipelineStageFlagBits::eComputeShader;
-			break;
-		case sa::Transition::FRAGMENT_SHADER_READ:
-			dstAccess = vk::AccessFlagBits::eShaderRead;
-			dstStage = vk::PipelineStageFlagBits::eFragmentShader;
-			break;
-		case sa::Transition::FRAGMENT_SHADER_WRITE:
-			dstAccess = vk::AccessFlagBits::eShaderWrite;
-			dstStage = vk::PipelineStageFlagBits::eFragmentShader;
-			break;
-		default:
-			break;
+		if (VulkanCore::IsDepthFormat(vkFormat)) {
+			aspectFlags = vk::ImageAspectFlagBits::eDepth;
+			if (VulkanCore::HasStencilComponent(vkFormat)) {
+				aspectFlags |= vk::ImageAspectFlagBits::eStencil;
+			}
 		}
 
-		switch (dst) {
-		case sa::Transition::NONE:
-			dstAccess = (vk::AccessFlags)0;
-			dstStage = vk::PipelineStageFlagBits::eTopOfPipe;
-			break;
-		case sa::Transition::RENDER_PROGRAM_INPUT:
-			dstAccess = vk::AccessFlagBits::eInputAttachmentRead;
-			dstStage = vk::PipelineStageFlagBits::eFragmentShader;
-			break;
-		case sa::Transition::RENDER_PROGRAM_OUTPUT:
-			dstAccess = vk::AccessFlagBits::eColorAttachmentWrite;
-			dstStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
-			newLayout = vk::ImageLayout::eColorAttachmentOptimal;
-			break;
-		case sa::Transition::RENDER_PROGRAM_DEPTH_OUTPUT:
-			dstAccess = vk::AccessFlagBits::eDepthStencilAttachmentWrite;
-			dstStage = vk::PipelineStageFlagBits::eEarlyFragmentTests;
-			newLayout = vk::ImageLayout::eDepthStencilAttachmentOptimal;
-			aspectFlags = vk::ImageAspectFlagBits::eDepth | vk::ImageAspectFlagBits::eStencil;
-			break;
-		case sa::Transition::COMPUTE_SHADER_READ:
-			dstAccess = vk::AccessFlagBits::eShaderRead;
-			dstStage = vk::PipelineStageFlagBits::eComputeShader;
-			if (texture.getUsageFlags() & TextureUsageFlagBits::STORAGE) {
-				newLayout = vk::ImageLayout::eGeneral;
-			}
-			break;
-		case sa::Transition::COMPUTE_SHADER_WRITE:
-			dstAccess = vk::AccessFlagBits::eShaderWrite;
-			dstStage = vk::PipelineStageFlagBits::eComputeShader;
-			if (texture.getUsageFlags() & TextureUsageFlagBits::STORAGE) {
-				newLayout = vk::ImageLayout::eGeneral;
-			}
-			break;
-		case sa::Transition::FRAGMENT_SHADER_READ:
-			dstAccess = vk::AccessFlagBits::eShaderRead;
-			dstStage = vk::PipelineStageFlagBits::eFragmentShader;
-			if (texture.getUsageFlags() & TextureUsageFlagBits::STORAGE) {
-				newLayout = vk::ImageLayout::eGeneral;
-			}
-			break;
-		case sa::Transition::FRAGMENT_SHADER_WRITE:
-			dstAccess = vk::AccessFlagBits::eShaderWrite;
-			dstStage = vk::PipelineStageFlagBits::eFragmentShader;
-			if (texture.getUsageFlags() & TextureUsageFlagBits::STORAGE) {
-				newLayout = vk::ImageLayout::eGeneral;
-			}
-			break;
-
-		default:
-			break;
+		if (newLayout == vk::ImageLayout::eShaderReadOnlyOptimal 
+			&& (texture.getUsageFlags() & sa::TextureUsageFlagBits::STORAGE) == sa::TextureUsageFlagBits::STORAGE) {
+			newLayout = vk::ImageLayout::eGeneral;
 		}
+		
+		vk::ImageMemoryBarrier imageBarrier{
+			.srcAccessMask = srcAccess,
+			.dstAccessMask = dstAccess,
+			.oldLayout = oldLayout,
+			.newLayout = newLayout,
+			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.image = pImage->image,
+			.subresourceRange{
+				.aspectMask = aspectFlags,
+				.baseMipLevel = imageView.getBaseMipLevel(),
+				.levelCount = imageView.getMipLevelCount(),
+				.baseArrayLayer = imageView.getBaseArrayLayer(),
+				.layerCount = imageView.getArrayLayerCount(),
+			},
+		};
 
-		DeviceImage* pImage = (DeviceImage*)texture;
-		m_pCore->transferImageLayout(
-			m_pCommandBufferSet->getBuffer(),
-			pImage->layout,
-			newLayout,
-			srcAccess,
-			dstAccess,
-			pImage->image,
-			aspectFlags,
-			pImage->mipLevels,
-			pImage->arrayLayers,
+		m_pCommandBufferSet->getBuffer().pipelineBarrier(
 			srcStage,
-			dstStage
-		);
-		pImage->layout = newLayout;
+			dstStage,
+			(vk::DependencyFlags)0,
+			nullptr,
+			nullptr,
+			imageBarrier);
+#if 0
+		std::cout << std::setfill('-') << std::setw(32) << "Image" << std::setw(32) << "srcAccess" << std::setw(32) << "dstAccess" << std::setw(16) << "mip" << std::setw(16) << "layer" << std::endl
+			<< std::setfill(' ')
+			<< std::setw(32) << pImage->image
+			<< std::setw(32) << vk::to_string(srcAccess)
+			<< std::setw(32) << vk::to_string(dstAccess)
+			<< std::setw(16) << imageView.getBaseMipLevel()
+			<< std::setw(16) << imageView.getBaseArrayLayer()
+			<< std::endl
+			<< "\t" << vk::to_string(oldLayout) << " -> " << vk::to_string(newLayout)
+			<< std::endl;
+#endif
+	}
+
+	void RenderContext::barrier(uint32_t textureCount, const Texture* pTextures, Transition src, Transition dst) const {
+		std::vector<vk::ImageMemoryBarrier> memoryBarriers(textureCount);
+		vk::AccessFlags srcAccess;
+		vk::AccessFlags dstAccess;
+		vk::PipelineStageFlags srcStage;
+		vk::PipelineStageFlags dstStage;
+		vk::ImageLayout oldLayout = vk::ImageLayout::eUndefined;
+		vk::ImageLayout newLayout = vk::ImageLayout::eUndefined;
+
+		VulkanCore::GetTransitionInfo(src, &srcStage, &srcAccess, &oldLayout);
+		VulkanCore::GetTransitionInfo(dst, &dstStage, &dstAccess, &newLayout);
+
+		for (uint32_t i = 0; i < textureCount; ++i) {
+
+			const ImageView& imageView = pTextures[i].getView();
+			const DeviceImage* pImage = imageView.getImage();
+
+			vk::Format vkFormat = static_cast<vk::Format>(imageView.getFormat());
+
+			vk::ImageAspectFlags aspectFlags = vk::ImageAspectFlagBits::eColor;
+			if (VulkanCore::IsDepthFormat(vkFormat)) {
+				aspectFlags = vk::ImageAspectFlagBits::eDepth;
+				if (VulkanCore::HasStencilComponent(vkFormat)) {
+					aspectFlags |= vk::ImageAspectFlagBits::eStencil;
+				}
+			}
+
+			if (newLayout == vk::ImageLayout::eShaderReadOnlyOptimal
+				&& (pTextures[i].getUsageFlags() & sa::TextureUsageFlagBits::STORAGE) == sa::TextureUsageFlagBits::STORAGE) {
+				newLayout = vk::ImageLayout::eGeneral;
+			}
+
+			memoryBarriers[i] = {
+				.srcAccessMask = srcAccess,
+				.dstAccessMask = dstAccess,
+				.oldLayout = oldLayout,
+				.newLayout = newLayout,
+				.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+				.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+				.image = pImage->image,
+				.subresourceRange{
+					.aspectMask = aspectFlags,
+					.baseMipLevel = imageView.getBaseMipLevel(),
+					.levelCount = imageView.getMipLevelCount(),
+					.baseArrayLayer = imageView.getBaseArrayLayer(),
+					.layerCount = imageView.getArrayLayerCount(),
+				},
+			};
+		}
+
+		m_pCommandBufferSet->getBuffer().pipelineBarrier(
+			srcStage,
+			dstStage,
+			(vk::DependencyFlags)0,
+			nullptr,
+			nullptr,
+			memoryBarriers);
+
+		
+	}
+
+	void RenderContext::barrier(const Buffer& buffer, Transition src, Transition dst) const {
+		const DeviceBuffer* pBuffer = buffer;
+
+		vk::AccessFlags srcAccess;
+		vk::AccessFlags dstAccess;
+		vk::PipelineStageFlags srcStage;
+		vk::PipelineStageFlags dstStage;
+		vk::ImageLayout tmpLayout;
+
+		VulkanCore::GetTransitionInfo(src, &srcStage, &srcAccess, &tmpLayout);
+		VulkanCore::GetTransitionInfo(dst, &dstStage, &dstAccess, &tmpLayout);
+
+		vk::BufferMemoryBarrier bufferBarrier{
+			.srcAccessMask = srcAccess,
+			.dstAccessMask = dstAccess,
+			.srcQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.dstQueueFamilyIndex = VK_QUEUE_FAMILY_IGNORED,
+			.buffer = pBuffer->buffer,
+			.offset = 0,
+			.size = pBuffer->size,
+		};
+		
+		m_pCommandBufferSet->getBuffer().pipelineBarrier(
+			srcStage,
+			dstStage,
+			(vk::DependencyFlags)0,
+			nullptr,
+			bufferBarrier,
+			nullptr);
+	}
+
+	void RenderContext::barrier(Transition src, Transition dst) const {
+		vk::PipelineStageFlags srcStage;
+		vk::PipelineStageFlags dstStage;
+		vk::AccessFlags tmpAccess;
+		vk::ImageLayout tmpLayout;
+
+		VulkanCore::GetTransitionInfo(src, &srcStage, &tmpAccess, &tmpLayout);
+		VulkanCore::GetTransitionInfo(dst, &dstStage, &tmpAccess, &tmpLayout);
+
+		m_pCommandBufferSet->getBuffer().pipelineBarrier(
+			srcStage,
+			dstStage,
+			(vk::DependencyFlags)0,
+			nullptr,
+			nullptr,
+			nullptr);
+	}
+
+	void RenderContext::fullBarrier() const {
+		vk::PipelineStageFlags srcStage = vk::PipelineStageFlagBits::eAllCommands;
+		vk::PipelineStageFlags dstStage = vk::PipelineStageFlagBits::eAllCommands;
+
+		vk::MemoryBarrier memorybarrier{
+			.srcAccessMask = vk::AccessFlagBits::eMemoryRead | vk::AccessFlagBits::eMemoryWrite,
+			.dstAccessMask = vk::AccessFlagBits::eMemoryRead | vk::AccessFlagBits::eMemoryWrite,
+		};
+
+		m_pCommandBufferSet->getBuffer().pipelineBarrier(
+			srcStage,
+			dstStage,
+			(vk::DependencyFlags)0,
+			memorybarrier,
+			nullptr,
+			nullptr);
 	}
 
 	void RenderContext::copyImageToImageColor(const Texture& src, const Texture& dst) const {
@@ -704,6 +828,10 @@ namespace sa {
 		return m_pCommandBufferSet->getBufferIndex();
 	}
 
+	void RenderContext::syncFramebuffer(ResourceID framebuffer) {
+		FramebufferSet* pFramebufferSet = RenderContext::GetFramebufferSet(framebuffer);
+		pFramebufferSet->sync(*this);
+	}
 
 	SubContext::SubContext()
 		: RenderContext()

@@ -38,7 +38,7 @@ namespace sa {
 
 		void destroy();
 
-		void swap();
+		void sync(const RenderContext& context);
 
 		vk::Framebuffer getBuffer(uint32_t index) const;
 		uint32_t getBufferCount() const;

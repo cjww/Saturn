@@ -149,6 +149,7 @@ namespace sa {
 			Engine::GetEngineStatistics().drawCalls += drawCallCount;
 
 		}
+		context.syncFramebuffer(renderData.depthFramebuffers[layer]);
 		context.endRenderProgram(m_depthRenderProgram);
 	}
 
@@ -456,6 +457,8 @@ namespace sa {
 			cleanupRenderData(renderData);
 			initializeRenderData(renderData, data.lightType);
 		}
+		renderData.depthTexture.sync(context);
+		
 
 		renderShadowMap(context, sceneCamera, data, renderData, sceneCollection);
 

@@ -14,6 +14,7 @@ void ImGuiRenderLayer::init() {
 		.beginSubpass()
 		.addAttachmentReference(0, sa::SubpassAttachmentUsage::ColorTarget)
 		.endSubpass()
+		.addSwapchainDependency(SA_SUBPASS_EXTERNAL, 0)
 		.end();
 
 	m_imGuiFramebuffer = m_renderer.createSwapchainFramebuffer(m_imGuiRenderProgram, m_pWindow->getSwapchainID());
