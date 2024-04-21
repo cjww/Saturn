@@ -42,6 +42,7 @@ namespace sa {
 		bool wasResized() const;
 
 		bool isSampleReady() const;
+		void sync(const RenderContext& context);
 		void makeSampleReady(const RenderContext& context);
 
 		const Extent& getExtent() const;

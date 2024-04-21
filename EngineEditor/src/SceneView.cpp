@@ -26,6 +26,7 @@ void SceneView::onSceneSet(const sa::engine_event::SceneSet& e) {
 }
 
 void SceneView::onRender(const sa::engine_event::OnRender& e) {
+	m_renderTarget.sync(*e.pContext);
 	if (m_isOpen && m_pEngine->getCurrentScene()) {
 		/*
 		if (m_sceneCollection.getMode() == sa::SceneCollection::CollectionMode::CONTINUOUS) {
@@ -249,7 +250,6 @@ void SceneView::onImGui() {
 		}
 		
 		if (m_renderTarget.isSampleReady()) {
-
 			ImGui::Image(m_renderTarget.getOutputTexture(), imAvailSize);
 			
 			auto pForwardPlus = m_pEngine->getRenderPipeline().getLayer<sa::ForwardPlus>();

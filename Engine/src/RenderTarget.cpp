@@ -64,6 +64,7 @@ namespace sa {
 		m_extent = extent;
 		m_wasResized = true;
 		m_pOutputTexture = nullptr;
+		m_lastTransition = Transition::NONE;
 	}
 
 	bool RenderTarget::wasResized() const {
@@ -76,10 +77,16 @@ namespace sa {
 			m_lastTransition == Transition::FRAGMENT_SHADER_READ;
 	}
 
+	void RenderTarget::sync(const RenderContext& context) {
+		if (!m_pOutputTexture)
+			return;
+		m_pOutputTexture->sync(context);
+	}
+
+
 	void RenderTarget::makeSampleReady(const RenderContext& context) {
 		if (!m_pOutputTexture)
 			return;
-
 		context.barrier(m_pOutputTexture->getTexture(), m_lastTransition, Transition::FRAGMENT_SHADER_READ);
 		m_lastTransition = Transition::FRAGMENT_SHADER_READ;
 	}

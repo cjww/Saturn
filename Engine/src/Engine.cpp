@@ -134,6 +134,7 @@ namespace sa {
 			return;
 		
 		Scene* pCurrentScene = getCurrentScene();
+		m_mainRenderTarget.sync(context);
 		if (pCurrentScene) {
 			pCurrentScene->render(context, m_renderPipeline, m_mainRenderTarget);
 		}
