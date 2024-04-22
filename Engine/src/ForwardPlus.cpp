@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Graphics/RenderTechniques/ForwardPlus.h"
 #include "Graphics\RenderLayers\ShadowRenderLayer.h"
+#include "Graphics\RenderLayers\EnvironmentRenderLayer.h"
 
 #include "Engine.h"
 
@@ -56,7 +57,32 @@ namespace sa {
 			.end();
 		m_renderer.setClearColor(m_colorRenderProgram, Color{ 0.0f, 0.0f, 0.1f, 1.0f });	
 
+	}
+
+	void ForwardPlus::createSkyboxPipeline() {
+		Image skyboxImage("resources/skybox.png");
+
+		m_skybox.cubemap.createCube(skyboxImage, false);
+
+		Shader shaders[2];
+		shaders[0].create(ReadSPVFile((Engine::GetShaderDirectory() / "skybox.vert.spv").generic_string().c_str()));
+		shaders[1].create(ReadSPVFile((Engine::GetShaderDirectory() / "skybox.frag.spv").generic_string().c_str()));
+
+		m_skybox.pipelineLayout.createFromShaders(shaders, 2);
+
+		PipelineSettings settings = {};
+		settings.dynamicStates.push_back(DynamicState::VIEWPORT);
+		settings.dynamicStates.push_back(DynamicState::SCISSOR);
+		settings.cullMode = CullModeFlagBits::NONE;
+		m_skybox.pipeline = m_renderer.createGraphicsPipeline(m_skybox.pipelineLayout, shaders, 2, m_colorRenderProgram, 0, { 0, 0 }, settings);
 		
+		auto& cube = AssetManager::Get().getCube()->data.meshes[0];
+		m_skybox.vertexBuffer.create(BufferType::VERTEX, cube.vertices.size() * sizeof(VertexNormalUV), cube.vertices.data());
+		m_skybox.indexBuffer.create(BufferType::INDEX, cube.indices.size() * sizeof(uint32_t), cube.indices.data());
+
+		m_skybox.descriptorSet = m_skybox.pipelineLayout.allocateDescriptorSet(0);
+		m_renderer.updateDescriptorSet(m_skybox.descriptorSet, 0, m_skybox.cubemap, m_linearSampler);
+
 	}
 
 	void ForwardPlus::initializeMainRenderData(ForwardPlusRenderData& data, Extent extent)
@@ -137,8 +163,44 @@ namespace sa {
 		
 	}
 
-	ForwardPlus::ForwardPlus(ShadowRenderLayer* pShadowRenderLayer) : IRenderLayer() {
-		m_pShadowRenderLayer = pShadowRenderLayer;
+	void ForwardPlus::bindShadows(const RenderContext& context, const SceneCollection& sc, const MaterialShaderCollection& collection) {
+		if (m_pShadowRenderLayer && m_pShadowRenderLayer->isActive()) {
+			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 5, sc.getShadowDataBuffer());
+
+			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 7, m_pShadowRenderLayer->getPreferencesBuffer());
+			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(),
+				8,
+				sc.getShadowTextures().data(),
+				sc.getShadowTextureCount(),
+				m_pShadowRenderLayer->getShadowSampler(),
+				0
+			);
+			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(),
+				9,
+				sc.getShadowCubeTextures().data(),
+				sc.getShadowCubeTextureCount(),
+				m_pShadowRenderLayer->getShadowSampler(),
+				0
+			);
+
+		}
+		else {
+			if (!m_defaultShadowPreferencesBuffer.isValid()) {
+				uint32_t shadowsEnabled = false;
+				m_defaultShadowPreferencesBuffer.create(BufferType::UNIFORM, sizeof(shadowsEnabled), &shadowsEnabled);
+			}
+
+			if (!m_defaultShadowDataBuffer.isValid()) {
+				m_defaultShadowDataBuffer.create(BufferType::STORAGE);
+			}
+			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 5, m_defaultShadowDataBuffer);
+			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 7, m_defaultShadowPreferencesBuffer);
+		}
+	}
+
+	ForwardPlus::ForwardPlus(const RenderPipeline& renderPipeline) : IRenderLayer() {
+		m_pShadowRenderLayer = renderPipeline.getLayer<ShadowRenderLayer>();
+		m_pEnvironmentRenderLayer = renderPipeline.getLayer<EnvironmentRenderLayer>();
 	}
 
 	void ForwardPlus::onRenderTargetResize(UUID renderTargetID, Extent oldExtent, Extent newExtent) {
@@ -153,14 +215,16 @@ namespace sa {
 	void ForwardPlus::init() {
 		if (m_isInitialized)
 			return;
+		
+		// Samplers
+		m_linearSampler = m_renderer.createSampler(FilterMode::LINEAR);
+		m_nearestSampler = m_renderer.createSampler(FilterMode::NEAREST);
+
 		createPreDepthPass();
 		createLightCullingShader();
 		createColorPass();
 
-		// Samplers
-		
-		m_linearSampler = m_renderer.createSampler(FilterMode::LINEAR);
-		m_nearestSampler = m_renderer.createSampler(FilterMode::NEAREST);
+		createSkyboxPipeline();
 
 
 		//DEBUG
@@ -202,6 +266,10 @@ namespace sa {
 		m_debugHeatmapFragmentShader.destroy();
 		m_renderer.destroyPipeline(m_debugLightHeatmapPipeline);
 		m_renderer.destroyRenderProgram(m_debugLightHeatmapRenderProgram);
+
+		m_skybox.pipelineLayout.destroy();
+		m_renderer.destroyPipeline(m_skybox.pipeline);
+
 	}
 
 	bool ForwardPlus::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sc) {
@@ -238,8 +306,8 @@ namespace sa {
 		}
 
 		PerFrameBuffer perFrame;
-		perFrame.projMat = pCamera->getProjectionMatrix();
 		perFrame.viewMat = pCamera->getViewMatrix();
+		perFrame.projMat = pCamera->getProjectionMatrix();
 		perFrame.viewPos = glm::vec4(pCamera->getPosition(), 1.0f);
 
 		
@@ -308,41 +376,21 @@ namespace sa {
 
 			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 1, sc.getLightBuffer());
 			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 4, data.lightIndexBuffer.getBuffer());
-			if (m_pShadowRenderLayer && m_pShadowRenderLayer->isActive()) {
-				context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 5, sc.getShadowDataBuffer());
+			
+			bindShadows(context, sc, collection);
 
-				context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 7, m_pShadowRenderLayer->getPreferencesBuffer());
-				context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 
-					8,
-					sc.getShadowTextures().data(), 
-					sc.getShadowTextureCount(), 
-					m_pShadowRenderLayer->getShadowSampler(), 
-					0
-				);
-				context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(),
-					9,
-					sc.getShadowCubeTextures().data(),
-					sc.getShadowCubeTextureCount(),
-					m_pShadowRenderLayer->getShadowSampler(),
-					0
-				);
-
+			/*
+			if (m_pEnvironmentRenderLayer && m_pEnvironmentRenderLayer->isActive()) {
+				context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 10, m_pEnvironmentRenderLayer->getSkyboxTexture(), m_linearSampler);
 			}
 			else {
-				if (!m_defaultShadowPreferencesBuffer.isValid()) {
-					uint32_t shadowsEnabled = false;
-					m_defaultShadowPreferencesBuffer.create(BufferType::UNIFORM, sizeof(shadowsEnabled), &shadowsEnabled);
-				}
-
-				if (!m_defaultShadowDataBuffer.isValid()) {
-					m_defaultShadowDataBuffer.create(BufferType::STORAGE);
-				}
-				context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 5, m_defaultShadowDataBuffer);
-				context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 7, m_defaultShadowPreferencesBuffer);
-					
+				context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 10, *AssetManager::Get().loadDefaultTexture(), m_linearSampler);
 			}
+			*/
+			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 10, m_skybox.cubemap, m_linearSampler);
+
+
 			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 6, m_linearSampler);
-			
 
 			context.bindDescriptorSet(collection.getSceneDescriptorSetColorPass());
 
@@ -357,11 +405,28 @@ namespace sa {
 			}
 		}
 		
+		//Skybox
+		context.bindPipelineLayout(m_skybox.pipelineLayout);
+		context.bindPipeline(m_skybox.pipeline);
+		context.setViewport(viewport);
+		context.setScissor(viewport);
+		
+		context.bindDescriptorSet(m_skybox.descriptorSet);
+
+		context.bindVertexBuffers(0, &m_skybox.vertexBuffer, 1);
+		context.bindIndexBuffer(m_skybox.indexBuffer);
+		
+		perFrame.viewMat = glm::mat4(glm::mat3(perFrame.viewMat));
+		context.pushConstants(ShaderStageFlagBits::VERTEX, 0, sizeof(glm::mat4) * 2, &perFrame);
+		
+		context.drawIndexed(m_skybox.indexBuffer.getElementCount<uint32_t>(), 1);
+		
+
 		//Finally render debug stuff
 		if (!DebugRenderer::Get().isInitialized())
 			DebugRenderer::Get().initialize(m_colorRenderProgram);
 
-		//DebugRenderer::Get().render(context, viewport.extent, *pCamera);
+		DebugRenderer::Get().render(context, viewport.extent, *pCamera);
 
 		context.endRenderProgram(m_colorRenderProgram);
 

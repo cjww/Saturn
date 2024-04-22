@@ -179,11 +179,7 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
         default:
             break;
         }
-
         
-
-
-
         vec3 F0 = vec3(0.04);
         F0 = mix(F0, pow(albedo, vec3(2.2)), metallic);
 
@@ -201,6 +197,10 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
         vec3 numerator = NDF * G * F;
         float denominator = 4.0 * max(dot(normal, viewDir), 0.0) * NdotL;
         vec3 specular = numerator / max(denominator, 0.0001);
+
+        vec3 refl = reflect(normal, viewDir);
+        vec4 skyboxColor = texture(skybox, refl);
+        specular *= skyboxColor.rgb;
 
         Lo += (kD * albedo / PI + specular) * radiance * NdotL;
         

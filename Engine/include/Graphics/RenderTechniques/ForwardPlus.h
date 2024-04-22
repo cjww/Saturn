@@ -6,6 +6,8 @@
 #include "Resources/DynamicTexture.hpp"
 #include "Resources/DynamicBuffer.hpp"
 
+#include "Graphics\RenderPipeline.h"
+
 #include "Tools/Profiler.h"
 
 #define TILE_SIZE 16U
@@ -15,6 +17,7 @@
 namespace sa {
 
 	class ShadowRenderLayer;
+	class EnvironmentRenderLayer;
 
 	struct ForwardPlusRenderData {
 		DynamicTexture colorTexture;
@@ -65,17 +68,32 @@ namespace sa {
 		Buffer m_defaultShadowPreferencesBuffer;
 		Buffer m_defaultShadowDataBuffer;
 
+		EnvironmentRenderLayer* m_pEnvironmentRenderLayer;
+
+		struct {
+			Texture cubemap;
+			PipelineLayout pipelineLayout;
+			ResourceID pipeline;
+			Buffer vertexBuffer;
+			Buffer indexBuffer;
+			ResourceID descriptorSet;
+		} m_skybox;
+
 
 		void createPreDepthPass();
 		void createLightCullingShader();
 		void createColorPass();
 
+		void createSkyboxPipeline();
+
 		void initializeMainRenderData(ForwardPlusRenderData& data, Extent extent);
 		void cleanupMainRenderData(ForwardPlusRenderData& data);
 
+		void bindShadows(const RenderContext& context, const SceneCollection& sc, const MaterialShaderCollection& collection);
+
 	public:
 
-		ForwardPlus(ShadowRenderLayer* pShadowRenderLayer);
+		ForwardPlus(const RenderPipeline& renderPipeline);
 
 		virtual void onRenderTargetResize(UUID renderTargetID, Extent oldExtent, Extent newExtent) override;
 

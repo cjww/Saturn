@@ -6,6 +6,7 @@
 #include "Graphics/RenderTechniques/ForwardPlus.h"
 #include "Graphics/RenderLayers/BloomRenderLayer.h"
 #include "Graphics/RenderLayers/ShadowRenderLayer.h"
+#include "Graphics/RenderLayers/EnvironmentRenderLayer.h"
 
 #include "Lua/Ref.h"
 #include "Tools/Vector.h"
@@ -104,7 +105,7 @@ namespace sa {
 
 	void Engine::setupDefaultRenderPipeline() {
 		m_renderPipeline.addLayer(new ShadowRenderLayer);
-		m_renderPipeline.addLayer(new ForwardPlus(m_renderPipeline.getLayer<ShadowRenderLayer>()));
+		m_renderPipeline.addLayer(new ForwardPlus(m_renderPipeline));
 		m_renderPipeline.addLayer(new BloomRenderLayer);
 	}
 

@@ -109,6 +109,8 @@ layout(set = 0, binding = 7) uniform ShadowPreferences {
 layout(set = 0, binding = 8) uniform sampler2DArrayShadow shadowTextures[MAX_SHADOW_MAP_COUNT];
 layout(set = 0, binding = 9) uniform samplerCubeShadow shadowCubeTextures[MAX_SHADOW_MAP_COUNT];
 
+layout(set = 0, binding = 10) uniform samplerCube skybox;
+
 layout(set = 0, binding = 32) uniform texture2D textures[];
 
 
