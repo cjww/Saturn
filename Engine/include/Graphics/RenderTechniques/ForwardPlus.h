@@ -68,8 +68,6 @@ namespace sa {
 		Buffer m_defaultShadowPreferencesBuffer;
 		Buffer m_defaultShadowDataBuffer;
 
-		EnvironmentRenderLayer* m_pEnvironmentRenderLayer;
-
 		struct {
 			Texture cubemap;
 			PipelineLayout pipelineLayout;

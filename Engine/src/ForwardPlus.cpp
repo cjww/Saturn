@@ -1,7 +1,6 @@
 #include "pch.h"
 #include "Graphics/RenderTechniques/ForwardPlus.h"
 #include "Graphics\RenderLayers\ShadowRenderLayer.h"
-#include "Graphics\RenderLayers\EnvironmentRenderLayer.h"
 
 #include "Engine.h"
 
@@ -200,7 +199,6 @@ namespace sa {
 
 	ForwardPlus::ForwardPlus(const RenderPipeline& renderPipeline) : IRenderLayer() {
 		m_pShadowRenderLayer = renderPipeline.getLayer<ShadowRenderLayer>();
-		m_pEnvironmentRenderLayer = renderPipeline.getLayer<EnvironmentRenderLayer>();
 	}
 
 	void ForwardPlus::onRenderTargetResize(UUID renderTargetID, Extent oldExtent, Extent newExtent) {
@@ -379,16 +377,7 @@ namespace sa {
 			
 			bindShadows(context, sc, collection);
 
-			/*
-			if (m_pEnvironmentRenderLayer && m_pEnvironmentRenderLayer->isActive()) {
-				context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 10, m_pEnvironmentRenderLayer->getSkyboxTexture(), m_linearSampler);
-			}
-			else {
-				context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 10, *AssetManager::Get().loadDefaultTexture(), m_linearSampler);
-			}
-			*/
 			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 10, m_skybox.cubemap, m_linearSampler);
-
 
 			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 6, m_linearSampler);
 

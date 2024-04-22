@@ -6,7 +6,6 @@
 #include "Graphics/RenderTechniques/ForwardPlus.h"
 #include "Graphics/RenderLayers/BloomRenderLayer.h"
 #include "Graphics/RenderLayers/ShadowRenderLayer.h"
-#include "Graphics/RenderLayers/EnvironmentRenderLayer.h"
 
 #include "Lua/Ref.h"
 #include "Tools/Vector.h"
