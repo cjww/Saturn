@@ -16,6 +16,25 @@ namespace sa {
 
 	tf::Executor Asset::s_taskExecutor = tf::Executor(std::thread::hardware_concurrency(), std::make_shared<WorkerInterface>());
 
+	bool Asset::readCompiledAsset(std::ifstream& file, AssetLoadFlags flags) {
+		file.seekg(m_header.contentOffset);
+		return onLoad(file, flags);
+	}
+
+	bool Asset::writeCompiledAsset(std::ofstream& file, AssetWriteFlags flags) {
+		const auto headerPos = file.tellp();
+		const std::streampos contentPos = sizeof(AssetHeader);
+
+		file.seekp(contentPos);
+		const bool success = onWrite(file, flags);
+
+		// Calculate size and write header
+		m_header.size = file.tellp() - contentPos;
+		m_header.contentOffset = contentPos;
+		file.seekp(headerPos);
+		WriteHeader(m_header, file);
+		return success;
+	}
 
 	void Asset::addDependency(const sa::ProgressView<bool>& progress) {
 		m_progress.addDependency(&progress);
@@ -97,8 +116,7 @@ namespace sa {
 					throw std::runtime_error("Failed to open file " + path.generic_string());
 				}
 
-				file.seekg(m_header.contentOffset);
-				m_isLoaded = onLoad(file, flags);
+				m_isLoaded = readCompiledAsset(file, flags);
 
 				file.close();
 				SA_DEBUG_LOG_INFO("Finished Loading ", m_name, " from ", path);
@@ -140,17 +158,8 @@ namespace sa {
 					return false;
 				}
 
-				const auto headerPos = file.tellp();
-				const std::streampos contentPos = sizeof(AssetHeader);
+				const bool success = writeCompiledAsset(file, flags);
 
-				file.seekp(contentPos);
-				const bool success = onWrite(file, flags);
-
-				// Calculate size and write header
-				m_header.size = file.tellp() - contentPos;
-				m_header.contentOffset = contentPos;
-				file.seekp(headerPos);
-				WriteHeader(m_header, file);
 
 				file.close();
 				SA_DEBUG_LOG_INFO("Finished Writing ", m_name, " to ", path);

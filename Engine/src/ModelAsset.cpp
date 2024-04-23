@@ -264,7 +264,7 @@ namespace sa {
 		return true;
 	}
 
-	bool ModelAsset::isExtensionSupported(const std::string& extension) {
+	bool ModelAsset::IsExtensionSupported(const std::string& extension) {
 		Assimp::Importer importer;
 		return importer.IsExtensionSupported(extension);
 	}

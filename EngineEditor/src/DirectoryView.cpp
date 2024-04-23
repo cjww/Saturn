@@ -11,7 +11,7 @@ void DirectoryView::onDraggedDropped(const sa::editor_event::DragDropped& e) {
 	for (uint32_t i = 0; i < e.count; i++) {
 		std::filesystem::path path = e.paths[i];
 		std::string extension = path.extension().generic_string();
-		if (sa::ModelAsset::isExtensionSupported(extension)) {
+		if (sa::ModelAsset::IsExtensionSupported(extension)) {
 			sa::AssetManager::Get().importAsset<sa::ModelAsset>(path, m_openDirectory);
 			continue;
 		}
@@ -169,7 +169,7 @@ void DirectoryView::onImGui() {
 				}
 				
 				sa::Asset* pAsset = nullptr;
-				if(sa::AssetManager::IsAsset(entry)) {
+				if(sa::AssetManager::IsCompiledAsset(entry)) {
 					pAsset = sa::AssetManager::Get().findAssetByPath(entry.path());
 					if (pAsset) {
 						icon = ImGui::GetAssetInfo(pAsset->getType()).icon;

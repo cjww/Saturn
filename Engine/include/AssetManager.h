@@ -73,8 +73,10 @@ namespace sa {
 		AssetManager();
 
 		void locateAssets();
+		Asset* addCompiledAsset(const std::filesystem::path& assetPath);
+		Asset* addCompiledAsset(AssetHeader header, const std::filesystem::path& assetPath);
+
 		Asset* addAsset(const std::filesystem::path& assetPath);
-		Asset* addAsset(AssetHeader header, const std::filesystem::path& assetPath);
 
 		void addAssetPackage(const std::filesystem::path& packagePath);
 
@@ -88,7 +90,8 @@ namespace sa {
 	
 		static AssetManager& Get();
 		
-		static bool IsAsset(const std::filesystem::directory_entry& entry);
+		static bool IsCompiledAsset(const std::filesystem::directory_entry& entry);
+		static bool IsAssetSource(const std::filesystem::directory_entry& entry);
 		static bool IsAssetPackage(const std::filesystem::directory_entry& entry);
 
 

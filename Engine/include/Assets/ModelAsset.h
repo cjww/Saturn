@@ -26,7 +26,7 @@ namespace sa {
 		using Asset::Asset;
 
 
-		static bool isExtensionSupported(const std::string& extension);
+		static bool IsExtensionSupported(const std::string& extension);
 
 		//Data
 		ModelData data;

@@ -5,8 +5,12 @@
 #include <stb_image.h>
 
 
-
 namespace sa {
+	bool Image::IsFileSupported(const char* path) {
+		int width, height, channels;
+		return stbi_info(path, &width, &height, &channels) == 1;
+	}
+
 	Image::Image()
 		: m_pixels(nullptr)
 		, m_width(0)

@@ -9,6 +9,8 @@ namespace sa {
 		int m_width, m_height, m_channels;
 		
 	public:
+		static bool IsFileSupported(const char* path);
+
 		Image();
 		Image(const char* path);
 		Image(const std::string& path);

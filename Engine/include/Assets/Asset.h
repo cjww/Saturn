@@ -21,6 +21,7 @@ namespace sa {
 		uint16_t version = SA_ASSET_VERSION;
 	};
 
+
 	typedef uint32_t AssetLoadFlags;
 	enum AssetLoadFlagBits : AssetLoadFlags {
 		FORCE = 1, // not going to care if asset is already loaded
@@ -55,9 +56,12 @@ namespace sa {
 
 		std::filesystem::path m_assetPath;
 
-
 		ProgressView<bool> m_progress;
 		std::mutex m_mutex;
+		
+		bool readCompiledAsset(std::ifstream& file, AssetLoadFlags flags);
+		bool writeCompiledAsset(std::ofstream& file, AssetWriteFlags flags);
+
 	protected:
 		void addDependency(const sa::ProgressView<bool>& progress);
 		
