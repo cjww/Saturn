@@ -164,30 +164,35 @@ namespace sa {
     }
 
     bool MaterialShader::onLoad(std::ifstream& file, AssetLoadFlags flags) {
+       
+        return true;
+    }
+
+    bool MaterialShader::onLoadCompiled(ByteStream& byteStream, AssetLoadFlags flags) {
         //Source files
         uint32_t sourceCount = 0;
-        file.read((char*)&sourceCount, sizeof(uint32_t));
+        byteStream.read(&sourceCount);
 
         m_sourceFiles.resize(sourceCount);
         for (int i = 0; i < sourceCount; i++) {
             uint32_t pathLength = 0;
-            file.read((char*)&pathLength, sizeof(uint32_t));
+            byteStream.read(&pathLength);
             std::string path;
             path.resize(pathLength);
-            file.read(path.data(), path.size());
+            byteStream.read(reinterpret_cast<byte_t*>(path.data()), path.size());
             m_sourceFiles[i].filePath = path;
-            file.read((char*)&m_sourceFiles[i].stage, sizeof(uint32_t));
+            byteStream.read(reinterpret_cast<byte_t*>(&m_sourceFiles[i].stage), sizeof(uint32_t));
         }
         // Binary code
         uint32_t codeCount = 0;
-        file.read((char*)&codeCount, sizeof(uint32_t));
+        byteStream.read(&codeCount);
 
         m_code.resize(codeCount);
         for (int i = 0; i < codeCount; i++) {
             size_t codeSize = 0;
-            file.read((char*)&codeSize, sizeof(size_t));
+            byteStream.read(&codeSize);
             m_code[i].resize(codeSize);
-            file.read((char*)m_code[i].data(), codeSize * sizeof(uint32_t));
+            byteStream.read(reinterpret_cast<byte_t*>(m_code[i].data()), codeSize * sizeof(uint32_t));
         }
 
         if (m_code.empty()) {

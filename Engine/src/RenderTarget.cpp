@@ -16,8 +16,8 @@ namespace sa {
 		m_extent = e.newExtent;
 	}
 
-	RenderTarget::RenderTarget(const AssetHeader& header)
-		: Asset(header)
+	RenderTarget::RenderTarget(const AssetHeader& header, bool isCompiled)
+		: Asset(header, isCompiled)
 		, m_renderer(Renderer::Get())
 		, m_isActive(true)
 		, m_extent({ 256, 256 })
@@ -29,7 +29,7 @@ namespace sa {
 	}
 
 	RenderTarget::RenderTarget() 
-		: RenderTarget(AssetHeader{})
+		: RenderTarget(AssetHeader{}, false)
 	{
 	}
 
@@ -119,6 +119,10 @@ namespace sa {
 	}
 
 	bool RenderTarget::onLoad(std::ifstream& file, AssetLoadFlags flags) {
+		return true;
+	}
+
+	bool RenderTarget::onLoadCompiled(ByteStream& byteStream, AssetLoadFlags flags) {
 		return true;
 	}
 	

@@ -61,6 +61,7 @@ set(Header_Files
     "include/Tools/StopWatch.h"
     "include/Tools/utils.h"
     "include/Tools/Vector.h"
+    "include/Tools/ByteStream.h"
     "include/UUID.h"
     "include/Vertex.h"
 )
@@ -116,6 +117,7 @@ set(Source_Files
     "src/UUID.cpp"
     "src/WindowRenderer.cpp"
     "src/DebugRenderer.cpp"
+    "src/ByteStream.cpp"
 )
 source_group("Source Files" FILES ${Source_Files})
 

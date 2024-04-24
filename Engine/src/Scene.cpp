@@ -70,8 +70,8 @@ namespace sa {
 	}
 
 
-	Scene::Scene(const AssetHeader& header)
-		: Asset(header)
+	Scene::Scene(const AssetHeader& header, bool isCompiled)
+		: Asset(header, isCompiled)
 		, m_scriptManager(*this)
 		, m_dynamicSceneCollection(sa::SceneCollection::CollectionMode::CONTINUOUS)
 		, m_runtime(false)
@@ -86,8 +86,13 @@ namespace sa {
 	}
 
 	bool Scene::onLoad(std::ifstream& file, AssetLoadFlags flags) {
+		
+		return true;
+	}
+
+	bool Scene::onLoadCompiled(ByteStream& byteStream, AssetLoadFlags flags) {
 		simdjson::padded_string jsonStr(getHeader().size);
-		file.read(jsonStr.data(), jsonStr.length());
+		byteStream.read(reinterpret_cast<byte_t*>(jsonStr.data()), jsonStr.length());
 
 		simdjson::ondemand::parser parser;
 		auto doc = parser.iterate(jsonStr);
@@ -95,7 +100,7 @@ namespace sa {
 			throw std::runtime_error("Json error: " + std::string(simdjson::error_message(doc.error())));
 		}
 		deserialize(&doc);
-		
+
 		return true;
 	}
 

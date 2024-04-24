@@ -16,9 +16,12 @@ namespace sa {
 
 	tf::Executor Asset::s_taskExecutor = tf::Executor(std::thread::hardware_concurrency(), std::make_shared<WorkerInterface>());
 
-	bool Asset::readCompiledAsset(std::ifstream& file, AssetLoadFlags flags) {
+	bool Asset::loadCompiledAsset(std::ifstream& file, AssetLoadFlags flags) {
 		file.seekg(m_header.contentOffset);
-		return onLoad(file, flags);
+		std::vector<byte_t> buffer(m_header.size);
+		file.read(reinterpret_cast<char*>(buffer.data()), buffer.size());
+		ByteStream byteStream(buffer.data(), buffer.size());
+		return onLoadCompiled(byteStream, flags);
 	}
 
 	bool Asset::writeCompiledAsset(std::ofstream& file, AssetWriteFlags flags) {
@@ -34,6 +37,11 @@ namespace sa {
 		file.seekp(headerPos);
 		WriteHeader(m_header, file);
 		return success;
+	}
+
+	bool Asset::loadAsset(std::ifstream& file, AssetLoadFlags flags) {
+
+		return false;
 	}
 
 	void Asset::addDependency(const sa::ProgressView<bool>& progress) {
@@ -52,13 +60,20 @@ namespace sa {
 		return s_taskExecutor.run(tf);
 	}
 
-	Asset::Asset(const AssetHeader& header)
+	Asset::Asset(const AssetHeader& header, bool isCompiled)
 		: m_isLoaded(false)
 		, m_name("New Asset")
 		, m_refCount(0)
 		, m_header(header)
+		, m_isCompiled(isCompiled)
 	{
-		
+		if (m_isCompiled) {
+			m_loadFunction = [&](std::ifstream& file, AssetLoadFlags flags) -> bool { return loadCompiledAsset(file, flags); };
+		}
+		else {
+			m_loadFunction = [&](std::ifstream& file, AssetLoadFlags flags) -> bool { return loadAsset(file, flags); };
+		}
+
 	}
 
 	Asset::~Asset() {
@@ -116,7 +131,7 @@ namespace sa {
 					throw std::runtime_error("Failed to open file " + path.generic_string());
 				}
 
-				m_isLoaded = readCompiledAsset(file, flags);
+				m_isLoaded = m_loadFunction(file, flags);
 
 				file.close();
 				SA_DEBUG_LOG_INFO("Finished Loading ", m_name, " from ", path);

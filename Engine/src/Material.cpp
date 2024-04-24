@@ -78,8 +78,8 @@ namespace sa {
 		}
 	}
 
-	Material::Material(const AssetHeader& header)
-		: Asset(header)
+	Material::Material(const AssetHeader& header, bool isCompiled)
+		: Asset(header, isCompiled)
 	{
 		twoSided = false;
 		m_allTexturesLoaded = false;
@@ -144,36 +144,40 @@ namespace sa {
 	}
 
 	bool Material::onLoad(std::ifstream& file, AssetLoadFlags flags) {
+		return true;
+	}
+	
+	bool Material::onLoadCompiled(ByteStream& byteStream, AssetLoadFlags flags) {
 		m_textures.clear();
 		m_blending.clear();
 		m_allTextures.clear();
 
-		file.read(reinterpret_cast<char*>(&values), sizeof(values));
-		
+		byteStream.read(&values);
+
 		//MaterialShader
 		UUID materialShaderID = SA_DEFAULT_MATERIAL_SHADER_ID;
-		file.read(reinterpret_cast<char*>(&materialShaderID), sizeof(UUID));
+		byteStream.read(&materialShaderID);
 		m_materialShader = materialShaderID;
 
-		if(const auto pProgress = m_materialShader.getProgress())
+		if (const auto pProgress = m_materialShader.getProgress())
 			addDependency(*pProgress);
 
 		uint32_t typeCount = 0;
-		file.read(reinterpret_cast<char*>(&typeCount), sizeof(typeCount));
+		byteStream.read(&typeCount);
 
 		for (uint32_t i = 0; i < typeCount; i++) {
 			sa::MaterialTextureType type;
-			file.read(reinterpret_cast<char*>(&type), sizeof(type));
+			byteStream.read(&type);
 			uint32_t textureCount = 0;
-			file.read(reinterpret_cast<char*>(&textureCount), sizeof(textureCount));
+			byteStream.read(&textureCount);
 			m_textures[type].resize(textureCount);
 
 			for (uint32_t j = 0; j < textureCount; j++) {
 				UUID textureID;
-				file.read(reinterpret_cast<char*>(&textureID), sizeof(textureID));
-				
+				byteStream.read(&textureID);
+
 				m_textures[type][j] = textureID;
-				if(const auto pProgress = m_textures[type][j].getProgress())
+				if (const auto pProgress = m_textures[type][j].getProgress())
 					addDependency(*pProgress);
 			}
 
@@ -181,7 +185,7 @@ namespace sa {
 
 		return true;
 	}
-
+	
 	bool Material::onWrite(std::ofstream& file, AssetWriteFlags flags) {
 		// Values
 		file.write(reinterpret_cast<char*>(&values), sizeof(values));

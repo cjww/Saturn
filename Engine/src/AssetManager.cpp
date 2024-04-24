@@ -69,7 +69,7 @@ namespace sa {
 			throw std::runtime_error("Unknown Asset Type " + std::to_string(header.type));
 		}
 
-		Asset* pAsset = m_assetAddConversions.at(header.type)(header);
+		Asset* pAsset = m_assetAddConversions.at(header.type)(header, true);
 
 		pAsset->setAssetPath(assetPath); // The path the asset will write to
 
@@ -416,7 +416,9 @@ namespace sa {
 	}
 
 	Asset* AssetManager::importAsset(AssetTypeID type, const std::filesystem::path& path, const std::filesystem::path& assetDirectory) {
+		throw "Unimplemented";
 		SA_DEBUG_LOG_INFO("Importing ", getAssetTypeName(type), " ", path);
+
 		AssetHeader header; // generates new UUID
 		header.type = type;
 		assert(header.type != -1 && "Can not use unregistered type!");
@@ -425,7 +427,7 @@ namespace sa {
 			std::lock_guard<std::mutex> lock(m_mutex);
 			
 			m_importedAssets[header.id] = path;
-			asset = m_assetAddConversions[type](header);
+			//asset = m_assetAddConversions[type](header);
 		}
 
 		if (!asset->importFromFile(path, assetDirectory)) {
@@ -449,7 +451,7 @@ namespace sa {
 		assert(header.type != -1 && "Can not use unregistered type!");
 
 		m_mutex.lock();
-		Asset* asset = m_assetAddConversions[type](header);
+		Asset* asset = m_assetAddConversions[type](header, true);
 		m_mutex.unlock();
 
 

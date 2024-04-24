@@ -9,7 +9,6 @@
 
 #include "assimp/ProgressHandler.hpp"
 
-
 #include "AssetManager.h"
 
 namespace sa {
@@ -277,32 +276,43 @@ namespace sa {
 	}
 
 	bool ModelAsset::onLoad(std::ifstream& file, AssetLoadFlags flags) {
+
+		return false;
+	}
+
+	bool ModelAsset::onLoadCompiled(ByteStream& byteStream, AssetLoadFlags flags) {
+		
 		uint32_t meshCount = 0;
-		file.read(reinterpret_cast<char*>(&meshCount), sizeof(meshCount));
+		byteStream.read(&meshCount);
 
 		data.meshes.resize(meshCount);
 		for (auto& mesh : data.meshes) {
 			uint32_t vertexCount = 0;
-			file.read(reinterpret_cast<char*>(&vertexCount), sizeof(vertexCount));
+			byteStream.read(&vertexCount);
+
 			mesh.vertices.resize(vertexCount);
-			file.read(reinterpret_cast<char*>(mesh.vertices.data()), sizeof(sa::VertexNormalUV) * vertexCount);
+			byteStream.read(reinterpret_cast<byte_t*>(mesh.vertices.data()), sizeof(sa::VertexNormalUV) * vertexCount);
 
 			uint32_t indexCount = 0;
-			file.read(reinterpret_cast<char*>(&indexCount), sizeof(indexCount));
+			byteStream.read(reinterpret_cast<byte_t*>(&indexCount), sizeof(indexCount));
+
 			mesh.indices.resize(indexCount);
-			file.read(reinterpret_cast<char*>(mesh.indices.data()), sizeof(uint32_t) * indexCount);
+			byteStream.read(reinterpret_cast<byte_t*>(mesh.indices.data()), sizeof(uint32_t) * indexCount);
 			UUID materialID = SA_DEFAULT_MATERIAL_ID;
-			file.read(reinterpret_cast<char*>(&materialID), sizeof(materialID));
+			byteStream.read(reinterpret_cast<byte_t*>(&materialID), sizeof(materialID));
 			mesh.material = materialID;
 
 			if(const auto pProgress = mesh.material.getProgress())
 				addDependency(*pProgress);
 			
 		}
+
 		return true;
 	}
 
 	bool ModelAsset::onWrite(std::ofstream& file, AssetWriteFlags flags) {
+
+
 		uint32_t meshCount = data.meshes.size();
 		file.write(reinterpret_cast<char*>(&meshCount), sizeof(meshCount));
 

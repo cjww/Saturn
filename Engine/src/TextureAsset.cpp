@@ -35,10 +35,15 @@ namespace sa {
     }
 
     bool TextureAsset::onLoad(std::ifstream& file, AssetLoadFlags flags) {
+        
+        return true;
+    }
+
+    bool TextureAsset::onLoadCompiled(ByteStream& byteStream, AssetLoadFlags flags) {
         setCompletionCount(3);
         m_dataBuffer.resize(getHeader().size);
 
-        file.read((char*)m_dataBuffer.data(), m_dataBuffer.size());
+        byteStream.read(static_cast<byte_t*>(m_dataBuffer.data()), m_dataBuffer.size());
         incrementProgress();
 
         if (m_texture.isValid())

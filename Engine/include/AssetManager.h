@@ -66,7 +66,7 @@ namespace sa {
 		std::unordered_map<UUID, std::unique_ptr<Asset>> m_assets;
 
 		AssetTypeID m_nextTypeID;
-		std::unordered_map<AssetTypeID, std::function<Asset* (const AssetHeader&)>> m_assetAddConversions;
+		std::unordered_map<AssetTypeID, std::function<Asset* (const AssetHeader&, bool)>> m_assetAddConversions;
 		std::unordered_map<AssetTypeID, std::string> m_typeToString;
 		std::unordered_map<std::string, AssetTypeID> m_stringToType;
 
@@ -173,7 +173,7 @@ namespace sa {
 		assert(header.type != -1 && "Can not use unregistered type!");
 		SA_DEBUG_LOG_INFO("Creating ", getAssetTypeName(header.type), " ", name, " with id ", std::to_string(id));
 
-		auto [it, success] = m_assets.insert({ header.id, std::make_unique<T>(header) });
+		auto [it, success] = m_assets.insert({ header.id, std::make_unique<T>(header, true) });
 
 		Asset* asset = it->second.get();
 
@@ -186,8 +186,8 @@ namespace sa {
 	inline AssetTypeID AssetManager::registerAssetType() {
 		AssetTypeID id = m_nextTypeID++;
 		
-		m_assetAddConversions[id] = [&](const AssetHeader& header) {
-			return m_assets.insert({ header.id, std::make_unique<T>(header) }).first->second.get();
+		m_assetAddConversions[id] = [&](const AssetHeader& header, bool isCompiled) {
+			return m_assets.insert({ header.id, std::make_unique<T>(header, isCompiled) }).first->second.get();
 		};
 
 		std::string str = typeid(T).name();
@@ -246,7 +246,7 @@ namespace sa {
 		assert(header.type != -1 && "Can not use unregistered type!");
 		SA_DEBUG_LOG_INFO("Creating ", getAssetTypeName(header.type), " ", name);
 
-		auto [it, success] = m_assets.insert({ header.id, std::make_unique<T>(header) });
+		auto [it, success] = m_assets.insert({ header.id, std::make_unique<T>(header, true) });
 
 		Asset* asset = it->second.get();
 

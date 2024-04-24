@@ -9,6 +9,8 @@
 #include "Core.h"
 #include "taskflow/taskflow.hpp"
 
+#include "Tools\ByteStream.h"
+
 namespace sa {
 
 	
@@ -59,8 +61,13 @@ namespace sa {
 		ProgressView<bool> m_progress;
 		std::mutex m_mutex;
 		
-		bool readCompiledAsset(std::ifstream& file, AssetLoadFlags flags);
+		const bool m_isCompiled;
+		std::function<bool(std::ifstream&, AssetLoadFlags)> m_loadFunction;
+
+		bool loadCompiledAsset(std::ifstream& file, AssetLoadFlags flags);
 		bool writeCompiledAsset(std::ofstream& file, AssetWriteFlags flags);
+
+		bool loadAsset(std::ifstream& file, AssetLoadFlags flags);
 
 	protected:
 		void addDependency(const sa::ProgressView<bool>& progress);
@@ -71,28 +78,68 @@ namespace sa {
 		tf::Future<void> runTaskflow(tf::Taskflow& tf);
 
 	public:
-		Asset(const AssetHeader& header);
+		Asset(const AssetHeader& header, bool isCompiled);
 
 		virtual ~Asset();
 
 		bool create(const std::string& name, const std::filesystem::path& assetDirectory);
 		bool importFromFile(const std::filesystem::path& path, const std::filesystem::path& assetDirectory);
 
-		//virtual bool loadFromPackage(std::ifstream& file) = 0;
-		//virtual bool loadFromFile(const std::filesystem::path& path) = 0;
-
-		//virtual bool writeToPackage(std::ofstream& file) = 0;
-		//virtual bool writeToFile(const std::filesystem::path& path) = 0;
-		
 		virtual bool onImport(const std::filesystem::path& path) { return false; }
 
 		// [DO NOT USE] Called by load. Do not call directly
 		virtual bool onLoad(std::ifstream& file, AssetLoadFlags flags) = 0;
+		virtual bool onLoadCompiled(ByteStream& dataStream, AssetLoadFlags flags) = 0;
+
 		// [DO NOT USE] Called by write. Do not call directly
 		virtual bool onWrite(std::ofstream& file, AssetWriteFlags flags) = 0;
 		// [DO NOT USE] Called by release. Do not call directly
 		virtual bool onUnload() = 0;
 
+
+		//	load()
+		//		open file
+		//		if compiled
+		//			navigate to data chunk
+		//			onLoadCompiled(data chunk)
+		//		else
+		//			parse json object
+		//			onLoad(jsonObject)
+		//		close file
+
+		//	write()
+		//		if compiled
+		//			logic error
+		//		open file
+		//		onWrite(serializer)
+		//		file << serializer.data()
+		//		close file
+
+		//	AssetManager::compile(assets)
+		//		calculate space needed
+		//			size += space for all assetHeaders
+		//			for each asset
+		//				size += asset.getBinaryDataSize()
+		//		allocate data
+		//		for each asset
+		//			asset.compile(data + offset)
+		//		write asset count to file
+		//		write headers to file
+		//		write data blob to file
+
+		//	compile(data)
+		//		onCompile(data)
+
+		//	AssetManager::addAsset(path)
+		//		if .mtasset
+		//			parse json
+		//			read type and id
+		//			create asset of type
+		//		else if .assetpkg
+		//			addAssetPackage()
+		//		else if extension exists in supportedFiles {
+		//			get asset create function
+		//			create asset 
 
 		bool hold();
 		bool load(AssetLoadFlags flags = 0);

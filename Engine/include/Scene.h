@@ -64,10 +64,11 @@ namespace sa {
 		void updateLightPositions();
 
 	public:
-		Scene(const AssetHeader& header);
+		Scene(const AssetHeader& header, bool isCompiled);
 		virtual ~Scene() override;
 
 		virtual bool onLoad(std::ifstream& file, AssetLoadFlags flags) override; // Asset
+		virtual bool onLoadCompiled(ByteStream& byteStream, AssetLoadFlags flags) override;
 		virtual bool onWrite(std::ofstream& file, AssetWriteFlags flags) override; // Asset
 		virtual bool onUnload() override; // Asset
 

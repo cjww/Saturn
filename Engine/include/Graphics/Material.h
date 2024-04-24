@@ -244,7 +244,7 @@ namespace sa {
 		bool twoSided;
 
 
-		Material(const AssetHeader& header);
+		Material(const AssetHeader& header, bool isCompiled);
 
 		void update();
 	
@@ -259,6 +259,8 @@ namespace sa {
 		void setMaterialShader(UUID id);
 
 		virtual bool onLoad(std::ifstream& file, AssetLoadFlags flags) override;
+		virtual bool onLoadCompiled(ByteStream& byteStream, AssetLoadFlags flags) override;
+
 		virtual bool onWrite(std::ofstream& file, AssetWriteFlags flags) override;
 		virtual bool onUnload() override;
 
