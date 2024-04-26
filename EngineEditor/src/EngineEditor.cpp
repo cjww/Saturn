@@ -220,52 +220,20 @@ namespace sa {
 	void EngineEditor::startSimulation() {
 		
 		Scene* pScene = m_pEngine->getCurrentScene();
-		/*
-		m_pEditingScene = pScene;
-
-		Scene* pSandbox = pScene->clone("Sandbox");
 		
-		m_pEngine->setScene(pSandbox);
-		auto path = pScene->getAssetPath();
-		pScene->setAssetPath(MakeEditorRelative("sceneCache.data"));
-		pScene->write();
-		pScene->getProgress().waitAll();
-		pScene->setAssetPath(path);
-		*/
 		pScene->compile(MakeEditorRelative("sceneCache.data"));
 		pScene->getProgress().waitAll();
 
 		m_state = State::PLAYING;
-		m_pEngine->getCurrentScene()->onRuntimeStart();
+		pScene->onRuntimeStart();
 	}
 
 	void EngineEditor::stopSimulation() {
-		m_pEngine->getCurrentScene()->onRuntimeStop();
+		Scene* pScene = m_pEngine->getCurrentScene();
+		pScene->onRuntimeStop();
 		m_state = State::EDIT;
 		
-		/*
-		Scene* pScene = m_pEditingScene;
-		Scene* pScene = m_pEditingScene;
-
-		m_pEngine->setScene(pScene);
-		AssetManager::Get().removeAsset(pSandbox->getID());
-		pSandbox = nullptr;
-		*/
-
-		Scene* pScene = m_pEngine->getCurrentScene();
-		//pScene->clearEntities();
-
-		/*
-		auto path = pScene->getAssetPath();
-		pScene->setAssetPath(MakeEditorRelative("sceneCache.data"));
-		pScene->load();
-		pScene->getProgress().waitAll();
-		pScene->setAssetPath(path);
-		*/
 		pScene->loadCompiled(MakeEditorRelative("sceneCache.data"));
-		
-
-
 	}
 
 
@@ -327,6 +295,8 @@ namespace sa {
 
 		m_pEngine->setupDefaultRenderPipeline();
 		m_pEngine->setWindowRenderer(new ImGuiRenderLayer(m_pWindow));
+
+		AssetManager::Get().createCompiled(false); // create new assets as non-compiled
 
 		ImGui::SetupImGuiStyle();
 		engine.sink<engine_event::WindowResized>().connect<&EngineEditor::onWindowResized>(this);

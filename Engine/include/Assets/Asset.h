@@ -86,7 +86,7 @@ namespace sa {
 
 		virtual ~Asset();
 
-		bool create(const std::string& name, const std::filesystem::path& assetDirectory);
+		void initialize(const std::filesystem::path& fileName, const std::filesystem::path& assetDirectory);
 		bool importFromFile(const std::filesystem::path& path, const std::filesystem::path& assetDirectory);
 
 		virtual bool onImport(const std::filesystem::path& path) { return false; }

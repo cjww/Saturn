@@ -112,7 +112,7 @@ template<typename ...Args>
 inline static void Logger::PrintInfo(const char* filename, int line, Args&&... args) {
 	const std::lock_guard<std::mutex> lock(s_loggerMutex);
 	SetColor(FGColor::BrightGreen);
-	(*s_outStream) << "[INFO: " << filename << ":" << line << "] ";
+	(*s_outStream) << "[INFO: -" << std::this_thread::get_id() << "- " << filename << ":" << line << "] ";
 	SetColor(FGColor::BrightWhite);
 	Print(args...);
 }
@@ -121,7 +121,7 @@ template<typename ...Args>
 inline static void Logger::PrintWarning(const char* filename, int line, Args&&... args) {
 	const std::lock_guard<std::mutex> lock(s_loggerMutex);
 	SetColor(FGColor::BrightYellow);
-	(*s_outStream) << "[WARNING: " << filename << ":" << line << "] ";
+	(*s_outStream) << "[WARNING: -" << std::this_thread::get_id() << "- " << filename << ":" << line << "] ";
 	SetColor(FGColor::BrightWhite);
 	Print(args...);
 }
@@ -130,7 +130,7 @@ template<typename ...Args>
 inline static void Logger::PrintError(const char* filename, int line, Args&&... args) {
 	const std::lock_guard<std::mutex> lock(s_loggerMutex);
 	Logger::SetColor(FGColor::BrightRed);
-	(*s_outStream) << "[ERROR: " << filename << ":" << line << "] ";
+	(*s_outStream) << "[ERROR: -" << std::this_thread::get_id() << "- " << filename << ":" << line << "] ";
 	Logger::SetColor(FGColor::BrightWhite);
 	Logger::Print(args...);
 }

@@ -71,7 +71,9 @@ namespace sa {
 		std::unordered_map<std::string, AssetTypeID> m_stringToType;
 
 		std::unordered_map<std::string, AssetTypeID> m_extensionToType;
+		std::unordered_map<AssetTypeID, std::string> m_typeToExtension;
 
+		bool m_createCompiled;
 
 		AssetManager();
 
@@ -152,20 +154,26 @@ namespace sa {
 		bool wasImported(Asset* pAsset) const;
 		void reimportAsset(Asset* pAsset);
 
+		void createCompiled(bool createCompiled);
 
 		template<typename T>
 		T* createAsset(const std::string& name, const std::filesystem::path& assetDirectory = SA_ASSET_DIR);
+		template<typename T>
+		T* createAssetConcurrent(const std::string& name, const std::filesystem::path& assetDirectory = SA_ASSET_DIR);
+
+
+		Asset* createAsset(AssetTypeID type, const std::string& name, const std::filesystem::path& assetDirectory = SA_ASSET_DIR);
+		Asset* createAssetConcurrent(AssetTypeID type, const std::string& name, const std::filesystem::path& assetDirectory = SA_ASSET_DIR);
 
 		Asset* importAsset(AssetTypeID type, const std::filesystem::path& path, const std::filesystem::path& assetDirectory = SA_ASSET_DIR);
-		Asset* createAsset(AssetTypeID type, const std::string& name, const std::filesystem::path& assetDirectory = SA_ASSET_DIR);
 
 		void makeAssetPackage(const std::vector<UUID>& assets, const std::filesystem::path& packagePath);
 
 		void removeAsset(Asset* asset);
 		void removeAsset(UUID id);
 
-		bool eraseAsset(Asset* asset);
-		bool eraseAsset(UUID id);
+		bool deleteAsset(Asset* asset);
+		bool deleteAsset(UUID id);
 
 
 	};
@@ -182,7 +190,7 @@ namespace sa {
 
 		Asset* asset = it->second.get();
 
-		asset->create(name, "");
+		asset->initialize(name, "");
 		SA_DEBUG_LOG_INFO("Finished Creating ", getAssetTypeName(header.type), " ", name);
 		return static_cast<T*>(asset);
 	}
@@ -246,17 +254,13 @@ namespace sa {
 	
 	template<typename T>
 	inline T* AssetManager::createAsset(const std::string& name, const std::filesystem::path& assetDirectory) {
-		AssetHeader header; // generates new UUID
-		header.type = getAssetTypeID<T>();
-		assert(header.type != -1 && "Can not use unregistered type!");
-		SA_DEBUG_LOG_INFO("Creating ", getAssetTypeName(header.type), " ", name);
+		Asset* asset = createAsset(getAssetTypeID<T>(), name, assetDirectory);
+		return static_cast<T*>(asset);
+	}
 
-		auto [it, success] = m_assets.insert({ header.id, std::make_unique<T>(header, true) });
-
-		Asset* asset = it->second.get();
-
-		asset->create(name, assetDirectory);
-		SA_DEBUG_LOG_INFO("Finished Creating ", getAssetTypeName(header.type), " ", name);
+	template<typename T>
+	inline T* AssetManager::createAssetConcurrent(const std::string& name, const std::filesystem::path& assetDirectory) {
+		Asset* asset = createAssetConcurrent(getAssetTypeID<T>(), name, assetDirectory);
 		return static_cast<T*>(asset);
 	}
 

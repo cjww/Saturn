@@ -1042,6 +1042,7 @@ namespace ImGui {
 		for (auto& file : items) {
 			try {
 				std::filesystem::copy(file, target);
+				SA_DEBUG_LOG_INFO("Pasted ", file, " to ", target);
 				wasChanged = true;
 			}
 			catch (const std::filesystem::filesystem_error& e) {
@@ -1061,6 +1062,8 @@ namespace ImGui {
 				else {
 					std::filesystem::remove(path);
 				}
+				SA_DEBUG_LOG_INFO("Deleted ", path);
+
 				wasChanged = true;
 
 			}
@@ -1077,6 +1080,7 @@ namespace ImGui {
 		try {
 			auto newPath = targetDirectory / item.filename();
 			std::filesystem::rename(item, newPath);
+			SA_DEBUG_LOG_INFO("Moved ", item.filename(), " to ", targetDirectory);
 			wasChanged = true;
 		}
 		catch (const std::filesystem::filesystem_error& e) {
@@ -1098,6 +1102,7 @@ namespace ImGui {
 		bool wasChanged = false;
 		try {
 			std::filesystem::rename(item, name);
+			SA_DEBUG_LOG_INFO("Renamed ", std::filesystem::proximate(item), " to ", std::filesystem::proximate(name));
 			wasChanged = true;
 		}
 		catch (const std::filesystem::filesystem_error& e) {

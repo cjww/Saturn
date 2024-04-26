@@ -153,14 +153,13 @@ namespace sa {
 		m_progress.wait();
 	}
 
-	bool Asset::create(const std::string& name, const std::filesystem::path& assetDirectory) {
-		m_name = name;
+	void Asset::initialize(const std::filesystem::path& fileName, const std::filesystem::path& assetDirectory) {
 		m_assetPath.clear();
-		if (!assetDirectory.empty()) {
-			m_assetPath = assetDirectory / (name + SA_ASSET_EXTENSION); // The path the asset will write to
+		if (!assetDirectory.empty()){
+			m_assetPath = assetDirectory / fileName;
 		}
+		m_name = fileName.stem().generic_string();
 		m_isLoaded = true;
-		return true;
 	}
 
 	bool Asset::importFromFile(const std::filesystem::path& path, const std::filesystem::path& assetDirectory) {

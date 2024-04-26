@@ -24,6 +24,7 @@
 namespace sa {
 	
 	void AssetManager::locateAssets() {
+		SA_DEBUG_LOG_INFO("Locating assets in Assets directory");
 		std::filesystem::path path = std::filesystem::current_path();
 		path /= SA_ASSET_DIR;
 		for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) {
@@ -75,7 +76,7 @@ namespace sa {
 			SA_DEBUG_LOG_WARNING("Asset versions do not match! ", assetPath, " (", header.version, " vs ", SA_ASSET_VERSION, ")");
 			header.version = SA_ASSET_VERSION;
 		}
-
+		std::lock_guard lock(m_mutex);
 		if (m_assets.count(header.id)) { // already loaded
 			m_assets.at(header.id)->setAssetPath(assetPath); // Update Asset Path
 			m_assets.at(header.id)->setHeader(header); // And header to bring over correct content offset value
@@ -347,7 +348,6 @@ namespace sa {
 		if (pMaterialShader) {
 			return pMaterialShader;
 		}
-
 		pMaterialShader = createAsset<MaterialShader>(SA_DEFAULT_MATERIAL_SHADER_NAME, SA_DEFAULT_MATERIAL_SHADER_ID);
 
 		auto vertexCode = ReadSPVFile((Engine::GetShaderDirectory() / "ForwardPlusColorPass.vert.spv").generic_string().c_str());
@@ -452,6 +452,10 @@ namespace sa {
 
 	}
 
+	void AssetManager::createCompiled(bool createCompiled) {
+		m_createCompiled = createCompiled;
+	}
+
 	Asset* AssetManager::importAsset(AssetTypeID type, const std::filesystem::path& path, const std::filesystem::path& assetDirectory) {
 		throw "Unimplemented";
 		SA_DEBUG_LOG_INFO("Importing ", getAssetTypeName(type), " ", path);
@@ -487,16 +491,30 @@ namespace sa {
 		header.type = type;
 		assert(header.type != -1 && "Can not use unregistered type!");
 
-		m_mutex.lock();
-		Asset* asset = m_assetAddConversions[type](header, true);
-		m_mutex.unlock();
+		std::string extension = SA_ASSET_EXTENSION;
+		bool createCompiled = m_createCompiled;
+		if (!createCompiled) {
+			if (m_typeToExtension.count(header.type)) {
+				extension = m_typeToExtension[header.type];
+			}
+			else {
+				createCompiled = true;
+				SA_DEBUG_LOG_WARNING("Can only be created as compiled");
+			}
+		}
 
+		
+		Asset* asset = m_assetAddConversions[type](header, createCompiled);
+		
+		asset->initialize(name + extension, assetDirectory);
 
-		asset->create(name, assetDirectory);
 		SA_DEBUG_LOG_INFO("Finished Creating ", getAssetTypeName(type), " ", name);
-		asset->write();
-
 		return asset;
+	}
+
+	Asset* AssetManager::createAssetConcurrent(AssetTypeID type, const std::string& name, const std::filesystem::path& assetDirectory) {
+		std::lock_guard lock(m_mutex);
+		return createAsset(type, name, assetDirectory);
 	}
 
 	void AssetManager::makeAssetPackage(const std::vector<UUID>& assets, const std::filesystem::path& packagePath) {
@@ -568,7 +586,7 @@ namespace sa {
 		m_importedAssets.erase(id);
 	}
 
-	bool AssetManager::eraseAsset(Asset* asset) {
+	bool AssetManager::deleteAsset(Asset* asset) {
 		if (!asset)
 			return false;
 		if (asset->getReferenceCount() > 0)
@@ -593,8 +611,8 @@ namespace sa {
 		return true;
 	}
 
-	bool AssetManager::eraseAsset(UUID id) {
-		return eraseAsset(getAsset(id));
+	bool AssetManager::deleteAsset(UUID id) {
+		return deleteAsset(getAsset(id));
 	}
 
 	AssetManager::AssetManager() {
@@ -603,6 +621,7 @@ namespace sa {
 			pTexture->destroy();
 		});
 
+		m_createCompiled = true; // default to compiled assets when creating
 		m_nextTypeID = 0;
 
 
@@ -611,6 +630,7 @@ namespace sa {
 		registerAssetType<TextureAsset>();
 		auto id = registerAssetType<Scene>();
 		m_extensionToType[".sascene"] = id;
+		m_typeToExtension[id] = ".sascene";
 		registerAssetType<RenderTarget>();
 		registerAssetType<MaterialShader>();
 	

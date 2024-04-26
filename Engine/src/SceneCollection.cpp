@@ -96,6 +96,14 @@ namespace sa {
 		m_vertexCount = 0;
 		m_indexCount = 0;
 		m_uniqueMeshCount = 0;
+
+		// Clear Dynamic buffers
+		m_objectBuffer.clear();
+		m_indirectIndexedBuffer.clear();
+		m_vertexBuffer.clear();
+		m_indexBuffer.clear();
+		m_materialBuffer.clear();
+		m_materialIndicesBuffer.clear();
 	}
 
 	void MaterialShaderCollection::swap() {
@@ -113,14 +121,7 @@ namespace sa {
 	}
 
 	void MaterialShaderCollection::makeRenderReady(MaterialShaderCollection& subset, glm::vec3* pViewFrustumPoints) {
-		// Clear Dynamic buffers
-		subset.m_objectBuffer.clear();
-		subset.m_indirectIndexedBuffer.clear();
-		subset.m_vertexBuffer.clear();
-		subset.m_indexBuffer.clear();
-		subset.m_materialBuffer.clear();
-		subset.m_materialIndicesBuffer.clear();
-
+		
 		// reserve dynamic buffers
 		subset.m_objectBuffer.reserve(m_objectCount * sizeof(ObjectData), IGNORE_CONTENT);
 		subset.m_indirectIndexedBuffer.reserve(m_uniqueMeshCount * sizeof(DrawIndexedIndirectCommand), IGNORE_CONTENT);
