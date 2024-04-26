@@ -54,10 +54,12 @@ namespace sa {
 		void setActive(bool isActive);
 		bool isActive() const;
 
-		virtual bool onLoad(std::ifstream& file, AssetLoadFlags flags) override;
-		virtual bool onLoadCompiled(ByteStream& byteStream, AssetLoadFlags flags) override;
+		virtual bool onLoad(JsonObject& metaData, AssetLoadFlags flags) override;
+		virtual bool onLoadCompiled(ByteStream& dataInStream, AssetLoadFlags flags) override;
 
-		virtual bool onWrite(std::ofstream& file, AssetWriteFlags flags) override;
+		virtual bool onWrite(AssetWriteFlags flags) override;
+		virtual bool onCompile(ByteStream& dataOutStream, AssetWriteFlags flags) override;
+
 		virtual bool onUnload() override;
 
 	};

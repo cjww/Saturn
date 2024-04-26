@@ -25,24 +25,40 @@ namespace sa {
 	
 	void AssetManager::locateAssets() {
 		std::filesystem::path path = std::filesystem::current_path();
+		path /= SA_ASSET_DIR;
 		for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) {
+			if (!entry.is_regular_file())
+				continue;
 			if (IsCompiledAsset(entry)) {
-				addCompiledAsset(std::filesystem::proximate(entry.path()));
+				addAsset(std::filesystem::proximate(entry.path()));
 			}
 			else if(IsAssetPackage(entry)) {
 				addAssetPackage(std::filesystem::proximate(entry.path()));
 			}
-			else if (IsAssetSource(entry)) {
+			else if (getAssetTypeByFile(entry.path()) != -1) {
 				// Look for meta file
+				AssetTypeID type = getAssetTypeByFile(entry.path());
+				std::filesystem::path metaFileName = entry.path();
+				metaFileName.replace_extension(SA_META_ASSET_EXTENSION);
 				
-				// create or add meta file
-
-				addAsset(std::filesystem::proximate(entry.path()));
+				AssetHeader header = {};
+				if (!std::filesystem::exists(metaFileName)) {
+					header.type = type;
+					// create meta file
+					Asset::WriteMetaFile(metaFileName, header);
+				}
+				else {
+					// parse meta file
+					if (!Asset::ReadMetaFile(metaFileName, &header)) {
+						continue;
+					}
+				}
+				addAsset(header, std::filesystem::proximate(entry.path()), false);
 			}
 		}
 	}
 
-	Asset* AssetManager::addCompiledAsset(const std::filesystem::path& assetPath) {
+	Asset* AssetManager::addAsset(const std::filesystem::path& assetPath) {
 		// read header
 		std::ifstream file(assetPath, std::ios::binary);
 		if (!file.good()) {
@@ -51,10 +67,10 @@ namespace sa {
 		}
 		AssetHeader header = Asset::ReadHeader(file);
 		file.close();
-		return addCompiledAsset(header, assetPath);
+		return addAsset(header, assetPath, true);
 	}
 
-	Asset* AssetManager::addCompiledAsset(AssetHeader header, const std::filesystem::path& assetPath) {
+	Asset* AssetManager::addAsset(AssetHeader header, const std::filesystem::path& assetPath, bool isCompiled) {
 		if (header.version != SA_ASSET_VERSION) {
 			SA_DEBUG_LOG_WARNING("Asset versions do not match! ", assetPath, " (", header.version, " vs ", SA_ASSET_VERSION, ")");
 			header.version = SA_ASSET_VERSION;
@@ -69,17 +85,13 @@ namespace sa {
 			throw std::runtime_error("Unknown Asset Type " + std::to_string(header.type));
 		}
 
-		Asset* pAsset = m_assetAddConversions.at(header.type)(header, true);
+		Asset* pAsset = m_assetAddConversions.at(header.type)(header, isCompiled);
 
 		pAsset->setAssetPath(assetPath); // The path the asset will write to
 
 		return pAsset;
 	}
 
-	Asset* AssetManager::addAsset(const std::filesystem::path& assetPath) {
-
-		return nullptr;
-	}
 
 	void AssetManager::addAssetPackage(const std::filesystem::path& packagePath) {
 		std::ifstream file(packagePath, std::ios::binary);
@@ -93,7 +105,7 @@ namespace sa {
 		SA_DEBUG_LOG_INFO("Package contains ", header.assetCount, " assets");
 		for(size_t i = 0; i < header.assetCount; i++) {
 			AssetHeader assetHeader = Asset::ReadHeader(file);
-			addCompiledAsset(assetHeader, packagePath);
+			addAsset(assetHeader, packagePath, true);
 			SA_DEBUG_LOG_INFO(i, ": Asset size: ", assetHeader.size, " - Asset content offset: ", assetHeader.contentOffset, " - Asset Type: ", getAssetTypeName(assetHeader.type));
 		}
 
@@ -105,12 +117,24 @@ namespace sa {
 		return instance;
 	}
 
+	bool AssetManager::IsMetaAsset(const std::filesystem::directory_entry& entry) {
+		return entry.is_regular_file() && entry.path().extension() == SA_META_ASSET_EXTENSION;
+	}
+
 	bool AssetManager::IsCompiledAsset(const std::filesystem::directory_entry& entry) {
 		return entry.is_regular_file() && entry.path().extension() == SA_ASSET_EXTENSION;
 	}
 
 	bool AssetManager::IsAssetSource(const std::filesystem::directory_entry& entry) {
-		if (ModelAsset::IsExtensionSupported(entry.path().extension().generic_string())) {
+		if (!entry.is_regular_file())
+			return false;
+
+		std::filesystem::path extension = entry.path().extension();
+		if (extension == ".sascene") {
+			return true;
+		}
+
+		if (ModelAsset::IsExtensionSupported(extension.generic_string())) {
 			return true;
 		}
 		if (Image::IsFileSupported(entry.path().generic_string().c_str())) {
@@ -124,6 +148,19 @@ namespace sa {
 		return entry.is_regular_file() && entry.path().extension() == SA_ASSET_PACKAGE_EXTENSION;
 	}
 
+	AssetTypeID AssetManager::getAssetTypeByFile(const std::filesystem::path& path) const {
+		std::string extension = path.extension().generic_string();
+		if (m_extensionToType.count(extension)) {
+			return m_extensionToType.at(extension);
+		}
+		if (ModelAsset::IsExtensionSupported(extension)) {
+			return getAssetTypeID<ModelAsset>();
+		}
+		if (Image::IsFileSupported(path.generic_string().c_str())) {
+			return getAssetTypeID<TextureAsset>();
+		}
+		return -1;
+	}
 
 	void AssetManager::clear() {
 		Asset::WaitAllAssets();
@@ -506,7 +543,7 @@ namespace sa {
 
 			file.seekp(contentPos);
 			header.contentOffset = contentPos;
-			pAsset->onWrite(file, 0);
+			//pAsset->onWrite(file, 0); // TODO use compile
 			header.size = file.tellp() - contentPos;
 			contentPos = file.tellp();
 
@@ -572,7 +609,8 @@ namespace sa {
 		registerAssetType<ModelAsset>();
 		registerAssetType<Material>();
 		registerAssetType<TextureAsset>();
-		registerAssetType<Scene>();
+		auto id = registerAssetType<Scene>();
+		m_extensionToType[".sascene"] = id;
 		registerAssetType<RenderTarget>();
 		registerAssetType<MaterialShader>();
 	

@@ -6,8 +6,8 @@
 #include <glm\vec3.hpp>
 #include <glm/gtc/quaternion.hpp>
 #include <sol/sol.hpp>
+
 namespace sa {
-	
 	class Serializer {
 	private:
 		bool m_hasElements;
@@ -46,6 +46,27 @@ namespace sa {
 
 	};
 	
+
+	class JsonObject {
+	private:
+		void* m_pObject;
+	public:
+		JsonObject() = default;
+		JsonObject(void* pObject);
+		template<typename T>
+		bool get(T& out, const char* key);
+	};
+
+
+	class Serializable {
+	public:
+
+		virtual void serialize(Serializer& s) = 0;
+		virtual void deserialize(void* pDoc) = 0;
+
+	};
+
+	// --------------------------------------------------------------------------
 	template<>
 	inline void Serializer::value(const char* value) {
 		if (m_hasElements) {
@@ -209,15 +230,6 @@ namespace sa {
 		m_ss << "\n" << std::setw(m_depth * m_tabSize + 1) << "\"" << key << "\" : " << std::to_string(value);
 		m_hasElements = true;
 	}
-
-
-	class Serializable {
-	public:
-
-		virtual void serialize(Serializer& s) = 0;
-		virtual void deserialize(void* pDoc) = 0;
-	
-	};
 
 
 }

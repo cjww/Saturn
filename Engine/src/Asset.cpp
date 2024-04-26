@@ -2,6 +2,7 @@
 #include "Assets/Asset.h"
 
 #include "Lua/LuaAccessable.h"
+#include "AssetManager.h"
 
 namespace sa {
 	class WorkerInterface : public tf::WorkerInterface
@@ -16,32 +17,102 @@ namespace sa {
 
 	tf::Executor Asset::s_taskExecutor = tf::Executor(std::thread::hardware_concurrency(), std::make_shared<WorkerInterface>());
 
-	bool Asset::loadCompiledAsset(std::ifstream& file, AssetLoadFlags flags) {
+	bool Asset::loadCompiledAsset(const std::filesystem::path& path, AssetLoadFlags flags) {
+		SA_DEBUG_LOG_INFO("Began loading compiled asset ", m_name, " from ", path);
+		std::ifstream file(path, std::ios::binary);
+		if (!file.good()) {
+			file.close();
+			throw std::runtime_error("Failed to open file " + path.generic_string());
+		}
 		file.seekg(m_header.contentOffset);
 		std::vector<byte_t> buffer(m_header.size);
 		file.read(reinterpret_cast<char*>(buffer.data()), buffer.size());
 		ByteStream byteStream(buffer.data(), buffer.size());
-		return onLoadCompiled(byteStream, flags);
+		const bool success = onLoadCompiled(byteStream, flags);
+		file.close();
+
+		if (success)
+			SA_DEBUG_LOG_INFO("Finished loading ", m_name, " from ", path);
+		else
+			SA_DEBUG_LOG_WARNING("Could not load ", m_name, " to ", path);
+
+		return success;
 	}
 
-	bool Asset::writeCompiledAsset(std::ofstream& file, AssetWriteFlags flags) {
+	bool Asset::writeCompiledAsset(const std::filesystem::path& path, AssetWriteFlags flags) {
+		SA_DEBUG_LOG_INFO("Began compiling ", m_name, " to ", path);
+		std::ofstream file(path, std::ios::binary);
+		if (!file.good()) {
+			file.close();
+			throw std::runtime_error("Failed to open file " + path.generic_string());
+		}
 		const auto headerPos = file.tellp();
 		const std::streampos contentPos = sizeof(AssetHeader);
 
 		file.seekp(contentPos);
-		const bool success = onWrite(file, flags);
+		ByteStream byteStream(256);
+		const bool success = onCompile(byteStream, flags);
+		file.write(reinterpret_cast<const char*>(byteStream.data()), byteStream.size());
 
 		// Calculate size and write header
 		m_header.size = file.tellp() - contentPos;
 		m_header.contentOffset = contentPos;
 		file.seekp(headerPos);
 		WriteHeader(m_header, file);
+		file.close();
+
+		if (success) {
+			SA_DEBUG_LOG_INFO("Finished Writing ", m_name, " to ", path);
+		}
+		else {
+			SA_DEBUG_LOG_WARNING("Could not write ", m_name, " to ", path);
+		}
+
 		return success;
 	}
 
-	bool Asset::loadAsset(std::ifstream& file, AssetLoadFlags flags) {
+	bool Asset::loadAsset(const std::filesystem::path& path, AssetLoadFlags flags) {
+		SA_DEBUG_LOG_INFO("Began loading asset ", m_name, " from ", path);
+		std::filesystem::path metaFileName = getAssetPath();
+		metaFileName.replace_extension(SA_META_ASSET_EXTENSION);
+		try {
+			SA_DEBUG_LOG_INFO("Parsing metafile ", metaFileName, " for asset ", m_name);
 
-		return false;
+			simdjson::padded_string jsonStr = simdjson::padded_string::load(metaFileName.generic_string());
+			simdjson::ondemand::parser parser;
+			auto doc = parser.iterate(jsonStr);
+			simdjson::ondemand::object object = doc.get_object();
+			m_header.id = object["id"].get_uint64().take_value();
+			m_header.type = object["type"].get_uint64().take_value();
+			JsonObject jsonObject;
+
+			const bool success = onLoad(jsonObject, flags);
+			if (success) {
+				SA_DEBUG_LOG_INFO("Finished loading ", m_name, " from ", path);
+			}
+			else {
+				SA_DEBUG_LOG_WARNING("Could not load ", m_name, " to ", path);
+			}
+			
+			return success;
+		}
+		catch (const std::exception& e) {
+			SA_DEBUG_LOG_ERROR("Failed to parse meta file ", metaFileName.generic_string(), ": ", e.what());
+			return false;
+		}
+	}
+
+	bool Asset::writeAsset(const std::filesystem::path& path, AssetWriteFlags flags) {
+		SA_DEBUG_LOG_INFO("Began writing asset ", m_name, " from ", path);
+
+		const bool success = onWrite(flags);
+		if (success) {
+			SA_DEBUG_LOG_INFO("Finished writing ", m_name, " from ", path);
+		}
+		else {
+			SA_DEBUG_LOG_WARNING("Could not write ", m_name, " to ", path);
+		}
+		return success;
 	}
 
 	void Asset::addDependency(const sa::ProgressView<bool>& progress) {
@@ -68,10 +139,12 @@ namespace sa {
 		, m_isCompiled(isCompiled)
 	{
 		if (m_isCompiled) {
-			m_loadFunction = [&](std::ifstream& file, AssetLoadFlags flags) -> bool { return loadCompiledAsset(file, flags); };
+			m_loadFunction = [&](const std::filesystem::path& path, AssetLoadFlags flags) -> bool { return loadCompiledAsset(path, flags); };
+			m_writeFunction = [&](const std::filesystem::path& path, AssetWriteFlags flags) -> bool { return writeCompiledAsset(path, flags); };
 		}
 		else {
-			m_loadFunction = [&](std::ifstream& file, AssetLoadFlags flags) -> bool { return loadAsset(file, flags); };
+			m_loadFunction = [&](const std::filesystem::path& path, AssetLoadFlags flags) -> bool { return loadAsset(path, flags); };
+			m_writeFunction = [&](const std::filesystem::path& path, AssetWriteFlags flags) -> bool { return writeAsset(path, flags); };
 		}
 
 	}
@@ -84,7 +157,7 @@ namespace sa {
 		m_name = name;
 		m_assetPath.clear();
 		if (!assetDirectory.empty()) {
-			m_assetPath = assetDirectory / (name + ".asset"); // The path the asset will write to
+			m_assetPath = assetDirectory / (name + SA_ASSET_EXTENSION); // The path the asset will write to
 		}
 		m_isLoaded = true;
 		return true;
@@ -123,18 +196,8 @@ namespace sa {
 			{
 				std::lock_guard<std::mutex> lock(m_mutex);
 				m_progress.reset();
-				SA_DEBUG_LOG_INFO("Began Loading ", m_name, " from ", path);
 				
-				std::ifstream file(path, std::ios::binary);
-				if (!file.good()) {
-					file.close();
-					throw std::runtime_error("Failed to open file " + path.generic_string());
-				}
-
-				m_isLoaded = m_loadFunction(file, flags);
-
-				file.close();
-				SA_DEBUG_LOG_INFO("Finished Loading ", m_name, " from ", path);
+				m_isLoaded = m_loadFunction(path, flags);
 			}
 			catch (std::exception& e)
 			{
@@ -154,7 +217,8 @@ namespace sa {
 		if (m_assetPath.empty())
 			return false;
 		if (isFromPackage()) {
-			throw std::runtime_error("Can not write asset to asset package! Recreate the asset package instead or set new asset path");
+			SA_DEBUG_LOG_ERROR("Can not write asset to asset package! Recreate the asset package instead or set new asset path");
+			return false;
 		}
 
 		auto path = m_assetPath;
@@ -165,19 +229,9 @@ namespace sa {
 				m_progress.reset();
 				if (!m_isLoaded)
 					return false;
-				SA_DEBUG_LOG_INFO("Began Writing ", m_name, " to ", path);
 
-				std::ofstream file(path, std::ios::binary);
-				if (!file.good()) {
-					file.close();
-					return false;
-				}
+				const bool success = m_writeFunction(path, flags);
 
-				const bool success = writeCompiledAsset(file, flags);
-
-
-				file.close();
-				SA_DEBUG_LOG_INFO("Finished Writing ", m_name, " to ", path);
 				return success;
 			}
 			catch (std::exception& e)
@@ -203,6 +257,59 @@ namespace sa {
 			return !m_isLoaded;
 		}
 		return !m_isLoaded;
+	}
+
+	bool Asset::compile(const std::filesystem::path& outputPath) {
+		std::lock_guard<std::mutex> lock(m_mutex);
+		if (!m_isLoaded)
+			return false; 
+		auto path = outputPath;
+		if (path.empty()) {
+			path = getAssetPath();
+			path.replace_extension(SA_ASSET_EXTENSION);
+		}
+		auto future = s_taskExecutor.async([=]() {
+			try
+			{
+				std::lock_guard<std::mutex> lock(m_mutex);
+				m_progress.reset();
+				if (!m_isLoaded)
+					return false;
+
+				const bool success = writeCompiledAsset(path, 0);
+				
+				return success;
+			}
+			catch (std::exception& e)
+			{
+				SA_DEBUG_LOG_ERROR("[Asset failed write] (", m_name, " -> ", path, ") ", e.what());
+			}
+			return false;
+		});
+		m_progress.setFuture(future.share());
+		return true;
+	}
+
+	bool Asset::loadCompiled(const std::filesystem::path& path) {
+		if (path.empty())
+			return false;
+		auto future = s_taskExecutor.async([=]() {
+			try
+			{
+				std::lock_guard<std::mutex> lock(m_mutex);
+				m_progress.reset();
+
+				m_isLoaded = loadCompiledAsset(path, 0);
+			}
+			catch (std::exception& e)
+			{
+				SA_DEBUG_LOG_ERROR("[Asset failed load] (", m_name, " <- ", path, ") ", e.what());
+				return false;
+			}
+			return m_isLoaded.load();
+			});
+		m_progress.setFuture(future.share());
+		return false;
 	}
 
 	bool Asset::isLoaded() const {
@@ -267,6 +374,36 @@ namespace sa {
 
 	void Asset::WriteHeader(const AssetHeader& header, std::ofstream& file) {
 		file.write(reinterpret_cast<const char*>(&header), sizeof(AssetHeader));
+	}
+
+	bool Asset::ReadMetaFile(const std::filesystem::path& path, AssetHeader* header) {
+		try {
+			simdjson::padded_string jsonStr = simdjson::padded_string::load(path.generic_string());
+			simdjson::ondemand::parser parser;
+			auto doc = parser.iterate(jsonStr);
+			auto object = doc.get_object();
+			header->id = object["id"].get_uint64().take_value();
+			header->type = object["type"].get_uint64().take_value();
+		}
+		catch (const std::exception& e) {
+			SA_DEBUG_LOG_ERROR("Failed to parse meta file ", path.generic_string(), ": ", e.what());
+			return false;
+		}
+		return true;
+	}
+
+	void Asset::WriteMetaFile(const std::filesystem::path& path,  const AssetHeader& header) {
+		std::ofstream file(path);
+		if (!file.good()) {
+			return;
+		}
+		Serializer serializer;
+		serializer.beginObject();
+		serializer.value("id", header.id);
+		serializer.value("type", header.type);
+		serializer.endObject();
+		file << serializer.dump();
+		file.close();
 	}
 
 	void Asset::WaitAllAssets() {

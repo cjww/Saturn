@@ -143,38 +143,38 @@ namespace sa {
 		m_materialShader = id;
 	}
 
-	bool Material::onLoad(std::ifstream& file, AssetLoadFlags flags) {
+	bool Material::onLoad(JsonObject& metaData, AssetLoadFlags flags) {
 		return true;
 	}
 	
-	bool Material::onLoadCompiled(ByteStream& byteStream, AssetLoadFlags flags) {
+	bool Material::onLoadCompiled(ByteStream& dataInStream, AssetLoadFlags flags) {
 		m_textures.clear();
 		m_blending.clear();
 		m_allTextures.clear();
 
-		byteStream.read(&values);
+		dataInStream.read(&values);
 
 		//MaterialShader
 		UUID materialShaderID = SA_DEFAULT_MATERIAL_SHADER_ID;
-		byteStream.read(&materialShaderID);
+		dataInStream.read(&materialShaderID);
 		m_materialShader = materialShaderID;
 
 		if (const auto pProgress = m_materialShader.getProgress())
 			addDependency(*pProgress);
 
 		uint32_t typeCount = 0;
-		byteStream.read(&typeCount);
+		dataInStream.read(&typeCount);
 
 		for (uint32_t i = 0; i < typeCount; i++) {
 			sa::MaterialTextureType type;
-			byteStream.read(&type);
+			dataInStream.read(&type);
 			uint32_t textureCount = 0;
-			byteStream.read(&textureCount);
+			dataInStream.read(&textureCount);
 			m_textures[type].resize(textureCount);
 
 			for (uint32_t j = 0; j < textureCount; j++) {
 				UUID textureID;
-				byteStream.read(&textureID);
+				dataInStream.read(&textureID);
 
 				m_textures[type][j] = textureID;
 				if (const auto pProgress = m_textures[type][j].getProgress())
@@ -186,24 +186,29 @@ namespace sa {
 		return true;
 	}
 	
-	bool Material::onWrite(std::ofstream& file, AssetWriteFlags flags) {
+	bool Material::onWrite(AssetWriteFlags flags) {
+
+		return false;
+	}
+
+	bool Material::onCompile(ByteStream& dataOutStream, AssetWriteFlags flags) {
 		// Values
-		file.write(reinterpret_cast<char*>(&values), sizeof(values));
+		dataOutStream.write(values);
 
 		//MaterialShader
 		UUID materialShaderID = m_materialShader ? m_materialShader.getID() : static_cast<UUID>(SA_DEFAULT_MATERIAL_SHADER_ID);
-		file.write(reinterpret_cast<char*>(&materialShaderID), sizeof(UUID));
+		dataOutStream.write(materialShaderID);
 
 		//Textures
 		uint32_t typeCount = m_textures.size();
-		file.write(reinterpret_cast<char*>(&typeCount), sizeof(typeCount));
+		dataOutStream.write(typeCount);
 
 		for (auto& [type, assets] : m_textures) {
-			file.write(reinterpret_cast<const char*>(&type), sizeof(type));
+			dataOutStream.write(type);
 			uint32_t textureCount = assets.size();
-			file.write(reinterpret_cast<char*>(&textureCount), sizeof(textureCount));
+			dataOutStream.write(textureCount);
 			for (auto& textureID : assets) {
-				file.write(reinterpret_cast<const char*>(&textureID.getID()), sizeof(UUID));
+				dataOutStream.write(textureID.getID());
 			}
 		}
 

@@ -118,16 +118,20 @@ namespace sa {
 		return m_isActive;
 	}
 
-	bool RenderTarget::onLoad(std::ifstream& file, AssetLoadFlags flags) {
+	bool RenderTarget::onLoad(JsonObject& metaData, AssetLoadFlags flags) {
 		return true;
 	}
 
-	bool RenderTarget::onLoadCompiled(ByteStream& byteStream, AssetLoadFlags flags) {
+	bool RenderTarget::onLoadCompiled(ByteStream& dataInStream, AssetLoadFlags flags) {
 		return true;
 	}
 	
-	bool RenderTarget::onWrite(std::ofstream& file, AssetWriteFlags flags) {
-		return true;
+	bool RenderTarget::onWrite(AssetWriteFlags flags) {
+		return false;
+	}
+
+	bool RenderTarget::onCompile(ByteStream& dataOutStream, AssetWriteFlags flags) {
+		return false;
 	}
 
 	bool RenderTarget::onUnload() {

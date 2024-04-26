@@ -75,9 +75,27 @@ namespace sa {
 		settings.cullMode = CullModeFlagBits::NONE;
 		m_skybox.pipeline = m_renderer.createGraphicsPipeline(m_skybox.pipelineLayout, shaders, 2, m_colorRenderProgram, 0, { 0, 0 }, settings);
 		
-		auto& cube = AssetManager::Get().getCube()->data.meshes[0];
-		m_skybox.vertexBuffer.create(BufferType::VERTEX, cube.vertices.size() * sizeof(VertexNormalUV), cube.vertices.data());
-		m_skybox.indexBuffer.create(BufferType::INDEX, cube.indices.size() * sizeof(uint32_t), cube.indices.data());
+		static glm::vec3 vertices[8] = {
+			glm::vec3(-1, -1, -1),
+			glm::vec3(1, -1, -1),
+			glm::vec3(1, 1, -1),
+			glm::vec3(-1, 1, -1),
+			glm::vec3(-1, -1, 1),
+			glm::vec3(1, -1, 1),
+			glm::vec3(1, 1, 1),
+			glm::vec3(-1, 1, 1)
+		};
+		static uint32_t indices[36] = {
+			0, 1, 3, 3, 1, 2,
+			1, 5, 2, 2, 5, 6,
+			5, 4, 6, 6, 4, 7,
+			4, 0, 7, 7, 0, 3,
+			3, 2, 7, 7, 2, 6,
+			4, 5, 0, 0, 5, 1
+		};
+
+		m_skybox.vertexBuffer.create(BufferType::VERTEX, sizeof(vertices), vertices);
+		m_skybox.indexBuffer.create(BufferType::INDEX, sizeof(indices), indices);
 
 		m_skybox.descriptorSet = m_skybox.pipelineLayout.allocateDescriptorSet(0);
 		m_renderer.updateDescriptorSet(m_skybox.descriptorSet, 0, m_skybox.cubemap, m_linearSampler);
@@ -94,7 +112,6 @@ namespace sa {
 		data.depthTexture.create2D(TextureUsageFlagBits::DEPTH_ATTACHMENT | TextureUsageFlagBits::SAMPLED, extent, depthFormat);
 
 		
-
 		//Depth pre pass
 		data.depthFramebuffer = m_renderer.createFramebuffer(m_depthPreRenderProgram, &data.depthTexture, 1);
 

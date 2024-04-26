@@ -53,32 +53,36 @@ DirectoryView::DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor)
 
 void DirectoryView::onImGui() {
 	SA_PROFILE_FUNCTION();
-	for (auto it = m_openAssetProperties.begin(); it != m_openAssetProperties.end(); it++) {
+	for (auto it = m_openAssetProperties.begin(); it != m_openAssetProperties.end(); ) {
 		sa::Asset* pAsset = *it;
 		SA_PROFILE_SCOPE(sa::AssetManager::Get().getAssetTypeName(pAsset->getType()), " Properties Window");
 		bool isOpen = true;
 		if(ImGui::Begin((pAsset->getName() + " Properties").c_str(), &isOpen)) {
-			ImGui::GetAssetInfo(pAsset->getType()).imGuiPropertiesFn(pAsset);
-			if (ImGui::Button("Apply")) {
-				pAsset->write();
+			if (!isOpen) {
+				it = m_openAssetProperties.erase(it);
+				pAsset->release();
+				ImGui::End();
+				continue;
 			}
-			ImGui::SameLine();
-			if (ImGui::Button("Revert")) {
-				pAsset->load();
-			}
-			if(sa::AssetManager::Get().wasImported(pAsset)) {
+			if (pAsset->isLoaded()) {
+				ImGui::GetAssetInfo(pAsset->getType()).imGuiPropertiesFn(pAsset);
+				if (ImGui::Button("Apply")) {
+					pAsset->write();
+				}
 				ImGui::SameLine();
-				if (ImGui::Button("Reimport")) {
-					sa::AssetManager::Get().reimportAsset(pAsset);
+				if (ImGui::Button("Revert")) {
+					pAsset->load();
+				}
+				if(sa::AssetManager::Get().wasImported(pAsset)) {
+					ImGui::SameLine();
+					if (ImGui::Button("Reimport")) {
+						sa::AssetManager::Get().reimportAsset(pAsset);
+					}
 				}
 			}
 		}
 		ImGui::End();
-		if (!isOpen) {
-			m_openAssetProperties.erase(it);
-			pAsset->release();
-			break;
-		}
+		it++;
 	}
 
 
@@ -190,8 +194,8 @@ void DirectoryView::onImGui() {
 							m_pEngine->setScene(pAsset->cast<sa::Scene>());
 						}
 						else {
-							pAsset->hold();
-							m_openAssetProperties.insert(pAsset);
+							if (m_openAssetProperties.insert(pAsset).second)
+								pAsset->hold();
 						}
 					}
 				}
@@ -243,8 +247,8 @@ void DirectoryView::onImGui() {
 		}
 		ImGui::SameLine();
 		if (ImGui::Button("Properties") && selected) {
-			selected->hold();
-			m_openAssetProperties.insert(selected);
+			if(m_openAssetProperties.insert(selected).second)
+				selected->hold();
 		}
 
 

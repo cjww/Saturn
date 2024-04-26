@@ -226,12 +226,13 @@ namespace sa {
 		Scene* pSandbox = pScene->clone("Sandbox");
 		
 		m_pEngine->setScene(pSandbox);
-		*/
 		auto path = pScene->getAssetPath();
 		pScene->setAssetPath(MakeEditorRelative("sceneCache.data"));
 		pScene->write();
+		pScene->getProgress().waitAll();
 		pScene->setAssetPath(path);
-
+		*/
+		pScene->compile(MakeEditorRelative("sceneCache.data"));
 		pScene->getProgress().waitAll();
 
 		m_state = State::PLAYING;
@@ -254,12 +255,16 @@ namespace sa {
 		Scene* pScene = m_pEngine->getCurrentScene();
 		//pScene->clearEntities();
 
+		/*
 		auto path = pScene->getAssetPath();
 		pScene->setAssetPath(MakeEditorRelative("sceneCache.data"));
 		pScene->load();
+		pScene->getProgress().waitAll();
 		pScene->setAssetPath(path);
+		*/
+		pScene->loadCompiled(MakeEditorRelative("sceneCache.data"));
+		
 
-		//pScene->getProgress().waitAll();
 
 	}
 

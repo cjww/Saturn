@@ -111,6 +111,8 @@ namespace sa {
 	void Engine::cleanup() {
 		if (m_pWindowRenderer)
 			delete m_pWindowRenderer;
+		
+		m_currentScene = nullptr;
 		AssetManager::Get().clear();
 	}
 

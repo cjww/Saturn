@@ -1,8 +1,6 @@
 #include "pch.h"
 #include "Scene.h"
 
-#include <d3d10sdklayers.h>
-
 #include "ECS/Components.h"
 
 namespace sa {
@@ -85,14 +83,21 @@ namespace sa {
 			m_pPhysicsScene->release();
 	}
 
-	bool Scene::onLoad(std::ifstream& file, AssetLoadFlags flags) {
-		
+	bool Scene::onLoad(JsonObject& metaData, AssetLoadFlags flags) {
+		simdjson::padded_string jsonStr = simdjson::padded_string::load(getAssetPath().generic_string());
+		simdjson::ondemand::parser parser;
+		auto doc = parser.iterate(jsonStr);
+		if (doc.error() != simdjson::error_code::SUCCESS) {
+			throw std::runtime_error("Json error: " + std::string(simdjson::error_message(doc.error())));
+		}
+		deserialize(&doc);
+
 		return true;
 	}
 
-	bool Scene::onLoadCompiled(ByteStream& byteStream, AssetLoadFlags flags) {
+	bool Scene::onLoadCompiled(ByteStream& dataInStream, AssetLoadFlags flags) {
 		simdjson::padded_string jsonStr(getHeader().size);
-		byteStream.read(reinterpret_cast<byte_t*>(jsonStr.data()), jsonStr.length());
+		dataInStream.read(reinterpret_cast<byte_t*>(jsonStr.data()), jsonStr.length());
 
 		simdjson::ondemand::parser parser;
 		auto doc = parser.iterate(jsonStr);
@@ -104,13 +109,23 @@ namespace sa {
 		return true;
 	}
 
-	bool Scene::onWrite(std::ofstream& file, AssetWriteFlags flags) {
+	bool Scene::onWrite(AssetWriteFlags flags) {
+		std::ofstream file(getAssetPath());
+		if (!file.good()) {
+			throw std::runtime_error("Failed to open file \"" + getAssetPath().generic_string() + "\"");
+		}
 		Serializer s;
 		serialize(s);
-		std::string jsonStr = s.dump();
-
 		file << s.dump();
+		file.close();
+		return true;
+	}
 
+	bool Scene::onCompile(ByteStream& dataOutStream, AssetWriteFlags flags) {
+		Serializer s;
+		serialize(s);
+		std::string json = s.dump();
+		dataOutStream.write(reinterpret_cast<const byte_t*>(json.c_str()), json.size());
 		return true;
 	}
 

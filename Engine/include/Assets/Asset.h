@@ -11,6 +11,8 @@
 
 #include "Tools\ByteStream.h"
 
+#include "Serializable.h"
+
 namespace sa {
 
 	
@@ -62,12 +64,14 @@ namespace sa {
 		std::mutex m_mutex;
 		
 		const bool m_isCompiled;
-		std::function<bool(std::ifstream&, AssetLoadFlags)> m_loadFunction;
+		std::function<bool(const std::filesystem::path&, AssetLoadFlags)> m_loadFunction;
+		std::function<bool(const std::filesystem::path&, AssetWriteFlags)> m_writeFunction;
 
-		bool loadCompiledAsset(std::ifstream& file, AssetLoadFlags flags);
-		bool writeCompiledAsset(std::ofstream& file, AssetWriteFlags flags);
+		bool loadCompiledAsset(const std::filesystem::path& path, AssetLoadFlags flags);
+		bool writeCompiledAsset(const std::filesystem::path& path, AssetWriteFlags flags);
 
-		bool loadAsset(std::ifstream& file, AssetLoadFlags flags);
+		bool loadAsset(const std::filesystem::path& path, AssetLoadFlags flags);
+		bool writeAsset(const std::filesystem::path& path, AssetWriteFlags flags);
 
 	protected:
 		void addDependency(const sa::ProgressView<bool>& progress);
@@ -88,11 +92,12 @@ namespace sa {
 		virtual bool onImport(const std::filesystem::path& path) { return false; }
 
 		// [DO NOT USE] Called by load. Do not call directly
-		virtual bool onLoad(std::ifstream& file, AssetLoadFlags flags) = 0;
-		virtual bool onLoadCompiled(ByteStream& dataStream, AssetLoadFlags flags) = 0;
+		virtual bool onLoad(JsonObject& metaData, AssetLoadFlags flags) = 0;
+		virtual bool onLoadCompiled(ByteStream& dataInStream, AssetLoadFlags flags) = 0;
 
 		// [DO NOT USE] Called by write. Do not call directly
-		virtual bool onWrite(std::ofstream& file, AssetWriteFlags flags) = 0;
+		virtual bool onWrite(AssetWriteFlags flags) = 0;
+		virtual bool onCompile(ByteStream& dataOutStream, AssetWriteFlags flags) = 0;
 		// [DO NOT USE] Called by release. Do not call directly
 		virtual bool onUnload() = 0;
 
@@ -146,6 +151,9 @@ namespace sa {
 		bool write(AssetWriteFlags flags = 0);
 		bool release();
 
+		bool compile(const std::filesystem::path& outputPath = "");
+		bool loadCompiled(const std::filesystem::path& path);
+
 		bool isLoaded() const;
 		
 		const ProgressView<bool>& getProgress() const;
@@ -168,6 +176,9 @@ namespace sa {
 
 		static AssetHeader ReadHeader(std::ifstream& file);
 		static void WriteHeader(const AssetHeader& header, std::ofstream& file);
+
+		static bool ReadMetaFile(const std::filesystem::path& path, AssetHeader* header);
+		static void WriteMetaFile(const std::filesystem::path& path, const AssetHeader& header);
 
 		static void WaitAllAssets();
 

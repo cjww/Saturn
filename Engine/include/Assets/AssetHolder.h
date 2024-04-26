@@ -4,7 +4,6 @@
 #include "AssetManager.h"
 
 namespace sa {
-
 	template<typename T>
 	class AssetHolder {
 	private:

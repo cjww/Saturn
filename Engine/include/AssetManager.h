@@ -70,14 +70,16 @@ namespace sa {
 		std::unordered_map<AssetTypeID, std::string> m_typeToString;
 		std::unordered_map<std::string, AssetTypeID> m_stringToType;
 
+		std::unordered_map<std::string, AssetTypeID> m_extensionToType;
+
+
 		AssetManager();
 
 		void locateAssets();
-		Asset* addCompiledAsset(const std::filesystem::path& assetPath);
-		Asset* addCompiledAsset(AssetHeader header, const std::filesystem::path& assetPath);
-
 		Asset* addAsset(const std::filesystem::path& assetPath);
+		Asset* addAsset(AssetHeader header, const std::filesystem::path& assetPath, bool isCompiled);
 
+		
 		void addAssetPackage(const std::filesystem::path& packagePath);
 
 		template<typename T>
@@ -90,10 +92,13 @@ namespace sa {
 	
 		static AssetManager& Get();
 		
+		static bool IsMetaAsset(const std::filesystem::directory_entry& entry);
 		static bool IsCompiledAsset(const std::filesystem::directory_entry& entry);
 		static bool IsAssetSource(const std::filesystem::directory_entry& entry);
 		static bool IsAssetPackage(const std::filesystem::directory_entry& entry);
 
+		AssetTypeID getAssetTypeByFile(const std::filesystem::path& path) const;
+		
 
 		void clear();
 

@@ -34,16 +34,24 @@ namespace sa {
         return true;
     }
 
-    bool TextureAsset::onLoad(std::ifstream& file, AssetLoadFlags flags) {
+    bool TextureAsset::onLoad(JsonObject& metaData, AssetLoadFlags flags) {
+        setCompletionCount(2);
         
+        if (m_texture.isValid())
+            m_texture.destroy();
+
+        Image img(getAssetPath().generic_string().c_str());
+        incrementProgress();
+        m_texture.create2D(img, true);
+        incrementProgress();
         return true;
     }
 
-    bool TextureAsset::onLoadCompiled(ByteStream& byteStream, AssetLoadFlags flags) {
+    bool TextureAsset::onLoadCompiled(ByteStream& dataInStream, AssetLoadFlags flags) {
         setCompletionCount(3);
         m_dataBuffer.resize(getHeader().size);
-
-        byteStream.read(static_cast<byte_t*>(m_dataBuffer.data()), m_dataBuffer.size());
+        
+        dataInStream.read(static_cast<byte_t*>(m_dataBuffer.data()), m_dataBuffer.size());
         incrementProgress();
 
         if (m_texture.isValid())
@@ -59,10 +67,14 @@ namespace sa {
         return true;
     }
 
-    bool TextureAsset::onWrite(std::ofstream& file, AssetWriteFlags flags) {
+    bool TextureAsset::onWrite(AssetWriteFlags flags) {
+        return false;
+    }
+
+    bool TextureAsset::onCompile(ByteStream& dataOutStream, AssetWriteFlags flags) {
         setCompletionCount(1);
         if (m_dataBuffer.size() > 0)
-            file.write((char*)m_dataBuffer.data(), m_dataBuffer.size());
+            dataOutStream.write(m_dataBuffer.data(), m_dataBuffer.size());
         incrementProgress();
         return true;
     }

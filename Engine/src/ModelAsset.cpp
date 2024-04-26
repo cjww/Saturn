@@ -195,8 +195,7 @@ namespace sa {
 		// Materials
 		SA_DEBUG_LOG_INFO("Material Count:", scene->mNumMaterials);
 
-
-		std::vector<Material*> materials(scene->mNumMaterials);
+		/*
 		if (scene->mNumMaterials > 0 || scene->mNumTextures > 0) {
 			auto filename = getAssetPath().filename();
 			auto dirname = getAssetPath().parent_path() / filename;
@@ -206,27 +205,27 @@ namespace sa {
 			setAssetPath(dirname / filename);
 		}
 
-		auto materialDir = getAssetPath().parent_path() / "Materials";
 		std::filesystem::create_directory(materialDir);
 		
 
-		auto textureDir = getAssetPath().parent_path() / "Textures";
 		std::filesystem::create_directory(textureDir);
+		*/
 		
+		std::vector<Material*> materials(scene->mNumMaterials);
+		auto materialDir = getAssetPath().parent_path();
+		auto textureDir = getAssetPath().parent_path();
 		
 		tf::Taskflow taskflow;
 		taskflow.for_each_index(0U, scene->mNumMaterials, 1U, [&](int i) {
 		//for (uint32_t i = 0; i < scene->mNumMaterials; i++) {
 			aiMaterial* aMaterial = scene->mMaterials[i];
 			SA_PROFILE_SCOPE(path.generic_string() + ", Load material [" + std::to_string(i) + "] " + aMaterial->GetName().C_Str());
-			SA_DEBUG_LOG_INFO("Load material: ", path.generic_string(), "-", aMaterial->GetName().C_Str());
-
-			Material* pMaterial = AssetManager::Get().findAssetByPath<Material>(materialDir / aMaterial->GetName().C_Str());
-			if(!pMaterial)
-				pMaterial = AssetManager::Get().createAsset<Material>(aMaterial->GetName().C_Str(), materialDir);
-
+			SA_DEBUG_LOG_INFO("Load material: ", path.generic_string(), " - ", aMaterial->GetName().C_Str());
+			std::string name = getName() + "-" + std::string(aMaterial->GetName().C_Str());
+			
+			Material* pMaterial = AssetManager::Get().createAsset<Material>(name, "");
+			
 			// Base Color
-			//pMaterial->values.albedoColor = getColor(aMaterial, AI_MATKEY_COLOR_DIFFUSE);
 			pMaterial->values.albedoColor = getColor(aMaterial, AI_MATKEY_BASE_COLOR);
 			
 			// Emissive Color
@@ -248,7 +247,7 @@ namespace sa {
 
 			pMaterial->update();
 			materials[i] = pMaterial;
-			pMaterial->write();
+			//pMaterial->write();
 			incrementProgress();
 		//}
 		});
@@ -275,31 +274,34 @@ namespace sa {
 		return sucess;
 	}
 
-	bool ModelAsset::onLoad(std::ifstream& file, AssetLoadFlags flags) {
-
-		return false;
+	bool ModelAsset::onLoad(JsonObject& metaData, AssetLoadFlags flags) {
+		sa::Clock clock;
+		data.meshes.clear();
+		bool sucess = loadAssimpModel(getAssetPath());
+		SA_DEBUG_LOG_INFO("Finished loading ", getAssetPath(), " in: ", clock.getElapsedTime<std::chrono::milliseconds>(), " ms");
+		return sucess;
 	}
 
-	bool ModelAsset::onLoadCompiled(ByteStream& byteStream, AssetLoadFlags flags) {
+	bool ModelAsset::onLoadCompiled(ByteStream& dataInStream, AssetLoadFlags flags) {
 		
 		uint32_t meshCount = 0;
-		byteStream.read(&meshCount);
+		dataInStream.read(&meshCount);
 
 		data.meshes.resize(meshCount);
 		for (auto& mesh : data.meshes) {
 			uint32_t vertexCount = 0;
-			byteStream.read(&vertexCount);
+			dataInStream.read(&vertexCount);
 
 			mesh.vertices.resize(vertexCount);
-			byteStream.read(reinterpret_cast<byte_t*>(mesh.vertices.data()), sizeof(sa::VertexNormalUV) * vertexCount);
+			dataInStream.read(reinterpret_cast<byte_t*>(mesh.vertices.data()), sizeof(sa::VertexNormalUV) * vertexCount);
 
 			uint32_t indexCount = 0;
-			byteStream.read(reinterpret_cast<byte_t*>(&indexCount), sizeof(indexCount));
+			dataInStream.read(reinterpret_cast<byte_t*>(&indexCount), sizeof(indexCount));
 
 			mesh.indices.resize(indexCount);
-			byteStream.read(reinterpret_cast<byte_t*>(mesh.indices.data()), sizeof(uint32_t) * indexCount);
+			dataInStream.read(reinterpret_cast<byte_t*>(mesh.indices.data()), sizeof(uint32_t) * indexCount);
 			UUID materialID = SA_DEFAULT_MATERIAL_ID;
-			byteStream.read(reinterpret_cast<byte_t*>(&materialID), sizeof(materialID));
+			dataInStream.read(reinterpret_cast<byte_t*>(&materialID), sizeof(materialID));
 			mesh.material = materialID;
 
 			if(const auto pProgress = mesh.material.getProgress())
@@ -310,26 +312,30 @@ namespace sa {
 		return true;
 	}
 
-	bool ModelAsset::onWrite(std::ofstream& file, AssetWriteFlags flags) {
+	bool ModelAsset::onWrite(AssetWriteFlags flags) {
+		// source model assest can't be written to
+		return false;
+	}
 
+	bool ModelAsset::onCompile(ByteStream& dataOutStream, AssetWriteFlags flags) {
 
 		uint32_t meshCount = data.meshes.size();
-		file.write(reinterpret_cast<char*>(&meshCount), sizeof(meshCount));
+		dataOutStream.write(meshCount);
 
 		for (auto& mesh : data.meshes) {
 			uint32_t vertexCount = mesh.vertices.size();
-			file.write(reinterpret_cast<char*>(&vertexCount), sizeof(vertexCount));
+			dataOutStream.write(vertexCount);
 			if (vertexCount > 0)
-				file.write(reinterpret_cast<char*>(mesh.vertices.data()), sizeof(sa::VertexNormalUV) * vertexCount);
-			
+				dataOutStream.write(reinterpret_cast<byte_t*>(mesh.vertices.data()), sizeof(sa::VertexNormalUV) * vertexCount);
+
 			uint32_t indexCount = mesh.indices.size();
-			file.write(reinterpret_cast<char*>(&indexCount), sizeof(indexCount));
-			
+			dataOutStream.write(indexCount);
+
 			if (indexCount > 0)
-				file.write(reinterpret_cast<char*>(mesh.indices.data()), sizeof(uint32_t) * indexCount);
-			
+				dataOutStream.write(reinterpret_cast<byte_t*>(mesh.indices.data()), sizeof(uint32_t) * indexCount);
+
 			UUID materialID = mesh.material ? mesh.material.getID() : static_cast<UUID>(SA_DEFAULT_MATERIAL_ID);
-			file.write(reinterpret_cast<const char*>(&materialID), sizeof(materialID));
+			dataOutStream.write(materialID);
 		}
 
 		return true;

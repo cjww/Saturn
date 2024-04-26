@@ -163,36 +163,36 @@ namespace sa {
         return !m_recompiled && !m_shaders.empty();
     }
 
-    bool MaterialShader::onLoad(std::ifstream& file, AssetLoadFlags flags) {
+    bool MaterialShader::onLoad(JsonObject& metaData, AssetLoadFlags flags) {
        
         return true;
     }
 
-    bool MaterialShader::onLoadCompiled(ByteStream& byteStream, AssetLoadFlags flags) {
+    bool MaterialShader::onLoadCompiled(ByteStream& dataInStream, AssetLoadFlags flags) {
         //Source files
         uint32_t sourceCount = 0;
-        byteStream.read(&sourceCount);
+        dataInStream.read(&sourceCount);
 
         m_sourceFiles.resize(sourceCount);
         for (int i = 0; i < sourceCount; i++) {
             uint32_t pathLength = 0;
-            byteStream.read(&pathLength);
+            dataInStream.read(&pathLength);
             std::string path;
             path.resize(pathLength);
-            byteStream.read(reinterpret_cast<byte_t*>(path.data()), path.size());
+            dataInStream.read(reinterpret_cast<byte_t*>(path.data()), path.size());
             m_sourceFiles[i].filePath = path;
-            byteStream.read(reinterpret_cast<byte_t*>(&m_sourceFiles[i].stage), sizeof(uint32_t));
+            dataInStream.read(reinterpret_cast<byte_t*>(&m_sourceFiles[i].stage), sizeof(uint32_t));
         }
         // Binary code
         uint32_t codeCount = 0;
-        byteStream.read(&codeCount);
+        dataInStream.read(&codeCount);
 
         m_code.resize(codeCount);
         for (int i = 0; i < codeCount; i++) {
             size_t codeSize = 0;
-            byteStream.read(&codeSize);
+            dataInStream.read(&codeSize);
             m_code[i].resize(codeSize);
-            byteStream.read(reinterpret_cast<byte_t*>(m_code[i].data()), codeSize * sizeof(uint32_t));
+            dataInStream.read(reinterpret_cast<byte_t*>(m_code[i].data()), codeSize * sizeof(uint32_t));
         }
 
         if (m_code.empty()) {
@@ -212,29 +212,32 @@ namespace sa {
         return true;
     }
 
-    bool MaterialShader::onWrite(std::ofstream& file, AssetWriteFlags flags) {
+    bool MaterialShader::onWrite(AssetWriteFlags flags) {
+        return false;
+    }
+
+    bool MaterialShader::onCompile(ByteStream& dataOutStream, AssetWriteFlags flags) {
 
         //Source files
         uint32_t sourceCount = m_sourceFiles.size();
-        file.write((char*)&sourceCount, sizeof(uint32_t));
+        dataOutStream.write(sourceCount);
 
         for (auto& source : m_sourceFiles) {
             uint32_t pathLength = source.filePath.generic_string().length();
-            file.write((char*)&pathLength, sizeof(uint32_t));
-            file.write(source.filePath.generic_string().c_str(), pathLength);
+            dataOutStream.write(pathLength);
+            dataOutStream.write(reinterpret_cast<const byte_t*>(source.filePath.generic_string().c_str()), pathLength);
             uint32_t stage = source.stage;
-            file.write((char*)&stage, sizeof(uint32_t));
+            dataOutStream.write(stage);
         }
 
         //Binary code
         uint32_t codeCount = m_code.size();
-        file.write((char*)&codeCount, sizeof(uint32_t));
+        dataOutStream.write(codeCount);
 
         for (auto& code : m_code) {
-
             size_t codeSize = code.size();
-            file.write((char*)&codeSize, sizeof(size_t));
-            file.write((char*)code.data(), code.size() * sizeof(uint32_t));
+            dataOutStream.write(codeSize);
+            dataOutStream.write(reinterpret_cast<byte_t*>(code.data()), code.size() * sizeof(uint32_t));
         }
         return true;
     }
