@@ -104,9 +104,12 @@ namespace sa {
 
 	bool Asset::writeAsset(const std::filesystem::path& path, AssetWriteFlags flags) {
 		SA_DEBUG_LOG_INFO("Began writing asset ", m_name, " from ", path);
-
 		const bool success = onWrite(flags);
 		if (success) {
+			std::filesystem::path metaFileName = path;
+			metaFileName.replace_extension(SA_META_ASSET_EXTENSION);
+			WriteMetaFile(metaFileName, m_header);
+
 			SA_DEBUG_LOG_INFO("Finished writing ", m_name, " from ", path);
 		}
 		else {

@@ -174,7 +174,8 @@ void DirectoryView::onImGui() {
 				}
 				
 				sa::Asset* pAsset = nullptr;
-				if(sa::AssetManager::IsCompiledAsset(entry)) {
+				sa::AssetTypeID assetType = sa::AssetManager::Get().getAssetTypeByFile(entry.path());
+				if(sa::AssetManager::IsCompiledAsset(entry) || assetType != -1) {
 					pAsset = sa::AssetManager::Get().findAssetByPath(entry.path());
 					if (pAsset) {
 						icon = ImGui::GetAssetInfo(pAsset->getType()).icon;

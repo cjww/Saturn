@@ -25,6 +25,26 @@ namespace sa {
 	
 	void AssetManager::locateAssets() {
 		SA_DEBUG_LOG_INFO("Locating assets in Assets directory");
+
+		for (auto it = m_assets.begin(); it != m_assets.end();) {
+			auto& pAsset = it->second;
+			if (pAsset->isLoaded()) {
+				it++;
+				continue;
+			}
+
+			if (!std::filesystem::exists(pAsset->getAssetPath())) {
+				std::filesystem::path metaFilePath = pAsset->getAssetPath();
+				metaFilePath.replace_extension(SA_META_ASSET_EXTENSION);
+				if (std::filesystem::exists(metaFilePath)) {
+					std::filesystem::remove(metaFilePath);
+				}
+				it = m_assets.erase(it);
+				continue;
+			}
+			it++;
+		}
+
 		std::filesystem::path path = std::filesystem::current_path();
 		path /= SA_ASSET_DIR;
 		for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) {
