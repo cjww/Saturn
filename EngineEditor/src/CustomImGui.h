@@ -1,6 +1,6 @@
 #pragma once
 
-
+#define IMGUI_DEFINE_MATH_OPERATORS
 
 #include "ECS/Components.h"
 #include "ECS/Entity.h"
