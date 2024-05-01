@@ -30,8 +30,267 @@ void DirectoryView::onDraggedDropped(const sa::editor_event::DragDropped& e) {
 }
 
 void DirectoryView::onProjectOpened(const sa::editor_event::ProjectOpened& e) {
-	m_openDirectory = std::filesystem::is_directory(e.projectPath)? e.projectPath : e.projectPath.parent_path();
+	assert(!std::filesystem::is_directory(e.projectPath));
+	setOpenDirectory(e.projectPath.parent_path() / SA_ASSET_DIR);
 }
+
+void DirectoryView::updateDirectoryEntries() {
+	m_currentFileEntries.clear();
+	for (const auto& entry : std::filesystem::directory_iterator(m_openDirectory)) {
+		addFileEntry(entry);
+	}
+}
+
+DirectoryView::FileEntry& DirectoryView::addFileEntry(const std::filesystem::path& path) {
+	if (sa::Asset* pAsset = sa::AssetManager::Get().findAssetByPath(path)) {
+		return addFileEntry(pAsset);
+	}
+	// Determine Icon
+	FileEntry file = {};
+	file.path = path;
+	file.icon = m_otherFileIcon;
+	if (std::filesystem::is_directory(path)) {
+		file.isDirectory = true;
+		file.icon = m_directoryIcon;
+	}
+	else if (path.extension() == ".lua") {
+		file.icon = m_luaScriptIcon;
+	}
+	return m_currentFileEntries.emplace_back(file);
+}
+
+DirectoryView::FileEntry& DirectoryView::addFileEntry(const sa::Asset * pAsset) {
+	FileEntry file = {};
+	file.path = pAsset->getAssetPath();
+	file.assetType = pAsset->getType();
+	file.assetID = pAsset->getID();
+	file.icon = ImGui::GetAssetInfo(pAsset->getType()).icon;
+	
+	return m_currentFileEntries.emplace_back(file);
+}
+
+auto DirectoryView::removeFileEntry(const std::filesystem::path& path) {
+	auto it = std::find_if(m_currentFileEntries.begin(), m_currentFileEntries.end(), [&](const FileEntry& entry) { return entry.path == path; });
+	if (it != m_currentFileEntries.end()) {
+		return m_currentFileEntries.erase(it);
+	}
+	return m_currentFileEntries.end();
+}
+
+void DirectoryView::copyItems(const FileEntrySet& items) {
+	m_clipboard.clear();
+	m_clipboard.insert(m_selectedItems.begin(), m_selectedItems.end());
+}
+
+uint32_t DirectoryView::pasteItems(const std::filesystem::path& targetDirectory) {
+	uint32_t itemsSuccess = 0;
+	for (auto& entry : m_clipboard) {
+		try {
+			if (entry.assetType != -1) {
+				sa::Asset* pAsset = sa::AssetManager::Get().getAsset(entry.assetID);
+				if (pasteAsset(pAsset, targetDirectory)) {
+					itemsSuccess++;
+				}
+			}
+			else {
+				auto newPath = std::filesystem::proximate(targetDirectory / entry.path.filename());
+				std::string stem = newPath.stem().generic_string();
+				if (std::filesystem::equivalent(targetDirectory, entry.path.parent_path())) {
+					int i = 1;
+					while (std::filesystem::exists(newPath)) {
+						newPath.replace_filename(stem + " - Copy (" + std::to_string(i) + ")" + newPath.extension().generic_string());
+						++i;
+					}
+				}
+				else {
+					if (std::filesystem::exists(newPath)) {
+						auto msg = newPath.wstring() + L" already exists.\nOverwrite with current file?";
+						if (!sa::FileDialogs::YesNoWindow(L"File already exists", msg.c_str(), false)) {
+							continue;
+						}
+					}
+				}
+				std::filesystem::copy(entry.path, newPath, std::filesystem::copy_options::overwrite_existing);
+
+				SA_DEBUG_LOG_INFO("Pasted ", entry.path, " to ", targetDirectory);
+				itemsSuccess++;
+			}
+
+		}
+		catch (const std::filesystem::filesystem_error& e) {
+			SA_DEBUG_LOG_ERROR(e.what(), ": ", e.path1(), " ", e.path2());
+		}
+	}
+	updateDirectoryEntries();
+	return itemsSuccess;
+}
+
+uint32_t DirectoryView::deleteItems(const FileEntrySet& items) {
+	uint32_t success = 0;
+	for (auto& entry : items) {
+		if (entry.assetType != -1) {
+			sa::AssetManager::Get().deleteAsset(entry.assetID);
+			success++;
+			SA_DEBUG_LOG_INFO("Deleted Asset ", entry.path);
+			continue;
+		}
+
+		try {
+			if (std::filesystem::is_directory(entry.path)) {
+				std::filesystem::remove_all(entry.path);
+			}
+			else {
+				std::filesystem::remove(entry.path);
+			}
+			success++;
+
+			SA_DEBUG_LOG_INFO("Deleted ", entry.path);
+		}
+		catch (const std::filesystem::filesystem_error& e) {
+			SA_DEBUG_LOG_ERROR(e.what(), ": ", e.path1(), " ", e.path2());
+		}
+	}
+	updateDirectoryEntries();
+	return success;
+}
+
+bool DirectoryView::moveItem(const FileEntry& item, const std::filesystem::path& targetDirectory) {
+	bool wasChanged = false;
+	try {
+		auto newPath = targetDirectory / item.path.filename();
+		if (std::filesystem::exists(newPath)) {
+			auto msg = newPath.wstring() + L" already exists.\nOverwrite with current file?";
+			if (!sa::FileDialogs::YesNoWindow(L"File already exists", msg.c_str(), false)) {
+				return false;
+			}
+		}
+		std::filesystem::rename(item.path, newPath);
+		wasChanged = true;
+
+		if (item.assetType != -1) {
+			sa::Asset* pAsset = sa::AssetManager::Get().getAsset(item.assetID);
+			wasChanged = moveAsset(pAsset, targetDirectory);
+		}
+		
+		SA_DEBUG_LOG_INFO("Moved ", item.path.filename(), " to ", targetDirectory);
+	}
+	catch (const std::filesystem::filesystem_error& e) {
+		SA_DEBUG_LOG_ERROR(e.what(), ": ", e.path1(), " ", e.path2());
+	}
+	updateDirectoryEntries();
+	return wasChanged;
+}
+
+uint32_t DirectoryView::moveItems(const FileEntrySet& items, const std::filesystem::path& targetDirectory) {
+	uint32_t success = 0;
+	for (auto& file : items) {
+		if (moveItem(file, targetDirectory))
+			success++;
+	}
+	return success;
+}
+
+bool DirectoryView::renameItem(const FileEntry& item, const std::filesystem::path& name) {
+	bool wasChanged = false;
+	try {
+		std::filesystem::path newName = item.path;
+		newName.replace_filename(name);
+		newName.replace_extension(item.path.extension());
+
+		std::filesystem::rename(item.path, newName);
+		wasChanged = true;
+		SA_DEBUG_LOG_INFO("Renamed ", std::filesystem::proximate(item.path), " to ", std::filesystem::proximate(name));
+
+		if (item.assetType != -1) {
+			sa::Asset* pAsset = sa::AssetManager::Get().getAsset(item.assetID);
+			wasChanged = renameAsset(pAsset, name);
+		}
+	}
+	catch (const std::filesystem::filesystem_error& e) {
+		SA_DEBUG_LOG_ERROR(e.what(), ": ", e.path1(), " ", e.path2());
+	}
+	return wasChanged;
+}
+
+bool DirectoryView::renameAsset(sa::Asset* pAsset, const std::filesystem::path& name) const {
+	if (!pAsset->isCompiled()) {
+		auto metaPath = pAsset->getMetaFilePath();
+		auto newPath = metaPath;
+		newPath.replace_filename(name);
+		newPath.replace_extension(SA_META_ASSET_EXTENSION);
+		try {
+			std::filesystem::rename(metaPath, newPath);
+		}
+		catch (const std::filesystem::filesystem_error& e) {
+			SA_DEBUG_LOG_ERROR("Failed to rename meta file ", metaPath, ": ", e.what());
+			return false;
+		}
+	}
+	std::filesystem::path newPath = pAsset->getAssetPath();
+	const std::filesystem::path& extension = newPath.extension();
+	newPath.replace_filename(name).replace_extension(extension);
+	pAsset->setAssetPath(newPath);
+	return true;
+}
+
+bool DirectoryView::pasteAsset(sa::Asset* pAsset, const std::filesystem::path& targetDirectory) {
+	
+	std::string newName = pAsset->getName() + " (Clone)";
+	sa::Asset* pClone = pAsset->clone(newName, targetDirectory);
+	if (!pClone) {
+		SA_DEBUG_LOG_ERROR("Asset ", pAsset->getName(), " could not be cloned");
+		return false;
+	}
+
+	int i = 1;
+	while (std::filesystem::exists(pClone->getAssetPath())) {
+		std::filesystem::path newPath = pClone->getAssetPath();
+		const std::filesystem::path& extension = newPath.extension();
+		newPath.replace_filename(pAsset->getName() + " (Clone " + std::to_string(i) + ")").replace_extension(extension);
+		pClone->setAssetPath(newPath);
+		++i;
+	}
+	pClone->write();
+	pClone->getProgress().wait();
+	return true;
+
+	if (!pAsset->isCompiled()) {
+		auto metaPath = pAsset->getMetaFilePath();
+		auto newPath  = targetDirectory / metaPath.filename();
+		try {
+			std::filesystem::copy(metaPath, newPath);
+		}
+		catch (const std::filesystem::filesystem_error& e) {
+			SA_DEBUG_LOG_ERROR("Failed to copy meta file ", metaPath, " to ", newPath, ": ", e.what());
+			return false;
+		}
+	}
+	std::filesystem::path assetPath = pAsset->getAssetPath();
+	assetPath = targetDirectory / assetPath.filename();
+	pAsset->setAssetPath(assetPath);
+	return true;
+}
+
+bool DirectoryView::moveAsset(sa::Asset* pAsset, const std::filesystem::path& targetDirectory) {
+	if (!pAsset->isCompiled()) {
+		try {
+			const auto& metaPath = pAsset->getMetaFilePath();
+			auto newPath = targetDirectory / metaPath.filename();
+			std::filesystem::rename(metaPath, newPath);
+			SA_DEBUG_LOG_INFO("Moved ", metaPath, " to ", targetDirectory);
+		}
+		catch (const std::filesystem::filesystem_error& e) {
+			SA_DEBUG_LOG_ERROR(e.what(), ": ", e.path1(), " ", e.path2());
+			return false;
+		}
+	}
+
+	std::filesystem::path assetPath = pAsset->getAssetPath();
+	assetPath = targetDirectory / assetPath.filename();
+	pAsset->setAssetPath(assetPath);
+	return true;
+}
+
 
 void DirectoryView::makeAssetPropertiesWindows() {
 	for (auto it = m_openAssetProperties.begin(); it != m_openAssetProperties.end(); ) {
@@ -173,32 +432,37 @@ void DirectoryView::makeAssetWindow() {
 }
 
 
-bool DirectoryView::makeDirectoryBackButton(bool& wasChanged) {
-	if (std::filesystem::equivalent(m_openDirectory, SA_ASSET_DIR)) {
-		return false;
-	}
+bool DirectoryView::makeDirectoryBackButton() {
+
 	if (ImGui::ArrowButton("parentDir_button", ImGuiDir_Left)) {
 		if (m_openDirectory.has_parent_path()) {
-			m_openDirectory = m_openDirectory.parent_path();
+			setOpenDirectory(m_openDirectory.parent_path());
+			m_selectedItems.clear();
+			m_lastSelected = {};
+			return true;
 		}
 	}
+	return false;
+}
 
+bool DirectoryView::makeDirectoryDragDropTarget(const std::filesystem::path& path) {
+	bool movedItem = false;
 	if (ImGui::BeginDragDropTarget()) {
 		const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Path");
 		if (payload && payload->IsDelivery()) {
-			auto path = static_cast<std::filesystem::path*>(payload->Data);
-			if (ImGui::MoveItem(*path, m_openDirectory.parent_path())) {
-				wasChanged = true;
+			FileEntrySet* selectedItems = static_cast<FileEntrySet*>(payload->Data);
+			if (moveItems(*selectedItems, std::filesystem::proximate(path)) > 0) {
+				selectedItems->clear();
+				movedItem = true;
 			}
-
 		}
 		ImGui::EndDragDropTarget();
 	}
-
-	return true;
+	return movedItem;
 }
 
-bool DirectoryView::beginDirectoryView(const char* str_id, bool& wasChanged, const ImVec2& size) {
+
+bool DirectoryView::beginDirectoryView(const char* str_id, const ImVec2& size) {
 	ImVec2 contentArea = size;
 	if (size.x == 0.f && size.y == 0.f) {
 		contentArea = ImGui::GetContentRegionAvail();
@@ -209,11 +473,12 @@ bool DirectoryView::beginDirectoryView(const char* str_id, bool& wasChanged, con
 		return false;
 	}
 
-	static std::set<std::filesystem::path> copiedFiles;
 	//Menu Bar
 	if (ImGui::BeginMenuBar()) {
 
-		if(makeDirectoryBackButton(wasChanged)) {
+		if (!std::filesystem::equivalent(m_openDirectory, SA_ASSET_DIR)) {
+			makeDirectoryBackButton();
+			makeDirectoryDragDropTarget(m_openDirectory.parent_path());
 			ImGui::SameLine();
 		}
 
@@ -222,37 +487,46 @@ bool DirectoryView::beginDirectoryView(const char* str_id, bool& wasChanged, con
 
 		ImGui::SetNextItemWidth(200);
 		ImGui::SliderInt("Icon size", &m_iconSize, 20, 200);
+
+		if(ImGui::SmallButton("Refresh")) {
+			updateDirectoryEntries();
+			sa::AssetManager::Get().rescanAssets();
+		}
+		int size = m_selectedItems.size();
+		ImGui::InputInt("selected items", &size);
+
 	}
 	ImGui::EndMenuBar();
 
-	makePopupContextWindow(wasChanged);
+	makePopupContextWindow();
 	/*
 	if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
 		if (!ImGui::IsKeyDown(ImGuiKey_LeftShift) && !ImGui::IsKeyDown(ImGuiKey_RightShift))
 			m_selectedItems.clear();
 	}
 	*/
-
-	if (ImGui::IsKeyPressed(ImGuiKey_F2) && !m_lastSelected.empty()) {
+	if (ImGui::IsKeyPressed(ImGuiKey_F2) && m_lastSelected) {
 		m_editedFile = m_lastSelected;
-		m_editingName = m_lastSelected.filename().generic_string();
+		m_editingName = m_lastSelected.path.stem().generic_string();
 	}
 
 	if (ImGui::IsKeyPressed(ImGuiKey_Delete)) {
-		if (ImGui::DeleteItems(m_selectedItems))
-			wasChanged = true;
-		m_lastSelected.clear();
+		if (deleteItems(m_selectedItems) > 0) {
+			m_selectedItems.clear();
+			m_lastSelected = {};
+		}
 	}
 
 	if (ImGui::IsKeyPressed(ImGuiKey_C) && ImGui::IsKeyDown(ImGuiKey_LeftCtrl)) {
-		copiedFiles.clear();
-		copiedFiles.insert(m_selectedItems.begin(), m_selectedItems.end());
+		copyItems(m_selectedItems);
 	}
 
 	if (ImGui::IsKeyPressed(ImGuiKey_V) && ImGui::IsKeyDown(ImGuiKey_LeftCtrl)) {
-		if (!copiedFiles.empty()) {
-			if (ImGui::PasteItems(copiedFiles, m_openDirectory))
-				wasChanged = true;
+		if (!m_clipboard.empty()) {
+			if (pasteItems(m_openDirectory) > 0) {
+				m_selectedItems.clear();
+				m_lastSelected = {};
+			}
 		}
 	}
 	
@@ -289,17 +563,17 @@ DirectoryView::DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor)
 	m_iconSize = 45;
 }
 
-bool DirectoryView::makePopupContextWindow(bool& wasChanged) {
+bool DirectoryView::makePopupContextWindow() {
 	//Input Events
 	if (ImGui::BeginPopupContextWindow()) {
-
+		
 		if (ImGui::BeginMenu("Create...")) {
 			if (ImGui::MenuItem("Folder")) {
 				auto newPath = m_openDirectory / "New Folder";
-				std::filesystem::create_directory(m_openDirectory / "New Folder");
-				m_editedFile = newPath;
-				m_editingName = "New Folder";
-				wasChanged = true;
+				if (std::filesystem::create_directory(m_openDirectory / "New Folder")) {
+					m_editingName = "New Folder";
+					m_editedFile = addFileEntry(newPath);
+				}
 			}
 
 			if (ImGui::BeginMenu("File...")) {
@@ -312,9 +586,8 @@ bool DirectoryView::makePopupContextWindow(bool& wasChanged) {
 						auto newPath = m_openDirectory / ("New " + typeName + " File");
 						newPath.replace_extension(".glsl");
 						sa::createGlslFile(newPath, (sa::ShaderStageFlagBits)stage);
-						m_editedFile = newPath;
 						m_editingName = newPath.stem().generic_string();
-						wasChanged = true;
+						m_editedFile = addFileEntry(newPath);
 					}
 					stage = stage << 1;
 				}
@@ -325,9 +598,8 @@ bool DirectoryView::makePopupContextWindow(bool& wasChanged) {
 					auto newPath = m_openDirectory / "New Lua Script";
 					newPath.replace_extension(".lua");
 					sa::createLuaFile(newPath);
-					m_editedFile = newPath;
 					m_editingName = newPath.stem().generic_string();
-					wasChanged = true;
+					m_editedFile = addFileEntry(newPath);
 				}
 
 				ImGui::EndMenu();
@@ -343,7 +615,7 @@ bool DirectoryView::makePopupContextWindow(bool& wasChanged) {
 						sa::Asset* pAsset = sa::AssetManager::Get().createAsset(type, "New " + typeName, m_openDirectory);
 						pAsset->write();
 						m_editingName = pAsset->getName();
-						m_editedFile = pAsset->getAssetPath();
+						m_editedFile = addFileEntry(pAsset);
 					}
 				}
 			}
@@ -351,30 +623,34 @@ bool DirectoryView::makePopupContextWindow(bool& wasChanged) {
 			ImGui::EndMenu();
 		}
 
-		if (ImGui::MenuItem("Rename", "F2")) {
-			m_editedFile = m_lastSelected;
-			m_editingName = m_lastSelected.filename().generic_string();
+		if (m_lastSelected) {
+			if (ImGui::MenuItem("Rename", "F2")) {
+				m_editedFile = m_lastSelected;
+				m_editingName = m_lastSelected.path.stem().generic_string();
+			}
 		}
 
 		if (!m_clipboard.empty()) {
 			if (ImGui::MenuItem("Paste", "Ctrl + V")) {
-				if (ImGui::PasteItems(m_clipboard, m_openDirectory))
-					wasChanged = true;
+				if (pasteItems(m_openDirectory) > 0) {
+					m_selectedItems.clear();
+					m_lastSelected = {};
+				}
 			}
 		}
 		if (!m_selectedItems.empty()) {
 			if (ImGui::MenuItem("Copy", "Ctrl + C")) {
-				m_clipboard.clear();
-				m_clipboard.insert(m_selectedItems.begin(), m_selectedItems.end());
+				copyItems(m_selectedItems);
 			}
 
 			if (ImGui::MenuItem("Delete", "Del")) {
-				if (ImGui::DeleteItems(m_selectedItems))
-					wasChanged = true;
-				m_lastSelected.clear();
+				if (deleteItems(m_selectedItems) > 0)  {
+					m_selectedItems.clear();
+					m_lastSelected = {};
+				}
 			}
 		}
-
+		
 		ImGui::Separator();
 
 		if (ImGui::MenuItem("Open in code editor")) {
@@ -411,47 +687,31 @@ void DirectoryView::onImGui() {
 
 		bool wasChanged = false;
 
-		if (beginDirectoryView("Explorer", wasChanged)) {
+		if (beginDirectoryView("Explorer")) {
 			SA_PROFILE_SCOPE("Explorer");
 			// Icon View Area
 			ImVec2 iconSizeVec((float)m_iconSize, (float)m_iconSize);
-			for (const auto& entry : std::filesystem::directory_iterator(m_openDirectory)) {
+			for (const auto& file : m_currentFileEntries) {
 
-
-				// Determine Icon
-				sa::Texture icon = m_otherFileIcon;
-				if (entry.is_directory()) {
-					icon = m_directoryIcon;
-				}
-				else if(entry.path().extension() == ".lua") {
-					icon = m_luaScriptIcon;
-				}
-				
-				sa::Asset* pAsset = nullptr;
-				sa::AssetTypeID assetType = sa::AssetManager::Get().getAssetTypeByFile(entry.path());
-				if(sa::AssetManager::IsCompiledAsset(entry) || assetType != -1) {
-					pAsset = sa::AssetManager::Get().findAssetByPath(entry.path());
-					if (pAsset) {
-						icon = ImGui::GetAssetInfo(pAsset->getType()).icon;
-					}
-				}
-
-				directoryEntry(entry, wasChanged, icon);
+				directoryEntry(file, wasChanged);
 				
 				if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenOverlapped) && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-					if (entry.is_directory()) {
+					if (file.isDirectory) {
 						m_selectedItems.clear();
-						m_lastSelected.clear();
-						m_openDirectory = entry.path();
+						m_lastSelected = {};
+						setOpenDirectory(file.path);
 						break;
 					}
-					if (pAsset) {
-						if (sa::AssetManager::Get().isType<sa::Scene>(pAsset)) {
-							m_pEngine->setScene(pAsset->cast<sa::Scene>());
-						}
-						else {
-							if (m_openAssetProperties.insert(pAsset).second)
-								pAsset->hold();
+					if (file.assetType != -1) {
+						sa::Asset* pAsset = sa::AssetManager::Get().getAsset(file.assetID);
+						if (pAsset) {
+							if (sa::AssetManager::Get().isType<sa::Scene>(pAsset)) {
+								m_pEngine->setScene(pAsset->cast<sa::Scene>());
+							}
+							else {
+								if (m_openAssetProperties.insert(pAsset).second)
+									pAsset->hold();
+							}
 						}
 					}
 				}
@@ -475,9 +735,9 @@ void DirectoryView::onImGui() {
 
 }
 
-bool DirectoryView::directoryEntry(const std::filesystem::directory_entry& entry, bool& wasChanged, const sa::Texture& icon) {
+bool DirectoryView::directoryEntry(const FileEntry& file, bool& wasChanged) {
 	// Check if selected
-	bool selected = m_selectedItems.count(entry.path());
+	bool selected = m_selectedItems.count(file);
 	ImVec2 iconSizeVec = ImVec2(m_iconSize, m_iconSize);
 	// Selected highlight color
 	int popCount = 0;
@@ -491,7 +751,7 @@ bool DirectoryView::directoryEntry(const std::filesystem::directory_entry& entry
 
 	// Draw icon and label
 
-	std::string label = entry.path().filename().generic_string();
+	std::string label = file.path.filename().generic_string();
 	ImVec2 totalSize = iconSizeVec + ImGui::GetStyle().ItemSpacing * 2.f;
 	ImVec2 textSize = ImGui::CalcTextSize(label.c_str(), 0, false, totalSize.x);
 	totalSize.y += textSize.y;
@@ -502,64 +762,57 @@ bool DirectoryView::directoryEntry(const std::filesystem::directory_entry& entry
 	if (ImGui::Selectable(("##directory_entry" + label).c_str(), selected, ImGuiSelectableFlags_NoPadWithHalfSpacing, totalSize)) {
 		if (!ImGui::IsKeyDown(ImGuiKey_LeftShift) && !ImGui::IsKeyDown(ImGuiKey_RightShift))
 			m_selectedItems.clear();
-		m_selectedItems.insert(entry.path());
-		m_lastSelected = entry.path();
+		m_selectedItems.insert(file);
+		m_lastSelected = file;
 	}
 	// Drag drop source
 	if (ImGui::BeginDragDropSource()) {
+		m_selectedItems.insert(file);
 		ImGui::SetDragDropPayload("Path", &m_selectedItems, sizeof(m_selectedItems));
-		ImGui::Image(icon, iconSizeVec);
+		ImGui::Image(file.icon, iconSizeVec);
 		ImGui::SameLine();
-		for (auto& path : m_selectedItems) {
-			ImGui::Text("%s", path.filename().generic_string().c_str());
+		for (auto& entry : m_selectedItems) {
+			ImGui::Text("%s", entry.path.filename().generic_string().c_str());
 		}
 		ImGui::EndDragDropSource();
 	}
 	// And possibly target
-	if (entry.is_directory()) {
-		if (ImGui::BeginDragDropTarget()) {
-			const ImGuiPayload* payload = ImGui::AcceptDragDropPayload("Path");
-			if (payload && payload->IsDelivery()) {
-				std::set<std::filesystem::path>* selectedItems = static_cast<std::set<std::filesystem::path>*>(payload->Data);
-				const auto& thisPath = entry.path();
-				for (auto& path : *selectedItems) {
-					if (ImGui::MoveItem(path, thisPath))
-						wasChanged = true;
-				}
-			}
-			ImGui::EndDragDropTarget();
-		}
+	if (file.isDirectory) {
+		makeDirectoryDragDropTarget(file.path);
 	}
 
 
 	cursorPos.x += ImGui::GetStyle().ItemSpacing.x;
 	ImGui::SetCursorPos(cursorPos);
 	// Icon
-	ImGui::Image(icon, iconSizeVec);
+	ImGui::Image(file.icon, iconSizeVec);
 
 	// Text field
 	cursorPos.x = ImGui::GetCursorPosX();
-	if (m_editedFile == entry.path()) {
+	if (m_editedFile == file) { 
+		// is renaming label
 		cursorPos.x += ImGui::GetStyle().ItemInnerSpacing.x;
 		ImGui::SetCursorPosX(cursorPos.x);
 		ImGui::SetNextItemWidth(totalSize.x - ImGui::GetStyle().ItemInnerSpacing.x * 2.0f);
-		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(0, 0));
+		ImGui::PushStyleVar(ImGuiStyleVar_FramePadding, ImVec2(1, 1));
 		if (ImGui::InputText("##edit_name", &m_editingName, ImGuiInputTextFlags_EnterReturnsTrue | ImGuiInputTextFlags_AutoSelectAll)) {
-			//rename
-			std::filesystem::path newName = (m_editedFile.parent_path() / m_editingName).replace_extension(m_editedFile.extension());
-			if (ImGui::RenameItem(m_editedFile, newName))
-				wasChanged = true;
-			m_editedFile.clear();
+			if (renameItem(m_editedFile, m_editingName)) {
+				m_selectedItems.clear();
+				m_lastSelected = {};
+				updateDirectoryEntries();
+			}
+			m_editedFile = {};
 		}
 		if (ImGui::IsMouseClicked(ImGuiMouseButton_Left) && !ImGui::IsItemHovered()) {
-			m_editedFile.clear();
+			m_editedFile = {};
 		}
 		else {
 			ImGui::SetKeyboardFocusHere(-1); // Auto focus previous widget
 		}
 		ImGui::PopStyleVar();
 	}
-	else {
+	else { 
+		// regular label
 		cursorPos.x += (totalSize.x - textSize.x) * 0.5f;
 		ImGui::SetCursorPosX(cursorPos.x);
 		ImGui::PushTextWrapPos(cursorPos.x + textSize.x);
@@ -576,4 +829,9 @@ bool DirectoryView::directoryEntry(const std::filesystem::directory_entry& entry
 
 void DirectoryView::update(float dt) {
 
+}
+
+void DirectoryView::setOpenDirectory(const std::filesystem::path& directory) {
+	m_openDirectory = directory;
+	updateDirectoryEntries();
 }

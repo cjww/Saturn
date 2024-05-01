@@ -62,5 +62,8 @@ namespace sa {
 
 		virtual bool onUnload() override;
 
+		RenderTarget* clone(const std::string& name, const std::filesystem::path& assetDir = "") const override;
+
+
 	};
 }

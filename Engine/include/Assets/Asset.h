@@ -14,7 +14,6 @@
 #include "Serializable.h"
 
 namespace sa {
-
 	
 	typedef uint32_t AssetTypeID;
 	struct AssetHeader {
@@ -101,6 +100,7 @@ namespace sa {
 		// [DO NOT USE] Called by release. Do not call directly
 		virtual bool onUnload() = 0;
 
+		virtual Asset* clone(const std::string& name, const std::filesystem::path& assetDir = "") const = 0;
 
 		//	load()
 		//		open file
@@ -155,6 +155,7 @@ namespace sa {
 		bool loadCompiled(const std::filesystem::path& path);
 
 		bool isLoaded() const;
+		bool isCompiled() const;
 		
 		const ProgressView<bool>& getProgress() const;
 		AssetTypeID getType() const;
@@ -163,6 +164,8 @@ namespace sa {
 		void setName(const std::string& name);
 		const std::filesystem::path& getAssetPath() const;
 		void setAssetPath(const std::filesystem::path& assetPath);
+
+		std::filesystem::path getMetaFilePath() const;
 
 		void setHeader(const AssetHeader& header);
 		const AssetHeader& getHeader() const;

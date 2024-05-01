@@ -50,10 +50,10 @@ namespace sa {
 		for (const auto& entry : std::filesystem::recursive_directory_iterator(path)) {
 			if (!entry.is_regular_file())
 				continue;
-			if (IsCompiledAsset(entry)) {
+			if (IsCompiledAsset(entry.path())) {
 				addAsset(std::filesystem::proximate(entry.path()));
 			}
-			else if(IsAssetPackage(entry)) {
+			else if(IsAssetPackage(entry.path())) {
 				addAssetPackage(std::filesystem::proximate(entry.path()));
 			}
 			else if (getAssetTypeByFile(entry.path()) != -1) {
@@ -138,19 +138,19 @@ namespace sa {
 		return instance;
 	}
 
-	bool AssetManager::IsMetaAsset(const std::filesystem::directory_entry& entry) {
-		return entry.is_regular_file() && entry.path().extension() == SA_META_ASSET_EXTENSION;
+	bool AssetManager::IsMetaAsset(const std::filesystem::path& path) {
+		return std::filesystem::is_regular_file(path) && path.extension() == SA_ASSET_EXTENSION;
 	}
 
-	bool AssetManager::IsCompiledAsset(const std::filesystem::directory_entry& entry) {
-		return entry.is_regular_file() && entry.path().extension() == SA_ASSET_EXTENSION;
+	bool AssetManager::IsCompiledAsset(const std::filesystem::path& path) {
+		return std::filesystem::is_regular_file(path) && path.extension() == SA_ASSET_EXTENSION;
 	}
 
-	bool AssetManager::IsAssetSource(const std::filesystem::directory_entry& entry) {
-		if (!entry.is_regular_file())
+	bool AssetManager::IsAssetSource(const std::filesystem::path& path) {
+		if (!std::filesystem::is_regular_file(path))
 			return false;
 
-		std::filesystem::path extension = entry.path().extension();
+		std::filesystem::path extension = path.extension();
 		if (extension == ".sascene") {
 			return true;
 		}
@@ -158,15 +158,15 @@ namespace sa {
 		if (ModelAsset::IsExtensionSupported(extension.generic_string())) {
 			return true;
 		}
-		if (Image::IsFileSupported(entry.path().generic_string().c_str())) {
+		if (Image::IsFileSupported(path.generic_string().c_str())) {
 			return true;
 		}
 
 		return false;
 	}
 
-	bool AssetManager::IsAssetPackage(const std::filesystem::directory_entry& entry) {
-		return entry.is_regular_file() && entry.path().extension() == SA_ASSET_PACKAGE_EXTENSION;
+	bool AssetManager::IsAssetPackage(const std::filesystem::path& path) {
+		return std::filesystem::is_regular_file(path) && path.extension() == SA_ASSET_PACKAGE_EXTENSION;
 	}
 
 	AssetTypeID AssetManager::getAssetTypeByFile(const std::filesystem::path& path) const {
@@ -526,7 +526,7 @@ namespace sa {
 		
 		Asset* asset = m_assetAddConversions[type](header, createCompiled);
 		
-		asset->initialize(name + extension, assetDirectory);
+		asset->initialize(name + extension, std::filesystem::proximate(assetDirectory));
 
 		SA_DEBUG_LOG_INFO("Finished Creating ", getAssetTypeName(type), " ", name);
 		return asset;
@@ -581,7 +581,8 @@ namespace sa {
 
 			file.seekp(contentPos);
 			header.contentOffset = contentPos;
-			//pAsset->onWrite(file, 0); // TODO use compile
+			//pAsset->onWrite(file, 0); // TODO use compile 
+			throw std::runtime_error("Cant make package");
 			header.size = file.tellp() - contentPos;
 			contentPos = file.tellp();
 
@@ -627,12 +628,50 @@ namespace sa {
 				return false;
 			}
 		}
+		if (!asset->isCompiled()) {
+			const auto& metaPath = asset->getMetaFilePath();
+			if (!metaPath.empty() && std::filesystem::exists(metaPath)) {
+				try {
+					std::filesystem::remove(metaPath); // delete file
+				}
+				catch (const std::filesystem::filesystem_error& e) {
+					SA_DEBUG_LOG_ERROR("Failed to remove file: ", e.what(), " -> ", e.path1());
+					return false;
+				}
+			}
+		}
+
 		removeAsset(asset); // remove from memory
 		return true;
 	}
 
 	bool AssetManager::deleteAsset(UUID id) {
 		return deleteAsset(getAsset(id));
+	}
+
+	Asset* AssetManager::cloneAsset(UUID id, const std::filesystem::path& assetPath) {
+		std::filesystem::path newAssetPath = std::filesystem::path(assetPath);
+		newAssetPath.replace_filename(assetPath.stem().generic_string() + " (Clone)" + assetPath.extension().generic_string());
+		Asset* pOrigAsset = getAsset(id);
+		AssetHeader header = pOrigAsset->getHeader();
+		header.id = UUID(); // generate new UUID
+		
+		sa::Asset* pClone = m_assetAddConversions.at(pOrigAsset->getType())(header, pOrigAsset->isCompiled());
+		std::filesystem::path origAssetPath = pOrigAsset->getAssetPath();
+		pOrigAsset->hold();
+		pOrigAsset->getProgress().wait();
+		pOrigAsset->setAssetPath(newAssetPath);
+		pOrigAsset->write();
+		pOrigAsset->getProgress().wait();
+		pOrigAsset->setAssetPath(origAssetPath);
+		pOrigAsset->release();
+
+		pClone->setAssetPath(newAssetPath);
+		pClone->hold();
+		pClone->getProgress().wait();
+		pClone->write();
+		pClone->release();
+		return pClone;
 	}
 
 	AssetManager::AssetManager() {
@@ -643,7 +682,6 @@ namespace sa {
 
 		m_createCompiled = true; // default to compiled assets when creating
 		m_nextTypeID = 0;
-
 
 		registerAssetType<ModelAsset>();
 		registerAssetType<Material>();

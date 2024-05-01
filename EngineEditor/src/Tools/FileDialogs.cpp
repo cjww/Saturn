@@ -88,3 +88,19 @@ bool sa::FileDialogs::OpenFileInTextEditor(const std::filesystem::path& applicat
 #endif 
     return success;
 }
+
+bool sa::FileDialogs::YesNoWindow(const wchar_t* pTitle, const wchar_t* pMsg, bool isYesDefault) {
+#ifdef _WIN32
+
+    int choiceID = MessageBox(
+        NULL,
+        (LPCWSTR)pMsg,
+        (LPCWSTR)pTitle,
+        MB_TASKMODAL | MB_ICONEXCLAMATION | MB_YESNO | (isYesDefault ? MB_DEFBUTTON1 : MB_DEFBUTTON2)
+    );
+
+    return choiceID == IDYES;
+#endif // _WIN32
+
+    return false;
+}

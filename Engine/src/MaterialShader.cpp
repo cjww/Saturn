@@ -257,4 +257,20 @@ namespace sa {
         m_depthPipelineLayout.destroy();
         return true;
     }
+
+    MaterialShader* MaterialShader::clone(const std::string& name, const std::filesystem::path& assetDir) const {
+        MaterialShader* clone = AssetManager::Get().createAsset<MaterialShader>(name, assetDir);
+        clone->m_code = m_code;
+        clone->m_sourceFiles = m_sourceFiles;
+        if (!clone->m_code.empty()) {
+            clone->create(clone->m_code);
+        }
+        else if (!clone->m_sourceFiles.empty()) {
+            clone->create(clone->m_sourceFiles);
+        }
+        else {
+            throw std::runtime_error("No source or code");
+        }
+        return clone;
+    }
 }

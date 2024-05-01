@@ -85,7 +85,8 @@ namespace sa {
 		void serialize(Serializer& s) override;
 		void deserialize(void* pDoc) override;
 
-		Scene* clone(const std::string& name);
+		Scene* clone(const std::string& name, const std::filesystem::path& assetDir = "") const override;
+
 
 		// Event emitter
 		void setScene(const std::string& name);

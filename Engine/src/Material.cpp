@@ -231,6 +231,15 @@ namespace sa {
 
 		return true;
 	}
+
+	Material* Material::clone(const std::string& name, const std::filesystem::path& assetDir) const {
+		Material* clone = AssetManager::Get().createAsset<Material>(name, assetDir);
+		clone->m_blending = m_blending;
+		clone->m_textures = m_textures;
+		clone->m_materialShader = m_materialShader;
+		clone->values = values;
+		return clone;
+	}
 	
 	
 

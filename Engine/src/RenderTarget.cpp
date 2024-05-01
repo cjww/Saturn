@@ -137,4 +137,8 @@ namespace sa {
 	bool RenderTarget::onUnload() {
 		return true;
 	}
+
+	RenderTarget* RenderTarget::clone(const std::string& name, const std::filesystem::path& assetDir) const {
+		return nullptr;
+	}
 }

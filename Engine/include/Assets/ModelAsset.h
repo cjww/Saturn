@@ -41,6 +41,7 @@ namespace sa {
 
 		virtual bool onUnload() override;
 
+		ModelAsset* clone(const std::string& name, const std::filesystem::path& assetDir = "") const override;
 
 
 

@@ -247,12 +247,12 @@ namespace sa {
 		}
 	}
 
-	Scene* Scene::clone(const std::string& name) {
-
-		auto clone = AssetManager::Get().createAsset<Scene>(name, "");
-		forEachEntity([&](Entity entity) {
+	Scene* Scene::clone(const std::string& name, const std::filesystem::path& assetDir) const {
+		auto clone = AssetManager::Get().createAsset<Scene>(name, assetDir);
+		for (auto it = m_reg.storage<entt::entity>()->begin(); it != m_reg.storage<entt::entity>()->end(); ++it) {
+			Entity entity(const_cast<Scene*>(this), *it);
 			entity.clone(clone);
-		});
+		}
 		return clone;
 	}
 

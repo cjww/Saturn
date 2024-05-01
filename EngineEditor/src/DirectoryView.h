@@ -15,27 +15,65 @@ private:
 
 	int m_iconSize;
 	
-	std::filesystem::path m_lastSelected;
-	std::set<std::filesystem::path> m_selectedItems;
-	
-	std::set<std::filesystem::path> m_clipboard;
 
+
+	struct FileEntry {
+		std::filesystem::path path;
+		bool isDirectory = false;
+		sa::Texture icon;
+		sa::UUID assetID = 0;
+		sa::AssetTypeID assetType = ~0u;
+
+		bool operator<(const FileEntry& other) const { return path < other.path; }
+		bool operator==(const FileEntry& other) const { return path == other.path; }
+
+		operator bool() const { return !path.empty(); };
+	};
+	
+	FileEntry m_lastSelected;
+	
 	std::string m_editingName;
-	std::filesystem::path m_editedFile;
+	FileEntry m_editedFile;
+
+	std::vector<FileEntry> m_currentFileEntries;
+
+	typedef std::set<FileEntry> FileEntrySet;
+
+	FileEntrySet m_selectedItems;
+	FileEntrySet m_clipboard;
+	
 
 	void onDraggedDropped(const sa::editor_event::DragDropped& e);
 	void onProjectOpened(const sa::editor_event::ProjectOpened& e);
 
+	void updateDirectoryEntries();
+
 	void makeAssetPropertiesWindows();
 	void makeAssetWindow();
 
-	bool makeDirectoryBackButton(bool& wasChanged);
+	bool makeDirectoryBackButton();
+	bool makeDirectoryDragDropTarget(const std::filesystem::path& path);
 
-	bool makePopupContextWindow(bool& wasChanged);
+	bool makePopupContextWindow();
 
-	bool beginDirectoryView(const char* str_id, bool& wasChanged, const ImVec2& size = ImVec2(0, 0));
+	bool beginDirectoryView(const char* str_id, const ImVec2& size = ImVec2(0, 0));
 	void endDirectoryView();
-	bool directoryEntry(const std::filesystem::directory_entry& entry, bool& wasChanged, const sa::Texture& icon);
+	bool directoryEntry(const FileEntry& file, bool& wasChanged);
+
+	FileEntry& addFileEntry(const std::filesystem::path& path);
+	FileEntry& addFileEntry(const sa::Asset* pAsset);
+	auto removeFileEntry(const std::filesystem::path& path);
+
+	void copyItems(const FileEntrySet& items);
+	uint32_t pasteItems(const std::filesystem::path& targetDirectory);
+	uint32_t deleteItems(const FileEntrySet& items);
+	bool moveItem(const FileEntry& item, const std::filesystem::path& targetDirectory);
+	uint32_t moveItems(const FileEntrySet& items, const std::filesystem::path& targetDirectory);
+	bool renameItem(const FileEntry& item, const std::filesystem::path& name);
+
+	bool renameAsset(sa::Asset* pAsset, const std::filesystem::path& name) const;
+	bool pasteAsset(sa::Asset* pAsset, const std::filesystem::path& targetDirectory);
+	bool moveAsset(sa::Asset* pAsset, const std::filesystem::path& targetDirectory);
 
 
 public:
@@ -45,4 +83,7 @@ public:
 	virtual void update(float dt) override;
 
 
+	void setOpenDirectory(const std::filesystem::path& directory);
+
 };
+

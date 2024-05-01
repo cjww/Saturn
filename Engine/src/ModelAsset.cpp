@@ -346,4 +346,10 @@ namespace sa {
 		data.meshes.shrink_to_fit();
 		return true;
 	}
+	
+	ModelAsset* ModelAsset::clone(const std::string& name, const std::filesystem::path& assetDir) const {
+		ModelAsset* clone = sa::AssetManager::Get().createAsset<ModelAsset>(name, assetDir);
+		clone->data = data;
+		return clone;
+	}
 }

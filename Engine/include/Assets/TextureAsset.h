@@ -22,6 +22,7 @@ namespace sa {
 		virtual bool onCompile(ByteStream& dataOutStream, AssetWriteFlags flags) override;
 		virtual bool onUnload() override;
 
+		TextureAsset* clone(const std::string& name, const std::filesystem::path& assetDir = "") const override;
 
 		const Texture& getTexture() const;
 

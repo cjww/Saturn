@@ -86,6 +86,20 @@ namespace sa {
         return true;
     }
 
+    TextureAsset* TextureAsset::clone(const std::string& name, const std::filesystem::path& assetDir) const {
+        TextureAsset* clone = sa::AssetManager::Get().createAsset<TextureAsset>(name, assetDir);
+        if (!m_dataBuffer.empty()) {
+            Image img(m_dataBuffer.data(), m_dataBuffer.size());
+            clone->m_texture.create2D(img, true);
+            clone->m_dataBuffer = m_dataBuffer;
+        }
+        else {
+            Image img(getAssetPath().generic_string().c_str());
+            clone->m_texture.create2D(img, true);
+        }
+        return clone;
+    }
+
     const Texture& TextureAsset::getTexture() const {
         return m_texture;
     }

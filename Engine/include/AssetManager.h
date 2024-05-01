@@ -94,10 +94,10 @@ namespace sa {
 	
 		static AssetManager& Get();
 		
-		static bool IsMetaAsset(const std::filesystem::directory_entry& entry);
-		static bool IsCompiledAsset(const std::filesystem::directory_entry& entry);
-		static bool IsAssetSource(const std::filesystem::directory_entry& entry);
-		static bool IsAssetPackage(const std::filesystem::directory_entry& entry);
+		static bool IsMetaAsset(const std::filesystem::path& entry);
+		static bool IsCompiledAsset(const std::filesystem::path& path);
+		static bool IsAssetSource(const std::filesystem::path& entry);
+		static bool IsAssetPackage(const std::filesystem::path& entry);
 
 		AssetTypeID getAssetTypeByFile(const std::filesystem::path& path) const;
 		
@@ -175,7 +175,7 @@ namespace sa {
 		bool deleteAsset(Asset* asset);
 		bool deleteAsset(UUID id);
 
-
+		Asset* cloneAsset(UUID id, const std::filesystem::path& assetPath);
 	};
 
 	template <typename T>

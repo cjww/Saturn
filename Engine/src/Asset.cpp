@@ -82,8 +82,9 @@ namespace sa {
 			simdjson::ondemand::parser parser;
 			auto doc = parser.iterate(jsonStr);
 			simdjson::ondemand::object object = doc.get_object();
-			m_header.id = object["id"].get_uint64().take_value();
-			m_header.type = object["type"].get_uint64().take_value();
+			
+			//m_header.id = object["id"].get_uint64().take_value();
+			//m_header.type = object["type"].get_uint64().take_value();
 			JsonObject jsonObject;
 
 			const bool success = onLoad(jsonObject, flags);
@@ -318,6 +319,10 @@ namespace sa {
 		return m_isLoaded;
 	}
 
+	bool Asset::isCompiled() const {
+		return m_isCompiled;
+	}
+
 	const ProgressView<bool>& Asset::getProgress() const {
 		return m_progress;
 	}
@@ -342,6 +347,11 @@ namespace sa {
 		m_assetPath = assetPath;
 		if(!isFromPackage())
 			m_name = m_assetPath.filename().replace_extension().generic_string();
+	}
+
+	std::filesystem::path Asset::getMetaFilePath() const {
+		std::filesystem::path path = m_assetPath;
+		return std::move(path.replace_extension(SA_META_ASSET_EXTENSION));
 	}
 
 	void Asset::setHeader(const AssetHeader& header) {
