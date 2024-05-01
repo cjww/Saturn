@@ -29,7 +29,7 @@ namespace sa {
 
 		comp::Model* model = entity.addComponent<comp::Model>();
 
-		m_completions.insert({ entity, sa::AssetManager::Get().importAsset<ModelAsset>(modelPath) });
+		m_completions.insert({ entity, static_cast<ModelAsset*>(sa::AssetManager::Get().findAssetByPath(modelPath))});
 		
 		//m_completions.at(entity).wait();
 

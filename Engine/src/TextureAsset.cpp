@@ -7,33 +7,6 @@
 
 namespace sa {
 
-    bool TextureAsset::onImport(const std::filesystem::path& path) {
-        try {
-            std::ifstream file(path, std::ios::binary | std::ios::ate);
-            if (!file.good()) {
-                return false;
-            }
-            int size = file.tellg();
-            m_dataBuffer.resize(size);
-            file.seekg(0);
-            file.read((char*)m_dataBuffer.data(), size);
-
-            file.close();
-
-            Image img(m_dataBuffer.data(), m_dataBuffer.size());
-            m_texture.create2D(img, true);
-
-            AssetHeader header = getHeader();
-            header.size = m_dataBuffer.size();
-            setHeader(header);
-        }
-        catch (const std::exception& e) {
-            SA_DEBUG_LOG_ERROR(e.what());
-            return false;
-        }
-        return true;
-    }
-
     bool TextureAsset::onLoad(JsonObject& metaData, AssetLoadFlags flags) {
         setCompletionCount(2);
         

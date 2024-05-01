@@ -61,8 +61,6 @@ namespace sa {
 
 		std::unordered_map<ResourceID, Texture*> m_textures;
 
-		std::unordered_map<UUID, std::filesystem::path> m_importedAssets;
-
 		std::unordered_map<UUID, std::unique_ptr<Asset>> m_assets;
 
 		AssetTypeID m_nextTypeID;
@@ -147,13 +145,6 @@ namespace sa {
 		T* findAssetByPath(const std::filesystem::path& path) const;
 		Asset* findAssetByPath(const std::filesystem::path& path) const;
 
-
-		template<typename T>
-		T* importAsset(const std::filesystem::path& path, const std::filesystem::path& assetDirectory = SA_ASSET_DIR);
-
-		bool wasImported(Asset* pAsset) const;
-		void reimportAsset(Asset* pAsset);
-
 		void createCompiled(bool createCompiled);
 
 		template<typename T>
@@ -164,8 +155,6 @@ namespace sa {
 
 		Asset* createAsset(AssetTypeID type, const std::string& name, const std::filesystem::path& assetDirectory = SA_ASSET_DIR);
 		Asset* createAssetConcurrent(AssetTypeID type, const std::string& name, const std::filesystem::path& assetDirectory = SA_ASSET_DIR);
-
-		Asset* importAsset(AssetTypeID type, const std::filesystem::path& path, const std::filesystem::path& assetDirectory = SA_ASSET_DIR);
 
 		void makeAssetPackage(const std::vector<UUID>& assets, const std::filesystem::path& packagePath);
 
@@ -245,13 +234,6 @@ namespace sa {
 		return dynamic_cast<T*>(findAssetByPath(path));
 	}
 
-	template<typename T>
-	inline T* AssetManager::importAsset(const std::filesystem::path& path, const std::filesystem::path& assetDirectory) {
-		if (Asset* pAsset = importAsset(getAssetTypeID<T>(), path, assetDirectory))
-			return static_cast<T*>(pAsset);
-		return nullptr;
-	}
-	
 	template<typename T>
 	inline T* AssetManager::createAsset(const std::string& name, const std::filesystem::path& assetDirectory) {
 		Asset* asset = createAsset(getAssetTypeID<T>(), name, assetDirectory);

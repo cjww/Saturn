@@ -452,57 +452,9 @@ namespace sa {
 		return nullptr;
 	}
 
-	bool AssetManager::wasImported(Asset* pAsset) const {
-		return m_importedAssets.count(pAsset->getID());
-	}
-
-	void AssetManager::reimportAsset(Asset* pAsset) {
-		m_mutex.lock();
-		if (!m_importedAssets.count(pAsset->getID())) {
-			SA_DEBUG_LOG_WARNING("Asset was never imported: ", pAsset->getName());
-			m_mutex.unlock();
-			return;
-		}
-		auto& path = m_importedAssets.at(pAsset->getID());
-		m_mutex.unlock();
-
-		if (!pAsset->importFromFile(path, pAsset->getAssetPath().parent_path())) {
-
-		}
-
-	}
-
 	void AssetManager::createCompiled(bool createCompiled) {
 		m_createCompiled = createCompiled;
 	}
-
-	Asset* AssetManager::importAsset(AssetTypeID type, const std::filesystem::path& path, const std::filesystem::path& assetDirectory) {
-		throw "Unimplemented";
-		SA_DEBUG_LOG_INFO("Importing ", getAssetTypeName(type), " ", path);
-
-		AssetHeader header; // generates new UUID
-		header.type = type;
-		assert(header.type != -1 && "Can not use unregistered type!");
-		Asset* asset;
-		{
-			std::lock_guard<std::mutex> lock(m_mutex);
-			
-			m_importedAssets[header.id] = path;
-			//asset = m_assetAddConversions[type](header);
-		}
-
-		if (!asset->importFromFile(path, assetDirectory)) {
-			std::lock_guard<std::mutex> lock(m_mutex);
-			removeAsset(asset);
-			return nullptr;
-		}
-		SA_DEBUG_LOG_INFO("Finished Importing ", getAssetTypeName(type), " ", path);
-
-		asset->write();
-
-		return asset;
-	}
-
 
 	Asset* AssetManager::createAsset(AssetTypeID type, const std::string& name, const std::filesystem::path& assetDirectory) {
 		SA_DEBUG_LOG_INFO("Creating ", getAssetTypeName(type), " ", name);
@@ -604,7 +556,6 @@ namespace sa {
 
 	void AssetManager::removeAsset(UUID id) {
 		m_assets.erase(id);
-		m_importedAssets.erase(id);
 	}
 
 	bool AssetManager::deleteAsset(Asset* asset) {

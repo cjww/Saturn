@@ -16,6 +16,7 @@
 void DirectoryView::onDraggedDropped(const sa::editor_event::DragDropped& e) {
 	for (uint32_t i = 0; i < e.count; i++) {
 		std::filesystem::path path = e.paths[i];
+		/*
 		std::string extension = path.extension().generic_string();
 		if (sa::ModelAsset::IsExtensionSupported(extension)) {
 			sa::AssetManager::Get().importAsset<sa::ModelAsset>(path, m_openDirectory);
@@ -26,6 +27,7 @@ void DirectoryView::onDraggedDropped(const sa::editor_event::DragDropped& e) {
 			continue;
 
 		SA_DEBUG_LOG_WARNING("Could not import: Unsupported extension ", extension);
+		*/
 	}
 }
 
@@ -322,12 +324,6 @@ void DirectoryView::makeAssetPropertiesWindows() {
 				if (ImGui::Button("Revert")) {
 					pAsset->load();
 				}
-				if (sa::AssetManager::Get().wasImported(pAsset)) {
-					ImGui::SameLine();
-					if (ImGui::Button("Reimport")) {
-						sa::AssetManager::Get().reimportAsset(pAsset);
-					}
-				}
 			}
 		}
 		ImGui::End();
@@ -339,16 +335,6 @@ void DirectoryView::makeAssetWindow() {
 	if (!m_isAssetListOpen)
 		return;
 	if (ImGui::Begin("Assets", &m_isAssetListOpen)) {
-		{
-			static std::string path;
-			ImGui::InputText("Path", &path);
-
-			if (ImGui::Button("Import")) {
-				sa::AssetManager::Get().importAsset<sa::ModelAsset>(path);
-			}
-		}
-
-		ImGui::Separator();
 
 		auto& assets = sa::AssetManager::Get().getAssets();
 		static sa::Asset* selected = nullptr;

@@ -129,23 +129,26 @@ namespace sa {
 					filename = std::string(pAiTex->mFilename.data); // read from file anyway
 				}
 			}
+			/*
 			std::filesystem::path finalPath;
 			if (!searchForFile(directory, filename, finalPath)) {
 				SA_DEBUG_LOG_ERROR("File not found: ", filename);
 				continue;
 			}
+			*/
 
-			TextureAsset* tex = AssetManager::Get().importAsset<TextureAsset>(finalPath, textureDir);
+			//TextureAsset* tex = AssetManager::Get().<TextureAsset>(finalPath, textureDir);
+			Asset* tex = AssetManager::Get().findAssetByPath(directory / filename);
 			if (!tex) {
-				SA_DEBUG_LOG_ERROR("Failed to create texture, ", finalPath.generic_string());
+				SA_DEBUG_LOG_ERROR("Failed to find texture, ", filename.generic_string());
 				continue;
 			}
 
-			textures[i].textureAssetID = tex->getHeader().id;
+			textures[i].textureAssetID = tex->getID();
 			textures[i].blendFactor = blending;
 			textures[i].blendOp = (TextureBlendOp)op;
 
-			SA_DEBUG_LOG_INFO("Loaded texture: ", finalPath.filename(), ", type:", sa::to_string((MaterialTextureType)type), ", Material: ", &pAiMaterial);
+			SA_DEBUG_LOG_INFO("Loaded texture: ", filename.filename(), ", type:", sa::to_string((MaterialTextureType)type), ", Material: ", &pAiMaterial);
 		}
 
 		material.setTextures(textures, (MaterialTextureType)type);
@@ -195,22 +198,6 @@ namespace sa {
 		// Materials
 		SA_DEBUG_LOG_INFO("Material Count:", scene->mNumMaterials);
 
-		/*
-		if (scene->mNumMaterials > 0 || scene->mNumTextures > 0) {
-			auto filename = getAssetPath().filename();
-			auto dirname = getAssetPath().parent_path() / filename;
-			dirname.replace_extension();
-
-			std::filesystem::create_directory(dirname);
-			setAssetPath(dirname / filename);
-		}
-
-		std::filesystem::create_directory(materialDir);
-		
-
-		std::filesystem::create_directory(textureDir);
-		*/
-		
 		std::vector<Material*> materials(scene->mNumMaterials);
 		auto materialDir = getAssetPath().parent_path();
 		auto textureDir = getAssetPath().parent_path();
@@ -223,7 +210,7 @@ namespace sa {
 			SA_DEBUG_LOG_INFO("Load material: ", path.generic_string(), " - ", aMaterial->GetName().C_Str());
 			std::string name = getName() + "-" + std::string(aMaterial->GetName().C_Str());
 			
-			Material* pMaterial = AssetManager::Get().createAsset<Material>(name, "");
+			Material* pMaterial = AssetManager::Get().createAssetConcurrent<Material>(name, "");
 			
 			// Base Color
 			pMaterial->values.albedoColor = getColor(aMaterial, AI_MATKEY_BASE_COLOR);
@@ -265,13 +252,6 @@ namespace sa {
 	bool ModelAsset::IsExtensionSupported(const std::string& extension) {
 		Assimp::Importer importer;
 		return importer.IsExtensionSupported(extension);
-	}
-
-	bool ModelAsset::onImport(const std::filesystem::path& path) {
-		sa::Clock clock;
-		bool sucess = loadAssimpModel(path);
-		SA_DEBUG_LOG_INFO("Finished importing ", path, ": ", clock.getElapsedTime<std::chrono::milliseconds>(), "ms");
-		return sucess;
 	}
 
 	bool ModelAsset::onLoad(JsonObject& metaData, AssetLoadFlags flags) {

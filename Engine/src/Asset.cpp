@@ -166,23 +166,6 @@ namespace sa {
 		m_isLoaded = true;
 	}
 
-	bool Asset::importFromFile(const std::filesystem::path& path, const std::filesystem::path& assetDirectory) {
-		m_name = path.stem().generic_string();
-
-		m_assetPath.clear();
-		if (!assetDirectory.empty()) {	
-			auto filename = path.filename().replace_extension(".asset");
-			m_assetPath = assetDirectory / filename; // The path the asset will write to
-		}
-
-		if (!std::filesystem::exists(path)) {
-			SA_DEBUG_LOG_ERROR("File path does not exist ", path);
-			return false;
-		}
-		m_isLoaded = onImport(path);
-		return m_isLoaded;
-	}
-
 	bool Asset::hold() {
 		if (++m_refCount == 1) {
 			return load();

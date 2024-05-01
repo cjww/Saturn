@@ -13,8 +13,6 @@ namespace sa {
 	public:
 		using Asset::Asset;
 		
-		virtual bool onImport(const std::filesystem::path& path) override;
-
 		virtual bool onLoad(JsonObject& metaData, AssetLoadFlags flags) override;
 		virtual bool onLoadCompiled(ByteStream& dataInStream, AssetLoadFlags flags) override;
 
