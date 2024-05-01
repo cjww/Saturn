@@ -559,7 +559,7 @@ namespace ImGui {
 				am.getAssetTypeID<sa::Scene>(),
 				{
 					.inCreateMenu = true,
-					.icon = LoadEditorIcon("resources/file-white.png"),
+					.icon = LoadEditorIcon("resources/scene-white.png"),
 					.imGuiPropertiesFn = [](sa::Asset* pAsset) {
 						return false;
 					}
