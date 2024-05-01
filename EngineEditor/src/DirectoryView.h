@@ -24,6 +24,9 @@ private:
 		sa::UUID assetID = 0;
 		sa::AssetTypeID assetType = ~0u;
 
+		glm::vec2 boundsMin;
+		glm::vec2 boundsMax;
+
 		bool operator<(const FileEntry& other) const { return path < other.path; }
 		bool operator==(const FileEntry& other) const { return path == other.path; }
 
@@ -42,6 +45,8 @@ private:
 	FileEntrySet m_selectedItems;
 	FileEntrySet m_clipboard;
 	
+	ImVec2 m_mousePosStart;
+	bool m_wasMouseDown;
 
 	void onDraggedDropped(const sa::editor_event::DragDropped& e);
 	void onProjectOpened(const sa::editor_event::ProjectOpened& e);
@@ -54,11 +59,16 @@ private:
 	bool makeDirectoryBackButton();
 	bool makeDirectoryDragDropTarget(const std::filesystem::path& path);
 
-	bool makePopupContextWindow();
+	bool makeContextMenu();
+	bool makeContextMenuShortcuts();
+
 
 	bool beginDirectoryView(const char* str_id, const ImVec2& size = ImVec2(0, 0));
 	void endDirectoryView();
-	bool directoryEntry(const FileEntry& file, bool& wasChanged);
+	bool directoryEntry(const FileEntry& file, bool& isBeingDragged);
+
+	bool makeMouseDragSelection(ImVec2& outMin, ImVec2& outMax);
+	void renderSelectionRect(const ImVec2& min, const ImVec2& max);
 
 	FileEntry& addFileEntry(const std::filesystem::path& path);
 	FileEntry& addFileEntry(const sa::Asset* pAsset);

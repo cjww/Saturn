@@ -37,7 +37,7 @@ void DirectoryView::onProjectOpened(const sa::editor_event::ProjectOpened& e) {
 void DirectoryView::updateDirectoryEntries() {
 	m_currentFileEntries.clear();
 	for (const auto& entry : std::filesystem::directory_iterator(m_openDirectory)) {
-		addFileEntry(entry);
+		addFileEntry(std::filesystem::proximate(entry.path()));
 	}
 }
 
@@ -59,13 +59,13 @@ DirectoryView::FileEntry& DirectoryView::addFileEntry(const std::filesystem::pat
 	return m_currentFileEntries.emplace_back(file);
 }
 
-DirectoryView::FileEntry& DirectoryView::addFileEntry(const sa::Asset * pAsset) {
+DirectoryView::FileEntry& DirectoryView::addFileEntry(const sa::Asset* pAsset) {
 	FileEntry file = {};
 	file.path = pAsset->getAssetPath();
 	file.assetType = pAsset->getType();
 	file.assetID = pAsset->getID();
 	file.icon = ImGui::GetAssetInfo(pAsset->getType()).icon;
-	
+
 	return m_currentFileEntries.emplace_back(file);
 }
 
@@ -137,6 +137,12 @@ uint32_t DirectoryView::deleteItems(const FileEntrySet& items) {
 
 		try {
 			if (std::filesystem::is_directory(entry.path)) {
+				if (!std::filesystem::is_empty(entry.path)) {
+					auto msg = L"The directory " + entry.path.wstring() + L" is not empty.\nRemove directory and all contents?";
+					if(!sa::FileDialogs::YesNoWindow(L"Non empty directory", msg.c_str())) {
+						continue;
+					}
+				}
 				std::filesystem::remove_all(entry.path);
 			}
 			else {
@@ -496,40 +502,7 @@ bool DirectoryView::beginDirectoryView(const char* str_id, const ImVec2& size) {
 		ImGui::InputInt("selected items", &size);
 
 	}
-	ImGui::EndMenuBar();
-
-	makePopupContextWindow();
-	/*
-	if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
-		if (!ImGui::IsKeyDown(ImGuiKey_LeftShift) && !ImGui::IsKeyDown(ImGuiKey_RightShift))
-			m_selectedItems.clear();
-	}
-	*/
-	if (ImGui::IsKeyPressed(ImGuiKey_F2) && m_lastSelected) {
-		m_editedFile = m_lastSelected;
-		m_editingName = m_lastSelected.path.stem().generic_string();
-	}
-
-	if (ImGui::IsKeyPressed(ImGuiKey_Delete)) {
-		if (deleteItems(m_selectedItems) > 0) {
-			m_selectedItems.clear();
-			m_lastSelected = {};
-		}
-	}
-
-	if (ImGui::IsKeyPressed(ImGuiKey_C) && ImGui::IsKeyDown(ImGuiKey_LeftCtrl)) {
-		copyItems(m_selectedItems);
-	}
-
-	if (ImGui::IsKeyPressed(ImGuiKey_V) && ImGui::IsKeyDown(ImGuiKey_LeftCtrl)) {
-		if (!m_clipboard.empty()) {
-			if (pasteItems(m_openDirectory) > 0) {
-				m_selectedItems.clear();
-				m_lastSelected = {};
-			}
-		}
-	}
-	
+	ImGui::EndMenuBar();	
 	return true;
 }
 
@@ -563,9 +536,10 @@ DirectoryView::DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor)
 	m_iconSize = 45;
 }
 
-bool DirectoryView::makePopupContextWindow() {
+bool DirectoryView::makeContextMenu() {
+	bool inContextMenu = ImGui::BeginPopupContextWindow();
 	//Input Events
-	if (ImGui::BeginPopupContextWindow()) {
+	if (inContextMenu) {
 		
 		if (ImGui::BeginMenu("Create...")) {
 			if (ImGui::MenuItem("Folder")) {
@@ -662,8 +636,37 @@ bool DirectoryView::makePopupContextWindow() {
 
 		ImGui::EndPopup();
 	}
+	return inContextMenu;
+}
+
+bool DirectoryView::makeContextMenuShortcuts() {
+	if (ImGui::IsKeyPressed(ImGuiKey_F2) && m_lastSelected) {
+		m_editedFile = m_lastSelected;
+		m_editingName = m_lastSelected.path.stem().generic_string();
+	}
+
+	if (ImGui::IsKeyPressed(ImGuiKey_Delete)) {
+		if (deleteItems(m_selectedItems) > 0) {
+			m_selectedItems.clear();
+			m_lastSelected = {};
+		}
+	}
+
+	if (ImGui::IsKeyPressed(ImGuiKey_C) && ImGui::IsKeyDown(ImGuiKey_LeftCtrl)) {
+		copyItems(m_selectedItems);
+	}
+
+	if (ImGui::IsKeyPressed(ImGuiKey_V) && ImGui::IsKeyDown(ImGuiKey_LeftCtrl)) {
+		if (!m_clipboard.empty()) {
+			if (pasteItems(m_openDirectory) > 0) {
+				m_selectedItems.clear();
+				m_lastSelected = {};
+			}
+		}
+	}
 	return true;
 }
+
 
 void DirectoryView::onImGui() {
 	SA_PROFILE_FUNCTION();
@@ -684,33 +687,48 @@ void DirectoryView::onImGui() {
 			ImGui::EndMenuBar();
 		}
 
-
-		bool wasChanged = false;
-
+		
+		// Icon View Area
 		if (beginDirectoryView("Explorer")) {
 			SA_PROFILE_SCOPE("Explorer");
-			// Icon View Area
-			ImVec2 iconSizeVec((float)m_iconSize, (float)m_iconSize);
-			for (const auto& file : m_currentFileEntries) {
+			
+			bool inContextMenu = makeContextMenu();
+			makeContextMenuShortcuts();
 
-				directoryEntry(file, wasChanged);
+
+			ImVec2 iconSizeVec((float)m_iconSize, (float)m_iconSize);
+			
+			ImRect selectionRect = {};
+			bool isSelecting = makeMouseDragSelection(selectionRect.Min, selectionRect.Max);
+			bool isAItemHovered = false;
+			for (auto& file : m_currentFileEntries) {
+
+				bool isBeingDragged = false;
+				directoryEntry(file, isBeingDragged);
+				file.boundsMin = glm::vec2(ImGui::GetItemRectMin().x, ImGui::GetItemRectMin().y);
+				file.boundsMax = glm::vec2(ImGui::GetItemRectMax().x, ImGui::GetItemRectMax().y);
+				if (isBeingDragged)
+					isSelecting = false;
 				
-				if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenOverlapped) && ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
-					if (file.isDirectory) {
-						m_selectedItems.clear();
-						m_lastSelected = {};
-						setOpenDirectory(file.path);
-						break;
-					}
-					if (file.assetType != -1) {
-						sa::Asset* pAsset = sa::AssetManager::Get().getAsset(file.assetID);
-						if (pAsset) {
-							if (sa::AssetManager::Get().isType<sa::Scene>(pAsset)) {
-								m_pEngine->setScene(pAsset->cast<sa::Scene>());
-							}
-							else {
-								if (m_openAssetProperties.insert(pAsset).second)
-									pAsset->hold();
+				if (ImGui::IsItemHovered(ImGuiHoveredFlags_AllowWhenOverlapped)) {
+					isAItemHovered = true;
+					if (ImGui::IsMouseDoubleClicked(ImGuiMouseButton_Left)) {
+						if (file.isDirectory) {
+							m_selectedItems.clear();
+							m_lastSelected = {};
+							setOpenDirectory(file.path);
+							break;
+						}
+						if (file.assetType != -1) {
+							sa::Asset* pAsset = sa::AssetManager::Get().getAsset(file.assetID);
+							if (pAsset) {
+								if (sa::AssetManager::Get().isType<sa::Scene>(pAsset)) {
+									m_pEngine->setScene(pAsset->cast<sa::Scene>());
+								}
+								else {
+									if (m_openAssetProperties.insert(pAsset).second)
+										pAsset->hold();
+								}
 							}
 						}
 					}
@@ -723,19 +741,39 @@ void DirectoryView::onImGui() {
 				}
 			}
 
+			if (!inContextMenu && !isAItemHovered) {
+				if (ImGui::IsMouseClicked(ImGuiMouseButton_Left)) {
+					if (!ImGui::IsKeyDown(ImGuiKey_LeftShift) && !ImGui::IsKeyDown(ImGuiKey_RightShift)) {
+						m_selectedItems.clear();
+						m_lastSelected = {};
+					}
+				}
+			}
+
+			if (isSelecting) {
+				m_lastSelected = {};
+				for (const auto& file : m_currentFileEntries) {
+					//if intersecting with selection rect
+					ImRect itemRect = ImRect(file.boundsMin.x, file.boundsMin.y, file.boundsMax.x, file.boundsMax.y);
+					if (selectionRect.Overlaps(itemRect)) {
+						m_selectedItems.insert(file);
+						m_lastSelected = file;
+					}
+					else {
+						m_selectedItems.erase(file);
+					}
+				}
+				renderSelectionRect(selectionRect.Min, selectionRect.Max);
+			}
+
 			endDirectoryView();
 		}
-
-		if (wasChanged) {
-			sa::AssetManager::Get().rescanAssets();
-		}
-
 	}
 	ImGui::End();
 
 }
 
-bool DirectoryView::directoryEntry(const FileEntry& file, bool& wasChanged) {
+bool DirectoryView::directoryEntry(const FileEntry& file, bool& isBeingDragged) {
 	// Check if selected
 	bool selected = m_selectedItems.count(file);
 	ImVec2 iconSizeVec = ImVec2(m_iconSize, m_iconSize);
@@ -767,11 +805,16 @@ bool DirectoryView::directoryEntry(const FileEntry& file, bool& wasChanged) {
 	}
 	// Drag drop source
 	if (ImGui::BeginDragDropSource()) {
-		m_selectedItems.insert(file);
+		isBeingDragged = true;
+		if (!m_selectedItems.contains(file)) {
+			m_selectedItems.clear();
+			m_selectedItems.insert(file);
+			m_lastSelected = file;
+		}
 		ImGui::SetDragDropPayload("Path", &m_selectedItems, sizeof(m_selectedItems));
-		ImGui::Image(file.icon, iconSizeVec);
-		ImGui::SameLine();
+		ImGui::Image(m_lastSelected.icon, iconSizeVec);
 		for (auto& entry : m_selectedItems) {
+			ImGui::SameLine();
 			ImGui::Text("%s", entry.path.filename().generic_string().c_str());
 		}
 		ImGui::EndDragDropSource();
@@ -825,6 +868,32 @@ bool DirectoryView::directoryEntry(const FileEntry& file, bool& wasChanged) {
 	ImGui::PopStyleColor(popCount);
 
 	return false;
+}
+
+bool DirectoryView::makeMouseDragSelection(ImVec2& outMin, ImVec2& outMax) {
+	bool isDragging = ImGui::IsMouseDragging(ImGuiMouseButton_Left);
+	if (isDragging) {
+		if (!m_wasMouseDown) {
+			m_wasMouseDown = true;
+			m_mousePosStart = ImGui::GetMousePos();
+		}
+		ImVec2 currentPos = ImGui::GetMousePos();
+
+		outMin = ImVec2(std::min(currentPos.x, m_mousePosStart.x), std::min(currentPos.y, m_mousePosStart.y));
+		outMax = ImVec2(std::max(currentPos.x, m_mousePosStart.x), std::max(currentPos.y, m_mousePosStart.y));
+
+	}
+	else {
+		m_wasMouseDown = false;
+	}
+	return isDragging;
+}
+
+void DirectoryView::renderSelectionRect(const ImVec2& min, const ImVec2& max) {
+	ImColor color = ImGui::GetStyleColorVec4(ImGuiCol_NavHighlight);
+	ImGui::GetWindowDrawList()->AddRect(min, max, color);
+	color.Value.w = 0.5f;
+	ImGui::GetWindowDrawList()->AddRectFilled(min, max, color);
 }
 
 void DirectoryView::update(float dt) {
