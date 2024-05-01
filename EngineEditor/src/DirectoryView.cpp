@@ -37,6 +37,9 @@ void DirectoryView::onProjectOpened(const sa::editor_event::ProjectOpened& e) {
 void DirectoryView::updateDirectoryEntries() {
 	m_currentFileEntries.clear();
 	for (const auto& entry : std::filesystem::directory_iterator(m_openDirectory)) {
+		if (entry.path().extension() == SA_META_ASSET_EXTENSION) {
+			continue; // Hide meta files
+		}
 		addFileEntry(std::filesystem::proximate(entry.path()));
 	}
 }
@@ -485,22 +488,20 @@ bool DirectoryView::beginDirectoryView(const char* str_id, const ImVec2& size) {
 		if (!std::filesystem::equivalent(m_openDirectory, SA_ASSET_DIR)) {
 			makeDirectoryBackButton();
 			makeDirectoryDragDropTarget(m_openDirectory.parent_path());
-			ImGui::SameLine();
+		
 		}
 
-		ImGui::Text(m_openDirectory.generic_string().c_str());
-		ImGui::SameLine();
-
-		ImGui::SetNextItemWidth(200);
-		ImGui::SliderInt("Icon size", &m_iconSize, 20, 200);
-
-		if(ImGui::SmallButton("Refresh")) {
+		ImGui::Text(std::filesystem::absolute(m_openDirectory).generic_string().c_str());
+		
+		float size = ImGui::GetCurrentWindow()->MenuBarHeight();
+		if (ImGui::ImageButtonTinted(m_refreshButton, ImVec2(size, size))) {
 			updateDirectoryEntries();
 			sa::AssetManager::Get().rescanAssets();
 		}
-		int size = m_selectedItems.size();
-		ImGui::InputInt("selected items", &size);
 
+		ImGui::SetNextItemWidth(200);
+		ImGui::SliderInt("Icon size", &m_iconSize, 20, 200);
+		
 	}
 	ImGui::EndMenuBar();	
 	return true;
@@ -529,6 +530,10 @@ DirectoryView::DirectoryView(sa::Engine* pEngine, sa::EngineEditor* pEditor)
 	m_luaScriptIcon.create2D(
 		sa::Image(m_pEditor->MakeEditorRelative("resources/lua_file-white.png").generic_string()),
 		true);
+	m_refreshButton.create2D(
+		sa::Image(m_pEditor->MakeEditorRelative("resources/refresh_button-white.png").generic_string()),
+		false);
+
 
 
 	m_openDirectory = std::filesystem::current_path();
@@ -874,6 +879,9 @@ bool DirectoryView::makeMouseDragSelection(ImVec2& outMin, ImVec2& outMax) {
 	bool isDragging = ImGui::IsMouseDragging(ImGuiMouseButton_Left);
 	if (isDragging) {
 		if (!m_wasMouseDown) {
+			if (!ImGui::IsWindowHovered()) {
+				return false;
+			}
 			m_wasMouseDown = true;
 			m_mousePosStart = ImGui::GetMousePos();
 		}

@@ -8,6 +8,7 @@ private:
 	sa::Texture m_directoryIcon;
 	sa::Texture m_otherFileIcon;
 	sa::Texture m_luaScriptIcon;
+	sa::Texture m_refreshButton;
 
 	std::unordered_set<sa::Asset*> m_openAssetProperties;
 
