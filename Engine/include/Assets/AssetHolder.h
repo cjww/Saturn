@@ -213,7 +213,7 @@ namespace sa {
 	template <typename T>
 	const char* AssetHolder<T>::getName() const {
 		if (m_pAsset)
-			return m_pAsset->getName();
+			return m_pAsset->getName().c_str();
 		return "None";
 	}
 

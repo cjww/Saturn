@@ -116,7 +116,10 @@ uint32_t DirectoryView::pasteItems(const std::filesystem::path& targetDirectory)
 					}
 				}
 				std::filesystem::copy(entry.path, newPath, std::filesystem::copy_options::overwrite_existing);
-
+				if (entry.isDirectory) {
+					updateDirectoryEntries();
+					sa::AssetManager::Get().rescanAssets();
+				}
 				SA_DEBUG_LOG_INFO("Pasted ", entry.path, " to ", targetDirectory);
 				itemsSuccess++;
 			}
@@ -154,6 +157,10 @@ uint32_t DirectoryView::deleteItems(const FileEntrySet& items) {
 				std::filesystem::remove(entry.path);
 			}
 			success++;
+			if (entry.isDirectory) {
+				updateDirectoryEntries();
+				sa::AssetManager::Get().rescanAssets();
+			}
 
 			SA_DEBUG_LOG_INFO("Deleted ", entry.path);
 		}
@@ -183,6 +190,11 @@ bool DirectoryView::moveItem(const FileEntry& item, const std::filesystem::path&
 			wasChanged = moveAsset(pAsset, targetDirectory);
 		}
 		
+		if (item.isDirectory) {
+			updateDirectoryEntries();
+			sa::AssetManager::Get().rescanAssets();
+		}
+
 		SA_DEBUG_LOG_INFO("Moved ", item.path.filename(), " to ", targetDirectory);
 	}
 	catch (const std::filesystem::filesystem_error& e) {
@@ -216,6 +228,11 @@ bool DirectoryView::renameItem(const FileEntry& item, const std::filesystem::pat
 			sa::Asset* pAsset = sa::AssetManager::Get().getAsset(item.assetID);
 			wasChanged = renameAsset(pAsset, name);
 		}
+		else if (item.isDirectory) {
+			updateDirectoryEntries();
+			sa::AssetManager::Get().rescanAssets();
+		}
+
 	}
 	catch (const std::filesystem::filesystem_error& e) {
 		SA_DEBUG_LOG_ERROR(e.what(), ": ", e.path1(), " ", e.path2());
@@ -355,6 +372,11 @@ void DirectoryView::makeAssetWindow() {
 			if (m_openAssetProperties.insert(selected).second)
 				selected->hold();
 		}
+		ImGui::SameLine();
+		if (ImGui::Button("Clone") && selected) {
+			selected->clone(selected->getName() + " - Clone");
+		}
+
 
 
 		if (selected && selected->isLoaded()) {

@@ -60,8 +60,54 @@ namespace sa {
 		};
 	}
 
-	void Material::setTextures(const std::vector<BlendedTexture>& textures, MaterialTextureType type, uint32_t& count) {
-		count = std::min((uint32_t)textures.size(), MAX_TEXTURE_MAP_COUNT);
+
+
+	bool Material::fetchTextures(MaterialTextureType type) {
+		bool allLoaded = true;
+		for (const auto& texture : m_textures[type]) {
+			TextureAsset* asset = texture.getAsset();
+			if (asset && asset->getTexture().isValid()) {
+				m_allTextures.push_back(asset->getTexture());
+			}
+			else {
+				m_allTextures.push_back(*AssetManager::Get().loadDefaultTexture());
+				allLoaded = false;
+			}
+		}
+
+		return allLoaded;
+	}
+
+	Material::Material(const AssetHeader& header, bool isCompiled)
+		: Asset(header, isCompiled)
+	{
+		twoSided = false;
+		m_allTexturesLoaded = false;
+	}
+
+	void Material::update() {
+		values.albedoMapCount = m_textures[MaterialTextureType::BASE_COLOR].size();
+		values.albedoMapFirst = 0;
+
+		values.normalMapCount = m_textures[MaterialTextureType::NORMAL_CAMERA].size();
+		values.normalMapFirst = values.albedoMapCount;
+
+		values.metalnessMapCount = m_textures[MaterialTextureType::METALNESS].size();
+		values.metalnessMapFirst = values.normalMapFirst + values.normalMapCount;
+
+		values.roughnessMapCount = m_textures[MaterialTextureType::DIFFUSE_ROUGHNESS].size();
+		values.roughnessMapFirst = values.metalnessMapFirst + values.metalnessMapCount;
+
+		values.emissiveMapCount = m_textures[MaterialTextureType::EMISSIVE].size();
+		values.emissiveMapFirst = values.roughnessMapFirst + values.roughnessMapCount;
+
+		values.occlusionMapCount = m_textures[MaterialTextureType::AMBIENT_OCCLUSION].size();
+		values.occlusionMapFirst = values.emissiveMapFirst + values.emissiveMapCount;
+		m_allTexturesLoaded = false;
+	}
+
+	void Material::setTextures(const std::vector<BlendedTexture>& textures, MaterialTextureType type) {
+		uint32_t count = std::min((uint32_t)textures.size(), MAX_TEXTURE_MAP_COUNT);
 		if (count == 0)
 			return;
 
@@ -78,46 +124,17 @@ namespace sa {
 		}
 	}
 
-	Material::Material(const AssetHeader& header, bool isCompiled)
-		: Asset(header, isCompiled)
-	{
-		twoSided = false;
-		m_allTexturesLoaded = false;
-	}
-
-	void Material::update() {
-		values.albedoMapCount = m_textures[MaterialTextureType::BASE_COLOR].size();
-		values.albedoMapFirst = 0;
-		
-		values.normalMapCount = m_textures[MaterialTextureType::NORMAL_CAMERA].size();
-		values.normalMapFirst = values.albedoMapCount;
-		
-		values.metalnessMapCount = m_textures[MaterialTextureType::METALNESS].size();
-		values.metalnessMapFirst = values.normalMapFirst + values.normalMapCount;
-
-		values.roughnessMapCount = m_textures[MaterialTextureType::DIFFUSE_ROUGHNESS].size();
-		values.roughnessMapFirst = values.metalnessMapFirst + values.metalnessMapCount;
-
-		values.emissiveMapCount = m_textures[MaterialTextureType::EMISSION_COLOR].size();
-		values.emissiveMapFirst = values.roughnessMapFirst + values.roughnessMapCount;
-
-		values.occlusionMapCount = m_textures[MaterialTextureType::AMBIENT_OCCLUSION].size();
-		values.occlusionMapFirst = values.emissiveMapFirst + values.emissiveMapCount;
-		m_allTexturesLoaded = false;
-	}
-
-	void Material::setTextures(const std::vector<BlendedTexture>& textures, MaterialTextureType type) {
-		setTextures(textures, type, values.albedoMapCount);
-	}
-
 	const std::vector<Texture>& Material::fetchTextures() {
 		if (m_allTexturesLoaded)
 			return m_allTextures;
-		
+
 		m_allTextures.clear();
 		m_allTexturesLoaded = true;
+
+		/*
 		for (auto& [type, textures] : m_textures) {
 			for (auto& texture : textures) {
+				SA_DEBUG_LOG_INFO("Fetching ", to_string(type), " : ", texture.getName());
 				TextureAsset* asset = texture.getAsset();
 				if (asset && asset->getTexture().isValid()) {
 					m_allTextures.push_back(asset->getTexture());
@@ -128,6 +145,27 @@ namespace sa {
 				}
 			}
 		}
+		*/
+
+		if(!fetchTextures(MaterialTextureType::BASE_COLOR)) {
+			m_allTexturesLoaded = false;
+		}
+		if (!fetchTextures(MaterialTextureType::NORMAL_CAMERA)) {
+			m_allTexturesLoaded = false;
+		}
+		if (!fetchTextures(MaterialTextureType::METALNESS)) {
+			m_allTexturesLoaded = false;
+		}
+		if (!fetchTextures(MaterialTextureType::DIFFUSE_ROUGHNESS)) {
+			m_allTexturesLoaded = false;
+		}
+		if(!fetchTextures(MaterialTextureType::EMISSIVE)) {
+			m_allTexturesLoaded = false;
+		}
+		if (!fetchTextures(MaterialTextureType::AMBIENT_OCCLUSION)) {
+			m_allTexturesLoaded = false;
+		}
+
 		return m_allTextures;
 	}
 

@@ -108,14 +108,17 @@ namespace sa {
 		}
 	}
 
-	void loadMaterialTexture(Material& material, const std::filesystem::path& directory, aiTextureType type, aiTexture** ppAiTextures, aiMaterial* pAiMaterial, const std::filesystem::path& textureDir) {
+	void loadMaterialTexture(Material& material, const std::filesystem::path& directory, aiTextureType type, aiTexture** ppAiTextures, aiMaterial* pAiMaterial) {
 		std::vector<BlendedTexture> textures(pAiMaterial->GetTextureCount(type));
 
 		for (size_t i = 0; i < textures.size(); i++) {
 			aiString str;
+			aiTextureMapping textureMapping = aiTextureMapping::aiTextureMapping_UV;
+			unsigned int uvIndex = 0;
 			ai_real blending = 1.0f;
 			aiTextureOp op = aiTextureOp::aiTextureOp_Multiply;
-			pAiMaterial->GetTexture(type, i, &str, NULL, NULL, &blending, &op);
+			aiTextureMapMode mapMode = aiTextureMapMode::aiTextureMapMode_Wrap;
+			pAiMaterial->GetTexture(type, i, &str, &textureMapping, &uvIndex, &blending, &op, &mapMode);
 
 			std::filesystem::path filename(str.C_Str());
 
@@ -136,8 +139,7 @@ namespace sa {
 				continue;
 			}
 			*/
-
-			//TextureAsset* tex = AssetManager::Get().<TextureAsset>(finalPath, textureDir);
+			
 			Asset* tex = AssetManager::Get().findAssetByPath(directory / filename);
 			if (!tex) {
 				SA_DEBUG_LOG_ERROR("Failed to find texture, ", filename.generic_string());
@@ -152,6 +154,7 @@ namespace sa {
 		}
 
 		material.setTextures(textures, (MaterialTextureType)type);
+
 	}
 
 	sa::Color getColor(aiMaterial* pMaterial, const char* pKey, unsigned int type, unsigned int idx, sa::Color defaultColor = sa::Color::White) {
@@ -199,12 +202,10 @@ namespace sa {
 		SA_DEBUG_LOG_INFO("Material Count:", scene->mNumMaterials);
 
 		std::vector<Material*> materials(scene->mNumMaterials);
-		auto materialDir = getAssetPath().parent_path();
-		auto textureDir = getAssetPath().parent_path();
-		
+
 		tf::Taskflow taskflow;
-		taskflow.for_each_index(0U, scene->mNumMaterials, 1U, [&](int i) {
-		//for (uint32_t i = 0; i < scene->mNumMaterials; i++) {
+		//taskflow.for_each_index(0U, scene->mNumMaterials, 1U, [&](int i) {
+		for (uint32_t i = 0; i < scene->mNumMaterials; i++) {
 			aiMaterial* aMaterial = scene->mMaterials[i];
 			SA_PROFILE_SCOPE(path.generic_string() + ", Load material [" + std::to_string(i) + "] " + aMaterial->GetName().C_Str());
 			SA_DEBUG_LOG_INFO("Load material: ", path.generic_string(), " - ", aMaterial->GetName().C_Str());
@@ -216,7 +217,11 @@ namespace sa {
 			pMaterial->values.albedoColor = getColor(aMaterial, AI_MATKEY_BASE_COLOR);
 			
 			// Emissive Color
-			pMaterial->values.emissiveColor = getColor(aMaterial, AI_MATKEY_COLOR_EMISSIVE, Color::Black);
+			int useEmissiveMap = false;
+			aMaterial->Get(AI_MATKEY_USE_EMISSIVE_MAP, useEmissiveMap);
+			if(!useEmissiveMap)
+				pMaterial->values.emissiveColor = getColor(aMaterial, AI_MATKEY_COLOR_EMISSIVE, Color::Black);
+
 
 			aMaterial->Get(AI_MATKEY_EMISSIVE_INTENSITY, pMaterial->values.emissiveColor.a);
 			aMaterial->Get(AI_MATKEY_OPACITY, pMaterial->values.opacity);
@@ -224,20 +229,52 @@ namespace sa {
 			aMaterial->Get(AI_MATKEY_METALLIC_FACTOR, pMaterial->values.metallic);
 			aMaterial->Get(AI_MATKEY_TWOSIDED, pMaterial->twoSided);
 
-			// PBR textures
-			loadMaterialTexture(*pMaterial, path.parent_path(), aiTextureType_BASE_COLOR, scene->mTextures, aMaterial, textureDir);
-			loadMaterialTexture(*pMaterial, path.parent_path(), aiTextureType_NORMAL_CAMERA, scene->mTextures, aMaterial, textureDir);
-			loadMaterialTexture(*pMaterial, path.parent_path(), aiTextureType_EMISSION_COLOR, scene->mTextures, aMaterial, textureDir);
-			loadMaterialTexture(*pMaterial, path.parent_path(), aiTextureType_METALNESS, scene->mTextures, aMaterial, textureDir);
-			loadMaterialTexture(*pMaterial, path.parent_path(), aiTextureType_DIFFUSE_ROUGHNESS, scene->mTextures, aMaterial, textureDir);
-			loadMaterialTexture(*pMaterial, path.parent_path(), aiTextureType_AMBIENT_OCCLUSION, scene->mTextures, aMaterial, textureDir);
+			int useColorMap = false;
+			if (aMaterial->Get(AI_MATKEY_USE_COLOR_MAP, useColorMap) != aiReturn_SUCCESS) {
+				SA_DEBUG_LOG_ERROR("Failed to get ", AI_MATKEY_USE_COLOR_MAP);
+			}
+			int useAOMap = false;
+			if (aMaterial->Get(AI_MATKEY_USE_AO_MAP, useAOMap) != aiReturn_SUCCESS) {
+				SA_DEBUG_LOG_ERROR("Failed to get ", AI_MATKEY_USE_AO_MAP);
+			}
 
+			int useMetallicMap = false;
+			if (aMaterial->Get(AI_MATKEY_USE_METALLIC_MAP, useMetallicMap) != aiReturn_SUCCESS) {
+				SA_DEBUG_LOG_ERROR("Failed to get ", AI_MATKEY_USE_METALLIC_MAP);
+			}
+
+			int useRoughnessMap = false;
+			if (aMaterial->Get(AI_MATKEY_USE_ROUGHNESS_MAP, useRoughnessMap) != aiReturn_SUCCESS) {
+				SA_DEBUG_LOG_ERROR("Failed to get ", AI_MATKEY_USE_ROUGHNESS_MAP);
+			}
+
+			SA_DEBUG_LOG_INFO("Using:\n\tcolorMap: ", useColorMap,
+				"\n\temissiveMap: ", useEmissiveMap,
+				"\n\taOMap: ", useAOMap,
+				"\n\tmetallicMap: ", useMetallicMap,
+				"\n\troughnessMap: ", useRoughnessMap);
+
+			// PBR textures
+			loadMaterialTexture(*pMaterial, path.parent_path(), aiTextureType_BASE_COLOR, scene->mTextures, aMaterial);
+			loadMaterialTexture(*pMaterial, path.parent_path(), aiTextureType_NORMAL_CAMERA, scene->mTextures, aMaterial);
+			loadMaterialTexture(*pMaterial, path.parent_path(), aiTextureType_EMISSION_COLOR, scene->mTextures, aMaterial);
+			loadMaterialTexture(*pMaterial, path.parent_path(), aiTextureType_METALNESS, scene->mTextures, aMaterial);
+			loadMaterialTexture(*pMaterial, path.parent_path(), aiTextureType_DIFFUSE_ROUGHNESS, scene->mTextures, aMaterial);
+			loadMaterialTexture(*pMaterial, path.parent_path(), aiTextureType_AMBIENT_OCCLUSION, scene->mTextures, aMaterial);
+			
+			loadMaterialTexture(*pMaterial, path.parent_path(), aiTextureType_EMISSIVE, scene->mTextures, aMaterial);
+			loadMaterialTexture(*pMaterial, path.parent_path(), aiTextureType_LIGHTMAP, scene->mTextures, aMaterial);
+
+			/*
+			for (uint32_t type = aiTextureType::aiTextureType_DIFFUSE; type <= AI_TEXTURE_TYPE_MAX; type++) {
+				loadMaterialTexture(*pMaterial, path.parent_path(), static_cast<aiTextureType>(type), scene->mTextures, aMaterial);
+			}
+			*/
 			pMaterial->update();
 			materials[i] = pMaterial;
-			//pMaterial->write();
 			incrementProgress();
-		//}
-		});
+		}
+		//});
 
 		runTaskflow(taskflow).wait();
 

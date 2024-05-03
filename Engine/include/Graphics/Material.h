@@ -211,9 +211,10 @@ namespace sa {
 
 		AssetHolder<MaterialShader> m_materialShader;
 
-		void setTextures(const std::vector<BlendedTexture>& textures, MaterialTextureType type, uint32_t& count);
-
+		bool fetchTextures(MaterialTextureType type);
+		
 	public:
+		
 		struct alignas(16) Values { // sent to shader
 			Color albedoColor = { 1, 1, 1, 1 };
 			Color emissiveColor = { 0, 0, 0, 1 };
@@ -269,3 +270,4 @@ namespace sa {
 
 	};
 }
+
