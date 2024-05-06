@@ -383,9 +383,11 @@ namespace sa {
 					vertex.position.y = j * fraction;
 					vertex.position.z = 0.5f;
 					vertex.position = faces[face] * vertex.position;
-					vertex.position = glm::vec4(glm::normalize(glm::vec3(vertex.position)), 1.0f);
+					glm::vec3 normalizedPos = glm::normalize(glm::vec3(vertex.position));
+					vertex.position = glm::vec4(normalizedPos * 0.5f, 1.0f);
 					
-					vertex.normal = vertex.position;
+					vertex.normal = glm::vec4(normalizedPos, 0.0f);
+					
 					vertex.texCoord.x = ((i + halfLength) * fraction);
 					vertex.texCoord.y = ((j + halfLength) * fraction);
 					
