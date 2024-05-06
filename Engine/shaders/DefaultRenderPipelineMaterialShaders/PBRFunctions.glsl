@@ -8,7 +8,7 @@
 
 vec4 CalculatePBRColor(Material material);
 vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float smoothness, float occlusion, float alpha, float alphaClipThreshold);
-vec3 GetPointLightColor(Light light, vec3 normal);
+vec3 GetPointLightRadiance(Light light, vec3 viewDir, out vec3 halfVector, out vec3 lightDir);
 vec3 GetDirectionalLightColor(Light light, vec3 normal);
 
 float DistributionGGX(vec3 N, vec3 H, float roughness);
@@ -16,15 +16,6 @@ float GeometrySchlickGGX(float NdotV, float roughness);
 float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness);
 vec3 FresnelSchlick(vec3 V, vec3 H, vec3 F0);
 
-float InShadowCascaded(vec3 worldPos, Light light);
-float InShadowCube(vec3 worldPos, Light light);
-float InShadow(vec3 worldPos, Light light, uint layer);
-
-const mat4 biasMat = mat4( 
-	0.5, 0.0, 0.0, 0.0,
-	0.0, 0.5, 0.0, 0.0,
-	0.0, 0.0, 1.0, 0.0,
-	0.5, 0.5, 0.0, 1.0 );
 
 vec4 CalculatePBRColor(Material material) {
 
@@ -74,9 +65,6 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
     for(int i = 0; i < MAX_LIGHTS_PER_TILE && lightIndices.data[i + offset] != -1; i++) {
         Light light = lightBuffer.lights[lightIndices.data[i + offset]];
 
-        //TODO send value to shader
-        int shininess = 32;
-        
         vec3 radiance = vec3(0);
         float lightRadius = max(light.position.w, 0.0001);
         float lightIntensity = light.color.a;
@@ -87,6 +75,7 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
         switch(light.type) {
         case LIGHT_TYPE_POINT: {
 
+            /*
             lightDir = normalize(light.position.xyz - in_vertexWorldPos);
             halfVector = normalize(viewDir + lightDir);
             
@@ -96,14 +85,14 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
             // Real world attenuation = 1.0 / (distance * distance)
             float fallOff = 1.0;
             float attenuation = max(1.0 - distance / lightRadius, 0.0) / fallOff;
-            /*
             // (clamp10(1-(d/lightRadius)^4)^2)/d*d+1
             float attenuation = clamp(1.0 - pow(distance / lightRadius, 4), 1.0, 0.0);
             attenuation = attenuation * attenuation;
             attenuation = attenuation / distance * distance + 1;
-            */
             
             radiance = light.color.rgb * attenuation * lightIntensity;
+            */
+            radiance = GetPointLightRadiance(light, viewDir, halfVector, lightDir);
             if(shadowPrefs.shadowsEnabled == 1) {
                 radiance *= 1.0 - InShadowCube(in_vertexWorldPos, light);
             }
@@ -211,20 +200,19 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
     return vec4(color, alpha);
 }
 
-vec3 GetPointLightColor(Light light, vec3 normal) {
-    float lightDistance = length(in_vertexWorldPos - light.position.xyz);
-
-    float lightRadius = light.position.w;
+vec3 GetPointLightRadiance(in Light light, in vec3 viewDir, out vec3 halfVector, out vec3 lightDir) {
+    lightDir = normalize(light.position.xyz - in_vertexWorldPos);
+    halfVector = normalize(viewDir + lightDir);
+    float lightRadius = max(light.position.w, 0.0001);
     float lightIntensity = light.color.a;
     
-    //float attenuation = (1 - lightDistance / lightRadius) / falloff;
-    float denom = max(lightDistance - lightRadius, 0.0) / lightRadius + 0.75;
-    float attenuation = 1.0 / (denom * denom);
-    attenuation = clamp(attenuation, 0.0, 1.0);
+    float distance = length(light.position.xyz - in_vertexWorldPos);
     
-    vec3 radiance = light.color.rgb * attenuation * lightIntensity; 
-    return radiance;
+    // Real world attenuation = 1.0 / (distance * distance)
+    float fallOff = 1.0;
+    float attenuation = max(1.0 - distance / lightRadius, 0.0) / fallOff;
     
+    return light.color.rgb * attenuation * lightIntensity;
 }
 
 vec3 GetDirectionalLightColor(Light light, vec3 normal) {
@@ -268,90 +256,5 @@ vec3 FresnelSchlick(vec3 V, vec3 H, vec3 F0) {
     float cosTheta = max(dot(H, V), 0.0);
     return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
 }  
-
-float InShadowCascaded(vec3 worldPos, Light light) {
-    uint cascadeIndex = 0;
-	for(uint i = 0; i < shadowPrefs.cascadeCount - 1; ++i) {
-		if(in_vertexViewPos.z < shadowPrefs.cascadeSplits[i / 4][i % 4]) {
-			cascadeIndex = i + 1;
-		}
-	}
-    return InShadow(worldPos, light, cascadeIndex);
-}
-
-float InShadowCube(vec3 worldPos, Light light) {
-    if(light.emitShadows == 0) {
-        return 0.0;
-    }
-    ShadowMapData shadowData = shadowMapDataBuffer.shadowMaps[light.shadowMapDataIndex];
-    
-    vec3 lightDir = worldPos - vec3(light.position);
-     
-    float far = light.position.w;
-    
-    float currentDepth = length(lightDir);
-    lightDir.x *= -1.0;
-    currentDepth /= far;
-    
-    if(shadowPrefs.smoothShadows == 0) {
-        return texture(shadowCubeTextures[shadowData.mapIndex], vec4(lightDir, currentDepth)).r;
-    }
-    
-    const vec3 sampleOffsetDirections[20] = vec3[]
-    (
-        vec3( 1,  1,  1), vec3( 1, -1,  1), vec3(-1, -1,  1), vec3(-1,  1,  1), 
-        vec3( 1,  1, -1), vec3( 1, -1, -1), vec3(-1, -1, -1), vec3(-1,  1, -1),
-        vec3( 1,  1,  0), vec3( 1, -1,  0), vec3(-1, -1,  0), vec3(-1,  1,  0),
-        vec3( 1,  0,  1), vec3(-1,  0,  1), vec3( 1,  0, -1), vec3(-1,  0, -1),
-        vec3( 0,  1,  1), vec3( 0, -1,  1), vec3( 0, -1, -1), vec3( 0,  1, -1)
-    );   
-
-    float shadow = 0.0;
-    int samples = 20;
-    float diskRadius = 0.05; 
-
-    for(int i = 0; i < samples; ++i) {
-        vec4 uv = vec4(lightDir + sampleOffsetDirections[i] * diskRadius, currentDepth);
-        shadow += texture(shadowCubeTextures[shadowData.mapIndex], uv).r;
-    }
-
-    return shadow / float(samples);
-}
-
-float InShadow(vec3 worldPos, Light light, uint layer) {
-    if(light.emitShadows == 0) {
-        return 0.0;
-    }
-    ShadowMapData shadowData = shadowMapDataBuffer.shadowMaps[light.shadowMapDataIndex];
-
-    vec4 lightSpacePos = biasMat * shadowData.lightMat[layer] * vec4(worldPos, 1.0);
-    vec3 projCoords = lightSpacePos.xyz / lightSpacePos.w;
-    
-    vec4 texCoord;
-    texCoord.xyw = projCoords.xyz;
-    texCoord.z = layer;
-    if(shadowPrefs.smoothShadows == 0) {
-        return texture(shadowTextures[shadowData.mapIndex], texCoord).r;
-    }
-    
-    vec3 texSize = textureSize(shadowTextures[shadowData.mapIndex], 0);
-    vec2 texelSize = 1.0 / texSize.xy;
-
-    const float gaussianKernel[3][3] = {
-        { 0.0625, 0.125,  0.0625 },
-        { 0.125,  0.25,   0.125 },
-        { 0.0625, 0.125,  0.0625 }
-    };
-
-    float shadow = 0.0;
-    for(int u = -1; u <= 1; u++) {
-        for(int v = -1; v <= 1; v++) {
-            vec4 uv = vec4(projCoords.xy + vec2(u, v) * texelSize, layer, projCoords.z);
-            float gauss = gaussianKernel[u + 1][v + 1];
-            shadow += texture(shadowTextures[shadowData.mapIndex], uv).r * gauss;
-        }
-    }
-    return shadow;
-}
 
 #endif

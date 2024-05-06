@@ -351,6 +351,65 @@ namespace sa {
 		return pAsset;
 	}
 
+	ModelAsset* AssetManager::getSphere() {
+		ModelAsset* pAsset = findAssetByName<ModelAsset>(SA_BUILTIN_SPHERE_NAME);
+		if (pAsset) {
+			return pAsset;
+		}
+
+		std::filesystem::create_directories(SA_BUILTIN_ASSET_DIR);
+		pAsset = createAsset<ModelAsset>(SA_BUILTIN_SPHERE_NAME, SA_BUILTIN_ASSET_DIR);
+
+		Mesh& mesh = pAsset->data.meshes.emplace_back();
+		const int segments = 8;
+		const int halfLength = segments * 0.5f;
+		const int verticesPerLength = segments + 1;
+		const float fraction = (float)1 / segments;
+
+		const glm::quat faces[] = {
+			glm::quat(glm::vec3(0, glm::radians(0.f), 0)),
+			glm::quat(glm::vec3(0, glm::radians(90.f), 0)),
+			glm::quat(glm::vec3(0, glm::radians(180.f), 0)),
+			glm::quat(glm::vec3(0, glm::radians(270.f), 0)),
+			glm::quat(glm::vec3(glm::radians(90.f), 0, 0)),
+			glm::quat(glm::vec3(glm::radians(270.f), 0, 0))
+		};
+		for (int face = 0; face < 6; ++face) {
+			for (int i = -halfLength; i <= halfLength; ++i) {
+				for (int j = -halfLength; j <= halfLength; ++j) {
+					
+					VertexNormalUV vertex = {};
+					vertex.position.x = i * fraction;
+					vertex.position.y = j * fraction;
+					vertex.position.z = 0.5f;
+					vertex.position = faces[face] * vertex.position;
+					vertex.position = glm::vec4(glm::normalize(glm::vec3(vertex.position)), 1.0f);
+					
+					vertex.normal = vertex.position;
+					vertex.texCoord.x = ((i + halfLength) * fraction);
+					vertex.texCoord.y = ((j + halfLength) * fraction);
+					
+					mesh.vertices.push_back(vertex);
+					if (j != halfLength && i != halfLength) {
+						uint32_t currentIndex = mesh.vertices.size() - 1;
+						mesh.indices.push_back(currentIndex);
+						mesh.indices.push_back(currentIndex + 1);
+						mesh.indices.push_back(currentIndex + verticesPerLength + 1);
+						mesh.indices.push_back(currentIndex + verticesPerLength + 1);
+						mesh.indices.push_back(currentIndex + verticesPerLength);
+						mesh.indices.push_back(currentIndex);
+					}
+
+				}
+			}
+			
+		}
+
+		mesh.material = getDefaultMaterial();
+		pAsset->write();
+		return pAsset;
+	}
+
 	Material* AssetManager::getDefaultMaterial() {
 		std::lock_guard lock(m_mutex);
 		Material* pAsset = getAsset<Material>(SA_DEFAULT_MATERIAL_ID);

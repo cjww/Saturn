@@ -27,8 +27,9 @@
 #define SA_DEFAULT_MATERIAL_NAME "default_material"
 #define SA_DEFAULT_MATERIAL_ID 2ull
 
-#define SA_BUILTIN_CUBE_NAME "builtin_cube"
 #define SA_BUILTIN_QUAD_NAME "builtin_quad"
+#define SA_BUILTIN_CUBE_NAME "builtin_cube"
+#define SA_BUILTIN_SPHERE_NAME "builtin_sphere"
 
 #define SA_BUILTIN_ASSET_DIR "Assets/builtin"
 
@@ -108,6 +109,8 @@ namespace sa {
 
 		ModelAsset* getQuad();
 		ModelAsset* getCube();
+		ModelAsset* getSphere();
+
 
 		Material* getDefaultMaterial();
 		MaterialShader* getDefaultMaterialShader();

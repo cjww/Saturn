@@ -45,6 +45,13 @@ void SceneHierarchy::makePopups() {
 				m_pEngine->trigger<sa::editor_event::EntitySelected>(sa::editor_event::EntitySelected{ entity });
 			}
 
+			if (ImGui::MenuItem("Sphere")) {
+				sa::Entity entity = m_pEngine->getCurrentScene()->createEntity("Sphere");
+				entity.addComponent<comp::Transform>();
+				entity.addComponent<comp::Model>()->model = sa::AssetManager::Get().getSphere();
+				m_pEngine->trigger<sa::editor_event::EntitySelected>(sa::editor_event::EntitySelected{ entity });
+			}
+
 			if (ImGui::MenuItem("Camera")) {
 				sa::Entity entity = m_pEngine->getCurrentScene()->createEntity("Camera");
 				entity.addComponent<comp::Transform>();
