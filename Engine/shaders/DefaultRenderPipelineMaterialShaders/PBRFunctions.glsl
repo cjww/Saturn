@@ -9,12 +9,18 @@
 vec4 CalculatePBRColor(Material material);
 vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float smoothness, float occlusion, float alpha, float alphaClipThreshold);
 vec3 GetPointLightRadiance(Light light, vec3 viewDir, out vec3 halfVector, out vec3 lightDir);
-vec3 GetDirectionalLightColor(Light light, vec3 normal);
+vec3 GetDirectionalLightRadiance(Light light, vec3 viewDir, out vec3 halfVector, out vec3 lightDir);
+vec3 GetSpotLightRadiance(Light light, vec3 viewDir, out vec3 halfVector, out vec3 lightDir);
 
+// Implements BRDF shading model as described in 
+// http://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf
 float DistributionGGX(vec3 N, vec3 H, float roughness);
 float GeometrySchlickGGX(float NdotV, float roughness);
 float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness);
 vec3 FresnelSchlick(vec3 V, vec3 H, vec3 F0);
+
+vec3 ImportanceSampleGGX(vec2 Xi, vec3 normal, float roughness);
+vec3 SpecularIBL(vec3 specularColor, float roughness, vec3 normal, vec3 V);
 
 
 vec4 CalculatePBRColor(Material material) {
@@ -74,24 +80,6 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
 
         switch(light.type) {
         case LIGHT_TYPE_POINT: {
-
-            /*
-            lightDir = normalize(light.position.xyz - in_vertexWorldPos);
-            halfVector = normalize(viewDir + lightDir);
-            
-
-            float distance = length(light.position.xyz - in_vertexWorldPos);
-            
-            // Real world attenuation = 1.0 / (distance * distance)
-            float fallOff = 1.0;
-            float attenuation = max(1.0 - distance / lightRadius, 0.0) / fallOff;
-            // (clamp10(1-(d/lightRadius)^4)^2)/d*d+1
-            float attenuation = clamp(1.0 - pow(distance / lightRadius, 4), 1.0, 0.0);
-            attenuation = attenuation * attenuation;
-            attenuation = attenuation / distance * distance + 1;
-            
-            radiance = light.color.rgb * attenuation * lightIntensity;
-            */
             radiance = GetPointLightRadiance(light, viewDir, halfVector, lightDir);
             if(shadowPrefs.shadowsEnabled == 1) {
                 radiance *= 1.0 - InShadowCube(in_vertexWorldPos, light);
@@ -100,12 +88,7 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
             break;
         }
         case LIGHT_TYPE_DIRECTIONAL: {
-
-            lightDir = normalize(-light.direction.xyz);
-
-            halfVector = normalize(viewDir + lightDir);
-
-            radiance = light.color.rgb * lightIntensity;
+            radiance = GetDirectionalLightRadiance(light, viewDir, halfVector, lightDir);
 
             if(shadowPrefs.shadowsEnabled == 1) {
 
@@ -140,26 +123,7 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
             break;
         }
         case LIGHT_TYPE_SPOT: {
-            lightDir = normalize(light.position.xyz - in_vertexWorldPos);
-            halfVector = normalize(viewDir + lightDir);
-            
-            vec3 spotDir = normalize(-light.direction.xyz);
-            float theta = dot(lightDir, spotDir);
-            
-            float cutoff = cos(light.direction.w);
-            
-            float innerCutoff = cutoff + 0.09;
-            float epsilon = innerCutoff - cutoff;
-            //float spot = theta > cutoff ? max((theta - cutoff) / epsilon, 0.0) : 0.0;
-            float spot = theta > cutoff ? smoothstep(0.0, 1.0, (theta - cutoff) / epsilon) : 0.0;
-
-            float distance = length(light.position.xyz - in_vertexWorldPos);
-            
-            // Real world attenuation = 1.0 / (distance * distance)
-            float fallOff = 1.0;
-            float attenuation = max(1.0 - distance / lightRadius, 0.0) / fallOff;
-            attenuation *= spot;
-            radiance = light.color.rgb * attenuation * lightIntensity;
+            radiance = GetSpotLightRadiance(light, viewDir, halfVector, lightDir);
             if(shadowPrefs.shadowsEnabled == 1) {
                 radiance *= 1.0 - InShadow(in_vertexWorldPos, light, 0);
             }
@@ -187,12 +151,15 @@ vec4 GetPBRColor(vec3 albedo, vec3 normal, vec3 emission, float metallic, float 
         float denominator = 4.0 * max(dot(normal, viewDir), 0.0) * NdotL;
         vec3 specular = numerator / max(denominator, 0.0001);
 
+/*
         vec3 refl = reflect(normal, viewDir);
         vec4 skyboxColor = texture(skybox, refl);
         specular *= skyboxColor.rgb;
+*/
 
         Lo += (kD * albedo / PI + specular) * radiance * NdotL;
-        
+        //Lo += F0;
+        //Lo += specular;
     }
 
     vec3 ambient = vec3(0.01) * albedo * occlusion;
@@ -215,13 +182,39 @@ vec3 GetPointLightRadiance(in Light light, in vec3 viewDir, out vec3 halfVector,
     return light.color.rgb * attenuation * lightIntensity;
 }
 
-vec3 GetDirectionalLightColor(Light light, vec3 normal) {
+vec3 GetDirectionalLightRadiance(Light light, vec3 viewDir, out vec3 halfVector, out vec3 lightDir) {
+    lightDir = normalize(-light.direction.xyz);
+    halfVector = normalize(viewDir + lightDir);
+    return light.color.rgb * light.color.a;
+}
+
+vec3 GetSpotLightRadiance(Light light, vec3 viewDir, out vec3 halfVector, out vec3 lightDir) {
+    lightDir = normalize(light.position.xyz - in_vertexWorldPos);
+    halfVector = normalize(viewDir + lightDir);
+    
+    vec3 spotDir = normalize(-light.direction.xyz);
+    float theta = dot(lightDir, spotDir);
+    
+    float cutoff = cos(light.direction.w);
+    
+    float innerCutoff = cutoff + 0.09;
+    float epsilon = innerCutoff - cutoff;
+    //float spot = theta > cutoff ? max((theta - cutoff) / epsilon, 0.0) : 0.0;
+    float spot = theta > cutoff ? smoothstep(0.0, 1.0, (theta - cutoff) / epsilon) : 0.0;
+
+    float lightDistance = length(light.position.xyz - in_vertexWorldPos);
+
+    float lightRadius = max(light.position.w, 0.0001);
     float lightIntensity = light.color.a;
-    vec3 radiance = light.color.rgb * lightIntensity;
-    return radiance;
+    // Real world attenuation = 1.0 / (lightDistance * lightDistance)
+    float fallOff = 1.0;
+    float attenuation = max(1.0 - lightDistance / lightRadius, 0.0) / fallOff;
+    attenuation *= spot;
+    return light.color.rgb * attenuation * lightIntensity;
 }
 
 float DistributionGGX(vec3 N, vec3 H, float roughness) {
+    // Disney’s GGX/Trowbridge-Reitz
     float a = roughness * roughness;
     float a2 = a * a;
     float NdotH = max(dot(N, H), 0.0);
@@ -237,10 +230,9 @@ float GeometrySchlickGGX(float NdotV, float roughness) {
     float r = (roughness + 1.0);
     float k = (r * r) / 8.0;
 
-    float num = NdotV;
     float denom = NdotV * (1.0 - k) + k;
 	
-    return num / max(denom, 0.00001);
+    return NdotV / max(denom, 0.00001);
 }
 
 float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
@@ -253,8 +245,30 @@ float GeometrySmith(vec3 N, vec3 V, vec3 L, float roughness) {
 }
 
 vec3 FresnelSchlick(vec3 V, vec3 H, vec3 F0) {
-    float cosTheta = max(dot(H, V), 0.0);
-    return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+    //float cosTheta = max(dot(H, V), 0.0);
+    //return F0 + (1.0 - F0) * pow(clamp(1.0 - cosTheta, 0.0, 1.0), 5.0);
+
+    float VdotH = max(dot(V, H), 0.0);
+    float exponent = (-5.55473 * VdotH - 6.98316) * VdotH;
+    return F0 + (1.0 - F0) * pow(2, exponent);
 }  
+
+vec3 ImportanceSampleGGX(vec2 Xi, vec3 normal, float roughness) {
+    float a = roughness * roughness;
+    float Phi = 2 * PI * Xi.x;
+    float cosTheta = sqrt((1.0 - Xi.y) / (1.0 + (a * a - 1.0) * Xi.y));
+    float sinTheta = sqrt(1.0 - cosTheta * cosTheta);
+    
+    vec3 H = vec3(0);
+    H.x = sinTheta * cos(Phi);
+    H.y = sinTheta * sin(Phi);
+    H.z = cosTheta;
+
+    vec3 upVector = abs(normal.z) < 0.999 ? vec3(0, 0, 1) : vec3(1, 0, 0);
+    vec3 tangentX = normalize(cross(upVector, normal));
+    vec3 tangentY = cross(normal, tangentX);
+    //tangent to world space
+    return tangentX * H.x + tangentY * H.y + normal * H.z;
+}
 
 #endif

@@ -359,9 +359,7 @@ namespace sa {
 		}
 
 		ImGuiID viewPortDockSpaceID = ImGui::DockSpaceOverViewport();
-
-		bool enterSceneNamePopup = false;
-
+		
 		const bool isPlaying = m_state == State::PLAYING;
 		const bool isPaused = m_state == State::PAUSED;
 
@@ -420,10 +418,10 @@ namespace sa {
 
 			ImGui::EndDisabled();
 
-			if (enterSceneNamePopup) {
-				ImGui::OpenPopup("Create New Scene");
-			}
+			ImGui::Separator();
 
+			if (Scene* pScene = m_pEngine->getCurrentScene())
+				ImGui::Text("%s", pScene->getName().c_str());
 
 			ImGui::SetCursorPosY(framePaddingY - (buttonSize * 0.25f));
 			ImGui::SetCursorPosX(ImGui::GetWindowWidth() * 0.5f - buttonSize * 0.5f);

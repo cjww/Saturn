@@ -157,17 +157,17 @@ namespace sa {
 		m_progress.wait();
 	}
 
-	void Asset::initialize(const std::filesystem::path& fileName, const std::filesystem::path& assetDirectory) {
+	void Asset::initialize(const std::filesystem::path& filename, const std::filesystem::path& assetDirectory) {
 		m_assetPath.clear();
 		if (!assetDirectory.empty()){
-			m_assetPath = assetDirectory / fileName;
+			m_assetPath = assetDirectory / filename;
 		}
-		m_name = fileName.stem().generic_string();
+		m_name = filename.stem().generic_string();
 		m_isLoaded = true;
 	}
 
 	bool Asset::hold() {
-		if (++m_refCount == 1) {
+		if (++m_refCount > 0 && !m_isLoaded) {
 			return load();
 		}
 		return false;
