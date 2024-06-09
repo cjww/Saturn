@@ -86,7 +86,7 @@ namespace sa {
 		virtual ~Asset();
 
 		void initialize(const std::filesystem::path& filename, const std::filesystem::path& assetDirectory);
-		
+
 		// [DO NOT USE] Called by load. Do not call directly
 		virtual bool onLoad(JsonObject& metaData, AssetLoadFlags flags) = 0;
 		virtual bool onLoadCompiled(ByteStream& dataInStream, AssetLoadFlags flags) = 0;

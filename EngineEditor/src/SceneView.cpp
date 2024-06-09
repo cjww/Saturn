@@ -2,20 +2,34 @@
 
 #include "Graphics\RenderTechniques\ForwardPlus.h"
 #include "Graphics/RenderLayers/ShadowRenderLayer.h"
-#include <limits>
 
 #include "EngineEditor.h"
 
 void SceneView::onEntitySelected(const sa::editor_event::EntitySelected& e) {
-	m_selectedEntity = e.entity;
+	m_lastSelectedEntity = e.entity;
+	m_selectedEntities.insert(e.entity);
 }
 
 void SceneView::onEntityDeselected(const sa::editor_event::EntityDeselected& e) {
-	m_selectedEntity = {};
+	m_selectedEntities.erase(e.entity);
+	if(e.entity == m_lastSelectedEntity) {
+		if(!m_selectedEntities.empty()) {
+			m_lastSelectedEntity = *m_selectedEntities.begin();
+		}
+		else {
+			m_lastSelectedEntity = {};
+		}
+	}
+}
+
+void SceneView::onAllEntitiesDeselected(const sa::editor_event::AllEntitiesDeselected& e) {
+	m_selectedEntities.clear();
+	m_lastSelectedEntity = {};
 }
 
 void SceneView::onSceneSet(const sa::engine_event::SceneSet& e) {
-	m_selectedEntity = {};
+	m_lastSelectedEntity = {};
+	m_selectedEntities.clear();
 	/*
 	m_camera.setPosition(sa::Vector3(0, 4, 10));
 	m_camera.lookAt(glm::vec3(0, 0, 0));
@@ -48,7 +62,8 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 	m_pWindow = pWindow;
 	m_isFocused = false;
 	m_isWorldCoordinates = false;
-	m_selectedEntity = {};
+	m_lastSelectedEntity = {};
+	m_selectedEntities.clear();
 
 	m_camera.setOrthoWidth(10.f);
 
@@ -67,6 +82,7 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 	pEngine->sink<sa::engine_event::SceneSet>().connect<&SceneView::onSceneSet>(this);
 	pEngine->sink<sa::editor_event::EntitySelected>().connect<&SceneView::onEntitySelected>(this);
 	pEngine->sink<sa::editor_event::EntityDeselected>().connect<&SceneView::onEntityDeselected>(this);
+	pEngine->sink<sa::editor_event::AllEntitiesDeselected>().connect<&SceneView::onAllEntitiesDeselected>(this);
 	pEngine->sink<sa::engine_event::OnRender>().connect<&SceneView::onRender>(this);
 
 	m_focusPointDistance = 10.f;
@@ -329,6 +345,107 @@ void SceneView::onImGui() {
 			});
 		}
 
+		bool isOperating = false;
+
+		for (auto it = m_selectedEntities.begin(); it != m_selectedEntities.end(); ) {
+			sa::Entity& selectedEntity = const_cast<sa::Entity&>(*it);
+			if(selectedEntity.isNull()) {
+				it = m_selectedEntities.erase(it);
+				continue;
+			}
+			++it;
+
+			const ImColor colliderColor = ImColor(0, 255, 0);
+			const ImColor lightSphereColor = ImColor(255, 255, 0);
+			// Light icons
+			comp::Light* light = selectedEntity.getComponent<comp::Light>();
+			if (light) {
+				switch (light->values.type) {
+				case sa::LightType::POINT:
+					ImGui::GizmoSphereResizable(light->values.position, light->values.position.w, glm::quat(1, 0, 0, 0), &camera, screenPos, screenSize, lightSphereColor, isOperating);
+					break;
+				case sa::LightType::DIRECTIONAL:
+
+					break;
+				case sa::LightType::SPOT:
+
+					break;
+				default:
+					break;
+				}
+			}
+
+			// Box colliders
+			comp::BoxCollider* bc = selectedEntity.getComponent<comp::BoxCollider>();
+			if (bc) {
+				comp::Transform* transform = selectedEntity.getComponent<comp::Transform>();
+				if (transform) {
+					glm::vec3 offset = transform->rotation * bc->offset;
+					if (ImGui::GizmoBoxResizable(transform->position + offset, bc->halfLengths, transform->rotation, &camera, screenPos, screenSize, colliderColor, isOperating)) {
+						bc->onUpdate(&selectedEntity);
+					}
+				}
+			}
+			// SphereColliders
+			comp::SphereCollider* sc = selectedEntity.getComponent<comp::SphereCollider>();
+			if (sc) {
+				comp::Transform* transform = selectedEntity.getComponent<comp::Transform>();
+				if (transform) {
+					if (ImGui::GizmoSphereResizable(transform->position + sc->offset, sc->radius, transform->rotation, &camera, screenPos, screenSize, colliderColor, isOperating)) {
+						sc->onUpdate(&selectedEntity);
+					}
+				}
+			}
+
+		}
+
+		if(m_lastSelectedEntity) {
+			if (operation) {
+				if (comp::Transform* pTransform = m_lastSelectedEntity.getComponent<comp::Transform>()) {
+					glm::mat4 transformMat = pTransform->getMatrix();
+					
+					float snapAxis[] = { snap, snap, snap };
+					if (ImGuizmo::Manipulate(&viewMat[0][0], &projMat[0][0],
+						operation, (ImGuizmo::MODE)m_isWorldCoordinates, &transformMat[0][0],
+						nullptr, (doSnap) ? snapAxis : nullptr))
+					{
+						glm::vec3 position, rotation, scale;
+						ImGuizmo::DecomposeMatrixToComponents(&transformMat[0][0], (float*)&position, (float*)&rotation, (float*)&scale);
+
+
+						glm::vec3 deltaPos = position - pTransform->position;
+						glm::quat deltaRot = glm::quat(glm::radians(rotation)) - pTransform->rotation;
+						glm::vec3 deltaScale = scale - pTransform->scale;
+
+						pTransform->position = position;
+						if (pTransform->hasParent) {
+							pTransform->relativePosition += deltaPos;
+						}
+						pTransform->rotation = glm::quat(glm::radians(rotation));
+						pTransform->scale = scale;
+
+						for (auto& selectedEntity : m_selectedEntities) {
+							if(selectedEntity == m_lastSelectedEntity)
+								continue;
+							if (auto pTransform = selectedEntity.getComponent<comp::Transform>()) {
+								pTransform->position += deltaPos;
+								pTransform->rotation += deltaRot;
+								pTransform->scale += deltaScale;
+							}
+						}
+					}
+					if (ImGuizmo::IsOver() && ImGui::IsMouseDown(ImGuiMouseButton_Left)) {
+						isOperating = true;
+					}
+					if (doSnap) {
+						glm::mat4 gridMat(1);
+						ImGuizmo::DrawGrid((float*)&viewMat, (float*)&projMat, (float*)&gridMat, 10.f);
+					}
+				}
+			}
+		}
+		
+		/*
 		if (m_selectedEntity) {
 
 			bool isOperating = false;
@@ -339,6 +456,7 @@ void SceneView::onImGui() {
 				if (transform) {
 
 					sa::Matrix4x4 transformMat = transform->getMatrix();
+					
 					float snapAxis[] = { snap, snap, snap };
 
 
@@ -414,7 +532,7 @@ void SceneView::onImGui() {
 
 
 		}
-		
+		*/
 		ImVec2 viewManipSize = ImVec2(100, 100);
 		ImVec2 viewManipPos = ImVec2(imageMin.x + (imageSize.x - viewManipSize.x), imageMin.y);
 		static int interpolationFrames = 0;
@@ -565,7 +683,7 @@ void SceneView::onImGui() {
 	}
 	ImGui::End();
 
-
+	/*
 	if (m_pEngine->getCurrentScene() && !m_selectedEntity.isNull()) {
 		comp::Light* pLight = m_selectedEntity.getComponent<comp::Light>();
 		if (pLight && pLight->values.emitShadows) {
@@ -601,6 +719,7 @@ void SceneView::onImGui() {
 			}
 		}
 	}
+	*/
 
 }
 
@@ -700,12 +819,4 @@ bool SceneView::imGuiDrawVector(glm::vec3 v, const ImColor& color, float thickne
 
 sa::SceneCamera* SceneView::getCamera() {
 	return &m_camera;
-}
-
-sa::Entity SceneView::getEntity() const {
-	return m_selectedEntity;
-}
-
-void SceneView::setEntity(sa::Entity entity) {
-	m_selectedEntity = entity;
 }

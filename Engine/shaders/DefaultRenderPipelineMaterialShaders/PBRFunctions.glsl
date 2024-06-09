@@ -12,6 +12,7 @@ vec3 GetPointLightRadiance(Light light, vec3 viewDir, out vec3 halfVector, out v
 vec3 GetDirectionalLightRadiance(Light light, vec3 viewDir, out vec3 halfVector, out vec3 lightDir);
 vec3 GetSpotLightRadiance(Light light, vec3 viewDir, out vec3 halfVector, out vec3 lightDir);
 
+
 // Implements BRDF shading model as described in 
 // http://blog.selfshadow.com/publications/s2013-shading-course/karis/s2013_pbs_epic_notes_v2.pdf
 float DistributionGGX(vec3 N, vec3 H, float roughness);
@@ -21,6 +22,8 @@ vec3 FresnelSchlick(vec3 V, vec3 H, vec3 F0);
 
 vec3 ImportanceSampleGGX(vec2 Xi, vec3 normal, float roughness);
 vec3 SpecularIBL(vec3 specularColor, float roughness, vec3 normal, vec3 V);
+
+vec2 Hammersley(float i, float numSamples);
 
 
 vec4 CalculatePBRColor(Material material) {
@@ -269,6 +272,30 @@ vec3 ImportanceSampleGGX(vec2 Xi, vec3 normal, float roughness) {
     vec3 tangentY = cross(normal, tangentX);
     //tangent to world space
     return tangentX * H.x + tangentY * H.y + normal * H.z;
+}
+
+vec3 SpecularIBL(vec3 specularColor, float roughness, vec3 normal, vec3 V) {
+    vec3 specularLight = vec3(0);
+    const uint numSamples = 1024;
+    for(uint i = 0; i < numSamples; i++) {
+        
+    }
+    return vec3(0);
+}
+
+vec2 Hammersley(float i, float numSamples)
+{   
+    uint b = uint(i);
+    
+    b = (b << 16u) | (b >> 16u);
+    b = ((b & 0x55555555u) << 1u) | ((b & 0xAAAAAAAAu) >> 1u);
+    b = ((b & 0x33333333u) << 2u) | ((b & 0xCCCCCCCCu) >> 2u);
+    b = ((b & 0x0F0F0F0Fu) << 4u) | ((b & 0xF0F0F0F0u) >> 4u);
+    b = ((b & 0x00FF00FFu) << 8u) | ((b & 0xFF00FF00u) >> 8u);
+    
+    float radicalInverseVDC = float(b) * 2.3283064365386963e-10;
+    
+    return vec2((i / numSamples), radicalInverseVDC);
 }
 
 #endif

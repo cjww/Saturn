@@ -56,7 +56,7 @@ namespace sa {
 		void removeShaderSourceFile(ShaderStageFlagBits stage);
 
 		void compileSource();
-		bool isCompiled() const;
+		bool isSourceCompiled() const;
 
 		virtual bool onLoad(JsonObject& metaData, AssetLoadFlags flags) override;
 		virtual bool onLoadCompiled(ByteStream& dataInStream, AssetLoadFlags flags) override;

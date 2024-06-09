@@ -13,6 +13,10 @@ namespace sa {
 			Entity entity;
 		};
 
+		struct AllEntitiesDeselected {
+			
+		};
+
 		struct DragDropped {
 			uint32_t count;
 			const char** paths;

@@ -92,6 +92,10 @@ namespace sa {
 		}
 		deserialize(&doc);
 
+		m_scriptManager.applyChanges();
+
+		enqueue<scene_event::SceneLoad>();
+
 		return true;
 	}
 
@@ -105,6 +109,10 @@ namespace sa {
 			throw std::runtime_error("Json error: " + std::string(simdjson::error_message(doc.error())));
 		}
 		deserialize(&doc);
+
+		m_scriptManager.applyChanges();
+
+		enqueue<scene_event::SceneLoad>();
 
 		return true;
 	}
@@ -130,6 +138,8 @@ namespace sa {
 	}
 
 	bool Scene::onUnload() {
+		trigger<scene_event::SceneUnload>();
+
 		m_reg.clear();
 		decltype(m_reg) reg;
 		m_reg.swap(reg);

@@ -191,6 +191,8 @@ namespace sa {
 		type["clone"] = [](Entity& self) { return self.clone(); };
 		type["destroy"] = &Entity::destroy;
 
+		type["isNull"] = &Entity::isNull;
+
 		type["parent"] = sol::property(
 			[](const Entity& self) -> sol::lua_value {
 				const Entity& parent = self.getParent();
@@ -292,10 +294,72 @@ namespace sa {
 			sol::no_constructor);
 		type["getCube"] = &AssetManager::getCube;
 		type["getQuad"] = &AssetManager::getQuad;
+		type["getSphere"] = &AssetManager::getSphere;
+
+		//type["getAsset"] = &AssetManager::getAsset;
+		type["findAssetByName"] = [](AssetManager& self, const std::string& name) {
+			return self.findAssetByName(name);
+		};
+		type["findAssetByPath"] = [](AssetManager& self, const std::string& path) {
+			return self.findAssetByPath(path);
+		};
 
 		getState()["AssetManager"] = &AssetManager::Get();
 
 		return true;
+	}
+
+	template<typename AssetType>
+	inline void registerAssetBase(sol::usertype<AssetType>& type) {
+		type["hold"] = &AssetType::hold;
+		type["write"] = &AssetType::write;
+		type["release"] = &AssetType::release;
+
+		type["isLoaded"] = &AssetType::isLoaded;
+
+		type["clone"] = [](const AssetType& self, const std::string& name) { return self.clone(name); };
+
+
+		type["name"] = sol::property(&AssetType::getName);
+		type["id"] = sol::property(&AssetType::getID);
+		type["referenceCount"] = sol::property(&AssetType::getReferenceCount);
+		type["path"] = sol::property([](const AssetType& self) { return self.getAssetPath().generic_string(); });
+
+		/*
+		type["progress"] = sol::property([](const AssetType& self) -> const ProgressView<bool>* {
+			return self.getProgress();
+		});
+		*/
+
+		// load status
+		type["completion"] = sol::property([](const AssetType& self) {
+			return self.getProgress().getCompletion();
+		});
+		type["allCompletion"] = sol::property([](const AssetType& self) {
+			return self.getProgress().getAllCompletion();
+		});
+		type["wait"] = [](const AssetType& self, sol::object timeout) {
+			if(timeout.get_type() == sol::type::number) {
+				self.getProgress().wait(std::chrono::seconds(timeout.as<long long>()));
+				return;
+			}
+			self.getProgress().wait();
+		};
+		type["waitAll"] = [](const AssetType& self, sol::object timeout) {
+			if (timeout.get_type() == sol::type::number) {
+				self.getProgress().waitAll(std::chrono::seconds(timeout.as<long long>()));
+				return;
+			}
+			self.getProgress().waitAll();
+		};
+
+		type["isDone"] = [](const AssetType& self, sol::object timeout) {
+			return self.getProgress().isDone();
+		};
+		type["isAllDone"] = [](const AssetType& self, sol::object timeout) {
+			return self.getProgress().isAllDone();
+		};
+
 	}
 
 	template<>
@@ -309,20 +373,11 @@ namespace sa {
 			type["value"] = sol::property(&ProgressView<bool>::getValue);
 
 		}
+		
 
 		auto& type = userType<Asset>("Asset",
 			sol::no_constructor);
-		type["hold"] = &Asset::hold;
-		type["write"] = &Asset::write;
-		type["release"] = &Asset::release;
-
-		type["isLoaded"] = &Asset::isLoaded;
-
-		type["progress"] = sol::property([](const Asset& self) { return &self.getProgress(); });
-		type["name"] = sol::property(&Asset::getName);
-		type["id"] = sol::property(&Asset::getID);
-		type["referenceCount"] = sol::property(&Asset::getReferenceCount);
-		type["path"] = sol::property([](const Asset& self) { return self.getAssetPath().generic_string(); });
+		registerAssetBase(type);
 
 		return true;
 	}
@@ -360,13 +415,57 @@ namespace sa {
 
 	template<>
 	inline bool LuaAccessable::registerType<ModelAsset>() {
+		{
+			
+			auto& vertexType = userType<VertexNormalUV>();
+			vertexType["position"] = &VertexNormalUV::position;
+			vertexType["normal"] = &VertexNormalUV::normal;
+			vertexType["texCoord"] = &VertexNormalUV::texCoord;
+
+
+			auto& type = userType<Mesh>();
+			type["material"] = sol::property([](const Mesh& self) { return self.material.getAsset(); },
+				[](Mesh& self, Material* material) { self.material = material; });
+			type["vertices"] = &Mesh::vertices;
+			type["indices"] = &Mesh::indices;
+		}
+
 		auto& type = userType<ModelAsset>("ModelAsset",
-			sol::no_constructor,
-			sol::base_classes, sol::bases<Asset>());
+			sol::no_constructor);
+		registerAssetBase(type);
+
+		type["meshes"] = sol::property(
+			[](ModelAsset& self) -> std::vector<Mesh>& {
+				return self.data.meshes;
+			},
+			[](ModelAsset& self, const std::vector<Mesh>& meshes) {
+				self.data.meshes = meshes;
+			});
+
+		return true;
+	}
+
+	template<>
+	inline bool LuaAccessable::registerType<Material>() {
+		auto& type = userType<Material>("Material",
+			sol::no_constructor);
+		registerAssetBase(type);
+
+		type["roughness"] = sol::property(
+			[](const Material& self) { return self.values.roughness; }, 
+			[](Material& self, float value) { self.values.roughness = value; });
+
+		type["metallic"] = sol::property(
+			[](const Material& self) { return self.values.metallic; },
+			[](Material& self, float value) { self.values.metallic = value; });
+		
+
+
 		return true;
 	}
 
 	// ----------------- Math -----------------
+
 	template<>
 	inline bool LuaAccessable::registerType<Vector3>() {
 		auto& type = userType<Vector3>("Vec3",

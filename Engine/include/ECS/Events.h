@@ -46,6 +46,13 @@ namespace sa {
 			inline static const char* CallbackName = "onStop";
 		};
 
+		struct SceneLoad {
+			inline static const char* CallbackName = "onLoad";
+		};
+		struct SceneUnload{
+			inline static const char* CallbackName = "onUnload";
+		};
+
 		struct SceneRequest {
 			std::string sceneName;
 		};

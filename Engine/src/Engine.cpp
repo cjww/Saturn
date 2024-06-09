@@ -182,6 +182,7 @@ namespace sa {
 		if (scene) {
 			scene->hold();
 			scene->getProgress().wait();
+			scene->update<scene_event::SceneLoad>(); // dispatch scene load event
 		}
 
 		trigger<engine_event::SceneSet>(engine_event::SceneSet{ m_currentScene.getAsset(), scene });

@@ -20,6 +20,9 @@ namespace sa {
 		pScript->bind<scene_event::SceneUpdate, &scene_event::SceneUpdate::deltaTime>(m_dispatcher);
 		pScript->bind<scene_event::SceneStart>(m_dispatcher);
 		pScript->bind<scene_event::SceneStop>(m_dispatcher);
+		pScript->bind<scene_event::SceneLoad>(m_dispatcher);
+		pScript->bind<scene_event::SceneUnload>(m_dispatcher);
+
 		pScript->bind<scene_event::EntityCreated, &scene_event::EntityCreated::entity>(m_dispatcher);
 		pScript->bind<scene_event::EntityDestroyed, &scene_event::EntityDestroyed::entity>(m_dispatcher);
 	}
@@ -27,8 +30,6 @@ namespace sa {
 	ScriptManager::ScriptManager(entt::dispatcher& dispatcher)
 		: m_dispatcher(dispatcher)
 	{
-		SA_PROFILE_FUNCTION();
-		
 		LuaAccessable::getState().open_libraries();
 
 		auto ret = LuaAccessable::getState().do_string("return 'Loaded ' .. jit.version .. ' for ' .. jit.os .. ' ' .. jit.arch");

@@ -159,7 +159,7 @@ namespace sa {
         create(m_sourceFiles);
     }
 
-    bool MaterialShader::isCompiled() const {
+    bool MaterialShader::isSourceCompiled() const {
         return !m_recompiled && !m_shaders.empty();
     }
 

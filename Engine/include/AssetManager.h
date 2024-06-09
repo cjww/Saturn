@@ -57,7 +57,7 @@ namespace sa {
 
 	// Singelton class
 	class AssetManager {
-	private:	
+	private:
 		mutable std::mutex m_mutex;
 
 		std::unordered_map<ResourceID, Texture*> m_textures;

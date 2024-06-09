@@ -870,7 +870,9 @@ namespace ImGui {
 		if (BeginDragDropTarget()) {
 			const ImGuiPayload* payload = AcceptDragDropPayload("Path");
 			if (payload && payload->IsDelivery()) {
-				std::filesystem::path* pPath = (std::filesystem::path*)payload->Data;
+				SA_DEBUG_LOG_ERROR("Drag & dropping assets not working currently");
+				//FileEntrySet* items = static_cast<FileEntrySet*>(payload->Data);
+				/*
 				if (pPath->extension() == ".asset") {
 					sa::Asset* asset = sa::AssetManager::Get().findAssetByPath(*pPath);
 					if (asset && asset->getID() != assetID && asset->getType() == typeID) {
@@ -878,6 +880,7 @@ namespace ImGui {
 						selected = true;
 					}
 				}
+				*/
 			}
 			EndDragDropTarget();
 		}

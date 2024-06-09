@@ -213,7 +213,12 @@ namespace sa {
 		}
 
 		if (ImGui::MenuItem("Reload Scene", "Ctrl + R")) {
-			m_pEngine->getCurrentScene()->load();
+			if(sa::Scene* const pScene = m_pEngine->getCurrentScene()) {
+				pScene->load();
+				pScene->getProgress().wait();
+				pScene->update<scene_event::SceneLoad>();
+			}
+
 		}
 	}
 
@@ -234,6 +239,7 @@ namespace sa {
 		m_state = State::EDIT;
 		
 		pScene->loadCompiled(MakeEditorRelative("sceneCache.data"));
+
 	}
 
 
@@ -384,7 +390,11 @@ namespace sa {
 					}
 				
 					if (ImGui::IsKeyPressed(ImGuiKey_R, false)) {
-						m_pEngine->getCurrentScene()->load();
+						if(sa::Scene* const pScene = m_pEngine->getCurrentScene()) {
+							pScene->load();
+							pScene->getProgress().wait();
+							pScene->update<scene_event::SceneLoad>();
+						}
 					}
 
 				}

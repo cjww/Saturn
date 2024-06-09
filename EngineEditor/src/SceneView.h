@@ -30,7 +30,9 @@ private:
 	glm::vec2 m_displayedSize;
 	float m_deltaTime;
 	
-	sa::Entity m_selectedEntity;
+
+	std::unordered_set<sa::Entity> m_selectedEntities;
+	sa::Entity m_lastSelectedEntity;
 	bool m_isWorldCoordinates;
 	
 	float m_zoom;
@@ -44,6 +46,8 @@ private:
 
 	void onEntitySelected(const sa::editor_event::EntitySelected& e);
 	void onEntityDeselected(const sa::editor_event::EntityDeselected& e);
+	void onAllEntitiesDeselected(const sa::editor_event::AllEntitiesDeselected& e);
+
 	void onSceneSet(const sa::engine_event::SceneSet& e);
 	void onRender(const sa::engine_event::OnRender& e);
 
@@ -63,9 +67,6 @@ public:
 
 
 	sa::SceneCamera* getCamera();
-
-	sa::Entity getEntity() const;
-	void setEntity(sa::Entity entity);
-
+	
 
 };

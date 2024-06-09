@@ -19,7 +19,7 @@ namespace sa {
 
 		EntityScript() {};
 
-		EntityScript(std::string name, std::filesystem::path path, sol::environment env, entt::entity owner, std::filesystem::file_time_type lastWriteTime)
+		EntityScript(const std::string& name, const std::filesystem::path& path, const sol::environment& env, entt::entity owner, const std::filesystem::file_time_type& lastWriteTime)
 			: name(name)
 			, path(path)
 			, env(env)

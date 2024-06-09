@@ -5,7 +5,7 @@
 class SceneHierarchy : public EditorModule {
 private:
 	
-	sa::Entity m_selectedEntity;
+	std::unordered_set<sa::Entity> m_selectedEntities;
 	sa::Entity m_hoveredEntity;
 
 	bool m_isPopupMenuOpen;
@@ -20,6 +20,8 @@ private:
 
 	void onEntitySelected(const sa::editor_event::EntitySelected& e);
 	void onEntityDeselected(const sa::editor_event::EntityDeselected& e);
+	void onAllEntitiesDeselected(const sa::editor_event::AllEntitiesDeselected& e);
+
 	void onSceneSet(const sa::engine_event::SceneSet& e);
 
 
