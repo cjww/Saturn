@@ -459,6 +459,9 @@ namespace sa {
 			[](const Material& self) { return self.values.metallic; },
 			[](Material& self, float value) { self.values.metallic = value; });
 		
+		type["albedoColor"] = sol::property(
+			[](const Material& self) { return *(sa::Vector4*)&self.values.albedoColor; },
+			[](Material& self, sa::Vector4 color) { self.values.albedoColor = *(sa::Color*)&color; });
 
 
 		return true;
