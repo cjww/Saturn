@@ -25,7 +25,7 @@ namespace sa {
 		VRESIZE		= 0x00036006
 	};
 
-	enum class ConnectionState {
+	enum class GamepadConnectionState {
 		CONNECTED,
 		DISCONNECTED
 	};
@@ -57,7 +57,7 @@ namespace sa {
 	* @param[in] joystick The ID of the joystick.
 	* @param[in] connectionState The connection state of the joystick, i.e. if it is connected or disconnected.
 	*/
-	typedef std::function<void(Joystick, ConnectionState)> JoystickConnectedCallback;
+	typedef std::function<void(Joystick, GamepadConnectionState)> JoystickConnectedCallback;
 	/*
 	* @param[in] count Number of strings in paths
 	* @param[in] paths Array of strings containing paths to dropped files
