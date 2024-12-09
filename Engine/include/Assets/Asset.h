@@ -80,13 +80,7 @@ namespace sa {
 
 		tf::Future<void> runTaskflow(tf::Taskflow& tf);
 
-	public:
-		Asset(const AssetHeader& header, bool isCompiled);
-
-		virtual ~Asset();
-
-		void initialize(const std::filesystem::path& filename, const std::filesystem::path& assetDirectory);
-
+	protected:
 		// [DO NOT USE] Called by load. Do not call directly
 		virtual bool onLoad(JsonObject& metaData, AssetLoadFlags flags) = 0;
 		virtual bool onLoadCompiled(ByteStream& dataInStream, AssetLoadFlags flags) = 0;
@@ -96,6 +90,13 @@ namespace sa {
 		virtual bool onCompile(ByteStream& dataOutStream, AssetWriteFlags flags) = 0;
 		// [DO NOT USE] Called by release. Do not call directly
 		virtual bool onUnload() = 0;
+
+	public:
+		Asset(const AssetHeader& header, bool isCompiled);
+
+		virtual ~Asset();
+
+		void initialize(const std::filesystem::path& filename, const std::filesystem::path& assetDirectory);
 
 		virtual Asset* clone(const std::string& name, const std::filesystem::path& assetDir = "") const = 0;
 

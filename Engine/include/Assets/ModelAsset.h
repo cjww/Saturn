@@ -22,15 +22,8 @@ namespace sa {
 	private:
 		void processNode(const void* scene, const void* node, std::vector<uint32_t>& materialIndices);
 		bool loadAssimpModel(const std::filesystem::path& path);
-	public:
-		//Data
-		ModelData data;
-
-
-		using Asset::Asset;
-
-		static bool IsExtensionSupported(const std::string& extension);
-
+		
+	protected:
 		virtual bool onLoad(JsonObject& metaData, AssetLoadFlags flags) override;
 		virtual bool onLoadCompiled(ByteStream& dataInStream, AssetLoadFlags flags) override;
 
@@ -38,6 +31,14 @@ namespace sa {
 		virtual bool onCompile(ByteStream& dataOutStream, AssetWriteFlags flags) override;
 
 		virtual bool onUnload() override;
+	public:
+		//Data
+		ModelData data;
+
+		using Asset::Asset;
+
+		static bool IsExtensionSupported(const std::string& extension);
+
 
 		ModelAsset* clone(const std::string& name, const std::filesystem::path& assetDir = "") const override;
 

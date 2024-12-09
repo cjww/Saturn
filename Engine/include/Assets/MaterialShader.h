@@ -27,6 +27,14 @@ namespace sa {
 
 		bool m_recompiled = false;
 
+	protected:
+		virtual bool onLoad(JsonObject& metaData, AssetLoadFlags flags) override;
+		virtual bool onLoadCompiled(ByteStream& dataInStream, AssetLoadFlags flags) override;
+
+		virtual bool onWrite(AssetWriteFlags flags) override;
+		virtual bool onCompile(ByteStream& dataOutStream, AssetWriteFlags flags) override;
+
+		virtual bool onUnload() override;
 	public:
 		using Asset::Asset;
 
@@ -58,13 +66,6 @@ namespace sa {
 		void compileSource();
 		bool isSourceCompiled() const;
 
-		virtual bool onLoad(JsonObject& metaData, AssetLoadFlags flags) override;
-		virtual bool onLoadCompiled(ByteStream& dataInStream, AssetLoadFlags flags) override;
-
-		virtual bool onWrite(AssetWriteFlags flags) override;
-		virtual bool onCompile(ByteStream& dataOutStream, AssetWriteFlags flags) override;
-
-		virtual bool onUnload() override;
 
 		MaterialShader* clone(const std::string& name, const std::filesystem::path& assetDir = "") const override;
 

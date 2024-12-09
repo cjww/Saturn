@@ -27,6 +27,16 @@ namespace sa {
 		entt::dispatcher* m_pDispatcher;
 
 		void onWindowResized(const engine_event::WindowResized& e);
+	
+	protected:
+		virtual bool onLoad(JsonObject& metaData, AssetLoadFlags flags) override;
+		virtual bool onLoadCompiled(ByteStream& dataInStream, AssetLoadFlags flags) override;
+
+		virtual bool onWrite(AssetWriteFlags flags) override;
+		virtual bool onCompile(ByteStream& dataOutStream, AssetWriteFlags flags) override;
+
+		virtual bool onUnload() override;
+
 	public:
 
 		RenderTarget();
@@ -53,14 +63,6 @@ namespace sa {
 
 		void setActive(bool isActive);
 		bool isActive() const;
-
-		virtual bool onLoad(JsonObject& metaData, AssetLoadFlags flags) override;
-		virtual bool onLoadCompiled(ByteStream& dataInStream, AssetLoadFlags flags) override;
-
-		virtual bool onWrite(AssetWriteFlags flags) override;
-		virtual bool onCompile(ByteStream& dataOutStream, AssetWriteFlags flags) override;
-
-		virtual bool onUnload() override;
 
 		RenderTarget* clone(const std::string& name, const std::filesystem::path& assetDir = "") const override;
 

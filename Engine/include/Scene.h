@@ -63,16 +63,17 @@ namespace sa {
 		void updateCameraPositions();
 		void updateLightPositions();
 
-	public:
-		Scene(const AssetHeader& header, bool isCompiled);
-		virtual ~Scene() override;
-
+	protected:
 		virtual bool onLoad(JsonObject& metaData, AssetLoadFlags flags) override; // Asset
 		virtual bool onLoadCompiled(ByteStream& dataInStream, AssetLoadFlags flags) override;
 
 		virtual bool onWrite(AssetWriteFlags flags) override; // Asset
 		virtual bool onCompile(ByteStream& dataOutStream, AssetWriteFlags flags) override;
 		virtual bool onUnload() override; // Asset
+	
+	public:
+		Scene(const AssetHeader& header, bool isCompiled);
+		virtual ~Scene() override;
 
 		virtual void onRuntimeStart();
 		virtual void onRuntimeStop();
