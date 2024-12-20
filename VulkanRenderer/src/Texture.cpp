@@ -194,14 +194,12 @@ namespace sa {
 		m_pDataTransfer = Renderer::Get().queueTransfer(transfer);
 	}
 
-	void Texture::createCube(const std::vector<Image>& images, bool generateMipmaps) {
+	void Texture::createCube(const Image faceImages[], bool generateMipmaps) {
 		TextureUsageFlags usage = TextureUsageFlagBits::SAMPLED | TextureUsageFlagBits::TRANSFER_DST;
-		if (images.size() != 6)
-			throw std::runtime_error("Must contain 6 images");
 
 		uint32_t mipLevels = 1;
 		if (generateMipmaps) {
-			mipLevels = images[0].calculateMipLevelCount();
+			mipLevels = faceImages[0].calculateMipLevelCount();
 			usage |= TextureUsageFlagBits::TRANSFER_SRC;
 		}
 
@@ -214,14 +212,14 @@ namespace sa {
 		create2D(
 			TextureType::TEXTURE_TYPE_CUBE,
 			usage,
-			images[0].getExtent(),
+			faceImages[0].getExtent(),
 			format,
 			mipLevels,
 			6,
 			1,
 			static_cast<uint32_t>(vk::ImageCreateFlagBits::eCubeCompatible));
 
-		size_t layerSize = images[0].getWidth() * images[0].getHeight() * images[0].getChannelCount();
+		size_t layerSize = faceImages[0].getWidth() * faceImages[0].getHeight() * faceImages[0].getChannelCount();
 		m_pStagingBuffer = m_pCore->createBuffer(
 			vk::BufferUsageFlagBits::eTransferSrc,
 			VMA_MEMORY_USAGE_AUTO,
@@ -230,7 +228,7 @@ namespace sa {
 			nullptr);
 
 		for (int i = 0; i < 6; i++) {
-			memcpy((char*)m_pStagingBuffer->mappedData + layerSize * i, images[i].getPixels(), layerSize);
+			memcpy((char*)m_pStagingBuffer->mappedData + layerSize * i, faceImages[i].getPixels(), layerSize);
 		}
 
 		// transfer data

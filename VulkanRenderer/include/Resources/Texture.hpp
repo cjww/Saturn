@@ -63,7 +63,12 @@ namespace sa {
 
 		void createCube(TextureUsageFlags usageFlags, Extent extent, Format format = Format::UNDEFINED, uint32_t mipLevels = 1, uint32_t samples = 1);
 		void createCube(const Image& image, bool generateMipmaps);
-		void createCube(const std::vector<Image>& images, bool generateMipmaps);
+		/// <summary>
+		/// Creates a cube texture from 6 images, one for each face. The face order is:
+		/// right, left, top, bottom, front, back
+		/// </summary>
+		void createCube(const Image faceImages[], bool generateMipmaps);
+
 
 		void create3D(TextureUsageFlags usageFlags, Extent3D extent, Format format = Format::UNDEFINED, uint32_t mipLevels = 1, uint32_t arrayLayers = 1, uint32_t samples = 1);
 

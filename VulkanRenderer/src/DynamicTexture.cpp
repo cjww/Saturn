@@ -44,7 +44,7 @@ namespace sa {
 		}
 	}
 	
-	void DynamicTexture::createCube(const std::vector<Image>& images, bool generateMipmaps) {
+	void DynamicTexture::createCube(const Image images[], bool generateMipmaps) {
 		m_textures.resize(m_pCore->getQueueCount());
 		for (uint32_t i = 0; i < m_textures.size(); i++) {
 			m_textures[i].createCube(images, generateMipmaps);
