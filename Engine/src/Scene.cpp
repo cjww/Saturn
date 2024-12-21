@@ -194,6 +194,7 @@ namespace sa {
 
 		bool renderedToMainRenderTarget = false;
 		forEach<comp::Camera>([&](comp::Camera& camera) {
+			camera.sceneCollection.clear();
 			m_dynamicSceneCollection.makeRenderReady(camera.sceneCollection, nullptr);
 			RenderTarget* pRenderTarget = camera.getRenderTarget().getAsset();
 			if (pRenderTarget) {
