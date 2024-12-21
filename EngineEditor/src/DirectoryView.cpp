@@ -224,7 +224,7 @@ bool DirectoryView::renameItem(const FileEntry& item, const std::filesystem::pat
 		wasChanged = true;
 		SA_DEBUG_LOG_INFO("Renamed ", std::filesystem::proximate(item.path), " to ", std::filesystem::proximate(name));
 
-		if (item.assetType != -1) {
+		if (item.assetType != 0) {
 			sa::Asset* pAsset = sa::AssetManager::Get().getAsset(item.assetID);
 			wasChanged = renameAsset(pAsset, name);
 		}
@@ -380,14 +380,14 @@ void DirectoryView::makeAssetWindow() {
 
 
 		if (selected && selected->isLoaded()) {
-			if (selected->getType() == sa::AssetManager::Get().getAssetTypeID<sa::ModelAsset>()) {
+			if (selected->getType() == sa::AssetManager::GetAssetTypeID<sa::ModelAsset>()) {
 				if (ImGui::Button("Spawn")) {
 					sa::Entity entity = m_pEngine->getCurrentScene()->createEntity();
 					entity.addComponent<comp::Transform>();
 					entity.addComponent<comp::Model>()->model = selected->getID();
 				}
 			}
-			else if (selected->getType() == sa::AssetManager::Get().getAssetTypeID<sa::Scene>()) {
+			else if (selected->getType() == sa::AssetManager::GetAssetTypeID<sa::Scene>()) {
 				if (ImGui::Button("Set Scene")) {
 					m_pEngine->setScene(static_cast<sa::Scene*>(selected));
 				}

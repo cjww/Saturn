@@ -175,10 +175,10 @@ namespace sa {
 			return m_extensionToType.at(extension);
 		}
 		if (ModelAsset::IsExtensionSupported(extension)) {
-			return getAssetTypeID<ModelAsset>();
+			return GetAssetTypeID<ModelAsset>();
 		}
 		if (Image::IsFileSupported(path.generic_string().c_str())) {
-			return getAssetTypeID<TextureAsset>();
+			return GetAssetTypeID<TextureAsset>();
 		}
 		return -1;
 	}

@@ -15,7 +15,7 @@
 
 namespace sa {
 	
-	typedef uint32_t AssetTypeID;
+	typedef size_t AssetTypeID;
 	struct AssetHeader {
 		UUID id;
 		size_t size = 0;

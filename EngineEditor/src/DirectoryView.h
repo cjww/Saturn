@@ -23,7 +23,7 @@ private:
 		bool isDirectory = false;
 		sa::Texture icon;
 		sa::UUID assetID = 0;
-		sa::AssetTypeID assetType = ~0u;
+		sa::AssetTypeID assetType = 0;
 
 		glm::vec2 boundsMin;
 		glm::vec2 boundsMax;

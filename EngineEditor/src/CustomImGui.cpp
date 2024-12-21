@@ -267,7 +267,7 @@ namespace ImGui {
 	void Component(sa::Entity entity, comp::Model* model) {
 		
 		sa::UUID id = model->model.getID();
-		if (AssetSlot(("Model##" + entity.getComponent<comp::Name>()->name).c_str(), id, sa::AssetManager::Get().getAssetTypeID<sa::ModelAsset>())) {	
+		if (AssetSlot(("Model##" + entity.getComponent<comp::Name>()->name).c_str(), id, sa::AssetManager::GetAssetTypeID<sa::ModelAsset>())) {	
 			model->model = id;
 		}
 
@@ -416,7 +416,7 @@ namespace ImGui {
 
 		
 		sa::UUID id = camera->getRenderTarget().getID();
-		if (AssetSlot("RenderTarget", id, sa::AssetManager::Get().getAssetTypeID<sa::RenderTarget>())) {
+		if (AssetSlot("RenderTarget", id, sa::AssetManager::GetAssetTypeID<sa::RenderTarget>())) {
 			camera->setRenderTarget(sa::AssetManager::Get().getAsset<sa::RenderTarget>(id));
 		}
 
@@ -529,10 +529,9 @@ namespace ImGui {
 	}
 	
 	AssetEditorInfo GetAssetInfo(sa::AssetTypeID type) {
-		sa::AssetManager& am = sa::AssetManager::Get();
 		const static std::unordered_map<sa::AssetTypeID, AssetEditorInfo> map = {
 			{
-				am.getAssetTypeID<sa::Material>(), 
+				sa::AssetManager::GetAssetTypeID<sa::Material>(),
 				{
 					.inCreateMenu = true,
 					.icon = LoadEditorIcon("resources/sphere-white.png"),
@@ -540,7 +539,7 @@ namespace ImGui {
 				}
 			},
 			{ 
-				am.getAssetTypeID<sa::ModelAsset>(), 
+				sa::AssetManager::GetAssetTypeID<sa::ModelAsset>(),
 				{
 					.inCreateMenu = false,
 					.icon = LoadEditorIcon("resources/mesh_cube.png"),
@@ -548,7 +547,7 @@ namespace ImGui {
 				}
 			},
 			{ 
-				am.getAssetTypeID<sa::TextureAsset>(), 
+				sa::AssetManager::GetAssetTypeID<sa::TextureAsset>(),
 				{
 					.inCreateMenu = false,
 					.icon = LoadEditorIcon("resources/image.png"),
@@ -556,7 +555,7 @@ namespace ImGui {
 				}
 			},
 			{
-				am.getAssetTypeID<sa::Scene>(),
+				sa::AssetManager::GetAssetTypeID<sa::Scene>(),
 				{
 					.inCreateMenu = true,
 					.icon = LoadEditorIcon("resources/scene-white.png"),
@@ -566,7 +565,7 @@ namespace ImGui {
 				}
 			},
 			{
-				am.getAssetTypeID<sa::RenderTarget>(),
+				sa::AssetManager::GetAssetTypeID<sa::RenderTarget>(),
 				{
 					.inCreateMenu = true,
 					.icon = LoadEditorIcon("resources/image.png"),
@@ -574,7 +573,7 @@ namespace ImGui {
 				}
 			},
 			{
-				am.getAssetTypeID<sa::MaterialShader>(),
+				sa::AssetManager::GetAssetTypeID<sa::MaterialShader>(),
 				{
 					.inCreateMenu = true,
 					.icon = LoadEditorIcon("resources/file-white.png"),
@@ -605,7 +604,7 @@ namespace ImGui {
 		sa::Material* pMaterial = static_cast<sa::Material*>(pAsset);
 
 		sa::UUID id = pMaterial->getMaterialShader().getID();
-		if(AssetSlot("Material Shader", id, sa::AssetManager::Get().getAssetTypeID<sa::MaterialShader>())) {
+		if(AssetSlot("Material Shader", id, sa::AssetManager::GetAssetTypeID<sa::MaterialShader>())) {
 			pMaterial->setMaterialShader(id);
 		}
 
@@ -622,7 +621,7 @@ namespace ImGui {
 		Checkbox("Two Sided", &pMaterial->twoSided);
 
 		auto& textures = pMaterial->getTextures();
-		sa::AssetTypeID textureAssetType = sa::AssetManager::Get().getAssetTypeID<sa::TextureAsset>();
+		sa::AssetTypeID textureAssetType = sa::AssetManager::GetAssetTypeID<sa::TextureAsset>();
 		if (BeginListBox("Textures")) {
 			for (auto& [type, texArr] : textures) {
 				std::string textureTypeName = sa::to_string(type);

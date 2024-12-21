@@ -231,7 +231,7 @@ namespace sa {
 
 	template <typename T>
 	AssetTypeID AssetHolder<T>::GetTypeID() {
-		return AssetManager::Get().getAssetTypeID<T>();
+		return AssetManager::GetAssetTypeID<T>();
 	}
 
 	template<typename T>

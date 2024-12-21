@@ -67,7 +67,6 @@ namespace sa {
 		AssetTypeID m_nextTypeID;
 		std::unordered_map<AssetTypeID, std::function<Asset* (const AssetHeader&, bool)>> m_assetAddConversions;
 		std::unordered_map<AssetTypeID, std::string> m_typeToString;
-		std::unordered_map<std::string, AssetTypeID> m_stringToType;
 
 		std::unordered_map<std::string, AssetTypeID> m_extensionToType;
 		std::unordered_map<AssetTypeID, std::string> m_typeToExtension;
@@ -92,6 +91,9 @@ namespace sa {
 		~AssetManager();
 	
 		static AssetManager& Get();
+
+		template<typename T>
+		static AssetTypeID GetAssetTypeID();
 		
 		static bool IsMetaAsset(const std::filesystem::path& entry);
 		static bool IsCompiledAsset(const std::filesystem::path& path);
@@ -131,9 +133,6 @@ namespace sa {
 		const std::string& getAssetTypeName(AssetTypeID typeID) const;
 
 		template<typename T>
-		AssetTypeID getAssetTypeID() const;
-
-		template<typename T>
 		bool isType(Asset* pAsset) const;
 
 		template<typename T>
@@ -170,11 +169,16 @@ namespace sa {
 		Asset* cloneAsset(UUID id, const std::filesystem::path& assetPath);
 	};
 
+	template<typename T>
+	inline AssetTypeID AssetManager::GetAssetTypeID() {
+		return std::hash<std::string_view>()(typeid(T).name());
+	}
+
 	template <typename T>
 	T* AssetManager::createAsset(const std::string& name, UUID id) {
 		AssetHeader header; // generates new UUID
 		header.id = id;
-		header.type = getAssetTypeID<T>();
+		header.type = GetAssetTypeID<T>();
 		assert(header.type != -1 && "Can not use unregistered type!");
 		SA_DEBUG_LOG_INFO("Creating ", getAssetTypeName(header.type), " ", name, " with id ", std::to_string(id));
 
@@ -189,34 +193,23 @@ namespace sa {
 
 	template<typename T>
 	inline AssetTypeID AssetManager::registerAssetType() {
-		AssetTypeID id = m_nextTypeID++;
+		AssetTypeID id = GetAssetTypeID<T>();
+		std::string str = typeid(T).name();
+		utils::stripTypeName(str);
 		
 		m_assetAddConversions[id] = [&](const AssetHeader& header, bool isCompiled) {
 			return m_assets.insert({ header.id, std::make_unique<T>(header, isCompiled) }).first->second.get();
 		};
 
-		std::string str = typeid(T).name();
-		utils::stripTypeName(str);
 		m_typeToString[id] = str;
-		m_stringToType[str] = id;
 
 		LuaAccessable::registerType<T>();
 		return id;
 	}
 
 	template<typename T>
-	inline AssetTypeID AssetManager::getAssetTypeID() const {
-		std::string str = typeid(T).name();
-		utils::stripTypeName(str);
-		if (!m_stringToType.count(str)) {
-			return -1;
-		}
-		return m_stringToType.at(str);
-	}
-
-	template<typename T>
 	inline bool AssetManager::isType(Asset* pAsset) const {
-		return pAsset && pAsset->getHeader().type == getAssetTypeID<T>();
+		return pAsset && pAsset->getHeader().type == GetAssetTypeID<T>();
 	}
 
 	template<typename T>
@@ -239,13 +232,13 @@ namespace sa {
 
 	template<typename T>
 	inline T* AssetManager::createAsset(const std::string& name, const std::filesystem::path& assetDirectory) {
-		Asset* asset = createAsset(getAssetTypeID<T>(), name, assetDirectory);
+		Asset* asset = createAsset(GetAssetTypeID<T>(), name, assetDirectory);
 		return static_cast<T*>(asset);
 	}
 
 	template<typename T>
 	inline T* AssetManager::createAssetConcurrent(const std::string& name, const std::filesystem::path& assetDirectory) {
-		Asset* asset = createAssetConcurrent(getAssetTypeID<T>(), name, assetDirectory);
+		Asset* asset = createAssetConcurrent(GetAssetTypeID<T>(), name, assetDirectory);
 		return static_cast<T*>(asset);
 	}
 
