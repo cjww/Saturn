@@ -39,6 +39,7 @@ set(Header_Files
     "include/structs.hpp"
     "include/Tools/Logger.hpp"
     "include/Tools/utils.hpp"
+    "include/Tools/ShortString.hpp"
     "include/Window.hpp"
 )
 source_group("Header Files" FILES ${Header_Files})
@@ -76,6 +77,7 @@ set(Source_Files
     "src/Texture.cpp"
     "src/ImageView.cpp"
     "src/utils.cpp"
+    "src/ShortString.cpp"
     "src/VulkanCore.cpp"
     "src/Window.cpp"
 )

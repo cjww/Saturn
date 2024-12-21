@@ -2,6 +2,7 @@
 #include "internal/CommandPool.hpp"
 
 #include "internal/debugFunctions.hpp"
+#include "Tools/ShortString.hpp"
 
 namespace sa {
 	
@@ -107,8 +108,9 @@ namespace sa {
 		info.setSwapchains(swapchain);
 		info.setImageIndices(imageIndex);
 		info.setWaitSemaphores(waitSempahore);
-		m_queues[m_lastBufferIndex].presentKHR(info), "Failed to present image" + std::to_string(imageIndex);
-
+		
+		sa::ShortString msg("Failed to present image %u", imageIndex);
+		sa::checkError(m_queues[m_lastBufferIndex].presentKHR(info), msg.data());
 	}
 
 	void CommandBufferSet::present(const std::vector<vk::Semaphore>& waitSempahores, vk::SwapchainKHR swapchain, uint32_t imageIndex) {
@@ -117,7 +119,8 @@ namespace sa {
 		info.setImageIndices(imageIndex);
 		info.setWaitSemaphores(waitSempahores);
 
-		m_queues[m_lastBufferIndex].presentKHR(info), "Failed to present image" + std::to_string(imageIndex);
+		sa::ShortString msg("Failed to present image %u", imageIndex);
+		sa::checkError(m_queues[m_lastBufferIndex].presentKHR(info), msg.data());
 	}
 
 	vk::CommandBuffer CommandBufferSet::getBuffer(uint32_t index) const {

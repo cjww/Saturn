@@ -2,12 +2,13 @@
 #include "internal/debugFunctions.hpp"
 
 namespace sa {
-    
-    void checkError(vk::Result result, const std::string& msg, bool doThrow) {
+
+    void checkError(vk::Result result, const std::string_view msg, bool doThrow) {
         if (result == vk::Result::eSuccess)
             return;
+
         std::stringstream ss;
-        if (msg.empty()) 
+        if (!msg.empty()) 
             ss << msg << " : ";
         ss << vk::to_string(result);
         if (doThrow) {

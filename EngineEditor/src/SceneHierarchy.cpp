@@ -1,4 +1,5 @@
 #include "SceneHierarchy.h"
+#include "Tools/ShortString.hpp"
 
 void SceneHierarchy::makePopups() {
 	if (ImGui::BeginPopup("SceneHierarchyMenu")) {
@@ -138,8 +139,8 @@ void SceneHierarchy::makeTree(sa::Entity e) {
 	if (!e.hasChildren()) {
 		flags |= ImGuiTreeNodeFlags_Leaf;
 	}
-
-	bool opened = ImGui::TreeNodeEx((e.getComponent<comp::Name>()->name + "##" + std::to_string((uint32_t)e)).c_str(), flags);
+	sa::ShortString nodeLabel("%s##%u", e.getComponent<comp::Name>()->name.c_str(), (uint32_t)e);
+	bool opened = ImGui::TreeNodeEx(nodeLabel, flags);
 	if (ImGui::IsItemHovered() && ImGui::IsMouseReleased(ImGuiMouseButton_Left)) {
 		if(!ImGui::IsKeyDown(ImGuiKey_ModShift)) {
 			m_pEngine->trigger<sa::editor_event::AllEntitiesDeselected>();
