@@ -67,13 +67,13 @@ namespace sa {
 			m_outputStream << ",";
 		}
 
-		std::string name = result.name;
-		std::replace(name.begin(), name.end(), '"', '\'');
+		snprintf(stringBuffer.data(), stringBuffer.size(), result.name.data());
+		std::replace(stringBuffer.begin(), stringBuffer.end(), '"', '\'');
 
 		m_outputStream << "{";
 		m_outputStream << "\"cat\":\"function\",";
 		m_outputStream << "\"dur\":" << (result.end - result.start) << ',';
-		m_outputStream << "\"name\":\"" << name << "\",";
+		m_outputStream << "\"name\":\"" << stringBuffer.data() << "\",";
 		m_outputStream << "\"ph\":\"X\",";
 		m_outputStream << "\"pid\":0,";
 		m_outputStream << "\"tid\":" << result.threadID << ",";
@@ -91,11 +91,16 @@ namespace sa {
 		m_outputStream.flush();
 	}
 
+	Profiler::ProfileTimer::ProfileTimer(const char* name)
+		: m_name(name)
+	{
+	}
+	
 	Profiler::ProfileTimer::ProfileTimer(const std::string& name)
 		: m_name(name)
 	{
 	}
-
+	
 	Profiler::ProfileTimer::~ProfileTimer() {
 		Profiler::Result res;
 		res.start = m_clock.getStartTime<std::chrono::microseconds>();

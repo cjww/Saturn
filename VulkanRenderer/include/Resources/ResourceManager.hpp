@@ -97,6 +97,10 @@ namespace sa {
 	public:
 
 		static ResourceManager& Get();
+		
+		template<typename T>
+		static ResourceType GetType();
+
 		virtual ~ResourceManager();
 
 		template<typename T>
@@ -144,7 +148,7 @@ namespace sa {
 
 	template<typename T>
 	inline details::ResourceContainer<T>* ResourceManager::getContainer() {
-		ResourceType type = std::hash<std::string>()(typeid(T).name());
+		ResourceType type = GetType<T>();
 		m_managerMutex.lock();
 		if (!m_containers.count(type)) {
 			m_containers[type] = std::make_unique<details::ResourceContainer<T>>();
@@ -155,11 +159,17 @@ namespace sa {
 
 	template<typename T>
 	inline details::ResourceContainer<T>* ResourceManager::tryGetContainer() const {
-		ResourceType type = std::hash<std::string>()(typeid(T).name());
+		ResourceType type = GetType<T>();
 		if (!m_containers.count(type)) {
 			return nullptr;
 		}
 		return static_cast<details::ResourceContainer<T>*>(m_containers.at(type).get());
+	}
+
+	template<typename T>
+	inline ResourceType ResourceManager::GetType() {
+		std::string_view str = std::string_view(typeid(T).name());
+		return std::hash<std::string_view>()(str);
 	}
 
 	template<typename T>

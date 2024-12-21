@@ -3,6 +3,7 @@
 #include <fstream>
 #include <mutex>
 #include <string>
+#include <array>
 namespace sa {
 
 	// Define SA_PROFILER_ENABLE to enable
@@ -13,10 +14,11 @@ namespace sa {
 		int m_profileCount;
 
 		std::mutex m_mutex;
+		std::array<char, 32> stringBuffer;
 	public:
 		struct Result
 		{
-			std::string name;
+			std::string_view name;
 			long long start, end;
 			uint32_t threadID;
 			Result(): start(0), end(0), threadID(0){} ;
@@ -26,8 +28,9 @@ namespace sa {
 		{
 		private:
 			Clock m_clock;
-			std::string m_name;
+			std::string_view m_name;
 		public:
+			ProfileTimer(const char* name);
 			ProfileTimer(const std::string& name);
 			~ProfileTimer();
 
