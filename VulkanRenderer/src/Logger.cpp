@@ -1,9 +1,12 @@
 #include "pch.h"
 #include "Tools/Logger.hpp"
 
+char setColorStr[11];
+
+
 void Logger::SetColor(FGColor foreground, BGColor background) {
-	std::string str = "\033[" + std::to_string((int)background) + ";" + std::to_string((int)foreground) + "m";
-	printf(str.c_str());
+	snprintf(setColorStr, 11, "\033[%d;%dm", (int)background, (int)foreground);
+	printf(setColorStr);
 }
 
 void Logger::SetOutStream(std::ostream& outStream) {
