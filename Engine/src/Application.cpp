@@ -42,9 +42,13 @@ namespace sa {
 		Clock clock;
 		while (m_pWindow->isOpen()) {
 			SA_PROFILE_SCOPE("Frame");
+			
+			EngineStatistics& stats = Engine::GetEngineStatistics();
+			stats.inFrameAllocCount = 0;
+			stats.inFrameAllocSize = 0;
+
 			m_pWindow->pollEvents();
 			float dt = clock.restart();
-
 			// Update layers 
 			for (const auto layer : m_layers) {
 				layer->onUpdate(dt);

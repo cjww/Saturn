@@ -16,6 +16,8 @@ namespace sa {
 		sa::DeviceMemoryStats gpuMemoryStats = {};
 		size_t drawCalls = 0;
 		size_t dispatchCalls = 0;
+		size_t inFrameAllocCount;
+		size_t inFrameAllocSize;
 	};
 
 
@@ -73,5 +75,6 @@ namespace sa {
 		void onSceneSet(engine_event::SceneSet& e);
 
 	};
-	
 }
+
+void* operator new(size_t size);

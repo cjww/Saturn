@@ -49,7 +49,6 @@ enum class BGColor {
 
 class Logger {
 private:
-
 	template<typename Arg>
 	static void PrintOneArgument(Arg arg);
 

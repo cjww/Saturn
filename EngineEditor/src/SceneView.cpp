@@ -645,6 +645,9 @@ void SceneView::onImGui() {
 
 				ImGui::Text("Draw calls: %u", stats.drawCalls);
 				ImGui::Text("Dispatch calls: %u", stats.dispatchCalls);
+				
+				ImGui::Text("In frame allocations: %u", stats.inFrameAllocCount);
+				ImGui::Text("In frame allocation size: %u", stats.inFrameAllocSize);
 
 			}
 			if (ImGui::CollapsingHeader("Memory")) {

@@ -203,3 +203,9 @@ namespace sa {
 	}
 }
 
+void* operator new(size_t size) {
+	sa::EngineStatistics& stats = sa::Engine::GetEngineStatistics();
+	stats.inFrameAllocCount++;
+	stats.inFrameAllocSize += size;
+	return malloc(size);
+}
