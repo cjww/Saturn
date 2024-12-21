@@ -120,7 +120,7 @@ namespace sa {
 
 		context.bindDescriptorSet(collection.getSceneDescriptorSetDepthPass());
 
-		context.bindVertexBuffers(0, &collection.getVertexBuffer(), 1);
+		context.bindVertexBuffer(0, collection.getVertexBuffer());
 		context.bindIndexBuffer(collection.getIndexBuffer());
 
 		Rect viewport = {};

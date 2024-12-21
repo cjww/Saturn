@@ -66,7 +66,7 @@ namespace sa {
         glm::mat4 mat = sceneCamera.getProjectionMatrix() * sceneCamera.getViewMatrix();
         context.pushConstant(ShaderStageFlagBits::VERTEX, mat);
 
-        context.bindVertexBuffers(0, &m_lineVertexBuffer.getBuffer(), 1);
+        context.bindVertexBuffer(0, m_lineVertexBuffer.getBuffer());
         
         context.draw(m_lineVertexBuffer.getElementCount<Vertex>(), 1);
         Engine::GetEngineStatistics().drawCalls++;

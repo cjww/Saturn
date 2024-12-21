@@ -339,7 +339,7 @@ namespace sa {
 			
 			collection.bindDepthPipeline(context);
 
-			context.bindVertexBuffers(0, &collection.getVertexBuffer(), 1);
+			context.bindVertexBuffer(0, collection.getVertexBuffer());
 			context.bindIndexBuffer(collection.getIndexBuffer());
 
 			context.setViewport(viewport);
@@ -419,7 +419,7 @@ namespace sa {
 		
 		context.bindDescriptorSet(m_skybox.descriptorSet);
 
-		context.bindVertexBuffers(0, &m_skybox.vertexBuffer, 1);
+		context.bindVertexBuffer(0, m_skybox.vertexBuffer);
 		context.bindIndexBuffer(m_skybox.indexBuffer);
 		
 		perFrame.viewMat = glm::mat4(glm::mat3(perFrame.viewMat));

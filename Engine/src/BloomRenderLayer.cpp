@@ -205,11 +205,11 @@ namespace sa {
 		// Upsample + combine
 
 		m_stackSize--;
-		DynamicTexture smallImage = bd.bloomMipTextures[bd.bloomMipTextures.size() - 1];
-		smallImage.sync(context);
+		DynamicTexture* pSmallImage = &bd.bloomMipTextures[bd.bloomMipTextures.size() - 1];
+		pSmallImage->sync(context);
 		for (int i = (int)bd.bufferMipTextures.size() - 1; i >= 0; i--) {
 			bd.bufferMipTextures[i].sync(context);
-			context.barrier(smallImage, sa::Transition::COMPUTE_SHADER_WRITE, sa::Transition::COMPUTE_SHADER_READ);
+			context.barrier(*pSmallImage, sa::Transition::COMPUTE_SHADER_WRITE, sa::Transition::COMPUTE_SHADER_READ);
 
 			m_stackSize--;
 			threadX = m_threadCountStack[m_stackSize].width;
@@ -219,7 +219,7 @@ namespace sa {
 			context.dispatch(threadX, threadY, 1);
 
 			if (i > 0) {
-				smallImage = bd.bufferMipTextures[i];
+				pSmallImage = &bd.bufferMipTextures[i];
 			}
 		}
 

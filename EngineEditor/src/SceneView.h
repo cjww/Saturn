@@ -43,6 +43,9 @@ private:
 	std::array<float, 100> m_frameTimeGraph;
 	std::array<float, 100> m_gpuMemoryData;
 
+	sa::Texture* m_pointLightIcon;
+	sa::Texture* m_directionalLightIcon;
+	sa::Texture* m_cameraIcon;
 
 	void onEntitySelected(const sa::editor_event::EntitySelected& e);
 	void onEntityDeselected(const sa::editor_event::EntityDeselected& e);

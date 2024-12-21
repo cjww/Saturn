@@ -93,6 +93,9 @@ SceneView::SceneView(sa::Engine* pEngine, sa::EngineEditor* pEditor, sa::RenderW
 		}
 	});
 
+	m_pointLightIcon = sa::AssetManager::Get().loadTexture(m_pEditor->MakeEditorRelative("resources/lightbulb-icon.png"), true);
+	m_directionalLightIcon = sa::AssetManager::Get().loadTexture(m_pEditor->MakeEditorRelative("resources/sun-icon.png"), true);
+	m_cameraIcon = sa::AssetManager::Get().loadTexture(m_pEditor->MakeEditorRelative("resources/camera-transparent.png"), true);
 }
 
 SceneView::~SceneView() {
@@ -318,16 +321,14 @@ void SceneView::onImGui() {
 		glm::vec2 screenSize = { imageSize.x, imageSize.y };
 
 		if (m_pEngine->getCurrentScene() && showIcons) {
-			sa::Texture* tex = sa::AssetManager::Get().loadTexture(m_pEditor->MakeEditorRelative("resources/lightbulb-icon.png"), true);
-			sa::Texture* sunTexture = sa::AssetManager::Get().loadTexture(m_pEditor->MakeEditorRelative("resources/sun-icon.png"), true);
 			m_pEngine->getCurrentScene()->forEach<comp::Light>([&](const comp::Light& light) {
 				ImColor color(light.values.color);
 				switch (light.values.type) {
 				case sa::LightType::POINT:
-					ImGui::GizmoIcon(tex, light.values.position, &camera, screenPos, screenSize, iconSize, color);
+					ImGui::GizmoIcon(m_pointLightIcon, light.values.position, &camera, screenPos, screenSize, iconSize, color);
 					break;
 				case sa::LightType::DIRECTIONAL:
-					ImGui::GizmoIcon(sunTexture, light.values.position, &camera, screenPos, screenSize, iconSize * 1.5f, color);
+					ImGui::GizmoIcon(m_directionalLightIcon, light.values.position, &camera, screenPos, screenSize, iconSize * 1.5f, color);
 					break;
 				case sa::LightType::SPOT:
 
@@ -335,13 +336,10 @@ void SceneView::onImGui() {
 				default:
 					break;
 				}
-				
-
 			});
 			
-			tex = sa::AssetManager::Get().loadTexture(m_pEditor->MakeEditorRelative("resources/camera-transparent.png"), true);
 			m_pEngine->getCurrentScene()->forEach<comp::Camera>([&](const comp::Camera& camera) {
-				ImGui::GizmoIcon(tex, camera.camera.getPosition(), &m_camera, screenPos, screenSize, iconSize, ImColor(1.f, 1.f, 1.f, 1.f));
+				ImGui::GizmoIcon(m_cameraIcon, camera.camera.getPosition(), &m_camera, screenPos, screenSize, iconSize, ImColor(1.f, 1.f, 1.f, 1.f));
 			});
 		}
 

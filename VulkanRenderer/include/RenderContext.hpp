@@ -96,6 +96,7 @@ namespace sa {
 		void bindPipeline(ResourceID pipeline) const;
 		void bindShader(const Shader& shader) const;
 		void bindShaders(const std::vector<Shader>& shaders) const;
+		void bindVertexBuffer(uint32_t firstBinding, const Buffer& buffer, size_t offset = 0) const;
 		void bindVertexBuffers(uint32_t firstBinding, const Buffer* pBuffers, size_t bufferCount) const;
 		void bindIndexBuffer(const Buffer& buffer) const;
 

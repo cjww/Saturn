@@ -206,6 +206,11 @@ namespace sa {
 
 	}
 
+	void RenderContext::bindVertexBuffer(uint32_t firstBinding, const Buffer& buffer, size_t offset) const {
+		const DeviceBuffer* deviceBuffer = (const DeviceBuffer*)buffer;
+		m_pCommandBufferSet->getBuffer().bindVertexBuffers(firstBinding, 1, &deviceBuffer->buffer, &offset);
+	}
+
 	void RenderContext::bindVertexBuffers(uint32_t firstBinding, const Buffer* pBuffers, size_t bufferCount) const {
 		if (bufferCount == 0)
 			return;
