@@ -1,5 +1,6 @@
 #pragma once
 #include "Clock.h"
+#include "Tools/ShortString.hpp"
 #include <fstream>
 #include <mutex>
 #include <string>
@@ -14,7 +15,7 @@ namespace sa {
 		int m_profileCount;
 
 		std::mutex m_mutex;
-		std::array<char, 32> stringBuffer;
+		ShortString nameStr;
 	public:
 		struct Result
 		{
