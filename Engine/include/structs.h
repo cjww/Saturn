@@ -19,4 +19,9 @@ namespace sa {
 		glm::mat4 projMat;
 		glm::vec4 viewPos;
 	};
+
+	struct RenderData {
+		PerFrameBuffer matrices;
+		Rect viewport;
+	};
 }

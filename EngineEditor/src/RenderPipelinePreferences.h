@@ -2,9 +2,6 @@
 
 #include "EditorModule.h"
 
-#include <Graphics/RenderPipeline.h>
-#include <Graphics/RenderLayers/BloomRenderLayer.h>
-
 class RenderPipelinePreferences : public EditorModule {
 private:
 	

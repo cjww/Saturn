@@ -9,6 +9,7 @@
 #include "Graphics\RenderPipeline.h"
 
 #include "Tools/Profiler.h"
+#include "Assets/Skybox.h"
 
 #define TILE_SIZE 16U
 #define MAX_LIGHTS_PER_TILE 1024
@@ -25,7 +26,6 @@ namespace sa {
 		ResourceID colorFramebuffer = NULL_RESOURCE;
 		ResourceID depthFramebuffer = NULL_RESOURCE;
 
-
 		// Light culling
 		glm::uvec2 tileCount;
 		DynamicBuffer lightIndexBuffer;
@@ -36,12 +36,11 @@ namespace sa {
 		ResourceID debugLightHeatmapDescriptorSet = NULL_RESOURCE;
 		bool renderDebugHeatmap = false;
 
-
 		bool isInitialized = false;
 	};
 
 	struct ForwardPlusPreferences {
-		
+		AssetHolder<Skybox> skybox;
 	};
 
 	class ForwardPlus : public IRenderLayer<ForwardPlusRenderData, ForwardPlusPreferences> {
@@ -68,21 +67,9 @@ namespace sa {
 		Buffer m_defaultShadowPreferencesBuffer;
 		Buffer m_defaultShadowDataBuffer;
 
-		struct {
-			Texture cubemap;
-			PipelineLayout pipelineLayout;
-			ResourceID pipeline;
-			Buffer vertexBuffer;
-			Buffer indexBuffer;
-			ResourceID descriptorSet;
-		} m_skybox;
-
-
 		void createPreDepthPass();
 		void createLightCullingShader();
 		void createColorPass();
-
-		void createSkyboxPipeline();
 
 		void initializeMainRenderData(ForwardPlusRenderData& data, Extent extent);
 		void cleanupMainRenderData(ForwardPlusRenderData& data);

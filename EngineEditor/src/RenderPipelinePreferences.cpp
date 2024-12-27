@@ -1,5 +1,9 @@
 #include "RenderPipelinePreferences.h"
 
+#include <Graphics/RenderPipeline.h>
+#include <Graphics/RenderLayers/BloomRenderLayer.h>
+#include <Graphics/RenderTechniques/ForwardPlus.h>
+
 #include "CustomImGui.h"
 
 RenderPipelinePreferences::RenderPipelinePreferences(sa::Engine* pEngine, sa::EngineEditor* pEditor) 
@@ -19,6 +23,7 @@ void RenderPipelinePreferences::onImGui() {
 		static bool autoUpdate = true;
 
 		bool changed = false;
+		changed |= ImGui::RenderLayerPreferences<sa::ForwardPlus>("Forward+", m_pEngine->getRenderPipeline(), false);
 		changed |= ImGui::RenderLayerPreferences<sa::ShadowRenderLayer>("Shadows", m_pEngine->getRenderPipeline());
 		changed |= ImGui::RenderLayerPreferences<sa::BloomRenderLayer>("Bloom", m_pEngine->getRenderPipeline());
 

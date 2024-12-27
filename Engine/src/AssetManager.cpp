@@ -15,6 +15,7 @@
 #include "Assets/TextureAsset.h"
 #include "Scene.h"
 #include "Assets/MaterialShader.h"
+#include "Assets/Skybox.h"
 
 #include "Core.h"
 #include "Engine.h"
@@ -703,6 +704,7 @@ namespace sa {
 		m_typeToExtension[id] = ".sascene";
 		registerAssetType<RenderTarget>();
 		registerAssetType<MaterialShader>();
+		registerAssetType<Skybox>();
 	
 	}
 

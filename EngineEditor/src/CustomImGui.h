@@ -11,6 +11,7 @@
 #include "FileTemplates.h"
 
 #include "Graphics/RenderPipeline.h"
+#include "Graphics/RenderTechniques/ForwardPlus.h"
 #include "Graphics/RenderLayers/BloomRenderLayer.h"
 #include "Graphics/RenderLayers/ShadowRenderLayer.h"
 
@@ -65,11 +66,12 @@ namespace ImGui {
 	void Component(const sa::Entity& entity);
 	bool Script(sa::EntityScript* pScript, bool* visable);
 
+	bool RenderLayerPreferences(sa::ForwardPlus* pLayer, sa::ForwardPlus::PreferencesType& prefs);
 	bool RenderLayerPreferences(sa::ShadowRenderLayer* pLayer, sa::ShadowRenderLayer::PreferencesType& prefs);
 	bool RenderLayerPreferences(sa::BloomRenderLayer* pLayer, sa::BloomRenderLayer::PreferencesType& prefs);
 
 	template<typename T, std::enable_if_t<std::is_base_of_v<sa::BasicRenderLayer, T>, bool> = true>
-	bool RenderLayerPreferences(const char* title, const sa::RenderPipeline& renderPipeline);
+	bool RenderLayerPreferences(const char* title, const sa::RenderPipeline& renderPipeline, bool canBeDeactivated = true);
 
 
 	AssetEditorInfo GetAssetInfo(sa::AssetTypeID type);
@@ -80,6 +82,7 @@ namespace ImGui {
 	bool TextureProperties(sa::Asset* pAsset);
 	bool RenderTargetProperties(sa::Asset* pAsset);
 	bool MaterialShaderProperties(sa::Asset* pAsset);
+	bool SkyboxProperties(sa::Asset* pAsset);
 
 	void AssetPreview(sa::Material* pMaterial);
 	void AssetPreview(sa::ModelAsset* pModel);
@@ -158,14 +161,16 @@ void ImGui::Component(const sa::Entity& entity) {
 }
 
 template<typename T, std::enable_if_t<std::is_base_of_v<sa::BasicRenderLayer, T>, bool>>
-bool ImGui::RenderLayerPreferences(const char* title, const sa::RenderPipeline& renderPipeline) {
+bool ImGui::RenderLayerPreferences(const char* title, const sa::RenderPipeline& renderPipeline, bool canBeDeactivated) {
 	T* pLayer = renderPipeline.getLayer<T>();
 	if (!pLayer)
 		return false;
 	ImGui::PushID(title);
-	bool active = pLayer->isActive();
-	if (ImGui::Checkbox("##active", &active)) {
-		pLayer->setActive(active);
+	if(canBeDeactivated) {
+		bool active = pLayer->isActive();
+		if (ImGui::Checkbox("##active", &active)) {
+			pLayer->setActive(active);
+		}
 	}
 
 	ImGui::SameLine();

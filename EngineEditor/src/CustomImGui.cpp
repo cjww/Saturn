@@ -5,6 +5,7 @@
 #include "Assets/TextureAsset.h"
 #include "Graphics/Material.h"
 #include "Assets/MaterialShader.h"
+#include "Assets/Skybox.h"
 
 #include "Tools\FileDialogs.h"
 
@@ -475,6 +476,13 @@ namespace ImGui {
 		return false;
 	}
 	
+	bool RenderLayerPreferences(sa::ForwardPlus* pLayer, sa::ForwardPlus::PreferencesType& prefs) {
+		bool changed = false;
+		sa::UUID assetId;
+		changed |= AssetSlot("Skybox", assetId, sa::AssetManager::GetAssetTypeID<sa::Skybox>());
+		return changed;
+	}
+
 	bool RenderLayerPreferences(sa::ShadowRenderLayer* pLayer, sa::ShadowRenderLayer::PreferencesType& prefs) {
 		bool changed = false;
 		const int step = 1;
@@ -578,6 +586,14 @@ namespace ImGui {
 					.inCreateMenu = true,
 					.icon = LoadEditorIcon("resources/file-white.png"),
 					.imGuiPropertiesFn = MaterialShaderProperties,
+				}
+			},
+			{
+				sa::AssetManager::GetAssetTypeID<sa::Skybox>(),
+				{
+					.inCreateMenu = true,
+					.icon = LoadEditorIcon("resources/image.png"),
+					.imGuiPropertiesFn = SkyboxProperties,
 				}
 			}
 		};
@@ -811,8 +827,12 @@ namespace ImGui {
 		return false;
 	}
 
+    bool SkyboxProperties(sa::Asset *pAsset) {
+		
+        return false;
+    }
 
-	void AssetPreview(sa::Material* pMaterial) {
+    void AssetPreview(sa::Material* pMaterial) {
 
 	}
 

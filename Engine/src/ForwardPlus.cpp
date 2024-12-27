@@ -58,50 +58,6 @@ namespace sa {
 
 	}
 
-	void ForwardPlus::createSkyboxPipeline() {
-		Image skyboxImage("resources/skybox.png");
-
-		m_skybox.cubemap.createCube(skyboxImage, false);
-
-		Shader shaders[2];
-		shaders[0].create(ReadSPVFile((Engine::GetShaderDirectory() / "skybox.vert.spv").generic_string().c_str()));
-		shaders[1].create(ReadSPVFile((Engine::GetShaderDirectory() / "skybox.frag.spv").generic_string().c_str()));
-
-		m_skybox.pipelineLayout.createFromShaders(shaders, 2);
-
-		PipelineSettings settings = {};
-		settings.dynamicStates.push_back(DynamicState::VIEWPORT);
-		settings.dynamicStates.push_back(DynamicState::SCISSOR);
-		settings.cullMode = CullModeFlagBits::NONE;
-		m_skybox.pipeline = m_renderer.createGraphicsPipeline(m_skybox.pipelineLayout, shaders, 2, m_colorRenderProgram, 0, { 0, 0 }, settings);
-		
-		static glm::vec3 vertices[8] = {
-			glm::vec3(-1, -1, -1),
-			glm::vec3(1, -1, -1),
-			glm::vec3(1, 1, -1),
-			glm::vec3(-1, 1, -1),
-			glm::vec3(-1, -1, 1),
-			glm::vec3(1, -1, 1),
-			glm::vec3(1, 1, 1),
-			glm::vec3(-1, 1, 1)
-		};
-		static uint32_t indices[36] = {
-			0, 1, 3, 3, 1, 2,
-			1, 5, 2, 2, 5, 6,
-			5, 4, 6, 6, 4, 7,
-			4, 0, 7, 7, 0, 3,
-			3, 2, 7, 7, 2, 6,
-			4, 5, 0, 0, 5, 1
-		};
-
-		m_skybox.vertexBuffer.create(BufferType::VERTEX, sizeof(vertices), vertices);
-		m_skybox.indexBuffer.create(BufferType::INDEX, sizeof(indices), indices);
-
-		m_skybox.descriptorSet = m_skybox.pipelineLayout.allocateDescriptorSet(0);
-		m_renderer.updateDescriptorSet(m_skybox.descriptorSet, 0, m_skybox.cubemap, m_linearSampler);
-
-	}
-
 	void ForwardPlus::initializeMainRenderData(ForwardPlusRenderData& data, Extent extent)
 	{
 		Format colorFormat = m_renderer.getAttachmentFormat(m_colorRenderProgram, 0);
@@ -239,7 +195,10 @@ namespace sa {
 		createLightCullingShader();
 		createColorPass();
 
-		createSkyboxPipeline();
+		// createSkyboxPipeline();
+		ForwardPlusPreferences& prefs = getPreferences();
+		if(prefs.skybox.getAsset())
+			prefs.skybox->createPipeline(m_colorRenderProgram);
 
 
 		//DEBUG
@@ -281,10 +240,10 @@ namespace sa {
 		m_debugHeatmapFragmentShader.destroy();
 		m_renderer.destroyPipeline(m_debugLightHeatmapPipeline);
 		m_renderer.destroyRenderProgram(m_debugLightHeatmapRenderProgram);
-
-		m_skybox.pipelineLayout.destroy();
-		m_renderer.destroyPipeline(m_skybox.pipeline);
-
+		
+		ForwardPlusPreferences& prefs = getPreferences();
+		if(prefs.skybox.getAsset())
+			prefs.skybox->cleanup();
 	}
 
 	bool ForwardPlus::render(RenderContext& context, SceneCamera* pCamera, RenderTarget* pRenderTarget, SceneCollection& sc) {
@@ -305,8 +264,10 @@ namespace sa {
 		context.syncFramebuffer(data.depthFramebuffer);
 		context.syncFramebuffer(data.debugLightHeatmapFramebuffer);
 
+		RenderData renderData = {};
+
 		Rectf cameraViewport = pCamera->getViewport();
-		Rect viewport = {
+		renderData.viewport = {
 			{
 				static_cast<int32_t>(cameraViewport.offset.x * pRenderTarget->getExtent().width),
 				static_cast<int32_t>(cameraViewport.offset.y * pRenderTarget->getExtent().height)
@@ -316,16 +277,13 @@ namespace sa {
 				static_cast<uint32_t>(cameraViewport.extent.y * pRenderTarget->getExtent().height)
 			}
 		};
-		if ((viewport.extent.height & viewport.extent.width) == 0) {
+		if ((renderData.viewport.extent.height & renderData.viewport.extent.width) == 0) {
 			return false;
 		}
 
-		PerFrameBuffer perFrame;
-		perFrame.viewMat = pCamera->getViewMatrix();
-		perFrame.projMat = pCamera->getProjectionMatrix();
-		perFrame.viewPos = glm::vec4(pCamera->getPosition(), 1.0f);
-
-		
+		renderData.matrices.viewMat = pCamera->getViewMatrix();
+		renderData.matrices.projMat = pCamera->getProjectionMatrix();
+		renderData.matrices.viewPos = glm::vec4(pCamera->getPosition(), 1.0f);		
 
 		context.beginRenderProgram(m_depthPreRenderProgram, data.depthFramebuffer, SubpassContents::DIRECT);
 		for (auto& collection : sc) {
@@ -342,8 +300,8 @@ namespace sa {
 			context.bindVertexBuffer(0, collection.getVertexBuffer());
 			context.bindIndexBuffer(collection.getIndexBuffer());
 
-			context.setViewport(viewport);
-			context.setScissor(viewport);
+			context.setViewport(renderData.viewport);
+			context.setScissor(renderData.viewport);
 			context.setDepthBiasEnable(false);
 			context.setDepthBias(0.0f, 0.0f, 0.0f);
 			context.setCullMode(sa::CullModeFlagBits::BACK);
@@ -352,7 +310,7 @@ namespace sa {
 
 
 			if (collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>() > 0) {
-				context.pushConstant(ShaderStageFlagBits::VERTEX, perFrame);
+				context.pushConstant(ShaderStageFlagBits::VERTEX, renderData.matrices);
 				size_t drawCallCount = collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>();
 				context.drawIndexedIndirect(collection.getDrawCommandBuffer(), 0, drawCallCount, sizeof(DrawIndexedIndirectCommand));
 				Engine::GetEngineStatistics().drawCalls += drawCallCount;
@@ -381,6 +339,7 @@ namespace sa {
 		context.barrier(data.depthTexture, Transition::COMPUTE_SHADER_READ, Transition::RENDER_PROGRAM_DEPTH_OUTPUT);
 		context.barrier(data.lightIndexBuffer, Transition::COMPUTE_SHADER_WRITE, Transition::FRAGMENT_SHADER_READ);
 		
+		ForwardPlusPreferences& preferences = getPreferences();
 		// Main color pass
 		context.beginRenderProgram(m_colorRenderProgram, data.colorFramebuffer, SubpassContents::DIRECT);
 		for (auto& collection : sc) {
@@ -393,18 +352,27 @@ namespace sa {
 			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 4, data.lightIndexBuffer.getBuffer());
 			
 			bindShadows(context, sc, collection);
+			
+			
+			const Texture* skyboxTexture;
+			if(preferences.skybox.getAsset()) {
+				skyboxTexture = &preferences.skybox->getTexture();
+			}
+			else {
+				skyboxTexture = AssetManager::Get().loadDefaultBlackTexture();
+			}
 
-			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 10, m_skybox.cubemap, m_linearSampler);
+			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 10, *skyboxTexture, m_linearSampler);
 
 			context.updateDescriptorSet(collection.getSceneDescriptorSetColorPass(), 6, m_linearSampler);
 
 			context.bindDescriptorSet(collection.getSceneDescriptorSetColorPass());
 
-			context.setViewport(viewport);
+			context.setViewport(renderData.viewport);
 
 			if (collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>() > 0) {
-				context.pushConstant(ShaderStageFlagBits::VERTEX | ShaderStageFlagBits::FRAGMENT, perFrame);
-				context.pushConstant(ShaderStageFlagBits::FRAGMENT, data.tileCount.x, sizeof(perFrame));
+				context.pushConstant(ShaderStageFlagBits::VERTEX | ShaderStageFlagBits::FRAGMENT, renderData.matrices);
+				context.pushConstant(ShaderStageFlagBits::FRAGMENT, data.tileCount.x, sizeof(renderData.matrices));
 				size_t drawCallCount = collection.getDrawCommandBuffer().getElementCount<DrawIndexedIndirectCommand>();
 				context.drawIndexedIndirect(collection.getDrawCommandBuffer(), 0, drawCallCount, sizeof(DrawIndexedIndirectCommand));
 				Engine::GetEngineStatistics().drawCalls += drawCallCount;
@@ -412,27 +380,28 @@ namespace sa {
 		}
 		
 		//Skybox
-		context.bindPipelineLayout(m_skybox.pipelineLayout);
-		context.bindPipeline(m_skybox.pipeline);
-		context.setViewport(viewport);
-		context.setScissor(viewport);
+		// context.bindPipelineLayout(m_skybox.pipelineLayout);
+		// context.bindPipeline(m_skybox.pipeline);
+		// context.setViewport(renderData.viewport);
+		// context.setScissor(renderData.viewport);
 		
-		context.bindDescriptorSet(m_skybox.descriptorSet);
+		// context.bindDescriptorSet(m_skybox.descriptorSet);
 
-		context.bindVertexBuffer(0, m_skybox.vertexBuffer);
-		context.bindIndexBuffer(m_skybox.indexBuffer);
+		// context.bindVertexBuffer(0, m_skybox.vertexBuffer);
+		// context.bindIndexBuffer(m_skybox.indexBuffer);
 		
-		perFrame.viewMat = glm::mat4(glm::mat3(perFrame.viewMat));
-		context.pushConstants(ShaderStageFlagBits::VERTEX, 0, sizeof(glm::mat4) * 2, &perFrame);
+		// renderData.matrices.viewMat = glm::mat4(glm::mat3(renderData.matrices.viewMat));
+		// context.pushConstants(ShaderStageFlagBits::VERTEX, 0, sizeof(glm::mat4) * 2, &renderData.matrices);
 		
-		context.drawIndexed(m_skybox.indexBuffer.getElementCount<uint32_t>(), 1);
-		
+		// context.drawIndexed(m_skybox.indexBuffer.getElementCount<uint32_t>(), 1);
+		if(preferences.skybox.getAsset())
+			preferences.skybox->render(context, renderData);
 
 		//Finally render debug stuff
 		if (!DebugRenderer::Get().isInitialized())
 			DebugRenderer::Get().initialize(m_colorRenderProgram);
 
-		DebugRenderer::Get().render(context, viewport.extent, *pCamera);
+		DebugRenderer::Get().render(context, renderData.viewport.extent, *pCamera);
 
 		context.endRenderProgram(m_colorRenderProgram);
 
