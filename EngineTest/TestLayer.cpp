@@ -24,7 +24,7 @@ namespace sa {
 
 		Entity box = pScene->createEntity("Box");
 		box.addComponent<comp::Transform>();
-		box.addComponent<comp::Model>()->modelID = sa::AssetManager::Get().loadCube()->getID();
+		box.addComponent<comp::Model>()->model = sa::AssetManager::Get().getCube();
 		box.addScript("test2.lua");
 
 		Entity light = pScene->createEntity("Light");
