@@ -78,7 +78,6 @@ if(MSVC)
             /Gy
         >
         /permissive-;
-        /std:c++17;
         /sdl;
         /W3;
         ${DEFAULT_CXX_DEBUG_INFORMATION_FORMAT};
@@ -111,11 +110,7 @@ add_dependencies(${PROJECT_NAME}
     Engine
 )
 
-set(ADDITIONAL_LIBRARY_DEPENDENCIES
-    "$(SolutionName)_$(Platform)$(Configuration)"
-)
-target_link_libraries(${PROJECT_NAME} PRIVATE "${ADDITIONAL_LIBRARY_DEPENDENCIES}")
 
-target_link_directories(${PROJECT_NAME} PRIVATE
-    "${CMAKE_SOURCE_DIR}//Engine/lib"
+target_link_libraries(${PROJECT_NAME} PRIVATE
+    Engine
 )

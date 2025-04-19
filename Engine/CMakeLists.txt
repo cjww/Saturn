@@ -369,6 +369,7 @@ find_program(glslc_executable NAMES glslc HINTS Vulkan::glslc)
 # Include Shaders
 set(SHADER_SOURCE_DIR ${CMAKE_CURRENT_SOURCE_DIR}/shaders)
 set(SHADER_BINARY_DIR ${CMAKE_CURRENT_BINARY_DIR}/shaders)
+target_compile_definitions(${PROJECT_NAME} PRIVATE SA_DEFAULT_SHADER_DIR="${SHADER_BINARY_DIR}")
 
 file(GLOB SHADERS
   ${SHADER_SOURCE_DIR}/*.vert
@@ -408,8 +409,8 @@ foreach(source IN LISTS SHADERS)
   list(APPEND SPV_SHADERS ${SHADER_BINARY_DIR}/${FILENAME}.spv)
 endforeach()
 
-add_custom_target(shaders ALL DEPENDS ${SPV_SHADERS})
+add_custom_target(shaders_compile_target ALL DEPENDS ${SPV_SHADERS})
 
 add_dependencies(${PROJECT_NAME}
-    shaders
+    shaders_compile_target
 )

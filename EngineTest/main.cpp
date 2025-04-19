@@ -17,7 +17,6 @@ namespace sa {
 	};
 
 	Application* CreateApplication(int argc, char** argv) {
-		Engine::SetShaderDirectory("../Engine/shaders/");
 		return new TestApp;
 	}
 }

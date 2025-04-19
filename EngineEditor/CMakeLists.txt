@@ -169,7 +169,7 @@ add_custom_command(
     TARGET ${PROJECT_NAME} POST_BUILD
     COMMAND ${CMAKE_COMMAND} -E copy_directory
         "$<TARGET_PROPERTY:${PROJECT_NAME},SOURCE_DIR>/resources"
-        "$<TARGET_PROPERTY:${PROJECT_NAME},BINARY_DIR>/resources"
+        "$<TARGET_FILE_DIR:${PROJECT_NAME}>/resources"
         
 )
 
