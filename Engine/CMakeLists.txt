@@ -64,6 +64,8 @@ set(Header_Files
     "include/Tools/ByteStream.h"
     "include/UUID.h"
     "include/Vertex.h"
+        include/DataLayout.h
+        include/DataBlob.h
 )
 source_group("Header Files" FILES ${Header_Files})
 
@@ -118,6 +120,8 @@ set(Source_Files
     "src/WindowRenderer.cpp"
     "src/DebugRenderer.cpp"
     "src/ByteStream.cpp"
+        src/DataLayout.cpp
+        src/DataBlob.cpp
 )
 source_group("Source Files" FILES ${Source_Files})
 
