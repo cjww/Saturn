@@ -226,9 +226,8 @@ int main() {
 		depthTexture.create2D(sa::TextureUsageFlagBits::DEPTH_ATTACHMENT, window.getCurrentExtent());
 
 		ResourceID framebuffer = renderer.createSwapchainFramebuffer(renderProgram, window.getSwapchainID(), &depthTexture, 1);
-
-		auto vshaderCode = sa::ReadSPVFile("Passthrough.vert.spv");
-		auto fshaderCode = sa::ReadSPVFile("Passthrough.frag.spv");
+		auto vshaderCode = sa::CompileGLSLFromFile("Passthrough.vert", sa::ShaderStageFlagBits::VERTEX, "main", ".");
+		auto fshaderCode = sa::CompileGLSLFromFile("Passthrough.frag", sa::ShaderStageFlagBits::FRAGMENT, "main", ".");
 
 		sa::Shader shaders[2];
 		shaders[0].create(vshaderCode, sa::ShaderStageFlagBits::VERTEX);
@@ -245,12 +244,32 @@ int main() {
 		ResourceID sceneDescriptorSet = pipelineLayout.allocateDescriptorSet(0);
 		ResourceID objectDescriptorSet = pipelineLayout.allocateDescriptorSet(1);
 
-		sa::ShaderAttribute timeAttrib = pipelineLayout.getShaderAttribute("object.material.time");
-		sa::ShaderAttribute colorAttrib = pipelineLayout.getShaderAttribute("object.material.color");
+		const sa::ShaderAttribute* pAttrib = pipelineLayout.getShaderAttribute();
+		for (int i = 0; i < pAttrib->members.size(); i++) {
+			SA_DEBUG_LOG_INFO(pAttrib->members[i].name);
+		}
+		sa::ShaderAttribute timeAttrib = *pipelineLayout.getShaderAttribute("object.material.time");
+		sa::ShaderAttribute colorAttrib = *pipelineLayout.getShaderAttribute("object.material.color");
+
+		int stride = 0;
+		for (auto binding : pipelineLayout.getVertexBindings()) {
+			SA_DEBUG_LOG_INFO(binding.binding, ", ", binding.stride);
+			stride = binding.stride;
+		}
+
+		// for (auto vertAttrib : pipelineLayout.getVertexAttributes()) {
+		//
+		// }
 
 		sa::Buffer vertexBuffer;
 		vertexBuffer.create(sa::BufferType::VERTEX);
-		vertexBuffer.write(box);
+		// vertexBuffer.write(box);
+		vertexBuffer.resize(stride * 8);
+		int currentStride = 0;
+		for (auto v : box) {
+			vertexBuffer.write(&v, stride, currentStride);
+			currentStride += stride;
+		}
 
 		sa::Buffer indexBuffer;
 		indexBuffer.create(sa::BufferType::INDEX);
@@ -339,8 +358,8 @@ int main() {
 				float* colorValue = (float*)uniformBufferMap.at(colorAttrib.set)->data(colorAttrib.offset);
 				ImGui::ColorEdit3(colorAttrib.name.c_str(), colorValue);
 
-				ImGui::End();
 			}
+			ImGui::End();
 
 
 			boxTransform = glm::rotate(boxTransform, glm::radians(1.f * dt), glm::vec3(0, 1, 0));

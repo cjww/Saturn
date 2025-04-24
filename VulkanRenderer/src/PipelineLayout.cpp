@@ -67,19 +67,18 @@ namespace sa {
 		uint32_t set,
 		uint32_t binding,
 		uint32_t offset,
-		std::unordered_map<std::string, ShaderAttribute>& outAttributes,
-		const std::string& attributePath)
+		ShaderAttribute& parentAttribute)
 	{
 		const auto& type = pCompiler->get_type(parentType.member_types[index]);
 
 		std::string name = pCompiler->get_member_name(parentType.self, index);
 
-		if (outAttributes.count(attributePath + name)) // already added
+		if (parentAttribute.getAttribute(name) != nullptr) // already added
 			return;
 
-		ShaderAttribute& attrib = outAttributes[attributePath + name];
+		parentAttribute.members.emplace_back();
+		ShaderAttribute& attrib = parentAttribute.members.back();
 		createAttribute(name, type, attrib);
-
 		attrib.descriptorType = descriptorType;
 		attrib.set = set;
 		attrib.binding = binding;
@@ -87,10 +86,9 @@ namespace sa {
 		attrib.offset = pCompiler->type_struct_member_offset(parentType, index) + offset;
 		attrib.size = pCompiler->get_declared_struct_member_size(parentType, index);
 
-
 		int i = 0;
 		for (spirv_cross::TypeID memberTypeID : type.member_types) {
-			addStructMember(pCompiler, type, i, descriptorType, set, binding, attrib.offset, outAttributes, (attrib.name.empty() ? attributePath : attributePath + attrib.name + "."));
+			addStructMember(pCompiler, type, i, descriptorType, set, binding, attrib.offset, attrib);
 			i++;
 		}
 	}
@@ -103,19 +101,18 @@ namespace sa {
 		DescriptorType descriptorType,
 		uint32_t set,
 		uint32_t binding,
-		std::unordered_map<std::string, ShaderAttribute>& outAttributes,
-		const std::string& attributePath)
+		ShaderAttribute& parentAttribute)
 	{
 		const auto& type = pCompiler->get_type(parentType.member_types[range.index]);
 
 		std::string name = pCompiler->get_member_name(parentType.self, range.index);
 
-		if (outAttributes.count(attributePath + name)) // already added
+		if (parentAttribute.getAttribute(name) != nullptr) // already added
 			return;
 
-		ShaderAttribute& attrib = outAttributes[attributePath + name];
+		parentAttribute.members.emplace_back();
+		ShaderAttribute& attrib = parentAttribute.members.back();
 		createAttribute(name, type, attrib);
-
 		attrib.descriptorType = descriptorType;
 		attrib.set = set;
 		attrib.binding = binding;
@@ -124,7 +121,7 @@ namespace sa {
 
 		int i = 0;
 		for (spirv_cross::TypeID memberTypeID : type.member_types) {
-			addStructMember(pCompiler, type, i, descriptorType, set, binding, attrib.offset, outAttributes, (attrib.name.empty() ? attributePath : attributePath + attrib.name + "."));
+			addStructMember(pCompiler, type, i, descriptorType, set, binding, attrib.offset, attrib);
 			i++;
 		}
 
@@ -134,13 +131,17 @@ namespace sa {
 		const spirv_cross::Compiler* pCompiler,
 		const spirv_cross::Resource& resource,
 		DescriptorType descriptorType,
-		std::unordered_map<std::string, ShaderAttribute>& outAttributes)
+		ShaderAttribute& parentAttribute)
 	{
 		const spirv_cross::SPIRType& type = pCompiler->get_type(resource.type_id);
 		const spirv_cross::SPIRType& baseType = pCompiler->get_type(resource.base_type_id);
 
 		std::string name = pCompiler->get_name(resource.id);
-		ShaderAttribute& attrib = outAttributes[name];
+		if(parentAttribute.getAttribute(name) != nullptr) {
+			return;
+		}
+		parentAttribute.members.emplace_back();
+		ShaderAttribute& attrib = parentAttribute.members.back();
 		createAttribute(name, type, attrib);
 		attrib.descriptorType = descriptorType;
 		attrib.set = pCompiler->get_decoration(resource.id, spv::Decoration::DecorationDescriptorSet);
@@ -150,17 +151,13 @@ namespace sa {
 		bool isBlock = pCompiler->get_decoration_bitset(type.self).get(spv::Decoration::DecorationBlock) ||
 			pCompiler->get_decoration_bitset(type.self).get(spv::Decoration::DecorationBufferBlock);
 
-		std::string attributePath = attrib.name;
-
 		if (isBlock) {
 			attrib.size = pCompiler->get_declared_struct_size(type);
 			const auto& bufferRanges = pCompiler->get_active_buffer_ranges(resource.id);
 			for (const auto& range : bufferRanges) {
-				addBlockMember(pCompiler, baseType, type, range, descriptorType, attrib.set, attrib.binding, outAttributes, attributePath.empty() ? "" : attributePath + ".");
+				addBlockMember(pCompiler, baseType, type, range, descriptorType, attrib.set, attrib.binding, attrib);
 			}
 		}
-		if (!attributePath.empty())
-			outAttributes[attributePath] = attrib;
 	}
 
 	void addResources(
@@ -170,7 +167,7 @@ namespace sa {
 		vk::Sampler* immutableSamplers,
 		ShaderStageFlagBits stage,
 		std::unordered_map<uint32_t, DescriptorSetLayoutInfo>& descriptorSets,
-		std::unordered_map<std::string, ShaderAttribute>& outAttributes)
+		ShaderAttribute& parentAttribute)
 	{
 		for (auto& resource : resources) {
 			const auto& t = pCompiler->get_type(resource.type_id);
@@ -207,7 +204,7 @@ namespace sa {
 			descriptorSets[set].bindings.push_back(layoutBinding);
 			descriptorSets[set].sizes.push_back(size);
 
-			addResourceAttribute(pCompiler, resource, type, outAttributes);
+			addResourceAttribute(pCompiler, resource, type, parentAttribute);
 		}
 	}
 
@@ -432,16 +429,16 @@ namespace sa {
 		}
 
 		auto resources = pCompiler->get_shader_resources();
-		addResources(pCompiler, resources.uniform_buffers, DescriptorType::UNIFORM_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos, m_attributes);
-		addResources(pCompiler, resources.separate_samplers, DescriptorType::SAMPLER, nullptr, stage, m_descriptorSetLayoutInfos, m_attributes); // sampler / samplerShadow
-		addResources(pCompiler, resources.separate_images, DescriptorType::SAMPLED_IMAGE, nullptr, stage, m_descriptorSetLayoutInfos, m_attributes); // texture2D
-		addResources(pCompiler, resources.separate_images, DescriptorType::UNIFORM_TEXEL_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos, m_attributes); // textureBuffer
-		addResources(pCompiler, resources.sampled_images, DescriptorType::COMBINED_IMAGE_SAMPLER, nullptr, stage, m_descriptorSetLayoutInfos, m_attributes); // sampler2D
-		addResources(pCompiler, resources.sampled_images, DescriptorType::UNIFORM_TEXEL_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos, m_attributes); // samplerBuffer
-		addResources(pCompiler, resources.storage_images, DescriptorType::STORAGE_IMAGE, nullptr, stage, m_descriptorSetLayoutInfos, m_attributes); // image2D
-		addResources(pCompiler, resources.storage_images, DescriptorType::STORAGE_TEXEL_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos, m_attributes); // 
-		addResources(pCompiler, resources.storage_buffers, DescriptorType::STORAGE_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos, m_attributes); // buffer SSBO 
-		addResources(pCompiler, resources.subpass_inputs, DescriptorType::INPUT_ATTACHMENT, nullptr, stage, m_descriptorSetLayoutInfos, m_attributes); // subpassInput
+		addResources(pCompiler, resources.uniform_buffers, DescriptorType::UNIFORM_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos, m_rootAttribute);
+		addResources(pCompiler, resources.separate_samplers, DescriptorType::SAMPLER, nullptr, stage, m_descriptorSetLayoutInfos, m_rootAttribute); // sampler / samplerShadow
+		addResources(pCompiler, resources.separate_images, DescriptorType::SAMPLED_IMAGE, nullptr, stage, m_descriptorSetLayoutInfos, m_rootAttribute); // texture2D
+		addResources(pCompiler, resources.separate_images, DescriptorType::UNIFORM_TEXEL_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos, m_rootAttribute); // textureBuffer
+		addResources(pCompiler, resources.sampled_images, DescriptorType::COMBINED_IMAGE_SAMPLER, nullptr, stage, m_descriptorSetLayoutInfos, m_rootAttribute); // sampler2D
+		addResources(pCompiler, resources.sampled_images, DescriptorType::UNIFORM_TEXEL_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos, m_rootAttribute); // samplerBuffer
+		addResources(pCompiler, resources.storage_images, DescriptorType::STORAGE_IMAGE, nullptr, stage, m_descriptorSetLayoutInfos, m_rootAttribute); // image2D
+		addResources(pCompiler, resources.storage_images, DescriptorType::STORAGE_TEXEL_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos, m_rootAttribute); //
+		addResources(pCompiler, resources.storage_buffers, DescriptorType::STORAGE_BUFFER, nullptr, stage, m_descriptorSetLayoutInfos, m_rootAttribute); // buffer SSBO
+		addResources(pCompiler, resources.subpass_inputs, DescriptorType::INPUT_ATTACHMENT, nullptr, stage, m_descriptorSetLayoutInfos, m_rootAttribute); // subpassInput
 
 		for (auto& p : resources.push_constant_buffers) {
 			size_t size = pCompiler->get_declared_struct_size(pCompiler->get_type(p.type_id));
@@ -453,7 +450,7 @@ namespace sa {
 				.size = static_cast<uint32_t>(size),
 			};
 			m_pushConstantRanges.push_back(range);
-			addResourceAttribute(pCompiler, p, DescriptorType::PUSH_CONSTANT, m_attributes);
+			addResourceAttribute(pCompiler, p, DescriptorType::PUSH_CONSTANT, m_rootAttribute);
 		}
 
 		if (stage & ShaderStageFlagBits::VERTEX) {
@@ -684,15 +681,12 @@ namespace sa {
 		m_pushConstantRanges.clear();
 		m_pushConstantRanges.shrink_to_fit();
 
-		std::unordered_map<std::string, ShaderAttribute> attribs;
-		m_attributes.clear();
-		m_attributes.swap(attribs);
+		m_rootAttribute = {};
 
 		m_vertexAttributes.clear();
 		m_vertexAttributes.shrink_to_fit();
 		m_vertexBindings.clear();
 		m_vertexBindings.shrink_to_fit();
-
 	}
 
 	bool PipelineLayout::isValid() const {
@@ -715,12 +709,12 @@ namespace sa {
 		return m_vertexBindings;
 	}
 
-	const ShaderAttribute& PipelineLayout::getShaderAttribute(const std::string& attributePath) const {
-		return m_attributes.at(attributePath);
+	const ShaderAttribute* PipelineLayout::getShaderAttribute() const {
+		return &m_rootAttribute;
 	}
 
-	const std::unordered_map<std::string, ShaderAttribute>& PipelineLayout::getShaderAttributes() const {
-		return m_attributes;
+	const ShaderAttribute* PipelineLayout::getShaderAttribute(const std::string& attributePath) const {
+		return m_rootAttribute.getAttribute(attributePath);
 	}
 	
 	bool PipelineLayout::isGraphicsPipeline() const {

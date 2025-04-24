@@ -5,6 +5,7 @@
 #include "DescriptorSetStructs.h"
 #include "PipelineSettings.hpp"
 #include "ShaderInfoStructs.h"
+#include "ShaderAttribute.h"
 
 namespace spirv_cross
 {
@@ -55,7 +56,7 @@ namespace sa {
 		std::vector<VertexInputAttributeDescription> m_vertexAttributes;
 		std::vector<VertexInputBindingDescription> m_vertexBindings;
 
-		std::unordered_map<std::string, ShaderAttribute> m_attributes;
+		ShaderAttribute m_rootAttribute;
 
 		std::set<ResourceID> m_allocatedDescriptorSets;
 
@@ -94,9 +95,8 @@ namespace sa {
 		const std::vector<VertexInputAttributeDescription>& getVertexAttributes() const;
 		const std::vector<VertexInputBindingDescription>& getVertexBindings() const;
 
-		const ShaderAttribute& getShaderAttribute(const std::string& attributePath) const;
-		const std::unordered_map<std::string, ShaderAttribute>& getShaderAttributes() const;
-		
+		const ShaderAttribute* getShaderAttribute() const;
+		const ShaderAttribute* getShaderAttribute(const std::string& attributePath) const;
 
 		bool isGraphicsPipeline() const;
 		bool hasTessellationStage() const;

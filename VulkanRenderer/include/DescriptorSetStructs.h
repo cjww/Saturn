@@ -66,19 +66,4 @@ namespace sa {
 		ACCELERATION_STRUCTURE,
 		RAY_QUERY
 	};
-
-	struct ShaderAttribute {
-		DescriptorType descriptorType;
-		ShaderAttributeType type;
-		std::vector<uint32_t> arraySize;
-		uint32_t vecSize;
-		uint32_t columns;
-		size_t size;
-		uint32_t offset;
-		std::string name;
-
-		uint32_t set;
-		uint32_t binding;
-	};
-
 }

@@ -40,6 +40,7 @@ set(Header_Files
     "include/Tools/Logger.hpp"
     "include/Tools/utils.hpp"
     "include/Window.hpp"
+        include/ShaderAttribute.h
 )
 source_group("Header Files" FILES ${Header_Files})
 
@@ -78,6 +79,7 @@ set(Source_Files
     "src/utils.cpp"
     "src/VulkanCore.cpp"
     "src/Window.cpp"
+        src/ShaderAttribute.cpp
 )
 source_group("Source Files" FILES ${Source_Files})
 
