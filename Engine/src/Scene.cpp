@@ -189,11 +189,11 @@ namespace sa {
 	void Scene::render(RenderContext& context, RenderPipeline& renderPipeline, RenderTarget& mainRenderTarget) {
 		m_dynamicSceneCollection.clear();
 		m_dynamicSceneCollection.collect(this);
-		m_dynamicSceneCollection.makeRenderReady();
 		renderPipeline.preRender(context, m_dynamicSceneCollection);
 
 		bool renderedToMainRenderTarget = false;
 		forEach<comp::Camera>([&](comp::Camera& camera) {
+			camera.sceneCollection.clear();
 			m_dynamicSceneCollection.makeRenderReady(camera.sceneCollection, nullptr);
 			RenderTarget* pRenderTarget = camera.getRenderTarget().getAsset();
 			if (pRenderTarget) {

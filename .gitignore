@@ -15,3 +15,5 @@ EngineEditor/sceneCache.data
 build/
 /cmake-build-debug
 /.idea
+/cmake-build-optimized
+/cmake-build-release
