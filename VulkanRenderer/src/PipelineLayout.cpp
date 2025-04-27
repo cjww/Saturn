@@ -56,7 +56,38 @@ namespace sa {
 		std::copy(type.array.begin(), type.array.end(), std::back_inserter(attrib.arraySize));
 		attrib.vecSize = type.vecsize;
 		attrib.columns = type.columns;
-		attrib.type = (ShaderAttributeType)type.basetype;
+		attrib.size = (type.width / 8) * type.vecsize * type.columns;
+		attrib.baseType = (ShaderAttributeBaseType)type.basetype;
+	}
+
+	void fillBindingData(uint32_t binding, uint32_t set, uint32_t location, ShaderAttribute& attrib) {
+		if (attrib.type == SHADER_ATTRIBUTE_TYPE_DESCRIPTOR) {
+			attrib.set = set;
+			attrib.binding = binding;
+		}
+		else if (attrib.type == SHADER_ATTRIBUTE_TYPE_STAGE_INPUT || attrib.type == SHADER_ATTRIBUTE_TYPE_STAGE_OUTPUT) {
+			attrib.location = location;
+		}
+	}
+
+	void createAttribute(
+		const spirv_cross::SPIRType& spirvType,
+		ShaderAttributeTypeFlagBits attributeType,
+		DescriptorType descriptorType,
+		ShaderStageFlagBits stage,
+		const std::string& name,
+		uint32_t set,
+		uint32_t binding,
+		uint32_t location,
+		uint32_t offset,
+		ShaderAttribute& attrib)
+	{
+		createAttribute(name, spirvType, attrib);
+		attrib.type = attributeType;
+		attrib.descriptorType = descriptorType;
+		fillBindingData(binding, set, location, attrib);
+		attrib.offset = offset;
+		attrib.stage = stage;
 	}
 
 	void addStructMember(
@@ -64,98 +95,106 @@ namespace sa {
 		const spirv_cross::SPIRType& parentType,
 		int index,
 		DescriptorType descriptorType,
-		uint32_t set,
-		uint32_t binding,
-		uint32_t offset,
 		ShaderAttribute& parentAttribute)
 	{
-		const auto& type = pCompiler->get_type(parentType.member_types[index]);
+		const std::string& name = pCompiler->get_member_name(parentType.self, index);
 
-		std::string name = pCompiler->get_member_name(parentType.self, index);
-
-		if (parentAttribute.getAttribute(name) != nullptr) // already added
+		if (parentAttribute.hasAttribute(name, parentAttribute.stage)) // already added
 			return;
 
+		const auto& type = pCompiler->get_type(parentType.member_types[index]);
 		parentAttribute.members.emplace_back();
 		ShaderAttribute& attrib = parentAttribute.members.back();
-		createAttribute(name, type, attrib);
-		attrib.descriptorType = descriptorType;
-		attrib.set = set;
-		attrib.binding = binding;
-
-		attrib.offset = pCompiler->type_struct_member_offset(parentType, index) + offset;
+		createAttribute(
+			type,
+			parentAttribute.type,
+			descriptorType,
+			parentAttribute.stage,
+			name,
+			parentAttribute.set,
+			parentAttribute.binding,
+			parentAttribute.location,
+			pCompiler->type_struct_member_offset(parentType, index) + parentAttribute.offset,
+			attrib);
 		attrib.size = pCompiler->get_declared_struct_member_size(parentType, index);
 
 		int i = 0;
 		for (spirv_cross::TypeID memberTypeID : type.member_types) {
-			addStructMember(pCompiler, type, i, descriptorType, set, binding, attrib.offset, attrib);
+			addStructMember(pCompiler, type, i, descriptorType, attrib);
 			i++;
 		}
 	}
 
 	void addBlockMember(
 		const spirv_cross::Compiler* pCompiler,
-		const spirv_cross::SPIRType& baseType,
 		const spirv_cross::SPIRType& parentType,
 		const spirv_cross::BufferRange& range,
 		DescriptorType descriptorType,
-		uint32_t set,
-		uint32_t binding,
 		ShaderAttribute& parentAttribute)
 	{
 		const auto& type = pCompiler->get_type(parentType.member_types[range.index]);
+		const std::string& name = pCompiler->get_member_name(parentType.self, range.index);
 
-		std::string name = pCompiler->get_member_name(parentType.self, range.index);
-
-		if (parentAttribute.getAttribute(name) != nullptr) // already added
+		if (parentAttribute.hasAttribute(name, parentAttribute.stage)) // already added
 			return;
 
 		parentAttribute.members.emplace_back();
 		ShaderAttribute& attrib = parentAttribute.members.back();
-		createAttribute(name, type, attrib);
-		attrib.descriptorType = descriptorType;
-		attrib.set = set;
-		attrib.binding = binding;
-		attrib.offset = range.offset;
+		createAttribute(
+			type,
+			parentAttribute.type,
+			descriptorType,
+			parentAttribute.stage,
+			name,
+			parentAttribute.set,
+			parentAttribute.binding,
+			parentAttribute.location,
+			range.offset,
+			attrib);
 		attrib.size = range.range;
 
 		int i = 0;
 		for (spirv_cross::TypeID memberTypeID : type.member_types) {
-			addStructMember(pCompiler, type, i, descriptorType, set, binding, attrib.offset, attrib);
+			addStructMember(pCompiler, type, i, descriptorType, attrib);
 			i++;
 		}
-
 	}
 
 	void addResourceAttribute(
 		const spirv_cross::Compiler* pCompiler,
 		const spirv_cross::Resource& resource,
-		DescriptorType descriptorType,
-		ShaderAttribute& parentAttribute)
+		ShaderAttributeTypeFlagBits attributeType,
+		ShaderStageFlagBits stage,
+		ShaderAttribute& parentAttribute,
+		DescriptorType descriptorType)
 	{
-		const spirv_cross::SPIRType& type = pCompiler->get_type(resource.type_id);
-		const spirv_cross::SPIRType& baseType = pCompiler->get_type(resource.base_type_id);
-
-		std::string name = pCompiler->get_name(resource.id);
-		if(parentAttribute.getAttribute(name) != nullptr) {
+		const std::string& name = pCompiler->get_name(resource.id);
+		if (parentAttribute.hasAttribute(name, stage)) {
 			return;
 		}
+		const spirv_cross::SPIRType& type = pCompiler->get_type(resource.type_id);
 		parentAttribute.members.emplace_back();
 		ShaderAttribute& attrib = parentAttribute.members.back();
-		createAttribute(name, type, attrib);
-		attrib.descriptorType = descriptorType;
-		attrib.set = pCompiler->get_decoration(resource.id, spv::Decoration::DecorationDescriptorSet);
-		attrib.binding = pCompiler->get_decoration(resource.id, spv::Decoration::DecorationBinding);
-		attrib.offset = pCompiler->get_decoration(resource.id, spv::Decoration::DecorationOffset);
+		createAttribute(
+			type,
+			attributeType,
+			descriptorType,
+			stage,
+			name,
+			pCompiler->get_decoration(resource.id, spv::Decoration::DecorationDescriptorSet),
+			pCompiler->get_decoration(resource.id, spv::Decoration::DecorationBinding),
+			pCompiler->get_decoration(resource.id, spv::Decoration::DecorationLocation),
+			pCompiler->get_decoration(resource.id, spv::Decoration::DecorationOffset),
+			attrib);
 
-		bool isBlock = pCompiler->get_decoration_bitset(type.self).get(spv::Decoration::DecorationBlock) ||
+		const bool isBlock = pCompiler->get_decoration_bitset(type.self).get(spv::Decoration::DecorationBlock) ||
 			pCompiler->get_decoration_bitset(type.self).get(spv::Decoration::DecorationBufferBlock);
 
 		if (isBlock) {
 			attrib.size = pCompiler->get_declared_struct_size(type);
 			const auto& bufferRanges = pCompiler->get_active_buffer_ranges(resource.id);
 			for (const auto& range : bufferRanges) {
-				addBlockMember(pCompiler, baseType, type, range, descriptorType, attrib.set, attrib.binding, attrib);
+				addBlockMember(pCompiler, type, range, descriptorType, attrib);
 			}
 		}
 	}
@@ -204,7 +243,7 @@ namespace sa {
 			descriptorSets[set].bindings.push_back(layoutBinding);
 			descriptorSets[set].sizes.push_back(size);
 
-			addResourceAttribute(pCompiler, resource, type, parentAttribute);
+			addResourceAttribute(pCompiler, resource, SHADER_ATTRIBUTE_TYPE_DESCRIPTOR, stage, parentAttribute, type);
 		}
 	}
 
@@ -419,10 +458,8 @@ namespace sa {
 	}
 
 	void PipelineLayout::initializeStage(spirv_cross::Compiler* pCompiler, ShaderStageFlagBits stage) {
-		if ((stage & sa::ShaderStageFlagBits::COMPUTE) != 0)
-			m_isGraphicsPipeline = false;
-		if ((stage & (sa::ShaderStageFlagBits::TESSELLATION_CONTROL | sa::ShaderStageFlagBits::TESSELLATION_EVALUATION)) != 0)
-			m_hasTessellationStage = true;
+		m_isGraphicsPipeline = (stage & sa::ShaderStageFlagBits::COMPUTE) == 0;
+		m_hasTessellationStage = (stage & (sa::ShaderStageFlagBits::TESSELLATION_CONTROL | sa::ShaderStageFlagBits::TESSELLATION_EVALUATION)) != 0;
 
 		for (auto ext : pCompiler->get_declared_extensions()) {
 			SA_DEBUG_LOG_INFO("Shader uses vulkan extension: ", ext);
@@ -450,7 +487,7 @@ namespace sa {
 				.size = static_cast<uint32_t>(size),
 			};
 			m_pushConstantRanges.push_back(range);
-			addResourceAttribute(pCompiler, p, DescriptorType::PUSH_CONSTANT, m_rootAttribute);
+			addResourceAttribute(pCompiler, p, SHADER_ATTRIBUTE_TYPE_PUSH_CONSTANT, stage, m_rootAttribute, DescriptorType::NONE);
 		}
 
 		if (stage & ShaderStageFlagBits::VERTEX) {
@@ -458,20 +495,29 @@ namespace sa {
 			m_vertexBindings.clear();
 			getVertexInput(pCompiler, resources.stage_inputs, m_vertexAttributes, m_vertexBindings);
 		}
+
+		uint32_t offset = 0;
+		for (auto input : resources.stage_inputs) {
+			addResourceAttribute(pCompiler, input, SHADER_ATTRIBUTE_TYPE_STAGE_INPUT, stage, m_rootAttribute, DescriptorType::NONE);
+			ShaderAttribute& lastInput = m_rootAttribute.members.back();
+			lastInput.offset = offset;
+			offset += lastInput.size;
+		}
+		offset = 0;
+		for (auto outputs : resources.stage_outputs) {
+			addResourceAttribute(pCompiler, outputs, SHADER_ATTRIBUTE_TYPE_STAGE_OUTPUT, stage, m_rootAttribute, DescriptorType::NONE);
+			ShaderAttribute& lastInput = m_rootAttribute.members.back();
+			lastInput.offset = offset;
+			offset += lastInput.size;
+		}
 	}
 
 	void PipelineLayout::createDescriptorPoolAndLayouts() {
 		std::set<vk::DescriptorType> descriptorTypes;
 		std::vector<vk::DescriptorPoolSize> poolSizes;
 		for (auto& [set, info] : m_descriptorSetLayoutInfos) {
-
-
-
-
 			vk::DescriptorSetLayoutBindingFlagsCreateInfo flagCreateInfo;
 			std::vector<vk::DescriptorBindingFlags> flags(info.bindings.size(), (vk::DescriptorBindingFlags)0);
-
-			
 
 			std::vector<vk::DescriptorSetLayoutBinding> layoutBindings(info.bindings.size());
 			for (int i = 0; i < layoutBindings.size(); i++) {

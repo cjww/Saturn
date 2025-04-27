@@ -26,7 +26,7 @@ namespace sa {
 		MUTABLE_VALVE = 1000351000,
 		
 		// Not actually a descriptor type
-		PUSH_CONSTANT = -1
+		NONE = ~0
 	};
 
 
@@ -43,7 +43,7 @@ namespace sa {
 		std::vector<size_t> sizes;
 	};
 
-	enum class ShaderAttributeType {
+	enum class ShaderAttributeBaseType {
 		UNKNOWN,
 		VOID,
 		BOOLEAN,
