@@ -198,14 +198,14 @@ int main() {
 		ResourceID crossHairCursor = sa::Window::CreateCursor(sa::StandardCursor::CROSSHAIR);
 		window.setCursor(crossHairCursor);
 
-		sa::Window::SetJoystickConnectedCallback([](sa::Joystick joystick, sa::ConnectionState state) {
-			if (state == sa::ConnectionState::CONNECTED) {
+		sa::Window::SetJoystickConnectedCallback([](sa::Joystick joystick, sa::GamepadConnectionState state) {
+			if (state == sa::GamepadConnectionState::CONNECTED) {
 				SA_DEBUG_LOG_INFO("Joystick", (int)joystick, "connected: ", sa::Window::GetJoystickName(joystick));
 			}
 			else {
 				SA_DEBUG_LOG_INFO("Joystick", (int)joystick, "disconnected");
 			}
-			});
+		});
 
 
 		sa::Renderer& renderer = sa::Renderer::Get();
@@ -222,13 +222,11 @@ int main() {
 
 		renderer.initImGui(window, renderProgram, 0);
 
-		sa::DynamicTexture t;
-		t.create2D(sa::TextureUsageFlagBits::DEPTH_ATTACHMENT, {32, 32});
+		sa::DynamicTexture depthTexture;
+		depthTexture.create2D(sa::TextureUsageFlagBits::DEPTH_ATTACHMENT, window.getCurrentExtent());
 
-		std::vector<sa::DynamicTexture> attachments = { t };
-		ResourceID framebuffer = renderer.createSwapchainFramebuffer(renderProgram, window.getSwapchainID(), attachments);
+		ResourceID framebuffer = renderer.createSwapchainFramebuffer(renderProgram, window.getSwapchainID(), &depthTexture, 1);
 
-		
 		auto vshaderCode = sa::ReadSPVFile("Passthrough.vert.spv");
 		auto fshaderCode = sa::ReadSPVFile("Passthrough.frag.spv");
 
@@ -250,14 +248,18 @@ int main() {
 		sa::ShaderAttribute timeAttrib = pipelineLayout.getShaderAttribute("object.material.time");
 		sa::ShaderAttribute colorAttrib = pipelineLayout.getShaderAttribute("object.material.color");
 
-		sa::Buffer vertexBuffer = renderer.createBuffer(sa::BufferType::VERTEX);
+		sa::Buffer vertexBuffer;
+		vertexBuffer.create(sa::BufferType::VERTEX);
 		vertexBuffer.write(box);
 
-		sa::Buffer indexBuffer = renderer.createBuffer(sa::BufferType::INDEX);
+		sa::Buffer indexBuffer;
+		indexBuffer.create(sa::BufferType::INDEX);
 		indexBuffer.write(boxIndices);
 
-		sa::Buffer sceneUniformBuffer = renderer.createBuffer(sa::BufferType::UNIFORM, sizeof(glm::mat4) * 2);
-		sa::Buffer objectUniformBuffer = renderer.createBuffer(sa::BufferType::UNIFORM, sizeof(glm::mat4));
+		sa::Buffer sceneUniformBuffer;
+		sceneUniformBuffer.create(sa::BufferType::UNIFORM, sizeof(glm::mat4) * 2);
+		sa::Buffer objectUniformBuffer;
+		objectUniformBuffer.create(sa::BufferType::UNIFORM, sizeof(glm::mat4));
 
 		glm::mat4 boxTransform(1);
 		objectUniformBuffer << boxTransform;
@@ -356,7 +358,7 @@ int main() {
 				context.bindDescriptorSet(sceneDescriptorSet);
 				context.bindDescriptorSet(objectDescriptorSet);
 				
-				context.bindVertexBuffers(0, { vertexBuffer });
+				context.bindVertexBuffers(0, &vertexBuffer, 1);
 				context.bindIndexBuffer(indexBuffer);
 
 				context.pushConstant(sa::ShaderStageFlagBits::VERTEX, timer);

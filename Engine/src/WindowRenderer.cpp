@@ -46,7 +46,8 @@ namespace sa {
 			shaders.size(), 
 			m_swapchainRenderProgram, 
 			0, 
-			m_pWindow->getCurrentExtent());
+			m_pWindow->getCurrentExtent(),
+			settings);
 		m_swapchainDescriptorSet = m_swapchainPipelineLayout.allocateDescriptorSet(0);
 		
 		onWindowResize(m_pWindow->getCurrentExtent());

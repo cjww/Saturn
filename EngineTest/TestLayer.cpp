@@ -13,6 +13,7 @@ namespace sa {
 		m_pEngine = &engine;
 		m_pWindow = &window;
 
+		m_pEngine->setupDefaultRenderPipeline();
 		//SA_PROFILER_BEGIN_SESSION();
 
 		Scene* pScene = sa::AssetManager::Get().createAsset<Scene>("MyScene");
@@ -24,7 +25,7 @@ namespace sa {
 
 		Entity box = pScene->createEntity("Box");
 		box.addComponent<comp::Transform>();
-		box.addComponent<comp::Model>()->modelID = sa::AssetManager::Get().loadCube()->getID();
+		box.addComponent<comp::Model>()->model = sa::AssetManager::Get().getCube();
 		box.addScript("test2.lua");
 
 		Entity light = pScene->createEntity("Light");
@@ -40,7 +41,7 @@ namespace sa {
 		box.addScript("test2.lua");
 		light.addScript("test2.lua");
 		 */
-		for(int i = 0; i < 20000; i++)
+		for(int i = 0; i < 20; i++)
 		{
 			float x = (i % 32) * 1.5f;
 			float y = (i / 32) * 1.5f;

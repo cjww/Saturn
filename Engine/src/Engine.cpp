@@ -14,8 +14,11 @@
 #include "Lua\LuaTypes.h"
 
 namespace sa {
+#ifdef SA_DEFAULT_SHADER_DIR
+	std::filesystem::path Engine::s_shaderDirectory = SA_DEFAULT_SHADER_DIR;
+#else
 	std::filesystem::path Engine::s_shaderDirectory = std::filesystem::current_path();
-
+#endif
 
 	void Engine::onWindowResize(Extent newExtent) {
 		m_pWindowRenderer->onWindowResize(newExtent);

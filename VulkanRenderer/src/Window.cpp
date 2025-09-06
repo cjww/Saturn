@@ -90,12 +90,7 @@ namespace sa {
 
 	void Window::onJoystickDetect(int jid, int state) {
 		if (s_onJoystickDetectFunction) {
-			if (state == GLFW_CONNECTED) {	
-				s_onJoystickDetectFunction((Joystick)jid, ConnectionState::CONNECTED);
-			}
-			else if (state == GLFW_DISCONNECTED) {
-				s_onJoystickDetectFunction((Joystick)jid, ConnectionState::DISCONNECTED);
-			}
+			s_onJoystickDetectFunction((Joystick)jid, (state == GLFW_CONNECTED) ? GamepadConnectionState::CONNECTED : GamepadConnectionState::DISCONNECTED);
 		}
 	}
 
