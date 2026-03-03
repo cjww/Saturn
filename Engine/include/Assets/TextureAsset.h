@@ -24,5 +24,6 @@ namespace sa {
 
 		const Texture& getTexture() const;
 
+		Image getImage() const;
 	};
 }

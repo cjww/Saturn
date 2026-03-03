@@ -36,16 +36,24 @@ namespace sa {
 
 		template<typename T>
 		void read(T* pOut);
+		template<typename T>
+		void readArray(T pOut[], size_t length);
 
 		template<typename T>
 		void write(const T& pIn);
-
+		template<typename T>
+		void writeArray(const T pIn[], size_t length);
 
 	};
 
 	template<typename T>
 	inline void ByteStream::read(T* pOut) {
 		read(reinterpret_cast<byte_t*>(pOut), sizeof(T));
+	}
+
+	template<typename T>
+	inline void ByteStream::readArray(T pOut[], size_t length) {
+		read(reinterpret_cast<byte_t*>(pOut), length * sizeof(T));
 	}
 
 	template<typename T>
@@ -58,4 +66,13 @@ namespace sa {
 		}
 	}
 
+	template<typename T>
+	inline void ByteStream::writeArray(const T pIn[], size_t length) {
+		if constexpr (std::is_nothrow_convertible<T*, byte_t*>::value) {
+			write(static_cast<const byte_t*>(pIn), sizeof(T) * length);
+		}
+		else {
+			write(reinterpret_cast<const byte_t*>(pIn), sizeof(T) * length);
+		}
+	}
 }

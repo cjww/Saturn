@@ -81,6 +81,7 @@ namespace sa {
 		ForwardPlus(const RenderPipeline& renderPipeline);
 
 		virtual void onRenderTargetResize(UUID renderTargetID, Extent oldExtent, Extent newExtent) override;
+		virtual void onPreferencesUpdated() override;
 
 		virtual void init() override;
 		virtual void cleanup() override;

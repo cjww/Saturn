@@ -35,29 +35,94 @@ namespace sa {
 		m_descriptorSet = m_pipelineLayout.allocateDescriptorSet(0);
 		m_linearSampler = Renderer::Get().createSampler(FilterMode::LINEAR);
 		Renderer::Get().updateDescriptorSet(m_descriptorSet, 0, m_cubemap, m_linearSampler);
+		m_initialized = true;
 	}
 
-	bool Skybox::onLoad(JsonObject& metaData, AssetLoadFlags flags)
-    {
-		setCompletionCount(2);
-		Image skyboxImage(getAssetPath().generic_string());
-		incrementProgress();
-		create(skyboxImage);
-		incrementProgress();
+	void Skybox::onAssetsUpdated() {
+		if (m_textureAssets.size() != 1 && m_textureAssets.size() != 6)
+			return;
+
+		if (m_cubemap.isValid())
+			m_cubemap.destroy();
+
+		if (m_textureAssets.size() == 1) {
+			TextureAsset* pAsset = sa::AssetManager::Get().getAsset<TextureAsset>(m_textureAssets[0]);
+			if (!pAsset)
+				return;
+			m_cubemap.createCube(pAsset->getImage(), false);
+		}
+		else if (m_textureAssets.size() == 6) {
+			Image images[6];
+			for (int i = 0; i < m_textureAssets.size(); i++) {
+				TextureAsset* pAsset = sa::AssetManager::Get().getAsset<TextureAsset>(m_textureAssets[0]);
+				if (!pAsset)
+					return;
+				images[i] = pAsset->getImage();
+			}
+			m_cubemap.createCube(images, false);
+		}
+		if (!m_initialized) {
+			init();
+		}
+		else {
+			Renderer::Get().updateDescriptorSet(m_descriptorSet, 0, m_cubemap, m_linearSampler);
+		}
+	}
+
+	bool Skybox::onLoad(JsonObject& metaData, AssetLoadFlags flags) {
+		simdjson::padded_string jsonStr = simdjson::padded_string::load(getAssetPath().generic_string());
+		simdjson::ondemand::parser parser;
+		auto doc = parser.iterate(jsonStr);
+		if (doc.error() != simdjson::error_code::SUCCESS) {
+			throw std::runtime_error("Json error: " + std::string(simdjson::error_message(doc.error())));
+		}
+		m_textureAssets.reserve(6);
+		simdjson::ondemand::array textures = doc["textures"];
+		for (auto element : textures) {
+			if (element.error()) {
+				SA_DEBUG_LOG_WARNING("Failed to get entity from file");
+				continue;
+			}
+			UUID textureId = element.value_unsafe().get_uint64().take_value();
+			m_textureAssets.push_back(textureId);
+		}	
+		onAssetsUpdated();
         return true;
     }
 
 	bool Skybox::onLoadCompiled(ByteStream& dataInStream, AssetLoadFlags flags) {
-		return false;
+		size_t length = 0;
+		dataInStream.read(&length);
+		m_textureAssets.resize(length);
+		dataInStream.readArray(m_textureAssets.data(), length);
+		onAssetsUpdated();
+		return true;
 	}
 
 	bool Skybox::onWrite(AssetWriteFlags flags) {
-		// WriteMetaFile(getMetaFilePath(), getHeader());
-		return false;
+		WriteMetaFile(getMetaFilePath(), getHeader());
+		std::ofstream file(getAssetPath());
+		if (!file.good()) {
+			throw std::runtime_error("Failed to open file \"" + getAssetPath().generic_string() + "\"");
+		}
+		Serializer serializer;
+		serializer.beginObject();
+		serializer.beginArray("textures");
+		for (auto id : m_textureAssets)
+		{
+			serializer.value(id);
+		}
+		serializer.endArray();
+		serializer.endObject();
+		file << serializer.dump();
+		file.close();
+		return true;
 	}
 
 	bool Skybox::onCompile(ByteStream& dataOutStream, AssetWriteFlags flags) {
-		return false;
+		dataOutStream.write(m_textureAssets.size());
+		dataOutStream.writeArray(m_textureAssets.data(), m_textureAssets.size());
+		return true;
 	}
 
 	bool Skybox::onUnload() {
@@ -71,6 +136,9 @@ namespace sa {
 		m_vertexBuffer.destroy();
 		m_indexBuffer.destroy();
 		Renderer::Get().destroySampler(m_linearSampler);
+		m_textureAssets.clear();
+		m_textureAssets.shrink_to_fit();
+		m_initialized = false;
 		return true;
 	}
 
@@ -131,4 +199,13 @@ namespace sa {
 	const Texture &Skybox::getTexture() const {
         return m_cubemap;
     }
+
+	const std::vector<UUID>& Skybox::getTextureAssets() const {
+		return m_textureAssets;
+	}
+
+	void Skybox::setTextureAssets(const std::vector<UUID>& textureAssets) {
+		m_textureAssets = textureAssets;
+		onAssetsUpdated();
+	}
 }

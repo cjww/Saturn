@@ -478,8 +478,9 @@ namespace ImGui {
 	
 	bool RenderLayerPreferences(sa::ForwardPlus* pLayer, sa::ForwardPlus::PreferencesType& prefs) {
 		bool changed = false;
-		sa::UUID assetId;
+		sa::UUID assetId = prefs.skybox.getID();
 		changed |= AssetSlot("Skybox", assetId, sa::AssetManager::GetAssetTypeID<sa::Skybox>());
+		prefs.skybox = sa::AssetManager::Get().getAsset<sa::Skybox>(assetId);
 		return changed;
 	}
 
@@ -828,7 +829,22 @@ namespace ImGui {
 	}
 
     bool SkyboxProperties(sa::Asset *pAsset) {
-		
+		sa::Skybox* pSkybox = static_cast<sa::Skybox*>(pAsset);
+		std::vector<sa::UUID> textureAssets = pSkybox->getTextureAssets();
+		bool changed = false;
+		if (Button("+"))
+		{
+			textureAssets.push_back(0);
+			changed = true;
+		}
+		for (int i = 0; i < textureAssets.size(); i++)
+		{
+			changed |= AssetSlot(("Texture " + std::to_string(i)).c_str(), textureAssets[i], sa::AssetManager::Get().GetAssetTypeID<sa::TextureAsset>());
+		}
+		if (changed)
+		{
+			pSkybox->setTextureAssets(textureAssets);
+		}
         return false;
     }
 

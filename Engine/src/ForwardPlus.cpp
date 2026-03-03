@@ -182,6 +182,11 @@ namespace sa {
 
 	}
 
+	void ForwardPlus::onPreferencesUpdated() {
+		ForwardPlusPreferences& prefs = getPreferences();
+		if (prefs.skybox.getAsset())
+			prefs.skybox->createPipeline(m_colorRenderProgram);
+	}
 
 	void ForwardPlus::init() {
 		if (m_isInitialized)

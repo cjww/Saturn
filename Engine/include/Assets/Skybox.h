@@ -20,7 +20,12 @@ namespace sa {
 		ResourceID m_descriptorSet = NULL_RESOURCE;
 		
 		ResourceID m_linearSampler = NULL_RESOURCE;
+		bool m_initialized = false;
+
+		std::vector<UUID> m_textureAssets;
+
 		void init();
+		void onAssetsUpdated();
 	protected:
 		// [DO NOT USE] Called by load. Do not call directly
 		virtual bool onLoad(JsonObject& metaData, AssetLoadFlags flags) override;
@@ -42,6 +47,9 @@ namespace sa {
 		void create(const Image* images);
 
 		const Texture& getTexture() const;
+
+		const std::vector<UUID>& getTextureAssets() const;
+		void setTextureAssets(const std::vector<UUID>& textureAssets);
 
 		virtual Skybox* clone(const std::string& name, const std::filesystem::path& assetDir = "") const override;
 

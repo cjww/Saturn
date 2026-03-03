@@ -76,4 +76,11 @@ namespace sa {
     const Texture& TextureAsset::getTexture() const {
         return m_texture;
     }
+    
+    Image TextureAsset::getImage() const {
+        if (!m_dataBuffer.empty()) {
+            return Image(m_dataBuffer.data(), m_dataBuffer.size());
+        }
+        return Image(getAssetPath().generic_string().c_str());
+    }
 }
