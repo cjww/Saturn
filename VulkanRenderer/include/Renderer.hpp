@@ -1,4 +1,6 @@
 #pragma once
+#include <list>
+
 #include "ApiBuildOptions.h"
 
 #include "RenderProgramFactory.hpp"
@@ -154,15 +156,15 @@ namespace sa {
 		void setClearColor(ResourceID renderProgram, Color color, uint32_t attachmentIndex);
 		void setClearColor(ResourceID renderProgram, Color color);
 
-		ResourceID createFramebuffer(ResourceID renderProgram, const DynamicTexture* pAttachmentTextures, uint32_t attachmentCount, uint32_t layers = 1ui32);
-		ResourceID createFramebuffer(ResourceID renderProgram, const DynamicTexture* pAttachmentTextures, uint32_t attachmentCount, Extent extent, uint32_t layers = 1ui32);
-		ResourceID createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const DynamicTexture* pAttachmentTextures, uint32_t attachmentCount, uint32_t layers = 1ui32);
+		ResourceID createFramebuffer(ResourceID renderProgram, const DynamicTexture* pAttachmentTextures, uint32_t attachmentCount, uint32_t layers = 1u);
+		ResourceID createFramebuffer(ResourceID renderProgram, const DynamicTexture* pAttachmentTextures, uint32_t attachmentCount, Extent extent, uint32_t layers = 1u);
+		ResourceID createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const DynamicTexture* pAttachmentTextures, uint32_t attachmentCount, uint32_t layers = 1u);
 
-		ResourceID createFramebuffer(ResourceID renderProgram, const Texture* pAttachmentTextures, uint32_t attachmentCount, uint32_t layers = 1ui32);
-		ResourceID createFramebuffer(ResourceID renderProgram, const Texture* pAttachmentTextures, uint32_t attachmentCount, Extent extent, uint32_t layers = 1ui32);
-		ResourceID createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const Texture* pAttachmentTextures, uint32_t attachmentCount, uint32_t layers = 1ui32);
+		ResourceID createFramebuffer(ResourceID renderProgram, const Texture* pAttachmentTextures, uint32_t attachmentCount, uint32_t layers = 1u);
+		ResourceID createFramebuffer(ResourceID renderProgram, const Texture* pAttachmentTextures, uint32_t attachmentCount, Extent extent, uint32_t layers = 1u);
+		ResourceID createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, const Texture* pAttachmentTextures, uint32_t attachmentCount, uint32_t layers = 1u);
 
-		ResourceID createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, uint32_t layers = 1ui32);
+		ResourceID createSwapchainFramebuffer(ResourceID renderProgram, ResourceID swapchain, uint32_t layers = 1u);
 
 		void destroyFramebuffer(ResourceID framebuffer);
 

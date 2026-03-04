@@ -1,5 +1,8 @@
 #include "pch.h"
 #include "Resources/Texture.hpp"
+
+#include <cmath>
+
 #include "internal/Swapchain.hpp"
 
 #include "internal/VulkanCore.hpp"
@@ -145,7 +148,7 @@ namespace sa {
 			usage |= TextureUsageFlagBits::TRANSFER_SRC;
 		}
 
-		sa::Extent subExtent = { image.getWidth() / 4, image.getHeight() / 3 };
+		sa::Extent subExtent = { image.getWidth() / 4u, image.getHeight() / 3u };
 
 		Format format = Renderer::Get().selectFormat(
 			sa::FormatPrecisionFlagBits::e8Bit,
@@ -171,14 +174,16 @@ namespace sa {
 			subExtent.width * subExtent.height * image.getChannelCount() * 6,
 			nullptr);
 
+		int32_t width = static_cast<int32_t>(subExtent.width);
+		int32_t height = static_cast<int32_t>(subExtent.height);
 		// fill staging buffer
 		sa::Offset offsets[6]{
-			{ 2 * subExtent.width, subExtent.height }, //right
-			{ 0, subExtent.height }, //left
-			{ subExtent.width, 0 }, // top
-			{ subExtent.width, 2 * subExtent.height }, // bottom
-			{ subExtent.width, subExtent.height }, // front
-			{ 3 * subExtent.width, subExtent.height } // back
+			{ 2 * width, height }, //right
+			{ 0, height }, //left
+			{ width, 0 }, // top
+			{ width, 2 * height }, // bottom
+			{ width, height }, // front
+			{ 3 * width, height } // back
 		};
 		uint32_t size = 0;
 		for (int i = 0; i < 6; i++) {
