@@ -92,12 +92,12 @@ namespace sa {
 		vk::PipelineStageFlags waitStage = vk::PipelineStageFlagBits::eColorAttachmentOutput;
 
 		vk::SubmitInfo info{
-			.waitSemaphoreCount = (waitSemaphore) ? 1ui32 : 0ui32,
+			.waitSemaphoreCount = (waitSemaphore) ? 1u : 0u,
 			.pWaitSemaphores = (waitSemaphore) ? &waitSemaphore : nullptr,
 			.pWaitDstStageMask = &waitStage,
 			.commandBufferCount = 1,
 			.pCommandBuffers = &m_buffers[m_lastBufferIndex],
-			.signalSemaphoreCount = (signalSemaphore) ? 1ui32 : 0ui32,
+			.signalSemaphoreCount = (signalSemaphore) ? 1u : 0u,
 			.pSignalSemaphores = (signalSemaphore)? &signalSemaphore : nullptr,
 		};
 		m_queues[m_lastBufferIndex].submit(info, fence);
@@ -108,7 +108,7 @@ namespace sa {
 		info.setSwapchains(swapchain);
 		info.setImageIndices(imageIndex);
 		info.setWaitSemaphores(waitSempahore);
-		
+
 		sa::ShortString msg("Failed to present image %u", imageIndex);
 		sa::checkError(m_queues[m_lastBufferIndex].presentKHR(info), msg.data());
 	}

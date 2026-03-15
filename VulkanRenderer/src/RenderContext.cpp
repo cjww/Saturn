@@ -61,6 +61,7 @@ namespace sa {
 	}
 
 	void RenderContext::bindVertexInput(const PipelineLayout& layout) const {
+		assert(m_pLastPipelineLayout != nullptr && "Pipeline layout was not set. Forgot to call bindPipelineLayout?");
 		const auto& vertexInputs = m_pLastPipelineLayout->getVertexBindings();
 
 		//TODO: inefficient to allocate memory every Call
@@ -157,6 +158,7 @@ namespace sa {
 	}
 
 	void RenderContext::bindPipeline(ResourceID pipeline) const {
+		assert(m_pLastPipelineLayout != nullptr && "Pipeline layout was not set. Forgot to call bindPipelineLayout?");
 		vk::PipelineBindPoint bindPoint = vk::PipelineBindPoint::eCompute;
 		if (m_pLastPipelineLayout->isGraphicsPipeline())
 			bindPoint = vk::PipelineBindPoint::eGraphics;
@@ -166,6 +168,7 @@ namespace sa {
 	}
 
 	void RenderContext::bindShader(const Shader& shader) const {
+		assert(m_pLastPipelineLayout != nullptr && "Pipeline layout was not set. Forgot to call bindPipelineLayout?");
 		const VkShaderEXT* pShader = ResourceManager::Get().get<VkShaderEXT>(shader.getShaderObjectID());
 		if (!pShader)
 			throw std::runtime_error("Nonexistent shader: " + shader.getShaderObjectID());
@@ -180,6 +183,7 @@ namespace sa {
 	}
 
 	void RenderContext::bindShaders(const std::vector<Shader>& shaders) const {
+		assert(m_pLastPipelineLayout != nullptr && "Pipeline layout was not set. Forgot to call bindPipelineLayout?");
 		std::array<VkShaderEXT, 5> vkShaders = { VK_NULL_HANDLE };
 		std::array<VkShaderStageFlagBits, 5> stages = {
 			VK_SHADER_STAGE_VERTEX_BIT,
@@ -199,11 +203,9 @@ namespace sa {
 		}
 
 		vkCmdBindShadersEXT(m_pCommandBufferSet->getBuffer(), stages.size(), stages.data(), vkShaders.data());
-
 		if (vkShaders[0] != VK_NULL_HANDLE) {
 			bindVertexInput(*m_pLastPipelineLayout);
 		}
-
 	}
 
 	void RenderContext::bindVertexBuffer(uint32_t firstBinding, const Buffer& buffer, size_t offset) const {
@@ -295,6 +297,7 @@ namespace sa {
 	}
 
 	void RenderContext::bindDescriptorSets(const std::vector<ResourceID>& descriptorSets) const {
+		assert(m_pLastPipelineLayout != nullptr && "Pipeline layout was not set. Forgot to call bindPipelineLayout?");
 		std::vector<vk::DescriptorSet> sets;
 		sets.reserve(descriptorSets.size());
 		uint32_t firstSet = UINT32_MAX;
@@ -306,6 +309,7 @@ namespace sa {
 		}
 
 		vk::PipelineBindPoint bindPoint = vk::PipelineBindPoint::eCompute;
+
 		if (m_pLastPipelineLayout->isGraphicsPipeline()) {
 			bindPoint = vk::PipelineBindPoint::eGraphics;
 		}
@@ -315,6 +319,8 @@ namespace sa {
 	}
 
 	void RenderContext::bindDescriptorSet(ResourceID descriptorSet) const {
+		assert(m_pLastPipelineLayout != nullptr && "Pipeline layout was not set. Forgot to call bindPipelineLayout?");
+
 		DescriptorSet* pDescriptorSet = GetDescriptorSet(descriptorSet);
 		
 		vk::PipelineBindPoint bindPoint = vk::PipelineBindPoint::eCompute;
@@ -328,6 +334,8 @@ namespace sa {
 	}
 
 	void RenderContext::pushConstants(ShaderStageFlags stages, uint32_t offset, uint32_t size, const void* data) const {
+		assert(m_pLastPipelineLayout != nullptr && "Pipeline layout was not set. Forgot to call bindPipelineLayout?");
+
 		vk::PipelineLayout* pLayout = GetPipelineLayout(m_pLastPipelineLayout->getLayoutID());
 
 		if (offset != UINT32_MAX) {

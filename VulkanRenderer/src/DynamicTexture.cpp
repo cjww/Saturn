@@ -1,6 +1,7 @@
 #include "pch.h"
 #include "Resources/DynamicTexture.hpp"
 #include "internal/VulkanCore.hpp"
+#include "Renderer.hpp"
 
 namespace sa {
 

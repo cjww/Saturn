@@ -1,10 +1,8 @@
 #pragma once
 #include "Texture.hpp"
-
-#include "Renderer.hpp"
+#include "RenderContext.hpp"
 
 namespace sa {
-
 	class DynamicTexture {
 	private:
 		std::vector<Texture> m_textures;
@@ -15,6 +13,8 @@ namespace sa {
 		
 
 	public:
+		virtual ~DynamicTexture() = default;
+
 		DynamicTexture();
 		DynamicTexture(const DynamicTexture& other) = default;
 		DynamicTexture& operator=(const DynamicTexture& other) = default;

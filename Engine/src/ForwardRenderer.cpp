@@ -1,5 +1,5 @@
 #include "pch.h"
-#include "ForwardRenderer.h"
+#include "Graphics/RenderTechniques/ForwardRenderer.h"
 
 #include <Renderer.hpp>
 

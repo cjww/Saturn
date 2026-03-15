@@ -2,6 +2,7 @@
 #include <string>
 #include <iostream>
 #include <mutex>
+#include <thread>
 
 #ifdef _WIN32
 #define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
@@ -106,9 +107,8 @@ inline void Logger::PrintInColor(FGColor color, Args&&... args) {
 	SetColor((FGColor)0);
 }
 
-
 template<typename ...Args>
-inline static void Logger::PrintInfo(const char* filename, int line, Args&&... args) {
+inline void Logger::PrintInfo(const char* filename, int line, Args&&... args) {
 	const std::lock_guard<std::mutex> lock(s_loggerMutex);
 	SetColor(FGColor::BrightGreen);
 	(*s_outStream) << "[INFO: -" << std::this_thread::get_id() << "- " << filename << ":" << line << "] ";
@@ -117,7 +117,7 @@ inline static void Logger::PrintInfo(const char* filename, int line, Args&&... a
 }
 
 template<typename ...Args>
-inline static void Logger::PrintWarning(const char* filename, int line, Args&&... args) {
+inline void Logger::PrintWarning(const char* filename, int line, Args&&... args) {
 	const std::lock_guard<std::mutex> lock(s_loggerMutex);
 	SetColor(FGColor::BrightYellow);
 	(*s_outStream) << "[WARNING: -" << std::this_thread::get_id() << "- " << filename << ":" << line << "] ";
@@ -126,7 +126,7 @@ inline static void Logger::PrintWarning(const char* filename, int line, Args&&..
 }
 
 template<typename ...Args>
-inline static void Logger::PrintError(const char* filename, int line, Args&&... args) {
+inline void Logger::PrintError(const char* filename, int line, Args&&... args) {
 	const std::lock_guard<std::mutex> lock(s_loggerMutex);
 	Logger::SetColor(FGColor::BrightRed);
 	(*s_outStream) << "[ERROR: -" << std::this_thread::get_id() << "- " << filename << ":" << line << "] ";

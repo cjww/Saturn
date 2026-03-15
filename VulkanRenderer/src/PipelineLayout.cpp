@@ -365,7 +365,8 @@ namespace sa {
 		options.SetAutoBindUniforms(true);
 		options.SetAutoMapLocations(true);
 		options.SetTargetEnvironment(shaderc_target_env_vulkan, SA_VK_API_VERSION);
-		options.SetIncluder(std::make_unique<ShaderIncluder>(additionalIncludeDirectory));
+		if (additionalIncludeDirectory)
+			options.SetIncluder(std::make_unique<ShaderIncluder>(additionalIncludeDirectory));
 
 		shaderc::Compiler compiler;
 		shaderc::SpvCompilationResult result = compiler.CompileGlslToSpv(glslCode, ToShadercKind(shaderStage), tag, entryPointName, options);

@@ -69,7 +69,7 @@ bool sa::FileDialogs::OpenFileInTextEditor(const std::filesystem::path& applicat
 
     si.cb = sizeof(si);
 
-    std::wstring commandLine = L"\"" + applicationPath.wstring() + L"\" \"" + file.generic_wstring() + L"\"";
+    std::string commandLine = "\"" + applicationPath.string() + "\" \"" + file.generic_string() + "\"";
     
 	bool success = CreateProcess(NULL,   // the path
         commandLine.data(),           // Command line
@@ -89,13 +89,13 @@ bool sa::FileDialogs::OpenFileInTextEditor(const std::filesystem::path& applicat
     return success;
 }
 
-bool sa::FileDialogs::YesNoWindow(const wchar_t* pTitle, const wchar_t* pMsg, bool isYesDefault) {
+bool sa::FileDialogs::YesNoWindow(const char* pTitle, const char* pMsg, bool isYesDefault) {
 #ifdef _WIN32
 
     int choiceID = MessageBox(
         NULL,
-        (LPCWSTR)pMsg,
-        (LPCWSTR)pTitle,
+        pMsg,
+        pTitle,
         MB_TASKMODAL | MB_ICONEXCLAMATION | MB_YESNO | (isYesDefault ? MB_DEFBUTTON1 : MB_DEFBUTTON2)
     );
 

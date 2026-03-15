@@ -6,9 +6,9 @@
 namespace sa {
 
     void checkError(vk::Result result, const std::string_view msg, bool doThrow = true);
-    
-    VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType,
-        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
+
+    VKAPI_ATTR vk::Bool32 VKAPI_CALL debugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity, vk::Flags<vk::DebugUtilsMessageTypeFlagBitsEXT> messageType,
+        const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
     /*
     VkResult setupDebugMessenger(VkInstance instance, VkDebugUtilsMessengerEXT* debugMessenger);
 
