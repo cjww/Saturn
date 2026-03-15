@@ -24,7 +24,7 @@ namespace sa {
 		static std::filesystem::path s_shaderDirectory;
 
 		RenderPipeline m_renderPipeline;
-		IWindowRenderer* m_pWindowRenderer;
+		IWindowRenderer* m_pWindowRenderer = nullptr;
 
 		RenderTarget m_mainRenderTarget;
 

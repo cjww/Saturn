@@ -5,7 +5,9 @@
 #include "Tools\Profiler.h"
 
 namespace sa {
-	Application::Application(bool enableImGui) {
+	Application::Application(bool enableImGui)
+		: m_lastLayerIndex(0)
+	{
 		SA_PROFILE_FUNCTION();
 		m_imGuiEnabled = enableImGui;
 		// TODO read application settings

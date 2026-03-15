@@ -2,6 +2,7 @@
 #include <string>
 #include <iostream>
 #include <mutex>
+#include <thread>
 
 #ifdef _WIN32
 #define __FILENAME__ (strrchr(__FILE__, '\\') ? strrchr(__FILE__, '\\') + 1 : __FILE__)
@@ -106,7 +107,6 @@ inline void Logger::PrintInColor(FGColor color, Args&&... args) {
 	Print(args...);
 	SetColor((FGColor)0);
 }
-
 
 template<typename ...Args>
 inline void Logger::PrintInfo(const char* filename, int line, Args&&... args) {

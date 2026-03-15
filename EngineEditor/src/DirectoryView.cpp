@@ -109,8 +109,8 @@ uint32_t DirectoryView::pasteItems(const std::filesystem::path& targetDirectory)
 				}
 				else {
 					if (std::filesystem::exists(newPath)) {
-						auto msg = newPath.wstring() + L" already exists.\nOverwrite with current file?";
-						if (!sa::FileDialogs::YesNoWindow(L"File already exists", msg.c_str(), false)) {
+						auto msg = newPath.string() + " already exists.\nOverwrite with current file?";
+						if (!sa::FileDialogs::YesNoWindow("File already exists", msg.c_str(), false)) {
 							continue;
 						}
 					}
@@ -146,8 +146,8 @@ uint32_t DirectoryView::deleteItems(const FileEntrySet& items) {
 		try {
 			if (std::filesystem::is_directory(entry.path)) {
 				if (!std::filesystem::is_empty(entry.path)) {
-					auto msg = L"The directory " + entry.path.wstring() + L" is not empty.\nRemove directory and all contents?";
-					if(!sa::FileDialogs::YesNoWindow(L"Non empty directory", msg.c_str())) {
+					auto msg = "The directory " + entry.path.string() + " is not empty.\nRemove directory and all contents?";
+					if(!sa::FileDialogs::YesNoWindow("Non empty directory", msg.c_str())) {
 						continue;
 					}
 				}
@@ -177,8 +177,8 @@ bool DirectoryView::moveItem(const FileEntry& item, const std::filesystem::path&
 	try {
 		auto newPath = targetDirectory / item.path.filename();
 		if (std::filesystem::exists(newPath)) {
-			auto msg = newPath.wstring() + L" already exists.\nOverwrite with current file?";
-			if (!sa::FileDialogs::YesNoWindow(L"File already exists", msg.c_str(), false)) {
+			auto msg = newPath.string() + " already exists.\nOverwrite with current file?";
+			if (!sa::FileDialogs::YesNoWindow("File already exists", msg.c_str(), false)) {
 				return false;
 			}
 		}
@@ -323,7 +323,7 @@ bool DirectoryView::moveAsset(sa::Asset* pAsset, const std::filesystem::path& ta
 void DirectoryView::makeAssetPropertiesWindows() {
 	for (auto it = m_openAssetProperties.begin(); it != m_openAssetProperties.end(); ) {
 		sa::Asset* pAsset = *it;
-		SA_PROFILE_SCOPE(sa::AssetManager::Get().getAssetTypeName(pAsset->getType()), " Properties Window");
+		SA_PROFILE_SCOPE(sa::AssetManager::Get().getAssetTypeName(pAsset->getType()) + " Properties Window");
 		bool isOpen = true;
 		if (ImGui::Begin((pAsset->getName() + " Properties").c_str(), &isOpen)) {
 			if (!isOpen) {

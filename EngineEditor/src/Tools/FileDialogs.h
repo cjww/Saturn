@@ -11,6 +11,6 @@ namespace sa {
 		static bool OpenFileInTextEditor(const std::filesystem::path& applicationPath, const std::filesystem::path& file);
 		
 		// Modal yes or no selection window, returns true if yes was pressed and false otherwise
-		static bool YesNoWindow(const wchar_t* pTitle, const wchar_t* pMsg, bool isYesDefault = false);
+		static bool YesNoWindow(const char* pTitle, const char* pMsg, bool isYesDefault = false);
 	};
 }

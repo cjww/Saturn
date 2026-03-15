@@ -185,7 +185,7 @@ std::array<uint32_t, 36> boxIndices = {
 
 int main() {
 
-#ifdef _WIN32
+#ifdef _MSC_VER
 	_CrtSetDbgFlag(_CRTDBG_ALLOC_MEM_DF | _CRTDBG_LEAK_CHECK_DF);
 #endif
 
@@ -227,8 +227,8 @@ int main() {
 
 		ResourceID framebuffer = renderer.createSwapchainFramebuffer(renderProgram, window.getSwapchainID(), &depthTexture, 1);
 
-		auto vshaderCode = sa::ReadSPVFile("Passthrough.vert.spv");
-		auto fshaderCode = sa::ReadSPVFile("Passthrough.frag.spv");
+		auto vshaderCode = sa::CompileGLSLFromFile("Passthrough.vert", sa::ShaderStageFlagBits::VERTEX, "main", nullptr);
+		auto fshaderCode = sa::CompileGLSLFromFile("Passthrough.frag", sa::ShaderStageFlagBits::FRAGMENT, "main", nullptr);
 
 		sa::Shader shaders[2];
 		shaders[0].create(vshaderCode, sa::ShaderStageFlagBits::VERTEX);

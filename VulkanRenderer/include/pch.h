@@ -11,6 +11,7 @@
 #include <fstream>
 #include <chrono>
 #include <thread>
+#include <memory>
 
 //#define VK_USE_PLATFORM_WIN32_KHR
 #if !defined(WIN32) and defined( _WIN32 )

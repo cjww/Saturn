@@ -18,22 +18,22 @@ namespace sa {
         }
     }
 
-    VKAPI_ATTR VkBool32 VKAPI_CALL debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType,
-        const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
+    VKAPI_ATTR vk::Bool32 VKAPI_CALL debugCallback(vk::DebugUtilsMessageSeverityFlagBitsEXT messageSeverity, vk::Flags<vk::DebugUtilsMessageTypeFlagBitsEXT> messageType,
+        const vk::DebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData)
     {
         std::stringstream ss;
         ss << pCallbackData->pMessage << std::endl;
 
-        if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT) {
+        if (messageSeverity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eWarning) {
             SA_DEBUG_LOG_WARNING(ss.str());
         }
-        if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_ERROR_BIT_EXT) {
+        if (messageSeverity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eError) {
             SA_DEBUG_LOG_ERROR(ss.str());
         }
-        if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_INFO_BIT_EXT) {
+        if (messageSeverity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eInfo) {
             SA_DEBUG_LOG_INFO(ss.str());
         }
-        if (messageSeverity & VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT) {
+        if (messageSeverity & vk::DebugUtilsMessageSeverityFlagBitsEXT::eVerbose) {
             ss << " VERBOSE ";
             SA_DEBUG_LOG_INFO(ss.str());
         }

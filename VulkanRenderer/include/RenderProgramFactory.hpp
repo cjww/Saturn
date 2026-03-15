@@ -65,7 +65,7 @@ namespace sa {
 		RenderProgramFactory(VulkanCore* pCore);
 		
 		RenderProgramFactory& addColorAttachment(AttachmentFlags flags, uint32_t sampleCount = 1U);
-		RenderProgramFactory& addColorAttachment(AttachmentFlags flags, const Texture& framebufferTexture);;
+		RenderProgramFactory& addColorAttachment(AttachmentFlags flags, const Texture& framebufferTexture);
 		RenderProgramFactory& addColorAttachment(AttachmentFlags flags, Format format, uint32_t sampleCount = 1U);
 
 
