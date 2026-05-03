@@ -19,7 +19,7 @@ namespace sa {
 	};
 
 	Application* CreateApplication(int argc, char** argv) {
-		Engine::SetShaderDirectory("../../build/Engine/shaders");
+		Engine::SetShaderDirectory(std::filesystem::current_path() / "../Engine/shaders");
 		return new EditorApp(argc, argv);
 	}
 
